@@ -1,7 +1,7 @@
 # From — Complete Product Documentation
 
 > Living document. Updated with each development session.
-> Last update: 2026-05-06 (v3.0 — full migration to node-based architecture)
+> Last update: 2026-05-06 (v3.0 — full migration, auth/AppMode, macOS published)
 
 ---
 
@@ -221,28 +221,50 @@ JWT HS256 with Railway `JWT_SECRET`. Expiry: 15 min (access) + 30 days (refresh)
 
 ---
 
-## Monetization model
+## Usage modes and monetization
 
-- **Manual mode:** User provides their own API key (Anthropic, OpenAI, Google)
-- **Automatic mode (From Server):** Prepaid tokens consumed per request
-  - 1M tokens = scaled rate
-  - Monthly subscription with included tokens
+### AppMode — account state
+
+`FromServerService.appMode` is the single source of truth for feature gating:
+
+| Mode | Condition | What works |
+|------|-----------|------------|
+| `.free` | No account | Bullets + Workspaces + Files. No sync, no AI |
+| `.subscription` | Login + `subscriptionStatus: active` | Everything — sync + managed AI (tokens) |
+| `.license` | Login + `licenseStatus: active` | Sync + AI with own API key |
+| `.expired` | Login + lapsed subscription/license | Bullets + files only |
+
+**Convenience flags:** `canSync` (≠ free), `canUseAI` (== subscription)
+
+### Monetization
+
+- **Free mode:** No account, no time limit. Unlimited bullets and files.
+- **Manual mode (license €59):** Own API key + Railway sync
+- **Automatic mode (subscription €7/month):** Prepaid tokens + Railway sync
   - LemonSqueezy variants: subscription (`1553200`), license (`1553210`), topup 5M (`1553900`)
 
 ---
 
 ## macOS version release process
 
-1. Bump `MARKETING_VERSION` in Xcode project
-2. `xcodebuild archive` → `.xcarchive`
+1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` (incremental integer) in Xcode
+2. `xcodebuild archive` (Release, Developer ID, Hardened Runtime)
 3. `xcodebuild -exportArchive` → `.app`
-4. `create-dmg` → signed `.dmg`
-5. `codesign` + `xcrun stapler`
-6. Upload DMG to GitHub Release
-7. Update `appcast.xml` with version, URL and size
-8. `git push` → Sparkle auto-detects update
+4. `hdiutil create` → `.dmg`
+5. `xcrun notarytool submit --keychain-profile "notarytool" --wait`
+6. `xcrun stapler staple` + `validate`
+7. `/tmp/sparkle-bin/bin/sign_update From.dmg` → get `edSignature` and `length`
+8. `gh release create vX.X /tmp/From.dmg` in repo `albertolezaun-afk/getfrom-app`
+9. Add `<item>` to `landing/appcast.xml` with edSignature, length and sparkle:version
+10. `git push` landing → GitHub Pages publishes in ~1 min → Sparkle auto-detects
+
+**Notarization credentials:** stored in Keychain as `"notarytool"` (`--keychain-profile "notarytool"`)
 
 Full reference: `docs/publicar-version.md`
+
+### Current published version
+- **macOS**: v3.0 (build 18) — published 2026-05-06
+- **iOS**: pending App Store (roadmap)
 
 ---
 
