@@ -1,9 +1,14 @@
 # From — Complete Product Documentation
 
 > Living document. Updated with each development session.
-> Last update: 2026-05-07 (v3.5.4 — performance fixes, dead code cleanup)
+> Last update: 2026-05-08 (v3.6.6 — temporal hierarchy + calendar fixes)
 
 ## Changelog
+
+### v3.6.6 (2026-05-08)
+- **Breadcrumb**: correct temporal hierarchy — no "From" prefix, each level shows only its ancestors. Year: no prefix; Month: year only; Week: year+month; Daily: year+month+week
+- **Temporal calendars**: year/month/week node calendars open at the node's actual date instead of today
+- **Daily notes in calendars**: daily notes now appear in week/month grids using `diaryDate`
 
 ### v3.5.4 (2026-05-07)
 - **Performance**: TemporalNavigator pre-buckets nodes by day — O(1) lookup per cell instead of iterating all nodes with Calendar operations

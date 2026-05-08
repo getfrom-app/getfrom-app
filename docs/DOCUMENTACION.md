@@ -1,9 +1,14 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-07 (v3.5.4 — performance fixes, limpieza código muerto)
+> Última actualización: 2026-05-08 (v3.6.6 — jerarquía temporal + calendarios corregidos)
 
 ## Changelog
+
+### v3.6.6 (2026-05-08)
+- **Breadcrumb**: jerarquía temporal correcta — sin "From", cada nivel muestra solo sus ancestros. Año: sin prefijo; Mes: solo año; Semana: año+mes; Diario: año+mes+semana
+- **Calendarios temporales**: el calendario de nodos año/mes/semana abre en la fecha correcta del nodo (ya no en la fecha actual)
+- **Notas diarias en calendarios**: las notas diarias aparecen en el grid de semana/mes usando `diaryDate`
 
 ### v3.5.4 (2026-05-07)
 - **Rendimiento**: TemporalNavigator pre-buckea nodos por día — lookup O(1) por celda en vez de iterar todos los nodos con Calendar operations
