@@ -7,6 +7,20 @@
         <language>en</language>
 
         <item>
+            <title>Version 3.6.5</title>
+            <pubDate>Thu, 08 May 2026 18:00:00 +0000</pubDate>
+            <sparkle:version>33</sparkle:version>
+            <sparkle:shortVersionString>3.6.5</sparkle:shortVersionString>
+            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.5</sparkle:releaseNotesLink>
+            <enclosure
+                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.5/From-3.6.5.dmg"
+                sparkle:edSignature="Zd8jT1FzQM73htn1vNSSB5N0VpTWM18l499iJ/lym1BZTB2yWHDk3u6OegrB7OhpIKUAkw5Nf5OU93TFwi/mBQ=="
+                length="11657856"
+                type="application/octet-stream"
+            />
+        </item>
+
+        <item>
             <title>Version 3.6.2</title>
             <pubDate>Thu, 08 May 2026 14:00:00 +0000</pubDate>
             <sparkle:version>30</sparkle:version>
