@@ -1,9 +1,15 @@
 # From — Complete Product Documentation
 
 > Living document. Updated with each development session.
-> Last update: 2026-05-08 (v3.6.7 — flat model + onboarding + area AI context)
+> Last update: 2026-05-08 (v3.6.8 — area picker + workspace fully removed)
 
 ## Changelog
+
+### v3.6.8 (2026-05-08)
+- **Area picker**: picker in properties panel to assign or create areas, shows existing areas and allows creating new ones
+- **Area AI context UI**: visual banner when editing an area context node, clearly indicating its purpose
+- **Workspace fully removed**: `Workspace` reduced to minimal shim, `Node.workspaceId` computed (not stored), `nodesByWorkspace` derived from `allNodes`
+- **Complete cleanup**: `AreaChipsFlow`, workspace filters, and other legacy references eliminated
 
 ### v3.6.7 (2026-05-08)
 - **Architecture**: workspace removed as structural entity — flat node model (`allNodes`), area as tag in `extraData["area"]`

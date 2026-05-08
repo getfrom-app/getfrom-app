@@ -1,9 +1,15 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-08 (v3.6.7 — modelo plano + onboarding + área como contexto IA)
+> Última actualización: 2026-05-08 (v3.6.8 — área picker + workspace eliminado)
 
 ## Changelog
+
+### v3.6.8 (2026-05-08)
+- **Área picker**: picker en el panel de propiedades para asignar o crear áreas. Muestra áreas existentes y permite escribir nuevas
+- **Contexto IA de área**: banner visual cuando se edita el nodo de contexto de área, con indicador claro de su propósito
+- **Workspace eliminado**: `Workspace` reducido a shim mínimo, `Node.workspaceId` computed (no almacenado), `nodesByWorkspace` derivado de `allNodes`
+- **Limpieza total**: `AreaChipsFlow`, filtros de workspace, y otras referencias eliminadas
 
 ### v3.6.7 (2026-05-08)
 - **Arquitectura**: workspace eliminado como entidad estructural — modelo plano de nodos (`allNodes`), área como tag en `extraData["area"]`
