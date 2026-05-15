@@ -1,9 +1,198 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-11 (v3.7.0 — supertags Tana + refactor estructural)
+> Última actualización: 2026-05-15
 
 ## Changelog
+
+## Estado actual — Mayo 2026
+
+Esta sección describe el estado completo de la aplicación From tal como está implementada a fecha de mayo de 2026. No es un changelog de versiones sino una descripción exhaustiva del sistema.
+
+---
+
+### Editor y nodos
+
+**Outliner jerárquico:**
+- Editor de bullets tipo outliner con árbol de nodos anidados. Cada nodo tiene `parentId`, texto de una línea, body Markdown libre y propiedades opcionales en `extraData`.
+- Drag & drop para reordenar nodos dentro del árbol (mismo nivel o reparenting).
+- Colapso y expansión de ramas. Zoom in/out: navegar dentro de cualquier nodo como si fuera la raíz del árbol.
+- Fractal indexing (`siblingOrder`) para ordenación manual sin colisiones.
+
+**Tipos de nodo y transformaciones:**
+- Slash palette (`/`) al inicio de un bullet para transformarlo: Tarea, Evento, Bucle Abierto, Título (h1/h2/h3), Agente, Prompt, Enlace, Archivo.
+- Headings inline: `/h1`, `/h2`, `/h3` con renderizado tipográfico diferenciado.
+- Cada nodo puede tener múltiples tipos simultáneos (`types: ["tarea", "proyecto"]`).
+
+**Supertags (#):**
+- Palette inline al escribir `#` en cualquier posición del texto.
+- Tipos predefinidos: tarea, proyecto, evento, agente, prompt. Tipos de usuario creados al momento sin confirmación.
+- El chip `#tipo` se elimina como unidad con Backspace y salta con ← →.
+- Coloreado dinámico por tipo. `TypeColorService` asigna color aleatorio persistido en la primera aparición.
+- Clic derecho en chip del sidebar → cambiar color (presets + ColorPicker nativo).
+
+**Propiedades del nodo (`extraData`):**
+- Campos tipados: `text`, `number`, `date`, `select`, `bool`, `url`, `email`, `phone`.
+- Área (`extraData["area"]`), contexto IA de área (`_areaCtx=1`), clave R2 de archivo adjunto (`r2Key`).
+- Frontmatter YAML accesible y editable por nota.
+- Body Markdown por nodo con soporte completo de formato.
+
+**Menciones y referencias:**
+- `@menciones` para referenciar otras notas/nodos desde el body. Navegación directa al nodo referenciado.
+
+**Atajos inline personalizables:**
+- Expansión de texto configurable en Ajustes. El usuario define alias y su expansión (ej. `-t` → convierte en tarea, `-d:hoy` → fecha de hoy, `-p:alta` → prioridad alta).
+
+---
+
+### Tareas
+
+- **Estados:** `pending`, `done`, `future`, `cancelled`.
+- **Prioridad:** alta, media, baja.
+- **Fecha de vencimiento** con lenguaje natural (hoy, mañana, próximo lunes, en 3 días…).
+- **`dueEnd`**: fecha de fin para tareas con duración.
+- **Recurrencia:** daily, weekly, monthly, yearly. La tarea se regenera automáticamente al completarse.
+- **Bucles abiertos (open loops):** tareas sin fecha fija, tipo recordatorio persistente. Visibles en sección dedicada del sidebar.
+- **Tareas atómicas:** nodos marcados como acción mínima indivisible.
+- **Tareas rápidas (⌘T):** captura directa sin abrir la app principal. Se insertan en el nodo raíz activo.
+- **Quick tasks** con `QuickCaptureSheet` vía FAB en iOS o teclado en macOS.
+
+---
+
+### Eventos y calendario
+
+- **Sync bidireccional con Apple Calendar y Apple Reminders** via EventKit. Los eventos creados en From aparecen en Calendario de macOS/iOS y viceversa.
+- **Creación de eventos con ⌘E** y lenguaje natural (fecha, hora, duración parseados automáticamente).
+- **`EventEditSheet`** para editar título, fecha/hora de inicio y fin, notas, calendario destino.
+- **Timeline** en columna derecha del diario: vista Día (24h), Semana, Mes, Año. Los eventos de Apple Calendar se renderizan en todos los grids.
+- Nodos diarios (`isDiaryEntry: true`) con `diaryDate` para alinear con el grid del calendario.
+
+---
+
+### Organización
+
+- **Tags `#`** con tipos predefinidos (tarea, proyecto, evento, agente, prompt) y tipos de usuario ilimitados.
+- **Áreas de conocimiento:** área como tag en `extraData["area"]`. Picker en el panel de propiedades para asignar o crear áreas. Cada área tiene un nodo de contexto IA (`_areaCtx=1`) cuyo body se incluye automáticamente en el system prompt del chat.
+- **Jerarquía temporal automática:** al primer uso se crea árbol año→mes→semana→diario. El onboarding abre el diario del día actual.
+- **Breadcrumb temporal:** Año > Mes > Semana > Día > [ancestros del nodo] > título.
+- **Collections y grupos:** organización interna dentro de un espacio para agrupar nodos relacionados.
+- **Workspaces:** entidad legacy reducida a shim mínimo. El modelo es plano (`allNodes`); el área reemplaza al workspace como contenedor semántico.
+
+---
+
+### Vistas
+
+- **Lista:** árbol de bullets estándar con indentación y colapso.
+- **Kanban:** columnas por estado (pendiente, hecho, cancelado, etc.).
+- **Tabla:** grid de nodos con columnas de propiedades.
+- **Galería:** cards visuales con body preview.
+- **Calendario Día / Semana / Mes / Año:** nodos con fecha renderizados en el grid. Clicable para navegar al nodo.
+- **Canvas infinito (whiteboard):** nodos posicionados libremente en un plano 2D con conexiones visuales entre ellos.
+- **Filtros:** por estado, prioridad, área, tipo, fecha, colección. Combinables.
+- **Ordenación:** por fecha de creación, modificación, vencimiento, prioridad, orden manual.
+- **Agrupación:** por estado, tipo, área, prioridad, fecha.
+- **Vistas guardadas (paneles):** búsquedas con filtros guardados como panel de acceso rápido en el sidebar.
+
+---
+
+### Búsqueda
+
+- **⌘K — CommandBar universal:** crear nodos, buscar, navegar, parsear fechas naturales. Flags `-t` (tarea), `-e` (evento), `-b` (bucle abierto). La barra interpreta lenguaje natural para fechas y tipos.
+- **⌘F — Búsqueda inline:** `InlineFilterBar` con `FilterResultsPanel` superpuesto sobre el editor. Muestra resultados en tiempo real con contexto.
+- **Comandos de búsqueda:** `estado:pendiente`, `fecha:hoy`, `tipo:proyecto`, `prioridad:alta`, `col:nombre`, `area:nombre`, texto libre.
+- **Spotlight de macOS:** los nodos están indexados y son accesibles desde la búsqueda del sistema.
+- **Magic Search:** búsqueda semántica con IA. La consulta en lenguaje natural busca en el vault completo y sintetiza una respuesta con referencias a los nodos relevantes.
+
+---
+
+### Inteligencia artificial
+
+**Chat por nota:**
+- Botón ✦ o ⌘J abre el chat IA con contexto del nodo actual (título + body + hijos + contexto de área).
+- Historial específico por nota. Al cambiar de nota el historial se limpia (salvo que el chat haya creado esa nota).
+- Las respuestas incluyen tarjetas de acción con icono coloreado para aplicar cambios directamente al nodo.
+
+**Editor IA y borradores:**
+- Sidebar de borradores IA para componer o reescribir contenido. El borrador se puede insertar en el body del nodo o reemplazarlo.
+
+**Sugerencias inline (ghost text):**
+- El modelo sugiere continuaciones del texto mientras se escribe. Se acepta con Tab o flecha derecha.
+
+**Grabación de voz:**
+- Captura de audio del micrófono, audio del sistema (Soundflower/BlackHole), o mezcla de ambos.
+- Transcripción automática → post-procesado con IA → bullets estructurados insertados en el nodo activo o en uno nuevo.
+- Barra de grabación persistente en la ventana principal. Accesible también desde QuickCaptureSheet.
+
+**Agentes autónomos:**
+- Los agentes son nodos con `types: ["agente"]`.
+- Cada agente tiene: instrucción fija, fuentes de contexto (nodos referenciados), schedule (al abrir, diario, semanal, manual).
+- Herramientas disponibles: `leer nodo`, `actualizar nodo`, `crear nodo`, `fetch_url` (hasta 4.000 chars), `buscar web` (Brave Search API).
+- Se ejecutan automáticamente según schedule o bajo demanda. Memoria persistida en `node.body`.
+- `AgentService` gestiona la cola y el presupuesto de tokens por ejecución.
+
+**Magic Search:**
+- Búsqueda semántica sobre el vault completo combinando FTS5 + embeddings. La IA sintetiza una respuesta citando los nodos relevantes.
+
+**Multi-proveedor:**
+- Principal: Anthropic Claude Haiku 4.5 (balance coste/calidad).
+- Fallback: Google Gemini Flash.
+- En modo licencia: el usuario aporta su propia API key (Anthropic, OpenAI o Gemini).
+
+**Gestión de tokens:**
+- Plan suscripción: 2 millones de tokens/mes incluidos.
+- Recarga disponible: paquetes de 5 millones de tokens adicionales (LemonSqueezy variant `1553900`).
+- Panel de tokens en Ajustes con uso actual y fecha de renovación.
+
+---
+
+### Integraciones
+
+- **Apple Calendar + Reminders:** sync bidireccional via EventKit. Creación, edición y eliminación de eventos desde From se refleja en el sistema y viceversa.
+- **Google Docs:** sincronización nota ↔ documento Google via OAuth2. Cambios en el body del nodo se propagan al doc y viceversa.
+- **Publicación de notas:** cada nota puede tener una URL pública por slug. Se puede actualizar el contenido publicado o despublicar desde el panel de propiedades.
+- **Spotlight macOS:** nodos indexados en el índice del sistema operativo.
+- **Brave Search API:** usada por los agentes para búsquedas web con fallback automático para URLs en IA inline.
+- **Cloudflare R2:** almacenamiento de archivos binarios adjuntos a nodos (presigned URLs, nunca pasan por Railway).
+
+---
+
+### Sync y cuenta
+
+- **Servidor propio en Railway:** `https://from-server-production.up.railway.app` (TypeScript + Bun + Hono + Drizzle + PostgreSQL).
+- **Sync delta en tiempo real:** Mac ↔ iPhone ↔ servidor. Protocolo "último en escribir gana" por `updated_at`. Ciclo cada 5 minutos o por push.
+- **Planes:**
+  - Gratis: sin cuenta, bullets ilimitados, sin sync ni IA.
+  - Suscripción €7/mes: sync + 2M tokens IA/mes (Anthropic/Gemini gestionados).
+  - Licencia perpetua €59: sync + IA con API key propia del usuario.
+- **LemonSqueezy** para pagos. Variants: suscripción (`1553200`), licencia (`1553210`), topup 5M tokens (`1553900`).
+- **Backup local automático:** `NodeBackupService` exporta todos los nodos a Markdown cada 2 horas en `~/Library/Application Support/From/Backups/`.
+
+---
+
+### Captura rápida
+
+- **⌘K:** CommandBar universal. Crear nodo, buscar, navegar, parsear fecha y tipo con lenguaje natural.
+- **⌘T:** captura de tarea rápida directamente en el inbox o nodo raíz activo.
+- **⌘E:** captura de evento con fecha/hora parseados con lenguaje natural.
+- **Barra de grabación persistente:** accesible desde cualquier vista para iniciar transcripción de voz.
+- **QuickCaptureSheet:** sheet modal con texto libre + flags inline (`-t`, `-d:hoy`, `-p:alta`, `-b`).
+
+---
+
+### Ajustes
+
+- **Apariencia:** tema claro/oscuro/sistema. Selector de idioma con 7 idiomas disponibles.
+- **Atajos de teclado personalizables:** lista completa de shortcuts editables por el usuario.
+- **Atajos inline (expansión de texto):** alias configurables que se expanden al escribir.
+- **Proveedores de IA:** configuración de API keys propias (Anthropic, OpenAI, Gemini). Panel de tokens con uso actual.
+- **Calendario:** configuración de calendarios de Apple Calendar y Reminders a sincronizar.
+- **Backup:** estado del servicio de backup local, última exportación, abrir carpeta.
+- **Agentes:** lista de agentes activos, schedule, historial de ejecuciones.
+- **Tipos y estados:** personalización del sistema de taxonomía (tipos predefinidos y de usuario, estados, colores).
+- **Import/Export:** exportar vault completo como Markdown o JSON. Importar desde otras apps.
+- **Cuenta:** login/logout, estado de suscripción o licencia, gestión de tokens.
+
+---
 
 ### v3.7.0 (2026-05-11) — Supertags estilo Tana + refactor profundo
 

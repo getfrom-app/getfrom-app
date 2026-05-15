@@ -67,6 +67,7 @@ In From, everything is a **node**: a line of text with a title, body (free markd
 | `Shift+Tab` | De-indent (move up one level) |
 | `Enter` | Create new bullet at the same level |
 | `/` | Open command menu on the current bullet |
+| `@` | Open mention picker to link another note |
 
 Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 
@@ -95,7 +96,16 @@ Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 
 ---
 
-## 6. Tasks
+## 6. @Mentions
+
+Type `@` anywhere in a bullet to open the **mention picker**. Search by name and select the note you want to link. The node is referenced: a chip with the target note's name appears, and you can navigate to it with a click.
+
+- Mentions are bidirectional: the target note shows in its properties panel which nodes reference it.
+- Useful for linking tasks to projects, connecting related ideas, or building a knowledge graph within the tree.
+
+---
+
+## 7. Tasks
 
 **Create a task:**
 - Type the bullet text and press `⌘T`, or use the inline shortcut `-t` at the end of the line.
@@ -118,7 +128,7 @@ Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 
 ---
 
-## 7. Events and calendar
+## 8. Events and calendar
 
 **Create an event:**
 - Create a node and tag it with `#event`, or use the "New event" button in the right panel when inside a diary node.
@@ -136,9 +146,9 @@ Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 
 ---
 
-## 8. Views
+## 9. Views
 
-From offers four display modes for nodes at any level. Switch views from the buttons in the top bar.
+From offers five display modes for nodes at any level. Switch views from the buttons in the top bar.
 
 | View | When to use it |
 |---|---|
@@ -146,14 +156,24 @@ From offers four display modes for nodes at any level. Switch views from the but
 | **Kanban** | Project management with statuses (pending, in progress, done) |
 | **Table** | Compare properties of multiple nodes at once |
 | **Gallery** | Review visual content or resource cards |
+| **Canvas** | Free visual organization on an infinite board |
 
 - **Kanban** groups child nodes by their `status` field. Drag cards between columns to change status.
 - **Table** shows fields like date, priority, and types in editable columns.
 - The last selected view is remembered per node.
 
+### Canvas
+
+The **Canvas** is an infinite board where you can place notes, tasks, and text freely and connect them with lines. Use it when the linear tree doesn't capture the relationships between ideas well enough.
+
+- **Add elements:** drag any existing node onto the canvas, or create a new one directly on the board by double-clicking.
+- **Connect elements:** drag from the edge of one node to the edge of another to create a connection line.
+- **Navigate:** use scroll or trackpad to pan and zoom across the board.
+- Changes on the canvas are reflected in the tree and vice versa: the nodes are the same, only the visual presentation changes.
+
 ---
 
-## 9. Search
+## 10. Search
 
 **Inline search (`⌘F`):**
 Filters the tree you're viewing without leaving it. Supports commands:
@@ -170,13 +190,68 @@ Filters the tree you're viewing without leaving it. Supports commands:
 - Searches across all nodes, files, and agents at once.
 - Instant, no server needed. Results update in real time as you type.
 
+**Semantic search (AI):**
+- Beyond exact text matching, From includes a **magic search** mode that answers questions about your vault's content.
+- Activate it by typing a natural language question in the global search bar: "What tasks do I have pending for client X?" or "What did we decide in Tuesday's meeting?"
+- The AI analyzes your notes and returns an answer with references to the relevant nodes.
+
+**Spotlight:**
+- From indexes your content in macOS search so you can find notes from Spotlight without opening the app.
+- The integration activates automatically when From is installed. You can disable it in **Settings → Search**.
+
 **Saved search panels:**
 - Pin frequent searches as panels in the sidebar.
 - Useful for "my tasks today", "active projects", "notes with #client".
 
 ---
 
-## 10. Integrated AI
+## 11. Quick capture
+
+From offers several ways to capture information without interrupting your flow.
+
+| Shortcut | What it does |
+|---|---|
+| `⌘K` | Global search and capture (nodes, files, agents) |
+| `⌘T` | Create quick task in the current node |
+| `⌘E` | Open properties panel to capture metadata |
+| `⌘N` | New node at the current level |
+
+**Capture from any app (macOS):**
+- From the macOS menu bar you can open a floating quick-capture window without switching apps.
+- The bullet is added to the selected node, or to today's diary if nothing is selected.
+
+**File capture:**
+- Drag any file from Finder to the bullet tree to attach it to a node.
+- You can also paste images directly from the clipboard.
+
+**Linked note:**
+- From the `···` menu of any node you can create a new linked child note with one click, without losing the context of the parent node.
+
+---
+
+## 12. Voice recording
+
+From includes a **persistent recording bar** at the bottom of the app. It captures audio and converts it into structured bullets using AI.
+
+**How to record:**
+1. Click the microphone icon in the bottom bar.
+2. Choose the source: **microphone** (your voice) or **system audio** (meetings, podcasts, any sound from the Mac).
+3. Press the record button. The bar shows elapsed time and audio level in real time.
+4. Press **Stop** when you're done.
+
+**Transcription and structuring:**
+- The AI transcribes the audio and automatically structures it into bullets.
+- The bullets are inserted into the active node or today's diary if nothing is selected.
+- You can review and edit the bullets before confirming the insertion.
+
+**Typical use cases:**
+- Capturing ideas while walking or driving.
+- Transcribing meetings or calls.
+- Dictating a long note draft without touching the keyboard.
+
+---
+
+## 13. Integrated AI
 
 **Opening the chat:**
 - Open any node and go to the **Chat** tab in the right panel.
@@ -195,15 +270,33 @@ Filters the tree you're viewing without leaving it. Supports commands:
 **History:**
 - Chat history is specific to each note. Switching nodes resets the chat.
 
-**Autonomous agents:**
-- An agent is a node tagged with `#agent`. It has a fixed instruction, context sources, and a schedule.
-- Runs automatically (daily, weekly...) or manually on demand.
-- Can read nodes, create them, update content, and perform web searches.
-- Great for automatic summaries, recurring reports, or capturing external information.
+---
+
+## 14. Agents
+
+**Agents** are AI automations that run with or without manual intervention. They are created as regular nodes inside the **Agents/** folder in the tree.
+
+**Create an agent:**
+1. Create a node inside `Agents/` or tag any node with `#agent`.
+2. Write the instruction in the body: what the agent should do, which notes it should read, what it should generate.
+3. In the properties panel, configure the **schedule**: on app open, daily, weekly, or at a specific time.
+4. Optionally, add **context nodes**: drag other notes into the agent's context field for it to read before executing.
+
+**What an agent can do:**
+- Read and summarize nodes from the vault.
+- Create or update notes with generated content.
+- Search the web and bring results into the tree.
+- Send notifications or generate periodic reports.
+
+**Manual execution:**
+- Press the **Run** button in the agent's panel to trigger it at any time, regardless of the schedule.
+
+**Execution history:**
+- Each run is logged in the agent's node with the date, result, and any errors produced.
 
 ---
 
-## 11. Areas
+## 15. Areas
 
 An **area** is a label that groups related nodes under a shared context: work, personal, health, a specific client.
 
@@ -219,7 +312,44 @@ An **area** is a label that groups related nodes under a shared context: work, p
 
 ---
 
-## 12. Sync and account
+## 16. Sharing notes
+
+**Publish a note:**
+- Open the `···` menu of any node and select **Publish**.
+- From generates a public URL of the form `getfrom.app/p/...` with the note's content rendered in markdown.
+- The URL is saved in the node's properties panel.
+
+**Update a published note:**
+- Edit the node normally and select **Publish** again from the `···` menu. The URL's content updates instantly.
+
+**Unpublish:**
+- Select **Unpublish** from the `···` menu. The URL becomes inaccessible immediately.
+
+**Typical uses:** sharing a report with someone who doesn't have From, publishing project documentation, sending a brief to a client.
+
+---
+
+## 17. Google Docs
+
+From can sync any note's content with a Google Docs document.
+
+**Initial setup:**
+1. Go to **Settings → Integrations** and connect your Google account.
+2. Authorize Google Drive access when prompted.
+
+**Sync a note:**
+- Open the node you want to sync.
+- In the note's action bar (top bar of the right panel), click the **Google Docs** button.
+- Choose whether to link to an existing document or create a new one.
+- From keeps the content in sync: changes in From are reflected in the document and vice versa.
+
+**Notes:**
+- Sync is per node, not for the whole vault.
+- Markdown formatting is automatically converted to Google Docs format on export.
+
+---
+
+## 18. Sync and account
 
 **Without an account (free mode):**
 - Unlimited bullets, nodes, and files stored locally.
@@ -247,7 +377,7 @@ An **area** is a label that groups related nodes under a shared context: work, p
 
 ---
 
-## 13. Useful settings
+## 19. Useful settings
 
 Access from the **From → Settings** menu or with `⌘,`.
 
@@ -256,11 +386,19 @@ Access from the **From → Settings** menu or with `⌘,`.
 | **Account** | Login, subscription, AI tokens, own API key |
 | **Appearance** | Light/dark theme, font size |
 | **Keyboard Shortcuts** | Reassign any shortcut in the app |
+| **Inline shortcuts** | Define your own text expansions (abbreviation → full text) |
 | **Calendar** | Enable Apple Calendar sync, select calendars |
 | **Types & Statuses** | Create, edit, or delete custom node types and statuses |
 | **AI** | Agents, saved prompts, assistant configuration |
+| **Integrations** | Connect your Google account for Google Docs |
+| **Search** | Enable/disable Spotlight integration |
 | **Backup** | Local backup status, export path |
 | **Space** | Local directory for files and agents |
+
+**Inline shortcuts (text expansions):**
+- In **Settings → Inline shortcuts** you define your own abbreviations: type a short key and From expands it automatically to the text you configured.
+- Example: type `;sig` and it expands to your full email signature.
+- Useful for recurring text blocks, templates, or anything you type repeatedly.
 
 **Voice transcription (iOS):**
 - In the iPhone app, the microphone button in quick capture transcribes your voice to text.

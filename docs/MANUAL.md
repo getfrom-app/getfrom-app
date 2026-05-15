@@ -67,6 +67,7 @@ En From, todo es un **nodo**: una línea de texto con título, cuerpo (markdown 
 | `Shift+Tab` | Des-indentar (subir un nivel) |
 | `Enter` | Crear nuevo bullet al mismo nivel |
 | `/` | Abrir menú de comandos en el bullet actual |
+| `@` | Abrir picker de menciones para enlazar otra nota |
 
 Los atajos son configurables en **Ajustes → Atajos de teclado**.
 
@@ -95,7 +96,16 @@ Los **supertags** permiten etiquetar cualquier nodo con un tipo semántico. Escr
 
 ---
 
-## 6. Tareas
+## 6. @Menciones
+
+Escribe `@` en cualquier posición de un bullet para abrir el **picker de menciones**. Busca por nombre y selecciona la nota que quieras enlazar. El nodo queda referenciado: aparece un chip con el nombre de la nota destino y puedes navegar a ella con un clic.
+
+- Las menciones son bidireccionales: la nota destino muestra en su panel de propiedades qué nodos la referencian.
+- Útil para vincular tareas a proyectos, enlazar ideas relacionadas o crear un grafo de conocimiento dentro del árbol.
+
+---
+
+## 7. Tareas
 
 **Crear una tarea:**
 - Escribe el texto del bullet y pulsa `⌘T`, o usa el atajo inline `-t` al final de la línea.
@@ -118,7 +128,7 @@ Los **supertags** permiten etiquetar cualquier nodo con un tipo semántico. Escr
 
 ---
 
-## 7. Eventos y calendario
+## 8. Eventos y calendario
 
 **Crear un evento:**
 - Crea un nodo y etiquétalo con `#evento`, o usa el botón "Nuevo evento" en el panel derecho al estar en un nodo diario.
@@ -136,9 +146,9 @@ Los **supertags** permiten etiquetar cualquier nodo con un tipo semántico. Escr
 
 ---
 
-## 8. Vistas
+## 9. Vistas
 
-From ofrece cuatro modos de visualización para los nodos de cualquier nivel. Cambia de vista desde los botones en la barra superior.
+From ofrece cinco modos de visualización para los nodos de cualquier nivel. Cambia de vista desde los botones en la barra superior.
 
 | Vista | Cuándo usarla |
 |---|---|
@@ -146,14 +156,24 @@ From ofrece cuatro modos de visualización para los nodos de cualquier nivel. Ca
 | **Kanban** | Gestión de proyectos con estados (pendiente, en curso, hecho) |
 | **Tabla** | Comparar propiedades de varios nodos a la vez |
 | **Galería** | Revisar contenido visual o tarjetas de recursos |
+| **Canvas** | Organización visual libre sobre lienzo infinito |
 
 - La vista **Kanban** agrupa los nodos hijos por su campo `estado`. Arrastra tarjetas entre columnas para cambiar el estado.
 - La vista **Tabla** muestra campos como fecha, prioridad y tipos en columnas editables.
 - La última vista seleccionada se recuerda por nodo.
 
+### Canvas
+
+El **Canvas** es un lienzo infinito donde puedes colocar notas, tareas y textos libremente y conectarlos con líneas. Es la vista adecuada cuando el árbol lineal no refleja bien las relaciones entre ideas.
+
+- **Añadir elementos:** arrastra cualquier nodo existente al canvas, o crea uno nuevo directamente sobre el lienzo haciendo doble clic.
+- **Conectar elementos:** arrastra desde el borde de un nodo al borde de otro para crear una línea de conexión.
+- **Navegar:** usa el scroll o el trackpad para hacer pan y zoom sobre el lienzo.
+- Los cambios en el canvas se reflejan en el árbol y viceversa: los nodos son los mismos, solo cambia la presentación visual.
+
 ---
 
-## 9. Búsqueda
+## 10. Búsqueda
 
 **Búsqueda inline (`⌘F`):**
 Filtra el árbol que estás viendo sin salir de él. Admite comandos:
@@ -170,13 +190,68 @@ Filtra el árbol que estás viendo sin salir de él. Admite comandos:
 - Busca en todos los nodos, archivos y agentes a la vez.
 - Instantánea, sin servidor. Resultados en tiempo real mientras escribes.
 
+**Búsqueda semántica (IA):**
+- Además de la búsqueda por texto exacto, From incluye un modo de **búsqueda mágica** que responde preguntas sobre el contenido de tu vault.
+- Actívala escribiendo una pregunta en lenguaje natural en la barra de búsqueda global: "¿qué tareas tengo pendientes sobre el cliente X?" o "¿qué decidimos en la reunión del martes?"
+- La IA analiza el contenido de tus notas y devuelve una respuesta con referencias a los nodos relevantes.
+
+**Spotlight:**
+- From indexa tu contenido en la búsqueda de macOS para que puedas encontrar notas desde Spotlight sin abrir la app.
+- La integración se activa automáticamente al instalar From. Puedes desactivarla en **Ajustes → Búsqueda**.
+
 **Paneles de búsqueda guardada:**
 - Puedes anclar búsquedas frecuentes como paneles en la barra lateral.
 - Útil para "mis tareas de hoy", "proyectos activos", "notas con #cliente".
 
 ---
 
-## 10. IA integrada
+## 11. Captura rápida
+
+From ofrece varias formas de capturar información sin interrumpir el flujo de trabajo.
+
+| Atajo | Qué hace |
+|---|---|
+| `⌘K` | Búsqueda y captura global (nodos, archivos, agentes) |
+| `⌘T` | Crear tarea rápida en el nodo actual |
+| `⌘E` | Abrir panel de propiedades para capturar metadatos |
+| `⌘N` | Nuevo nodo en el nivel actual |
+
+**Captura desde cualquier app (macOS):**
+- Desde la barra de menú de macOS puedes abrir una ventana flotante de captura rápida sin cambiar de app.
+- El bullet se añade al nodo que tengas seleccionado o al diario del día si no hay selección.
+
+**Captura de archivos:**
+- Arrastra cualquier archivo desde el Finder al árbol de bullets para adjuntarlo a un nodo.
+- También puedes pegar imágenes directamente desde el portapapeles.
+
+**Nota enlazada:**
+- Desde el menú `···` de cualquier nodo puedes crear una nueva nota hija enlazada con un clic, sin perder el contexto del nodo padre.
+
+---
+
+## 12. Grabación de voz
+
+From incluye una **barra de grabación persistente** en la parte inferior de la app. Permite capturar audio y convertirlo en bullets estructurados mediante IA.
+
+**Cómo grabar:**
+1. Haz clic en el icono de micrófono en la barra inferior.
+2. Elige la fuente: **micrófono** (tu voz) o **audio del sistema** (reuniones, podcasts, cualquier sonido del Mac).
+3. Pulsa el botón de grabación. La barra muestra el tiempo y el nivel de audio en tiempo real.
+4. Pulsa **Detener** cuando termines.
+
+**Transcripción y estructuración:**
+- La IA transcribe el audio y lo estructura automáticamente en bullets.
+- Los bullets se insertan en el nodo activo o en el diario del día si no hay ninguno seleccionado.
+- Puedes revisar y editar los bullets antes de confirmar la inserción.
+
+**Casos de uso típicos:**
+- Capturar ideas mientras caminas o conduces.
+- Transcribir reuniones o llamadas.
+- Dictar el borrador de una nota larga sin tocar el teclado.
+
+---
+
+## 13. IA integrada
 
 **Activar el chat:**
 - Abre cualquier nodo y ve a la pestaña **Chat** en el panel derecho.
@@ -195,15 +270,33 @@ Filtra el árbol que estás viendo sin salir de él. Admite comandos:
 **Historial:**
 - El historial del chat es específico por nota. Al cambiar de nodo, el chat se reinicia.
 
-**Agentes autónomos:**
-- Un agente es un nodo con `#agente`. Tiene una instrucción fija, fuentes de contexto y un schedule.
-- Se ejecuta automáticamente (diario, semanal...) o de forma manual.
-- Puede leer nodos, crearlos, actualizar contenido y hacer búsquedas web.
-- Ideal para resúmenes automáticos, informes periódicos o capturas de información externa.
+---
+
+## 14. Agentes
+
+Los **agentes** son automatizaciones de IA que se ejecutan con o sin intervención manual. Se crean como nodos normales dentro de la carpeta **Agentes/** del árbol.
+
+**Crear un agente:**
+1. Crea un nodo dentro de `Agentes/` o etiqueta cualquier nodo con `#agente`.
+2. Escribe la instrucción en el body: qué debe hacer el agente, qué notas debe leer, qué debe generar.
+3. En el panel de propiedades, configura el **schedule**: al abrir la app, diario, semanal o en una hora concreta.
+4. Opcionalmente, añade **nodos de contexto**: arrastra otras notas al campo de contexto del agente para que las lea antes de ejecutarse.
+
+**Qué puede hacer un agente:**
+- Leer y resumir nodos del vault.
+- Crear o actualizar notas con contenido generado.
+- Hacer búsquedas en internet y traer resultados al árbol.
+- Enviar notificaciones o generar informes periódicos.
+
+**Ejecución manual:**
+- Pulsa el botón **Ejecutar** en el panel del agente para lanzarlo en cualquier momento, independientemente del schedule.
+
+**Historial de ejecuciones:**
+- Cada ejecución queda registrada en el nodo del agente con la fecha, el resultado y cualquier error producido.
 
 ---
 
-## 11. Áreas
+## 15. Áreas
 
 Un **área** es una etiqueta que agrupa nodos relacionados bajo un mismo contexto: trabajo, personal, salud, un cliente concreto.
 
@@ -219,7 +312,44 @@ Un **área** es una etiqueta que agrupa nodos relacionados bajo un mismo context
 
 ---
 
-## 12. Sync y cuenta
+## 16. Compartir notas
+
+**Publicar una nota:**
+- Abre el menú `···` de cualquier nodo y selecciona **Publicar**.
+- From genera una URL pública del tipo `getfrom.app/p/...` con el contenido de la nota renderizado en markdown.
+- La URL queda guardada en el panel de propiedades del nodo.
+
+**Actualizar una nota publicada:**
+- Edita el nodo normalmente y vuelve a seleccionar **Publicar** en el menú `···`. El contenido de la URL se actualiza al instante.
+
+**Despublicar:**
+- Selecciona **Despublicar** en el menú `···`. La URL deja de ser accesible inmediatamente.
+
+**Usos típicos:** compartir un informe con alguien que no tiene From, publicar documentación de un proyecto, enviar un brief a un cliente.
+
+---
+
+## 17. Google Docs
+
+From puede sincronizar el contenido de cualquier nota con un documento de Google Docs.
+
+**Configuración inicial:**
+1. Ve a **Ajustes → Integraciones** y conecta tu cuenta de Google.
+2. Autoriza el acceso a Google Drive cuando se te solicite.
+
+**Sincronizar una nota:**
+- Abre el nodo que quieras sincronizar.
+- En la barra de acciones de la nota (barra superior del panel derecho), pulsa el botón de **Google Docs**.
+- Elige si vincular a un documento existente o crear uno nuevo.
+- From mantiene el contenido sincronizado: los cambios en From se reflejan en el documento y viceversa.
+
+**Notas:**
+- La sincronización es por nodo, no por vault completo.
+- El formato markdown se convierte automáticamente al formato de Google Docs en la exportación.
+
+---
+
+## 18. Sync y cuenta
 
 **Sin cuenta (modo gratuito):**
 - Bullets, nodos y archivos ilimitados en local.
@@ -247,7 +377,7 @@ Un **área** es una etiqueta que agrupa nodos relacionados bajo un mismo context
 
 ---
 
-## 13. Ajustes útiles
+## 19. Ajustes útiles
 
 Accede desde el menú **From → Ajustes** o con `⌘,`.
 
@@ -256,11 +386,19 @@ Accede desde el menú **From → Ajustes** o con `⌘,`.
 | **Cuenta** | Login, suscripción, tokens de IA, API key propia |
 | **Apariencia** | Tema claro/oscuro, tamaño de fuente |
 | **Atajos de teclado** | Reasigna cualquier atajo de la app |
+| **Atajos inline** | Define expansiones de texto propias (abreviación → texto completo) |
 | **Calendario** | Activar sync con Apple Calendar, seleccionar calendarios |
 | **Tipos y estados** | Crear, editar o eliminar tipos de nodo y estados personalizados |
 | **IA** | Agentes, prompts guardados, configuración del asistente |
+| **Integraciones** | Conectar cuenta de Google para Google Docs |
+| **Búsqueda** | Activar/desactivar integración con Spotlight |
 | **Backup** | Estado del backup local, ruta de exportación |
 | **Espacio** | Directorio local para archivos y agentes |
+
+**Atajos inline (expansiones de texto):**
+- En **Ajustes → Atajos inline** defines abreviaciones propias: escribe una clave corta y From la expande automáticamente al texto que hayas configurado.
+- Ejemplo: escribes `;firma` y se expande a tu firma de email completa.
+- Útil para bloques de texto recurrentes, plantillas o cualquier texto que repitas a menudo.
 
 **Transcripción de voz (iOS):**
 - En la app de iPhone, el botón de micrófono en la captura rápida transcribe tu voz a texto.
