@@ -11,9 +11,9 @@
             <pubDate>Tue, 12 May 2026 08:00:00 +0000</pubDate>
             <sparkle:version>37</sparkle:version>
             <sparkle:shortVersionString>3.8.0</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.8.0</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.8.0</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.8.0/From-3.8.0.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.8.0/From-3.8.0.dmg"
                 sparkle:edSignature="al10S1p5wjAwomynH3KBlGtgCkNdcXDyanBxb+M8XLs/D0I8p2Dyy294oiYW7JbP4sQlUodk6dgaLtEeY2tbDw=="
                 length="10324482"
                 type="application/octet-stream"
@@ -25,9 +25,9 @@
             <pubDate>Thu, 08 May 2026 23:30:00 +0000</pubDate>
             <sparkle:version>36</sparkle:version>
             <sparkle:shortVersionString>3.6.8</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.8</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.8</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.8/From-3.6.8.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.8/From-3.6.8.dmg"
                 sparkle:edSignature="vzNkiHjFREWx09EIXnQ5R+rC+JcApQp756DuW1mEdpov0SZM1P86hKtI08AFjtHPtkYI2YU9nvdp321UYZFVCQ=="
                 length="11462280"
                 type="application/octet-stream"
@@ -39,9 +39,9 @@
             <pubDate>Thu, 08 May 2026 22:00:00 +0000</pubDate>
             <sparkle:version>35</sparkle:version>
             <sparkle:shortVersionString>3.6.7</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.7</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.7</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.7/From-3.6.7.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.7/From-3.6.7.dmg"
                 sparkle:edSignature="MnNU4KAHY1gou25y9YFKlMmGPIyWgYA5EpvJOuHiBdT53SJwuiy04cpONvDrCEUHJ9m546srRXa1Yt5LyENAAQ=="
                 length="11543671"
                 type="application/octet-stream"
@@ -53,9 +53,9 @@
             <pubDate>Thu, 08 May 2026 20:00:00 +0000</pubDate>
             <sparkle:version>34</sparkle:version>
             <sparkle:shortVersionString>3.6.6</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.6</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.6</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.6/From-3.6.6.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.6/From-3.6.6.dmg"
                 sparkle:edSignature="kmGDlkAyA9jD0j1iRT+6osbqKSxJpdZqSjuBjVh/Avzg8eL36qXRbFWgJkaswyvdE3W+T3spCl2FlQaexOGQCQ=="
                 length="11674620"
                 type="application/octet-stream"
@@ -67,9 +67,9 @@
             <pubDate>Thu, 08 May 2026 18:00:00 +0000</pubDate>
             <sparkle:version>33</sparkle:version>
             <sparkle:shortVersionString>3.6.5</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.5</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.5</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.5/From-3.6.5.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.5/From-3.6.5.dmg"
                 sparkle:edSignature="Zd8jT1FzQM73htn1vNSSB5N0VpTWM18l499iJ/lym1BZTB2yWHDk3u6OegrB7OhpIKUAkw5Nf5OU93TFwi/mBQ=="
                 length="11657856"
                 type="application/octet-stream"
@@ -81,9 +81,9 @@
             <pubDate>Thu, 08 May 2026 14:00:00 +0000</pubDate>
             <sparkle:version>30</sparkle:version>
             <sparkle:shortVersionString>3.6.2</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.2</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.2</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.2/From-3.6.2.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.2/From-3.6.2.dmg"
                 sparkle:edSignature="GR15FOFrsr+3FQowPaHqUkFHmqxDLSrgbR1tAxuMYU3ZAl7PtI9XrXX90Oz+GALSG1hKeqmkha+l8Mhm0lq/Dg=="
                 length="11556848"
                 type="application/octet-stream"
@@ -95,9 +95,9 @@
             <pubDate>Thu, 08 May 2026 12:30:00 +0000</pubDate>
             <sparkle:version>29</sparkle:version>
             <sparkle:shortVersionString>3.6.1</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.6.1</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.6.1</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.6.1/From-3.6.1.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.6.1/From-3.6.1.dmg"
                 sparkle:edSignature="NlFsUjbe4Db6eKFguS+BfRc+yu9leL6PoTBqcn5XlBKCu1UIwr28H/zsmcc6aWRzxo9pZ+8vUOK9134etgVQCA=="
                 length="11542488"
                 type="application/octet-stream"
@@ -109,9 +109,9 @@
             <pubDate>Wed, 07 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>27</sparkle:version>
             <sparkle:shortVersionString>3.5.4</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.5.4</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.5.4</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.5.4/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.5.4/From.dmg"
                 sparkle:edSignature="wmEjpGdc7lgAseYMhRjC+enAkptcVTe2JSe+YFPDdVHl2hWhaz43wY42BJTbG+Hwps2Bw/a6z/70xHVNUnlxAQ=="
                 length="7707059"
                 type="application/octet-stream"
@@ -123,9 +123,9 @@
             <pubDate>Wed, 06 May 2026 19:35:00 +0000</pubDate>
             <sparkle:version>25</sparkle:version>
             <sparkle:shortVersionString>3.5.2</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.5.2</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.5.2</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.5.2/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.5.2/From.dmg"
                 sparkle:edSignature="bMGN/3GyosGwJjw5hbR5vy1I8J0dBmi9ZNSJDtK8vGwS1EBGNx6O92sh7D7adoupoOMtg5bBnF6QYnpSvc5SBw=="
                 length="8390721"
                 type="application/octet-stream"
@@ -137,9 +137,9 @@
             <pubDate>Wed, 06 May 2026 19:30:00 +0000</pubDate>
             <sparkle:version>24</sparkle:version>
             <sparkle:shortVersionString>3.5.1</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.5.1</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.5.1</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.5.1/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.5.1/From.dmg"
                 sparkle:edSignature="T7MwMNW5NtMnBXLwOqx2oBB7xgILy0YVLvBQnmKWpuT5fpksSN0qqfviDQgN7O2j9KGPMdKo5E4XYaJI637UAw=="
                 length="8391915"
                 type="application/octet-stream"
@@ -151,9 +151,9 @@
             <pubDate>Wed, 06 May 2026 17:05:00 +0000</pubDate>
             <sparkle:version>23</sparkle:version>
             <sparkle:shortVersionString>3.5</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.5</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.5</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.5/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.5/From.dmg"
                 sparkle:edSignature="X/uBZU3gY+CAXozg5x7V/p8xcQakNT0MwiSB1+060irJDZtPdyzl2383AZTw+b+KwMO7JEVT5xe1ZNHYQClTBQ=="
                 length="8391269"
                 type="application/octet-stream"
@@ -165,9 +165,9 @@
             <pubDate>Wed, 06 May 2026 22:00:00 +0000</pubDate>
             <sparkle:version>22</sparkle:version>
             <sparkle:shortVersionString>3.4</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.4</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.4</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.4/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.4/From.dmg"
                 sparkle:edSignature="toaCirCDyU1ETd7xy2HGmlZ5PJm5Rev5Ps+Bf5x5pos/lsakDkrkjFL5ozrx+H8lv7Z8JZf0ijJCqlf/BMZfDw=="
                 length="8884281"
                 type="application/octet-stream"
@@ -179,9 +179,9 @@
             <pubDate>Wed, 06 May 2026 18:00:00 +0000</pubDate>
             <sparkle:version>21</sparkle:version>
             <sparkle:shortVersionString>3.3</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.3</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.3</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.3/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.3/From.dmg"
                 sparkle:edSignature="a9tVbSS4OywcfyeT6tHn/7VsswCXSihZrWUY9eu0HVboXlkWeyCto/UCU+gdSaHdHyw1PVhaPmgt9LzK+aB/Cg=="
                 length="8766433"
                 type="application/octet-stream"
@@ -193,9 +193,9 @@
             <pubDate>Wed, 06 May 2026 12:00:00 +0000</pubDate>
             <sparkle:version>20</sparkle:version>
             <sparkle:shortVersionString>3.2</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.2</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.2</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.2/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.2/From.dmg"
                 sparkle:edSignature="Isb1o1lKGMwEom916W2Ug5Ye0o+R38+8d9u/PZkgaGfcijEoiZcoUjkYR6cLGCZnBIjVfoMSPad+5L0NhkyIBg=="
                 length="8746158"
                 type="application/octet-stream"
@@ -207,9 +207,9 @@
             <pubDate>Wed, 06 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>19</sparkle:version>
             <sparkle:shortVersionString>3.1</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.1</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.1</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.1/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.1/From.dmg"
                 sparkle:edSignature="O9yiBSB6eq7WQoo3RAHebWnW51sTXYuVPnVKzIcmkOc2nmiKC6WM6+dgCEh5OT54GevYRgeqS8eaFOpFTfnJBA=="
                 length="8692910"
                 type="application/octet-stream"
@@ -221,9 +221,9 @@
             <pubDate>Tue, 06 May 2026 00:00:00 +0000</pubDate>
             <sparkle:version>18</sparkle:version>
             <sparkle:shortVersionString>3.0</sparkle:shortVersionString>
-            <sparkle:releaseNotesLink>https://github.com/albertolezaun-afk/getfrom-app/releases/tag/v3.0</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.0</sparkle:releaseNotesLink>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v3.0/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.0/From.dmg"
                 sparkle:edSignature="FoNbTROPhcpf9IYzDJ0lgVsHfos59pXh0oG8s2LIMDRTd+F5X/nCSBtZIWmONSxa7wUTBoEPVdv9oLrwjspIDw=="
                 length="8357032"
                 type="application/octet-stream"
@@ -236,7 +236,7 @@
             <sparkle:version>17</sparkle:version>
             <sparkle:shortVersionString>2.6</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.6/From-2.6.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.6/From-2.6.dmg"
                 sparkle:edSignature="lBg+tVgrUiXNN1Ka7V1N3bDCTSFyzuh8tNiiVtZ52GLHgDtCp2rqcMScTlzs7KgkzOhxywvEGEDrGmzUnhvADQ=="
                 length="17454166"
                 type="application/octet-stream"
@@ -249,7 +249,7 @@
             <sparkle:version>16</sparkle:version>
             <sparkle:shortVersionString>2.5</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.5/From-2.5.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.5/From-2.5.dmg"
                 sparkle:edSignature="VF9su1bERd4kjAqw4w0BFfYRI8PhWSt/67RGKCLWDrLOdZMRvuXaxdaKUjg+CfbgTZ9uTNiNA7KCDqK6hujcAw=="
                 length="17444033"
                 type="application/octet-stream"
@@ -262,7 +262,7 @@
             <sparkle:version>15</sparkle:version>
             <sparkle:shortVersionString>2.4</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.4/From-2.4.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.4/From-2.4.dmg"
                 sparkle:edSignature="G5o3f9U6KC+q2eejh+d/Bsmr4pN2BY72RYdfUQTZoUlWiYVDVj1C6iIBCfs65C36PHG0K9Vo+QH+J6l6gN/SCA=="
                 length="17443988"
                 type="application/octet-stream"
@@ -275,7 +275,7 @@
             <sparkle:version>14</sparkle:version>
             <sparkle:shortVersionString>2.3</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.3/From-2.3.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.3/From-2.3.dmg"
                 sparkle:edSignature="2lbKhS8lUefv3yyznaybtmRcrWcSP1Tm5WZxswnuXhVHvib691Xc7R4+4+YqoAH8/HrJpS9ykkLH8pIUdeK8AQ=="
                 length="17434739"
                 type="application/octet-stream"
@@ -288,7 +288,7 @@
             <sparkle:version>13</sparkle:version>
             <sparkle:shortVersionString>2.2</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.2/From-2.2.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.2/From-2.2.dmg"
                 sparkle:edSignature="axbI2QiEkUBzJgr4RzjA/G4g0RYm3nT1SMMMo/pY9jYIH4lMMpFjXqwvrT6v6QIYQCCfm2J0Zxtj046KMVfIDQ=="
                 length="17434177"
                 type="application/octet-stream"
@@ -301,7 +301,7 @@
             <sparkle:version>12</sparkle:version>
             <sparkle:shortVersionString>2.1</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.1/From-2.1.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.1/From-2.1.dmg"
                 sparkle:edSignature="jxDj4ocidOCsIZ9IwIfQzFFl/gSqHmMjzcy0ja0yt9HV1SkWG62m0AgfeoUpOYSJildivcA+iHiKNRxgTVUIDA=="
                 length="17431109"
                 type="application/octet-stream"
@@ -314,7 +314,7 @@
             <sparkle:version>11</sparkle:version>
             <sparkle:shortVersionString>2.0</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v2.0/From-2.0.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v2.0/From-2.0.dmg"
                 sparkle:edSignature="V1RSvDQchfiRr6TRQPiOaMyQu/xbQtigx5TbN+AfQUhjIVGXt5O5mCV5uP1dygf4b4olNUXHWzBRD5FMYjFFCw=="
                 length="17408354"
                 type="application/octet-stream"
@@ -327,7 +327,7 @@
             <sparkle:version>10</sparkle:version>
             <sparkle:shortVersionString>1.9</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.9/From-1.9.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.9/From-1.9.dmg"
                 sparkle:edSignature="OxWNbC4P9vUrERaxCQ6E/1Kl8qu/HFbWoxErTSIgxIqRSpOzMGRaRF2S5NNakYhEaCOc2Uyg2AsZlgSO+C4oAQ=="
                 length="17328457"
                 type="application/octet-stream"
@@ -340,7 +340,7 @@
             <sparkle:version>9</sparkle:version>
             <sparkle:shortVersionString>1.8</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.8/From-1.8.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.8/From-1.8.dmg"
                 sparkle:edSignature="0d70XZM5ez6UtjqYImXvACvtY/oBph1TsgAAFKIAD7enQGrV7b84G4EbGioCIXqdHh3ULsGKp9kD6nDfabVHAg=="
                 length="17314922"
                 type="application/octet-stream"
@@ -353,7 +353,7 @@
             <sparkle:version>8</sparkle:version>
             <sparkle:shortVersionString>1.7</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.7/From-1.7.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.7/From-1.7.dmg"
                 sparkle:edSignature="OptZCAG4FO1WMyvHpVvwf/jgDyObkVV+XWYfESJAeazMs9JBtSgaYL2ZD6e+8VMzU+DvtLwI47qZI3eKOL52AQ=="
                 length="15565085"
                 type="application/octet-stream"
@@ -366,7 +366,7 @@
             <sparkle:version>7</sparkle:version>
             <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.6/From-1.6.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.6/From-1.6.dmg"
                 sparkle:edSignature="9CnCz0IuM5nvRV0iLjn0M15lKN79YgmJYA1BegWEVdioz5hxAY4GtOIm+jYxFnxAtuLPNrwhIDpAIGmqOr6JBg=="
                 length="13894678"
                 type="application/octet-stream"
@@ -379,7 +379,7 @@
             <sparkle:version>6</sparkle:version>
             <sparkle:shortVersionString>1.5</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.5/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.5/From.dmg"
                 sparkle:edSignature="tLsrcB8SMn2nhRjxIlGnoegJHKiAfqJHevJmHfdsC4Wwgo3BSCC29t5GB0DibhpvXyMnO+OVorOWKC9+vSWNDA=="
                 length="13850440"
                 type="application/octet-stream"
@@ -392,7 +392,7 @@
             <sparkle:version>5</sparkle:version>
             <sparkle:shortVersionString>1.4</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.4/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.4/From.dmg"
                 sparkle:edSignature="ycY9tAYKSBEA5SetF0QEzDQoQL5FA2l1FJhWZ9J9INmnw9VQ94GxdYutDoWzW0271vCF1i1kDKzKS8/KaXlZBQ=="
                 length="14058218"
                 type="application/octet-stream"
@@ -405,7 +405,7 @@
             <sparkle:version>4</sparkle:version>
             <sparkle:shortVersionString>1.3</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.3/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.3/From.dmg"
                 sparkle:edSignature="EqREW7hE+iY7uzpv+VotcwzOamM0XJZj26wY7OFxSbL8ZRFWc/C9zuAmHthDKV4Q0obk1i3MQCvQ0mGos2pIDg=="
                 length="15399452"
                 type="application/octet-stream"
@@ -418,7 +418,7 @@
             <sparkle:version>3</sparkle:version>
             <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.2/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.2/From.dmg"
                 sparkle:edSignature="cY9ra5qJgZlrm3zYVQNVegeU39CAtK/A2ZOQcNoXJYOUI4vttWCOBx/7bB6NGEvPirpJdi9R6PP++msqTT80CQ=="
                 length="14002282"
                 type="application/octet-stream"
@@ -431,7 +431,7 @@
             <sparkle:version>2</sparkle:version>
             <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.1/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.1/From.dmg"
                 sparkle:edSignature="EktqqruK7JEYZ2qqq4pzI8daetsdD1ajLO6W4YguoYnPT6cMLblB3zW0LaQH/9g8tXUq9Ar0dTYUJC1lyju9Dw=="
                 length="13256814"
                 type="application/octet-stream"
@@ -444,7 +444,7 @@
             <sparkle:version>1</sparkle:version>
             <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
             <enclosure
-                url="https://github.com/albertolezaun-afk/getfrom-app/releases/download/v1.0/From.dmg"
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v1.0/From.dmg"
                 sparkle:edSignature="AKQQYUxdPryCtBYjeHNcWaFds717xCffZYoTyM2bBwXVejmKWomyBPZSI6B944q9YCLZIvPJQttshSVXsw/oBQ=="
                 length="13234508"
                 type="application/octet-stream"

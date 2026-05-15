@@ -470,7 +470,7 @@ JWT HS256 with Railway `JWT_SECRET`. Expiry: 15 min (access) + 30 days (refresh)
 5. `xcrun notarytool submit --keychain-profile "notarytool" --wait`
 6. `xcrun stapler staple` + `validate`
 7. `/tmp/sparkle-bin/bin/sign_update From.dmg` → get `edSignature` and `length`
-8. `gh release create vX.X /tmp/From.dmg` in repo `albertolezaun-afk/getfrom-app`
+8. `gh release create vX.X /tmp/From.dmg` in repo `getfrom-app/getfrom-app`
 9. Add `<item>` to `landing/appcast.xml` with edSignature, length and sparkle:version
 10. `git push` landing → GitHub Pages publishes in ~1 min → Sparkle auto-detects
 
