@@ -418,4 +418,158 @@ Accede desde el menú **From → Ajustes** o con `⌘,`.
 
 ---
 
+## 20. Importar desde otras apps
+
+From puede importar notas desde Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes y cualquier carpeta de archivos Markdown.
+
+Accede desde **Ajustes → Importar**.
+
+### Cómo organiza From las notas importadas
+
+From trabaja con una jerarquía temporal: cada nota y tarea vive dentro de un día concreto. Al importar, esto es lo que ocurre:
+
+| Qué importas | Dónde va en From |
+|---|---|
+| Notas y tareas sin fecha | Diario de **ayer** (para no llenar el día actual) |
+| Tareas con fecha (`due: 2024-07-01`) | Diario del **día que indica la fecha**, creando ese día si no existe |
+| Diarios del origen (LogSeq, NotePlan, archivos `YYYY-MM-DD.md`) | Diario de **su fecha real**, conservando el historial |
+| Carpetas del vault | Nodos de agrupación dentro del diario de ayer |
+
+Después de importar, puedes mover cualquier nodo al día que quieras simplemente arrastrándolo en el árbol o editando su parentesco.
+
+---
+
+### Importar desde Notion
+
+**Cómo exportar de Notion:**
+
+1. En Notion, abre **Ajustes** (⚙ arriba a la izquierda) → **Espacio de trabajo** → **Ajustes**.
+2. Baja hasta la sección **Exportar contenido del espacio de trabajo**.
+3. Haz clic en **Exportar todo el contenido**.
+4. Formato de exportación: elige **Markdown & CSV**.
+5. Descarga el archivo ZIP que Notion genera.
+
+**Cómo importar en From:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar ZIP** y selecciona el archivo descargado.
+3. From detecta automáticamente el formato Notion y lo procesa.
+
+**Qué hace From con tu contenido de Notion:**
+- **Títulos de página**: elimina automáticamente los IDs de 32 caracteres que Notion añade al final de los nombres (`Mi página abc123def456...` → `Mi página`).
+- **Páginas anidadas**: las subcarpetas de Notion se convierten en nodos padre, respetando la jerarquía.
+- **Bases de datos**: los archivos CSV se omiten; las páginas Markdown se importan normalmente.
+- **Propiedades frontmatter**: si una página tiene `due:` o `fecha:`, la tarea se coloca en ese día.
+
+---
+
+### Importar desde Obsidian
+
+**Cómo exportar de Obsidian:**
+
+No hace falta exportar nada. Obsidian guarda tus notas como archivos `.md` en una carpeta normal de tu disco.
+
+**Cómo importar en From:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar carpeta** y selecciona la carpeta principal de tu vault de Obsidian (la que contiene la carpeta `.obsidian/`).
+3. From detecta automáticamente que es un vault de Obsidian.
+
+**Qué hace From con tu vault de Obsidian:**
+- **Estructura de carpetas**: cada carpeta raíz del vault se convierte en un nodo agrupador dentro del diario de ayer.
+- **Callouts** (`> [!NOTE]`): se convierten a blockquotes estándar Markdown.
+- **Frontmatter**: los campos `due:`, `fecha:`, `tipo:`, `estado:` se mapean a los campos correspondientes de los nodos de From.
+- **Carpetas ignoradas**: `.obsidian/`, `.trash/`, `Templates/`, `assets/` y `Attachments/` se omiten.
+- **Tareas** (`- [ ]` y `- [x]`): se extraen como nodos hijo con estado Activo o Hecha.
+
+---
+
+### Importar desde LogSeq
+
+**Cómo exportar de LogSeq:**
+
+No hace falta exportar nada. LogSeq guarda el grafo como archivos `.md` en tu disco.
+
+**Cómo importar en From:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar carpeta** y selecciona la carpeta principal de tu grafo (la que contiene la carpeta `logseq/`).
+3. From detecta automáticamente el formato LogSeq.
+
+**Qué hace From con tu grafo de LogSeq:**
+- **Journals** (`journals/`): cada archivo de diario de LogSeq (con nombre de fecha) se importa al diario de From de su fecha correspondiente.
+- **Páginas** (`pages/`): se importan como notas bajo el diario de ayer.
+- **Formato de bullets**: LogSeq usa bullets para todo el contenido, incluso la prosa. From los convierte a párrafos normales de Markdown.
+- **Referencias de bloque** (`((uuid))`): se eliminan al no tener equivalente en From.
+- **Carpetas ignoradas**: `logseq/`, `.recycle/`, `assets/`.
+
+---
+
+### Importar desde NotePlan
+
+**Cómo exportar de NotePlan:**
+
+No hace falta exportar nada. NotePlan guarda las notas como archivos `.md` en tu disco.
+
+**Cómo importar en From:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar carpeta** y selecciona la carpeta del vault de NotePlan.
+3. From detecta automáticamente el formato NotePlan (por la presencia de archivos de fecha en la raíz).
+
+**Qué hace From con tu contenido de NotePlan:**
+- **Calendar Notes**: los archivos de diario de NotePlan (`YYYY-MM-DD.md`) se importan al diario de From de su fecha.
+- **Notas de proyecto**: se importan como notas normales bajo el diario de ayer.
+- **Tareas**: las líneas `- [ ]` y `- [x]` se extraen como nodos hijo con estado Activo o Hecha.
+
+---
+
+### Importar desde Bear
+
+**Cómo exportar de Bear:**
+
+1. En Bear, ve al menú **Archivo → Exportar notas**.
+2. Selecciona **Todos los archivos** y el formato **Markdown**.
+3. Elige una carpeta destino y guarda.
+
+**Cómo importar en From:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar carpeta** y selecciona la carpeta que guardaste.
+3. From importa todos los archivos `.md` como notas bajo el diario de ayer.
+
+---
+
+### Importar desde Apple Notes
+
+Apple Notes no tiene exportación directa a Markdown, pero hay una solución sencilla:
+
+**Pasos:**
+
+1. Descarga la app gratuita **Exporter** desde el Mac App Store.
+2. Abre Exporter y selecciona tus notas de Apple Notes.
+3. Exporta en formato **Markdown** a una carpeta de tu disco.
+4. En From, ve a **Ajustes → Importar → Importar carpeta** y selecciona esa carpeta.
+
+---
+
+### Importar una carpeta genérica de Markdown
+
+Cualquier carpeta con archivos `.md` o `.txt` puede importarse en From, sin importar el origen.
+
+**Cómo importar:**
+
+1. En From, ve a **Ajustes → Importar**.
+2. Haz clic en **Importar carpeta** y selecciona la carpeta.
+3. Opcionalmente, si tienes todo en un ZIP, usa **Importar ZIP**.
+
+**Reglas generales:**
+- Cada archivo `.md` o `.txt` se convierte en un nodo.
+- Las carpetas se convierten en nodos agrupadores.
+- Los archivos con nombre `YYYY-MM-DD.md` se tratan como entradas de diario.
+- Las imágenes, PDFs y otros archivos binarios se omiten.
+- El frontmatter YAML estándar (`due:`, `fecha:`, `tipo:`, `estado:`) se respeta.
+
+---
+
 *getfrom.app*

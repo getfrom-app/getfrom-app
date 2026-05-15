@@ -418,4 +418,157 @@ Access from the **From → Settings** menu or with `⌘,`.
 
 ---
 
+## 20. Importing from other apps
+
+From can import notes from Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes, and any folder of Markdown files.
+
+Access via **Settings → Import**.
+
+### How From organises imported notes
+
+From works with a temporal hierarchy: every note and task lives inside a specific day. When importing, this is what happens:
+
+| What you import | Where it goes in From |
+|---|---|
+| Notes and tasks without a date | **Yesterday's** diary (so today stays clean) |
+| Tasks with a date (`due: 2024-07-01`) | The diary for the **date specified**, creating that day if needed |
+| Source diaries (LogSeq, NotePlan, `YYYY-MM-DD.md` files) | The diary for their **real date**, preserving your history |
+| Vault folders | Grouping nodes inside yesterday's diary |
+
+After importing, you can move any node to any other day by dragging it in the tree or editing its parent.
+
+---
+
+### Importing from Notion
+
+**How to export from Notion:**
+
+1. In Notion, open **Settings** (⚙ top left) → **Workspace** → **Settings**.
+2. Scroll to **Export workspace content**.
+3. Click **Export all content**.
+4. Export format: choose **Markdown & CSV**.
+5. Download the ZIP file Notion generates.
+
+**How to import into From:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import ZIP** and select the downloaded file.
+3. From automatically detects the Notion format and processes it.
+
+**What From does with your Notion content:**
+- **Page titles**: automatically removes the 32-character IDs Notion appends to names (`My page abc123def456...` → `My page`).
+- **Nested pages**: Notion subfolders become parent nodes, preserving hierarchy.
+- **Databases**: CSV files are skipped; Markdown pages are imported normally.
+- **Frontmatter properties**: if a page has `due:` or `date:`, the task is placed on that day.
+
+---
+
+### Importing from Obsidian
+
+**How to export from Obsidian:**
+
+No export needed. Obsidian stores your notes as `.md` files in a regular folder on your disk.
+
+**How to import into From:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import folder** and select your Obsidian vault's main folder (the one containing the `.obsidian/` folder).
+3. From automatically detects it as an Obsidian vault.
+
+**What From does with your Obsidian vault:**
+- **Folder structure**: each root folder becomes a grouping node inside yesterday's diary.
+- **Callouts** (`> [!NOTE]`): converted to standard Markdown blockquotes.
+- **Frontmatter**: `due:`, `date:`, `tipo:`, `estado:` fields are mapped to From node fields.
+- **Ignored folders**: `.obsidian/`, `.trash/`, `Templates/`, `assets/`, `Attachments/`.
+- **Tasks** (`- [ ]` and `- [x]`): extracted as child nodes with Active or Done status.
+
+---
+
+### Importing from LogSeq
+
+**How to export from LogSeq:**
+
+No export needed. LogSeq stores your graph as `.md` files on your disk.
+
+**How to import into From:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import folder** and select your graph's main folder (the one containing the `logseq/` folder).
+3. From automatically detects the LogSeq format.
+
+**What From does with your LogSeq graph:**
+- **Journals** (`journals/`): each dated LogSeq journal file is imported to the corresponding diary in From.
+- **Pages** (`pages/`): imported as notes under yesterday's diary.
+- **Bullet format**: LogSeq uses bullets for all content, even prose. From converts them to normal Markdown paragraphs.
+- **Block references** (`((uuid))`): removed, as they have no equivalent in From.
+- **Ignored folders**: `logseq/`, `.recycle/`, `assets/`.
+
+---
+
+### Importing from NotePlan
+
+**How to export from NotePlan:**
+
+No export needed. NotePlan stores notes as `.md` files on your disk.
+
+**How to import into From:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import folder** and select your NotePlan vault folder.
+3. From automatically detects the NotePlan format (by the presence of dated files in the root).
+
+**What From does with your NotePlan content:**
+- **Calendar Notes**: NotePlan diary files (`YYYY-MM-DD.md`) are imported to the matching diary in From.
+- **Project notes**: imported as regular notes under yesterday's diary.
+- **Tasks**: `- [ ]` and `- [x]` lines are extracted as child nodes with Active or Done status.
+
+---
+
+### Importing from Bear
+
+**How to export from Bear:**
+
+1. In Bear, go to **File → Export Notes**.
+2. Select **All files** and the **Markdown** format.
+3. Choose a destination folder and save.
+
+**How to import into From:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import folder** and select the folder you just saved.
+3. From imports all `.md` files as notes under yesterday's diary.
+
+---
+
+### Importing from Apple Notes
+
+Apple Notes doesn't export directly to Markdown, but there's a simple solution:
+
+**Steps:**
+
+1. Download the free **Exporter** app from the Mac App Store.
+2. Open Exporter and select your Apple Notes.
+3. Export in **Markdown** format to a folder on your disk.
+4. In From, go to **Settings → Import → Import folder** and select that folder.
+
+---
+
+### Importing a generic Markdown folder
+
+Any folder with `.md` or `.txt` files can be imported into From, regardless of origin.
+
+**How to import:**
+
+1. In From, go to **Settings → Import**.
+2. Click **Import folder** and select the folder. Or use **Import ZIP** if your files are zipped.
+
+**General rules:**
+- Each `.md` or `.txt` file becomes a node.
+- Folders become grouping nodes.
+- Files named `YYYY-MM-DD.md` are treated as diary entries.
+- Images, PDFs, and other binary files are skipped.
+- Standard YAML frontmatter (`due:`, `date:`, `tipo:`, `estado:`) is respected.
+
+---
+
 *getfrom.app*

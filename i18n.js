@@ -156,6 +156,8 @@ const TRANSLATIONS = {
     "index.faq6_a": "No necesariamente. Puedes usar la IA gestionada de From (con suscripción) o aportar tu propia API key de Anthropic, OpenAI o Google. También puedes conectar tu suscripción de Claude directamente.",
     "index.faq7_q": "¿Mis datos están seguros?",
     "index.faq7_a": "Tus datos se almacenan en servidores privados de From y en Cloudflare R2, con cifrado en tránsito y en reposo. No hay telemetría, no hay analíticas, no hay venta de datos.",
+    "index.faq8_q": "¿Puedo importar mis notas desde Notion u Obsidian?",
+    "index.faq8_a": "Sí. From importa desde Obsidian, Notion, LogSeq, NotePlan, Bear y cualquier carpeta de Markdown. Las notas sin fecha van al diario de ayer; las tareas con fecha van automáticamente al día que les corresponde. Consulta el Manual para instrucciones detalladas por app.",
 
     "index.cta_title": "Tu segundo cerebro te está esperando",
     "index.cta_body":  "Descarga From y empieza a organizar tus ideas, tareas y proyectos. Disponible para Mac y iPhone.",
@@ -484,6 +486,8 @@ const TRANSLATIONS = {
     "index.faq6_a": "Not necessarily. You can use From's managed AI (with a subscription) or bring your own API key from Anthropic, OpenAI, or Google. You can also connect your Claude subscription directly.",
     "index.faq7_q": "Is my data safe?",
     "index.faq7_a": "Your data is stored on From's private servers and Cloudflare R2, encrypted in transit and at rest. No telemetry, no analytics, no data selling.",
+    "index.faq8_q": "Can I import my notes from Notion or Obsidian?",
+    "index.faq8_a": "Yes. From imports from Obsidian, Notion, LogSeq, NotePlan, Bear, and any Markdown folder. Notes without a date go to yesterday's diary; tasks with a date are automatically placed on their correct day. See the Manual for step-by-step instructions per app.",
 
     "index.cta_title": "Your second brain is waiting",
     "index.cta_body":  "Download From and start organizing your ideas, tasks, and projects. Available for Mac and iPhone.",
