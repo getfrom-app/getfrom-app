@@ -71,6 +71,14 @@
             <p data-i18n="support.faq_card_body">Consulta las preguntas frecuentes más abajo. Probablemente tu duda ya esté resuelta.</p>
             <a href="#faq" class="btn-secondary btn-small" data-i18n="support.faq_card_btn">Ver FAQ</a>
         </div>
+        <div class="support-card">
+            <div class="card-icon" style="background: rgba(175,82,222,0.1); color: var(--purple);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3 data-i18n="support.manual_card_title">Manual de usuario</h3>
+            <p data-i18n="support.manual_card_body">Guía completa de todas las funciones de From: notas, tareas, IA, agentes y más.</p>
+            <a href="/docs/" class="btn-secondary btn-small" data-i18n="support.manual_card_btn">Ver manual</a>
+        </div>
     </div>
 </section>
 
@@ -84,50 +92,46 @@
         <div class="faq">
             <!-- Getting started -->
             <div class="faq-item">
-                <h3 data-i18n="support.faq1_q">¿Cómo instalo From?</h3>
+                <h3 data-i18n="support.faq1_q">¿Cómo instalo From en Mac?</h3>
                 <p data-i18n="support.faq1_a">Descarga el archivo .dmg desde nuestra web, ábrelo y arrastra From a tu carpeta de Aplicaciones. No necesitas instalador ni crear una cuenta para empezar.</p>
             </div>
             <div class="faq-item">
-                <h3 data-i18n="support.faq2_q">¿Dónde se guardan mis notas?</h3>
-                <p data-i18n="support.faq2_a">En una carpeta de tu Mac. Por defecto, From crea un espacio en iCloud Drive, pero puedes elegir cualquier carpeta. Tus notas son archivos .md estándar que puedes abrir con cualquier editor.</p>
+                <h3 data-i18n="support.faq1b_q">¿Hay app para iPhone?</h3>
+                <p data-i18n-html="support.faq1b_a">Sí. From para iPhone está disponible en el <a href="https://apps.apple.com/app/from-tu-segundo-cerebro/id6769823296">App Store</a>. Sincroniza en tiempo real con tu Mac.</p>
             </div>
             <div class="faq-item">
-                <h3 data-i18n="support.faq3_q">¿Puedo usar una carpeta de Obsidian existente?</h3>
-                <p data-i18n="support.faq3_a">Sí. Puedes apuntar From a cualquier carpeta existente con archivos Markdown. From leerá la estructura y te permitirá trabajar con esas notas.</p>
+                <h3 data-i18n="support.faq2_q">¿Dónde se guardan mis notas?</h3>
+                <p data-i18n="support.faq2_a">Tus notas se almacenan localmente en tu dispositivo. La sincronización entre Mac e iPhone se hace vía servidor privado de From, cifrada en tránsito. Puedes exportar todo en formato Markdown estándar en cualquier momento desde Ajustes → Exportar.</p>
             </div>
 
             <!-- Sync -->
             <div class="faq-item">
                 <h3 data-i18n="support.faq4_q">¿Cómo funciona la sincronización?</h3>
-                <p data-i18n="support.faq4_a">From usa iCloud Drive. Si tu espacio está en iCloud (opción por defecto), las notas se sincronizan automáticamente entre todos tus Macs. No hay que configurar nada extra.</p>
-            </div>
-            <div class="faq-item">
-                <h3 data-i18n="support.faq5_q">¿Puedo acceder a mis notas desde iPhone?</h3>
-                <p data-i18n="support.faq5_a">Tus notas en iCloud Drive son accesibles desde la app Archivos de iOS, o con cualquier editor Markdown para iPhone. La app nativa de From para iOS está en desarrollo.</p>
+                <p data-i18n="support.faq4_a">From sincroniza en tiempo real entre Mac e iPhone vía servidor privado. Abre la app en cualquier dispositivo y los cambios ya están ahí. No usa iCloud Drive. Requiere cuenta activa (gratuita).</p>
             </div>
 
             <!-- AI -->
             <div class="faq-item">
                 <h3 data-i18n="support.faq6_q">¿Cómo configuro la IA?</h3>
-                <p data-i18n="support.faq6_a">Ve a Ajustes → IA. Elige entre modo automático (suscripción), manual (tu propia API key) o Claude OAuth (tu suscripción de Claude). En modo manual, pega tu API key y elige el modelo.</p>
+                <p data-i18n="support.faq6_a">Con la suscripción (€7/mes), la IA está lista sin configuración: incluye 2M tokens/mes. Con la licencia perpetua, ve a Ajustes → IA, pega tu API key de Anthropic, OpenAI o Google y elige el modelo.</p>
             </div>
             <div class="faq-item">
-                <h3 data-i18n="support.faq7_q">¿Mis notas se envían a un servidor?</h3>
-                <p data-i18n="support.faq7_a">No. From indexa tus notas localmente. Cuando usas la IA, solo el fragmento relevante se envía a la API del proveedor (Anthropic, OpenAI o Google) para procesar tu consulta. Nada se almacena en servidores externos.</p>
+                <h3 data-i18n="support.faq7_q">¿Mis notas se envían a servidores externos?</h3>
+                <p data-i18n="support.faq7_a">Solo el fragmento relevante a tu consulta se envía a la API del proveedor de IA (Anthropic, OpenAI o Google) en el momento de procesarla. Nada se almacena en servidores de IA. El sync de notas va a nuestro servidor privado, cifrado.</p>
             </div>
             <div class="faq-item">
                 <h3 data-i18n="support.faq8_q">¿Qué proveedores de IA soporta From?</h3>
-                <p data-i18n="support.faq8_a">Anthropic (Claude), OpenAI (GPT) y Google (Gemini). Puedes cambiar de proveedor en cualquier momento desde Ajustes → IA.</p>
+                <p data-i18n="support.faq8_a">Anthropic (Claude Haiku), OpenAI (GPT) y Google (Gemini). Con la suscripción usas el modelo gestionado por From. Con licencia perpetua eliges tú el proveedor y modelo.</p>
             </div>
 
             <!-- Integrations -->
             <div class="faq-item">
                 <h3 data-i18n="support.faq9_q">¿Cómo conecto Apple Calendar?</h3>
-                <p data-i18n="support.faq9_a">From pide permiso de acceso a Calendar cuando lo activas en Ajustes → Integraciones. Una vez concedido, tus eventos aparecen automáticamente en el timeline.</p>
+                <p data-i18n="support.faq9_a">From pide permiso de acceso a Calendar al abrir la app por primera vez. Una vez concedido, tus eventos aparecen en el timeline del día y puedes crear eventos directamente desde From.</p>
             </div>
             <div class="faq-item">
-                <h3 data-i18n="support.faq10_q">¿Cómo conecto Google Drive?</h3>
-                <p data-i18n="support.faq10_a">Ve a Ajustes → Google. Haz clic en "Conectar cuenta" y sigue el proceso de autorización de Google. Puedes conectar múltiples cuentas.</p>
+                <h3 data-i18n="support.faq10_q">¿Cómo sincronizo con Google Docs?</h3>
+                <p data-i18n="support.faq10_a">Desde la barra de acciones de cualquier nota, pulsa el botón de Google Docs. La primera vez te pedirá autorización de Google. Una vez conectado, el contenido de la nota se sincroniza con el documento automáticamente.</p>
             </div>
 
             <!-- Account -->
