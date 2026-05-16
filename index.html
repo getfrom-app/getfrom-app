@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>From — Tu segundo cerebro. En todos tus dispositivos.</title>
-    <meta name="description" content="From es una app nativa para macOS e iPhone que organiza todo en un árbol de nodos con sincronización en tiempo real. IA contextual, agentes autónomos y captura rápida.">
-    <meta property="og:title" content="From — Tu segundo cerebro. En todos tus dispositivos.">
-    <meta property="og:description" content="Árbol de nodos, sync en tiempo real entre Mac e iPhone, IA contextual y agentes autónomos. Tu segundo cerebro, siempre contigo.">
+    <title>From — La app de notas que Mac estaba esperando</title>
+    <meta name="description" content="From es el outliner nativo para Mac e iPhone que redefine cómo capturas, organizas y actúas sobre tus ideas. Sync instantáneo, IA integrada, captura rápida.">
+    <meta property="og:title" content="From — La app de notas que Mac estaba esperando">
+    <meta property="og:description" content="Notas inteligentes, sync instantáneo Mac+iPhone, diario automático, tareas con fecha e IA que conoce tu contexto. Descárgala gratis.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://getfrom.app">
     <meta name="twitter:card" content="summary_large_image">
@@ -34,37 +34,39 @@
         </button>
         <div class="nav-links">
             <a href="#features" data-i18n="nav.features">Funciones</a>
-            <a href="#sync" data-i18n="nav.sync">Sync</a>
+            <a href="#ios-sync" data-i18n="nav.sync">iOS + Sync</a>
             <a href="#ai" data-i18n="nav.ai">IA</a>
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
+            <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
-            <a href="#download" class="btn-nav" data-i18n="nav.download">Descargar</a>
+            <a href="#download" class="btn-nav" data-i18n="nav.download">Descargar gratis</a>
         </div>
     </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-    <span class="hero-badge" data-i18n="index.hero_badge">macOS + iPhone · Sync en tiempo real · Árbol de nodos</span>
-    <h1 data-i18n-html="index.hero_title">Tu segundo cerebro.<br><span>En todos tus dispositivos.</span></h1>
-    <p data-i18n="index.hero_subtitle">From organiza todo en un árbol de nodos sincronizado en tiempo real entre tu Mac y tu iPhone. Notas, tareas, proyectos y agentes de IA en un solo lugar.</p>
+    <span class="hero-badge">✦ Nuevo · iPhone ya disponible · Sync instantáneo Mac + iPhone</span>
+    <h1>El outliner que<br><span>Mac estaba esperando.</span></h1>
+    <p>From redefine cómo capturas, organizas y actúas sobre tus ideas. Notas inteligentes, diario automático y IA que conoce tu contexto. Nativo en Mac y iPhone.</p>
     <div class="hero-actions">
         <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span data-i18n="index.hero_cta_primary">Descargar para Mac</span>
+            Descárgala gratis — macOS
         </a>
-        <a href="#how-it-works" class="btn-secondary" data-i18n="index.hero_cta_secondary">Cómo funciona</a>
+        <a href="#how-it-works" class="btn-secondary">Cómo funciona</a>
     </div>
+    <p class="hero-footnote">También en iPhone · Gratis para empezar · Sin tarjeta de crédito</p>
 </section>
 
-<!-- Screenshot -->
+<!-- Screenshot gallery -->
 <div class="screenshots-gallery">
     <div class="screenshots-tabs">
-        <button class="tab-btn active" onclick="showTab(0)" data-i18n="index.tab_diary">Diario de hoy</button>
-        <button class="tab-btn" onclick="showTab(1)" data-i18n="index.tab_note">Notas con IA</button>
-        <button class="tab-btn" onclick="showTab(2)" data-i18n="index.tab_search">Búsqueda ⌘K</button>
-        <button class="tab-btn" onclick="showTab(3)" data-i18n="index.tab_ai">Chat IA</button>
+        <button class="tab-btn active" onclick="showTab(0)">Diario de hoy</button>
+        <button class="tab-btn" onclick="showTab(1)">Notas con IA</button>
+        <button class="tab-btn" onclick="showTab(2)">Búsqueda ⌘K</button>
+        <button class="tab-btn" onclick="showTab(3)">Chat IA</button>
     </div>
     <div class="screenshots-viewer">
         <img class="screenshot-img active" src="img/screenshots/screen-1-diary.png" alt="Diario de hoy en From" />
@@ -74,127 +76,189 @@
     </div>
 </div>
 
-<!-- Ownership message -->
+<!-- Philosophy -->
 <section class="section" id="how-it-works">
     <div class="section-header">
-        <span class="section-label" data-i18n="index.philosophy_label">Filosofía</span>
-        <h2 data-i18n="index.philosophy_title">Todo en un árbol. En todos tus dispositivos.</h2>
-        <p data-i18n="index.philosophy_subtitle">From organiza tu conocimiento en workspaces con un árbol de nodos: cada idea, tarea o proyecto tiene su lugar. Sincronizado en tiempo real entre Mac e iPhone.</p>
+        <span class="section-label">Filosofía</span>
+        <h2>Un árbol. Todos tus dispositivos. Una sola app.</h2>
+        <p>Olvida las carpetas, los archivos sueltos y los sistemas que nunca terminan de funcionar. En From, todo vive en un árbol de nodos sincronizado en tiempo real. Más simple. Más potente.</p>
     </div>
     <div class="features-grid" style="max-width: 900px;">
         <div class="card">
             <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
             </div>
-            <h3 data-i18n="index.card_md_title">Árbol de nodos</h3>
-            <p data-i18n="index.card_md_body">Todo en From vive en un árbol jerárquico de nodos. Mueve, anida y reorganiza con total libertad. Sin carpetas rígidas, sin archivos sueltos.</p>
+            <h3>Árbol de nodos sin límite</h3>
+            <p>Anida, mueve y reorganiza con total libertad. Sin carpetas rígidas, sin archivos sueltos que pierdes. Todo conectado, todo accesible.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
             </div>
-            <h3 data-i18n="index.card_folder_title">Workspaces organizados</h3>
-            <p data-i18n="index.card_folder_body">Agrupa tu contenido en workspaces: uno para trabajo, otro personal, otro para cada proyecto. Cada workspace es un universo independiente.</p>
+            <h3>Workspaces para cada contexto</h3>
+            <p>Trabajo, personal, proyectos. Cada workspace es un universo independiente y enfocado. Cambia de contexto en un clic.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(175,82,222,0.1); color: var(--purple);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             </div>
-            <h3 data-i18n="index.card_layer_title">Sync en tiempo real</h3>
-            <p data-i18n="index.card_layer_body">From sincroniza tu árbol en tiempo real vía servidor privado. Abre el Mac y el iPhone: el cambio ya está ahí. Sin iCloud Drive, sin configuración extra.</p>
+            <h3>Sync instantáneo — de verdad</h3>
+            <p>Escribe en el Mac, abre el iPhone: ya está ahí. Sin iCloud Drive, sin pasos extra, sin esperas. El cambio llega en segundos.</p>
         </div>
     </div>
 </section>
 
-<!-- Features -->
-<div class="section-alt" id="features">
+<!-- NEW iOS + Sync Section -->
+<div class="section-alt" id="ios-sync">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <span class="section-label" data-i18n="index.features_label">Funciones</span>
-            <h2 data-i18n="index.features_title">Todo lo que necesitas para organizar tu vida</h2>
-            <p data-i18n="index.features_subtitle">Notas, tareas, proyectos, calendario, vistas configurables y un asistente de IA que conoce tu contexto.</p>
+            <span class="section-label">Nuevo — iPhone</span>
+            <h2>Tu cerebro, siempre en tu bolsillo.</h2>
+            <p>From para iPhone acaba de llegar. La misma potencia del Mac, en tu mano. Captura ideas en 3 segundos, consulta tus notas en cualquier lugar y mantén el sync al instante.</p>
         </div>
-        <div class="features-grid">
-            <div class="card">
-                <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+
+        <div class="ios-highlight-grid">
+            <div class="ios-feature-card">
+                <div class="ios-feature-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13,2 13,9 20,9"/></svg>
                 </div>
-                <h3 data-i18n="index.feat_editor_title">Editor de bullets</h3>
-                <p data-i18n="index.feat_editor_body">Todo son bullets como en Workflowy o Notion. Usa / para crear tareas, headings, vistas, enlaces o archivos. Zoom in en cualquier bullet para enfocarte en él.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                <div>
+                    <h3>Captura rápida con atajos</h3>
+                    <p>Escribe tu idea y añade atajos inline al instante: <code>-t</code> para tarea, <code>-p:alta</code> para prioridad alta, <code>-d:mañana</code> para fecha. Sin menús, sin fricción.</p>
                 </div>
-                <h3 data-i18n="index.feat_tasks_title">Tareas integradas</h3>
-                <p data-i18n="index.feat_tasks_body">Las tareas son nodos con fecha, prioridad y estado. Crea, completa y organiza sin salir de tu flujo. Drag &amp; drop en el timeline.</p>
             </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(175,82,222,0.1); color: var(--purple);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div class="ios-feature-card">
+                <div class="ios-feature-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
                 </div>
-                <h3 data-i18n="index.feat_timeline_title">Timeline: día, semana, mes, año</h3>
-                <p data-i18n="index.feat_timeline_body">Visualiza tareas, eventos de Apple Calendar y recordatorios en una sola vista temporal. Arrastra para reprogramar.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                <div>
+                    <h3>Diario automático en todos tus dispositivos</h3>
+                    <p>Cada día, From crea tu nodo de diario automáticamente. El mismo contenido en Mac y iPhone, sincronizado. Abre la app y empieza a escribir — el contexto ya está ahí.</p>
                 </div>
-                <h3 data-i18n="index.feat_hierarchy_title">Jerarquía temporal real</h3>
-                <p data-i18n="index.feat_hierarchy_body">Estructura Año → Mes → Semana → Día como en Tana. Cada nivel es un nodo navegable con su propia vista de calendario. Tus notas y tareas viven en el tiempo, no en carpetas.</p>
             </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            <div class="ios-feature-card">
+                <div class="ios-feature-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
                 </div>
-                <h3 data-i18n="index.feat_views_title">6 vistas por nota</h3>
-                <p data-i18n="index.feat_views_body">Lista, Tabla, Kanban, Galería, Calendario y Canvas dentro de cualquier nota con el comando /. Cambia de vista sin salir de la nota.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(0,122,255,0.1); color: var(--blue);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                <div>
+                    <h3>Panel de tareas siempre al día</h3>
+                    <p>Tareas vencidas, para hoy y bucles activos visibles de un vistazo. Marca como hecha deslizando, reprograma tocando. Tu lista de pendientes siempre sincronizada.</p>
                 </div>
-                <h3 data-i18n="index.feat_native_title">Mac + iPhone nativos</h3>
-                <p data-i18n="index.feat_native_body">Swift y SwiftUI en Mac e iPhone. Rendimiento real, integración con el sistema, atajos nativos. Se siente como parte de tu dispositivo.</p>
             </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(90,200,250,0.1); color: var(--cyan);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <div class="ios-feature-card">
+                <div class="ios-feature-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 </div>
-                <h3 data-i18n="index.feat_collections_title">Captura rápida</h3>
-                <p data-i18n="index.feat_collections_body">Añade nodos al vuelo desde cualquier lugar. Widget en iPhone, atajo global en Mac. Ninguna idea se pierde.</p>
-            </div>
-            <div class="card" style="border: 1px solid rgba(255,45,85,0.2); background: rgba(255,45,85,0.03);">
-                <div class="card-icon" style="background: rgba(255,45,85,0.1); color: #ff2d55;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <div>
+                    <h3>Servidor privado From — cero iCloud</h3>
+                    <p>El sync no depende de iCloud Drive ni de ningún servicio externo. Cada cambio se propaga vía servidor privado de From con latencia mínima. Fiable, rápido y tuyo.</p>
                 </div>
-                <h3 data-i18n="index.feat_voice_title">Captura de voz con IA</h3>
-                <p data-i18n="index.feat_voice_body">Graba reuniones, llamadas o instrucciones rápidas. La IA transcribe, extrae tareas con fechas, puntos clave y crea el bullet estructurado automáticamente. En Mac, graba también el audio del sistema: Zoom, YouTube, Teams.</p>
             </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(255,45,85,0.1); color: var(--pink);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                </div>
-                <h3 data-i18n="index.feat_canvas_title">Búsqueda inteligente</h3>
-                <p data-i18n="index.feat_canvas_body">Busca en toda tu base de conocimiento con filtros por tipo, área, fecha y estado. Modo integral para encontrar hasta el último bullet.</p>
+        </div>
+
+        <div class="ios-cta-strip">
+            <div class="ios-cta-text">
+                <span class="section-label" style="margin-bottom: 6px; display: inline-block;">Disponible ahora</span>
+                <h3>From para iPhone — recién lanzado</h3>
+                <p>La revolución en notas inteligentes, ahora en tu bolsillo. Descarga el Mac, inicia sesión en el iPhone: tu árbol ya está esperando.</p>
             </div>
-            <div class="card">
-                <div class="card-icon" style="background: rgba(255,59,48,0.1); color: var(--red);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-                </div>
-                <h3 data-i18n="index.feat_history_title">Canvas infinito</h3>
-                <p data-i18n="index.feat_history_body">Organiza visualmente tus ideas en un canvas libre. Crea nodos, conéctalos, agrúpalos. Pan y zoom ilimitados. Para cuando la lista no es suficiente.</p>
-            </div>
+            <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Empieza hoy — es gratis
+            </a>
         </div>
     </section>
 </div>
 
+<!-- Features -->
+<div class="section-divider-label">
+    <span>Funciones</span>
+</div>
+<section class="section" id="features">
+    <div class="section-header">
+        <h2>Todo lo que necesitas para organizar tu vida</h2>
+        <p>Notas, tareas, proyectos, calendario, vistas configurables y un asistente de IA que conoce tu contexto. Todo nativo, todo conectado.</p>
+    </div>
+    <div class="features-grid">
+        <div class="card">
+            <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <h3>Outliner de bullets</h3>
+            <p>Escribe rápido, organiza después. Usa <code>/</code> para crear tareas, headings o vistas. Haz zoom en cualquier bullet para enfocarte en él sin distracciones.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+            </div>
+            <h3>Tareas que viven en tu árbol</h3>
+            <p>Las tareas son nodos con fecha, prioridad y estado. Crea, completa y organiza sin salir de tu flujo. Drag &amp; drop en el timeline para reprogramar al instante.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(175,82,222,0.1); color: var(--purple);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <h3>Timeline: día, semana, mes, año</h3>
+            <p>Visualiza tareas y eventos de Apple Calendar en una sola vista temporal. Arrastra para reprogramar. Tu día, de un vistazo.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <h3>Jerarquía temporal real</h3>
+            <p>Estructura Año → Mes → Semana → Día como en Tana. Cada nivel es un nodo navegable. Tus notas y tareas viven en el tiempo, no en carpetas sin sentido.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            </div>
+            <h3>6 vistas por nota</h3>
+            <p>Lista, Tabla, Kanban, Galería, Calendario y Canvas dentro de cualquier nota con el comando <code>/</code>. Cambia de vista sin perder el contexto.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(0,122,255,0.1); color: var(--blue);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <h3>Nativo en Mac y iPhone</h3>
+            <p>Swift y SwiftUI puros. Rendimiento real, integración con el sistema, atajos nativos. Se siente como parte de tu dispositivo — porque lo es.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(90,200,250,0.1); color: var(--cyan);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <h3>Captura rápida — ninguna idea se pierde</h3>
+            <p>Widget en iPhone, atajo global en Mac. Captura al vuelo desde cualquier app. El bullet aparece en tu diario automáticamente.</p>
+        </div>
+        <div class="card" style="border: 1px solid rgba(255,45,85,0.2); background: rgba(255,45,85,0.02);">
+            <div class="card-icon" style="background: rgba(255,45,85,0.1); color: #ff2d55;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+            <h3>Voz → Notas estructuradas</h3>
+            <p>Graba reuniones, llamadas o instrucciones. La IA transcribe, extrae tareas con fechas y crea el bullet estructurado. En Mac, graba también el audio del sistema: Zoom, YouTube, Teams.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(255,45,85,0.1); color: var(--pink);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <h3>Búsqueda que encuentra de verdad</h3>
+            <p>Filtra por tipo, área, fecha y estado. Modo semántico con IA para responder preguntas sobre tu base de conocimiento. Spotlight integrado.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: rgba(255,59,48,0.1); color: var(--red);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            </div>
+            <h3>Canvas infinito</h3>
+            <p>Organiza visualmente tus ideas en un canvas libre. Crea nodos, conéctalos, agrúpalos. Pan y zoom ilimitados. Para cuando la lista no es suficiente.</p>
+        </div>
+    </div>
+</section>
+
 <!-- Sync -->
 <section class="section" id="sync">
     <div class="section-header">
-        <span class="section-label" data-i18n="index.sync_label">Sincronización</span>
-        <h2 data-i18n="index.sync_title">Tu árbol. En todos tus dispositivos.</h2>
-        <p data-i18n="index.sync_subtitle">From sincroniza en tiempo real vía servidor privado. Abre la app en Mac o iPhone y tus nodos ya están ahí. Sin iCloud Drive, sin configuración.</p>
+        <span class="section-label">Sincronización</span>
+        <h2>Tu árbol. En todos tus dispositivos.</h2>
+        <p>From sincroniza en tiempo real vía servidor privado. Abre la app en Mac o iPhone y tus nodos ya están ahí. Sin iCloud Drive, sin configuración adicional.</p>
     </div>
 
     <div class="sync-visual">
@@ -202,21 +266,21 @@
             <div class="sync-node-icon" style="background: rgba(0,122,255,0.1); color: var(--blue);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             </div>
-            <div class="sync-node-label" data-i18n="index.sync_mac">Mac</div>
+            <div class="sync-node-label">Mac</div>
         </div>
         <div class="sync-arrow">&harr;</div>
         <div class="sync-node">
             <div class="sync-node-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg>
             </div>
-            <div class="sync-node-label" data-i18n="index.sync_icloud">Servidor From</div>
+            <div class="sync-node-label">Servidor From</div>
         </div>
         <div class="sync-arrow">&harr;</div>
         <div class="sync-node">
             <div class="sync-node-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
             </div>
-            <div class="sync-node-label" data-i18n="index.sync_macs">iPhone</div>
+            <div class="sync-node-label">iPhone</div>
         </div>
     </div>
 
@@ -225,22 +289,22 @@
             <div class="card-icon" style="background: rgba(90,200,250,0.1); color: var(--cyan);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
             </div>
-            <h3 data-i18n="index.sync_icloud_title">Sincronización en tiempo real</h3>
-            <p data-i18n="index.sync_icloud_body">Cada cambio en un nodo se propaga al instante a todos tus dispositivos. Servidor privado en la nube, latencia mínima, siempre al día.</p>
+            <h3>Sync en tiempo real</h3>
+            <p>Cada cambio en un nodo se propaga al instante a todos tus dispositivos. Servidor privado en la nube, latencia mínima, siempre al día.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(66,133,244,0.1); color: #4285F4;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13,2 13,9 20,9"/></svg>
             </div>
-            <h3 data-i18n="index.sync_gdrive_title">Google Drive y Docs</h3>
-            <p data-i18n="index.sync_gdrive_body">Conecta múltiples cuentas de Google. Vincula notas a Google Docs con sincronización bidireccional automática. Tus docs de Google como contexto para la IA.</p>
+            <h3>Google Drive y Docs</h3>
+            <p>Conecta múltiples cuentas de Google. Vincula notas a Google Docs con sincronización bidireccional automática. Tus docs de Google como contexto para la IA.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             </div>
-            <h3 data-i18n="index.sync_backup_title">Backup automático</h3>
-            <p data-i18n="index.sync_backup_body">Tus datos se almacenan de forma segura en Cloudflare R2. Backups automáticos de todo tu árbol. Exporta en Markdown estándar en cualquier momento.</p>
+            <h3>Backup automático cada 2 horas</h3>
+            <p>Tus datos se almacenan en Cloudflare R2. Backup completo local cada 2 horas en Markdown estándar. Exporta en cualquier momento — sin lock-in.</p>
         </div>
     </div>
 </section>
@@ -249,9 +313,9 @@
 <div class="section-alt" id="integrations">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <span class="section-label" data-i18n="index.integrations_label">Integraciones</span>
-            <h2 data-i18n="index.integrations_title">Conectado a lo que ya usas</h2>
-            <p data-i18n="index.integrations_subtitle">From se integra nativamente con las apps de Apple y Google que ya forman parte de tu día a día.</p>
+            <span class="section-label">Integraciones</span>
+            <h2>Conectado a lo que ya usas</h2>
+            <p>From se integra nativamente con las apps de Apple y Google que ya forman parte de tu día a día. Sin plugins, sin configuración compleja.</p>
         </div>
         <div class="integrations-grid">
             <div class="integration-item">
@@ -259,8 +323,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_calendar_title">Apple Calendar</h3>
-                    <p data-i18n="index.int_calendar_body">Tus eventos aparecen en el timeline de From. Crea eventos desde notas. Sincronización bidireccional.</p>
+                    <h3>Apple Calendar</h3>
+                    <p>Tus eventos aparecen en el timeline de From. Crea eventos desde notas. Sincronización bidireccional.</p>
                 </div>
             </div>
             <div class="integration-item">
@@ -268,8 +332,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_reminders_title">Apple Recordatorios</h3>
-                    <p data-i18n="index.int_reminders_body">Las tareas de From se sincronizan con Recordatorios de Apple. Completa desde cualquier dispositivo.</p>
+                    <h3>Apple Recordatorios</h3>
+                    <p>Las tareas de From se sincronizan con Recordatorios de Apple. Completa desde cualquier dispositivo.</p>
                 </div>
             </div>
             <div class="integration-item">
@@ -277,8 +341,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_gdrive_title">Google Drive</h3>
-                    <p data-i18n="index.int_gdrive_body">Navega, busca y vincula archivos de Drive. Multi-cuenta. Accede a tus carpetas sin salir de From.</p>
+                    <h3>Google Drive</h3>
+                    <p>Navega, busca y vincula archivos de Drive. Multi-cuenta. Accede a tus carpetas sin salir de From.</p>
                 </div>
             </div>
             <div class="integration-item">
@@ -286,8 +350,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_gdocs_title">Google Docs</h3>
-                    <p data-i18n="index.int_gdocs_body">Vincula notas a Google Docs. Edita en un lado y se sincroniza al otro. Auto-sync al guardar.</p>
+                    <h3>Google Docs</h3>
+                    <p>Vincula notas a Google Docs. Edita en un lado y se sincroniza al otro. Auto-sync al guardar.</p>
                 </div>
             </div>
             <div class="integration-item">
@@ -295,8 +359,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_icloud_title">App nativa iPhone</h3>
-                    <p data-i18n="index.int_icloud_body">From para iPhone sincroniza tu árbol en tiempo real. Captura, consulta y edita desde cualquier lugar.</p>
+                    <h3>App nativa iPhone</h3>
+                    <p>From para iPhone sincroniza tu árbol en tiempo real. Captura, consulta y edita desde cualquier lugar.</p>
                 </div>
             </div>
             <div class="integration-item">
@@ -304,8 +368,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </div>
                 <div>
-                    <h3 data-i18n="index.int_aimodels_title">Claude, GPT y Gemini</h3>
-                    <p data-i18n="index.int_aimodels_body">Elige tu proveedor de IA preferido. Usa tu propia API key o la IA gestionada de From con tokens incluidos.</p>
+                    <h3>Claude, GPT y Gemini</h3>
+                    <p>Elige tu proveedor de IA preferido. Usa tu propia API key o la IA gestionada de From con tokens incluidos.</p>
                 </div>
             </div>
         </div>
@@ -315,38 +379,38 @@
 <!-- AI -->
 <section class="section" id="ai">
     <div class="section-header">
-        <span class="section-label" data-i18n="index.ai_label">Inteligencia Artificial</span>
-        <h2 data-i18n="index.ai_title">Una IA que conoce tu contexto</h2>
-        <p data-i18n="index.ai_subtitle">No es un chatbot genérico. Es un asistente que ha leído tus notas, entiende tus proyectos y trabaja con tu información real.</p>
+        <span class="section-label">Inteligencia Artificial</span>
+        <h2>Una IA que conoce tu contexto</h2>
+        <p>No es un chatbot genérico. Es un asistente que ha leído tus notas, entiende tus proyectos y trabaja con tu información real. La diferencia es brutal.</p>
     </div>
     <div class="features-grid" style="max-width: 900px;">
         <div class="card">
             <div class="card-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <h3 data-i18n="index.ai_chat_title">Chat contextual</h3>
-            <p data-i18n="index.ai_chat_body">Pregunta sobre tus notas, resume proyectos, busca información. La IA recupera los fragmentos relevantes de tu espacio con búsqueda semántica.</p>
+            <h3>Chat contextual</h3>
+            <p>Pregunta sobre tus notas, resume proyectos, busca información. La IA recupera los fragmentos relevantes de tu espacio con búsqueda semántica real.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
-            <h3 data-i18n="index.ai_editor_title">Editor IA</h3>
-            <p data-i18n="index.ai_editor_body">La IA edita tus notas directamente. Revisa los cambios, confírmalos o deshazlos. Como un copiloto para tu escritura.</p>
+            <h3>Editor IA</h3>
+            <p>La IA edita tus notas directamente. Revisa los cambios, confírmalos o deshazlos. Un copiloto real para tu escritura, no un generador de texto genérico.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(255,45,85,0.1); color: var(--pink);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             </div>
-            <h3 data-i18n="index.ai_agents_title">Agentes autónomos</h3>
-            <p data-i18n="index.ai_agents_body">Crea agentes con lenguaje natural. Se ejecutan automáticamente: diario, semanal, al abrir la app. Leen, crean y actualizan nodos por ti.</p>
+            <h3>Agentes autónomos</h3>
+            <p>Crea agentes con lenguaje natural. Se ejecutan automáticamente: diario, semanal, al abrir la app. Leen, crean y actualizan nodos por ti.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 data-i18n="index.ai_privacy_title">Privacidad real</h3>
-            <p data-i18n="index.ai_privacy_body">Solo el fragmento relevante viaja a la API de IA. Tus nodos no se comparten con terceros. Puedes usar tu propia API key para control total.</p>
+            <h3>Privacidad real</h3>
+            <p>Solo el fragmento relevante viaja a la API de IA. Tus nodos no se comparten con terceros. Usa tu propia API key para control total.</p>
         </div>
     </div>
 </section>
@@ -355,38 +419,38 @@
 <div class="section-alt" id="privacy">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <span class="section-label" data-i18n="index.privacy_label">Privacidad</span>
-            <h2 data-i18n="index.privacy_title">Tu privacidad, por diseño</h2>
-            <p data-i18n="index.privacy_subtitle">From no vende ni comparte tus datos. Tu árbol es tuyo. El servidor existe para sincronizar, no para leer tu contenido.</p>
+            <span class="section-label">Privacidad</span>
+            <h2>Tu privacidad, por diseño</h2>
+            <p>From no vende ni comparte tus datos. Tu árbol es tuyo. El servidor existe para sincronizar, no para leer tu contenido.</p>
         </div>
         <div class="privacy-grid">
             <div class="privacy-card">
                 <div class="card-icon" style="background: rgba(74,144,217,0.15); color: var(--accent); margin: 0 auto 16px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <h3 data-i18n="index.priv_noserver_title">Servidor privado</h3>
-                <p data-i18n="index.priv_noserver_body">Tu árbol se sincroniza vía servidor privado de From. Los archivos adjuntos se almacenan en Cloudflare R2, cifrados y solo accesibles por ti.</p>
+                <h3>Servidor privado</h3>
+                <p>Tu árbol se sincroniza vía servidor privado de From. Los archivos adjuntos se almacenan en Cloudflare R2, cifrados y solo accesibles por ti.</p>
             </div>
             <div class="privacy-card">
                 <div class="card-icon" style="background: rgba(74,144,217,0.15); color: var(--accent); margin: 0 auto 16px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </div>
-                <h3 data-i18n="index.priv_notelemetry_title">Cero telemetría</h3>
-                <p data-i18n="index.priv_notelemetry_body">No rastreamos uso, no enviamos analíticas, no recopilamos datos de comportamiento. Cero.</p>
+                <h3>Cero telemetría</h3>
+                <p>No rastreamos uso, no enviamos analíticas, no recopilamos datos de comportamiento. Cero. Lo que haces en From se queda en From.</p>
             </div>
             <div class="privacy-card">
                 <div class="card-icon" style="background: rgba(74,144,217,0.15); color: var(--accent); margin: 0 auto 16px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 </div>
-                <h3 data-i18n="index.priv_nolockin_title">Sin lock-in</h3>
-                <p data-i18n="index.priv_nolockin_body">Tu contenido es exportable en cualquier momento. Si dejas From, te llevas todo. No hay formatos propietarios sin salida.</p>
+                <h3>Sin lock-in</h3>
+                <p>Tu contenido es exportable en cualquier momento. Si dejas From, te llevas todo. No hay formatos propietarios sin salida.</p>
             </div>
             <div class="privacy-card">
                 <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green); margin: 0 auto 16px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </div>
-                <h3 data-i18n="index.priv_backup_title">Backup local cada 2h</h3>
-                <p data-i18n="index.priv_backup_body">From guarda un snapshot completo de tus notas en tu Mac cada 2 horas. Markdown estándar, legible con cualquier editor. Restaura cualquier momento de las últimas 12h desde Ajustes.</p>
+                <h3>Backup local cada 2h</h3>
+                <p>From guarda un snapshot completo de tus notas en tu Mac cada 2 horas. Markdown estándar, legible con cualquier editor. Restaura cualquier momento de las últimas 12h desde Ajustes.</p>
             </div>
         </div>
     </section>
@@ -395,23 +459,23 @@
 <!-- How it works -->
 <section class="section">
     <div class="section-header">
-        <h2 data-i18n="index.steps_title">Empieza en 30 segundos</h2>
+        <h2>Empieza en 30 segundos</h2>
     </div>
     <div class="steps">
         <div class="step">
             <div class="step-number">1</div>
-            <h3 data-i18n="index.step1_title">Descarga From</h3>
-            <p data-i18n="index.step1_body">Instala la app en Mac o iPhone. Sin configuración compleja, sin cuenta de iCloud obligatoria.</p>
+            <h3>Descarga From</h3>
+            <p>Instala la app en Mac o iPhone. Sin configuración compleja, sin cuenta de iCloud obligatoria.</p>
         </div>
         <div class="step">
             <div class="step-number">2</div>
-            <h3 data-i18n="index.step2_title">Crea tu workspace</h3>
-            <p data-i18n="index.step2_body">Nombra tu primer workspace y empieza a añadir nodos. From sincroniza automáticamente con todos tus dispositivos.</p>
+            <h3>Crea tu workspace</h3>
+            <p>Nombra tu primer workspace y empieza a añadir nodos. From sincroniza automáticamente con todos tus dispositivos.</p>
         </div>
         <div class="step">
             <div class="step-number">3</div>
-            <h3 data-i18n="index.step3_title">Empieza a trabajar</h3>
-            <p data-i18n="index.step3_body">Crea nodos, organiza proyectos, programa tareas. La IA ya conoce tu contexto desde el minuto uno.</p>
+            <h3>Empieza a trabajar</h3>
+            <p>Crea nodos, organiza proyectos, programa tareas. La IA ya conoce tu contexto desde el minuto uno.</p>
         </div>
     </div>
 </section>
@@ -420,62 +484,63 @@
 <div class="section-alt">
     <section class="section text-center" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <h2 data-i18n="index.pricing_teaser_title">Simple y justo</h2>
-            <p data-i18n="index.pricing_teaser_body">Licencia perpetua para usar From para siempre. Suscripción opcional solo si quieres IA gestionada sin configurar API keys.</p>
+            <h2>Simple y justo</h2>
+            <p>Licencia perpetua para usar From para siempre. Suscripción opcional solo si quieres IA gestionada sin configurar API keys.</p>
         </div>
-        <a href="pricing.html" class="btn-primary" data-i18n="index.pricing_teaser_cta">Ver precios</a>
+        <a href="pricing.html" class="btn-primary">Ver precios</a>
     </section>
 </div>
 
 <!-- FAQ -->
 <section class="section" id="faq">
     <div class="section-header">
-        <h2 data-i18n="index.faq_title">Preguntas frecuentes</h2>
+        <h2>Preguntas frecuentes</h2>
     </div>
     <div class="faq">
         <div class="faq-item">
-            <h3 data-i18n="index.faq1_q">¿From es solo para Mac o también para iPhone?</h3>
-            <p data-i18n="index.faq1_a">From está disponible tanto para macOS como para iPhone. Ambas apps son nativas y están sincronizadas en tiempo real. Lo que escribes en el Mac aparece al instante en el iPhone, y viceversa.</p>
+            <h3>¿From es solo para Mac o también para iPhone?</h3>
+            <p>From está disponible para macOS e iPhone — ambas apps nativas y sincronizadas en tiempo real. Lo que escribes en el Mac aparece al instante en el iPhone, y viceversa. La app de iPhone acaba de lanzarse y ya está disponible.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq2_q">¿Cómo funciona la IA?</h3>
-            <p data-i18n="index.faq2_a">From indexa tu árbol de nodos y recupera el contexto relevante cuando interactúas con la IA. Solo el fragmento necesario viaja a la API — nada se comparte con terceros. Puedes elegir entre Claude, GPT o Gemini.</p>
+            <h3>¿Qué diferencia a From de Notion, Obsidian o Apple Notes?</h3>
+            <p>From es nativo (Swift puro, no Electron), sincroniza en tiempo real vía servidor propio sin depender de iCloud Drive, tiene IA contextual integrada que conoce tus notas, y combina outliner + tareas + diario + agentes en una sola app. No es una navaja suiza — es una herramienta diseñada para fluir.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq3_q">¿Cómo funciona la sincronización?</h3>
-            <p data-i18n="index.faq3_a">From usa un servidor privado para sincronizar tu árbol en tiempo real. No depende de iCloud Drive ni de ningún servicio externo. Los archivos adjuntos se almacenan en Cloudflare R2.</p>
+            <h3>¿Cómo funciona la sincronización?</h3>
+            <p>From usa un servidor privado para sincronizar tu árbol en tiempo real. Cada cambio se propaga en segundos a todos tus dispositivos. No depende de iCloud Drive ni de ningún servicio externo. Los archivos adjuntos se almacenan en Cloudflare R2.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq4_q">¿Mis datos están en archivos .md?</h3>
-            <p data-i18n="index.faq4_a">No. From v3 usa una base de datos de nodos optimizada para sincronización en tiempo real. Tu contenido siempre es exportable, pero el formato interno no son archivos Markdown sueltos.</p>
+            <h3>¿Cómo funciona la IA?</h3>
+            <p>From indexa tu árbol de nodos y recupera el contexto relevante cuando interactúas con la IA. Solo el fragmento necesario viaja a la API — nada se comparte con terceros. Puedes elegir entre Claude, GPT o Gemini, o usar la IA gestionada de From.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq5_q">¿Qué pasa si dejo de usar From?</h3>
-            <p data-i18n="index.faq5_a">Puedes exportar todo tu contenido en cualquier momento antes de cancelar. From no te retiene: tus datos son tuyos y puedes llevártelos.</p>
+            <h3>¿Qué pasa si dejo de usar From?</h3>
+            <p>Exporta todo en cualquier momento. From no te retiene: tus datos son tuyos y puedes llevártelos. Backup local automático cada 2 horas en Markdown estándar.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq6_q">¿Necesito una API key para la IA?</h3>
-            <p data-i18n="index.faq6_a">No necesariamente. Puedes usar la IA gestionada de From (con suscripción) o aportar tu propia API key de Anthropic, OpenAI o Google. También puedes conectar tu suscripción de Claude directamente.</p>
+            <h3>¿Puedo importar mis notas desde Notion u Obsidian?</h3>
+            <p>Sí. From importa desde Obsidian, Notion, LogSeq, NotePlan, Bear y cualquier carpeta de Markdown. Las notas sin fecha van al diario de ayer; las tareas con fecha van automáticamente al día que les corresponde. Ver el <a href="docs/index.html">Manual</a> para instrucciones por app.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq7_q">¿Mis datos están seguros?</h3>
-            <p data-i18n="index.faq7_a">Tus datos se almacenan en servidores privados de From y en Cloudflare R2, con cifrado en tránsito y en reposo. No hay telemetría, no hay analíticas, no hay venta de datos.</p>
+            <h3>¿Necesito una API key para la IA?</h3>
+            <p>No necesariamente. Puedes usar la IA gestionada de From (con suscripción) o aportar tu propia API key de Anthropic, OpenAI o Google. También puedes conectar tu suscripción de Claude directamente.</p>
         </div>
         <div class="faq-item">
-            <h3 data-i18n="index.faq8_q">¿Puedo importar mis notas desde Notion u Obsidian?</h3>
-            <p data-i18n="index.faq8_a">Sí. From importa desde Obsidian, Notion, LogSeq, NotePlan, Bear y cualquier carpeta de Markdown. Las notas sin fecha van al diario de ayer; las tareas con fecha van automáticamente al día que les corresponde. Ver el Manual para instrucciones por app.</p>
+            <h3>¿Mis datos están seguros?</h3>
+            <p>Tus datos se almacenan en servidores privados de From y en Cloudflare R2, con cifrado en tránsito y en reposo. No hay telemetría, no hay analíticas, no hay venta de datos.</p>
         </div>
     </div>
 </section>
 
 <!-- CTA -->
 <section class="cta" id="download">
-    <h2 data-i18n="index.cta_title">Tu segundo cerebro te está esperando</h2>
-    <p data-i18n="index.cta_body">Descarga From y empieza a organizar tus ideas, tareas y proyectos. Disponible para Mac y iPhone.</p>
+    <h2>Tus notas. Finalmente inteligentes.</h2>
+    <p>Descarga From y empieza a organizar tus ideas, tareas y proyectos. Disponible para Mac y iPhone. Gratis para empezar.</p>
     <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span data-i18n="index.cta_btn">Descargar para macOS</span>
+        Descargar para macOS — gratis
     </a>
+    <p style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">También disponible en iPhone · Sin tarjeta de crédito</p>
 </section>
 
 <!-- Footer -->
@@ -489,24 +554,26 @@
                 </svg>
                 From
             </a>
-            <p data-i18n="footer.tagline">Tu segundo cerebro. En todos tus dispositivos.</p>
+            <p>La app de notas que Mac estaba esperando.</p>
         </div>
         <div class="footer-col">
-            <h4 data-i18n="footer.col_product">Producto</h4>
-            <a href="#features" data-i18n="footer.link_features">Funciones</a>
-            <a href="pricing.html" data-i18n="footer.link_pricing">Precios</a>
-            <a href="#download" data-i18n="footer.link_download">Descargar</a>
+            <h4>Producto</h4>
+            <a href="#features">Funciones</a>
+            <a href="#ios-sync">iOS + Sync</a>
+            <a href="pricing.html">Precios</a>
+            <a href="#download">Descargar</a>
         </div>
         <div class="footer-col">
-            <h4 data-i18n="footer.col_support">Soporte</h4>
-            <a href="support.html" data-i18n="footer.link_help">Centro de ayuda</a>
-            <a href="mailto:hola@getfrom.app" data-i18n="footer.link_contact">Contacto</a>
-            <a href="account.html" data-i18n="footer.link_account">Mi cuenta</a>
+            <h4>Soporte</h4>
+            <a href="docs/index.html">Manual</a>
+            <a href="support.html">Centro de ayuda</a>
+            <a href="mailto:hola@getfrom.app">Contacto</a>
+            <a href="account.html">Mi cuenta</a>
         </div>
         <div class="footer-col">
-            <h4 data-i18n="footer.col_legal">Legal</h4>
-            <a href="privacy.html" data-i18n="footer.link_privacy">Privacidad</a>
-            <a href="terms.html" data-i18n="footer.link_terms">Términos</a>
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacidad</a>
+            <a href="terms.html">Términos</a>
         </div>
     </div>
     <div class="footer-bottom">

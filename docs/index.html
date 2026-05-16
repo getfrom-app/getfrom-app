@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual — From</title>
-    <meta name="description" content="From user guide. Everything you need to get the most out of From.">
+    <meta name="description" content="Guía completa de From. Todo lo que necesitas para sacarle el máximo partido a la app.">
     <link rel="icon" type="image/svg+xml" href="../icon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,12 +13,15 @@
     <style>
         :root {
             --accent: #4A90D9;
-            --bg: #0e0e10;
-            --text: #e8e8e8;
-            --text-secondary: #8b8b8b;
-            --card-bg: #18181a;
-            --border: #2a2a2c;
+            --accent-hover: #357ABD;
+            --bg: #FAFAFA;
+            --bg-alt: #F3F4F6;
+            --text: #1a1a1a;
+            --text-secondary: #6b7280;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
             --sidebar-width: 260px;
+            --nav-height: 54px;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
@@ -30,15 +33,16 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* NAV */
         nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(14,14,16,0.92);
-            backdrop-filter: blur(12px);
+            background: rgba(250,250,250,0.92);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
-            height: 52px;
+            height: var(--nav-height);
             display: flex; align-items: center;
             padding: 0 24px;
             gap: 16px;
@@ -48,7 +52,7 @@
             font-weight: 700; font-size: 15px;
             color: var(--text); text-decoration: none;
         }
-        .nav-logo svg { opacity: 0.9; }
+        .nav-logo svg { color: var(--accent); }
         .nav-title {
             font-size: 13px; color: var(--text-secondary);
             border-left: 1px solid var(--border);
@@ -61,10 +65,49 @@
         }
         .nav-link:hover { color: var(--text); }
 
+        /* Search bar in nav */
+        .nav-search {
+            position: relative;
+            display: flex; align-items: center;
+        }
+        .nav-search input {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 12px 6px 32px;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            width: 200px;
+            outline: none;
+            transition: border-color 0.2s, width 0.2s;
+        }
+        .nav-search input:focus {
+            border-color: var(--accent);
+            width: 260px;
+        }
+        .nav-search input::placeholder { color: var(--text-secondary); }
+        .nav-search svg {
+            position: absolute; left: 9px;
+            color: var(--text-secondary); pointer-events: none;
+        }
+        #search-results-count {
+            font-size: 12px; color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        #search-clear {
+            font-size: 12px; color: var(--accent);
+            cursor: pointer; white-space: nowrap;
+            display: none;
+            background: none; border: none; font-family: inherit;
+            padding: 0; text-decoration: underline;
+        }
+        #search-clear:hover { color: var(--accent-hover); }
+
         /* Lang toggle */
         .lang-toggle {
             display: flex; align-items: center;
-            background: var(--card-bg);
+            background: var(--bg-alt);
             border: 1px solid var(--border);
             border-radius: 6px;
             overflow: hidden;
@@ -88,45 +131,60 @@
         .nav-download {
             font-size: 13px; font-weight: 600;
             background: var(--accent); color: #fff;
-            padding: 6px 14px; border-radius: 6px;
-            text-decoration: none;
+            padding: 6px 14px; border-radius: 7px;
+            text-decoration: none; transition: background 0.2s;
         }
+        .nav-download:hover { background: var(--accent-hover); }
 
         /* LAYOUT */
         .layout {
             display: flex;
-            margin-top: 52px;
+            margin-top: var(--nav-height);
             flex: 1;
         }
 
         /* SIDEBAR */
         aside {
             width: var(--sidebar-width);
-            position: fixed; top: 52px; bottom: 0; left: 0;
+            position: fixed; top: var(--nav-height); bottom: 0; left: 0;
             overflow-y: auto;
             border-right: 1px solid var(--border);
-            padding: 24px 0;
-            background: var(--bg);
+            padding: 20px 0;
+            background: var(--card-bg);
         }
         aside::-webkit-scrollbar { width: 4px; }
         aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+        .toc-section-label {
+            display: block; padding: 12px 16px 6px;
+            font-size: 10px; font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.07em;
+        }
         .toc-h2 {
-            display: block; padding: 6px 20px;
-            font-size: 12px; font-weight: 600;
+            display: block; padding: 5px 16px;
+            font-size: 13px; font-weight: 500;
             color: var(--text-secondary);
             text-decoration: none; cursor: pointer;
-            transition: color 0.15s;
+            transition: color 0.15s, background 0.15s;
             border-left: 2px solid transparent;
+            line-height: 1.4;
         }
-        .toc-h2:hover { color: var(--text); }
-        .toc-h2.active { color: var(--accent); border-left-color: var(--accent); }
+        .toc-h2:hover { color: var(--text); background: var(--bg-alt); }
+        .toc-h2.active {
+            color: var(--accent); border-left-color: var(--accent);
+            background: rgba(74,144,217,0.05);
+        }
         .toc-h3 {
-            display: block; padding: 4px 20px 4px 32px;
-            font-size: 12px; color: #555;
+            display: block; padding: 3px 16px 3px 28px;
+            font-size: 12px; color: #9ca3af;
             text-decoration: none; transition: color 0.15s;
+            line-height: 1.4;
         }
         .toc-h3:hover { color: var(--text-secondary); }
+
+        /* Search hidden state for TOC items */
+        .toc-h2.search-hidden, .toc-h3.search-hidden { display: none; }
 
         /* CONTENT */
         main {
@@ -136,42 +194,106 @@
             padding: 48px 56px 96px;
         }
 
-        #content h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-        #content h1 + p, #content h1 + blockquote { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+        /* Search highlight */
+        mark {
+            background: rgba(74,144,217,0.18);
+            color: inherit;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        /* Search: hidden sections */
+        .search-hidden-section {
+            display: none !important;
+        }
+        .search-no-results {
+            padding: 48px 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        #content h1 {
+            font-size: 30px; font-weight: 700; margin-bottom: 8px; color: var(--text);
+            letter-spacing: -0.02em;
+        }
+        #content h1 + p, #content h1 + blockquote {
+            color: var(--text-secondary); font-size: 14px; margin-bottom: 32px;
+        }
         #content h2 {
             font-size: 20px; font-weight: 700;
             margin: 48px 0 16px; padding-top: 48px;
             border-top: 1px solid var(--border);
-            color: var(--text); scroll-margin-top: 72px;
+            color: var(--text); scroll-margin-top: 74px;
+            letter-spacing: -0.01em;
         }
         #content h2:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
-        #content h3 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; color: var(--text); scroll-margin-top: 72px; }
-        #content h4 { font-size: 13px; font-weight: 600; margin: 20px 0 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-        #content p { font-size: 14px; line-height: 1.75; color: #c0c0c0; margin-bottom: 14px; }
-        #content ul, #content ol { font-size: 14px; line-height: 1.75; color: #c0c0c0; margin-bottom: 14px; padding-left: 22px; }
+        #content h3 {
+            font-size: 15px; font-weight: 600;
+            margin: 28px 0 10px; color: var(--text); scroll-margin-top: 74px;
+        }
+        #content h4 {
+            font-size: 12px; font-weight: 700; margin: 20px 0 8px;
+            color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        #content p {
+            font-size: 14px; line-height: 1.75; color: var(--text-secondary); margin-bottom: 14px;
+        }
+        #content ul, #content ol {
+            font-size: 14px; line-height: 1.75; color: var(--text-secondary);
+            margin-bottom: 14px; padding-left: 22px;
+        }
         #content li { margin-bottom: 4px; }
         #content li strong { color: var(--text); }
         #content a { color: var(--accent); text-decoration: none; }
         #content a:hover { text-decoration: underline; }
         #content strong { color: var(--text); }
-        #content code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: #1e1e22; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; color: #a78bfa; }
-        #content pre { background: #131315; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 16px 0; }
-        #content pre code { background: none; border: none; padding: 0; font-size: 13px; color: #d4d4d4; }
-        #content blockquote { border-left: 3px solid var(--accent); padding: 2px 16px; color: var(--text-secondary); margin: 16px 0; font-style: italic; }
-        #content table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
-        #content th { text-align: left; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--border); font-weight: 600; color: var(--text); }
-        #content td { padding: 8px 12px; border: 1px solid var(--border); color: #c0c0c0; }
-        #content tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+        #content code {
+            font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+            background: rgba(74,144,217,0.08); border: 1px solid rgba(74,144,217,0.2);
+            padding: 2px 6px; border-radius: 4px; color: var(--accent);
+        }
+        #content pre {
+            background: #f6f8fa; border: 1px solid var(--border);
+            border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 16px 0;
+        }
+        #content pre code {
+            background: none; border: none; padding: 0;
+            font-size: 13px; color: #374151;
+        }
+        #content blockquote {
+            border-left: 3px solid var(--accent); padding: 2px 16px;
+            color: var(--text-secondary); margin: 16px 0; font-style: italic;
+        }
+        #content table {
+            width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;
+        }
+        #content th {
+            text-align: left; padding: 8px 12px; background: var(--bg-alt);
+            border: 1px solid var(--border); font-weight: 600; color: var(--text);
+        }
+        #content td { padding: 8px 12px; border: 1px solid var(--border); color: var(--text-secondary); }
+        #content tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
         #content hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
         /* Loading */
-        #loading { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 14px; padding: 48px 0; }
-        .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        #loading {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text-secondary); font-size: 14px; padding: 48px 0;
+        }
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid var(--border); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.7s linear infinite;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
             aside { display: none; }
             main { margin-left: 0; padding: 32px 20px 64px; }
+            .nav-search input { width: 140px; }
+            .nav-search input:focus { width: 180px; }
+            #search-results-count, #search-clear { display: none; }
         }
     </style>
 </head>
@@ -187,6 +309,15 @@
     </a>
     <span class="nav-title" id="nav-title">Manual</span>
     <div class="nav-spacer"></div>
+
+    <!-- Search -->
+    <div class="nav-search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Buscar en el manual…" autocomplete="off" />
+    </div>
+    <span id="search-results-count"></span>
+    <button id="search-clear">Limpiar</button>
+
     <a href="../support.html" class="nav-link" id="nav-support">Soporte</a>
     <div class="lang-toggle">
         <button class="lang-btn" id="btn-es" onclick="setLang('es')">ES</button>
@@ -200,9 +331,12 @@
     <main>
         <div id="loading">
             <div class="spinner"></div>
-            <span id="loading-text">Cargando documentación…</span>
+            <span id="loading-text">Cargando manual…</span>
         </div>
         <div id="content" style="display:none"></div>
+        <div id="no-results" class="search-no-results" style="display:none">
+            No se encontraron resultados. Prueba con otra búsqueda.
+        </div>
     </main>
 </div>
 
@@ -212,8 +346,8 @@
         en: 'MANUAL_EN.md'
     };
     const UI = {
-        es: { title: 'Manual', support: 'Soporte', download: 'Descargar', loading: 'Cargando manual…', error: 'Error cargando el manual.' },
-        en: { title: 'User Guide', support: 'Support', download: 'Download', loading: 'Loading guide…', error: 'Error loading the guide.' }
+        es: { title: 'Manual', support: 'Soporte', download: 'Descargar', loading: 'Cargando manual…', error: 'Error cargando el manual.', search: 'Buscar en el manual…', clear: 'Limpiar', results: (n) => `${n} resultado${n === 1 ? '' : 's'}` },
+        en: { title: 'User Guide', support: 'Support', download: 'Download', loading: 'Loading guide…', error: 'Error loading the guide.', search: 'Search the guide…', clear: 'Clear', results: (n) => `${n} result${n === 1 ? '' : 's'}` }
     };
 
     function slugify(text) {
@@ -236,6 +370,8 @@
         document.getElementById('nav-support').textContent = t.support;
         document.getElementById('nav-download').textContent = t.download;
         document.getElementById('loading-text').textContent = t.loading;
+        document.getElementById('search-input').placeholder = t.search;
+        document.getElementById('search-clear').textContent = t.clear;
         document.getElementById('btn-es').classList.toggle('active', lang === 'es');
         document.getElementById('btn-en').classList.toggle('active', lang === 'en');
     }
@@ -246,6 +382,7 @@
         const loading = document.getElementById('loading');
         content.style.display = 'none';
         loading.style.display = 'flex';
+        clearSearch();
 
         fetch(FILES[lang] + '?v=' + Date.now())
             .then(r => { if (!r.ok) throw new Error(); return r.text(); })
@@ -256,7 +393,7 @@
                 buildToc(content);
                 if (location.hash) {
                     const el = document.getElementById(location.hash.slice(1));
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
                 } else {
                     window.scrollTo(0, 0);
                 }
@@ -280,29 +417,27 @@
             const id = h.id;
             const text = h.textContent;
             if (h.tagName === 'H2') {
-                html += `<a class="toc-h2" href="#${id}">${text}</a>`;
+                html += `<a class="toc-h2" data-target="${id}" href="#${id}">${text}</a>`;
             } else {
-                html += `<a class="toc-h3" href="#${id}">${text}</a>`;
+                html += `<a class="toc-h3" data-target="${id}" href="#${id}">${text}</a>`;
             }
         });
         toc.innerHTML = html;
 
-        // Click suave en sidebar
         toc.querySelectorAll('a').forEach(a => {
             a.addEventListener('click', e => {
                 e.preventDefault();
-                const el = document.getElementById(a.getAttribute('href').slice(1));
+                const el = document.getElementById(a.dataset.target);
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
             });
         });
 
-        // Resaltar sección activa
         const h2links = toc.querySelectorAll('.toc-h2');
         const observer = new IntersectionObserver(entries => {
             entries.forEach(e => {
                 if (e.isIntersecting) {
                     h2links.forEach(l => l.classList.remove('active'));
-                    const link = toc.querySelector(`.toc-h2[href="#${e.target.id}"]`);
+                    const link = toc.querySelector(`.toc-h2[data-target="${e.target.id}"]`);
                     if (link) link.classList.add('active');
                 }
             });
@@ -310,7 +445,172 @@
         content.querySelectorAll('h2').forEach(h => observer.observe(h));
     }
 
-    // Arrancar
+    // ─── Search ───────────────────────────────────────────────────────────────
+    let searchTimer = null;
+
+    function clearSearch() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('search-results-count').textContent = '';
+        document.getElementById('search-clear').style.display = 'none';
+        document.getElementById('no-results').style.display = 'none';
+        const content = document.getElementById('content');
+        if (content) {
+            // Remove highlights
+            content.querySelectorAll('mark').forEach(m => {
+                m.replaceWith(document.createTextNode(m.textContent));
+            });
+            // Show all sections
+            content.querySelectorAll('.search-hidden-section').forEach(el => {
+                el.classList.remove('search-hidden-section');
+            });
+        }
+        // Show all TOC items
+        document.querySelectorAll('.toc-h2, .toc-h3').forEach(a => {
+            a.classList.remove('search-hidden');
+        });
+    }
+
+    function doSearch(query) {
+        const content = document.getElementById('content');
+        if (!content || content.style.display === 'none') return;
+
+        // First clear previous highlights
+        clearSearchHighlights();
+
+        query = query.trim();
+        if (!query) {
+            document.getElementById('search-results-count').textContent = '';
+            document.getElementById('search-clear').style.display = 'none';
+            document.getElementById('no-results').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('search-clear').style.display = 'inline';
+
+        const lowerQuery = query.toLowerCase();
+
+        // Get all h2 sections
+        const h2s = Array.from(content.querySelectorAll('h2'));
+        let matchCount = 0;
+        let anyVisible = false;
+
+        h2s.forEach((h2, idx) => {
+            // Get section nodes: from this h2 to next h2
+            const sectionNodes = [];
+            let node = h2;
+            sectionNodes.push(node);
+            while (node.nextElementSibling && node.nextElementSibling.tagName !== 'H2') {
+                node = node.nextElementSibling;
+                sectionNodes.push(node);
+            }
+
+            // Check if section matches query
+            const sectionText = sectionNodes.map(n => n.textContent).join(' ').toLowerCase();
+            const matches = sectionText.includes(lowerQuery);
+
+            if (matches) {
+                anyVisible = true;
+                // Highlight matches in section nodes
+                sectionNodes.forEach(n => {
+                    highlightNode(n, query);
+                });
+                // Count highlight marks
+                matchCount += sectionNodes.reduce((acc, n) => acc + n.querySelectorAll('mark').length, 0);
+                // Show TOC link
+                const tocLink = document.querySelector(`.toc-h2[data-target="${h2.id}"]`);
+                if (tocLink) tocLink.classList.remove('search-hidden');
+            } else {
+                // Hide section
+                sectionNodes.forEach(n => n.classList.add('search-hidden-section'));
+                // Hide TOC link
+                const tocLink = document.querySelector(`.toc-h2[data-target="${h2.id}"]`);
+                if (tocLink) tocLink.classList.add('search-hidden');
+            }
+        });
+
+        // Handle content before first h2 (h1, blockquote, etc.)
+        const firstH2 = content.querySelector('h2');
+        if (firstH2) {
+            let node = content.firstElementChild;
+            while (node && node !== firstH2) {
+                const next = node.nextElementSibling;
+                const matches = node.textContent.toLowerCase().includes(lowerQuery);
+                if (matches) {
+                    highlightNode(node, query);
+                } else if (!['H1'].includes(node.tagName)) {
+                    node.classList.add('search-hidden-section');
+                }
+                node = next;
+            }
+        }
+
+        const noResults = document.getElementById('no-results');
+        const countEl = document.getElementById('search-results-count');
+        const t = UI[currentLang];
+
+        if (!anyVisible) {
+            noResults.style.display = 'block';
+            countEl.textContent = '';
+        } else {
+            noResults.style.display = 'none';
+            countEl.textContent = t.results(matchCount);
+        }
+    }
+
+    function clearSearchHighlights() {
+        const content = document.getElementById('content');
+        if (!content) return;
+        content.querySelectorAll('mark').forEach(m => {
+            const parent = m.parentNode;
+            m.replaceWith(document.createTextNode(m.textContent));
+            if (parent) parent.normalize();
+        });
+        content.querySelectorAll('.search-hidden-section').forEach(el => {
+            el.classList.remove('search-hidden-section');
+        });
+        document.querySelectorAll('.toc-h2, .toc-h3').forEach(a => {
+            a.classList.remove('search-hidden');
+        });
+    }
+
+    function highlightNode(node, query) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const lower = node.textContent.toLowerCase();
+            const lq = query.toLowerCase();
+            const idx = lower.indexOf(lq);
+            if (idx !== -1) {
+                const before = node.textContent.slice(0, idx);
+                const match = node.textContent.slice(idx, idx + query.length);
+                const after = node.textContent.slice(idx + query.length);
+                const mark = document.createElement('mark');
+                mark.textContent = match;
+                const frag = document.createDocumentFragment();
+                if (before) frag.appendChild(document.createTextNode(before));
+                frag.appendChild(mark);
+                if (after) frag.appendChild(document.createTextNode(after));
+                node.parentNode.replaceChild(frag, node);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE && !['SCRIPT', 'STYLE', 'CODE', 'PRE'].includes(node.tagName)) {
+            Array.from(node.childNodes).forEach(child => highlightNode(child, query));
+        }
+    }
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        const query = e.target.value;
+        if (!query.trim()) {
+            clearSearch();
+            return;
+        }
+        searchTimer = setTimeout(() => doSearch(query), 200);
+    });
+
+    document.getElementById('search-clear').addEventListener('click', () => {
+        clearSearch();
+        document.getElementById('search-input').focus();
+    });
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
     loadDoc(currentLang);
 </script>
 </body>
