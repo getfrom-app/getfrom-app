@@ -1,9 +1,39 @@
 # From — Complete Product Documentation
 
 > Living document. Updated with each development session.
-> Last update: 2026-05-15
+> Last update: 2026-05-18
 
 ## Changelog
+
+### v3.10.0 — 2026-05-18
+
+**Editor**
+- Inline AI now reads the note's content as context. Asking "group these exercises" over a list works without repeating the list.
+- Clicking on the empty area of any line places the cursor at the end (Notion style). Clicking below the last content line creates a new line or focuses an existing empty one.
+
+**UI / navigation**
+- View selector (Bullets/Table/Kanban/Calendar) moved to the top-right action bar (icons only). The note header stays clean.
+- Collapse/expand button for the right column, mirror of the left one.
+- Settings tabs properly indented as children of "Settings" and highlighted in blue only when open.
+- Removed the "Calendar" tree from the sidebar (duplicated dashboard and breadcrumbs).
+- Hover "···" menu button no longer disappears when approaching it.
+
+**Side AI chat removed**
+- The lateral chat panel (⌘J) fully removed (~1800 LOC). All AI interaction is now inline.
+
+**Performance**
+- Markdown regex cached as `static let`. They were being recompiled on every NSTextView render.
+- `loadAllNodes()` moved to a `userInitiated`-priority Task; the main actor is free to mount UI while SQLite loads.
+- Removed the global 1 s timer; it now lives only inside the bottom status bar at 5 s cadence.
+- Startup phased: critical paths at `userInitiated`, non-critical at `utility`/`background` with 3–6 s delays.
+- Light keystroke save path with 200 ms debounce (no `nodesVersion` bump).
+- Skip hashtag coloring when text has no `#` or `@`.
+
+**Audio / recording**
+- Transcription engine errors (mic permission, language, audio engine) are no longer swallowed: surfaced live while recording.
+
+**Critical data-loss fix**
+- `getOrCreateDailyNote` now waits for memory to be loaded before creating with the canonical ID. Without this guard, an `INSERT OR REPLACE` on the canonical ID would (via `ON DELETE CASCADE`) wipe all existing diary content. Double safeguard: if memory doesn't have the diary, SQLite is consulted before inserting.
 
 ## Current state — May 2026
 

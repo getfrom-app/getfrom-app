@@ -1,9 +1,39 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-15
+> Última actualización: 2026-05-18
 
 ## Changelog
+
+### v3.10.0 — 2026-05-18
+
+**Editor**
+- IA inline lee el contenido de la nota como contexto. Pedir "agrupa estos ejercicios" sobre una lista funciona sin tener que repetir la lista.
+- Click en cualquier zona vacía de una línea coloca el cursor al final del texto (estilo Notion). Click bajo la última línea con contenido crea una nueva línea o enfoca la línea vacía existente.
+
+**UI / navegación**
+- Selector de vista (Bullets/Tabla/Kanban/Calendario) movido a la barra de acciones superior derecha (iconos sin texto). La cabecera de la nota queda limpia.
+- Botón de colapso/expansión de la columna derecha, espejo del izquierdo.
+- Pestañas de Ajustes correctamente indentadas como hijas de "Ajustes" y resaltadas en azul solo si están abiertas.
+- Eliminado el árbol "Calendario" del sidebar (duplicaba el dashboard y los breadcrumbs).
+- Botones "···" del hover ya no se ocultan al acercar el ratón.
+
+**Chat IA lateral retirado**
+- El panel chat lateral (⌘J) eliminado por completo (~1800 líneas). Toda la interacción con IA es ahora inline.
+
+**Rendimiento**
+- Regex de markdown cacheadas como `static let`. Antes se recompilaban en cada render del NSTextView.
+- `loadAllNodes()` movido a Task de prioridad `userInitiated`; el main actor queda libre para montar UI mientras SQLite carga.
+- Timer global de 1 s eliminado; queda solo dentro de la barra de estado inferior con cadencia 5 s.
+- Arranque por fases: críticas en `userInitiated`, no críticas en `utility`/`background` con delays de 3–6 s.
+- Ruta ligera de guardado por keystroke con debounce 200 ms (no bumpea `nodesVersion`).
+- Skip de coloreado de hashtags cuando el texto no contiene `#` o `@`.
+
+**Audio / grabación**
+- Errores del motor de transcripción (mic sin permiso, idioma, audio engine) ya no se silencian: se muestran en directo durante la grabación.
+
+**Crítico — fix de pérdida de datos**
+- `getOrCreateDailyNote` ahora espera a que la memoria esté cargada antes de crear con ID canónico. Sin esta protección, un `INSERT OR REPLACE` sobre el ID canónico borraba (vía `ON DELETE CASCADE`) todo el contenido del diario existente. Doble salvaguarda: si la memoria no tiene el diario, se consulta SQLite antes de insertar.
 
 ## Estado actual — Mayo 2026
 
