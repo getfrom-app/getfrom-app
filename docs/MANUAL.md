@@ -30,78 +30,147 @@ Al abrir From por primera vez, aterrizas en el **diario del día actual**. Es tu
 
 ---
 
-## 3. Notas y nodos
+## 3. El editor de bloques
 
-En From, todo es un **nodo**: una línea de texto con título, cuerpo (markdown libre) e hijos. No hay distinción entre nota y tarea: un nodo puede ser las dos cosas al mismo tiempo.
+En From, cada nota se compone de **bloques**. Cada bloque es un nodo independiente con su propio tipo (párrafo, heading, tarea, página hija, divisor, cita, código…). El editor funciona como Notion: escribes y los bloques se crean sobre la marcha.
 
-**Crear un nodo:**
-- Pulsa `Enter` en cualquier bullet para crear uno nuevo al mismo nivel.
-- Pulsa `Tab` para hacer ese nodo hijo del anterior.
-- Pulsa `Backspace` al inicio de un bullet vacío para subir un nivel.
+**Crear bloques:**
+- `Enter` al final de un bloque → nuevo bloque debajo del mismo tipo (excepto headings, que pasan a texto normal)
+- `/` abre el menú de comandos para insertar cualquier tipo de bloque
+- Clic en cualquier zona vacía debajo del contenido → cursor en un nuevo bloque
 
-**Abrir el detalle de un nodo:**
-- Haz clic en el título del bullet para abrirlo en el panel derecho.
-- Ahí puedes editar el body en markdown, ver las propiedades (estado, fecha, prioridad, tipos) y gestionar los hijos.
+**Indentación:**
+- `Tab` → indenta el bloque (hasta 6 niveles)
+- `Shift+Tab` → desindenta
+- `Backspace` al inicio de bloque indentado → primero desindenta, luego fusiona con el anterior
 
-**Organizar con jerarquía:**
-- Anida nodos sin límite de profundidad. Por ejemplo: `Proyecto X → Fase 1 → Tarea pendiente`.
-- Haz clic en el punto (●) del bullet para hacer zoom y ver solo ese nodo como raíz.
-- Arrastra bullets para reorganizarlos dentro del árbol.
+**Atajos markdown (al inicio del bloque):**
+| Escribes | Se convierte en |
+|---|---|
+| `# ` | Título 1 |
+| `## ` | Título 2 |
+| `### ` | Título 3 |
+| `> ` | Cita |
+| `[] ` | Tarea |
+| `---` | Divisor |
 
-**Nodo de diario:**
-- Los nodos marcados como entrada de diario (`isDiaryEntry`) forman la jerarquía temporal.
-- From los crea automáticamente al iniciar: no tienes que hacerlo tú.
+**Atajos de tipos sistema (al inicio del bloque):**
+| Escribes | Se convierte en |
+|---|---|
+| `-t ` | Tarea |
+| `-e ` | Evento |
+| `-b ` | Bucle (open loop) |
+| `-a ` | Agente IA |
+| `-p ` | Prompt |
+
+**Mover y duplicar bloques:**
+- `Cmd+D` → duplicar el bloque actual
+- `Cmd+Shift+↑/↓` → mover bloque arriba/abajo
+- Arrastrar el handle `···` (visible al pasar el ratón) para reordenar
+
+**Páginas hijas (notas anidadas):**
+- `/Nueva página` crea una nota hija dentro del bloque
+- Aparece con un punto azul (●) → marca de identidad de From
+- Clic en el punto navega a esa nota hija
+- Las páginas pueden anidarse sin límite
+
+**Formato inline:**
+- `Cmd+B` → **negrita**, `Cmd+I` → _cursiva_, `Cmd+E` → `código`
+- También puedes escribir `**bold**`, `*italic*`, `` `code` `` directamente
+
+**Tipos de bloque disponibles (vía `/`):**
+
+| Grupo | Bloques |
+|---|---|
+| **Texto** | Texto, Título 1/2/3, Lista numerada, Cita, Destacado (emoji editable), Código, Divisor, Desplegable, Imagen, Tabla de contenidos |
+| **Página** | Nueva página, Enlace, Archivo, Mover a… |
+| **Base de datos** | Lista, Tabla, Kanban, Calendario |
+| **Objetos** | Tarea, Evento, Bucle, Agente, Prompt |
+
+**Bloques especiales:**
+- **Desplegable (Toggle):** clic en la flecha para plegar/desplegar bloques hijos (los que estén indentados debajo)
+- **Destacado (Callout):** clic en el emoji para cambiarlo (16 emojis comunes + acceso al selector completo del sistema)
+- **Imagen:** clic para elegir archivo o arrastra una imagen sobre el bloque vacío
+- **Divisor:** línea horizontal limpia, escríbelo con `---`
 
 ---
 
-## 4. Atajos de teclado esenciales
+## 4. Selección y eliminación
+
+**Selección múltiple con arrastre (rubber-band):**
+- Arrastra el ratón desde cualquier zona vacía sobre los bloques
+- Aparece un rectángulo azul translúcido
+- Los bloques que intersectan se marcan en azul
+- `Backspace` los elimina todos de golpe
+- `Escape` o clic en cualquier sitio limpia la selección
+
+**Cmd+A (estilo Notion):**
+- Primer Cmd+A → selecciona todo el texto del bloque actual
+- Segundo Cmd+A → selecciona todos los bloques del documento
+
+---
+
+## 5. Atajos de teclado esenciales
 
 | Atajo | Acción |
 |---|---|
-| `⌘K` | Búsqueda rápida global (nodos, archivos, agentes) |
-| `⌘T` | Marcar/desmarcar bullet como tarea |
-| `⌘E` | Abrir/cerrar panel de propiedades del nodo |
-| `⌘N` | Nuevo nodo en el nivel actual |
-| `⌘F` | Búsqueda inline en el árbol actual |
-| `Tab` | Indentar (hacer hijo del nodo anterior) |
-| `Shift+Tab` | Des-indentar (subir un nivel) |
-| `Enter` | Crear nuevo bullet al mismo nivel |
-| `/` | Abrir menú de comandos en el bullet actual |
-| `@` | Abrir picker de menciones para enlazar otra nota |
-
-Los atajos son configurables en **Ajustes → Atajos de teclado**.
-
----
-
-## 5. Tags (#objetos)
-
-Los **supertags** permiten etiquetar cualquier nodo con un tipo semántico. Escribe `#` en cualquier posición del texto para abrir el selector de tipos.
-
-**Tipos predefinidos:**
-
-| Tag | Uso |
-|---|---|
-| `#tarea` | Elemento de acción con estado y fecha |
-| `#proyecto` | Contenedor de tareas y recursos |
-| `#evento` | Cita o compromiso con hora |
-| `#agente` | Automatización de IA con schedule |
-| `#prompt` | Instrucción reutilizable para el chat |
-
-**Tipos propios:**
-- Escribe `#cliente`, `#reunión`, `#idea` o cualquier palabra: From crea el tipo al instante.
-- Cada tipo recibe un color automático. Puedes cambiarlo haciendo clic derecho en el chip del árbol.
-- Los tags son visibles en el bullet, en el título del panel y en el árbol lateral.
-
-**Borrar un tag:** `Backspace` sobre el chip lo elimina como unidad completa.
+| `⌘N` | Nueva nota en el diario de hoy |
+| `⌘K` | Búsqueda rápida global |
+| `⌘F` | Filtro global por tags/áreas |
+| `⌘T` | Marcar/desmarcar tarea |
+| `⌘E` | Panel derecho IA |
+| `/` | Menú de comandos slash |
+| `@` | Mención a otra nota |
+| `#` | Tag (autocompleta tags existentes) |
+| Espacio en bloque vacío | Abre chat IA en columna derecha |
+| `Tab` / `Shift+Tab` | Indentar / desindentar bloque |
+| `Cmd+D` | Duplicar bloque |
+| `Cmd+Shift+↑/↓` | Mover bloque arriba/abajo |
+| `Cmd+B / I / E` | Negrita / cursiva / código inline |
+| `Cmd+K` (con selección) | Convertir selección en enlace |
+| `Cmd+Z / Cmd+Shift+Z` | Deshacer / rehacer cambios estructurales del documento |
+| `Cmd+F` | Filtro global — resalta coincidencias en amarillo en la nota actual |
 
 ---
 
-## 6. @Menciones
+## 6. Tags (`#`)
 
-Escribe `@` en cualquier posición de un bullet para abrir el **picker de menciones**. Busca por nombre y selecciona la nota que quieras enlazar. El nodo queda referenciado: aparece un chip con el nombre de la nota destino y puedes navegar a ella con un clic.
+Los tags en From son **100% libres**. No hay tags predefinidos del sistema — el usuario crea los suyos vía `#` desde cualquier bloque.
 
-- Las menciones son bidireccionales: la nota destino muestra en su panel de propiedades qué nodos la referencian.
-- Útil para vincular tareas a proyectos, enlazar ideas relacionadas o crear un grafo de conocimiento dentro del árbol.
+**Crear y usar tags:**
+- Escribe `#` y empieza a teclear → autocomplete con tags existentes
+- Si el tag no existe, aparece "+ Crear «nombre»" para crearlo al instante
+- Cada tag recibe un color automático (cambiable haciendo clic derecho en el sidebar)
+- El tag aparece como pill colorido en el texto y como entrada en el sidebar izquierdo
+
+**Tags jerárquicos:**
+- Escribe `#personal/amigos` → crea `amigos` como hijo de `personal`
+- Buscar por `#personal` incluye todas las notas con cualquier hijo (`#personal/amigos`, `#personal/familia`, etc.)
+- Buscar por `#personal/amigos` filtra solo ese hijo específico
+
+**Eliminar un tag:**
+- Clic derecho en el tag del sidebar → "Eliminar tag"
+- Se elimina de `node.types`, del texto inline (`#tagname`) y del nodo de definición
+- Todas las notas que lo contenían se actualizan automáticamente
+
+**Tipos sistema vs tags:**
+Las tareas, eventos, agentes, prompts y bucles **no son tags**. Son tipos sistema detectados por `node.status` y `extraData["elementMode"]`. Por eso conviertes un bloque a tarea con `/Tarea` o `-t `, no con `#tarea`. Los tags quedan exclusivamente para tu organización conceptual.
+
+---
+
+## 7. @Menciones inline
+
+Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título y selecciona la nota a enlazar.
+
+**Cómo se ven:**
+- En el texto: el título de la nota con un subrayado fino gris (estilo Notion)
+- Mismo tamaño y tipo de letra que el texto normal
+- Al pasar el ratón aparece el cursor de "mano"
+- Clic → navega a esa nota
+
+**Bidireccionalidad:**
+- El nodo destino sabe qué bloques lo mencionan (panel derecho del nodo destino)
+- Útil para crear un grafo de conocimiento dentro de From
 
 ---
 
@@ -146,30 +215,53 @@ Escribe `@` en cualquier posición de un bullet para abrir el **picker de mencio
 
 ---
 
-## 9. Vistas
+## 9. Bases de datos (vistas inline)
 
-From ofrece cinco modos de visualización para los nodos de cualquier nivel. Cambia de vista desde los botones en la barra superior.
+Cualquier bloque puede convertirse en una **base de datos inline** que muestra sus nodos hijos en cuatro modos de visualización:
 
 | Vista | Cuándo usarla |
 |---|---|
-| **Lista** | Navegación general del árbol, escritura, jerarquía |
-| **Kanban** | Gestión de proyectos con estados (pendiente, en curso, hecho) |
-| **Tabla** | Comparar propiedades de varios nodos a la vez |
-| **Galería** | Revisar contenido visual o tarjetas de recursos |
-| **Canvas** | Organización visual libre sobre lienzo infinito |
+| **Lista** | Vista de árbol con hijos editables inline |
+| **Tabla** | Filas con columnas tipadas (date, select, number, boolean, url, etc.) |
+| **Kanban** | Tablero por estado, prioridad o propiedad select del esquema |
+| **Calendario** | Distribución temporal por fecha (`due` o propiedad date custom) |
 
-- La vista **Kanban** agrupa los nodos hijos por su campo `estado`. Arrastra tarjetas entre columnas para cambiar el estado.
-- La vista **Tabla** muestra campos como fecha, prioridad y tipos en columnas editables.
-- La última vista seleccionada se recuerda por nodo.
+**Crear una base de datos:**
+1. En cualquier bloque, abre el slash y elige **Lista**, **Tabla**, **Kanban** o **Calendario**
+2. El bloque se convierte en contenedor; los hijos son las "filas"
+3. Cambia entre vistas con el selector del header (arriba a la derecha)
 
-### Canvas
+**Propiedades tipadas en tabla:**
+- Botón `+` en el header de la tabla → nuevo campo con tipo (texto, número, fecha, select, boolean, URL, email, teléfono)
+- Cada celda renderiza el editor correspondiente (date picker, select dropdown, checkbox, etc.)
+- Las propiedades quedan disponibles para cualquier nodo hijo
 
-El **Canvas** es un lienzo infinito donde puedes colocar notas, tareas y textos libremente y conectarlos con líneas. Es la vista adecuada cuando el árbol lineal no refleja bien las relaciones entre ideas.
+**Vistas guardadas (tabs):**
+- Botón `🔖` en el header → guarda la vista actual con nombre
+- Cada vista guardada aparece como tab debajo del header
+- Pueden coexistir varias vistas del mismo nodo (tabla, kanban por prioridad, calendario, etc.)
+- Renombrar/eliminar desde el menú contextual del tab
 
-- **Añadir elementos:** arrastra cualquier nodo existente al canvas, o crea uno nuevo directamente sobre el lienzo haciendo doble clic.
-- **Conectar elementos:** arrastra desde el borde de un nodo al borde de otro para crear una línea de conexión.
-- **Navegar:** usa el scroll o el trackpad para hacer pan y zoom sobre el lienzo.
-- Los cambios en el canvas se reflejan en el árbol y viceversa: los nodos son los mismos, solo cambia la presentación visual.
+**Kanban por propiedad:**
+- El menú "Agrupar por" del kanban incluye las propiedades de tipo select del esquema
+- Cada valor único de la propiedad se convierte en una columna del tablero
+- Arrastrar tarjetas entre columnas actualiza el valor de la propiedad
+
+**Filtros y orden (ViewConfig):**
+- Botón `⚙` → filtros por estado, prioridad, área, tipo o texto
+- Ordenar por: manual, fecha vencimiento, prioridad, alfabético, fecha creación/modificación
+- Agrupar por estado, prioridad o fecha
+
+**Navegación a la fila:**
+- Hover en una fila → aparece el `●` (dot de From) a la izquierda
+- Clic en el dot → zoom dentro de la fila (la fila pasa a ser página completa con sus propios bloques)
+- La fila puede tener su propio editor de bloques (cada fila ES una página)
+
+---
+
+## 9.1 Tabla de contenidos (TOC)
+
+`/Tabla de contenidos` inserta un bloque que genera automáticamente el índice de headings H1/H2/H3 del documento. Útil para notas largas. Clic en cada entrada navega/focaliza ese heading.
 
 ---
 
@@ -253,19 +345,27 @@ From incluye una **barra de grabación persistente** en la parte inferior de la 
 
 ## 13. IA integrada
 
-**Activar el chat:**
-- Abre cualquier nodo y ve a la pestaña **Chat** en el panel derecho.
-- El asistente tiene contexto completo del nodo: título, body e hijos.
+**Cómo abrir el chat (3 formas):**
+1. **Espacio al inicio de un bloque vacío** → abre el chat en la columna derecha y traslada el foco a la caja del chat (atajo Notion-style)
+2. **`⌘E`** → abre/cierra el panel derecho con el chat
+3. **Pestaña Chat** en la columna derecha cuando está visible
 
-**Cómo usarlo:**
+**Cuándo aparece la columna derecha:**
+- Siempre en notas temporales (día, semana, mes, año) — muestra `DayReferencePanel` con tareas del día, vencidas, etc.
+- En notas con tipo sistema: tarea, evento, bucle, agente, prompt
+- En nodos zoomeados o configuración (settings)
+- En notas regulares: oculta por defecto. Aparece al pulsar `⌘E` o teclear espacio al inicio de un bloque
+
+**Cómo usar el chat:**
 - Pregunta o da instrucciones en lenguaje natural. Ejemplos:
   - "Resume los puntos pendientes de este proyecto."
   - "Crea 5 subtareas para esta fase."
   - "Redacta un email con el contenido de esta nota."
-- El asistente puede leer y escribir en el nodo directamente.
+- El asistente tiene contexto completo del nodo: título, body, hijos y propiedades
+- Puede leer y escribir en el nodo directamente
 
 **Añadir resultados a la nota:**
-- Las respuestas del chat incluyen botones de acción para insertar el contenido generado en el body del nodo con un clic.
+- Las respuestas del chat incluyen botones de acción para insertar el contenido generado como bloques nuevos con un clic.
 
 **Historial:**
 - El historial del chat es específico por nota. Al cambiar de nodo, el chat se reinicia.
