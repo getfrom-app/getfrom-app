@@ -230,7 +230,9 @@ Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título
 **Organizar el día con drag & drop:**
 - Pulsa el icono `clock` en la columna derecha → abre panel dividido (tareas izquierda + timeline derecha)
 - Arrastra cualquier tarea desde la columna izquierda al slot horario deseado
-- El `due` de la tarea se actualiza con esa hora (snap a 15 min)
+- El timeline muestra slots de **15 minutos** — cada uno se resalta al pasar por encima con el label `HH:MM` exacto
+- El `due` de la tarea se actualiza con esa hora al soltar
+- Las tareas ya colocadas en el timeline se mueven con snap visual a 15 min: el bloque muestra su posición final antes de soltar
 - Pulsa `clock` de nuevo para volver al panel único de tareas
 
 ---

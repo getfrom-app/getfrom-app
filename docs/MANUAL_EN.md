@@ -154,7 +154,9 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 **Organize your day with drag & drop:**
 - Tap the `clock` icon in the right column → opens a split panel (tasks left + timeline right)
 - Drag any task to the desired time slot
-- The task's `due` is updated with that time (snapped to 15 min)
+- The timeline shows **15-minute slots** — each highlights as you hover with the exact `HH:MM` label
+- The task's `due` is updated with that time when you drop
+- Tasks already on the timeline snap to 15-min intervals during drag — the block shows its final position before you release
 - Tap `clock` again to collapse back to the single tasks panel
 
 ---
