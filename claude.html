@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From para Claude — Extensión MCP</title>
+    <meta name="description" content="Conecta Claude con tu vault de From. Crea notas, añade tareas y busca tu información directamente desde el chat. Instala la extensión en un click.">
+    <meta property="og:title" content="From para Claude — Extensión MCP">
+    <meta property="og:description" content="Crea notas, añade tareas y busca tu vault de From directamente desde Claude. Instalación en un click.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://getfrom.app/claude">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .claude-hero {
+            padding: 100px 24px 60px;
+            max-width: 860px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .claude-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #8b5cf6;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 28px;
+        }
+        .claude-hero h1 {
+            font-size: clamp(36px, 6vw, 58px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 20px;
+        }
+        .claude-hero h1 span { color: var(--accent); }
+        .claude-hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 36px;
+        }
+        .hero-actions-center {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-purple {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #8b5cf6;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-purple:hover { background: #7c3aed; transform: translateY(-1px); }
+
+        /* Demo visual */
+        .demo-window {
+            max-width: 780px;
+            margin: 60px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.12);
+        }
+        .demo-titlebar {
+            background: #f5f5f7;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        @media (prefers-color-scheme: dark) {
+            .demo-titlebar { background: #2a2a2e; }
+        }
+        .demo-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .demo-dot.red { background: #ff5f57; }
+        .demo-dot.yellow { background: #ffbd2e; }
+        .demo-dot.green { background: #28c840; }
+        .demo-titlebar-label {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .demo-content {
+            padding: 24px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .demo-msg { margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start; }
+        .demo-msg.user { flex-direction: row-reverse; }
+        .demo-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0;
+        }
+        .demo-avatar.claude { background: #d97706; color: white; font-weight: 700; font-size: 11px; }
+        .demo-avatar.user { background: var(--accent); color: white; font-weight: 700; font-size: 11px; }
+        .demo-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            line-height: 1.6;
+        }
+        .demo-msg.user .demo-bubble {
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .demo-msg.claude .demo-bubble {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+        .demo-tool-call {
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #8b5cf6;
+            font-family: monospace;
+        }
+
+        /* Pasos */
+        .steps-section {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+        .steps-section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 48px;
+            letter-spacing: -0.02em;
+        }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+        }
+        .step-number {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+        .step-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .step-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .step-card code {
+            background: rgba(0,0,0,0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        @media (prefers-color-scheme: dark) {
+            .step-card code { background: rgba(255,255,255,0.08); }
+        }
+
+        /* Tools */
+        .tools-section {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 80px 24px;
+        }
+        .tools-inner {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .tools-inner h2 {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .tools-inner > p {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 48px;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .tool-item {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--card-bg);
+        }
+        .tool-name {
+            font-family: monospace;
+            font-size: 12px;
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.08);
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .tool-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .tool-item p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+        /* Ejemplos */
+        .examples-section {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 80px 24px;
+        }
+        .examples-section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 48px;
+            letter-spacing: -0.02em;
+        }
+        .example-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .example-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .example-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: rgba(139, 92, 246, 0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .example-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+        .example-text strong { color: var(--text); }
+
+        /* Requisitos */
+        .req-section {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+            text-align: center;
+        }
+        .req-section h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
+        .req-section p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+        .req-section a { color: var(--accent); }
+    </style>
+</head>
+<body data-page="claude">
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/">Inicio</a>
+            <a href="pricing.html">Precios</a>
+            <a href="docs/index.html">Manual</a>
+            <a href="support.html">Soporte</a>
+            <a href="#download" class="btn-nav">Descargar From</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="claude-hero">
+    <div class="claude-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Extensión MCP · Claude Desktop + Claude Code
+    </div>
+    <h1>From en Claude.<br><span>Tu vault, desde el chat.</span></h1>
+    <p>Crea notas, añade tareas y busca en tu vault de From directamente desde Claude. Sin copiar, sin pegar. Un click para instalar.</p>
+    <div class="hero-actions-center">
+        <a href="From.dxt" class="btn-purple" download>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar extensión — From.dxt
+        </a>
+        <a href="/" class="btn-secondary">Descargar From</a>
+    </div>
+    <p style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">Requiere From + Claude Desktop o Claude Code · Gratis</p>
+</div>
+
+<!-- Demo visual -->
+<div style="padding: 0 24px;">
+<div class="demo-window">
+    <div class="demo-titlebar">
+        <div class="demo-dot red"></div>
+        <div class="demo-dot yellow"></div>
+        <div class="demo-dot green"></div>
+        <div class="demo-titlebar-label">Claude</div>
+    </div>
+    <div class="demo-content">
+        <div class="demo-msg user">
+            <div class="demo-avatar user">TÚ</div>
+            <div class="demo-bubble">Añade una tarea para llamar a Adrián mañana a las 10h y guarda un resumen de esta conversación en From.</div>
+        </div>
+        <div class="demo-msg claude">
+            <div class="demo-avatar claude">C</div>
+            <div class="demo-bubble">
+                <div class="demo-tool-call">▶ from_create_node · text="Llamar a Adrián" · isTask=true · due="2026-05-20T10:00:00Z"</div>
+                <div class="demo-tool-call">▶ from_create_node · text="Resumen conversación" · body="..."</div>
+                Hecho. He añadido la tarea <strong>Llamar a Adrián</strong> para mañana a las 10:00h y he guardado el resumen de nuestra conversación en From. Puedes verlos en tu vault la próxima vez que sincronices.
+            </div>
+        </div>
+        <div class="demo-msg user">
+            <div class="demo-avatar user">TÚ</div>
+            <div class="demo-bubble">¿Qué tareas tengo pendientes?</div>
+        </div>
+        <div class="demo-msg claude">
+            <div class="demo-avatar claude">C</div>
+            <div class="demo-bubble">
+                <div class="demo-tool-call">▶ from_list_nodes · isTask=true · status="pending"</div>
+                Tienes <strong>3 tareas pendientes</strong> en From:<br><br>
+                • Llamar a Adrián — mañana 10:00h<br>
+                • Reparación coche — sin fecha<br>
+                • Ir a la comisaría — mañana
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Pasos de instalación -->
+<div class="steps-section" style="padding-top: 80px;">
+    <h2>Instalar en 3 pasos</h2>
+    <div class="steps-grid">
+        <div class="step-card">
+            <div class="step-number">1</div>
+            <h3>Descarga From.dxt</h3>
+            <p>Descarga el archivo <code>.dxt</code> y haz doble click. Claude Desktop lo reconoce automáticamente y te guía por la instalación.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-number">2</div>
+            <h3>Genera tu token</h3>
+            <p>En la app de From, ve a <strong>Ajustes → Cuenta → Integraciones</strong> y pulsa "Generar token de API". Cópialo y pégalo cuando Claude te lo pida.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-number">3</div>
+            <h3>Sincroniza From</h3>
+            <p>Abre From en Mac o iPhone y asegúrate de que está sincronizado. Así Claude puede ver tus workspaces y crear nodos en el lugar correcto.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Tools -->
+<div class="tools-section">
+    <div class="tools-inner">
+        <h2>Lo que Claude puede hacer con From</h2>
+        <p>Cinco herramientas que Claude usa automáticamente según lo que le pidas.</p>
+        <div class="tools-grid">
+            <div class="tool-item">
+                <div class="tool-name">from_create_node</div>
+                <h4>Crear nota o tarea</h4>
+                <p>Crea notas con contenido en markdown o tareas con fecha de vencimiento, directamente en tu workspace.</p>
+            </div>
+            <div class="tool-item">
+                <div class="tool-name">from_search</div>
+                <h4>Buscar en tu vault</h4>
+                <p>Encuentra notas y tareas por texto. Útil para que Claude use tu información como contexto antes de responder.</p>
+            </div>
+            <div class="tool-item">
+                <div class="tool-name">from_list_nodes</div>
+                <h4>Listar tareas y notas</h4>
+                <p>Consulta tus tareas pendientes, notas recientes o filtra por workspace. "¿Qué tengo pendiente hoy?"</p>
+            </div>
+            <div class="tool-item">
+                <div class="tool-name">from_update_node</div>
+                <h4>Editar contenido</h4>
+                <p>Modifica el texto, cuerpo o estado de cualquier nodo existente. Marca tareas como hechas desde el chat.</p>
+            </div>
+            <div class="tool-item">
+                <div class="tool-name">from_list_workspaces</div>
+                <h4>Ver workspaces</h4>
+                <p>Lista tus workspaces disponibles para que Claude sepa dónde guardar si tienes más de uno.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ejemplos -->
+<div class="examples-section">
+    <h2>Ejemplos de lo que puedes pedir</h2>
+    <div class="example-list">
+        <div class="example-item">
+            <div class="example-icon">📝</div>
+            <div class="example-text"><strong>"Guarda un resumen de esta conversación en From"</strong> — Claude crea una nota con el contenido estructurado en markdown.</div>
+        </div>
+        <div class="example-item">
+            <div class="example-icon">✅</div>
+            <div class="example-text"><strong>"Añade una tarea para revisar el contrato el lunes"</strong> — Claude crea la tarea con fecha automáticamente.</div>
+        </div>
+        <div class="example-item">
+            <div class="example-icon">🔍</div>
+            <div class="example-text"><strong>"¿Tengo algo apuntado sobre el proyecto X?"</strong> — Claude busca en tu vault y responde con contexto real.</div>
+        </div>
+        <div class="example-item">
+            <div class="example-icon">📋</div>
+            <div class="example-text"><strong>"¿Qué tareas tengo pendientes esta semana?"</strong> — Claude lista tus tareas con fecha directamente desde From.</div>
+        </div>
+        <div class="example-item">
+            <div class="example-icon">✓</div>
+            <div class="example-text"><strong>"Marca como hecha la tarea de llamar a Adrián"</strong> — Claude la actualiza en tu vault sin que abras la app.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Requisitos -->
+<div class="req-section">
+    <h2>Requisitos</h2>
+    <p>
+        Necesitas <a href="/">From para Mac</a> con una cuenta activa y sincronización habilitada.<br>
+        Compatible con <strong>Claude Desktop</strong> (la app de escritorio de Claude) y <strong>Claude Code</strong>.<br><br>
+        El token de API se genera desde la app de From y no caduca hasta un año.<br>
+        Todos los datos se guardan en tu vault de From, en tu servidor personal.
+    </p>
+</div>
+
+<!-- CTA -->
+<section class="cta" id="download" style="text-align:center; padding: 80px 24px;">
+    <h2>Empieza ahora</h2>
+    <p>Descarga la extensión e instálala en Claude en menos de 2 minutos.</p>
+    <div class="hero-actions-center" style="margin-top: 28px;">
+        <a href="From.dxt" class="btn-purple" download>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar From.dxt
+        </a>
+        <a href="/" class="btn-secondary">Descargar From — macOS</a>
+    </div>
+    <p style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">Gratis · Sin configuración manual · 1.7 KB</p>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>La app de notas que Mac estaba esperando.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Producto</h4>
+            <a href="/#features">Funciones</a>
+            <a href="pricing.html">Precios</a>
+            <a href="#download">Descargar</a>
+            <a href="claude.html">Extensión Claude</a>
+        </div>
+        <div class="footer-col">
+            <h4>Soporte</h4>
+            <a href="docs/index.html">Manual</a>
+            <a href="support.html">Centro de ayuda</a>
+            <a href="mailto:hola@getfrom.app">Contacto</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacidad</a>
+            <a href="terms.html">Términos</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hello@getfrom.app">hello@getfrom.app</a>
+    </div>
+</footer>
+
+</body>
+</html>
