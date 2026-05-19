@@ -1,6 +1,6 @@
 # From — User Manual
 
-> Version 3.7 · macOS 14+ · iOS 17+
+> Version 3.8 · macOS 14+ · iOS 17+
 
 ---
 
@@ -131,8 +131,14 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 ## 8. Events and calendar
 
 **Create an event:**
-- Create a node and tag it with `#event`, or use the "New event" button in the right panel when inside a diary node.
-- Assign start and end time from the properties panel.
+- In any block, type `-e ` or use the slash command `/event`
+- The new event modal opens with the block's title pre-filled
+- Set start and end time → the event is created in Apple Calendar and the node shows a 📅 icon + date/time badge
+- Global shortcut: `⌘E` opens the new event modal from anywhere
+
+**Date badge:**
+- Task and event nodes show their date/time as a badge to the right of the text (and title if the node is open)
+- The badge turns orange when the date is past due
 
 **Apple Calendar sync:**
 - From automatically imports events from your Apple calendars.
@@ -142,7 +148,14 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 **24h timeline:**
 - Visible in the right column when a diary node is open.
 - Shows hour-by-hour blocks with the day's events.
-- Day-planner style: see what's booked at a glance.
+- Overlapping events share the width (like Apple Calendar).
+- Height scales automatically to fill the panel.
+
+**Organize your day with drag & drop:**
+- Tap the `clock` icon in the right column → opens a split panel (tasks left + timeline right)
+- Drag any task to the desired time slot
+- The task's `due` is updated with that time (snapped to 15 min)
+- Tap `clock` again to collapse back to the single tasks panel
 
 ---
 
@@ -231,18 +244,23 @@ From offers several ways to capture information without interrupting your flow.
 
 ## 12. Voice recording
 
-From includes a **persistent recording bar** at the bottom of the app. It captures audio and converts it into structured bullets using AI.
+From includes a **persistent recording bar** at the bottom of the left column. It captures audio and converts it into structured bullets using AI.
 
 **How to record:**
-1. Click the microphone icon in the bottom bar.
-2. Choose the source: **microphone** (your voice) or **system audio** (meetings, podcasts, any sound from the Mac).
-3. Press the record button. The bar shows elapsed time and audio level in real time.
-4. Press **Stop** when you're done.
+1. Select the source: **Microphone**, **System**, or **Mixed** in the bottom bar.
+2. Press **Record** — the left column transforms into the recording panel (slides up with animation).
+3. The top half shows the live transcription; the bottom half has a manual notes field.
+4. Press **Save** (stops and processes with AI) or the chevron `⌄` to minimize without stopping.
+
+**Minimized panel:**
+- Recording and transcription continue in the background.
+- The navigation tree reappears with an active waveform indicator.
+- Press `⌃` to re-expand the full panel at any time.
 
 **Transcription and structuring:**
-- The AI transcribes the audio and automatically structures it into bullets.
-- The bullets are inserted into the active node or today's diary if nothing is selected.
-- You can review and edit the bullets before confirming the insertion.
+- The AI transcribes the audio and structures it into bullets.
+- Manual notes are combined with the transcription on save.
+- Bullets are inserted into today's diary.
 
 **Typical use cases:**
 - Capturing ideas while walking or driving.

@@ -1,6 +1,6 @@
 # From — Manual de usuario
 
-> Versión 3.7 · macOS 14+ · iOS 17+
+> Versión 3.8 · macOS 14+ · iOS 17+
 
 ---
 
@@ -153,6 +153,13 @@ Los tags en From son **100% libres**. No hay tags predefinidos del sistema — e
 - Se elimina de `node.types`, del texto inline (`#tagname`) y del nodo de definición
 - Todas las notas que lo contenían se actualizan automáticamente
 
+**Columna izquierda — navegación:**
+La columna izquierda tiene 4 pestañas de icono:
+- `tag.fill` **Tags** — árbol de todos tus tags. Clic derecho en cualquier tag para Renombrar, Cambiar color o Eliminar.
+- `pin.fill` **Fijados** — notas que hayas fijado (pin). Título completo, sin límite. Para fijar cualquier nota: clic derecho en el nodo → "Fijar", o desde la barra de acciones del título.
+- `square.grid.2x2.fill` **Paneles** — búsquedas guardadas como vistas.
+- `gearshape.fill` **Ajustes** — configuración de la app.
+
 **Tipos sistema vs tags:**
 Las tareas, eventos, agentes, prompts y bucles **no son tags**. Son tipos sistema detectados por `node.status` y `extraData["elementMode"]`. Por eso conviertes un bloque a tarea con `/Tarea` o `-t `, no con `#tarea`. Los tags quedan exclusivamente para tu organización conceptual.
 
@@ -200,8 +207,14 @@ Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título
 ## 8. Eventos y calendario
 
 **Crear un evento:**
-- Crea un nodo y etiquétalo con `#evento`, o usa el botón "Nuevo evento" en el panel derecho al estar en un nodo diario.
-- Asigna hora de inicio y fin desde el panel de propiedades.
+- En cualquier bloque, escribe `-e ` o usa el slash `/evento`
+- Se abre el modal de nuevo evento con el título del bloque pre-relleno
+- Selecciona fecha, hora de inicio y fin → el evento se crea en Apple Calendar y el nodo muestra icono 📅 + badge de fecha/hora a la derecha del texto
+- Atajo global: `⌘E` abre el modal de nuevo evento desde cualquier parte
+
+**Badge de fecha en el editor:**
+- Los nodos tarea y evento muestran su fecha/hora como badge a la derecha del texto (y del título si el nodo está abierto)
+- El badge se vuelve naranja si la fecha está vencida
 
 **Sincronización con Apple Calendar:**
 - From importa automáticamente los eventos de tus calendarios de Apple.
@@ -211,7 +224,14 @@ Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título
 **Timeline 24h:**
 - Visible en la columna derecha al abrir un nodo diario.
 - Muestra bloques hora a hora con los eventos del día.
-- Estilo similar a un planificador de día: ves de un vistazo qué hay ocupado.
+- Eventos solapados se reparten el ancho (igual que Apple Calendar).
+- La altura se ajusta automáticamente para llenar el panel.
+
+**Organizar el día con drag & drop:**
+- Pulsa el icono `clock` en la columna derecha → abre panel dividido (tareas izquierda + timeline derecha)
+- Arrastra cualquier tarea desde la columna izquierda al slot horario deseado
+- El `due` de la tarea se actualiza con esa hora (snap a 15 min)
+- Pulsa `clock` de nuevo para volver al panel único de tareas
 
 ---
 
@@ -323,22 +343,27 @@ From ofrece varias formas de capturar información sin interrumpir el flujo de t
 
 ## 12. Grabación de voz
 
-From incluye una **barra de grabación persistente** en la parte inferior de la app. Permite capturar audio y convertirlo en bullets estructurados mediante IA.
+From incluye una **barra de grabación persistente** en la parte inferior de la columna izquierda. Permite capturar audio y convertirlo en bullets estructurados mediante IA.
 
 **Cómo grabar:**
-1. Haz clic en el icono de micrófono en la barra inferior.
-2. Elige la fuente: **micrófono** (tu voz) o **audio del sistema** (reuniones, podcasts, cualquier sonido del Mac).
-3. Pulsa el botón de grabación. La barra muestra el tiempo y el nivel de audio en tiempo real.
-4. Pulsa **Detener** cuando termines.
+1. Selecciona la fuente: **Micrófono**, **Sistema** o **Mixto** en la barra inferior.
+2. Pulsa **Grabar**. La columna izquierda se transforma en el panel de grabación (se eleva desde abajo con animación).
+3. La mitad superior muestra la transcripción en tiempo real; la mitad inferior tiene un campo de apuntes manuales.
+4. Pulsa **Guardar** (detiene y procesa con IA) o el chevron `⌄` para minimizar sin parar la grabación.
+
+**Panel minimizado:**
+- Mientras está minimizado, la grabación y la transcripción continúan en segundo plano.
+- El árbol de navegación vuelve a aparecer con un indicador de onda y tiempo activo.
+- Pulsa `⌃` para re-expandir el panel completo en cualquier momento.
 
 **Transcripción y estructuración:**
 - La IA transcribe el audio y lo estructura automáticamente en bullets.
-- Los bullets se insertan en el nodo activo o en el diario del día si no hay ninguno seleccionado.
-- Puedes revisar y editar los bullets antes de confirmar la inserción.
+- Los apuntes manuales se combinan con la transcripción al guardar.
+- Los bullets se insertan en el diario del día.
 
 **Casos de uso típicos:**
 - Capturar ideas mientras caminas o conduces.
-- Transcribir reuniones o llamadas.
+- Transcribir reuniones o llamadas (fuente: Sistema o Mixto).
 - Dictar el borrador de una nota larga sin tocar el teclado.
 
 ---
@@ -351,10 +376,25 @@ From incluye una **barra de grabación persistente** en la parte inferior de la 
 3. **Pestaña Chat** en la columna derecha cuando está visible
 
 **Cuándo aparece la columna derecha:**
-- Siempre en notas temporales (día, semana, mes, año) — muestra `DayReferencePanel` con tareas del día, vencidas, etc.
+- Siempre en notas temporales (día, semana, mes, año) — muestra el panel de referencia del día
 - En notas con tipo sistema: tarea, evento, bucle, agente, prompt
 - En nodos zoomeados o configuración (settings)
 - En notas regulares: oculta por defecto. Aparece al pulsar `⌘E` o teclear espacio al inicio de un bloque
+
+**Columna derecha — nota diaria:**
+Dos pestañas de icono:
+- `checklist` **Tareas del día** — bucles abiertos (con sus tareas hijas anidadas), tareas vencidas, tareas de hoy, completadas
+- `clock` **Timeline** — calendario 24h con eventos de Apple Calendar. Pulsar de nuevo colapsa el timeline
+
+**Panel dividido (organización del día):**
+- Pulsa el `clock` → la columna se duplica: tareas a la izquierda, timeline a la derecha
+- Arrastra cualquier tarea al slot horario deseado para bloquear tiempo en el día
+- La nota central se estrecha para dar espacio al panel dividido
+- Pulsa `clock` de nuevo → colapsa de vuelta al panel único
+
+**Notas diarias pasadas/futuras:**
+- Muestran las tareas y eventos de ese día concreto (no del día actual)
+- Los bucles solo aparecen en el día actual; en otros días sus tareas salen sueltas
 
 **Cómo usar el chat:**
 - Pregunta o da instrucciones en lenguaje natural. Ejemplos:
