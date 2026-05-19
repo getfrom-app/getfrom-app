@@ -1,6 +1,6 @@
 # From — User Manual
 
-> Version 3.8 · macOS 14+ · iOS 17+
+> Version 3.11 · macOS 14+ · iOS 17+
 
 ---
 
@@ -94,6 +94,12 @@ Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 
 **Delete a tag:** `Backspace` on the chip removes it as a whole unit.
 
+**Left column — 4 tabs:**
+- `tag.fill` **Tags** — tree of all your tags. Right-click any tag to rename, change color, or delete.
+- `pin.fill` **Pinned** — notes you've pinned. To pin any note: right-click the node → "Pin", or from the title action bar.
+- `square.grid.2x2` **Panels** — saved searches as views.
+- `gearshape` **Settings** — app configuration.
+
 ---
 
 ## 6. @Mentions
@@ -121,6 +127,9 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 
 **Priority:**
 - Three levels: high, medium, low. Set from the properties panel or with `-p:high`.
+
+**Convert to loop:**
+- Right-click any task → "Convert to loop". Loops are open loops always visible in the day panel until resolved.
 
 **Open loops:**
 - In the global dashboard (grid icon), the **Tasks** tab shows all overdue and unresolved tasks grouped by status.
@@ -151,13 +160,18 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 - Overlapping events share the width (like Apple Calendar).
 - Height scales automatically to fill the panel.
 
+**Events in the day panel:**
+- Calendar events appear in the tasks list in the right column with a calendar icon, alongside the day's tasks.
+
 **Organize your day with drag & drop:**
-- Tap the `clock` icon in the right column → opens a split panel (tasks left + timeline right)
-- Drag any task to the desired time slot
+- The right column of a diary note has a 3-view control:
+  - `checklist` — tasks, loops, and overdue items for the day
+  - `rectangle.split.2x1` — split view: tasks on the left + timeline on the right simultaneously (ideal for planning by dragging tasks to time slots)
+  - `clock` — full 24h timeline
+- Switch to the split view (`rectangle.split.2x1`) and drag any task to the desired time slot
 - The timeline shows **15-minute slots** — each highlights as you hover with the exact `HH:MM` label
 - The task's `due` is updated with that time when you drop
 - Tasks already on the timeline snap to 15-min intervals during drag — the block shows its final position before you release
-- Tap `clock` again to collapse back to the single tasks panel
 
 ---
 
@@ -272,6 +286,16 @@ From includes a **persistent recording bar** at the bottom of the left column. I
 ---
 
 ## 13. Integrated AI
+
+**Right column — diary notes:**
+A 3-view control at the top of the right column:
+- `checklist` **Day tasks** — open loops (with nested child tasks), overdue tasks, today's tasks, completed items, and calendar events
+- `rectangle.split.2x1` **Split view** — tasks on the left, timeline on the right simultaneously; ideal for planning the day by dragging tasks to time slots
+- `clock` **Timeline** — full 24h calendar with Apple Calendar events
+
+**Past/future diary notes:**
+- Show tasks and events for that specific day (not today's)
+- Loops only appear on the current day; on other days their tasks appear individually
 
 **Opening the chat:**
 - Open any node and go to the **Chat** tab in the right panel.

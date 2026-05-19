@@ -1,6 +1,6 @@
 # From — Manual de usuario
 
-> Versión 3.8 · macOS 14+ · iOS 17+
+> Versión 3.11 · macOS 14+ · iOS 17+
 
 ---
 
@@ -92,6 +92,9 @@ En From, cada nota se compone de **bloques**. Cada bloque es un nodo independien
 - **Destacado (Callout):** clic en el emoji para cambiarlo (16 emojis comunes + acceso al selector completo del sistema)
 - **Imagen:** clic para elegir archivo o arrastra una imagen sobre el bloque vacío
 - **Divisor:** línea horizontal limpia, escríbelo con `---`
+
+**Decoraciones del editor:**
+- Los checkboxes de tarea tienen estilo cuadrado (Notion-style) y están centrados verticalmente con el texto en cualquier nivel de indentación.
 
 ---
 
@@ -198,6 +201,9 @@ Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título
 **Prioridad:**
 - Tres niveles: alta, media, baja. Se asigna desde el panel de propiedades o con `-p:alta`.
 
+**Convertir en bucle:**
+- Clic derecho en cualquier tarea → "Convertir en bucle". Los bucles son open loops siempre visibles en el panel del día hasta que se resuelven.
+
 **Bucles abiertos:**
 - En el dashboard global (icono de cuadrícula), la pestaña **Tareas** muestra todas las tareas vencidas y sin resolver, agrupadas por estado.
 - Usa `estado:pendiente` en la barra de búsqueda inline para filtrar solo lo que está abierto.
@@ -227,13 +233,18 @@ Escribe `@` en cualquier bloque para abrir el picker de notas. Busca por título
 - Eventos solapados se reparten el ancho (igual que Apple Calendar).
 - La altura se ajusta automáticamente para llenar el panel.
 
+**Eventos en el panel del día:**
+- Los eventos del calendario aparecen en la lista de tareas de la columna derecha con icono de calendario, junto a las tareas del día.
+
 **Organizar el día con drag & drop:**
-- Pulsa el icono `clock` en la columna derecha → abre panel dividido (tareas izquierda + timeline derecha)
-- Arrastra cualquier tarea desde la columna izquierda al slot horario deseado
+- En la columna derecha de una nota diaria hay un control de 3 vistas:
+  - `checklist` — lista de tareas, bucles y vencidas del día
+  - `rectangle.split.2x1` — vista dividida: tareas a la izquierda + timeline a la derecha simultáneos (ideal para planificar arrastrando tareas al timeline)
+  - `clock` — timeline completo 24h
+- Activa la vista dividida (`rectangle.split.2x1`) y arrastra cualquier tarea al slot horario deseado
 - El timeline muestra slots de **15 minutos** — cada uno se resalta al pasar por encima con el label `HH:MM` exacto
 - El `due` de la tarea se actualiza con esa hora al soltar
 - Las tareas ya colocadas en el timeline se mueven con snap visual a 15 min: el bloque muestra su posición final antes de soltar
-- Pulsa `clock` de nuevo para volver al panel único de tareas
 
 ---
 
@@ -384,15 +395,10 @@ From incluye una **barra de grabación persistente** en la parte inferior de la 
 - En notas regulares: oculta por defecto. Aparece al pulsar `⌘E` o teclear espacio al inicio de un bloque
 
 **Columna derecha — nota diaria:**
-Dos pestañas de icono:
-- `checklist` **Tareas del día** — bucles abiertos (con sus tareas hijas anidadas), tareas vencidas, tareas de hoy, completadas
-- `clock` **Timeline** — calendario 24h con eventos de Apple Calendar. Pulsar de nuevo colapsa el timeline
-
-**Panel dividido (organización del día):**
-- Pulsa el `clock` → la columna se duplica: tareas a la izquierda, timeline a la derecha
-- Arrastra cualquier tarea al slot horario deseado para bloquear tiempo en el día
-- La nota central se estrecha para dar espacio al panel dividido
-- Pulsa `clock` de nuevo → colapsa de vuelta al panel único
+Control de 3 vistas con iconos en la parte superior:
+- `checklist` **Tareas del día** — bucles abiertos (con sus tareas hijas anidadas), tareas vencidas, tareas de hoy, completadas y eventos del calendario
+- `rectangle.split.2x1` **Vista dividida** — tareas a la izquierda, timeline a la derecha simultáneos; ideal para planificar el día arrastrando tareas a slots horarios
+- `clock` **Timeline** — calendario 24h completo con eventos de Apple Calendar
 
 **Notas diarias pasadas/futuras:**
 - Muestran las tareas y eventos de ese día concreto (no del día actual)
@@ -561,7 +567,7 @@ El botón **+** expande dos opciones:
 El botón de micrófono crea notas por voz.
 
 ### Sync con Mac
-From sincroniza automáticamente entre Mac e iPhone. Los cambios aparecen en segundos. El diario, tareas, bucles y favoritos están siempre actualizados en todos tus dispositivos.
+From sincroniza automáticamente entre Mac e iPhone. Los cambios aparecen en segundos. El diario, tareas, bucles y notas fijadas están siempre actualizados en todos tus dispositivos.
 
 ---
 
