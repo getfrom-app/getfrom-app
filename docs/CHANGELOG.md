@@ -93,3 +93,17 @@ Historial de versiones de From para Mac, iPhone y Web.
 - Fix crítico: `getOrCreateDailyNote` ya no borraba el diario existente en arranque concurrente
 - Transcripción de voz se guarda automáticamente si falla la IA, sin perder nada
 - Mensajes de error de IA diferenciados: sesión expirada vs sin suscripción vs error de red
+
+## Web 1.1 — 20 mayo 2026
+
+**Plataforma: Web** (getfrom.app/app)
+
+**Nuevo:**
+- Sidebar hamburger en móvil — sidebar abre/cierra con overlay (fix UX crítico mobile)
+- Undo/Redo global (⌘Z / ⌘Shift+Z) en todo el editor — history de 50 estados
+- PWA manifest — From Web instalable como app desde Chrome/Edge/Safari
+- Vista Agentes real — historial de runs + crear agente manual con system prompt
+- 3 agentes predefinidos: Resumir diario, Generar tareas, Análisis semanal
+- ✨ Búsqueda IA (Magic Search) — síntesis IA sobre resultados de búsqueda del vault
+
+---
