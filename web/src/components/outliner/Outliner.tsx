@@ -256,6 +256,32 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             ○ Marcar como tarea
           </button>
           <button
+            className="multi-select-action"
+            onClick={() => {
+              for (const id of selectedIds) {
+                const n = store.getNode(id)
+                if (n) store.updateNode(id, { status: n.status === 'done' ? 'pending' : (n.status === 'pending' ? 'done' : 'pending') })
+              }
+              setSelectedIds(new Set())
+            }}
+            title="Toggle done"
+          >
+            ✓ Toggle done
+          </button>
+          <button
+            className="multi-select-action"
+            onClick={() => {
+              for (const id of selectedIds) {
+                const n = store.getNode(id)
+                if (n) store.updateNode(id, { isFavorite: !n.isFavorite })
+              }
+              setSelectedIds(new Set())
+            }}
+            title="Toggle favorito"
+          >
+            ★ Favorito
+          </button>
+          <button
             className="multi-select-action multi-select-action--danger"
             onClick={handleDeleteSelected}
             title="Borrar seleccionados"

@@ -3019,6 +3019,11 @@ mark.inline-highlight {
 .body-block-ol { margin: 4px 0; padding-left: 20px; list-style: decimal; }
 .body-block-ul .body-block-li,
 .body-block-ol .body-block-li { display: list-item; padding-left: 0; margin: 2px 0; }
+.body-block-table-wrapper { overflow-x: auto; margin: 8px 0; }
+.body-block-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.body-table-th { border: 1px solid var(--border); padding: 6px 12px; background: var(--bg-secondary); font-weight: 600; text-align: left; }
+.body-table-td { border: 1px solid var(--border); padding: 6px 12px; }
+.body-block-table tr:nth-child(even) td { background: var(--bg-secondary); }
 
 /* ── Diary panel stats ────────────────────────────────────────────────────── */
 .diary-panel-stats { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }

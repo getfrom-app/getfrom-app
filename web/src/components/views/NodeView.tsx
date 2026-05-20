@@ -566,6 +566,18 @@ export default function NodeView() {
     handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
   }
 
+  function handleImportMarkdown() {
+    const md = prompt('Pega el texto markdown a importar:')
+    if (md === null) return
+    const trimmed = md.trim()
+    if (!trimmed) return
+    const current = bodyValue
+    const separator = current.trim() ? '\n\n' : ''
+    const newVal = current + separator + trimmed
+    setBodyValue(newVal)
+    store.updateNode(node!.id, { body: newVal })
+  }
+
   // Table of contents: children that are headings
   const headings = s.children(node.id)
     .filter(n => ['h1', 'h2', 'h3'].includes(detectBlockType(n.text)))
@@ -1004,6 +1016,24 @@ export default function NodeView() {
                     }}
                     title="Checkbox"
                   >[ ]</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    title="Insertar tabla"
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      const tableTemplate = '\n| Columna 1 | Columna 2 | Columna 3 |\n|-----------|-----------|----------|\n| Dato      | Dato      | Dato      |\n| Dato      | Dato      | Dato      |\n'
+                      const ta = textareaRef.current
+                      if (!ta) return
+                      const pos = ta.selectionStart
+                      ta.setRangeText(tableTemplate, pos, pos, 'end')
+                      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+                    }}
+                  >⊞</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    title="Importar markdown"
+                    onMouseDown={e => { e.preventDefault(); handleImportMarkdown() }}
+                  >📥</button>
                 </div>
                 <textarea
                   ref={textareaRef}

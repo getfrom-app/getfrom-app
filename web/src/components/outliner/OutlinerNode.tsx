@@ -470,6 +470,28 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       }
     }
 
+    // Cmd+/ → ciclar heading H1 → H2 → H3 → normal
+    if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      e.stopPropagation()
+      const currentText = nodeTextRef.current
+      const currentBlockType = detectBlockType(currentText)
+      let newText = currentText
+      if (currentBlockType === 'text') {
+        newText = '# ' + currentText.replace(/^#+ /, '')
+      } else if (currentBlockType === 'h1') {
+        newText = '## ' + currentText.replace(/^#+ /, '')
+      } else if (currentBlockType === 'h2') {
+        newText = '### ' + currentText.replace(/^#+ /, '')
+      } else {
+        newText = currentText.replace(/^#+ /, '')
+      }
+      nodeTextRef.current = newText
+      store.updateNode(node.id, { text: newText })
+      if (contentRef.current) contentRef.current.textContent = newText
+      return
+    }
+
     // Cmd+T dentro del outliner → toggle tarea del nodo activo
     if (e.key === 't' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
       // Solo si no hay texto seleccionado (para no interferir con el modal global de nueva tarea)
