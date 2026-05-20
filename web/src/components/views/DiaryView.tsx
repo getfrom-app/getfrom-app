@@ -309,31 +309,79 @@ export default function DiaryView() {
     )
   }
 
+  // ── Events for timeline ────────────────────────────────────────────────
+  const allEvents = s.allActive().filter(n => n.isEvent && n.due && !n.deletedAt)
+  const eventsByHour: Record<number, Node[]> = {}
+  for (const h of hours) {
+    eventsByHour[h] = []
+  }
+  allEvents.forEach(n => {
+    if (!n.due) return
+    const d = new Date(n.due)
+    if (d >= todayStart && d <= todayEnd) {
+      const h = d.getHours()
+      if (h >= 8 && h <= 22) {
+        eventsByHour[h] = eventsByHour[h] || []
+        eventsByHour[h].push(n)
+      }
+    }
+  })
+
+  function handleTimelineHourClick(h: number) {
+    const date = new Date(targetDate)
+    date.setHours(h, 0, 0, 0)
+    const newNode = store.createNode({
+      text: '',
+      parentId: null,
+      siblingOrder: Date.now(),
+      isTask: true,
+    })
+    store.updateNode(newNode.id, {
+      isEvent: true,
+      status: 'pending',
+      due: date.toISOString(),
+    })
+    navigate(`/node/${newNode.id}`)
+  }
+
   function renderTimeline() {
     return (
-      <div className="diary-panel-content">
+      <div className="diary-panel-content timeline-panel">
         {hours.map(h => {
-          const isCurrentHour = h === currentHour
+          const isCurrentHour = dateOffset === 0 && h === currentHour
           const tasks = tasksByHour[h] || []
+          const events = eventsByHour[h] || []
+          const allItems = [...events, ...tasks]
+
+          // Show now-line just before current hour row
+          const showNowLine = dateOffset === 0 && h === currentHour
+
           return (
             <div key={h}>
-              {isCurrentHour && (
+              {showNowLine && (
                 <div
                   className="timeline-now-line"
-                  title={`${currentHour}:${String(currentMinutes).padStart(2, '0')}`}
-                />
+                  title={`Ahora: ${String(currentHour).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`}
+                >
+                  <span className="timeline-now-dot" />
+                  <span className="timeline-now-rule" />
+                </div>
               )}
               <div className="timeline-row">
                 <span className="timeline-hour-label">{String(h).padStart(2, '0')}:00</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flex: 1 }}>
-                  {tasks.map(t => (
+                <div
+                  className="timeline-hour-clickable"
+                  onClick={() => handleTimelineHourClick(h)}
+                  title={`Crear evento a las ${String(h).padStart(2, '0')}:00`}
+                >
+                  {allItems.map(t => (
                     <span
                       key={t.id}
-                      className="timeline-task-chip"
-                      onClick={() => navigate(`/node/${t.id}`)}
+                      className={t.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
+                      onClick={e => { e.stopPropagation(); navigate(`/node/${t.id}`) }}
                       title={t.text || 'Sin título'}
                     >
-                      {t.text || 'Sin título'}
+                      {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
                     </span>
                   ))}
                 </div>

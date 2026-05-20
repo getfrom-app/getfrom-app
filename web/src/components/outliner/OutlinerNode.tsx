@@ -7,13 +7,16 @@ import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRen
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
+import { aiInlineStream } from '../../api/client'
 
 interface Props {
   node: Node
   depth: number
   isSelected: boolean
+  isMultiSelected?: boolean
   onSelect: (id: string) => void
   onSelectNext: (id: string, dir: 'up' | 'down') => void
+  onShiftSelect?: (id: string) => void
   filterText?: string
 }
 
@@ -57,7 +60,7 @@ function getCursorRect(el: HTMLElement): DOMRect {
 // Module-level drag state (shared across all OutlinerNode instances)
 let _draggedNodeId: string | null = null
 
-export default function OutlinerNode({ node, depth, isSelected, onSelect, onSelectNext, filterText }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -72,6 +75,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDragOverChild, setIsDragOverChild] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const [isAiStreaming, setIsAiStreaming] = useState(false)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -319,6 +323,41 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         else if (e.key === 'e') applyFormat('code')
         return
       }
+    }
+
+    // Cmd+Space → completar con IA inline
+    if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !isAiStreaming) {
+      e.preventDefault()
+      e.stopPropagation()
+      const currentText = contentRef.current?.textContent || ''
+      if (!currentText.trim()) return
+      setIsAiStreaming(true)
+      let aiText = ''
+      aiInlineStream(
+        currentText + '\n',
+        undefined,
+        (chunk) => {
+          aiText += chunk
+          if (contentRef.current) {
+            contentRef.current.textContent = currentText + aiText
+            // Cursor al final
+            const range = document.createRange()
+            const sel = window.getSelection()
+            const textNode = contentRef.current.firstChild
+            if (textNode) {
+              range.setStart(textNode, contentRef.current.textContent?.length || 0)
+              range.collapse(true)
+              sel?.removeAllRanges()
+              sel?.addRange(range)
+            }
+          }
+        }
+      ).then(() => {
+        const finalText = (currentText + aiText).replace(/ /g, ' ')
+        nodeTextRef.current = finalText
+        store.updateNode(node.id, { text: finalText })
+      }).catch(console.error).finally(() => setIsAiStreaming(false))
+      return
     }
 
     // Cmd+Enter → marcar tarea como done/pending
@@ -676,6 +715,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const nodeRowClass = [
     'node-row',
     isSelected ? 'selected' : '',
+    isMultiSelected ? 'multi-selected' : '',
     node.status === 'done' ? 'done' : '',
     isHeading ? `node-row--${blockType}` : '',
     isDragOver ? 'drag-over' : '',
@@ -705,6 +745,12 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
         onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY }) }}
+        onClick={e => {
+          if (e.shiftKey && onShiftSelect) {
+            e.preventDefault()
+            onShiftSelect(node.id)
+          }
+        }}
       >
 
         {/* Collapse toggle — hidden for headings and dividers */}
@@ -898,8 +944,10 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           node={child}
           depth={depth + 1}
           isSelected={isSelected && false} // selection handled by parent
+          isMultiSelected={isMultiSelected}
           onSelect={onSelect}
           onSelectNext={onSelectNext}
+          onShiftSelect={onShiftSelect}
           filterText={filterText}
         />
       ))}
