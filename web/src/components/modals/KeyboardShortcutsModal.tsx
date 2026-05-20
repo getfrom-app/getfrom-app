@@ -17,6 +17,8 @@ const GROUPS: ShortcutGroup[] = [
       { keys: 'Esc', desc: 'Ir a hoy / cerrar modales' },
       { keys: '⌘K', desc: 'Búsqueda / captura rápida' },
       { keys: '⌘⇧S', desc: 'Toggle sidebar' },
+      { keys: '⌘[', desc: 'Página anterior (historial)' },
+      { keys: '⌘]', desc: 'Página siguiente (historial)' },
       { keys: '?', desc: 'Ver atajos de teclado' },
       { keys: '⌘Z / ⌘⇧Z', desc: 'Deshacer / Rehacer' },
     ],

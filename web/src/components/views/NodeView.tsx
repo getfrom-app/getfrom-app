@@ -1041,13 +1041,46 @@ export default function NodeView() {
                 }}
               >
                 {hasBody ? (
-                  // Render body — agrupar líneas en bloques para listas y checkboxes
+                  // Render body — agrupar líneas en bloques para listas, checkboxes y tablas
                   (() => {
                     const lines = (node.body || '').split('\n')
                     const blocks: React.ReactNode[] = []
                     let i = 0
                     while (i < lines.length) {
                       const line = lines[i]
+
+                      // Table: line starts with | and next line is separator (---|)
+                      if (line.trim().startsWith('|') && i + 1 < lines.length && lines[i + 1].includes('---')) {
+                        const tableLines: string[] = [line]
+                        i++
+                        while (i < lines.length && lines[i].trim().startsWith('|')) {
+                          tableLines.push(lines[i])
+                          i++
+                        }
+                        const headerLine = tableLines[0]
+                        const bodyLines = tableLines.slice(2) // skip separator line
+                        const headers = headerLine.split('|').filter(c => c.trim()).map(c => c.trim())
+                        blocks.push(
+                          <div key={`table-${i}`} className="body-block-table-wrapper">
+                            <table className="body-block-table">
+                              <thead>
+                                <tr>{headers.map((h, j) => <th key={j} className="body-table-th"><InlineRenderer text={h} /></th>)}</tr>
+                              </thead>
+                              <tbody>
+                                {bodyLines.map((row, ri) => {
+                                  const cells = row.split('|').filter(c => c.trim() !== '' && !c.trim().match(/^-+$/)).map(c => c.trim())
+                                  return (
+                                    <tr key={ri}>
+                                      {cells.map((cell, ci) => <td key={ci} className="body-table-td"><InlineRenderer text={cell} /></td>)}
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                        continue
+                      }
 
                       // Checkbox
                       if (/^- \[[ xX]\] /.test(line)) {

@@ -104,6 +104,16 @@ export default function MainLayout() {
         e.preventDefault()
         setShowVoiceCapture(true)
       }
+      // Cmd+[ → Atrás en la navegación
+      if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        window.history.back()
+      }
+      // Cmd+] → Adelante en la navegación
+      if (e.key === ']' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        window.history.forward()
+      }
       if (e.key === 'z' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         e.preventDefault()
         store.undo()
