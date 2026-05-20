@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
@@ -137,9 +137,22 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
 export default function DiaryView() {
   const s = useStore()
   const navigate = useNavigate()
-  const [dateOffset, setDateOffset] = useState(0)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [dateOffset, setDateOffset] = useState(() => {
+    const offset = searchParams.get('offset')
+    return offset ? parseInt(offset) : 0
+  })
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
   const [pendingSearch, setPendingSearch] = useState('')
+
+  // Sync URL param with dateOffset
+  useEffect(() => {
+    if (dateOffset !== 0) {
+      setSearchParams({ offset: String(dateOffset) }, { replace: true })
+    } else {
+      setSearchParams({}, { replace: true })
+    }
+  }, [dateOffset]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const streak = calculateStreak(s)
 
