@@ -957,7 +957,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     }
   }
 
-  if (activeFilter && !matchesFilter) return null
+  if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
   return (
     <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>

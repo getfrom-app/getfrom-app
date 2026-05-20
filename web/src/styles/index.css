@@ -635,6 +635,8 @@ a { color: inherit; text-decoration: none; }
 }
 .breadcrumb-home:hover,
 .breadcrumb-item:hover { color: var(--text-primary); }
+.breadcrumb-root-btn { color: var(--text-tertiary); font-size: 13px; padding: 0 4px; border-radius: 4px; transition: color 0.15s, background 0.15s; margin-left: 4px; }
+.breadcrumb-root-btn:hover { color: var(--text-primary); background: var(--hover); }
 
 .breadcrumb-sep {
   margin: 0 6px;
@@ -4535,3 +4537,29 @@ mark.inline-highlight {
 .diary-panel-search { margin-bottom: 8px; }
 .diary-panel-search-input { width: 100%; font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); box-sizing: border-box; }
 .diary-panel-search-input:focus { outline: none; border-color: var(--accent); }
+
+/* ── CalendarView diary indicators ──────────────────────────────────────── */
+.calendar-month-cell-header { display: flex; align-items: center; justify-content: space-between; }
+.calendar-diary-dot {
+  font-size: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-tertiary);
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.calendar-diary-dot:hover { background: var(--bg-hover); }
+.calendar-diary-count {
+  font-size: 9px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  padding: 0 4px;
+  min-width: 14px;
+  text-align: center;
+}

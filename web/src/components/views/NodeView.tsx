@@ -700,6 +700,13 @@ export default function NodeView() {
           {crumbs.length > 0 && (
             <nav className="breadcrumb">
               <button className="breadcrumb-home" onClick={() => navigate('/')}>Inicio</button>
+              <button
+                className="breadcrumb-root-btn"
+                onClick={() => navigate(`/node/${crumbs[0].id}`)}
+                title="Ir al nodo raíz"
+              >
+                ⇑
+              </button>
               {crumbs.map((c) => (
                 <span key={c.id}>
                   <span className="breadcrumb-sep">/</span>

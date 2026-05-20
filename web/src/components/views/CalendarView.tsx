@@ -486,7 +486,9 @@ interface MonthViewProps {
 }
 
 function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onDayClick }: MonthViewProps) {
+  const navigate = useNavigate()
   const nodesWithDue = allNodes.filter(n => n.due)
+  const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate)
 
   // Build grid: from Mon of the first week to Sun of the last week
   const firstDay = startOfMonth(monthStart)
@@ -499,6 +501,10 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
 
   function getNodesForDay(day: Date): Node[] {
     return nodesWithDue.filter(n => n.due && isSameDay(new Date(n.due), day))
+  }
+
+  function getDiaryForDay(day: Date): Node | undefined {
+    return diaryEntries.find(n => n.diaryDate && isSameDay(new Date(n.diaryDate), day))
   }
 
   const monthLabel = `${formatMonth(monthStart)} ${monthStart.getFullYear()}`
@@ -525,6 +531,8 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
             const isToday = isSameDay(day, today)
             const dayNodes = getNodesForDay(day)
             const overflow = dayNodes.length > 3
+            const diaryEntry = inMonth ? getDiaryForDay(day) : undefined
+            const childCount = diaryEntry ? store.children(diaryEntry.id).length : 0
 
             return (
               <div
@@ -532,7 +540,25 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
                 className={`calendar-month-cell ${inMonth ? '' : 'calendar-month-cell--out'} ${isToday ? 'calendar-month-cell--today' : ''}`}
                 onClick={() => onDayClick(day)}
               >
-                <div className="calendar-month-cell-number">{day.getDate()}</div>
+                <div className="calendar-month-cell-header">
+                  <div className="calendar-month-cell-number">{day.getDate()}</div>
+                  {diaryEntry && inMonth && (
+                    <button
+                      className="calendar-diary-dot"
+                      onClick={e => {
+                        e.stopPropagation()
+                        // Navigate to diary view for this date
+                        const today2 = new Date()
+                        today2.setHours(0, 0, 0, 0)
+                        const diff = Math.round((day.getTime() - today2.getTime()) / 86400000)
+                        navigate(`/?offset=${diff}`)
+                      }}
+                      title={`Entrada de diario · ${childCount} bullets`}
+                    >
+                      📓{childCount > 0 && <span className="calendar-diary-count">{childCount}</span>}
+                    </button>
+                  )}
+                </div>
                 <div className="calendar-month-cell-nodes">
                   {dayNodes.slice(0, 3).map(node => (
                     <button
