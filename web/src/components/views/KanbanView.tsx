@@ -65,7 +65,16 @@ function KanbanCard({ task, onDrop }: { task: Node; onDrop: (id: string, newStat
       <div className="kanban-card-header">
         <PriorityDot priority={task.priority} />
         <span className="kanban-card-title">{task.text || 'Sin título'}</span>
+        {task.isFavorite && <span style={{ fontSize: 11, color: '#f59e0b' }}>★</span>}
       </div>
+      {/* Tags */}
+      {(task.types || []).filter(t => !['bucle','agente','prompt','evento','tarea'].includes(t)).length > 0 && (
+        <div className="kanban-card-tags">
+          {(task.types || []).filter(t => !['bucle','agente','prompt','evento','tarea'].includes(t)).slice(0,3).map(t => (
+            <span key={t} className="kanban-card-tag">#{t}</span>
+          ))}
+        </div>
+      )}
       {task.due && (() => {
         const { label, overdue } = formatDue(task.due)
         return (

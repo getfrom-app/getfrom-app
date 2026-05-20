@@ -122,6 +122,15 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
   const [treeSearch, setTreeSearch] = useState('')
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('from_sidebar_collapsed') || '{}') } catch { return {} }
+  })
+
+  function toggleSection(key: string) {
+    const next = { ...collapsedSections, [key]: !collapsedSections[key] }
+    setCollapsedSections(next)
+    localStorage.setItem('from_sidebar_collapsed', JSON.stringify(next))
+  }
 
   const tags = s.tagDefinitions()
   const usedTags = s.allUsedTags()
@@ -229,11 +238,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
         {/* Tags section */}
         {allTagNames.length > 0 ? (
           <div style={{ marginBottom: 8 }}>
-            <div className="nav-section-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('tags')}>
+              <span className="nav-section-chevron">{collapsedSections['tags'] ? '▸' : '▾'}</span>
               <span>Tags</span>
               <span style={{ fontSize: 10, opacity: 0.5 }}>{allTagNames.length}</span>
             </div>
-            {allTagNames.map(name => {
+            {!collapsedSections['tags'] && allTagNames.map(name => {
               const defNode = tagDefMap.get(name)
               const color = s.tagColor(name)
               const count = s.tagNodeCount(name)
@@ -260,27 +270,34 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
         {/* Full notes tree */}
         {favorites.length > 0 && (
           <>
-            <div className="nav-section-label">Favoritos</div>
-            <div className="tree-section">
-              {favorites.map(node => (
-                <TreeNodeItem
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  activePath={location.pathname}
-                  onNavigate={handleNavigate}
-                  onCreateChild={handleCreateChild}
-                />
-              ))}
+            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('favorites')}>
+              <span className="nav-section-chevron">{collapsedSections['favorites'] ? '▸' : '▾'}</span>
+              <span>Favoritos</span>
+              <span style={{ fontSize: 10, opacity: 0.5 }}>{favorites.length}</span>
             </div>
+            {!collapsedSections['favorites'] && (
+              <div className="tree-section">
+                {favorites.map(node => (
+                  <TreeNodeItem
+                    key={node.id}
+                    node={node}
+                    depth={0}
+                    activePath={location.pathname}
+                    onNavigate={handleNavigate}
+                    onCreateChild={handleCreateChild}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
 
-        <div className="nav-section-label tree-section-header">
+        <div className="nav-section-label tree-section-header nav-section-label--clickable" onClick={() => toggleSection('notes')}>
+          <span className="nav-section-chevron">{collapsedSections['notes'] ? '▸' : '▾'}</span>
           <span>Notas</span>
           <button
             className="tree-add-root"
-            onClick={handleCreateRoot}
+            onClick={e => { e.stopPropagation(); handleCreateRoot() }}
             title="Nueva nota raíz"
           >
             +
