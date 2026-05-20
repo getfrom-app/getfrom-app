@@ -312,7 +312,7 @@ export default function AgentsView() {
                     <th>Estado</th>
                     <th>Modelo</th>
                     <th>Inicio</th>
-                    <th>Tokens</th>
+                    <th style={{ width: 80 }}>Costo</th>
                     <th>Turnos</th>
                   </tr>
                 </thead>
@@ -329,7 +329,13 @@ export default function AgentsView() {
                         {run.model || MODEL_LABEL}
                       </td>
                       <td style={{ color: 'var(--text-secondary)' }}>{formatDate(run.startedAt)}</td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{run.tokensUsed ?? '—'}</td>
+                      <td style={{ fontSize: 12 }}>
+                        {run.tokensUsed ? (
+                          <span title={`${run.tokensUsed} tokens`} style={{ fontFamily: 'monospace', letterSpacing: 1 }}>
+                            {'▓'.repeat(Math.min(5, Math.ceil(run.tokensUsed / 2000)))}{'░'.repeat(Math.max(0, 5 - Math.ceil(run.tokensUsed / 2000)))}
+                          </span>
+                        ) : '—'}
+                      </td>
                       <td style={{ color: 'var(--text-secondary)' }}>{run.turnsUsed ?? '—'}</td>
                     </tr>
                   ))}
