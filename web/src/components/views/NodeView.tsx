@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
+import NodeContextPanel from '../panels/NodeContextPanel'
 import { recordRecentNode } from '../CommandPalette'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream } from '../../api/client'
 
@@ -240,7 +241,7 @@ export default function NodeView() {
   const isLoggedIn = !store.isGuest
 
   return (
-    <div className={`view node-view ${showProperties ? 'node-view--with-panel' : ''}`}>
+    <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''}`}>
       <div className="node-view-main">
         <div className="view-header">
           {crumbs.length > 0 && (
@@ -440,6 +441,8 @@ export default function NodeView() {
           />
         </div>
       </div>
+
+      <NodeContextPanel nodeId={node.id} />
 
       {showProperties && (
         <NodePropertiesPanel

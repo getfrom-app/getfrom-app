@@ -15,6 +15,9 @@ import KanbanView from '../views/KanbanView'
 import GuestBanner from './GuestBanner'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
+import NewTaskModal from '../modals/NewTaskModal'
+import NewEventModal from '../modals/NewEventModal'
+import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -24,6 +27,9 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [showNewTask, setShowNewTask] = useState(false)
+  const [showNewEvent, setShowNewEvent] = useState(false)
+  const [showVoiceCapture, setShowVoiceCapture] = useState(false)
 
   useEffect(() => {
     if (isGuest) {
@@ -55,6 +61,10 @@ export default function MainLayout() {
 
   // Cmd+N / Ctrl+N → new note
   // Cmd+K / Ctrl+K → command palette
+  // Cmd+T / Ctrl+T → new task
+  // Cmd+E / Ctrl+E → new event
+  // Cmd+R / Ctrl+R → voice capture
+  // Escape → go home (if no modal/input focused)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
@@ -66,10 +76,32 @@ export default function MainLayout() {
         e.preventDefault()
         setShowCommandPalette(v => !v)
       }
+      if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowNewTask(true)
+      }
+      if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowNewEvent(true)
+      }
+      if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowVoiceCapture(true)
+      }
+      if (e.key === 'Escape') {
+        const active = document.activeElement
+        const isInputFocused =
+          active?.tagName === 'INPUT' ||
+          active?.tagName === 'TEXTAREA' ||
+          (active as HTMLElement)?.isContentEditable
+        if (!isInputFocused && !showCommandPalette && !showNewTask && !showNewEvent && !showVoiceCapture) {
+          navigate('/')
+        }
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate])
+  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture])
 
   function handleLogout() {
     clearTokens()
@@ -116,6 +148,9 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
+      {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
+      {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
+      {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
     </div>
   )
 }

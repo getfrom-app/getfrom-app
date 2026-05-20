@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
+import { useTheme } from '../../hooks/useTheme'
 import type { Node } from '../../types'
 
 interface Props {
@@ -92,11 +93,34 @@ function TreeNodeItem({ node, depth, activePath, onNavigate, onCreateChild }: Tr
   )
 }
 
+interface Panel {
+  id: string
+  name: string
+  query: string
+  createdAt: string
+}
+
+function getPanels(): Panel[] {
+  try {
+    return JSON.parse(localStorage.getItem('from_panels') || '[]')
+  } catch { return [] }
+}
+
+function savePanels(panels: Panel[]) {
+  localStorage.setItem('from_panels', JSON.stringify(panels))
+}
+
+type SidebarTab = 'tags' | 'favorites' | 'panels' | 'settings'
+
 export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const s = useStore()
   const us = useUserStore()
+  const { theme, setTheme } = useTheme()
+
+  const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
+  const [panels, setPanels] = useState<Panel[]>(getPanels)
 
   const tags = s.tagDefinitions()
   const pendingCount = s.pendingTasks().length
@@ -118,12 +142,23 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const favorites = rootNotes.filter(n => n.isFavorite)
   const regularNotes = rootNotes.filter(n => !n.isFavorite)
 
+  // Favorites tab: all nodes with isFavorite === true
+  const allFavorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt)
+
   function isActive(path: string) {
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
   function tagName(node: Node) {
     return s.tagName(node) || node.text
+  }
+
+  function tagChildCount(tagNode: Node) {
+    return s.allActive().filter(n => {
+      const types = n.types || []
+      const name = s.tagName(tagNode) || tagNode.text
+      return types.includes(name || '')
+    }).length
   }
 
   function handleCreateRoot() {
@@ -138,6 +173,226 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   function handleCreateChild(parentId: string) {
     const newNode = store.createNode({ text: '', parentId })
     navigate(`/node/${newNode.id}`)
+  }
+
+  function handleCreatePanel() {
+    const name = prompt('Nombre del panel:')
+    if (!name) return
+    const query = prompt('Búsqueda (query):')
+    if (query === null) return
+    const newPanel: Panel = {
+      id: Date.now().toString(),
+      name,
+      query,
+      createdAt: new Date().toISOString(),
+    }
+    const updated = [...panels, newPanel]
+    setPanels(updated)
+    savePanels(updated)
+  }
+
+  function handleDeletePanel(id: string) {
+    const updated = panels.filter(p => p.id !== id)
+    setPanels(updated)
+    savePanels(updated)
+  }
+
+  // ── Tab content ────────────────────────────────────────────────────────
+
+  function renderTagsTab() {
+    return (
+      <div className="sidebar-tab-content">
+        {/* Tags section */}
+        {tags.length > 0 ? (
+          <div style={{ marginBottom: 8 }}>
+            {tags.map(tag => (
+              <div
+                key={tag.id}
+                className={`sidebar-tag-item ${isActive(`/node/${tag.id}`) ? 'active' : ''}`}
+                onClick={() => navigate(`/node/${tag.id}`)}
+              >
+                <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>#</span>
+                <span style={{ flex: 1, fontSize: 13 }}>{tagName(tag)}</span>
+                <span className="sidebar-tag-count">{tagChildCount(tag)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="tree-empty" style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            Sin áreas. Crea un tag en From para Mac.
+          </div>
+        )}
+
+        {/* Full notes tree */}
+        {favorites.length > 0 && (
+          <>
+            <div className="nav-section-label">Favoritos</div>
+            <div className="tree-section">
+              {favorites.map(node => (
+                <TreeNodeItem
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  activePath={location.pathname}
+                  onNavigate={handleNavigate}
+                  onCreateChild={handleCreateChild}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="nav-section-label tree-section-header">
+          <span>Notas</span>
+          <button
+            className="tree-add-root"
+            onClick={handleCreateRoot}
+            title="Nueva nota raíz"
+          >
+            +
+          </button>
+        </div>
+        <div className="tree-section">
+          {regularNotes.slice(0, 50).map(node => (
+            <TreeNodeItem
+              key={node.id}
+              node={node}
+              depth={0}
+              activePath={location.pathname}
+              onNavigate={handleNavigate}
+              onCreateChild={handleCreateChild}
+            />
+          ))}
+          {regularNotes.length === 0 && (
+            <div className="tree-empty">
+              Sin notas. Crea una con +
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  function renderFavoritesTab() {
+    return (
+      <div className="sidebar-tab-content">
+        {allFavorites.length > 0 ? (
+          <div className="tree-section">
+            {allFavorites.map(node => (
+              <TreeNodeItem
+                key={node.id}
+                node={node}
+                depth={0}
+                activePath={location.pathname}
+                onNavigate={handleNavigate}
+                onCreateChild={handleCreateChild}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            Marca una nota como favorita con ☆
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderPanelsTab() {
+    return (
+      <div className="sidebar-tab-content">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 8px' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Paneles</span>
+          <button className="sidebar-panel-create-btn" onClick={handleCreatePanel} title="Nuevo panel">+</button>
+        </div>
+        {panels.length > 0 ? (
+          panels.map(panel => (
+            <div
+              key={panel.id}
+              className="sidebar-panel-item"
+              onClick={() => navigate(`/search?q=${encodeURIComponent(panel.query)}`)}
+            >
+              <span style={{ flex: 1, fontSize: 13 }}>{panel.name}</span>
+              <button
+                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
+                onClick={e => { e.stopPropagation(); handleDeletePanel(panel.id) }}
+                title="Eliminar panel"
+              >
+                ×
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            No hay paneles. Guarda una búsqueda como panel.
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderSettingsTab() {
+    const email = us.user?.email
+    return (
+      <div className="sidebar-tab-content">
+        <div className="sidebar-settings">
+          {email && (
+            <div className="sidebar-settings-user">{email}</div>
+          )}
+
+          <div className="sidebar-settings-section">
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Apariencia</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                style={{ flex: 1, padding: '6px 0', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: theme === 'light' ? 'var(--accent)' : 'var(--bg)', color: theme === 'light' ? '#fff' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}
+                onClick={() => setTheme('light')}
+              >
+                ☀ Claro
+              </button>
+              <button
+                style={{ flex: 1, padding: '6px 0', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: theme === 'dark' ? 'var(--accent)' : 'var(--bg)', color: theme === 'dark' ? '#fff' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}
+                onClick={() => setTheme('dark')}
+              >
+                🌙 Oscuro
+              </button>
+            </div>
+          </div>
+
+          <div className="sidebar-settings-section">
+            <button
+              className="nav-item"
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
+              onClick={() => navigate('/account')}
+            >
+              <span className="nav-icon">⚙</span>
+              <span>Ajustes completos</span>
+            </button>
+            {showUpgrade && (
+              <button
+                className="nav-item"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
+                onClick={() => navigate('/pricing')}
+              >
+                <span className="nav-icon">✨</span>
+                <span>Precios y plan</span>
+              </button>
+            )}
+            <button
+              className="nav-item"
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
+              onClick={() => window.open('https://getfrom.app/claude', '_blank')}
+            >
+              <span className="nav-icon">🤖</span>
+              <span>Extensión Claude</span>
+            </button>
+          </div>
+
+          <div style={{ marginTop: 'auto', paddingTop: 16, fontSize: 11, color: 'var(--text-tertiary)' }}>
+            From Web 1.0
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -162,154 +417,132 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
         {open && isSyncing && <div className="sync-dot" title="Sincronizando..." />}
       </div>
 
-      <nav className="sidebar-nav">
-        <button
-          className={`nav-item ${isActive('/') && location.pathname === '/' ? 'active' : ''}`}
-          onClick={() => navigate('/')}
-        >
-          <span className="nav-icon">📓</span>
-          {open && <span>Hoy</span>}
-        </button>
+      {open ? (
+        <>
+          {/* Tab bar */}
+          <div className="sidebar-tabs">
+            <button
+              className={`sidebar-tab-btn ${activeTab === 'tags' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tags')}
+              title="Tags y notas"
+            >
+              🏷
+            </button>
+            <button
+              className={`sidebar-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveTab('favorites')}
+              title="Fijados"
+            >
+              ⭐
+            </button>
+            <button
+              className={`sidebar-tab-btn ${activeTab === 'panels' ? 'active' : ''}`}
+              onClick={() => setActiveTab('panels')}
+              title="Paneles"
+            >
+              📋
+            </button>
+            <button
+              className={`sidebar-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+              title="Ajustes"
+            >
+              ⚙
+            </button>
+          </div>
 
-        <button
-          className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
-          onClick={() => navigate('/tasks')}
-        >
-          <span className="nav-icon">✓</span>
-          {open && <span>Tareas{pendingCount > 0 ? ` (${pendingCount})` : ''}</span>}
-        </button>
+          {/* Tab content */}
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            {activeTab === 'tags' && renderTagsTab()}
+            {activeTab === 'favorites' && renderFavoritesTab()}
+            {activeTab === 'panels' && renderPanelsTab()}
+            {activeTab === 'settings' && renderSettingsTab()}
+          </div>
 
-        <button
-          className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
-          onClick={() => navigate('/calendar')}
-          title="Calendario"
-        >
-          <span className="nav-icon">📅</span>
-          {open && <span>Calendario</span>}
-        </button>
-
-        <button
-          className={`nav-item ${isActive('/kanban') ? 'active' : ''}`}
-          onClick={() => navigate('/kanban')}
-          title="Kanban"
-        >
-          <span className="nav-icon">⬛</span>
-          {open && <span>Kanban</span>}
-        </button>
-
-        <button
-          className={`nav-item ${isActive('/agents') ? 'active' : ''}`}
-          onClick={() => navigate('/agents')}
-          title="Agentes"
-        >
-          <span className="nav-icon">🤖</span>
-          {open && <span>Agentes</span>}
-        </button>
-
-        <button
-          className={`nav-item ${isActive('/search') ? 'active' : ''}`}
-          onClick={() => navigate('/search')}
-        >
-          <span className="nav-icon">🔍</span>
-          {open && <span>Buscar</span>}
-        </button>
-
-        {open && tags.length > 0 && (
-          <>
-            <div className="nav-section-label">Áreas</div>
-            {tags.map(tag => (
-              <button
-                key={tag.id}
-                className={`nav-item ${isActive(`/node/${tag.id}`) ? 'active' : ''}`}
-                onClick={() => navigate(`/node/${tag.id}`)}
-              >
-                <span className="nav-icon">🏷</span>
-                <span>{tagName(tag)}</span>
+          {/* Footer nav - always visible */}
+          <div className="sidebar-footer">
+            <button
+              className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+              onClick={() => navigate('/')}
+              title="Hoy"
+            >
+              <span className="nav-icon">📓</span>
+              <span>Hoy</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
+              onClick={() => navigate('/tasks')}
+              title="Tareas"
+            >
+              <span className="nav-icon">✓</span>
+              <span>Tareas{pendingCount > 0 ? ` (${pendingCount})` : ''}</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/search') ? 'active' : ''}`}
+              onClick={() => navigate('/search')}
+              title="Buscar"
+            >
+              <span className="nav-icon">🔍</span>
+              <span>Buscar</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
+              onClick={() => navigate('/calendar')}
+              title="Calendario"
+            >
+              <span className="nav-icon">📅</span>
+              <span>Calendario</span>
+            </button>
+            {!isGuest && (
+              <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
+                <span className="nav-icon">↩</span>
+                <span>Salir</span>
               </button>
-            ))}
-          </>
-        )}
-
-        {/* Tree navigation */}
-        {open && (
-          <>
-            {/* Favorites section */}
-            {favorites.length > 0 && (
-              <>
-                <div className="nav-section-label">Favoritos</div>
-                <div className="tree-section">
-                  {favorites.map(node => (
-                    <TreeNodeItem
-                      key={node.id}
-                      node={node}
-                      depth={0}
-                      activePath={location.pathname}
-                      onNavigate={handleNavigate}
-                      onCreateChild={handleCreateChild}
-                    />
-                  ))}
-                </div>
-              </>
             )}
-
-            {/* Notes section */}
-            <div className="nav-section-label tree-section-header">
-              <span>Notas</span>
-              <button
-                className="tree-add-root"
-                onClick={handleCreateRoot}
-                title="Nueva nota raíz"
-              >
-                +
+            {isGuest && (
+              <button className="nav-item" onClick={onLogout} title="Iniciar sesión">
+                <span className="nav-icon">↩</span>
+                <span>Iniciar sesión</span>
               </button>
-            </div>
-            <div className="tree-section">
-              {regularNotes.slice(0, 50).map(node => (
-                <TreeNodeItem
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  activePath={location.pathname}
-                  onNavigate={handleNavigate}
-                  onCreateChild={handleCreateChild}
-                />
-              ))}
-              {regularNotes.length === 0 && (
-                <div className="tree-empty">
-                  Sin notas. Crea una con +
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </nav>
-
-      <div className="sidebar-footer">
-        {showUpgrade && (
-          <button
-            className={`nav-item nav-item--upgrade ${isActive('/pricing') ? 'active' : ''}`}
-            onClick={() => navigate('/pricing')}
-            title="Actualizar plan"
-          >
-            <span className="nav-icon">✨</span>
-            {open && <span>Actualizar plan</span>}
-          </button>
-        )}
-        {!isGuest && (
-          <button
-            className={`nav-item ${isActive('/account') ? 'active' : ''}`}
-            onClick={() => navigate('/account')}
-            title="Ajustes"
-          >
-            <span className="nav-icon">⚙</span>
-            {open && <span>Ajustes</span>}
-          </button>
-        )}
-        <button className="nav-item" onClick={onLogout} title={isGuest ? 'Iniciar sesión' : 'Cerrar sesión'}>
-          <span className="nav-icon">↩</span>
-          {open && <span>{isGuest ? 'Iniciar sesión' : 'Salir'}</span>}
-        </button>
-      </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Collapsed sidebar: just nav icons */
+        <>
+          <nav className="sidebar-nav">
+            <button
+              className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+              onClick={() => navigate('/')}
+            >
+              <span className="nav-icon">📓</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
+              onClick={() => navigate('/tasks')}
+            >
+              <span className="nav-icon">✓</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
+              onClick={() => navigate('/calendar')}
+            >
+              <span className="nav-icon">📅</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/search') ? 'active' : ''}`}
+              onClick={() => navigate('/search')}
+            >
+              <span className="nav-icon">🔍</span>
+            </button>
+          </nav>
+          <div className="sidebar-footer">
+            <button className="nav-item" onClick={onLogout}>
+              <span className="nav-icon">↩</span>
+            </button>
+          </div>
+        </>
+      )}
     </aside>
   )
 }
