@@ -94,8 +94,12 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
 
   function buildPickerItems(type: '@' | '#', query: string): Array<{ id: string; label: string }> {
     if (type === '#') {
-      return COMMON_TYPES
-        .filter(t => t.includes(query.toLowerCase()))
+      // Combinar tags del usuario (allUsedTags) + tipos comunes, filtrar por query
+      const userTags = store.allUsedTags()
+      const allTags = Array.from(new Set([...userTags, ...COMMON_TYPES]))
+      return allTags
+        .filter(t => !query || t.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 10)
         .map(t => ({ id: t, label: t }))
     }
     // @ — search nodes
@@ -153,18 +157,19 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     const after = text.slice(pos)
 
     if (picker.type === '#') {
-      // Add type to node, remove #tag from text
-      const newText = newBefore + after
-      const newTypes = node.types.includes(item.id) ? node.types : [...node.types, item.id]
+      // Insertar #tag completo en el texto + añadir a types
+      const tagText = `#${item.id}`
+      const newText = newBefore + tagText + after
+      const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
       if (contentRef.current) {
         contentRef.current.textContent = newText
-        // Move caret to end of newBefore
+        const insertPos = newBefore.length + tagText.length
         const range = document.createRange()
         const sel = window.getSelection()
         const textNode = contentRef.current.firstChild
         if (textNode) {
-          range.setStart(textNode, Math.min(newBefore.length, textNode.textContent?.length || 0))
+          range.setStart(textNode, Math.min(insertPos, textNode.textContent?.length || 0))
           range.collapse(true)
           sel?.removeAllRanges()
           sel?.addRange(range)
