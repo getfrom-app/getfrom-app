@@ -107,7 +107,7 @@ interface Props {
 }
 
 // Detect block type from text prefix
-export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'text'
+export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 'code' | 'text'
 
 export function detectBlockType(text: string): BlockType {
   if (text === '---') return 'divider'
@@ -115,6 +115,8 @@ export function detectBlockType(text: string): BlockType {
   if (text.startsWith('## ')) return 'h2'
   if (text.startsWith('# ')) return 'h1'
   if (text.startsWith('> ')) return 'quote'
+  if (/^\d+\.\s/.test(text)) return 'numbered'
+  if (text.startsWith('` ')) return 'code'
   return 'text'
 }
 
@@ -123,6 +125,8 @@ export function getBlockContent(text: string, type: BlockType): string {
   if (type === 'h2') return text.slice(3)
   if (type === 'h3') return text.slice(4)
   if (type === 'quote') return text.slice(2)
+  if (type === 'numbered') return text.replace(/^\d+\.\s/, '')
+  if (type === 'code') return text.slice(2)
   return text
 }
 
@@ -167,6 +171,8 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
   else if (type === 'h2') { content = text.replace(/^##\s*/, ''); wrapClass = 'block-h2' }
   else if (type === 'h3') { content = text.replace(/^###\s*/, ''); wrapClass = 'block-h3' }
   else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
+  else if (type === 'numbered') { content = text.replace(/^\d+\.\s/, ''); wrapClass = 'block-numbered' }
+  else if (type === 'code') { content = text.slice(2); wrapClass = 'block-code' }
 
   // Procesar inline markdown
   let html = esc(content)

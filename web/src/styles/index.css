@@ -765,6 +765,9 @@ mark.inline-highlight {
   min-height: 200px;
 }
 
+.outliner-filter-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-bottom: 2px; }
+.outliner-filter-input { flex: 1; font-size: 12px; border: none; background: transparent; color: var(--text-primary); outline: none; font-family: inherit; }
+
 .outliner-placeholder {
   padding: 2px 0 2px 32px;
   color: var(--text-tertiary);
@@ -1701,6 +1704,23 @@ mark.inline-highlight {
   color: var(--text-secondary);
   font-style: italic;
 }
+.block-numbered {
+  padding-left: 4px;
+  list-style: decimal;
+  counter-increment: list-counter;
+}
+.block-numbered::before {
+  content: counter(list-counter) '. ';
+  opacity: 0.6;
+}
+.block-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-accent);
+}
 
 .inline-code {
   background: #2a2a2a;
@@ -2486,8 +2506,10 @@ mark.inline-highlight {
 .calendar-timeline-day-col { position: absolute; top: 0; }
 
 /* Celdas clicables vacías */
-.calendar-timeline-cell { position: absolute; left: 0; right: 0; cursor: pointer; border-left: 1px solid var(--border); }
+.calendar-timeline-cell { position: absolute; left: 0; right: 0; cursor: pointer; border-left: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
 .calendar-timeline-cell:hover { background: var(--accent-soft); opacity: 0.5; }
+.calendar-cell-add-hint { font-size: 11px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.1s; white-space: nowrap; }
+.calendar-timeline-cell:hover .calendar-cell-add-hint { opacity: 1; }
 
 /* Bloques de evento con hora */
 .calendar-event-block { position: absolute; left: 2px; right: 2px; border-radius: 5px; padding: 2px 5px; color: white; font-size: 11px; text-align: left; cursor: pointer; border: none; overflow: hidden; display: flex; flex-direction: column; gap: 1px; opacity: 0.92; transition: opacity 0.1s; z-index: 1; }
@@ -2551,6 +2573,11 @@ mark.inline-highlight {
 .agent-shortcut-text { font-size: 13px; }
 .agents-new-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
 .agents-result { margin-top: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+.agents-result--markdown { white-space: normal; }
+.agents-result--markdown h3 { margin: 12px 0 6px; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.agents-result--markdown h4 { margin: 10px 0 4px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.agents-result--markdown li { margin-left: 16px; list-style: disc; margin-bottom: 2px; }
+.agents-result--markdown code { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 12px; }
 
 /* ── Node quick actions bar ─────────────────────────────────────────────── */
 

@@ -129,6 +129,26 @@ function removeFromHistory(q: string) {
   localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(h))
 }
 
+// ── Natural language to DSL ───────────────────────────────────────────────────
+
+const NATURAL_PATTERNS: Array<[RegExp, string]> = [
+  [/tareas?\s+(de\s+)?(hoy|para hoy)/i, 'fecha:hoy tipo:tarea'],
+  [/vencid[oa]s?/i, 'fecha:vencida'],
+  [/pendientes?/i, 'estado:pendiente'],
+  [/complet[ao]d[oa]s?|hech[oa]s?/i, 'estado:hecho'],
+  [/favorit[oa]s?/i, 'tipo:favorito'],
+  [/bucles?\s+(activ[oa]s?)?/i, 'tipo:bucle estado:pendiente'],
+  [/event[oa]s?/i, 'tipo:evento'],
+  [/alta\s+prioridad/i, 'prioridad:alta'],
+]
+
+function naturalToFilter(q: string): string | null {
+  for (const [regex, replacement] of NATURAL_PATTERNS) {
+    if (regex.test(q)) return replacement
+  }
+  return null
+}
+
 // ── Quick chips ───────────────────────────────────────────────────────────────
 
 const QUICK_CHIPS: Array<{ label: string; dsl: string }> = [
@@ -170,6 +190,18 @@ export default function SearchView() {
   const [magicSummary, setMagicSummary] = useState('')
   const [history, setHistory] = useState<string[]>(() => getHistory())
 
+  // Detect natural language and compute the auto-converted DSL hint
+  const naturalHint = useMemo(() => {
+    const raw = query.trim()
+    if (!raw) return null
+    const converted = naturalToFilter(raw)
+    if (!converted) return null
+    // Only show hint if the query doesn't already look like DSL
+    const alreadyDsl = /estado:|fecha:|prioridad:|tipo:/.test(raw)
+    if (alreadyDsl) return null
+    return converted
+  }, [query])
+
   // Sync URL with query state
   useEffect(() => {
     const urlQ = searchParams.get('q') || ''
@@ -200,7 +232,9 @@ export default function SearchView() {
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
-  const parsed = useMemo(() => parseQuery(query), [query])
+  // If the query is natural language, use the converted DSL for parsing; otherwise use as-is
+  const effectiveQuery = naturalHint ?? query
+  const parsed = useMemo(() => parseQuery(effectiveQuery), [effectiveQuery])
 
   const allNodes = useMemo(() => s.allActive(), [s])
   const totalNodeCount = allNodes.length
@@ -284,6 +318,21 @@ export default function SearchView() {
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
           )}
         </div>
+
+        {/* Natural language hint */}
+        {naturalHint && (
+          <div className="search-natural-hint">
+            <span className="search-natural-hint-label">✨ Búsqueda inteligente:</span>
+            <code className="search-natural-hint-dsl">{naturalHint}</code>
+            <button
+              className="search-natural-hint-apply"
+              onClick={() => handleQueryChange(naturalHint)}
+              title="Aplicar conversión"
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
 
         {/* Quick chips */}
         <div className="search-quick-chips">

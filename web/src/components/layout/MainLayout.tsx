@@ -13,6 +13,7 @@ import CalendarView from '../views/CalendarView'
 import AgentsView from '../views/AgentsView'
 import KanbanView from '../views/KanbanView'
 import TagView from '../views/TagView'
+import FollowupView from '../views/FollowupView'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -218,6 +219,7 @@ export default function MainLayout() {
         <Routes>
           <Route index element={<DiaryView />} />
           <Route path="tasks" element={<TasksView />} />
+          <Route path="followup" element={<FollowupView />} />
           <Route path="search" element={<SearchView />} />
           <Route path="calendar" element={<CalendarView />} />
           <Route path="kanban" element={<KanbanView />} />
