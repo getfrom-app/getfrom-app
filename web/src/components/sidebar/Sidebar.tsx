@@ -730,6 +730,22 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               <span className="nav-icon">✦</span>
               <span>Chat IA</span>
             </button>
+            <button
+              className={`nav-item ${isActive('/inbox') ? 'active' : ''}`}
+              onClick={() => navigate('/inbox')}
+              title="Inbox"
+            >
+              <span className="nav-icon">📥</span>
+              <span>Inbox</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/files') ? 'active' : ''}`}
+              onClick={() => navigate('/files')}
+              title="Archivos"
+            >
+              <span className="nav-icon">📎</span>
+              <span>Archivos</span>
+            </button>
             {!isGuest && (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
                 <span className="nav-icon">↩</span>
@@ -788,6 +804,20 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               title="Chat IA"
             >
               <span className="nav-icon">✦</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/inbox') ? 'active' : ''}`}
+              onClick={() => navigate('/inbox')}
+              title="Inbox"
+            >
+              <span className="nav-icon">📥</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/files') ? 'active' : ''}`}
+              onClick={() => navigate('/files')}
+              title="Archivos"
+            >
+              <span className="nav-icon">📎</span>
             </button>
           </nav>
           <div className="sidebar-footer">

@@ -15,6 +15,8 @@ import ChatView from '../views/ChatView'
 import KanbanView from '../views/KanbanView'
 import TagView from '../views/TagView'
 import FollowupView from '../views/FollowupView'
+import FilesView from '../views/FilesView'
+import InboxView from '../views/InboxView'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -248,6 +250,8 @@ export default function MainLayout() {
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
           <Route path="tag/:name" element={<TagView />} />
+          <Route path="files" element={<FilesView />} />
+          <Route path="inbox" element={<InboxView />} />
         </Routes>
         <StatusBar isSyncing={s.isSyncing} />
       </main>

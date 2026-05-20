@@ -4563,3 +4563,33 @@ mark.inline-highlight {
   min-width: 14px;
   text-align: center;
 }
+
+/* ── FilesView ─────────────────────────────────────────────────────────── */
+.files-info-banner { font-size: 13px; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.files-section-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+.files-notes-list { display: flex; flex-direction: column; gap: 4px; }
+.files-note-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; transition: background 0.1s; }
+.files-note-item:hover { background: var(--bg-hover); }
+.files-note-icon { font-size: 14px; flex-shrink: 0; color: var(--text-tertiary); }
+.files-note-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.files-note-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-note-meta { font-size: 11px; color: var(--text-tertiary); }
+.files-note-open { font-size: 12px; color: var(--text-tertiary); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: transparent; cursor: pointer; flex-shrink: 0; }
+.files-note-open:hover { background: var(--bg-hover); }
+
+/* ── InboxView ─────────────────────────────────────────────────────────── */
+.inbox-count { font-size: 14px; background: var(--accent); color: white; border-radius: 20px; padding: 1px 8px; margin-left: 8px; }
+.inbox-list { display: flex; flex-direction: column; gap: 4px; }
+.inbox-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); transition: background 0.1s; }
+.inbox-item:hover { background: var(--bg-hover); }
+.inbox-item-main { flex: 1; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; min-width: 0; }
+.inbox-item-icon { font-size: 14px; flex-shrink: 0; color: var(--text-tertiary); padding-top: 2px; }
+.inbox-item-content { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.inbox-item-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-item-preview { font-size: 12px; color: var(--text-tertiary); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-item-date { font-size: 11px; color: var(--text-tertiary); }
+.inbox-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.inbox-action-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+.inbox-action-btn--keep:hover { background: rgba(251,191,36,0.2); border-color: #f59e0b; }
+.inbox-action-btn--done:hover { background: rgba(34,197,94,0.2); border-color: #22c55e; }
+.inbox-action-btn--delete:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; }
