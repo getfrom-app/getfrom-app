@@ -623,7 +623,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link') {
+  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link' | 'copy') {
+    if (type === 'copy') {
+      const plainText = contentRef.current?.textContent || ''
+      navigator.clipboard.writeText(plainText).catch(console.error)
+      return
+    }
+
     const sel = window.getSelection()
     if (!sel || sel.isCollapsed || !contentRef.current) return
     const selectedText = sel.toString()

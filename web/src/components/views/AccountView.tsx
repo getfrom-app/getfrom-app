@@ -407,6 +407,66 @@ export default function AccountView() {
           )}
         </section>
 
+        {/* ── Privacidad section ── */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">Privacidad</h2>
+
+          <div className="settings-row">
+            <div>
+              <div className="settings-row-label">Datos almacenados</div>
+              <div className="settings-row-hint">
+                Tus notas y tareas se guardan localmente en tu dispositivo y, si tienes cuenta activa, también en nuestros servidores para sincronización.
+                Nunca compartimos tus datos con terceros ni los usamos para entrenar modelos de IA.
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div>
+              <div className="settings-row-label">Política de privacidad</div>
+              <div className="settings-row-hint">Consulta cómo tratamos y protegemos tus datos.</div>
+            </div>
+            <a
+              href="https://getfrom.app/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary"
+            >
+              Ver política ↗
+            </a>
+          </div>
+
+          {getToken() && (
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">Exportar mis datos</div>
+                <div className="settings-row-hint">Descarga una copia completa de todos tus datos en formato JSON o Markdown.</div>
+              </div>
+            </div>
+          )}
+          {getToken() && (
+            <>
+              {exportError && <div className="auth-error" style={{ marginTop: 8 }}>{exportError}</div>}
+              <div className="settings-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => handleExport('json')}
+                  disabled={exportLoading}
+                >
+                  {exportLoading ? 'Exportando...' : 'Backup completo (JSON)'}
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => handleExport('markdown')}
+                  disabled={exportLoading}
+                >
+                  {exportLoading ? 'Exportando...' : 'Descarga Markdown'}
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+
         {/* ── Subscription section ── */}
         <section className="settings-section">
           <h2 className="settings-section-title">Suscripción</h2>

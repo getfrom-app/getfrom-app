@@ -239,6 +239,17 @@ export default function NodeView() {
 
   // ── AI Inline ──────────────────────────────────────────────────────────
 
+  function buildAiContext(context: string): string {
+    const hijos = node ? store.children(node.id).slice(0, 3) : []
+    return [
+      `Nota: "${node?.text || ''}"`,
+      `Fecha: ${new Date().toLocaleDateString('es-ES')}`,
+      hijos.length > 0 ? `Bullets relacionados:\n${hijos.map(h => '- ' + h.text).join('\n')}` : '',
+      '---',
+      context,
+    ].filter(Boolean).join('\n')
+  }
+
   const handleBodyKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
       e.preventDefault()
@@ -246,11 +257,11 @@ export default function NodeView() {
       setIsAiStreaming(true)
       const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
       const context = bodyValue.slice(0, cursorPos)
-      const contextWithTitle = context + '\n\n[Título del nodo: ' + (node?.text || '') + ']'
+      const contextEnriquecido = buildAiContext(context)
       let aiText = ''
       try {
         await aiInlineStream(
-          contextWithTitle,
+          contextEnriquecido,
           undefined,
           (chunk) => {
             aiText += chunk
@@ -276,11 +287,11 @@ export default function NodeView() {
     setIsAiStreaming(true)
     const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
     const context = bodyValue.slice(0, cursorPos)
-    const contextWithTitle = context + '\n\n[Título del nodo: ' + (node?.text || '') + ']'
+    const contextEnriquecido = buildAiContext(context)
     let aiText = ''
     try {
       await aiInlineStream(
-        contextWithTitle,
+        contextEnriquecido,
         undefined,
         (chunk) => {
           aiText += chunk
