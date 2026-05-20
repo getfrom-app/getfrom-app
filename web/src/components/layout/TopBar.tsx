@@ -18,6 +18,11 @@ const VIEW_LABELS: Record<string, string> = {
   '/kanban': 'Kanban',
   '/agents': 'Agentes',
   '/account': 'Cuenta',
+  '/chat': 'Chat IA',
+  '/followup': 'Seguimiento',
+  '/files': 'Archivos',
+  '/inbox': 'Inbox',
+  '/trash': 'Papelera',
 }
 
 function getHourIcon() {
