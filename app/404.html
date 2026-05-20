@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  var l = window.location;
+  l.replace(l.protocol + '//' + l.host + '/app/?p=' + encodeURIComponent(l.pathname.slice(1) + l.search) + l.hash);
+</script>
+</head>
+</html>
