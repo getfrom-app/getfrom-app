@@ -781,9 +781,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           <button
             className={`bullet-btn ${node.status !== null ? 'task' : ''}`}
             onClick={node.status !== null ? toggleTask : undefined}
-            onDoubleClick={node.status === null ? toggleTask : undefined}
+            onDoubleClick={
+              node.status === null
+                ? (children.length > 0 ? () => navigate(`/node/${node.id}`) : toggleTask)
+                : undefined
+            }
             tabIndex={-1}
             aria-label={node.status !== null ? 'Toggle tarea' : 'Bullet'}
+            title={node.status === null && children.length > 0 ? 'Doble-clic para zoom' : undefined}
           >
             {node.status === 'done' ? (
               <svg width="14" height="14" viewBox="0 0 14 14">

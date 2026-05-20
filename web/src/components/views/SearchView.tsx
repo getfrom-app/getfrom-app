@@ -410,45 +410,65 @@ export default function SearchView() {
           <div className="view-empty">Escribe para buscar o usa los filtros rápidos</div>
         )}
 
-        {results.map(node => (
-          <div
-            key={node.id}
-            className="search-result"
-            onClick={() => navigate(`/node/${node.id}`)}
-          >
-            <div className="search-result-main">
-              <span className="result-text">
-                {parsed.text
-                  ? highlight(node.text, parsed.text)
-                  : node.text}
-              </span>
-              {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
+        {results.length > 0 && (() => {
+          const tasks = results.filter(n => n.status !== null)
+          const events = results.filter(n => n.status === null && n.isEvent)
+          const notes = results.filter(n => n.status === null && !n.isEvent)
+
+          const groups: Array<{ label: string; icon: string; nodes: typeof results }> = []
+          if (tasks.length > 0) groups.push({ label: 'Tareas', icon: '✓', nodes: tasks })
+          if (events.length > 0) groups.push({ label: 'Eventos', icon: '📅', nodes: events })
+          if (notes.length > 0) groups.push({ label: 'Notas', icon: '📄', nodes: notes })
+
+          return groups.map(group => (
+            <div key={group.label} className="search-result-group">
+              <div className="search-result-group-header">
+                <span className="search-result-group-icon">{group.icon}</span>
+                <span className="search-result-group-label">{group.label}</span>
+                <span className="search-result-group-count">{group.nodes.length}</span>
+              </div>
+              {group.nodes.map(node => (
+                <div
+                  key={node.id}
+                  className="search-result"
+                  onClick={() => navigate(`/node/${node.id}`)}
+                >
+                  <div className="search-result-main">
+                    <span className="result-text">
+                      {parsed.text
+                        ? highlight(node.text, parsed.text)
+                        : node.text}
+                    </span>
+                    {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
+                  </div>
+                  <div className="search-result-meta">
+                    {node.status !== null && (
+                      <span className={`result-badge status-badge ${node.status}`}>
+                        {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
+                      </span>
+                    )}
+                    {node.priority && (
+                      <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
+                        {PRIORITY_LABEL[node.priority]}
+                      </span>
+                    )}
+                    {node.due && (
+                      <span className="result-badge due-badge">
+                        📅 {formatDue(node.due)}
+                      </span>
+                    )}
+                    {node.isEvent && (
+                      <span className="result-badge event-badge">Evento</span>
+                    )}
+                    {node.types.includes('bucle') && (
+                      <span className="result-badge loop-badge">Bucle</span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="search-result-meta">
-              {node.status !== null && (
-                <span className={`result-badge status-badge ${node.status}`}>
-                  {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
-                </span>
-              )}
-              {node.priority && (
-                <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
-                  {PRIORITY_LABEL[node.priority]}
-                </span>
-              )}
-              {node.due && (
-                <span className="result-badge due-badge">
-                  📅 {formatDue(node.due)}
-                </span>
-              )}
-              {node.isEvent && (
-                <span className="result-badge event-badge">Evento</span>
-              )}
-              {node.types.includes('bucle') && (
-                <span className="result-badge loop-badge">Bucle</span>
-              )}
-            </div>
-          </div>
-        ))}
+          ))
+        })()}
       </div>
     </div>
   )

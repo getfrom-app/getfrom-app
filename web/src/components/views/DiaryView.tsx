@@ -399,6 +399,12 @@ export default function DiaryView() {
   const taskChildren = diaryChildren.filter(n => n.status !== null && !n.deletedAt)
   const doneChildren = taskChildren.filter(n => n.status === 'done')
 
+  const EXCLUDED_TYPES = ['bucle', 'agente', 'prompt', 'evento', 'tarea']
+  const dayTags = [...new Set(
+    diaryChildren.flatMap(n => n.types || [])
+      .filter(t => !EXCLUDED_TYPES.includes(t))
+  )]
+
 
   function renderAgenda() {
     // Próximos 7 días con sus tareas
@@ -464,6 +470,15 @@ export default function DiaryView() {
                     <> · {taskChildren.length} {taskChildren.length === 1 ? 'tarea' : 'tareas'} · {doneChildren.length} completadas</>
                   )}
                 </span>
+              )}
+
+              {/* Tag counter */}
+              {diary && dayTags.length > 0 && (
+                <div className="diary-day-tags">
+                  {dayTags.map(t => (
+                    <span key={t} className="diary-day-tag" style={{ color: store.tagColor(t) }}>#{t}</span>
+                  ))}
+                </div>
               )}
 
               <div className="diary-nav">
