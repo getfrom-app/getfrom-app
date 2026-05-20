@@ -5,6 +5,7 @@ import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
+import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
@@ -60,6 +61,9 @@ export default function NodeView() {
 
   // Emoji picker state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+
+  // Chat panel state
+  const [showChat, setShowChat] = useState(false)
 
   // Record recent visit
   useEffect(() => {
@@ -124,6 +128,10 @@ export default function NodeView() {
           setShareCopied(true)
           setTimeout(() => setShareCopied(false), 2000)
         }).catch(() => {})
+      }
+      if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowChat(v => !v)
       }
       if (e.key === 'Escape') {
         setShowInDocSearch(false)
@@ -793,6 +801,16 @@ export default function NodeView() {
               </svg>
               Duplicar nota
             </button>
+            <button
+              className={`node-quick-action-btn ${showChat ? 'node-quick-action-btn--active' : ''}`}
+              onClick={() => setShowChat(v => !v)}
+              title="Chat IA sobre esta nota (⌘J)"
+            >
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9.586a1 1 0 0 0 .707-.293l2.414-2.414A1 1 0 0 0 15 10.586V4a2 2 0 0 0-2-2H2zm3 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
+              </svg>
+              Chat IA
+            </button>
             {quickActionMsg && (
               <span className="node-quick-action-feedback">{quickActionMsg}</span>
             )}
@@ -1116,6 +1134,13 @@ export default function NodeView() {
           />
         </div>
       </div>
+
+      {showChat && (
+        <NodeChatPanel
+          node={node}
+          onClose={() => setShowChat(false)}
+        />
+      )}
 
       <NodeContextPanel nodeId={node.id} />
 

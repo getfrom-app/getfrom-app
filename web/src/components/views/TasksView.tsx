@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -158,10 +158,41 @@ interface SectionProps {
   onToggle: () => void
   selectedTaskIds: Set<string>
   onToggleSelect: (id: string) => void
+  onQuickAdd?: (text: string) => void
 }
 
-function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSelect }: SectionProps) {
-  if (section.tasks.length === 0) return null
+function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSelect, onQuickAdd }: SectionProps) {
+  const [adding, setAdding] = useState(false)
+  const [addText, setAddText] = useState('')
+  const addInputRef = useRef<HTMLInputElement>(null)
+
+  function handleAddConfirm() {
+    const t = addText.trim()
+    if (t && onQuickAdd) onQuickAdd(t)
+    setAddText('')
+    setAdding(false)
+  }
+
+  if (section.tasks.length === 0 && !adding) {
+    return (
+      <div className={`tasks-section tasks-section--${section.id}`}>
+        <button className="tasks-section-header" onClick={onToggle}>
+          <svg className={`tasks-section-arrow ${collapsed ? 'collapsed' : ''}`} width="10" height="10" viewBox="0 0 10 10">
+            <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+          <span className="tasks-section-label">{section.label}</span>
+          <span className="tasks-section-count">0</span>
+          {onQuickAdd && (
+            <button
+              className="tasks-section-add-btn"
+              onClick={e => { e.stopPropagation(); setAdding(true); setTimeout(() => addInputRef.current?.focus(), 50) }}
+              title="Añadir tarea"
+            >+</button>
+          )}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className={`tasks-section tasks-section--${section.id}`}>
@@ -174,6 +205,13 @@ function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSe
         </svg>
         <span className="tasks-section-label">{section.label}</span>
         <span className="tasks-section-count">{section.tasks.length}</span>
+        {onQuickAdd && (
+          <button
+            className="tasks-section-add-btn"
+            onClick={e => { e.stopPropagation(); setAdding(true); setTimeout(() => addInputRef.current?.focus(), 50) }}
+            title="Añadir tarea"
+          >+</button>
+        )}
       </button>
       {!collapsed && (
         <div className="tasks-section-body">
@@ -192,6 +230,32 @@ function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSe
               </div>
             )
           })}
+          {adding && (
+            <div className="tasks-quick-add">
+              <span className="tasks-quick-add-icon">○</span>
+              <input
+                ref={addInputRef}
+                className="tasks-quick-add-input"
+                value={addText}
+                onChange={e => setAddText(e.target.value)}
+                placeholder="Nombre de la tarea..."
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddConfirm()
+                  if (e.key === 'Escape') { setAdding(false); setAddText('') }
+                }}
+                onBlur={() => { if (!addText.trim()) setAdding(false) }}
+              />
+            </div>
+          )}
+          {!adding && onQuickAdd && (
+            <button
+              className="tasks-section-quick-add-row"
+              onClick={() => { setAdding(true); setTimeout(() => addInputRef.current?.focus(), 50) }}
+            >
+              <span style={{ opacity: 0.4, marginRight: 6 }}>+</span>
+              <span style={{ opacity: 0.4, fontSize: 13 }}>Añadir tarea</span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -565,6 +629,26 @@ export default function TasksView() {
                 onToggle={() => toggleSection(section.id)}
                 selectedTaskIds={selectedTaskIds}
                 onToggleSelect={toggleSelect}
+                onQuickAdd={(text) => {
+                  // Determine due date based on section
+                  let due: string | null = null
+                  if (section.id === 'today') {
+                    const d = new Date()
+                    d.setHours(23, 59, 0, 0)
+                    due = d.toISOString()
+                  } else if (section.id === 'week') {
+                    const d = new Date()
+                    d.setDate(d.getDate() + 3)
+                    d.setHours(23, 59, 0, 0)
+                    due = d.toISOString()
+                  } else if (section.id === 'later') {
+                    const d = new Date()
+                    d.setDate(d.getDate() + 14)
+                    d.setHours(23, 59, 0, 0)
+                    due = d.toISOString()
+                  }
+                  store.createNode({ text, parentId: null, isTask: true, due })
+                }}
               />
             ))}
           </div>
