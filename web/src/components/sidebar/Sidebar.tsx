@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useStore } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
 
@@ -9,6 +10,86 @@ interface Props {
   onLogout: () => void
   isSyncing: boolean
   isGuest?: boolean
+}
+
+interface TreeNodeProps {
+  node: Node
+  depth: number
+  activePath: string
+  onNavigate: (id: string) => void
+  onCreateChild: (parentId: string) => void
+}
+
+function TreeNodeItem({ node, depth, activePath, onNavigate, onCreateChild }: TreeNodeProps) {
+  const [expanded, setExpanded] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const children = store.children(node.id).filter(n => !n.deletedAt && !n.isDiaryEntry)
+  const hasChildren = children.length > 0
+  const isActive = activePath === `/node/${node.id}` || activePath.startsWith(`/node/${node.id}/`)
+
+  return (
+    <div className="tree-node">
+      <div
+        className={`tree-node-row ${isActive ? 'active' : ''}`}
+        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {/* Expand toggle */}
+        <button
+          className={`tree-node-toggle ${hasChildren ? '' : 'invisible'}`}
+          onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
+          tabIndex={-1}
+        >
+          <svg
+            width="10" height="10" viewBox="0 0 10 10"
+            style={{ transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}
+          >
+            <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          </svg>
+        </button>
+
+        {/* Node label */}
+        <button
+          className="tree-node-label"
+          onClick={() => onNavigate(node.id)}
+        >
+          <span className="tree-node-text">
+            {node.isFavorite && <span className="tree-node-star">★</span>}
+            {node.text || 'Sin título'}
+          </span>
+        </button>
+
+        {/* Add child button */}
+        {hovered && (
+          <button
+            className="tree-node-add"
+            onClick={e => { e.stopPropagation(); onCreateChild(node.id) }}
+            title="Añadir hijo"
+            tabIndex={-1}
+          >
+            +
+          </button>
+        )}
+      </div>
+
+      {/* Children */}
+      {expanded && hasChildren && (
+        <div className="tree-node-children">
+          {children.map(child => (
+            <TreeNodeItem
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              activePath={activePath}
+              onNavigate={onNavigate}
+              onCreateChild={onCreateChild}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }: Props) {
@@ -21,12 +102,42 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const pendingCount = s.pendingTasks().length
   const showUpgrade = isGuest || !us.isPremium
 
+  // Get root notes (parentId === null, not diary, not tag definitions)
+  const allNodes = s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt)
+  const rootNotes = allNodes
+    .filter(n => n.parentId === null)
+    .filter(n => {
+      // Skip tag definitions from the general tree
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        return !ed._tagDefinition
+      } catch { return true }
+    })
+    .sort((a, b) => a.siblingOrder - b.siblingOrder)
+
+  const favorites = rootNotes.filter(n => n.isFavorite)
+  const regularNotes = rootNotes.filter(n => !n.isFavorite)
+
   function isActive(path: string) {
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
   function tagName(node: Node) {
     return s.tagName(node) || node.text
+  }
+
+  function handleCreateRoot() {
+    const newNode = store.createNode({ text: '', parentId: null })
+    navigate(`/node/${newNode.id}`)
+  }
+
+  function handleNavigate(id: string) {
+    navigate(`/node/${id}`)
+  }
+
+  function handleCreateChild(parentId: string) {
+    const newNode = store.createNode({ text: '', parentId })
+    navigate(`/node/${newNode.id}`)
   }
 
   return (
@@ -89,6 +200,59 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 <span>{tagName(tag)}</span>
               </button>
             ))}
+          </>
+        )}
+
+        {/* Tree navigation */}
+        {open && (
+          <>
+            {/* Favorites section */}
+            {favorites.length > 0 && (
+              <>
+                <div className="nav-section-label">Favoritos</div>
+                <div className="tree-section">
+                  {favorites.map(node => (
+                    <TreeNodeItem
+                      key={node.id}
+                      node={node}
+                      depth={0}
+                      activePath={location.pathname}
+                      onNavigate={handleNavigate}
+                      onCreateChild={handleCreateChild}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Notes section */}
+            <div className="nav-section-label tree-section-header">
+              <span>Notas</span>
+              <button
+                className="tree-add-root"
+                onClick={handleCreateRoot}
+                title="Nueva nota raíz"
+              >
+                +
+              </button>
+            </div>
+            <div className="tree-section">
+              {regularNotes.slice(0, 50).map(node => (
+                <TreeNodeItem
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  activePath={location.pathname}
+                  onNavigate={handleNavigate}
+                  onCreateChild={handleCreateChild}
+                />
+              ))}
+              {regularNotes.length === 0 && (
+                <div className="tree-empty">
+                  Sin notas. Crea una con +
+                </div>
+              )}
+            </div>
           </>
         )}
       </nav>

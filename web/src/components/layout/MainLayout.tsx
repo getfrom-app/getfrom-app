@@ -48,6 +48,19 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:paywall', handler)
   }, [])
 
+  // Cmd+N / Ctrl+N → new note
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        const newNode = store.createNode({ text: '', parentId: null })
+        navigate(`/node/${newNode.id}`)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [navigate])
+
   function handleLogout() {
     clearTokens()
     userStore.reset()
