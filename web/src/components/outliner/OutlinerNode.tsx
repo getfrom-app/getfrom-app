@@ -14,6 +14,7 @@ interface Props {
   isSelected: boolean
   onSelect: (id: string) => void
   onSelectNext: (id: string, dir: 'up' | 'down') => void
+  filterText?: string
 }
 
 const COMMON_TYPES = ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota']
@@ -47,7 +48,7 @@ function getCursorRect(el: HTMLElement): DOMRect {
 // Module-level drag state (shared across all OutlinerNode instances)
 let _draggedNodeId: string | null = null
 
-export default function OutlinerNode({ node, depth, isSelected, onSelect, onSelectNext }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, onSelect, onSelectNext, filterText }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -67,16 +68,20 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
 
+  // Filter: if filterText is active and this node doesn't match, hide it
+  const activeFilter = filterText && filterText.trim()
+  const matchesFilter = !activeFilter || node.text.toLowerCase().includes(filterText!.toLowerCase())
+
   // Sync DOM text with node.text when not editing
   // Setear contenido via innerHTML cuando NO editando — evita poner hijos React
   // dentro de contentEditable (causa bug removeChild en reconciler de React)
   useEffect(() => {
     if (isEditing || !contentRef.current) return
-    const newHtml = renderInlineToHtml(node.text)
+    const newHtml = renderInlineToHtml(node.text, activeFilter ? filterText : undefined)
     if (contentRef.current.innerHTML !== newHtml) {
       contentRef.current.innerHTML = newHtml
     }
-  }, [node.text, isEditing])
+  }, [node.text, isEditing, filterText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus when selected
   useEffect(() => {
@@ -645,6 +650,8 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     }
   }
 
+  if (activeFilter && !matchesFilter) return null
+
   return (
     <div className="outliner-node" style={{ '--depth': depth } as React.CSSProperties}>
       <div
@@ -834,6 +841,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           isSelected={isSelected && false} // selection handled by parent
           onSelect={onSelect}
           onSelectNext={onSelectNext}
+          filterText={filterText}
         />
       ))}
 

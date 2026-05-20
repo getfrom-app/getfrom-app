@@ -733,6 +733,13 @@ a { color: inherit; text-decoration: none; }
   padding: 0 1px;
 }
 
+mark.search-highlight {
+  background: rgba(251, 191, 36, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 .result-badge {
   font-size: 12px;
   flex-shrink: 0;

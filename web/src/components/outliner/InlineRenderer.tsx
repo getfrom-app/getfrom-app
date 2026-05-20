@@ -153,7 +153,7 @@ export default function InlineRenderer({ text, className }: Props) {
 // ── HTML string renderer (para useEffect en contentEditable) ─────────────────
 // Convierte texto con markdown inline a HTML string sin React nodes
 // Evita poner React children dentro de contentEditable (bug removeChild)
-export function renderInlineToHtml(text: string): string {
+export function renderInlineToHtml(text: string, highlight?: string): string {
   if (!text) return ''
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -181,6 +181,13 @@ export function renderInlineToHtml(text: string): string {
       const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]
       return `<span class="tag-inline tag-inline--${color}">${match}</span>`
     })
+
+  // Aplicar highlight de búsqueda si existe
+  if (highlight && highlight.trim()) {
+    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp(`(${escapedHighlight})`, 'gi')
+    html = html.replace(re, '<mark class="search-highlight">$1</mark>')
+  }
 
   return wrapClass ? `<span class="${wrapClass}">${html}</span>` : html
 }

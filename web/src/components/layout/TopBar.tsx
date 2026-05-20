@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTheme } from '../../hooks/useTheme'
 
 interface Props {
   onNewNote: () => void
@@ -30,11 +31,16 @@ function getTodayLabel() {
 export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEvent, onVoiceCapture }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { theme, setTheme } = useTheme()
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isHome = path === '/' || path === ''
 
   function goHome() {
     navigate('/')
+  }
+
+  function toggleTheme() {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   return (
@@ -118,6 +124,15 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
             <span className="top-bar-shortcut-hint">⌘R</span>
           </button>
         )}
+
+        {/* Theme toggle */}
+        <button
+          className="top-bar-action"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
     </div>
   )

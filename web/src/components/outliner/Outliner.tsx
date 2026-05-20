@@ -8,9 +8,10 @@ interface Props {
   autoFocusEmpty?: boolean
   placeholder?: string
   className?: string
+  filterText?: string
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const nodes = s.children(parentId)
@@ -72,6 +73,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           isSelected={selectedId === node.id}
           onSelect={setSelectedId}
           onSelectNext={handleSelectNext}
+          filterText={filterText}
         />
       ))}
     </div>

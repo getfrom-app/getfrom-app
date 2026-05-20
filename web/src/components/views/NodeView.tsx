@@ -551,6 +551,7 @@ export default function NodeView() {
             parentId={node.id}
             autoFocusEmpty
             placeholder="Añade contenido..."
+            filterText={inDocSearch || undefined}
           />
         </div>
       </div>
