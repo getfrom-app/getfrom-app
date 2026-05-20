@@ -4,8 +4,10 @@ import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
 import ResetPasswordPage from './components/auth/ResetPasswordPage'
 import MainLayout from './components/layout/MainLayout'
+import PricingView from './components/views/PricingView'
 
-function PrivateRoute({ children }: { children: React.ReactNode }) {
+// Rutas que requieren cuenta — redirigen a login si no hay sesión
+function AccountRoute({ children }: { children: React.ReactNode }) {
   return getToken() ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -15,11 +17,10 @@ export default function App() {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/*" element={
-        <PrivateRoute>
-          <MainLayout />
-        </PrivateRoute>
-      } />
+      <Route path="/pricing" element={<PricingView />} />
+      <Route path="/*" element={<MainLayout />} />
     </Routes>
   )
 }
+
+export { AccountRoute }

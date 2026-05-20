@@ -150,6 +150,20 @@ export async function changePlan(): Promise<{ ok: boolean; action: 'checkout' | 
   return apiRequest('/auth/plan/change', { method: 'POST' })
 }
 
+export async function changePlanAnnual(): Promise<{ ok: boolean; action: string; checkoutUrl?: string }> {
+  return apiRequest('/auth/plan/change', {
+    method: 'POST',
+    body: JSON.stringify({ variant: 'annual' }),
+  })
+}
+
+export async function changePlanLifetime(): Promise<{ ok: boolean; action: string; checkoutUrl?: string }> {
+  return apiRequest('/auth/plan/change', {
+    method: 'POST',
+    body: JSON.stringify({ variant: 'lifetime' }),
+  })
+}
+
 // Sync
 export async function syncNodes(payload: {
   lastSyncAt: string | null

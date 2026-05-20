@@ -1,6 +1,9 @@
-import { syncNodes } from '../api/client'
+import { syncNodes, getToken } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
+
+const GUEST_NODES_KEY = 'from_guest_nodes'
+const GUEST_WORKSPACES_KEY = 'from_guest_workspaces'
 
 type Listener = () => void
 
@@ -9,6 +12,7 @@ class NodeStore {
   workspaces: Workspace[] = []
   lastSyncAt: string | null = null
   isSyncing = false
+  isGuest: boolean = !getToken()
   private listeners: Set<Listener> = new Set()
   private dirtyIds: Set<string> = new Set()
   private syncTimer: ReturnType<typeof setTimeout> | null = null
@@ -162,7 +166,45 @@ class NodeStore {
     this.syncTimer = setTimeout(() => this.sync(), 1500)
   }
 
+  private persistGuest() {
+    try {
+      const nodes = [...this.nodes.values()]
+      localStorage.setItem(GUEST_NODES_KEY, JSON.stringify(nodes))
+      localStorage.setItem(GUEST_WORKSPACES_KEY, JSON.stringify(this.workspaces))
+    } catch { /* ignore quota errors */ }
+  }
+
+  async loadGuest(): Promise<void> {
+    try {
+      const raw = localStorage.getItem(GUEST_NODES_KEY)
+      const rawWs = localStorage.getItem(GUEST_WORKSPACES_KEY)
+      if (raw) {
+        const nodes: Node[] = JSON.parse(raw)
+        for (const n of nodes) this.applyNode(n)
+      }
+      if (rawWs) {
+        this.workspaces = JSON.parse(rawWs)
+      }
+      // Ensure default workspace
+      if (this.workspaces.length === 0) {
+        this.workspaces = [{ id: '00000000-0000-0000-0000-000000000001', name: 'Mi espacio', color: null, icon: null, description: null, siblingOrder: 0, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Workspace]
+      }
+    } catch { /* ignore parse errors */ }
+    // If no diary for today, create one
+    if (!this.todayDiary()) {
+      await this.createTodayDiary()
+    }
+    this.notify()
+  }
+
   async sync(force = false): Promise<void> {
+    // En modo invitado, persistir en localStorage y no llamar al servidor
+    if (this.isGuest) {
+      this.persistGuest()
+      this.dirtyIds.clear()
+      return
+    }
+
     if (this.isSyncing && !force) return
     this.isSyncing = true
     this.notify()
@@ -216,7 +258,11 @@ class NodeStore {
           this.nodes.set(node.id, { ...node, _isDirty: false })
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      // Detectar límite free (402 FREE_LIMIT_REACHED)
+      if (err instanceof Error && err.message === 'FREE_LIMIT_REACHED') {
+        window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
+      }
       console.error('Sync failed:', err)
     } finally {
       this.isSyncing = false
