@@ -304,36 +304,40 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           </button>
         </div>
         {/* Mini buscador de notas */}
-        <div className="sidebar-tree-search">
-          <input
-            type="text"
-            className="sidebar-tree-search-input"
-            placeholder="Filtrar notas..."
-            value={treeSearch}
-            onChange={e => setTreeSearch(e.target.value)}
-          />
-          {treeSearch && <button className="sidebar-tree-search-clear" onClick={() => setTreeSearch('')}>×</button>}
-        </div>
-        <div className="tree-section">
-          {(treeSearch
-            ? s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt && n.text.toLowerCase().includes(treeSearch.toLowerCase()))
-            : regularNotes
-          ).slice(0, 50).map(node => (
-            <TreeNodeItem
-              key={node.id}
-              node={node}
-              depth={0}
-              activePath={location.pathname}
-              onNavigate={handleNavigate}
-              onCreateChild={handleCreateChild}
-            />
-          ))}
-          {regularNotes.length === 0 && (
-            <div className="tree-empty">
-              Sin notas. Crea una con +
+        {!collapsedSections['notes'] && (
+          <>
+            <div className="sidebar-tree-search">
+              <input
+                type="text"
+                className="sidebar-tree-search-input"
+                placeholder="Filtrar notas..."
+                value={treeSearch}
+                onChange={e => setTreeSearch(e.target.value)}
+              />
+              {treeSearch && <button className="sidebar-tree-search-clear" onClick={() => setTreeSearch('')}>×</button>}
             </div>
-          )}
-        </div>
+            <div className="tree-section">
+              {(treeSearch
+                ? s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt && n.text.toLowerCase().includes(treeSearch.toLowerCase()))
+                : regularNotes
+              ).slice(0, 50).map(node => (
+                <TreeNodeItem
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  activePath={location.pathname}
+                  onNavigate={handleNavigate}
+                  onCreateChild={handleCreateChild}
+                />
+              ))}
+              {regularNotes.length === 0 && (
+                <div className="tree-empty">
+                  Sin notas. Crea una con +
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Stats widget */}
         <div className="sidebar-stats-widget">

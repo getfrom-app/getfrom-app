@@ -41,9 +41,6 @@ export default function AccountView() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
-  // Google Calendar
-  const [gcalInfoVisible, setGcalInfoVisible] = useState(false)
-
   // Text shortcuts
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => getShortcuts())
   const [newTrigger, setNewTrigger] = useState('')
@@ -620,91 +617,116 @@ export default function AccountView() {
           <section className="settings-section">
             <h2 className="settings-section-title">Google Calendar</h2>
 
-            {/* Info cuenta */}
+            {/* Estado de sincronización */}
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Cuenta</div>
-                <div className="settings-row-value">{user?.email ?? '—'}</div>
-              </div>
-            </div>
-
-            {/* Estado de conexión */}
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">Estado</div>
+                <div className="settings-row-label">Estado de sincronización</div>
                 <div className="settings-row-hint">
-                  La sincronización con Google Calendar se realiza automáticamente cuando inicias sesión con Google.
-                  Los eventos con fecha y hora aparecen en el Calendario de From.
+                  Los eventos de Google Calendar aparecerán en el Calendario cuando inicies sesión con tu cuenta de Google.
                 </div>
               </div>
+              <span style={{
+                fontSize: 12,
+                padding: '3px 8px',
+                borderRadius: 99,
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-tertiary)',
+                whiteSpace: 'nowrap',
+                alignSelf: 'flex-start',
+              }}>
+                No conectado
+              </span>
             </div>
 
-            {gcalInfoVisible ? (
-              <div className="settings-info-box" style={{ marginTop: 8, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, lineHeight: 1.6 }}>
-                <strong>Cómo conectar Google Calendar</strong>
-                <p style={{ margin: '8px 0 0' }}>
-                  Para sincronizar con Google Calendar, inicia sesión con Google en la pantalla de login.
-                  Los eventos con fecha/hora aparecerán automáticamente en el Calendario.
-                </p>
-                <button
-                  className="btn-secondary"
-                  style={{ marginTop: 10, fontSize: 12 }}
-                  onClick={() => setGcalInfoVisible(false)}
-                >
-                  Cerrar
-                </button>
-              </div>
-            ) : (
-              <div className="settings-actions">
-                <button
-                  className="btn-secondary"
-                  onClick={() => setGcalInfoVisible(true)}
-                >
-                  Conectar Google Calendar
-                </button>
-              </div>
-            )}
+            {/* Instrucciones */}
+            <div style={{ marginTop: 4, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, lineHeight: 1.65, color: 'var(--text-secondary)' }}>
+              <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>Cómo sincronizar Google Calendar</strong>
+              <ol style={{ margin: 0, paddingLeft: 18 }}>
+                <li>Cierra sesión en From.</li>
+                <li>Inicia sesión usando el botón <em>Continuar con Google</em>.</li>
+                <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
+              </ol>
+              <a
+                href="https://getfrom.app/docs/google-calendar"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent)', fontSize: 12 }}
+              >
+                Ver documentación →
+              </a>
+            </div>
           </section>
         )}
 
-        {/* ── Extensión Claude — MCP token ── */}
+        {/* ── Integraciones ── */}
         {getToken() && (
           <section className="settings-section">
-            <h2 className="settings-section-title">Extensión Claude</h2>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">Token de API para Claude</div>
-                <div className="settings-row-hint">
-                  Conecta Claude con tu vault de From.{' '}
-                  <a href="https://getfrom.app/claude" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>
-                    Ver instrucciones →
-                  </a>
+            <h2 className="settings-section-title">Integraciones</h2>
+
+            {/* Claude Desktop MCP */}
+            <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="settings-row-label">Claude Desktop (MCP)</div>
+                  <div className="settings-row-hint">
+                    Conecta Claude con tu vault de From para acceder a tus notas desde el asistente.{' '}
+                    <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                      Ver instrucciones →
+                    </a>
+                  </div>
                 </div>
+                <a
+                  href="https://getfrom.app/from.dxt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
+                >
+                  Descargar .dxt
+                </a>
+              </div>
+
+              {/* Token MCP */}
+              <div style={{ width: '100%' }}>
+                <div className="settings-row-label" style={{ marginBottom: 6, fontSize: 12, color: 'var(--text-secondary)' }}>Tu token de API</div>
+                {mcpLoaded && (
+                  mcpToken ? (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
+                          {mcpToken}
+                        </code>
+                        <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
+                          {mcpCopied ? '✓ Copiado' : 'Copiar'}
+                        </button>
+                      </div>
+                      <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
+                        {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="settings-actions">
+                      <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
+                        {generatingMcp ? 'Generando...' : 'Generar token de API'}
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             </div>
-            {mcpLoaded && (
-              mcpToken ? (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
-                      {mcpToken}
-                    </code>
-                    <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
-                      {mcpCopied ? '✓ Copiado' : 'Copiar'}
-                    </button>
-                  </div>
-                  <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-                    {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
-                  </button>
-                </div>
-              ) : (
-                <div className="settings-actions">
-                  <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-                    {generatingMcp ? 'Generando...' : 'Generar token de API'}
-                  </button>
-                </div>
-              )
-            )}
+
+            {/* Divider */}
+            <div style={{ height: 1, background: 'var(--border)', margin: '12px 0' }} />
+
+            {/* API Key propia */}
+            <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+              <div className="settings-row-label">API Key propia de Claude (opcional)</div>
+              <div className="settings-row-hint">
+                Si quieres usar tu propia clave de Anthropic en lugar de los tokens incluidos en tu plan,
+                puedes añadirla en la app de escritorio en <strong>Ajustes → IA → API Key</strong>.
+                Esto te permite usar tu cuota directamente sin consumir los tokens de From.
+              </div>
+            </div>
           </section>
         )}
 

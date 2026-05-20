@@ -255,6 +255,13 @@ export default function DiaryView() {
     })
     .slice(0, 5)
 
+  // Notas creadas o actualizadas hoy (excluye entradas de diario y tareas)
+  const notesCreatedToday = s.allActive()
+    .filter(n => !n.isDiaryEntry && !n.deletedAt && n.status === null)
+    .filter(n => new Date(n.updatedAt) >= todayStart)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 5)
+
   // ── Panel stats ────────────────────────────────────────────────────────
   const todayStartStr = todayStart.toDateString()
   const doneToday = s.allActive().filter(n => {
@@ -265,7 +272,7 @@ export default function DiaryView() {
 
   function renderPending() {
     const hasBucles = bucles.length > 0
-    const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0
+    const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0 || activeProjects.length > 0
 
     const statsHeader = (
       <div className="diary-panel-stats">
@@ -291,23 +298,20 @@ export default function DiaryView() {
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
             Nada pendiente hoy
           </div>
-          {activeProjects.length > 0 && (
+          {notesCreatedToday.length > 0 && (
             <div className="diary-pending-section">
-              <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Proyectos activos</div>
-              {activeProjects.map(proj => {
-                const pendingCount = store.children(proj.id).filter(c => c.status === 'pending' && !c.deletedAt).length
-                return (
-                  <div
-                    key={proj.id}
-                    className="diary-task-chip"
-                    onClick={() => navigate(`/node/${proj.id}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <span className="diary-task-text">{proj.text || 'Sin título'}</span>
-                    <span className="diary-task-due" style={{ marginLeft: 'auto' }}>({pendingCount})</span>
-                  </div>
-                )
-              })}
+              <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Notas de hoy</div>
+              {notesCreatedToday.map(note => (
+                <div
+                  key={note.id}
+                  className="diary-task-chip"
+                  onClick={() => navigate(`/node/${note.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
+                  <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -399,6 +403,24 @@ export default function DiaryView() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Notas de hoy */}
+        {notesCreatedToday.length > 0 && (
+          <div className="diary-pending-section">
+            <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Notas de hoy</div>
+            {notesCreatedToday.map(note => (
+              <div
+                key={note.id}
+                className="diary-task-chip"
+                onClick={() => navigate(`/node/${note.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
+                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -640,6 +662,7 @@ export default function DiaryView() {
                 autoFocusEmpty
                 placeholder="Escribe lo que está en tu mente..."
                 className="diary-outliner"
+                compact
               />
             ) : (
               <div className="view-empty-state" style={{ padding: '32px 0' }}>

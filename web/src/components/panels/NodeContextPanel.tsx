@@ -30,7 +30,17 @@ export default function NodeContextPanel({ nodeId }: Props) {
     } catch { return false }
   }).slice(0, 10)
 
-  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0
+  // Related by shared tags
+  const relatedByTag = tags.length > 0
+    ? s.allActive().filter(n => {
+        if (n.id === nodeId || n.deletedAt) return false
+        return (n.types || []).some(t => tags.includes(t))
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, 5)
+    : []
+
+  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0
 
   return (
     <div className="node-context-panel">
@@ -62,6 +72,18 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">Mencionado en</div>
           {backlinks.map(n => (
+            <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
+              {n.text || 'Sin título'}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Related by shared tags */}
+      {relatedByTag.length > 0 && (
+        <div className="context-section">
+          <div className="context-section-label">Relacionadas</div>
+          {relatedByTag.map(n => (
             <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
               {n.text || 'Sin título'}
             </div>

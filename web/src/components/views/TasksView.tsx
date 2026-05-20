@@ -87,7 +87,14 @@ function isSubtask(node: Node): boolean {
   return parent ? parent.status !== null : false
 }
 
-function TaskRow({ task, depth = 0 }: { task: Node; depth?: number }) {
+interface TaskRowProps {
+  task: Node
+  depth?: number
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
+}
+
+function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
   const navigate = useNavigate()
 
   function toggleDone(e: React.MouseEvent) {
@@ -99,10 +106,20 @@ function TaskRow({ task, depth = 0 }: { task: Node; depth?: number }) {
 
   return (
     <div
-      className={`task-item task-item--sectioned ${isDone ? 'task-item--done' : ''}`}
+      className={`task-item task-item--sectioned ${isDone ? 'task-item--done' : ''} ${selected ? 'task-item--selected' : ''}`}
       style={depth > 0 ? { paddingLeft: `${depth * 20}px` } : undefined}
       onClick={() => navigate(`/node/${task.id}`)}
     >
+      {onToggleSelect && (
+        <input
+          type="checkbox"
+          className="task-select-checkbox"
+          checked={selected || false}
+          onChange={() => onToggleSelect(task.id)}
+          onClick={e => e.stopPropagation()}
+          aria-label="Seleccionar tarea"
+        />
+      )}
       <button
         className="task-check"
         onClick={toggleDone}
@@ -139,9 +156,11 @@ interface SectionProps {
   section: Section
   collapsed: boolean
   onToggle: () => void
+  selectedTaskIds: Set<string>
+  onToggleSelect: (id: string) => void
 }
 
-function TaskSection({ section, collapsed, onToggle }: SectionProps) {
+function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSelect }: SectionProps) {
   if (section.tasks.length === 0) return null
 
   return (
@@ -162,7 +181,11 @@ function TaskSection({ section, collapsed, onToggle }: SectionProps) {
             const subtasks = store.children(t.id).filter(c => c.status !== null)
             return (
               <div key={t.id}>
-                <TaskRow task={t} />
+                <TaskRow
+                  task={t}
+                  selected={selectedTaskIds.has(t.id)}
+                  onToggleSelect={onToggleSelect}
+                />
                 {subtasks.map(sub => (
                   <TaskRow key={sub.id} task={sub} depth={1} />
                 ))}
@@ -187,6 +210,31 @@ export default function TasksView() {
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
   const [savedViews, setSavedViewsState] = useState<SavedView[]>(getSavedViews)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function handleBulkMarkDone() {
+    for (const id of selectedTaskIds) {
+      store.updateNode(id, { status: 'done' })
+    }
+    setSelectedTaskIds(new Set())
+  }
+
+  function handleBulkDelete() {
+    if (!window.confirm(`¿Eliminar ${selectedTaskIds.size} tarea${selectedTaskIds.size !== 1 ? 's' : ''}?`)) return
+    for (const id of selectedTaskIds) {
+      store.deleteNode(id)
+    }
+    setSelectedTaskIds(new Set())
+  }
 
   function updateFilter<K extends keyof ReturnType<typeof loadFilters>>(key: K, value: ReturnType<typeof loadFilters>[K]) {
     const current = loadFilters()
@@ -492,6 +540,16 @@ export default function TasksView() {
         )}
       </div>
 
+      {/* Bulk actions bar */}
+      {selectedTaskIds.size > 0 && (
+        <div className="task-bulk-bar">
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedTaskIds.size} seleccionada{selectedTaskIds.size !== 1 ? 's' : ''}</span>
+          <button className="task-bulk-btn" onClick={handleBulkMarkDone}>Marcar como hechas</button>
+          <button className="task-bulk-btn" onClick={handleBulkDelete}>Eliminar</button>
+          <button className="task-bulk-btn" onClick={() => setSelectedTaskIds(new Set())} style={{ marginLeft: 'auto' }}>✕ Deseleccionar</button>
+        </div>
+      )}
+
       <div className="view-body">
         {totalPending === 0 ? (
           <div className="view-empty-state">
@@ -505,6 +563,8 @@ export default function TasksView() {
                 section={section}
                 collapsed={isCollapsed(section.id, section.defaultOpen)}
                 onToggle={() => toggleSection(section.id)}
+                selectedTaskIds={selectedTaskIds}
+                onToggleSelect={toggleSelect}
               />
             ))}
           </div>

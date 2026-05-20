@@ -159,10 +159,32 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         </div>
       </div>
 
-      {/* Fecha y hora */}
+      {/* Fecha rápida */}
       <div className="prop-section">
-        <div className="prop-section-label">Fecha de inicio</div>
-        <div className="prop-datetime">
+        <div className="prop-section-label">Fecha</div>
+        <div className="prop-quick-dates">
+          {[
+            { label: 'Hoy', days: 0 },
+            { label: 'Mañana', days: 1 },
+            { label: 'Próx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8-d) % 7 || 7 })() },
+            { label: 'Próx. semana', days: 7 },
+          ].map(({ label, days }) => {
+            const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
+            const iso = d.toISOString().slice(0, 10)
+            const isSelected = dueDate === iso
+            return (
+              <button
+                key={label}
+                className={`prop-quick-date-btn ${isSelected ? 'active' : ''}`}
+                onClick={() => setDue(iso, dueTime || '09:00')}
+              >{label}</button>
+            )
+          })}
+          {dueDate && (
+            <button className="prop-quick-date-btn" onClick={() => setDue('', '')}>✕</button>
+          )}
+        </div>
+        <div className="prop-datetime" style={{ marginTop: 6 }}>
           <input
             type="date"
             className="prop-date-input"

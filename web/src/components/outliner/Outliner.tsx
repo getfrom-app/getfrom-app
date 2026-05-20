@@ -9,9 +9,10 @@ interface Props {
   placeholder?: string
   className?: string
   filterText?: string
+  compact?: boolean
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, compact }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -143,7 +144,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         </div>
       )}
       <div
-        className={`outliner-container ${className || ''}`}
+        className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''}`}
         onClick={handleContainerClick}
       >
         {nodes.length === 0 && placeholder && (
