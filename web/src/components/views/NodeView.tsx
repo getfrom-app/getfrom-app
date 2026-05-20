@@ -549,6 +549,9 @@ export default function NodeView() {
                     ✨
                   </button>
                 )}
+                <span className="node-body-wordcount">
+                  {bodyValue.trim() ? `${bodyValue.trim().split(/\s+/).length} palabras · ${bodyValue.length} chars` : ''}
+                </span>
               </>
             ) : (
               <div

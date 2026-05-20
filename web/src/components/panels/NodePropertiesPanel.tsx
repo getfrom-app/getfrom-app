@@ -83,10 +83,13 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
   const recurrenceOptions = [
     { value: '', label: 'Sin repetición' },
-    { value: 'daily', label: '📅 Cada día' },
-    { value: 'weekly', label: '📅 Cada semana' },
-    { value: 'monthly', label: '📅 Cada mes' },
-    { value: 'yearly', label: '📅 Cada año' },
+    { value: 'daily', label: '🔁 Cada día' },
+    { value: 'daily:2', label: '🔁 Cada 2 días' },
+    { value: 'weekly', label: '🔁 Cada semana' },
+    { value: 'weekly:2', label: '🔁 Cada 2 semanas' },
+    { value: 'monthly', label: '🔁 Cada mes' },
+    { value: 'monthly:3', label: '🔁 Cada trimestre' },
+    { value: 'yearly', label: '🔁 Cada año' },
   ]
 
   return (

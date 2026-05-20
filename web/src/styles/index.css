@@ -1092,34 +1092,90 @@ mark.search-highlight {
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
+  /* ── Sidebar as full-screen drawer ── */
   .sidebar.open {
-    width: var(--sidebar-width);
+    width: 85vw;
+    max-width: 320px;
     position: fixed;
     z-index: 200;
     height: 100%;
     top: 0;
     left: 0;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+    border-right: 1px solid var(--border);
   }
   .sidebar.closed { width: 0; overflow: hidden; }
   .sidebar-mobile-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
+
+  /* ── TopBar mobile: solo home pill + ⌘K ── */
+  .top-bar {
+    padding: 6px 12px;
+  }
+  .top-bar-date,
+  .top-bar-dot,
+  .top-bar-shortcut,
+  .top-bar-view-label,
+  .top-bar-stats {
+    display: none;
+  }
+  .top-bar-action:not(.top-bar-action--cmd-k):not(.top-bar-action--always-mobile) {
+    display: none;
+  }
+
+  /* ── Mobile header ── */
   .mobile-header {
     display: flex; align-items: center; gap: 12px;
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
     position: sticky; top: 0; background: var(--bg); z-index: 10; flex-shrink: 0;
+    min-height: 50px;
   }
   .mobile-hamburger {
-    padding: 6px; border-radius: var(--radius); color: var(--text-secondary);
+    padding: 8px; border-radius: var(--radius); color: var(--text-secondary);
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; cursor: pointer;
+    min-width: 44px; min-height: 44px;
   }
   .mobile-hamburger:hover { background: var(--bg-hover); }
   .mobile-logo {
     display: flex; align-items: center; gap: 8px;
     font-size: 15px; font-weight: 600; color: var(--text-primary);
   }
+
+  /* ── Outliner touch targets ── */
+  .collapse-btn {
+    width: 28px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .bullet-btn {
+    width: 28px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .node-open-btn {
+    width: 28px;
+    height: 44px;
+    min-height: 44px;
+    opacity: 1;
+  }
+  .node-row {
+    min-height: 44px;
+    padding: 2px 0;
+    align-items: center;
+  }
+  .node-text {
+    min-height: 44px;
+    padding: 10px 4px;
+    line-height: 1.45;
+  }
+
   .view-header { padding: 16px 16px 0; }
   .view-body   { padding: 12px 16px 32px; }
   .main-content { overflow-y: auto; }
@@ -2284,6 +2340,8 @@ mark.search-highlight {
 
 .node-body-textarea.ai-streaming { border-color: var(--accent) !important; animation: pulse-border 1s ease-in-out infinite; }
 .ai-streaming-hint { position: absolute; bottom: 10px; left: 12px; font-size: 11px; color: var(--text-accent); pointer-events: none; opacity: 0.8; }
+.node-body-wordcount { position: absolute; bottom: 8px; left: 8px; font-size: 11px; color: var(--text-tertiary); opacity: 0; transition: opacity 0.15s; }
+.node-body-editor:focus-within .node-body-wordcount { opacity: 0.6; }
 .ai-inline-trigger-btn { position: absolute; bottom: 8px; right: 8px; padding: 4px 8px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s; opacity: 0; }
 .node-body-editor:hover .ai-inline-trigger-btn,
 .node-body-editor:focus-within .ai-inline-trigger-btn { opacity: 1; }
