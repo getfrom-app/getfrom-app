@@ -130,6 +130,21 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       setSlashQuery('')
     }
 
+    // Auto-conversión markdown al escribir:
+    // '# ' al inicio → H1, '## ' → H2, '### ' → H3, '> ' → quote, '--- ' → divider
+    if (!text.startsWith('/')) {
+      if (text === '# ' || text === '## ' || text === '### ' || text === '> ') {
+        // El usuario escribió el markdown prefix → mantener para detectBlockType
+        // No hacer nada aquí, detectBlockType lo manejará en el render
+      }
+      if (text === '---') {
+        // Divider automático
+        nodeTextRef.current = '---'
+        store.updateNode(node.id, { text: '---' })
+        if (contentRef.current) contentRef.current.textContent = ''
+      }
+    }
+
     // Detect @ and # triggers
     const pos = getCaretPosition(contentRef.current!)
     const before = text.slice(0, pos)

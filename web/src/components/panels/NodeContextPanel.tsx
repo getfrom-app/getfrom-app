@@ -19,14 +19,16 @@ export default function NodeContextPanel({ nodeId }: Props) {
   const tags = node.types || []
   const tagNodes = s.tagDefinitions().filter(td => tags.includes(s.tagName(td) || ''))
 
-  // Backlinks: nodes that mention this node's text in their body
-  const nodeText = node.text?.toLowerCase() || ''
-  const backlinks = nodeText.length > 3
-    ? s.allActive().filter(n =>
-        n.id !== nodeId &&
-        (n.body?.toLowerCase().includes(nodeText) || false)
-      ).slice(0, 5)
-    : []
+  // Backlinks: nodes that @mention this node's text or reference this node's id via extraData.refs
+  const nodeText = node.text || ''
+  const backlinks = s.allActive().filter(n => {
+    if (n.id === nodeId) return false
+    if (nodeText.length > 2 && n.text.includes('@' + nodeText)) return true
+    try {
+      const ed = JSON.parse(n.extraData || '{}')
+      return (ed.refs || []).includes(nodeId)
+    } catch { return false }
+  }).slice(0, 10)
 
   const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0
 

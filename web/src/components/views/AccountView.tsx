@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens, exportNodes, getToken, getApiToken, generateApiToken } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
+import { store } from '../../store/nodeStore'
 
 export default function AccountView() {
   const navigate = useNavigate()
@@ -168,6 +169,24 @@ export default function AccountView() {
     } finally {
       setExportLoading(false)
     }
+  }
+
+  function exportMarkdown() {
+    const nodes = store.allActive().filter(n => !n.deletedAt && !n.isDiaryEntry)
+    const lines = nodes.map(n => {
+      const prefix = n.status !== null ? (n.status === 'done' ? '- [x] ' : '- [ ] ') : '- '
+      return prefix + (n.text || '')
+    })
+    const content = lines.join('\n')
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `from-export-${new Date().toISOString().slice(0, 10)}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   async function handleDeleteAccount() {
