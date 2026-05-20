@@ -1842,6 +1842,14 @@ mark.inline-highlight {
   min-height: 1.4em;
 }
 
+/* Body block markdown render */
+.body-block-h1 { font-size: 1.5em; font-weight: 700; margin: 12px 0 4px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.body-block-h2 { font-size: 1.2em; font-weight: 600; margin: 10px 0 3px; }
+.body-block-h3 { font-size: 1em; font-weight: 600; margin: 8px 0 2px; color: var(--text-secondary); }
+.body-block-quote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 4px 0; }
+.body-block-li { margin: 2px 0; padding-left: 20px; list-style: disc; display: list-item; }
+.body-block-li--num { list-style: decimal; }
+
 .node-body-placeholder {
   color: var(--text-tertiary);
   font-style: italic;

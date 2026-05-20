@@ -314,6 +314,28 @@ export default function NodeView() {
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
   const isLoggedIn = !store.isGuest
 
+  // ── Body format helpers ────────────────────────────────────────────────
+
+  function applyBodyFormat(prefix: string, suffix?: string) {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const selected = ta.value.slice(start, end)
+    const newText = prefix + selected + (suffix || prefix)
+    ta.setRangeText(newText, start, end, 'select')
+    handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+  }
+
+  function applyLinePrefix(linePrefix: string) {
+    const ta = textareaRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+    ta.setRangeText(linePrefix, lineStart, lineStart, 'end')
+    handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+  }
+
   // Table of contents: children that are headings
   const headings = s.children(node.id)
     .filter(n => ['h1', 'h2', 'h3'].includes(detectBlockType(n.text)))
@@ -555,6 +577,39 @@ export default function NodeView() {
           <div className="node-body-editor">
             {bodyEditing ? (
               <>
+                <div className="node-body-toolbar">
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyBodyFormat('**') }}
+                    title="Negrita"
+                  ><strong>B</strong></button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyBodyFormat('*') }}
+                    title="Cursiva"
+                  ><em>I</em></button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyBodyFormat('`') }}
+                    title="Código"
+                  >&lt;&gt;</button>
+                  <span className="node-body-toolbar-sep" />
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyLinePrefix('- ') }}
+                    title="Lista con viñeta"
+                  >•</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyLinePrefix('1. ') }}
+                    title="Lista numerada"
+                  >1.</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyLinePrefix('> ') }}
+                    title="Cita"
+                  >&gt;</button>
+                </div>
                 <textarea
                   ref={textareaRef}
                   className={`node-body-textarea ${isAiStreaming ? 'ai-streaming' : ''}`}
@@ -591,12 +646,18 @@ export default function NodeView() {
                 }}
               >
                 {hasBody ? (
-                  // Render body lines
-                  (node.body || '').split('\n').map((line, i) => (
-                    <p key={i} className="node-body-line">
-                      {line ? <InlineRenderer text={line} /> : <br />}
-                    </p>
-                  ))
+                  // Render body lines con soporte de bloques markdown
+                  (node.body || '').split('\n').map((line, i) => {
+                    if (!line.trim()) return <br key={i} />
+                    if (line === '---') return <hr key={i} className="block-divider" />
+                    if (line.startsWith('# ')) return <h1 key={i} className="body-block-h1"><InlineRenderer text={line.slice(2)} /></h1>
+                    if (line.startsWith('## ')) return <h2 key={i} className="body-block-h2"><InlineRenderer text={line.slice(3)} /></h2>
+                    if (line.startsWith('### ')) return <h3 key={i} className="body-block-h3"><InlineRenderer text={line.slice(4)} /></h3>
+                    if (line.startsWith('> ')) return <blockquote key={i} className="body-block-quote"><InlineRenderer text={line.slice(2)} /></blockquote>
+                    if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="body-block-li"><InlineRenderer text={line.slice(2)} /></li>
+                    if (/^\d+\.\s/.test(line)) return <li key={i} className="body-block-li body-block-li--num"><InlineRenderer text={line.replace(/^\d+\.\s/, '')} /></li>
+                    return <p key={i} className="node-body-line"><InlineRenderer text={line} /></p>
+                  })
                 ) : (
                   <span className="node-body-placeholder">Añade una descripción...</span>
                 )}

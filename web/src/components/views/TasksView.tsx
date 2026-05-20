@@ -5,6 +5,25 @@ import type { Node } from '../../types'
 
 const SECTIONS_KEY = 'from_task_sections'
 const FILTERS_KEY = 'from_tasks_filters'
+const VIEWS_KEY = 'from_task_views'
+
+interface SavedView {
+  id: string
+  name: string
+  filterPriority: 'all' | 'high' | 'medium' | 'low'
+  filterTag: string
+  searchText: string
+  showDone: boolean
+  sortBy: 'date' | 'priority' | 'created'
+}
+
+function getSavedViews(): SavedView[] {
+  try { return JSON.parse(localStorage.getItem(VIEWS_KEY) || '[]') } catch { return [] }
+}
+
+function setSavedViews(views: SavedView[]) {
+  localStorage.setItem(VIEWS_KEY, JSON.stringify(views))
+}
 
 function loadFilters(): { filterPriority: 'all'|'high'|'medium'|'low'; showDone: boolean; sortBy: 'date'|'priority'|'created' } {
   try {
@@ -167,6 +186,7 @@ export default function TasksView() {
   const [searchText, setSearchText] = useState<string>('')
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
+  const [savedViews, setSavedViewsState] = useState<SavedView[]>(getSavedViews)
 
   function updateFilter<K extends keyof ReturnType<typeof loadFilters>>(key: K, value: ReturnType<typeof loadFilters>[K]) {
     const current = loadFilters()
@@ -200,6 +220,39 @@ export default function TasksView() {
   function isCollapsed(id: SectionId, defaultOpen: boolean): boolean {
     if (id in sectionState) return sectionState[id]
     return !defaultOpen
+  }
+
+  function handleSaveView() {
+    const name = window.prompt('Nombre para esta vista:')
+    if (!name || !name.trim()) return
+    const newView: SavedView = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      filterPriority,
+      filterTag,
+      searchText,
+      showDone,
+      sortBy,
+    }
+    const updated = [...savedViews, newView]
+    setSavedViews(updated)
+    setSavedViewsState(updated)
+  }
+
+  function handleApplyView(view: SavedView) {
+    setFilterPriority(view.filterPriority)
+    setFilterTag(view.filterTag)
+    setSearchText(view.searchText)
+    setShowDone(view.showDone)
+    setSortBy(view.sortBy)
+    saveFilters({ filterPriority: view.filterPriority, showDone: view.showDone, sortBy: view.sortBy })
+  }
+
+  function handleDeleteView(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const updated = savedViews.filter(v => v.id !== id)
+    setSavedViews(updated)
+    setSavedViewsState(updated)
   }
 
   // All tags used across tasks
@@ -319,6 +372,29 @@ export default function TasksView() {
         )}
       </div>
 
+      {/* Saved views bar */}
+      {(savedViews.length > 0) && (
+        <div className="tasks-saved-views-bar">
+          {savedViews.map(view => (
+            <button
+              key={view.id}
+              className="tasks-saved-view-chip"
+              onClick={() => handleApplyView(view)}
+              title={`Aplicar vista: ${view.name}`}
+            >
+              {view.name}
+              <span
+                className="tasks-saved-view-delete"
+                onClick={(e) => handleDeleteView(view.id, e)}
+                title="Eliminar vista"
+              >
+                ×
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Filter bar */}
       <div className="tasks-filter-bar">
         <div className="tasks-filter-group">
@@ -359,6 +435,14 @@ export default function TasksView() {
             </button>
           ))}
         </div>
+        <div className="tasks-filter-separator" />
+        <button
+          className="tasks-filter-chip tasks-save-view-btn"
+          onClick={handleSaveView}
+          title="Guardar vista actual"
+        >
+          🔖 Guardar vista
+        </button>
       </div>
 
       {/* Text search + tag filter — always visible */}
