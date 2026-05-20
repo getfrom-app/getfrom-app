@@ -149,6 +149,14 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         {nodes.length === 0 && placeholder && (
           <div className="outliner-placeholder">{placeholder}</div>
         )}
+        {nodes.length === 0 && !placeholder && (
+          <div className="outliner-empty-hint" onClick={() => {
+            const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
+            setSelectedId(n.id)
+          }}>
+            Haz clic para empezar a escribir...
+          </div>
+        )}
         {nodes.map(node => (
           <OutlinerNode
             key={node.id}

@@ -845,8 +845,29 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onFocus={handleFocus}
             onBlur={handleBlur}
             onClick={e => {
-              // Click en hashtag inline → navegar a TagView
               const target = e.target as HTMLElement
+
+              // Click en mention-inline → navegar al nodo referenciado
+              const mentionEl = target.classList.contains('mention-inline')
+                ? target
+                : target.closest('.mention-inline') as HTMLElement | null
+              if (mentionEl && !isEditing) {
+                e.preventDefault()
+                const mentionText = mentionEl.textContent?.replace(/^@/, '') || ''
+                // Buscar en extraData.refs primero
+                try {
+                  const ed = JSON.parse(node.extraData || '{}')
+                  const refIds: string[] = ed.refs || []
+                  const refNode = refIds.map(id => store.getNode(id)).find(n => n && !n.deletedAt)
+                  if (refNode) { navigate(`/node/${refNode.id}`); return }
+                } catch { /* ignore */ }
+                // Buscar por texto
+                const found = store.allActive().find(n => n.text === mentionText && !n.deletedAt)
+                if (found) navigate(`/node/${found.id}`)
+                return
+              }
+
+              // Click en hashtag inline → navegar a TagView
               if (target.classList.contains('tag-inline') || target.closest('.tag-inline')) {
                 const tagEl = target.classList.contains('tag-inline') ? target : target.closest('.tag-inline') as HTMLElement
                 const tagText = tagEl.textContent?.replace(/^#/, '') || ''

@@ -17,6 +17,7 @@ import FollowupView from '../views/FollowupView'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
+import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
@@ -33,6 +34,7 @@ export default function MainLayout() {
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showNewTask, setShowNewTask] = useState(false)
+  const [showNewNote, setShowNewNote] = useState(false)
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -74,8 +76,7 @@ export default function MainLayout() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        const newNode = store.createNode({ text: '', parentId: null })
-        navigate(`/node/${newNode.id}`)
+        setShowNewNote(true)
       }
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -190,10 +191,7 @@ export default function MainLayout() {
       <main className="main-content">
         {/* TopBar global */}
         <TopBar
-          onNewNote={() => {
-            const newNode = store.createNode({ text: '', parentId: null })
-            navigate(`/node/${newNode.id}`)
-          }}
+          onNewNote={() => setShowNewNote(true)}
           onCommandPalette={() => setShowCommandPalette(v => !v)}
           onNewTask={() => setShowNewTask(true)}
           onNewEvent={() => setShowNewEvent(true)}
@@ -236,6 +234,7 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
+      {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}

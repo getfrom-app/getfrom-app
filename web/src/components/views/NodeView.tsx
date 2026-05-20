@@ -412,6 +412,26 @@ export default function NodeView() {
             <button className="in-doc-search-close" onClick={() => { setShowInDocSearch(false); setInDocSearch('') }}>×</button>
           </div>
         )}
+        {node.publicSlug && (
+          <div className="node-published-bar">
+            <span className="node-published-icon">👁</span>
+            <span className="node-published-label">Pública:</span>
+            <a
+              href={`https://getfrom.app/p/${node.publicSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="node-published-link"
+            >
+              getfrom.app/p/{node.publicSlug}
+            </a>
+            <button
+              className="node-published-copy"
+              onClick={() => navigator.clipboard.writeText(`https://getfrom.app/p/${node.publicSlug!}`)}
+            >
+              📋
+            </button>
+          </div>
+        )}
         <div className="view-header">
           {crumbs.length > 0 && (
             <nav className="breadcrumb">

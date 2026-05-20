@@ -193,6 +193,7 @@ class NodeStore {
       recurrence: null,
       diaryDate: params.diaryDate || null,
       extraData: params.extraData ? JSON.stringify(params.extraData) : null,
+      publicSlug: null,
       deletedAt: null,
       createdAt: now,
       updatedAt: now,

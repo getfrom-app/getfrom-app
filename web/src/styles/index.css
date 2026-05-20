@@ -2614,6 +2614,15 @@ mark.inline-highlight {
 .modal-overlay { padding: 20px; }
 .modal-card { max-width: 480px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
 .move-node-modal { width: 400px; padding: 16px; }
+.new-note-modal { width: 440px; }
+.note-templates { margin-top: 12px; }
+.note-templates-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+.note-templates-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.note-template-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-secondary); cursor: pointer; transition: all 0.1s; font-family: inherit; }
+.note-template-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.note-template-btn.active { border-color: var(--accent); background: var(--accent-soft); }
+.note-template-icon { font-size: 20px; }
+.note-template-name { font-size: 11px; color: var(--text-secondary); text-align: center; }
 .move-node-search { margin-bottom: 8px; }
 .move-node-results { max-height: 280px; overflow-y: auto; }
 .move-node-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius); cursor: pointer; transition: background 0.1s; }
@@ -3371,3 +3380,15 @@ mark.inline-highlight {
 .search-natural-hint-apply:hover {
   opacity: 0.85;
 }
+
+/* ── node-published-bar ─────────────────────────────────────────────── */
+.node-published-bar { display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(34,197,94,0.08); border-bottom: 1px solid rgba(34,197,94,0.2); font-size: 12px; }
+.node-published-icon { font-size: 14px; }
+.node-published-label { color: var(--text-tertiary); }
+.node-published-link { color: #22c55e; text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-published-link:hover { text-decoration: underline; }
+.node-published-copy { background: none; border: none; cursor: pointer; font-size: 12px; opacity: 0.7; }
+.node-published-copy:hover { opacity: 1; }
+
+/* ── outliner-empty-hint ─────────────────────────────────────────────── */
+.outliner-empty-hint { padding: 16px; color: var(--text-tertiary); font-size: 14px; cursor: text; }

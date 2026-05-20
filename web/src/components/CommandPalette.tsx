@@ -163,9 +163,10 @@ export default function CommandPalette({ onClose }: Props) {
         },
       }))
 
-    // All notes for search
+    // All notes for search — ordenadas por updatedAt (más recientes primero)
     const allNotes: PaletteItem[] = store.allActive()
       .filter(n => !n.isDiaryEntry && !recentIds.includes(n.id))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .map(n => ({
         id: `note-${n.id}`,
         icon: n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',

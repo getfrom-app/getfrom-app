@@ -20,6 +20,7 @@ export interface Node {
   recurrence: string | null
   diaryDate: string | null
   extraData: string | null
+  publicSlug: string | null
   deletedAt: string | null
   createdAt: string
   updatedAt: string
