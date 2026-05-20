@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
@@ -91,6 +91,16 @@ function TreeNodeItem({ node, depth, activePath, onNavigate, onCreateChild }: Tr
       )}
     </div>
   )
+}
+
+function getNodeIcon(n: Node): string {
+  if (n.isDiaryEntry) return '📓'
+  if (n.isEvent) return '📅'
+  if (n.status === 'done') return '✅'
+  if (n.status === 'pending') return '○'
+  if ((n.types || []).includes('bucle')) return '↺'
+  if (n.isFavorite) return '★'
+  return '📄'
 }
 
 interface Panel {
@@ -389,50 +399,74 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
     )
   }
 
+  const handleRemoveFavorite = useCallback((id: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    store.updateNode(id, { isFavorite: false })
+  }, [])
+
   function renderFavoritesTab() {
-    // Recientes: últimos nodos visitados (ordenados por updatedAt)
-    const recents = s.allActive()
-      .filter(n => !n.isDiaryEntry && !n.isFavorite)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    // Recientes: últimas 8 notas visitadas desde localStorage
+    const recentIds: string[] = (() => {
+      try { return JSON.parse(localStorage.getItem('from_recent_nodes') || '[]') as string[] } catch { return [] }
+    })()
+    const recentNodes = recentIds
+      .map(id => store.getNode(id))
+      .filter(Boolean)
+      .map(n => n!)
+      .filter(n => !n.deletedAt)
       .slice(0, 8)
 
     return (
       <div className="sidebar-tab-content">
-        {allFavorites.length > 0 && (
+        {allFavorites.length > 0 ? (
           <>
             <div className="nav-section-label">Fijados</div>
             <div className="tree-section">
               {allFavorites.map(node => (
-                <TreeNodeItem
+                <div
                   key={node.id}
-                  node={node}
-                  depth={0}
-                  activePath={location.pathname}
-                  onNavigate={handleNavigate}
-                  onCreateChild={handleCreateChild}
-                />
+                  className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', cursor: 'pointer' }}
+                  onClick={() => navigate(`/node/${node.id}`)}
+                  onContextMenu={e => {
+                    e.preventDefault()
+                    if (window.confirm(`¿Quitar "${node.text || 'Sin título'}" de favoritos?`)) {
+                      handleRemoveFavorite(node.id, e)
+                    }
+                  }}
+                  title="Click derecho → Quitar de favoritos"
+                >
+                  <span style={{ fontSize: 12, flexShrink: 0 }}>{getNodeIcon(node)}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {node.text || 'Sin título'}
+                  </span>
+                </div>
               ))}
             </div>
           </>
-        )}
-        {allFavorites.length === 0 && (
+        ) : (
           <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
             Fija una nota con ☆ para verla aquí
           </div>
         )}
-        {recents.length > 0 && (
+
+        {recentNodes.length > 0 && (
           <>
-            <div className="nav-section-label" style={{ marginTop: 8 }}>Recientes</div>
+            <div className="nav-section-label" style={{ marginTop: 12 }}>Recientes</div>
             <div className="tree-section">
-              {recents.map(node => (
-                <TreeNodeItem
+              {recentNodes.map(node => (
+                <button
                   key={node.id}
-                  node={node}
-                  depth={0}
-                  activePath={location.pathname}
-                  onNavigate={handleNavigate}
-                  onCreateChild={handleCreateChild}
-                />
+                  className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 12px', textAlign: 'left' }}
+                  onClick={() => navigate(`/node/${node.id}`)}
+                >
+                  <span style={{ fontSize: 12, flexShrink: 0 }}>{getNodeIcon(node)}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {node.text || 'Sin título'}
+                  </span>
+                </button>
               ))}
             </div>
           </>

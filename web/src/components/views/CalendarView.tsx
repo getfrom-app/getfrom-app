@@ -261,6 +261,16 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to current hour on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      const currentHour = new Date().getHours()
+      const scrollTarget = Math.max(0, (currentHour - 1) * CELL_HEIGHT)
+      scrollRef.current.scrollTop = scrollTarget
+    }
+  }, [])
 
   // Eventos y tareas con fecha
   const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
@@ -338,7 +348,7 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
         </div>
 
         {/* ── Timeline horario ── */}
-        <div className="calendar-timeline-scroll">
+        <div ref={scrollRef} className="calendar-timeline-scroll">
           <div className="calendar-timeline-grid" style={{ height: CELL_HEIGHT * 24 }}>
             {/* Líneas de hora + etiquetas */}
             {HOURS.map(hour => (

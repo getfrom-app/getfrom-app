@@ -2436,8 +2436,24 @@ mark.inline-highlight {
   flex-shrink: 0;
 }
 
-.cmdpalette-item-label {
+.cmdpalette-item-info {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
+}
+
+.cmdpalette-item-label {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdpalette-item-sublabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4419,4 +4435,49 @@ mark.inline-highlight {
   color: var(--text-primary);
   outline: none;
   padding: 2px 0;
+}
+
+/* ── NodeContextPanel additions ─────────────────────────────────────────── */
+
+.context-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+}
+.context-child:hover { background: var(--bg-hover); }
+.context-child-bullet { color: var(--text-tertiary); flex-shrink: 0; font-size: 11px; }
+.context-child-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+.context-child-count { font-size: 10px; color: var(--text-tertiary); background: var(--bg-tertiary); padding: 0 4px; border-radius: 8px; flex-shrink: 0; }
+
+.context-timestamps { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+.context-ts-row { display: flex; align-items: baseline; gap: 6px; }
+.context-ts-label { font-size: 11px; color: var(--text-tertiary); width: 70px; flex-shrink: 0; }
+.context-ts-value { font-size: 11px; color: var(--text-secondary); }
+
+.context-more { font-size: 11px; color: var(--text-tertiary); padding: 2px 8px; }
+
+/* ── NodeContextMenu submenu ─────────────────────────────────────────────── */
+
+.context-menu-item--submenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.context-menu-arrow {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+.context-menu--sub {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 160px;
 }

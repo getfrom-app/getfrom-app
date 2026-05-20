@@ -12,6 +12,7 @@ interface PaletteItem {
   id: string
   icon: string
   label: string
+  sublabel?: string
   type: 'action' | 'note' | 'recent' | 'create'
   action: () => void
 }
@@ -267,6 +268,20 @@ export default function CommandPalette({ onClose }: Props) {
         action: () => { navigate('/calendar'); onClose() },
       },
       {
+        id: 'action-followup',
+        icon: '↺',
+        label: 'Ir a seguimiento',
+        type: 'action',
+        action: () => { navigate('/followup'); onClose() },
+      },
+      {
+        id: 'action-chat',
+        icon: '✦',
+        label: 'Ir al chat IA',
+        type: 'action',
+        action: () => { navigate('/chat'); onClose() },
+      },
+      {
         id: 'action-kanban',
         icon: '📋',
         label: 'Abrir kanban',
@@ -313,33 +328,41 @@ export default function CommandPalette({ onClose }: Props) {
       .filter(Boolean)
       .map(n => n!)
       .filter(n => !n.deletedAt)
-      .map(n => ({
-        id: `recent-${n.id}`,
-        icon: n.isDiaryEntry ? '📓' : n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
-        label: n.text || 'Sin título',
-        type: 'recent' as const,
-        action: () => {
-          recordRecentNode(n.id)
-          navigate(`/node/${n.id}`)
-          onClose()
-        },
-      }))
+      .map(n => {
+        const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
+        return {
+          id: `recent-${n.id}`,
+          icon: n.isDiaryEntry ? '📓' : n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
+          label: n.text || 'Sin título',
+          sublabel: parentText || undefined,
+          type: 'recent' as const,
+          action: () => {
+            recordRecentNode(n.id)
+            navigate(`/node/${n.id}`)
+            onClose()
+          },
+        }
+      })
 
     // All notes for search — ordenadas por updatedAt (más recientes primero)
     const allNotes: PaletteItem[] = store.allActive()
       .filter(n => !n.isDiaryEntry && !recentIds.includes(n.id))
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-      .map(n => ({
-        id: `note-${n.id}`,
-        icon: n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
-        label: n.text || 'Sin título',
-        type: 'note' as const,
-        action: () => {
-          recordRecentNode(n.id)
-          navigate(`/node/${n.id}`)
-          onClose()
-        },
-      }))
+      .map(n => {
+        const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
+        return {
+          id: `note-${n.id}`,
+          icon: n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
+          label: n.text || 'Sin título',
+          sublabel: parentText || undefined,
+          type: 'note' as const,
+          action: () => {
+            recordRecentNode(n.id)
+            navigate(`/node/${n.id}`)
+            onClose()
+          },
+        }
+      })
 
     if (!query.trim()) {
       // No query: actions + recent
@@ -354,6 +377,27 @@ export default function CommandPalette({ onClose }: Props) {
         type: 'create',
         action: doCreate,
       })
+
+      // Si el query empieza con #, buscar por tag
+      if (parsed.cleanText.startsWith('#')) {
+        const tagQuery = parsed.cleanText.slice(1).toLowerCase()
+        const taggedNodes = store.allActive().filter(n =>
+          !n.deletedAt && (n.types || []).some(t => t.toLowerCase().includes(tagQuery))
+        )
+        items.push(...taggedNodes.map(n => {
+          const matchedTag = (n.types || []).find(t => t.toLowerCase().includes(tagQuery)) || tagQuery
+          const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
+          return {
+            id: `tag-${n.id}`,
+            icon: n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
+            label: `${n.text || 'Sin título'} · #${matchedTag}`,
+            sublabel: parentText || undefined,
+            type: 'note' as const,
+            action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
+          }
+        }))
+        return items
+      }
 
       // Filter rest by fuzzy match against CLEAN text (sin flags)
       const searchTerm = parsed.cleanText || query.trim()
@@ -451,7 +495,10 @@ export default function CommandPalette({ onClose }: Props) {
               onMouseEnter={() => setActiveIdx(idx)}
             >
               <span className="cmdpalette-item-icon">{item.icon}</span>
-              <span className="cmdpalette-item-label">{item.label}</span>
+              <div className="cmdpalette-item-info">
+                <span className="cmdpalette-item-label">{item.label}</span>
+                {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
+              </div>
               {item.type === 'action' && item.id === 'action-new-note' && (
                 <span className="cmdpalette-item-kbd">⌘N</span>
               )}

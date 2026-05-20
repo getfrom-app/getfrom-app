@@ -615,6 +615,37 @@ export default function NodeView() {
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
+  function handlePrint() {
+    const title = node!.text || 'Sin título'
+    const body = node!.body || ''
+    const children = store.children(node!.id)
+    const bullets = children.map(c => `• ${c.text}`).join('\n')
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+    if (!printWindow) return
+    printWindow.document.write(`
+      <!DOCTYPE html><html><head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      <style>
+        body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 40px auto; color: #1a1a1a; line-height: 1.6; }
+        h1 { font-size: 24px; margin-bottom: 8px; }
+        .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+        .body { white-space: pre-wrap; font-size: 14px; margin-bottom: 24px; }
+        .bullets { font-size: 14px; }
+        .bullet { margin: 4px 0; }
+        @media print { body { margin: 20px; } }
+      </style>
+      </head><body>
+      <h1>${title}</h1>
+      <div class="meta">From · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      ${body ? `<div class="body">${body.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+      ${bullets ? `<div class="bullets">${bullets.split('\n').map(b => `<div class="bullet">${b}</div>`).join('')}</div>` : ''}
+      </body></html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
+  }
+
   return (
     <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''} ${focusMode ? 'node-view--focus' : ''}`}>
       <div className="node-view-main">
@@ -800,6 +831,13 @@ export default function NodeView() {
                 <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
               </svg>
               Duplicar nota
+            </button>
+            <button className="node-quick-action-btn" onClick={handlePrint} title="Imprimir nota">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+                <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+              </svg>
+              Imprimir
             </button>
             <button
               className={`node-quick-action-btn ${showChat ? 'node-quick-action-btn--active' : ''}`}

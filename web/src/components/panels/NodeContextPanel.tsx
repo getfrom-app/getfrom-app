@@ -40,7 +40,15 @@ export default function NodeContextPanel({ nodeId }: Props) {
       .slice(0, 5)
     : []
 
-  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0
+  // All children (not just tasks) for tree view
+  const children = s.children(nodeId).filter(n => !n.deletedAt)
+
+  // Siblings
+  const siblings = node.parentId
+    ? s.children(node.parentId).filter(n => !n.deletedAt)
+    : []
+
+  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0 || children.length > 0
 
   return (
     <div className="node-context-panel">
@@ -90,6 +98,58 @@ export default function NodeContextPanel({ nodeId }: Props) {
           ))}
         </div>
       )}
+
+      {/* Subárbol del nodo */}
+      {children.length > 0 && (
+        <div className="context-section">
+          <div className="context-section-label">Contenido ({children.length} bullets)</div>
+          {children.slice(0, 8).map(child => (
+            <div key={child.id} className="context-child" onClick={() => navigate(`/node/${child.id}`)}>
+              <span className="context-child-bullet">
+                {child.status === 'done' ? '✓' : child.status === 'pending' ? '○' : '·'}
+              </span>
+              <span className="context-child-text">{child.text || 'Sin título'}</span>
+              {s.children(child.id).length > 0 && (
+                <span className="context-child-count">{s.children(child.id).length}</span>
+              )}
+            </div>
+          ))}
+          {children.length > 8 && (
+            <div className="context-more">+{children.length - 8} más</div>
+          )}
+        </div>
+      )}
+
+      {/* Notas hermanas */}
+      {node.parentId && siblings.length > 1 && (
+        <div className="context-section">
+          <div className="context-section-label">Hermanas ({siblings.length - 1})</div>
+          {siblings.filter(sib => sib.id !== node.id).slice(0, 5).map(sib => (
+            <div key={sib.id} className="context-backlink" onClick={() => navigate(`/node/${sib.id}`)}>
+              <span>{sib.text || 'Sin título'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Historial */}
+      <div className="context-section">
+        <div className="context-section-label">Historial</div>
+        <div className="context-timestamps">
+          <div className="context-ts-row">
+            <span className="context-ts-label">Creado:</span>
+            <span className="context-ts-value">{new Date(node.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div className="context-ts-row">
+            <span className="context-ts-label">Modificado:</span>
+            <span className="context-ts-value">{new Date(node.updatedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div className="context-ts-row">
+            <span className="context-ts-label">ID:</span>
+            <span className="context-ts-value" style={{ fontFamily: 'monospace', fontSize: 10 }}>{node.id.slice(0, 8)}...</span>
+          </div>
+        </div>
+      </div>
 
       {!hasContent && (
         <div className="context-empty">Sin contexto adicional</div>
