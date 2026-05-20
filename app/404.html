@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  // GitHub Pages SPA redirect: redirige rutas desconocidas al index con ?p= param
+  var l = window.location;
+  l.replace(l.protocol + '//' + l.host + '/app/?p=' + encodeURIComponent(l.pathname.slice(1) + l.search) + l.hash);
+</script>
+</head>
+</html>
