@@ -37,8 +37,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
-// Rutas que requieren cuenta — redirigen a login si no hay sesión
-function AccountRoute({ children }: { children: React.ReactNode }) {
+// Rutas protegidas — redirigen a login si no hay sesión
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   return getToken() ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -46,15 +46,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
+        {/* Rutas públicas */}
         <Route path="/login" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage initialMode="register" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pricing" element={<PricingView />} />
-        <Route path="/*" element={<MainLayout />} />
+        {/* Toda la app requiere cuenta */}
+        <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
       </Routes>
     </ErrorBoundary>
   )
 }
 
-export { AccountRoute }
+export { PrivateRoute }

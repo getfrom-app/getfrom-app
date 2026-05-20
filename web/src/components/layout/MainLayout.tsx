@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
-import { clearTokens, getToken } from '../../api/client'
+import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
 import DiaryView from '../views/DiaryView'
@@ -12,7 +12,6 @@ import AccountView from '../views/AccountView'
 import CalendarView from '../views/CalendarView'
 import AgentsView from '../views/AgentsView'
 import KanbanView from '../views/KanbanView'
-import GuestBanner from './GuestBanner'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -23,7 +22,6 @@ import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 export default function MainLayout() {
   const navigate = useNavigate()
   const s = useStore()
-  const isGuest = !getToken()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
@@ -33,23 +31,18 @@ export default function MainLayout() {
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
 
   useEffect(() => {
-    if (isGuest) {
-      store.isGuest = true
-      store.loadGuest().catch(console.error)
-    } else {
-      store.isGuest = false
-      store.initialLoad().catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err)
-        if (msg === 'UNAUTHORIZED') {
-          clearTokens()
-          navigate('/login', { replace: true })
-        } else {
-          setLoadError(msg)
-        }
-      })
-      userStore.fetchMe()
-    }
-  }, [navigate, isGuest])
+    store.isGuest = false
+    store.initialLoad().catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg === 'UNAUTHORIZED') {
+        clearTokens()
+        navigate('/login', { replace: true })
+      } else {
+        setLoadError(msg)
+      }
+    })
+    userStore.fetchMe()
+  }, [navigate])
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -133,13 +126,12 @@ export default function MainLayout() {
 
   return (
     <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {isGuest && <GuestBanner />}
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
         onLogout={handleLogout}
         isSyncing={s.isSyncing}
-        isGuest={isGuest}
+        isGuest={false}
       />
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -148,7 +140,7 @@ export default function MainLayout() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <main className="main-content" style={isGuest ? { paddingTop: '40px' } : undefined}>
+      <main className="main-content">
         {/* Mobile hamburger */}
         <div className="mobile-header">
           <button className="mobile-hamburger" onClick={() => setSidebarOpen(true)}>
@@ -173,9 +165,7 @@ export default function MainLayout() {
           <Route path="calendar" element={<CalendarView />} />
           <Route path="kanban" element={<KanbanView />} />
           <Route path="agents" element={<AgentsView />} />
-          <Route path="account" element={
-            isGuest ? <Navigate to="/login" replace /> : <AccountView />
-          } />
+          <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
         </Routes>
       </main>
