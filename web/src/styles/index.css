@@ -2590,6 +2590,12 @@ mark.search-highlight {
 .diary-task-due { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
 
 /* ── Bucles en panel diario ──────────────────────────────────────────────── */
+/* Agenda tab */
+.agenda-day { margin-bottom: 12px; }
+.agenda-day-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 8px; }
+.agenda-day-label.today { color: var(--accent); }
+.agenda-empty { font-size: 12px; color: var(--text-tertiary); padding: 2px 8px; }
+
 .diary-bucle-section { margin-bottom: 12px; border-left: 2px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding-left: 4px; }
 .diary-bucle-header { display: flex; align-items: center; gap: 6px; padding: 5px 8px; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; border-radius: var(--radius); transition: background 0.1s; }
 .diary-bucle-header:hover { background: var(--accent-soft); }

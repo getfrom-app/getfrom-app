@@ -4,7 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 
-type DiaryPanelTab = 'pending' | 'timeline'
+type DiaryPanelTab = 'pending' | 'timeline' | 'agenda'
 
 function getDiaryForDate(date: Date): Node | null {
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -351,6 +351,50 @@ export default function DiaryView() {
   const taskChildren = diaryChildren.filter(n => n.status !== null && !n.deletedAt)
   const doneChildren = taskChildren.filter(n => n.status === 'done')
 
+
+  function renderAgenda() {
+    // Próximos 7 días con sus tareas
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() + i)
+      d.setHours(0, 0, 0, 0)
+      return d
+    })
+    return (
+      <div className="diary-panel-content">
+        {days.map(day => {
+          const dayEnd = new Date(day.getTime() + 86400000)
+          const dayTasks = s.allActive().filter(n => {
+            if (!n.due || n.deletedAt) return false
+            const d = new Date(n.due)
+            return d >= day && d < dayEnd
+          })
+          const isToday = day.toDateString() === new Date().toDateString()
+          if (dayTasks.length === 0 && !isToday) return null
+          return (
+            <div key={day.toISOString()} className="agenda-day">
+              <div className={`agenda-day-label${isToday ? ' today' : ''}`}>
+                {isToday ? 'Hoy' : day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+              </div>
+              {dayTasks.length === 0 && <div className="agenda-empty">Sin tareas</div>}
+              {dayTasks.map(t => (
+                <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
+                  <input type="checkbox" className="diary-task-check"
+                    checked={t.status === 'done'}
+                    onChange={e => { e.stopPropagation(); store.updateNode(t.id, { status: t.status === 'done' ? 'pending' : 'done' }) }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <span className={`diary-task-text${t.status === 'done' ? ' done' : ''}`}>{t.text || 'Sin título'}</span>
+                  {t.due && <span className="diary-task-due">{new Date(t.due).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>}
+                </div>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className="view diary-view">
       <div className="diary-layout">
@@ -456,8 +500,14 @@ export default function DiaryView() {
             >
               Timeline
             </button>
+            <button
+              className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
+              onClick={() => setPanelTab('agenda')}
+            >
+              Agenda
+            </button>
           </div>
-          {panelTab === 'pending' ? renderPending() : renderTimeline()}
+          {panelTab === 'pending' ? renderPending() : panelTab === 'timeline' ? renderTimeline() : renderAgenda()}
         </div>
       </div>
     </div>
