@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -110,6 +110,25 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
   return result
 }
 
+// ── Search history ────────────────────────────────────────────────────────────
+
+const SEARCH_HISTORY_KEY = 'from_search_history'
+
+function getHistory(): string[] {
+  try { return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]') } catch { return [] }
+}
+
+function addToHistory(q: string) {
+  if (!q.trim() || q.trim().length < 2) return
+  const h = getHistory().filter(item => item !== q.trim()).slice(0, 4)
+  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify([q.trim(), ...h]))
+}
+
+function removeFromHistory(q: string) {
+  const h = getHistory().filter(item => item !== q)
+  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(h))
+}
+
 // ── Quick chips ───────────────────────────────────────────────────────────────
 
 const QUICK_CHIPS: Array<{ label: string; dsl: string }> = [
@@ -149,6 +168,7 @@ export default function SearchView() {
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
   const [magicSearching, setMagicSearching] = useState(false)
   const [magicSummary, setMagicSummary] = useState('')
+  const [history, setHistory] = useState<string[]>(() => getHistory())
 
   // Sync URL with query state
   useEffect(() => {
@@ -164,15 +184,34 @@ export default function SearchView() {
     else setSearchParams({}, { replace: true })
   }
 
+  // Save to history when query is committed (blur or Enter)
+  const commitSearch = useCallback((q: string) => {
+    if (q.trim().length >= 2) {
+      addToHistory(q)
+      setHistory(getHistory())
+    }
+  }, [])
+
+  function handleRemoveHistory(item: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    removeFromHistory(item)
+    setHistory(getHistory())
+  }
+
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const parsed = useMemo(() => parseQuery(query), [query])
 
+  const allNodes = useMemo(() => s.allActive(), [s])
+  const totalNodeCount = allNodes.length
+
   const results = useMemo(() => {
     if (!query.trim()) return []
-    const nodes = s.allActive()
-    return applyFilters(nodes, parsed).slice(0, 50)
-  }, [query, parsed, s])
+    return applyFilters(allNodes, parsed).slice(0, 50)
+  }, [query, parsed, allNodes])
+
+  // For empty-state tag suggestions
+  const availableTags = useMemo(() => s.allUsedTags().slice(0, 8), [s])
 
   // Remove a single DSL filter chip
   function removeFilter(raw: string) {
@@ -187,6 +226,11 @@ export default function SearchView() {
     } else {
       handleQueryChange(query.trim() ? `${query} ${dsl}` : dsl)
     }
+  }
+
+  // Search only by free text, removing DSL filters
+  function searchFreeText() {
+    handleQueryChange(parsed.text || query)
   }
 
   async function handleMagicSearch() {
@@ -215,6 +259,8 @@ export default function SearchView() {
 
   const isLoggedIn = !!getToken()
   const hasActiveFilters = parsed.filters.length > 0
+  const hasQuery = query.trim().length > 0
+  const noResults = hasQuery && results.length === 0
 
   return (
     <div className="view search-view">
@@ -231,6 +277,8 @@ export default function SearchView() {
             placeholder="Buscar… o usa estado:pendiente, fecha:hoy, prioridad:alta…"
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
+            onBlur={e => commitSearch(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') commitSearch(query) }}
           />
           {query && (
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
@@ -271,11 +319,11 @@ export default function SearchView() {
           </div>
         )}
 
-        {isLoggedIn && query.trim() && (
+        {isLoggedIn && hasQuery && (
           <button
             className={`magic-search-btn${magicSearching ? ' loading' : ''}`}
             onClick={handleMagicSearch}
-            disabled={magicSearching || !query.trim()}
+            disabled={magicSearching || !hasQuery}
           >
             {magicSearching ? '✨ Analizando...' : '✨ Búsqueda IA'}
           </button>
@@ -290,11 +338,75 @@ export default function SearchView() {
           </div>
         )}
 
-        {query && results.length === 0 && (
-          <div className="view-empty">Sin resultados para "{query}"</div>
+        {/* Result count */}
+        {hasQuery && results.length > 0 && (
+          <div className="search-result-count">
+            {results.length === 50 ? '50+ resultados' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}
+          </div>
         )}
 
-        {!query && (
+        {/* Empty state with suggestions */}
+        {noResults && (
+          <div className="search-empty-state">
+            <div className="view-empty">Sin resultados para "{query}"</div>
+
+            {hasActiveFilters && (
+              <button className="search-free-text-btn" onClick={searchFreeText}>
+                Buscar solo por texto libre
+              </button>
+            )}
+
+            {availableTags.length > 0 && (
+              <div className="search-tag-suggestions">
+                <div className="search-tag-suggestions-label">Prueba buscando por tag:</div>
+                <div className="search-tag-suggestions-chips">
+                  {availableTags.map(tag => (
+                    <button
+                      key={tag}
+                      className="search-chip"
+                      onClick={() => handleQueryChange(tag)}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="search-vault-count">
+              {totalNodeCount} {totalNodeCount === 1 ? 'nota' : 'notas'} en tu vault
+            </div>
+          </div>
+        )}
+
+        {/* Search history — shown when input is empty */}
+        {!hasQuery && history.length > 0 && (
+          <div className="search-history">
+            <div className="search-history-label">Búsquedas recientes</div>
+            {history.map(item => (
+              <div
+                key={item}
+                className="search-history-item"
+                onClick={() => handleQueryChange(item)}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" className="search-history-icon">
+                  <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                  <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span className="search-history-text">{item}</span>
+                <button
+                  className="search-history-remove"
+                  onClick={e => handleRemoveHistory(item, e)}
+                  aria-label={`Eliminar "${item}" del historial`}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!hasQuery && history.length === 0 && (
           <div className="view-empty">Escribe para buscar o usa los filtros rápidos</div>
         )}
 

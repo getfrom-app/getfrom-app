@@ -1,9 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../../store/userStore'
-import { getToken, changePlan, changePlanAnnual, changePlanLifetime } from '../../api/client'
+import { getToken, changePlanLifetime } from '../../api/client'
 
-const LS_MONTHLY  = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f'
-const LS_ANNUAL   = 'https://from.lemonsqueezy.com/checkout/buy/1182c3fa-554f-49c8-8922-153caffaac60'
 const LS_LIFETIME = 'https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520'
 
 interface PlanFeature {
@@ -29,28 +27,20 @@ export default function PricingView() {
   const us = useUserStore()
   const isGuest = !getToken()
 
-  async function handleCheckout(plan: 'monthly' | 'annual' | 'lifetime') {
+  async function handleCheckoutLifetime() {
     if (isGuest) {
-      const urls = { monthly: LS_MONTHLY, annual: LS_ANNUAL, lifetime: LS_LIFETIME }
-      window.open(urls[plan], '_blank')
+      window.open(LS_LIFETIME, '_blank')
       return
     }
-    const fns = {
-      monthly: changePlan,
-      annual: changePlanAnnual,
-      lifetime: changePlanLifetime,
-    }
     try {
-      const res = await fns[plan]()
+      const res = await changePlanLifetime()
       if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
     } catch (err) {
       console.error('Error al iniciar checkout:', err)
     }
   }
 
-  const handleMonthly  = () => handleCheckout('monthly')
-  const handleAnnual   = () => handleCheckout('annual')
-  const handleLifetime = () => handleCheckout('lifetime')
+  const handleLifetime = () => handleCheckoutLifetime()
 
   const isFree = !us.isPremium
   const isLifetime = us.user?.licenseStatus === 'active'
@@ -61,65 +51,35 @@ export default function PricingView() {
       name: 'Gratis',
       price: '€0',
       features: [
-        { text: '1.000 nodos', included: true },
-        { text: 'Sync básico', included: true },
+        { text: 'Outliner + diario', included: true },
+        { text: 'Búsqueda avanzada', included: true },
+        { text: 'Sync entre dispositivos', included: true },
         { text: 'Mac + iOS + Web', included: true },
-        { text: 'IA incluida', included: false },
-        { text: 'Archivos adjuntos', included: false },
-        { text: 'Publicar notas', included: false },
+        { text: 'IA y agentes', included: false },
+        { text: 'Vistas avanzadas', included: false },
+        { text: 'Sin límite de nodos', included: false },
       ],
       ctaLabel: isFree && !isGuest ? 'Tu plan actual' : 'Empezar gratis',
       isCurrent: isFree && !isGuest,
       onCta: isGuest ? () => navigate('/register') : () => {},
     },
     {
-      id: 'monthly',
-      name: 'Pro mensual',
-      price: '€7/mes',
-      features: [
-        { text: 'Nodos ilimitados', included: true },
-        { text: 'Sync ilimitado', included: true },
-        { text: 'Mac + iOS + Web', included: true },
-        { text: 'IA incluida', included: true },
-        { text: 'Archivos adjuntos', included: true },
-        { text: 'Publicar notas', included: true },
-      ],
-      ctaLabel: 'Empezar',
-      onCta: handleMonthly,
-    },
-    {
-      id: 'annual',
-      name: 'Pro anual',
-      price: '€49/año',
-      priceDetail: '€4,08/mes · 30% ahorro vs mensual',
-      badge: 'Popular',
+      id: 'lifetime',
+      name: 'Pro · Lifetime',
+      price: '€49',
+      priceDetail: 'pago único · acceso de por vida',
+      badge: 'Mejor valor',
       isPopular: true,
       features: [
-        { text: 'Nodos ilimitados', included: true },
-        { text: 'Sync ilimitado', included: true },
+        { text: 'Outliner + diario', included: true },
+        { text: 'Búsqueda avanzada', included: true },
+        { text: 'Sync completo entre dispositivos', included: true },
         { text: 'Mac + iOS + Web', included: true },
-        { text: 'IA incluida', included: true },
-        { text: 'Archivos adjuntos', included: true },
-        { text: 'Publicar notas', included: true },
-      ],
-      ctaLabel: 'Empezar',
-      onCta: handleAnnual,
-    },
-    {
-      id: 'lifetime',
-      name: 'Lifetime',
-      price: '€149',
-      priceDetail: 'pago único',
-      features: [
+        { text: 'IA y agentes incluidos', included: true },
+        { text: 'Vistas avanzadas', included: true },
         { text: 'Nodos ilimitados', included: true },
-        { text: 'Sync ilimitado', included: true },
-        { text: 'Mac + iOS + Web', included: true },
-        { text: '3M tokens de IA', included: true },
-        { text: 'Archivos adjuntos', included: true },
-        { text: 'Publicar notas', included: true },
-        { text: 'API key propia', included: true },
       ],
-      ctaLabel: isLifetime ? 'Tu plan actual' : 'Comprar',
+      ctaLabel: isLifetime ? 'Tu plan actual' : 'Comprar ahora',
       isCurrent: isLifetime,
       onCta: isLifetime ? () => {} : handleLifetime,
     },
@@ -130,7 +90,7 @@ export default function PricingView() {
       <div className="pricing-header">
         <h1 className="pricing-title">Elige tu plan</h1>
         <p className="pricing-subtitle">
-          Todos los planes incluyen Mac + iOS + Web · Cancela cuando quieras
+          Empieza gratis · Paga una vez y usa From para siempre
         </p>
       </div>
 

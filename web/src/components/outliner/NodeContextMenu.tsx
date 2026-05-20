@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import MoveNodeModal from '../modals/MoveNodeModal'
 
 interface Props {
   node: Node
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSelect }: Props) {
+  const [showMove, setShowMove] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Cerrar al click fuera
@@ -93,7 +95,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     }
   }
 
-  return createPortal(
+  const portal = createPortal(
     <div
       ref={menuRef}
       className="context-menu"
@@ -106,6 +108,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         </button>
         <button className="context-menu-item" onClick={action(duplicate)}>
           <span className="context-menu-icon">⧉</span> Duplicar <span className="context-menu-shortcut">⌘D</span>
+        </button>
+        <button className="context-menu-item" onClick={(e) => { e.preventDefault(); setShowMove(true) }}>
+          <span className="context-menu-icon">→</span> Mover a...
         </button>
       </div>
       <div className="context-menu-separator" />
@@ -140,5 +145,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       </div>
     </div>,
     document.body
+  )
+
+  return (
+    <>
+      {portal}
+      {showMove && (
+        <MoveNodeModal
+          node={node}
+          onClose={() => { setShowMove(false); onClose() }}
+        />
+      )}
+    </>
   )
 }
