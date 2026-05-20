@@ -42,86 +42,9 @@ a:hover { color: var(--accent-light); }
 
 img { max-width: 100%; height: auto; }
 
-/* ── Dark mode ── */
-@media (prefers-color-scheme: dark) {
-    body { background: var(--bg-dark); color: var(--text-dark); }
-
-    /* Fondos */
-    .section-alt { background: #111113; }
-    .card, .legal-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .pricing-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .pricing-card.featured { border-color: var(--accent); }
-    .account-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .support-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .legal-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .integration-item { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .sync-visual { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .privacy-card { background: rgba(74,144,217,0.08); border-color: rgba(74,144,217,0.18); }
-    .footer { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .hero-badge { background: rgba(74,144,217,0.15); }
-    .screenshot-placeholder { border-color: var(--border-dark); background: linear-gradient(135deg, rgba(74,144,217,0.1), rgba(74,144,217,0.03)); }
-
-    /* Nav */
-    .nav { background: rgba(14,14,16,0.92); border-color: var(--border-dark); }
-    .nav-logo, .nav-logo:hover { color: var(--text-dark); }
-    .nav-links a { color: var(--text-secondary-dark); }
-    .mobile-menu-btn span { background: var(--text-dark); }
-
-    /* Bordes y separadores */
-    .faq-item { border-color: var(--border-dark); }
-    .btn-secondary { border-color: var(--border-dark); color: var(--text-secondary-dark); }
-
-    /* Headings — texto principal */
-    h1, h2, h3, h4 { color: var(--text-dark); }
-    .section-header h2, .page-hero h1, .cta h2 { color: var(--text-dark); }
-    .step h3, .faq-item h3, .sync-node-label { color: var(--text-dark); }
-    .card h3, .privacy-card h3, .account-card h3, .support-card h3,
-    .integration-item h3, .pricing-card h3, .legal-body h2, .legal-body h3 { color: var(--text-dark); }
-
-    /* Texto secundario — todos los párrafos descriptivos */
-    .hero p, .section-header p, .cta p { color: var(--text-secondary-dark); }
-    .card p, .privacy-card p, .account-card p, .support-card p,
-    .integration-item p, .step p, .faq-item p { color: var(--text-secondary-dark); }
-    .pricing-desc, .pricing-period, .pricing-feature { color: var(--text-secondary-dark); }
-    .account-desc { color: var(--text-secondary-dark); }
-    .legal-body p, .legal-body li { color: var(--text-secondary-dark); }
-    .footer-brand p, .footer-col h4, .footer-col a { color: var(--text-secondary-dark); }
-    .text-secondary { color: var(--text-secondary-dark); }
-
-    /* Precios */
-    .pricing-price { color: var(--text-dark); }
-
-    /* Comparison table */
-    .comparison-table th, .comparison-table td { border-color: var(--border-dark); color: var(--text-dark); }
-    .comparison-table thead th { background: var(--card-bg-dark); color: var(--text-secondary-dark); }
-    .comparison-table tbody td { color: var(--text-dark); }
-    .comparison-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
-
-    /* Lang select */
-    .lang-select { color: var(--text-secondary-dark); border-color: var(--border-dark); background-color: transparent; }
-    .lang-select option { background: #1a1a1a; color: var(--text-dark); }
-    .lang-select:hover, .lang-select:focus { border-color: var(--accent); color: var(--accent); }
-
-    /* Footer */
-    .footer-bottom { border-color: var(--border-dark); color: var(--text-secondary-dark); }
-
-    /* Legal */
-    .legal-body strong { color: var(--text-dark); }
-    .legal-updated { border-color: var(--border-dark); color: var(--text-secondary-dark); }
-
-    /* Mobile nav */
-    .nav-links.open { background: var(--bg-dark); border-color: var(--border-dark); }
-
-    /* iOS section dark mode */
-    .ios-feature-card { background: var(--card-bg-dark); border-color: var(--border-dark); }
-    .ios-feature-card h3 { color: var(--text-dark); }
-    .ios-feature-card p { color: var(--text-secondary-dark); }
-    .ios-cta-strip { background: rgba(74,144,217,0.08); border-color: rgba(74,144,217,0.2); }
-    .ios-cta-text h3 { color: var(--text-dark); }
-    .ios-cta-text p { color: var(--text-secondary-dark); }
-    .section-divider-label span { border-color: var(--border-dark); color: var(--text-secondary-dark); }
-    .screenshots-viewer { background: #111; }
-}
+/* ── Dark mode desactivado en la landing — siempre fondo claro ──
+   La web app React (/app) tiene su propio modo oscuro independiente.
+   La landing comercial es siempre light para máximo contraste y legibilidad. */
 
 /* ── Nav ── */
 .nav {
