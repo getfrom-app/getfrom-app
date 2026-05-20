@@ -129,11 +129,14 @@ export default function AccountView() {
       let blob: Blob
       let filename: string
       if (format === 'markdown') {
-        blob = new Blob([data as string], { type: 'text/markdown' })
-        filename = `from-export-${date}.md`
+        const mdStr = typeof data === 'string' ? data : (data as Record<string, unknown>).markdown as string || JSON.stringify(data)
+        blob = new Blob([mdStr], { type: 'text/markdown' })
+        filename = `from-backup-${date}.md`
       } else {
-        blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-        filename = `from-export-${date}.json`
+        const jsonData = Array.isArray(data) ? data : (data as Record<string, unknown>).nodes || data
+        const jsonStr = JSON.stringify(jsonData, null, 2)
+        blob = new Blob([jsonStr], { type: 'application/json' })
+        filename = `from-backup-${date}.json`
       }
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -204,14 +207,14 @@ export default function AccountView() {
                 onClick={() => handleExport('json')}
                 disabled={exportLoading}
               >
-                {exportLoading ? 'Exportando...' : 'Exportar JSON'}
+                {exportLoading ? 'Exportando...' : 'Backup completo (JSON)'}
               </button>
               <button
                 className="btn-secondary"
                 onClick={() => handleExport('markdown')}
                 disabled={exportLoading}
               >
-                {exportLoading ? 'Exportando...' : 'Exportar Markdown'}
+                {exportLoading ? 'Exportando...' : 'Descarga Markdown'}
               </button>
             </div>
           </section>
