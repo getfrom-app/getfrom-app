@@ -255,6 +255,18 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       }
     }
 
+    // Cmd+T dentro del outliner → toggle tarea del nodo activo
+    if (e.key === 't' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      // Solo si no hay texto seleccionado (para no interferir con el modal global de nueva tarea)
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed) {
+        e.preventDefault()
+        e.stopPropagation() // Evitar que MainLayout abra el modal de nueva tarea
+        toggleTask()
+        return
+      }
+    }
+
     // Cmd+B/I/E → formato inline (solo si hay selección)
     if ((e.key === 'b' || e.key === 'i' || e.key === 'e') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
       const sel = window.getSelection()
@@ -344,6 +356,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         return
       }
       // Create sibling below
+      // Si es un heading, el siguiente nodo es texto normal (no hereda el tipo)
       const newNode = store.createNode({
         text: '',
         parentId: node.parentId,
@@ -393,6 +406,14 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
 
     if (e.key === 'Backspace' && text === '') {
       e.preventDefault()
+      if (node.parentId) {
+        // Nodo vacío y con padre → desindentar en vez de borrar (como en Mac)
+        const parent = store.getNode(node.parentId)
+        if (parent) {
+          store.updateNode(node.id, { parentId: parent.parentId, siblingOrder: parent.siblingOrder + 0.5 })
+          return
+        }
+      }
       onSelectNext(node.id, 'up')
       store.deleteNode(node.id)
     }
@@ -697,6 +718,17 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
             data-placeholder="Escribe algo..."
           />
         )}
+
+        {/* Priority badge */}
+        {node.priority === 'high' && <span className="node-priority-dot high" title="Alta prioridad" />}
+        {node.priority === 'medium' && <span className="node-priority-dot medium" title="Media prioridad" />}
+
+        {/* Bucle / Evento badge */}
+        {(node.types || []).includes('bucle') && <span className="node-type-badge bucle" title="Bucle">↺</span>}
+        {node.isEvent && !((node.types || []).includes('bucle')) && <span className="node-type-badge event" title="Evento">📅</span>}
+
+        {/* Favorito badge */}
+        {node.isFavorite && <span className="node-fav-badge" title="Fijado">★</span>}
 
         {/* Open node button */}
         {!isDivider && (

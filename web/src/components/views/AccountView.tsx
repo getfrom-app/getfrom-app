@@ -39,6 +39,9 @@ export default function AccountView() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  // Google Calendar
+  const [gcalInfoVisible, setGcalInfoVisible] = useState(false)
+
   // Claude API token (MCP)
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
@@ -431,6 +434,58 @@ export default function AccountView() {
             </a>
           </div>
         </section>
+
+        {/* ── Google Calendar ── */}
+        {getToken() && (
+          <section className="settings-section">
+            <h2 className="settings-section-title">Google Calendar</h2>
+
+            {/* Info cuenta */}
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">Cuenta</div>
+                <div className="settings-row-value">{user?.email ?? '—'}</div>
+              </div>
+            </div>
+
+            {/* Estado de conexión */}
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">Estado</div>
+                <div className="settings-row-hint">
+                  La sincronización con Google Calendar se realiza automáticamente cuando inicias sesión con Google.
+                  Los eventos con fecha y hora aparecen en el Calendario de From.
+                </div>
+              </div>
+            </div>
+
+            {gcalInfoVisible ? (
+              <div className="settings-info-box" style={{ marginTop: 8, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, lineHeight: 1.6 }}>
+                <strong>Cómo conectar Google Calendar</strong>
+                <p style={{ margin: '8px 0 0' }}>
+                  Para sincronizar con Google Calendar, inicia sesión con Google en la pantalla de login.
+                  Los eventos con fecha/hora aparecerán automáticamente en el Calendario.
+                </p>
+                <button
+                  className="btn-secondary"
+                  style={{ marginTop: 10, fontSize: 12 }}
+                  onClick={() => setGcalInfoVisible(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            ) : (
+              <div className="settings-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => setGcalInfoVisible(true)}
+                >
+                  Conectar Google Calendar
+                </button>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── Extensión Claude — MCP token ── */}
         {getToken() && (

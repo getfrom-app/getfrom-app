@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '../../store/nodeStore'
+import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -85,7 +85,25 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
   )
 }
 
+// ── Priority color helper ─────────────────────────────────────────────────────
+
+function priorityBg(node: Node): string {
+  if (node.priority === 'high') return 'var(--priority-high, #ef4444)'
+  if (node.priority === 'medium') return 'var(--priority-medium, #f97316)'
+  if (node.isEvent) return 'var(--accent, #8b5cf6)'
+  return 'var(--accent-soft, #7c3aed)'
+}
+
+// Returns true if the ISO date string has a time component (non-midnight)
+function hasTime(isoStr: string): boolean {
+  const d = new Date(isoStr)
+  return d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0
+}
+
 // ── Week View ─────────────────────────────────────────────────────────────────
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i) // 0..23
+const CELL_HEIGHT = 60 // px per hour
 
 interface WeekViewProps {
   weekStart: Date
@@ -94,21 +112,37 @@ interface WeekViewProps {
   onNavigate: (offset: number) => void
   onGoToToday: () => void
   onNodeClick: (id: string) => void
+  onCreateEvent: (date: Date) => void
 }
 
-function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick }: WeekViewProps) {
+function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent }: WeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-  const nodesWithDue = allNodes.filter(n => n.due)
-  const noDateTasks = allNodes.filter(n => n.status !== null && !n.due)
 
+  // Eventos y tareas con fecha
+  const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
+
+  // Nodos para un día determinado
   function getNodesForDay(day: Date): Node[] {
-    return nodesWithDue.filter(n => {
-      if (!n.due) return false
-      return isSameDay(new Date(n.due), day)
-    })
+    return nodesWithDue.filter(n => n.due && isSameDay(new Date(n.due), day))
+  }
+
+  // Nodos "todo el día" (fecha sin hora, o hora = 00:00:00)
+  function getAllDayNodes(day: Date): Node[] {
+    return getNodesForDay(day).filter(n => !n.due || !hasTime(n.due))
+  }
+
+  // Nodos con hora específica
+  function getTimedNodes(day: Date): Node[] {
+    return getNodesForDay(day).filter(n => n.due && hasTime(n.due))
   }
 
   const weekLabel = `${formatDate(weekStart)} — ${formatDate(days[6])}`
+
+  function handleCellClick(day: Date, hour: number) {
+    const d = new Date(day)
+    d.setHours(hour, 0, 0, 0)
+    onCreateEvent(d)
+  }
 
   return (
     <>
@@ -119,52 +153,117 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
       </div>
 
-      <div className="view-body">
-        <div className="calendar-grid">
+      <div className="view-body calendar-week-body">
+        {/* ── Cabecera de días ── */}
+        <div className="calendar-timeline-header">
+          <div className="calendar-timeline-gutter" />
           {days.map((day, i) => {
             const isToday = isSameDay(day, today)
-            const dayNodes = getNodesForDay(day)
             return (
-              <div
-                key={i}
-                className={`calendar-day-cell ${isToday ? 'calendar-day-cell--today' : ''}`}
-              >
-                <div className="calendar-day-header">
-                  <span className="calendar-day-name">{DAY_NAMES[i]}</span>
-                  <span className="calendar-day-number">{day.getDate()}</span>
-                </div>
-                <div className="calendar-day-nodes">
-                  {dayNodes.map(node => (
-                    <NodeChip
-                      key={node.id}
-                      node={node}
-                      onClick={() => onNodeClick(node.id)}
-                    />
-                  ))}
-                  {dayNodes.length === 0 && (
-                    <span className="calendar-day-empty">—</span>
-                  )}
-                </div>
+              <div key={i} className={`calendar-timeline-day-header ${isToday ? 'calendar-timeline-day-header--today' : ''}`}>
+                <span className="calendar-day-name">{DAY_NAMES[i]}</span>
+                <span className={`calendar-day-number ${isToday ? 'calendar-day-number--today' : ''}`}>{day.getDate()}</span>
               </div>
             )
           })}
         </div>
 
-        {noDateTasks.length > 0 && (
-          <div className="calendar-nodate-section">
-            <h3 className="calendar-nodate-title">Sin fecha</h3>
-            <div className="calendar-nodate-chips">
-              {noDateTasks.map(node => (
-                <NodeChip
-                  key={node.id}
-                  node={node}
-                  onClick={() => onNodeClick(node.id)}
-                  compact
-                />
-              ))}
-            </div>
+        {/* ── Sección "Todo el día" ── */}
+        <div className="calendar-allday-row">
+          <div className="calendar-timeline-gutter calendar-allday-label">Todo el día</div>
+          {days.map((day, i) => {
+            const allDayNodes = getAllDayNodes(day)
+            return (
+              <div key={i} className="calendar-allday-cell">
+                {allDayNodes.map(node => (
+                  <button
+                    key={node.id}
+                    className="calendar-event-chip"
+                    style={{ background: priorityBg(node) }}
+                    onClick={() => onNodeClick(node.id)}
+                    title={node.text || 'Sin título'}
+                  >
+                    {node.text || 'Sin título'}
+                  </button>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ── Timeline horario ── */}
+        <div className="calendar-timeline-scroll">
+          <div className="calendar-timeline-grid" style={{ height: CELL_HEIGHT * 24 }}>
+            {/* Líneas de hora + etiquetas */}
+            {HOURS.map(hour => (
+              <div
+                key={hour}
+                className="calendar-timeline-hour-row"
+                style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
+              >
+                <div className="calendar-timeline-gutter calendar-hour-label">
+                  {hour === 0 ? '' : `${String(hour).padStart(2, '0')}:00`}
+                </div>
+                <div className="calendar-timeline-hour-line" />
+              </div>
+            ))}
+
+            {/* Columnas por día (celdas clicables + eventos) */}
+            {days.map((day, di) => {
+              const timedNodes = getTimedNodes(day)
+              return (
+                <div
+                  key={di}
+                  className="calendar-timeline-day-col"
+                  style={{ left: `calc(var(--gutter-width) + ${di} * var(--day-col-width))`, width: 'var(--day-col-width)', height: CELL_HEIGHT * 24 }}
+                >
+                  {/* Celdas clicables por hora */}
+                  {HOURS.map(hour => (
+                    <div
+                      key={hour}
+                      className="calendar-timeline-cell"
+                      style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
+                      onClick={() => handleCellClick(day, hour)}
+                    />
+                  ))}
+
+                  {/* Eventos con hora */}
+                  {timedNodes.map(node => {
+                    const d = new Date(node.due!)
+                    const topPx = (d.getHours() + d.getMinutes() / 60) * CELL_HEIGHT
+
+                    // Duración: si tiene dueEnd, calcular; si no, 1h por defecto
+                    let durationH = 1
+                    if (node.dueEnd) {
+                      const end = new Date(node.dueEnd)
+                      durationH = Math.max(0.5, (end.getTime() - d.getTime()) / 3600000)
+                    }
+                    const heightPx = durationH * CELL_HEIGHT
+
+                    const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+
+                    return (
+                      <button
+                        key={node.id}
+                        className="calendar-event-block"
+                        style={{
+                          top: topPx,
+                          height: heightPx,
+                          background: priorityBg(node),
+                        }}
+                        onClick={e => { e.stopPropagation(); onNodeClick(node.id) }}
+                        title={node.text || 'Sin título'}
+                      >
+                        <span className="calendar-event-time">{timeLabel}</span>
+                        <span className="calendar-event-text">{node.text || 'Sin título'}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
-        )}
+        </div>
       </div>
     </>
   )
@@ -389,6 +488,19 @@ export default function CalendarView() {
     setYear(y => y + offset)
   }
 
+  function handleCreateEvent(date: Date) {
+    const node = store.createNode({
+      text: 'Nuevo evento',
+      parentId: null,
+    })
+    store.updateNode(node.id, {
+      due: date.toISOString(),
+      isEvent: true,
+      status: 'pending',
+    })
+    navigate(`/node/${node.id}`)
+  }
+
   return (
     <div className="view calendar-view">
       <div className="view-header">
@@ -415,6 +527,7 @@ export default function CalendarView() {
             onNavigate={navigateWeek}
             onGoToToday={goToToday}
             onNodeClick={id => navigate(`/node/${id}`)}
+            onCreateEvent={handleCreateEvent}
           />
         )}
 

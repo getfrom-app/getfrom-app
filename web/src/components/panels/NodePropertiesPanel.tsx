@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { store } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
 interface Props {
@@ -7,13 +7,26 @@ interface Props {
   onClose: () => void
 }
 
-const COMMON_TYPES = ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota']
-
 export default function NodePropertiesPanel({ node, onClose }: Props) {
+  const s = useStore()
   const [newType, setNewType] = useState('')
 
-  function toggleFavorite() {
-    store.updateNode(node.id, { isFavorite: !node.isFavorite })
+  // Fecha/hora split
+  const dueDate = node.due ? node.due.slice(0, 10) : ''
+  const dueTime = node.due ? node.due.slice(11, 16) : ''
+  const dueEndDate = node.dueEnd ? node.dueEnd.slice(0, 10) : ''
+  const dueEndTime = node.dueEnd ? node.dueEnd.slice(11, 16) : ''
+
+  function setDue(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { due: null }); return }
+    const iso = time ? new Date(`${date}T${time}:00`).toISOString() : new Date(`${date}T00:00:00`).toISOString()
+    store.updateNode(node.id, { due: iso })
+  }
+
+  function setDueEnd(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { dueEnd: null }); return }
+    const iso = time ? new Date(`${date}T${time}:00`).toISOString() : new Date(`${date}T23:59:00`).toISOString()
+    store.updateNode(node.id, { dueEnd: iso })
   }
 
   function setStatus(status: Node['status']) {
@@ -24,97 +37,101 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
     store.updateNode(node.id, { priority })
   }
 
-  function handleDueChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value
-    store.updateNode(node.id, { due: val ? new Date(val).toISOString() : null })
+  function toggleFavorite() {
+    store.updateNode(node.id, { isFavorite: !node.isFavorite })
+  }
+
+  function toggleBucle() {
+    const types = node.types || []
+    if (types.includes('bucle')) {
+      store.updateNode(node.id, { types: types.filter(t => t !== 'bucle') })
+    } else {
+      store.updateNode(node.id, { types: [...types, 'bucle'], status: 'pending' })
+    }
+  }
+
+  function toggleEvent() {
+    store.updateNode(node.id, { isEvent: !node.isEvent })
   }
 
   function addType(type: string) {
-    const trimmed = type.trim().toLowerCase()
-    if (!trimmed) return
-    if (node.types.includes(trimmed)) return
-    store.updateNode(node.id, { types: [...node.types, trimmed] })
+    const t = type.trim().toLowerCase()
+    if (!t || (node.types || []).includes(t)) return
+    store.updateNode(node.id, { types: [...(node.types || []), t] })
     setNewType('')
   }
 
   function removeType(type: string) {
-    store.updateNode(node.id, { types: node.types.filter(t => t !== type) })
+    store.updateNode(node.id, { types: (node.types || []).filter(t => t !== type) })
   }
 
-  function handleTypeKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addType(newType)
-    }
-  }
+  const isBucle = (node.types || []).includes('bucle')
+  const usedTags = s.allUsedTags()
 
-  // Format ISO date to YYYY-MM-DD for <input type="date">
-  const dueDateValue = node.due ? node.due.slice(0, 10) : ''
-
-  const statusOptions: { value: Node['status']; label: string; icon: string }[] = [
-    { value: null, label: 'Sin estado', icon: '○' },
-    { value: 'pending', label: 'Pendiente', icon: '●' },
-    { value: 'done', label: 'Hecho', icon: '✓' },
+  const statusOptions: { value: Node['status']; label: string }[] = [
+    { value: null, label: '○ Sin estado' },
+    { value: 'pending', label: '● Pendiente' },
+    { value: 'done', label: '✓ Hecho' },
   ]
 
-  const priorityOptions: { value: Node['priority']; label: string; color: string }[] = [
-    { value: null, label: 'Ninguna', color: '' },
-    { value: 'low', label: 'Baja', color: 'priority-badge--low' },
-    { value: 'medium', label: 'Media', color: 'priority-badge--medium' },
-    { value: 'high', label: 'Alta', color: 'priority-badge--high' },
+  const priorityOptions: { value: Node['priority']; label: string; style?: React.CSSProperties }[] = [
+    { value: null, label: '— Ninguna' },
+    { value: 'low', label: '▽ Baja' },
+    { value: 'medium', label: '△ Media', style: { color: '#f59e0b' } },
+    { value: 'high', label: '▲ Alta', style: { color: '#ef4444' } },
+  ]
+
+  const recurrenceOptions = [
+    { value: '', label: 'Sin repetición' },
+    { value: 'daily', label: '📅 Cada día' },
+    { value: 'weekly', label: '📅 Cada semana' },
+    { value: 'monthly', label: '📅 Cada mes' },
+    { value: 'yearly', label: '📅 Cada año' },
   ]
 
   return (
     <div className="properties-panel">
       <div className="properties-panel-header">
         <span className="properties-panel-title">Propiedades</span>
-        <button className="properties-close-btn" onClick={onClose} aria-label="Cerrar panel">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
+        <button className="properties-close-btn" onClick={onClose} aria-label="Cerrar">
+          ×
         </button>
       </div>
 
-      {/* Favorito */}
+      {/* Favorito + Bucle + Evento */}
       <div className="prop-row">
-        <span className="prop-label">Favorito</span>
         <button
-          className={`prop-fav-btn ${node.isFavorite ? 'active' : ''}`}
+          className={`prop-icon-btn ${node.isFavorite ? 'active' : ''}`}
           onClick={toggleFavorite}
-          title={node.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+          title={node.isFavorite ? 'Quitar de favoritos' : 'Fijar'}
         >
-          {node.isFavorite ? '★' : '☆'}
+          {node.isFavorite ? '★' : '☆'} Fijado
+        </button>
+        <button
+          className={`prop-icon-btn ${isBucle ? 'active bucle' : ''}`}
+          onClick={toggleBucle}
+          title={isBucle ? 'Quitar bucle' : 'Convertir en bucle'}
+        >
+          ↺ Bucle
+        </button>
+        <button
+          className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
+          onClick={toggleEvent}
+          title={node.isEvent ? 'Quitar evento' : 'Marcar como evento'}
+        >
+          📅 Evento
         </button>
       </div>
 
       {/* Estado */}
-      <div className="prop-row prop-row--column">
-        <span className="prop-label">Estado</span>
-        <div className="prop-buttons">
+      <div className="prop-section">
+        <div className="prop-section-label">Estado</div>
+        <div className="prop-pills">
           {statusOptions.map(opt => (
             <button
               key={String(opt.value)}
-              className={`prop-btn ${node.status === opt.value ? 'active' : ''}`}
+              className={`prop-pill ${node.status === opt.value ? 'active' : ''}`}
               onClick={() => setStatus(opt.value)}
-              title={opt.label}
-            >
-              <span>{opt.icon}</span>
-              <span>{opt.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Prioridad */}
-      <div className="prop-row prop-row--column">
-        <span className="prop-label">Prioridad</span>
-        <div className="prop-buttons">
-          {priorityOptions.map(opt => (
-            <button
-              key={String(opt.value)}
-              className={`prop-btn ${node.priority === opt.value ? 'active' : ''} ${opt.color}`}
-              onClick={() => setPriority(opt.value)}
-              title={opt.label}
             >
               {opt.label}
             </button>
@@ -122,49 +139,89 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         </div>
       </div>
 
-      {/* Fecha */}
-      <div className="prop-row">
-        <span className="prop-label">Fecha</span>
-        <input
-          type="date"
-          className="prop-date-input"
-          value={dueDateValue}
-          onChange={handleDueChange}
-        />
+      {/* Prioridad */}
+      <div className="prop-section">
+        <div className="prop-section-label">Prioridad</div>
+        <div className="prop-pills">
+          {priorityOptions.map(opt => (
+            <button
+              key={String(opt.value)}
+              className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`}
+              onClick={() => setPriority(opt.value)}
+              style={opt.style}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Recurrencia — solo para tareas */}
+      {/* Fecha y hora */}
+      <div className="prop-section">
+        <div className="prop-section-label">Fecha de inicio</div>
+        <div className="prop-datetime">
+          <input
+            type="date"
+            className="prop-date-input"
+            value={dueDate}
+            onChange={e => setDue(e.target.value, dueTime)}
+          />
+          <input
+            type="time"
+            className="prop-time-input"
+            value={dueTime}
+            onChange={e => setDue(dueDate, e.target.value)}
+            disabled={!dueDate}
+          />
+        </div>
+      </div>
+
+      {/* Fecha fin (solo si es evento) */}
+      {(node.isEvent || node.dueEnd) && (
+        <div className="prop-section">
+          <div className="prop-section-label">Fecha de fin</div>
+          <div className="prop-datetime">
+            <input
+              type="date"
+              className="prop-date-input"
+              value={dueEndDate}
+              onChange={e => setDueEnd(e.target.value, dueEndTime)}
+            />
+            <input
+              type="time"
+              className="prop-time-input"
+              value={dueEndTime}
+              onChange={e => setDueEnd(dueEndDate, e.target.value)}
+              disabled={!dueEndDate}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Recurrencia */}
       {node.status !== null && (
-        <div className="prop-row">
-          <span className="prop-label">Repetir</span>
+        <div className="prop-section">
+          <div className="prop-section-label">Repetición</div>
           <select
             className="prop-select"
             value={node.recurrence || ''}
             onChange={e => store.updateNode(node.id, { recurrence: e.target.value || null })}
           >
-            <option value="">Sin repetición</option>
-            <option value="daily">Cada día</option>
-            <option value="weekly">Cada semana</option>
-            <option value="monthly">Cada mes</option>
-            <option value="yearly">Cada año</option>
+            {recurrenceOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
         </div>
       )}
 
-      {/* Tipos / Tags */}
-      <div className="prop-row prop-row--column">
-        <span className="prop-label">Tipos</span>
-        <div className="prop-types">
-          {node.types.map(t => (
-            <span key={t} className="type-chip">
-              {t}
-              <button
-                className="type-chip-remove"
-                onClick={() => removeType(t)}
-                aria-label={`Quitar tipo ${t}`}
-              >
-                ×
-              </button>
+      {/* Tags */}
+      <div className="prop-section">
+        <div className="prop-section-label">Tags</div>
+        <div className="prop-tags">
+          {(node.types || []).map(t => (
+            <span key={t} className="prop-tag-chip" style={{ background: s.tagColor(t) + '20', color: s.tagColor(t) }}>
+              #{t}
+              <button className="prop-tag-remove" onClick={() => removeType(t)}>×</button>
             </span>
           ))}
           <input
@@ -172,12 +229,14 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
             className="prop-type-input"
             value={newType}
             onChange={e => setNewType(e.target.value)}
-            onKeyDown={handleTypeKeyDown}
-            placeholder="+ tipo"
-            list="common-types"
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addType(newType) } }}
+            placeholder="+ tag"
+            list="prop-tags-datalist"
           />
-          <datalist id="common-types">
-            {COMMON_TYPES.map(t => <option key={t} value={t} />)}
+          <datalist id="prop-tags-datalist">
+            {usedTags.filter(t => !node.types?.includes(t)).map(t => (
+              <option key={t} value={t} />
+            ))}
           </datalist>
         </div>
       </div>
