@@ -5,6 +5,7 @@ import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
+import NodeContextMenu from './NodeContextMenu'
 
 interface Props {
   node: Node
@@ -59,6 +60,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDragOverChild, setIsDragOverChild] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -259,8 +261,75 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       return
     }
 
+    // Cmd+D → duplicar nodo
+    if (e.key === 'd' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      e.preventDefault()
+      const dup = store.createNode({
+        text: node.text,
+        parentId: node.parentId,
+        siblingOrder: node.siblingOrder + 0.25,
+        status: node.status,
+        types: node.types,
+        priority: node.priority,
+      })
+      onSelect(dup.id)
+      return
+    }
+
+    // Cmd+↑ → mover nodo arriba
+    if (e.key === 'ArrowUp' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+      const idx = siblings.findIndex(n => n.id === node.id)
+      if (idx > 0) {
+        const prev = siblings[idx - 1]
+        const prevPrev = siblings[idx - 2]
+        const newOrder = prevPrev ? (prevPrev.siblingOrder + prev.siblingOrder) / 2 : prev.siblingOrder - 1
+        store.updateNode(node.id, { siblingOrder: newOrder })
+      }
+      return
+    }
+
+    // Cmd+↓ → mover nodo abajo
+    if (e.key === 'ArrowDown' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+      const idx = siblings.findIndex(n => n.id === node.id)
+      if (idx < siblings.length - 1) {
+        const next = siblings[idx + 1]
+        const nextNext = siblings[idx + 2]
+        const newOrder = nextNext ? (next.siblingOrder + nextNext.siblingOrder) / 2 : next.siblingOrder + 1
+        store.updateNode(node.id, { siblingOrder: newOrder })
+      }
+      return
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
+      // Detect inline shortcuts at end of text: -t (tarea), -b (bucle), -e (evento)
+      const trimmed = text.trimEnd()
+      if (trimmed.endsWith(' -t') || trimmed.endsWith(' -t')) {
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        nodeTextRef.current = cleanText
+        store.updateNode(node.id, { text: cleanText, status: 'pending' })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        return
+      }
+      if (trimmed.endsWith(' -b') || trimmed.endsWith(' -b')) {
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        const newTypes = node.types?.includes('bucle') ? node.types : [...(node.types || []), 'bucle']
+        nodeTextRef.current = cleanText
+        store.updateNode(node.id, { text: cleanText, status: 'pending', types: newTypes })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        return
+      }
+      if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        nodeTextRef.current = cleanText
+        store.updateNode(node.id, { text: cleanText, isEvent: true, status: 'pending' })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        return
+      }
       // Create sibling below
       const newNode = store.createNode({
         text: '',
@@ -522,6 +591,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
+        onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY }) }}
       >
 
         {/* Collapse toggle — hidden for headings and dividers */}
@@ -656,6 +726,18 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           onSelectNext={onSelectNext}
         />
       ))}
+
+      {/* Context menu */}
+      {contextMenu && (
+        <NodeContextMenu
+          node={node}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          onNavigate={navigate}
+          onSelect={onSelect}
+        />
+      )}
     </div>
   )
 }
