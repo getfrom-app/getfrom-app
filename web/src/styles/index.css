@@ -2961,11 +2961,22 @@ mark.inline-highlight {
 .tasks-saved-view-delete:hover { opacity: 1; }
 
 /* ── Body editor toolbar ──────────────────────────────────────────────────── */
-.node-body-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
+.node-body-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
 .node-body-toolbar-btn { padding: 3px 8px; font-size: 12px; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s; line-height: 1.4; }
 .node-body-toolbar-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border); }
 .node-body-toolbar-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 .node-body-editor .node-body-toolbar + .node-body-textarea { border-radius: 0 0 var(--radius) var(--radius); }
+
+/* ── Body block: checkbox ─────────────────────────────────────────────────── */
+.body-block-checkbox { display: flex; align-items: flex-start; gap: 8px; padding: 2px 0; }
+.body-block-checkbox-input { margin-top: 2px; flex-shrink: 0; cursor: pointer; width: 14px; height: 14px; accent-color: var(--text-accent, var(--accent)); }
+.body-block-checkbox-text--done { text-decoration: line-through; opacity: 0.5; }
+
+/* ── Body block: lists ────────────────────────────────────────────────────── */
+.body-block-ul { margin: 4px 0; padding-left: 20px; list-style: disc; }
+.body-block-ol { margin: 4px 0; padding-left: 20px; list-style: decimal; }
+.body-block-ul .body-block-li,
+.body-block-ol .body-block-li { display: list-item; padding-left: 0; margin: 2px 0; }
 
 /* ── Diary panel stats ────────────────────────────────────────────────────── */
 .diary-panel-stats { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
@@ -3630,3 +3641,88 @@ mark.inline-highlight {
 
 /* Chips with icons */
 .search-quick-chips { flex-wrap: wrap; }
+
+/* ── Calendar EventPopup & QuickEventCreate ──────────────────────────────── */
+
+.calendar-event-popup {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 220px;
+  max-width: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+.calendar-event-popup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.calendar-event-popup-icon { font-size: 14px; flex-shrink: 0; }
+.calendar-event-popup-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.calendar-event-popup-close {
+  color: var(--text-tertiary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.calendar-event-popup-close:hover { color: var(--text-primary); }
+.calendar-event-popup-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+.calendar-event-popup-body {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.calendar-event-popup-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.calendar-quick-create {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.calendar-quick-create-input {
+  width: 100%;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.calendar-quick-create-input:focus { outline: none; border-color: var(--accent); }
+.calendar-quick-create-actions { display: flex; gap: 4px; }
+
+.calendar-timeline-cell--creating {
+  background: rgba(139,92,246,0.05);
+  border: 1px dashed var(--accent);
+  z-index: 10;
+  min-height: 100px;
+}
+
+.btn-sm {
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}

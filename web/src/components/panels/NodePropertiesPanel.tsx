@@ -10,6 +10,8 @@ interface Props {
 export default function NodePropertiesPanel({ node, onClose }: Props) {
   const s = useStore()
   const [newType, setNewType] = useState('')
+  const [areaInput, setAreaInput] = useState('')
+  const nodeArea = store.getNodeArea(node.id)
 
   // Fecha/hora split
   const dueDate = node.due ? node.due.slice(0, 10) : ''
@@ -238,6 +240,46 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           </select>
         </div>
       )}
+
+      {/* Área */}
+      <div className="prop-section">
+        <div className="prop-section-label">Área</div>
+        <div className="prop-tags">
+          {nodeArea && (
+            <span className="prop-tag-chip" style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--text-accent)' }}>
+              📁 {nodeArea}
+              <button className="prop-tag-remove" onClick={() => store.setNodeArea(node.id, null)}>×</button>
+            </span>
+          )}
+          {!nodeArea && (
+            <>
+              <input
+                type="text"
+                className="prop-type-input"
+                value={areaInput}
+                onChange={e => {
+                  setAreaInput(e.target.value)
+                  if (s.allAreas().includes(e.target.value)) {
+                    store.setNodeArea(node.id, e.target.value)
+                    setAreaInput('')
+                  }
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && areaInput.trim()) {
+                    store.setNodeArea(node.id, areaInput.trim())
+                    setAreaInput('')
+                  }
+                }}
+                placeholder="+ área"
+                list="prop-areas-datalist"
+              />
+              <datalist id="prop-areas-datalist">
+                {s.allAreas().map(a => <option key={a} value={a} />)}
+              </datalist>
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Tags */}
       <div className="prop-section">

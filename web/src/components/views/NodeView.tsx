@@ -259,6 +259,7 @@ export default function NodeView() {
   }
 
   const handleBodyKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // ── Cmd+Space → AI inline ──────────────────────────────────────────────
     if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
       e.preventDefault()
       if (isAiStreaming || store.isGuest) return
@@ -286,6 +287,192 @@ export default function NodeView() {
         }
       } finally {
         setIsAiStreaming(false)
+      }
+      return
+    }
+
+    // ── Cmd+B → negrita ───────────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      e.preventDefault()
+      applyBodyFormat('**')
+      return
+    }
+
+    // ── Cmd+I → cursiva ───────────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+      e.preventDefault()
+      applyBodyFormat('*')
+      return
+    }
+
+    // ── Cmd+E → código inline ─────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+      e.preventDefault()
+      applyBodyFormat('`')
+      return
+    }
+
+    // ── Cmd+Shift+K → link template ───────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'k') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const end = ta.selectionEnd
+      const selected = ta.value.slice(start, end)
+      const linkText = selected || 'texto'
+      const insertion = `[${linkText}](url)`
+      ta.setRangeText(insertion, start, end, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Cmd+] → indentar línea (añadir 2 espacios) ───────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      ta.setRangeText('  ', lineStart, lineStart, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Cmd+[ → des-indentar línea (quitar 2 espacios) ───────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      const lineContent = ta.value.slice(lineStart)
+      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
+      if (spacesToRemove > 0) {
+        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
+        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      }
+      return
+    }
+
+    // ── Tab → insertar 4 espacios ─────────────────────────────────────────
+    if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      ta.setRangeText('    ', start, start, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Shift+Tab → quitar 4 espacios al inicio de línea ─────────────────
+    if (e.key === 'Tab' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      const lineContent = ta.value.slice(lineStart)
+      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
+      if (spacesToRemove > 0) {
+        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
+        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      }
+      return
+    }
+
+    // ── Enter → auto-continuación de listas ──────────────────────────────
+    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      const ta = textareaRef.current
+      if (!ta) return
+      const pos = ta.selectionStart
+      const lines = bodyValue.slice(0, pos).split('\n')
+      const currentLine = lines[lines.length - 1]
+
+      const bulletMatch = currentLine.match(/^(\s*)([-*])\s(.*)/)
+      const numberedMatch = currentLine.match(/^(\s*)(\d+)\.\s(.*)/)
+
+      if (bulletMatch) {
+        if (bulletMatch[3].trim() !== '') {
+          // Continuar lista de viñetas
+          e.preventDefault()
+          const indent = bulletMatch[1]
+          const bullet = bulletMatch[2]
+          const insertion = `\n${indent}${bullet} `
+          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = pos + insertion.length
+              textareaRef.current.selectionEnd = pos + insertion.length
+            }
+          }, 0)
+        } else {
+          // Viñeta vacía → salir de la lista
+          e.preventDefault()
+          const indent = bulletMatch[1]
+          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
+          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const newPos = lineStart + indent.length + 1
+              textareaRef.current.selectionStart = newPos
+              textareaRef.current.selectionEnd = newPos
+            }
+          }, 0)
+        }
+        return
+      }
+
+      if (numberedMatch) {
+        if (numberedMatch[3].trim() !== '') {
+          // Continuar lista numerada
+          e.preventDefault()
+          const indent = numberedMatch[1]
+          const nextNum = parseInt(numberedMatch[2]) + 1
+          const insertion = `\n${indent}${nextNum}. `
+          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = pos + insertion.length
+              textareaRef.current.selectionEnd = pos + insertion.length
+            }
+          }, 0)
+        } else {
+          // Numerada vacía → salir de la lista
+          e.preventDefault()
+          const indent = numberedMatch[1]
+          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
+          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const newPos = lineStart + indent.length + 1
+              textareaRef.current.selectionStart = newPos
+              textareaRef.current.selectionEnd = newPos
+            }
+          }, 0)
+        }
+        return
       }
     }
   }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -637,6 +824,43 @@ export default function NodeView() {
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('> ') }}
                     title="Cita"
                   >&gt;</button>
+                  <span className="node-body-toolbar-sep" />
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyLinePrefix('# ') }}
+                    title="Encabezado H1"
+                  >H1</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => { e.preventDefault(); applyLinePrefix('## ') }}
+                    title="Encabezado H2"
+                  >H2</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      const ta = textareaRef.current
+                      if (!ta) return
+                      const pos = ta.selectionStart
+                      const insertion = '\n---\n'
+                      ta.setRangeText(insertion, pos, pos, 'end')
+                      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+                    }}
+                    title="Línea divisoria"
+                  >---</button>
+                  <button
+                    className="node-body-toolbar-btn"
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      const ta = textareaRef.current
+                      if (!ta) return
+                      const pos = ta.selectionStart
+                      const lineStart = ta.value.lastIndexOf('\n', pos - 1) + 1
+                      ta.setRangeText('- [ ] ', lineStart, lineStart, 'end')
+                      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+                    }}
+                    title="Checkbox"
+                  >[ ]</button>
                 </div>
                 <textarea
                   ref={textareaRef}
@@ -674,18 +898,69 @@ export default function NodeView() {
                 }}
               >
                 {hasBody ? (
-                  // Render body lines con soporte de bloques markdown
-                  (node.body || '').split('\n').map((line, i) => {
-                    if (!line.trim()) return <br key={i} />
-                    if (line === '---') return <hr key={i} className="block-divider" />
-                    if (line.startsWith('# ')) return <h1 key={i} className="body-block-h1"><InlineRenderer text={line.slice(2)} /></h1>
-                    if (line.startsWith('## ')) return <h2 key={i} className="body-block-h2"><InlineRenderer text={line.slice(3)} /></h2>
-                    if (line.startsWith('### ')) return <h3 key={i} className="body-block-h3"><InlineRenderer text={line.slice(4)} /></h3>
-                    if (line.startsWith('> ')) return <blockquote key={i} className="body-block-quote"><InlineRenderer text={line.slice(2)} /></blockquote>
-                    if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="body-block-li"><InlineRenderer text={line.slice(2)} /></li>
-                    if (/^\d+\.\s/.test(line)) return <li key={i} className="body-block-li body-block-li--num"><InlineRenderer text={line.replace(/^\d+\.\s/, '')} /></li>
-                    return <p key={i} className="node-body-line"><InlineRenderer text={line} /></p>
-                  })
+                  // Render body — agrupar líneas en bloques para listas y checkboxes
+                  (() => {
+                    const lines = (node.body || '').split('\n')
+                    const blocks: React.ReactNode[] = []
+                    let i = 0
+                    while (i < lines.length) {
+                      const line = lines[i]
+
+                      // Checkbox
+                      if (/^- \[[ xX]\] /.test(line)) {
+                        const checked = line[3] === 'x' || line[3] === 'X'
+                        const text = line.slice(6)
+                        blocks.push(
+                          <div key={i} className="body-block-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              readOnly
+                              className="body-block-checkbox-input"
+                            />
+                            <span className={checked ? 'body-block-checkbox-text--done' : ''}>
+                              <InlineRenderer text={text} />
+                            </span>
+                          </div>
+                        )
+                        i++
+                        continue
+                      }
+
+                      // Bullet list group
+                      if (/^(\s*)([-*])\s/.test(line) && !/^- \[[ xX]\] /.test(line)) {
+                        const items: React.ReactNode[] = []
+                        while (i < lines.length && /^(\s*)([-*])\s/.test(lines[i]) && !/^- \[[ xX]\] /.test(lines[i])) {
+                          items.push(<li key={i} className="body-block-li"><InlineRenderer text={lines[i].replace(/^(\s*)([-*])\s/, '')} /></li>)
+                          i++
+                        }
+                        blocks.push(<ul key={`ul-${i}`} className="body-block-ul">{items}</ul>)
+                        continue
+                      }
+
+                      // Numbered list group
+                      if (/^\d+\.\s/.test(line)) {
+                        const items: React.ReactNode[] = []
+                        while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+                          items.push(<li key={i} className="body-block-li body-block-li--num"><InlineRenderer text={lines[i].replace(/^\d+\.\s/, '')} /></li>)
+                          i++
+                        }
+                        blocks.push(<ol key={`ol-${i}`} className="body-block-ol">{items}</ol>)
+                        continue
+                      }
+
+                      // Other block types
+                      if (!line.trim()) { blocks.push(<br key={i} />); i++; continue }
+                      if (line === '---') { blocks.push(<hr key={i} className="block-divider" />); i++; continue }
+                      if (line.startsWith('# ')) { blocks.push(<h1 key={i} className="body-block-h1"><InlineRenderer text={line.slice(2)} /></h1>); i++; continue }
+                      if (line.startsWith('## ')) { blocks.push(<h2 key={i} className="body-block-h2"><InlineRenderer text={line.slice(3)} /></h2>); i++; continue }
+                      if (line.startsWith('### ')) { blocks.push(<h3 key={i} className="body-block-h3"><InlineRenderer text={line.slice(4)} /></h3>); i++; continue }
+                      if (line.startsWith('> ')) { blocks.push(<blockquote key={i} className="body-block-quote"><InlineRenderer text={line.slice(2)} /></blockquote>); i++; continue }
+                      blocks.push(<p key={i} className="node-body-line"><InlineRenderer text={line} /></p>)
+                      i++
+                    }
+                    return blocks
+                  })()
                 ) : (
                   <span className="node-body-placeholder">Añade una descripción...</span>
                 )}

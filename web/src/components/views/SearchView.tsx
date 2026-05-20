@@ -12,7 +12,7 @@ interface ParsedQuery {
 }
 
 interface Filter {
-  type: 'status' | 'date' | 'priority' | 'kind' | 'tag' | 'has'
+  type: 'status' | 'date' | 'priority' | 'kind' | 'tag' | 'has' | 'area'
   value: string
   raw: string // original token, e.g. "estado:pendiente"
 }
@@ -41,6 +41,10 @@ const DSL_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => Filte
   {
     regex: /tiene:(cuerpo|fecha|adjuntos)/gi,
     parse: m => ({ type: 'has', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /area:(\S+)/gi,
+    parse: m => ({ type: 'area', value: m[1].toLowerCase(), raw: m[0] }),
   },
 ]
 
@@ -136,6 +140,10 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
       } else if (f.value === 'fecha') {
         result = result.filter(n => !!n.due)
       }
+    } else if (f.type === 'area') {
+      result = result.filter(n => {
+        try { return JSON.parse(n.extraData || '{}').area?.toLowerCase() === f.value } catch { return false }
+      })
     }
   }
 

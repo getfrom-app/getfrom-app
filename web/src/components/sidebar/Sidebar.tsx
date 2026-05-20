@@ -267,6 +267,33 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           </div>
         )}
 
+        {/* Áreas section */}
+        {s.allAreas().length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('areas')}>
+              <span className="nav-section-chevron">{collapsedSections['areas'] ? '▸' : '▾'}</span>
+              <span>Áreas</span>
+              <span style={{ fontSize: 10, opacity: 0.5 }}>{s.allAreas().length}</span>
+            </div>
+            {!collapsedSections['areas'] && (
+              <div className="tree-section">
+                {s.allAreas().map(area => (
+                  <button
+                    key={area}
+                    className={`tree-item ${location.search.includes(`area:${encodeURIComponent(area)}`) ? 'active' : ''}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 12px', fontSize: 13, color: 'var(--text-primary)', textAlign: 'left' }}
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(`area:${area}`)}`)}
+                  >
+                    <span style={{ fontSize: 12 }}>📁</span>
+                    <span style={{ flex: 1 }}>{area}</span>
+                    <span style={{ fontSize: 11, background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', borderRadius: 8, padding: '1px 6px' }}>{s.nodesInArea(area).length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Full notes tree */}
         {favorites.length > 0 && (
           <>

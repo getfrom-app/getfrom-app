@@ -1,7 +1,135 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
+
+// ── EventPopup ────────────────────────────────────────────────────────────────
+
+interface EventPopupProps {
+  node: Node
+  anchorEl: HTMLElement | null
+  onClose: () => void
+  onOpen: (id: string) => void
+}
+
+function EventPopup({ node, anchorEl, onClose, onOpen }: EventPopupProps) {
+  const popupRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (!anchorEl || !popupRef.current) return
+    const rect = anchorEl.getBoundingClientRect()
+    const popup = popupRef.current
+    const w = popup.offsetWidth || 220
+    const h = popup.offsetHeight || 120
+    let left = rect.right + 8
+    let top = rect.top
+    // Stay in viewport
+    if (left + w > window.innerWidth - 16) left = rect.left - w - 8
+    if (top + h > window.innerHeight - 16) top = window.innerHeight - h - 16
+    setPos({ top, left })
+  }, [anchorEl])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(e.target as globalThis.Node)) onClose()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
+  const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+  const formatDay = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })
+
+  return createPortal(
+    <div
+      ref={popupRef}
+      className="calendar-event-popup"
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
+    >
+      <div className="calendar-event-popup-header">
+        <span className="calendar-event-popup-icon">{node.isEvent ? '📅' : '○'}</span>
+        <span className="calendar-event-popup-title">{node.text || 'Sin título'}</span>
+        <button className="calendar-event-popup-close" onClick={onClose}>×</button>
+      </div>
+      {node.due && (
+        <div className="calendar-event-popup-time">
+          <span>📅 {formatDay(node.due)}</span>
+          {node.due && new Date(node.due).getHours() !== 0 && (
+            <span style={{ marginLeft: 6 }}>{formatTime(node.due)}
+              {node.dueEnd && ` – ${formatTime(node.dueEnd)}`}
+            </span>
+          )}
+        </div>
+      )}
+      {node.body && (
+        <div className="calendar-event-popup-body">{node.body.slice(0, 80)}{node.body.length > 80 ? '…' : ''}</div>
+      )}
+      <div className="calendar-event-popup-actions">
+        <button
+          className="btn-primary btn-sm"
+          onClick={() => { onOpen(node.id); onClose() }}
+        >Abrir →</button>
+        {node.status !== null && (
+          <button
+            className="btn-secondary btn-sm"
+            onClick={() => {
+              store.updateNode(node.id, { status: node.status === 'done' ? 'pending' : 'done' })
+              onClose()
+            }}
+          >
+            {node.status === 'done' ? '↩ Reabrir' : '✓ Hecho'}
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+// ── QuickEventCreate ──────────────────────────────────────────────────────────
+
+interface QuickEventCreateProps {
+  date: Date
+  style?: React.CSSProperties
+  onCancel: () => void
+  onCreate: (id: string) => void
+}
+
+function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateProps) {
+  const [text, setText] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  function handleSubmit() {
+    const t = text.trim() || 'Nuevo evento'
+    const node = store.createNode({ text: t, parentId: null })
+    store.updateNode(node.id, { due: date.toISOString(), isEvent: true, status: 'pending' })
+    onCreate(node.id)
+  }
+
+  return (
+    <div className="calendar-quick-create" style={style} onClick={e => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        className="calendar-quick-create-input"
+        placeholder="Nombre del evento…"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); handleSubmit() }
+          if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+        }}
+      />
+      <div className="calendar-quick-create-actions">
+        <button className="btn-primary btn-sm" onClick={handleSubmit}>Crear</button>
+        <button className="btn-secondary btn-sm" onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  )
+}
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -131,6 +259,8 @@ interface WeekViewProps {
 function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent }: WeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
+  const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
+  const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
 
   // Eventos y tareas con fecha
   const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
@@ -152,10 +282,12 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
 
   const weekLabel = formatWeekLabel(weekStart)
 
-  function handleCellClick(day: Date, hour: number) {
+  function handleCellClick(day: Date, hour: number, cellKey: string) {
+    if (quickCreate?.cellKey === cellKey) { setQuickCreate(null); return }
     const d = new Date(day)
     d.setHours(hour, 0, 0, 0)
-    onCreateEvent(d)
+    setQuickCreate({ date: d, cellKey })
+    setEventPopup(null)
   }
 
   return (
@@ -235,16 +367,13 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                   {HOURS.map(hour => {
                     const cellKey = `${di}-${hour}`
                     const isHovered = hoveredCell === cellKey
-                    const hasTimedEvent = timedNodes.some(n => {
-                      const d2 = new Date(n.due!)
-                      return d2.getHours() === hour
-                    })
+                    const isCreating = quickCreate?.cellKey === cellKey
                     return (
                       <div
                         key={hour}
-                        className={`calendar-timeline-cell ${isHovered ? 'calendar-timeline-cell--hover' : ''}`}
-                        style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
-                        onClick={() => handleCellClick(day, hour)}
+                        className={`calendar-timeline-cell ${isHovered ? 'calendar-timeline-cell--hover' : ''} ${isCreating ? 'calendar-timeline-cell--creating' : ''}`}
+                        style={{ top: hour * CELL_HEIGHT, height: isCreating ? 'auto' : CELL_HEIGHT, minHeight: CELL_HEIGHT }}
+                        onClick={() => { if (!isCreating) handleCellClick(day, hour, cellKey) }}
                         onMouseEnter={() => setHoveredCell(cellKey)}
                         onMouseLeave={() => setHoveredCell(null)}
                         onDragOver={e => e.preventDefault()}
@@ -257,8 +386,15 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                           store.updateNode(eventId, { due: newDate.toISOString() })
                         }}
                       >
-                        {isHovered && !hasTimedEvent && (
-                          <span className="calendar-cell-add-hint">+ Añadir evento</span>
+                        {isHovered && !isCreating && (
+                          <span className="calendar-cell-add-hint">+ Añadir</span>
+                        )}
+                        {isCreating && quickCreate && (
+                          <QuickEventCreate
+                            date={quickCreate.date}
+                            onCancel={() => setQuickCreate(null)}
+                            onCreate={id => { setQuickCreate(null); onNodeClick(id) }}
+                          />
                         )}
                       </div>
                     )
@@ -295,7 +431,11 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                           background: priorityBg(node),
                           cursor: 'grab',
                         }}
-                        onClick={e => { e.stopPropagation(); onNodeClick(node.id) }}
+                        onClick={e => {
+                          e.stopPropagation()
+                          setQuickCreate(null)
+                          setEventPopup({ node, anchor: e.currentTarget as HTMLElement })
+                        }}
                         title={node.text || 'Sin título'}
                       >
                         <span className="calendar-event-time">{timeLabel}</span>
@@ -309,6 +449,16 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
           </div>
         </div>
       </div>
+
+      {/* Event popup */}
+      {eventPopup && (
+        <EventPopup
+          node={eventPopup.node}
+          anchorEl={eventPopup.anchor}
+          onClose={() => setEventPopup(null)}
+          onOpen={id => { setEventPopup(null); onNodeClick(id) }}
+        />
+      )}
     </>
   )
 }

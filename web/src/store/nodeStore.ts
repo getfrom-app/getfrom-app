@@ -135,6 +135,45 @@ class NodeStore {
     return COLORS[Math.abs(hash) % COLORS.length]
   }
 
+  // ── Áreas ─────────────────────────────────────────────────────────────────
+
+  allAreas(): string[] {
+    const areas = new Set<string>()
+    for (const node of this.nodes.values()) {
+      if (node.deletedAt) continue
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        if (ed.area) areas.add(ed.area)
+      } catch { /* ignore */ }
+    }
+    return Array.from(areas).sort()
+  }
+
+  getNodeArea(nodeId: string): string | null {
+    const node = this.nodes.get(nodeId)
+    if (!node) return null
+    try { return JSON.parse(node.extraData || '{}').area || null } catch { return null }
+  }
+
+  setNodeArea(nodeId: string, area: string | null) {
+    const node = this.nodes.get(nodeId)
+    if (!node) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (area) ed.area = area
+      else delete ed.area
+      this.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+    } catch {
+      if (area) this.updateNode(nodeId, { extraData: JSON.stringify({ area }) })
+    }
+  }
+
+  nodesInArea(area: string): Node[] {
+    return this.allActive().filter(n => {
+      try { return JSON.parse(n.extraData || '{}').area === area } catch { return false }
+    })
+  }
+
   pendingTasks(): Node[] {
     return this.allActive()
       .filter(n => n.status === 'pending')
