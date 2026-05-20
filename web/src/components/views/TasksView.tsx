@@ -481,7 +481,7 @@ export default function TasksView() {
   const totalPending = sections.reduce((acc, s) => acc + s.tasks.filter(t => t.status !== 'done').length, 0)
 
   return (
-    <div className="view tasks-view">
+    <div className="view tasks-view" role="main" aria-label="Vista de tareas">
       <div className="view-header">
         <h1 className="view-title">Tareas</h1>
         {totalPending > 0 && (

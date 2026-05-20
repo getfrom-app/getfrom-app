@@ -3601,8 +3601,17 @@ mark.inline-highlight {
 .node-published-copy { background: none; border: none; cursor: pointer; font-size: 12px; opacity: 0.7; }
 .node-published-copy:hover { opacity: 1; }
 
-/* ── outliner-empty-hint ─────────────────────────────────────────────── */
-.outliner-empty-hint { padding: 16px; color: var(--text-tertiary); font-size: 14px; cursor: text; }
+/* ── outliner-empty-hint (inline, dentro de empty-state) ─────────────── */
+.outliner-empty-hint { font-size: 13px; color: var(--text-tertiary); line-height: 1.6; }
+
+/* ── outliner-empty-state ────────────────────────────────────────────── */
+.outliner-empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 24px; gap: 8px; cursor: pointer; }
+.outliner-empty-state:hover .outliner-empty-icon { opacity: 0.8; }
+.outliner-empty-icon { font-size: 28px; opacity: 0.3; color: var(--text-accent, var(--accent)); }
+.outliner-empty-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+
+/* ── node-updated-badge ──────────────────────────────────────────────── */
+.node-updated-badge { font-size: 10px; color: var(--text-tertiary); padding: 0 4px; opacity: 0.7; pointer-events: none; }
 
 /* ── Toast system ────────────────────────────────────────────────────── */
 .toast-container {
@@ -4720,4 +4729,19 @@ mark.inline-highlight {
 }
 [data-theme="dark"][data-accent="teal"] {
   --text-accent: #5eead4;
+}
+
+/* Search result body excerpt */
+.search-result-excerpt {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin: 2px 0 4px;
+  line-height: 1.5;
+}
+.search-result-excerpt mark {
+  background: rgba(251,191,36,0.3);
+  color: inherit;
+  border-radius: 2px;
+  font-style: normal;
 }

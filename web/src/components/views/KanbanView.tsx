@@ -343,7 +343,7 @@ export default function KanbanView() {
   const totalDone = allTasks.filter(t => t.status === 'done').length
 
   return (
-    <div className="view kanban-view">
+    <div className="view kanban-view" role="main" aria-label="Vista Kanban">
       <div className="view-header">
         <h1 className="view-title">Kanban</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

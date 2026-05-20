@@ -219,11 +219,17 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           <div className="outliner-placeholder">{placeholder}</div>
         )}
         {nodes.length === 0 && !placeholder && (
-          <div className="outliner-empty-hint" onClick={() => {
+          <div className="outliner-empty-state" onClick={() => {
             const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
             setSelectedId(n.id)
           }}>
-            Haz clic para empezar a escribir...
+            <div className="outliner-empty-icon">✎</div>
+            <div className="outliner-empty-title">Nota vacía</div>
+            <div className="outliner-empty-hint">
+              Haz clic aquí o pulsa Enter para empezar a escribir
+              <br />
+              <span style={{ opacity: 0.6 }}>/ para comandos · # para tags · @ para menciones</span>
+            </div>
           </div>
         )}
         {nodes.map(node => (

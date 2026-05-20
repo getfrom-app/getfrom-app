@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
@@ -6,18 +6,18 @@ import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
 import DiaryView from '../views/DiaryView'
 import NodeView from '../views/NodeView'
-import TasksView from '../views/TasksView'
-import SearchView from '../views/SearchView'
-import AccountView from '../views/AccountView'
-import CalendarView from '../views/CalendarView'
-import AgentsView from '../views/AgentsView'
-import ChatView from '../views/ChatView'
-import KanbanView from '../views/KanbanView'
-import TagView from '../views/TagView'
-import FollowupView from '../views/FollowupView'
-import FilesView from '../views/FilesView'
-import InboxView from '../views/InboxView'
-import TrashView from '../views/TrashView'
+const TasksView = lazy(() => import('../views/TasksView'))
+const SearchView = lazy(() => import('../views/SearchView'))
+const AccountView = lazy(() => import('../views/AccountView'))
+const CalendarView = lazy(() => import('../views/CalendarView'))
+const AgentsView = lazy(() => import('../views/AgentsView'))
+const ChatView = lazy(() => import('../views/ChatView'))
+const KanbanView = lazy(() => import('../views/KanbanView'))
+const TagView = lazy(() => import('../views/TagView'))
+const FollowupView = lazy(() => import('../views/FollowupView'))
+const FilesView = lazy(() => import('../views/FilesView'))
+const InboxView = lazy(() => import('../views/InboxView'))
+const TrashView = lazy(() => import('../views/TrashView'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'

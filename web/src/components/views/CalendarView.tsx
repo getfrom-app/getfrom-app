@@ -732,7 +732,7 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="view calendar-view">
+    <div className="view calendar-view" role="main" aria-label="Vista de calendario">
       <div className="view-header">
         <div className="calendar-header-row">
           <h1 className="view-title">Calendario</h1>

@@ -752,7 +752,7 @@ export default function DiaryView() {
   }
 
   return (
-    <div className="view diary-view">
+    <div className="view diary-view" role="main" aria-label="Vista de diario">
       <div className="diary-layout">
         {/* Left: outliner */}
         <div className="diary-main">

@@ -865,7 +865,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link' | 'copy') {
+  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'underline' | 'link' | 'copy') {
     if (type === 'copy') {
       const plainText = contentRef.current?.textContent || ''
       navigator.clipboard.writeText(plainText).catch(console.error)
@@ -883,6 +883,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     else if (type === 'italic') wrapped = `*${selectedText}*`
     else if (type === 'code') wrapped = `\`${selectedText}\``
     else if (type === 'strikethrough') wrapped = `~~${selectedText}~~`
+    else if (type === 'underline') wrapped = `<u>${selectedText}</u>`
     else if (type === 'link') wrapped = `[${selectedText}](url)`
 
     // Reemplazar la selección con texto formateado
@@ -983,7 +984,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
   return (
-    <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>
+    <div
+      className="outliner-node"
+      data-node-id={node.id}
+      style={{ '--depth': depth } as React.CSSProperties}
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-selected={isSelected}
+    >
       <div
         className={nodeRowClass}
         draggable={!isDivider && !isHeading}
@@ -1021,7 +1029,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
               }
             }}
             tabIndex={-1}
-            aria-label="Colapsar"
+            aria-label={isCollapsed ? 'Expandir nodo' : 'Colapsar nodo'}
+            aria-expanded={!isCollapsed}
             title={isCollapsed ? 'Expandir (click) · Alt+click: expandir todo' : 'Colapsar (click) · Alt+click: colapsar todo'}
             style={{ position: 'relative' }}
           >
@@ -1244,6 +1253,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
             tabIndex={-1}
             title="Entrar en nodo"
+            aria-label="Entrar en nodo"
           >
             ⟶
           </button>
@@ -1256,6 +1266,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onClick={openNode}
             tabIndex={-1}
             title="Abrir nodo"
+            aria-label="Abrir nodo en vista detalle"
           >
             <svg width="12" height="12" viewBox="0 0 12 12">
               <path d="M5 2H2v8h8V7M7 1h4m0 0v4m0-4L5.5 6.5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round"/>

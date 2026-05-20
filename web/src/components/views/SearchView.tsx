@@ -381,7 +381,7 @@ export default function SearchView() {
   const noResults = hasQuery && results.length === 0
 
   return (
-    <div className="view search-view">
+    <div className="view search-view" role="main" aria-label="Vista de búsqueda">
       <div className="view-header">
         <div className="search-bar">
           <svg width="16" height="16" viewBox="0 0 16 16" className="search-icon">
@@ -585,6 +585,14 @@ export default function SearchView() {
                     </span>
                     {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
                   </div>
+                  {/* Body excerpt when match is in body but not in title */}
+                  {parsed.text && node.body && !node.text.toLowerCase().includes(parsed.text.toLowerCase()) && node.body.toLowerCase().includes(parsed.text.toLowerCase()) && (() => {
+                    const idx = node.body.toLowerCase().indexOf(parsed.text.toLowerCase())
+                    const start = Math.max(0, idx - 40)
+                    const end = Math.min(node.body.length, idx + parsed.text.length + 60)
+                    const excerpt = (start > 0 ? '…' : '') + node.body.slice(start, end) + (end < node.body.length ? '…' : '')
+                    return <div className="search-result-excerpt">{highlight(excerpt, parsed.text)}</div>
+                  })()}
                   <div className="search-result-meta">
                     {node.status !== null && (
                       <span className={`result-badge status-badge ${node.status}`}>
