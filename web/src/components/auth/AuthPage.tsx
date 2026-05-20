@@ -7,6 +7,21 @@ const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string
 const APPLE_WEB_SERVICE_ID = import.meta.env.VITE_APPLE_WEB_SERVICE_ID as string | undefined
 const APPLE_REDIRECT_URI   = import.meta.env.VITE_APPLE_REDIRECT_URI as string | undefined
 
+// Carga dinámica de scripts de terceros (Google/Apple) — solo en AuthPage
+// Así no interfieren con el DOM de React en el resto de la app
+function loadScript(src: string, id: string): Promise<void> {
+  return new Promise((resolve) => {
+    if (document.getElementById(id)) { resolve(); return }
+    const script = document.createElement('script')
+    script.src = src
+    script.id = id
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => resolve() // silencia errores de red
+    document.head.appendChild(script)
+  })
+}
+
 declare global {
   interface Window {
     google?: {
@@ -46,6 +61,12 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     const params = new URLSearchParams(location.search)
     if (params.get('register') === '1') setMode('register')
   }, [location.search])
+
+  // Carga scripts de Google/Apple solo en esta página
+  useEffect(() => {
+    loadScript('https://accounts.google.com/gsi/client', 'gsi-script')
+    loadScript('https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js', 'apple-script')
+  }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
