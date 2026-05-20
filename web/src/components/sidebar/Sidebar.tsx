@@ -292,25 +292,52 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   }
 
   function renderFavoritesTab() {
+    // Recientes: últimos nodos visitados (ordenados por updatedAt)
+    const recents = s.allActive()
+      .filter(n => !n.isDiaryEntry && !n.isFavorite)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, 8)
+
     return (
       <div className="sidebar-tab-content">
-        {allFavorites.length > 0 ? (
-          <div className="tree-section">
-            {allFavorites.map(node => (
-              <TreeNodeItem
-                key={node.id}
-                node={node}
-                depth={0}
-                activePath={location.pathname}
-                onNavigate={handleNavigate}
-                onCreateChild={handleCreateChild}
-              />
-            ))}
-          </div>
-        ) : (
+        {allFavorites.length > 0 && (
+          <>
+            <div className="nav-section-label">Fijados</div>
+            <div className="tree-section">
+              {allFavorites.map(node => (
+                <TreeNodeItem
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  activePath={location.pathname}
+                  onNavigate={handleNavigate}
+                  onCreateChild={handleCreateChild}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {allFavorites.length === 0 && (
           <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Marca una nota como favorita con ☆
+            Fija una nota con ☆ para verla aquí
           </div>
+        )}
+        {recents.length > 0 && (
+          <>
+            <div className="nav-section-label" style={{ marginTop: 8 }}>Recientes</div>
+            <div className="tree-section">
+              {recents.map(node => (
+                <TreeNodeItem
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  activePath={location.pathname}
+                  onNavigate={handleNavigate}
+                  onCreateChild={handleCreateChild}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     )

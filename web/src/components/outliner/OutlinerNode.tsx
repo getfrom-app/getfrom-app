@@ -306,6 +306,16 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       }
     }
 
+    // Cmd+Enter → marcar tarea como done/pending
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (node.status !== null) {
+        store.updateNode(node.id, { status: node.status === 'done' ? 'pending' : 'done' })
+      }
+      return
+    }
+
     // Cmd+Shift+F → toggle favorite
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
