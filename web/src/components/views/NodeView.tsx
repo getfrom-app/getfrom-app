@@ -338,8 +338,8 @@ export default function NodeView() {
       text: (node!.text || 'Sin título') + ' (copia)',
       parentId: node!.parentId || null,
       siblingOrder: node!.siblingOrder + 1,
-      body: node!.body || undefined,
     })
+    if (node!.body) store.updateNode(newNode.id, { body: node!.body })
     if (newNode?.id) {
       navigate(`/node/${newNode.id}`)
     }
