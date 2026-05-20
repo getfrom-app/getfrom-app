@@ -322,7 +322,7 @@ export default function NodeView() {
       setTimeout(() => setQuickActionMsg(null), 2000)
       return
     }
-    const children = s.getChildren ? s.getChildren(todayDiary.id) : []
+    const children = store.children(todayDiary.id)
     const maxOrder = children.reduce((max: number, n: Node) => Math.max(max, n.siblingOrder), 0)
     store.createNode({
       text: node!.text || 'Sin título',
@@ -336,7 +336,7 @@ export default function NodeView() {
   function handleDuplicate() {
     const newNode = store.createNode({
       text: (node!.text || 'Sin título') + ' (copia)',
-      parentId: node!.parentId || undefined,
+      parentId: node!.parentId || null,
       siblingOrder: node!.siblingOrder + 1,
       body: node!.body || undefined,
     })

@@ -367,7 +367,17 @@ export default function DiaryView() {
           </div>
 
           <div className="view-body">
-            {diary ? (
+            {isLoadingDiary ? (
+              <div className="diary-skeleton" style={{ padding: '16px 0' }}>
+                <style>{`
+                  .skeleton-line { height: 14px; background: var(--bg-tertiary); border-radius: 4px; margin: 8px 0; animation: skeletonPulse 1.5s ease-in-out infinite; }
+                  @keyframes skeletonPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+                `}</style>
+                <div className="skeleton-line" style={{ width: '72%' }} />
+                <div className="skeleton-line" style={{ width: '55%' }} />
+                <div className="skeleton-line" style={{ width: '85%' }} />
+              </div>
+            ) : diary ? (
               <Outliner
                 parentId={diary.id}
                 autoFocusEmpty
