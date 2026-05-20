@@ -1,6 +1,29 @@
 # From — Manual de usuario
 
-> Versión 3.11 · macOS 14+ · iOS 17+
+> Versión 3.12 · macOS 14+ · iOS 17+
+
+---
+
+## Novedades en 3.12
+
+**Mac 3.12**
+- Inicio de sesión con email/contraseña — ya no hace falta Apple ID o Google para entrar
+- Login con Google (Google Sign-In) — opción adicional junto a Apple ID
+- Precios actualizados: Free, Pro Mensual (€7/mes), Pro Anual (€49/año), Lifetime (€149 + 3M tokens IA)
+- Botón "Crear cuenta gratis" en Mac → registra directamente desde la app
+
+**iOS 1.2**
+- Tab **Tareas** — vista dedicada de tareas agrupadas por: Vencidas, Hoy, Esta semana, Más tarde, Sin fecha
+- Botón **✨ IA** en el editor de notas — genera o continúa el texto con streaming
+- Login con Google — nueva opción de autenticación
+- Indicador de plan: Free / Pro / Lifetime en Ajustes
+
+**From Web** (getfrom.app/app)
+- Editor completo con 20 funcionalidades: outliner, markdown, slash menu, Cmd+K, arrastrar y soltar
+- Vista calendario semana · Vista kanban por estado
+- Exportar datos (JSON/Markdown) · Compartir enlace de nota
+- Modo claro/oscuro · Checkout directo sin cuenta
+- AI inline (Cmd+Space) · Adjuntar archivos
 
 ---
 
