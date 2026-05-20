@@ -264,6 +264,23 @@ export default function MainLayout() {
           <Route path="files" element={<FilesView />} />
           <Route path="inbox" element={<InboxView />} />
           <Route path="trash" element={<TrashView />} />
+          <Route path="*" element={
+            <div className="view">
+              <div className="view-header"><h1 className="view-title">404</h1></div>
+              <div className="view-body">
+                <div className="view-empty" style={{ paddingTop: 40 }}>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>🗺</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Página no encontrada</div>
+                  <div style={{ color: 'var(--text-tertiary)' }}>La ruta que buscas no existe.</div>
+                  <button
+                    className="btn-primary"
+                    style={{ marginTop: 20 }}
+                    onClick={() => window.location.href = '/app/'}
+                  >Ir a inicio</button>
+                </div>
+              </div>
+            </div>
+          } />
         </Routes>
         <StatusBar isSyncing={s.isSyncing} />
       </main>
