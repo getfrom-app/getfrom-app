@@ -245,6 +245,30 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
 
     return (
       <div className="sidebar-tab-content">
+        {/* Proyectos activos - antes de tags */}
+        {(() => {
+          const projects = s.allActive()
+            .filter(n => !n.deletedAt && (n.types || []).includes('proyecto') && n.status !== 'done')
+            .slice(0, 5)
+          if (projects.length === 0) return null
+          return (
+            <div style={{ marginBottom: 8 }}>
+              <div className="nav-section-label nav-section-label--clickable" onClick={() => navigate(`/search?q=tag:proyecto`)}>
+                <span>Proyectos</span>
+                <span className="tree-item-count">{projects.length}</span>
+              </div>
+              <div className="tree-section">
+                {projects.map(p => (
+                  <button key={p.id} className="tree-item" onClick={() => navigate(`/node/${p.id}`)}>
+                    <span className="tree-item-icon">🚀</span>
+                    <span className="tree-item-name">{p.text || 'Sin título'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Tags section */}
         {allTagNames.length > 0 ? (
           <div style={{ marginBottom: 8 }}>

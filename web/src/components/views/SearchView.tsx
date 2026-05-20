@@ -324,13 +324,18 @@ export default function SearchView() {
         const pb = PRIORITY_RANK[b.priority ?? ''] ?? 3
         return pa - pb
       }
-      // relevance: favor exact text match
+      // relevance: título empieza por query > lo incluye > favoritos > más reciente
       const q = parsed.text.toLowerCase()
       if (q) {
-        const aExact = a.text.toLowerCase().startsWith(q) ? 0 : 1
-        const bExact = b.text.toLowerCase().startsWith(q) ? 0 : 1
-        if (aExact !== bExact) return aExact - bExact
+        const aTitle = a.text.toLowerCase()
+        const bTitle = b.text.toLowerCase()
+        const aStartsExact = aTitle.startsWith(q) ? 0 : aTitle.includes(q) ? 1 : 2
+        const bStartsExact = bTitle.startsWith(q) ? 0 : bTitle.includes(q) ? 1 : 2
+        if (aStartsExact !== bStartsExact) return aStartsExact - bStartsExact
       }
+      // Favoritos primero
+      if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1
+      // Más reciente
       return b.updatedAt.localeCompare(a.updatedAt)
     })
     return filtered.slice(0, 60)

@@ -57,10 +57,34 @@ export default function NodeContextPanel({ nodeId }: Props) {
     } catch { return [] }
   })()
 
+  const wordCount = node.body ? node.body.trim().split(/\s+/).length : 0
+
   const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0 || children.length > 0 || outgoingLinks.length > 0
 
   return (
     <div className="node-context-panel">
+      {/* Node insights */}
+      <div className="context-section context-insights">
+        <div className="insights-grid">
+          <div className="insight-item">
+            <span className="insight-value">{children.length}</span>
+            <span className="insight-label">Bullets</span>
+          </div>
+          <div className="insight-item">
+            <span className="insight-value">{wordCount}</span>
+            <span className="insight-label">Palabras</span>
+          </div>
+          <div className="insight-item">
+            <span className="insight-value">{backlinks.length + outgoingLinks.length}</span>
+            <span className="insight-label">Links</span>
+          </div>
+          <div className="insight-item">
+            <span className="insight-value">{childTasks.length}</span>
+            <span className="insight-label">Tareas</span>
+          </div>
+        </div>
+      </div>
+
       {/* Child tasks */}
       {childTasks.length > 0 && (
         <div className="context-section">

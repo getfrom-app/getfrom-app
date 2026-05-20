@@ -314,8 +314,18 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     }
 
     // Text expansion: detectar si el texto termina en un trigger configurado
-    const expanded = tryExpand(text, getShortcuts())
+    // Mostrar hint visual si hay un shortcut coincidente
+    const shortcuts = getShortcuts()
+    const matchingShortcut = shortcuts.find(s => text.endsWith(s.trigger))
+    if (matchingShortcut) {
+      contentRef.current?.classList.add('has-expansion')
+    } else {
+      contentRef.current?.classList.remove('has-expansion')
+    }
+
+    const expanded = tryExpand(text, shortcuts)
     if (expanded) {
+      contentRef.current?.classList.remove('has-expansion')
       nodeTextRef.current = expanded
       store.updateNode(node.id, { text: expanded })
       if (contentRef.current) {
