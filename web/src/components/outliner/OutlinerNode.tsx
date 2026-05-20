@@ -83,11 +83,13 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     }
   }, [node.text, isEditing, filterText]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Focus when selected
+  // Focus when selected + scroll into view
   useEffect(() => {
     if (isSelected && contentRef.current && !isEditing) {
       setIsEditing(true)
       contentRef.current.focus()
+      // Scroll the node into view
+      contentRef.current.closest('.outliner-node')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       const range = document.createRange()
       const sel = window.getSelection()
       range.selectNodeContents(contentRef.current)
