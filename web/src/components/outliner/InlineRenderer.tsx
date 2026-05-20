@@ -149,3 +149,38 @@ export default function InlineRenderer({ text, className }: Props) {
 
   return <span className={className}>{renderInline(text)}</span>
 }
+
+// ── HTML string renderer (para useEffect en contentEditable) ─────────────────
+// Convierte texto con markdown inline a HTML string sin React nodes
+// Evita poner React children dentro de contentEditable (bug removeChild)
+export function renderInlineToHtml(text: string): string {
+  if (!text) return ''
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  // Detectar tipo de bloque
+  const type = detectBlockType(text)
+  let content = text
+  let wrapClass = ''
+
+  if (type === 'divider') return '<hr class="block-divider" />'
+  if (type === 'h1') { content = text.replace(/^#\s*/, ''); wrapClass = 'block-h1' }
+  else if (type === 'h2') { content = text.replace(/^##\s*/, ''); wrapClass = 'block-h2' }
+  else if (type === 'h3') { content = text.replace(/^###\s*/, ''); wrapClass = 'block-h3' }
+  else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
+
+  // Procesar inline markdown
+  let html = esc(content)
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    // hashtags con color
+    .replace(/#([\wÀ-ɏ]+)/g, (match, tag) => {
+      const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]
+      return `<span class="tag-inline tag-inline--${color}">${match}</span>`
+    })
+
+  return wrapClass ? `<span class="${wrapClass}">${html}</span>` : html
+}

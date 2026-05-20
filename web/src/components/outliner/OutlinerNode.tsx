@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import InlineRenderer, { detectBlockType } from './InlineRenderer'
+import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import SlashMenu from './SlashMenu'
 
 interface Props {
@@ -61,9 +61,13 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const isDivider = blockType === 'divider'
 
   // Sync DOM text with node.text when not editing
+  // Setear contenido via innerHTML cuando NO editando — evita poner hijos React
+  // dentro de contentEditable (causa bug removeChild en reconciler de React)
   useEffect(() => {
-    if (!isEditing && contentRef.current && contentRef.current.textContent !== node.text) {
-      contentRef.current.textContent = node.text
+    if (isEditing || !contentRef.current) return
+    const newHtml = renderInlineToHtml(node.text)
+    if (contentRef.current.innerHTML !== newHtml) {
+      contentRef.current.innerHTML = newHtml
     }
   }, [node.text, isEditing])
 
@@ -533,12 +537,12 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           <div className="node-text node-text--divider">
             <hr className="block-divider" />
           </div>
-        ) : isEditing ? (
-          /* Modo edición: contentEditable puro sin hijos React — evita el bug removeChild */
+        ) : (
+          /* contentEditable SIN hijos React — el contenido se gestiona
+             via useEffect (innerHTML) para evitar el bug removeChild del reconciler */
           <div
-            key={`edit-${node.id}`}
             ref={contentRef}
-            className="node-text"
+            className={`node-text ${!isEditing ? 'node-text--rendered' : ''}`}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
@@ -551,26 +555,6 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
             onBlur={handleBlur}
             data-placeholder="Escribe algo..."
           />
-        ) : (
-          /* Modo lectura: div no editable con InlineRenderer */
-          <div
-            key={`view-${node.id}`}
-            ref={contentRef}
-            className="node-text node-text--rendered"
-            contentEditable
-            suppressContentEditableWarning
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="off"
-            data-gramm="false"
-            onInput={handleInput}
-            onKeyDown={handleKeyDown}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            data-placeholder="Escribe algo..."
-          >
-            {node.text ? <InlineRenderer text={node.text} /> : null}
-          </div>
         )}
 
         {/* Open node button */}
