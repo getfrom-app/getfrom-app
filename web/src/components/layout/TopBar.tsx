@@ -44,6 +44,12 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isHome = path === '/' || path === ''
 
+  // Nodo actual si estamos en /node/:id
+  const isNodeView = path.startsWith('/node/')
+  const nodeId = isNodeView ? path.split('/node/')[1] : null
+  const currentNode = nodeId ? s.getNode(nodeId) : null
+  const nodeTitle = currentNode?.text || 'Sin título'
+
   function goHome() {
     navigate('/')
   }
@@ -67,9 +73,16 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
       </button>
 
       {/* Current view label */}
-      {!isHome && (
+      {!isHome && !isNodeView && (
         <span className="top-bar-view-label">
           {VIEW_LABELS[path] ?? ''}
+        </span>
+      )}
+
+      {/* Título del nodo actual */}
+      {isNodeView && currentNode && (
+        <span className="top-bar-node-title" title={nodeTitle}>
+          {nodeTitle.length > 30 ? nodeTitle.slice(0, 30) + '…' : nodeTitle}
         </span>
       )}
 

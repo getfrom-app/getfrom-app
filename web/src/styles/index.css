@@ -4801,3 +4801,18 @@ mark.inline-highlight {
   }
   .breadcrumb::-webkit-scrollbar { display: none; }
 }
+
+/* ── AccountView stats ─────────────────────────────────────────────────────── */
+.account-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.account-stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.account-stat-number { font-size: 24px; font-weight: 700; color: var(--text-accent, var(--accent)); line-height: 1; }
+.account-stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+@media (max-width: 500px) { .account-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Calendar legend ───────────────────────────────────────────────────────── */
+.calendar-legend { display: flex; gap: 16px; padding: 8px 12px; font-size: 11px; color: var(--text-tertiary); border-top: 1px solid var(--border); margin-top: 4px; }
+.calendar-legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── TopBar node title ─────────────────────────────────────────────────────── */
+.top-bar-node-title { font-size: 13px; font-weight: 600; color: var(--text-primary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

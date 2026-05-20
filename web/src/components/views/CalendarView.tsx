@@ -229,10 +229,16 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
 // ── Priority color helper ─────────────────────────────────────────────────────
 
 function priorityBg(node: Node): string {
-  if (node.priority === 'high') return 'var(--priority-high, #ef4444)'
-  if (node.priority === 'medium') return 'var(--priority-medium, #f97316)'
-  if (node.isEvent) return 'var(--accent, #8b5cf6)'
-  return 'var(--accent-soft, #7c3aed)'
+  // Events: amber/orange
+  if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f59e0b)'
+  // Tasks done: muted
+  if (node.status === 'done') return '#6b7280'
+  // Priority colors
+  if (node.priority === 'high') return '#ef4444'
+  if (node.priority === 'medium') return '#f97316'
+  if (node.priority === 'low') return '#22c55e'
+  // Default: accent
+  return 'var(--accent, #8b5cf6)'
 }
 
 // Returns true if the ISO date string has a time component (non-midnight)
@@ -469,6 +475,13 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
           onOpen={id => { setEventPopup(null); onNodeClick(id) }}
         />
       )}
+
+      {/* Leyenda */}
+      <div className="calendar-legend">
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#f59e0b' }}></span>Evento</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#ef4444' }}></span>Alta prioridad</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#8b5cf6' }}></span>Tarea</span>
+      </div>
     </>
   )
 }

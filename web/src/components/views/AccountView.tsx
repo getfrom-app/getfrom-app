@@ -320,6 +320,37 @@ export default function AccountView() {
 
   const { user } = us
 
+  // ── Estadísticas globales ──
+  const nodes = store.allActive()
+  const totalNotes = nodes.filter(n => !n.isDiaryEntry && n.status === null).length
+  const totalTasks = nodes.filter(n => n.status !== null).length
+  const doneTasks = nodes.filter(n => n.status === 'done').length
+  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+  const totalWords = nodes.reduce((acc, n) => {
+    const bodyWords = n.body ? n.body.trim().split(/\s+/).length : 0
+    const titleWords = n.text ? n.text.trim().split(/\s+/).length : 0
+    return acc + bodyWords + titleWords
+  }, 0)
+
+  // Racha de diario: días consecutivos hasta hoy
+  const diaryDates = new Set(
+    nodes
+      .filter(n => n.isDiaryEntry && n.diaryDate)
+      .map(n => new Date(n.diaryDate!).toDateString())
+  )
+  let diaryStreak = 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    if (diaryDates.has(d.toDateString())) {
+      diaryStreak++
+    } else {
+      break
+    }
+  }
+
   function getPlanBadge() {
     if (user?.licenseStatus === 'active') {
       return <span className="plan-badge plan-badge--license">Licencia perpetua</span>
@@ -340,6 +371,34 @@ export default function AccountView() {
       </div>
 
       <div className="view-body account-body">
+
+        {/* ── Estadísticas globales ── */}
+        <div className="account-stats-grid">
+          <div className="account-stat-card">
+            <span className="account-stat-number">{totalNotes}</span>
+            <span className="account-stat-label">Notas</span>
+          </div>
+          <div className="account-stat-card">
+            <span className="account-stat-number">{totalTasks}</span>
+            <span className="account-stat-label">Tareas</span>
+          </div>
+          <div className="account-stat-card">
+            <span className="account-stat-number">{doneTasks}</span>
+            <span className="account-stat-label">Completadas</span>
+          </div>
+          <div className="account-stat-card">
+            <span className="account-stat-number">{completionRate}%</span>
+            <span className="account-stat-label">Tasa completado</span>
+          </div>
+          <div className="account-stat-card">
+            <span className="account-stat-number">{diaryStreak}</span>
+            <span className="account-stat-label">Racha días</span>
+          </div>
+          <div className="account-stat-card">
+            <span className="account-stat-number">{totalWords.toLocaleString()}</span>
+            <span className="account-stat-label">Palabras totales</span>
+          </div>
+        </div>
 
         {/* ── Exportar datos section ── */}
         {getToken() && (
