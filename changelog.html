@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novedades — From</title>
+    <meta name="description" content="Historial de versiones y novedades de From para Mac, iPhone y Web.">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .changelog-page { max-width: 680px; margin: 0 auto; padding: 80px 24px 120px; }
+        .changelog-header { text-align: center; margin-bottom: 72px; }
+        .changelog-header h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; }
+        .changelog-header p { font-size: 16px; color: var(--text-secondary); }
+
+        .version-entry { display: flex; gap: 32px; margin-bottom: 64px; }
+        .version-sidebar { width: 160px; flex-shrink: 0; text-align: right; padding-top: 4px; }
+        .version-number { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .version-date { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+        .version-platforms { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+        .platform-chip { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 100px; letter-spacing: 0.3px; }
+        .platform-mac { background: rgba(0,122,255,0.12); color: #007AFF; }
+        .platform-ios { background: rgba(52,199,89,0.12); color: #34C759; }
+        .platform-web { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+
+        .version-body { flex: 1; border-left: 2px solid var(--border); padding-left: 32px; transition: border-left-color 0.2s; }
+        .version-body:hover { border-left-color: var(--accent); }
+
+        .change-group { margin-bottom: 20px; }
+        .change-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .change-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+        .change-item { font-size: 14px; color: var(--text); line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+        .change-item::before { content: '\00b7'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+        .change-platform-tag { font-size: 11px; font-weight: 600; color: var(--text-secondary); background: var(--card-bg); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; flex-shrink: 0; white-space: nowrap; }
+
+        .subscribe-strip { text-align: center; margin-top: 80px; padding: 32px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; }
+        .subscribe-strip h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .subscribe-strip p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+
+        @media (max-width: 600px) {
+            .version-entry { flex-direction: column; gap: 12px; }
+            .version-sidebar { width: auto; text-align: left; }
+            .version-platforms { justify-content: flex-start; }
+            .version-body { border-left: none; border-top: 2px solid var(--border); padding-left: 0; padding-top: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/">Inicio</a>
+            <a href="pricing.html">Precios</a>
+            <a href="changelog.html" class="active">Novedades</a>
+            <a href="docs/index.html">Manual</a>
+            <a href="support.html">Soporte</a>
+            <a href="#download" class="btn-nav">Descargar From</a>
+        </div>
+    </div>
+</nav>
+
+<div class="changelog-page">
+    <div class="changelog-header">
+        <span class="hero-badge" style="margin-bottom: 20px; display: inline-block;">Historial de versiones</span>
+        <h1>Novedades</h1>
+        <p>Todo lo que ha cambiado en From. Actualizado con cada nueva versión de Mac, iPhone y Web.</p>
+    </div>
+
+    <!-- VERSION v3.12 -->
+    <div class="version-entry">
+        <div class="version-sidebar">
+            <div class="version-number">v3.12</div>
+            <div class="version-date">20 mayo 2026</div>
+            <div class="version-platforms">
+                <span class="platform-chip platform-mac">Mac</span>
+                <span class="platform-chip platform-ios">iOS</span>
+                <span class="platform-chip platform-web">Web</span>
+            </div>
+        </div>
+        <div class="version-body">
+            <div class="change-group">
+                <div class="change-group-label">Nuevo</div>
+                <ul class="change-list">
+                    <li class="change-item"><span class="change-platform-tag">Web</span>From Web: editor completo en getfrom.app/app — outliner, diario, tareas, búsqueda, IA y sync en tiempo real</li>
+                    <li class="change-item"><span class="change-platform-tag">Mac</span><span class="change-platform-tag">iOS</span>Login con email/contraseña (antes solo Apple ID)</li>
+                    <li class="change-item"><span class="change-platform-tag">Mac</span><span class="change-platform-tag">iOS</span><span class="change-platform-tag">Web</span>Google Sign-In como opción adicional de autenticación</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>Tab dedicado de Tareas: secciones Vencidas / Hoy / Esta semana / Más tarde / Sin fecha</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>Botón IA en editor con streaming en tiempo real</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>ShareLink en menú de nodo — comparte enlace de cualquier nota</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>Pantalla de carga animada al iniciar la app</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Sidebar con 4 tabs: Tags, Fijados, Paneles, Ajustes</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Panel derecho en diario: Pendiente + Timeline del día</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Atajos de teclado: Cmd+T nueva tarea · Cmd+E nuevo evento · Cmd+R grabar voz · Escape volver a hoy</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Grabación de voz a nota (Web Speech API, Chrome/Edge)</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Vista Kanban y vista Calendario semana</li>
+                    <li class="change-item"><span class="change-platform-tag">Web</span>Exportar datos completos en JSON y Markdown</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <div class="change-group-label">Mejorado</div>
+                <ul class="change-list">
+                    <li class="change-item">Precios actualizados: Free · Pro €7/mes · Anual €49/año · Lifetime €149</li>
+                    <li class="change-item">Checkout sin cuenta: LemonSqueezy crea la cuenta y envía credenciales por mail automáticamente</li>
+                    <li class="change-item">Manual con sección de novedades por versión al inicio</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION v3.11 -->
+    <div class="version-entry">
+        <div class="version-sidebar">
+            <div class="version-number">v3.11</div>
+            <div class="version-date">13 mayo 2026</div>
+            <div class="version-platforms">
+                <span class="platform-chip platform-mac">Mac</span>
+                <span class="platform-chip platform-ios">iOS</span>
+            </div>
+        </div>
+        <div class="version-body">
+            <div class="change-group">
+                <div class="change-group-label">Nuevo</div>
+                <ul class="change-list">
+                    <li class="change-item">Extensión MCP para Claude Desktop y Claude Code — instalar en getfrom.app/claude</li>
+                    <li class="change-item">Tags unificados con áreas: contexto de cada área de trabajo gestionado directamente en From</li>
+                    <li class="change-item">Token de API para integraciones (válido 1 año, generado desde Ajustes)</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>Indicador de plan en Ajustes: Free / Pro / Lifetime / Caducado</li>
+                    <li class="change-item"><span class="change-platform-tag">iOS</span>Google Sign-In</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <div class="change-group-label">Mejorado</div>
+                <ul class="change-list">
+                    <li class="change-item">Sync más rápido al arrancar: delay reducido de 2s a 0.5s en Mac e iOS</li>
+                    <li class="change-item">Indicador de modo offline (wifi.slash, amarillo) en Mac e iOS</li>
+                    <li class="change-item">Arquitectura confirmada como local-first: SQLite como fuente de verdad, servidor solo relay</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION v3.10.1 -->
+    <div class="version-entry">
+        <div class="version-sidebar">
+            <div class="version-number">v3.10.1</div>
+            <div class="version-date">18 mayo 2026</div>
+            <div class="version-platforms">
+                <span class="platform-chip platform-mac">Mac</span>
+            </div>
+        </div>
+        <div class="version-body">
+            <div class="change-group">
+                <div class="change-group-label">Arreglado</div>
+                <ul class="change-list">
+                    <li class="change-item">Si la IA falla al procesar una grabación, la transcripción se guarda automáticamente como bullet — ya no se pierde nada</li>
+                    <li class="change-item">Mensajes de error diferenciados: sesión expirada vs sin suscripción vs error genérico</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION v3.10 -->
+    <div class="version-entry">
+        <div class="version-sidebar">
+            <div class="version-number">v3.10</div>
+            <div class="version-date">18 mayo 2026</div>
+            <div class="version-platforms">
+                <span class="platform-chip platform-mac">Mac</span>
+            </div>
+        </div>
+        <div class="version-body">
+            <div class="change-group">
+                <div class="change-group-label">Nuevo</div>
+                <ul class="change-list">
+                    <li class="change-item">IA inline con contexto de nota completa — "agrupa estos ejercicios" funciona sin repetir el contenido</li>
+                    <li class="change-item">Click en zona vacía coloca el cursor al final del texto, estilo Notion</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <div class="change-group-label">Mejorado</div>
+                <ul class="change-list">
+                    <li class="change-item">Selector de vista movido a barra superior derecha (iconos compactos)</li>
+                    <li class="change-item">Panel chat lateral retirado — toda la IA es ahora inline en el editor</li>
+                    <li class="change-item">Rendimiento: regex cacheadas, carga en prioridades, debounce 200ms por keystroke, arranque por fases</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <div class="change-group-label">Arreglado</div>
+                <ul class="change-list">
+                    <li class="change-item">Fix crítico: ya no se borraba el diario existente en arranque concurrente con doble creación del nodo del día</li>
+                    <li class="change-item">Transcripción de voz se guarda automáticamente si falla la IA, sin perder nada</li>
+                    <li class="change-item">Mensajes de error de IA diferenciados: sesión expirada vs sin suscripción vs error de red</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscribe strip -->
+    <div class="subscribe-strip">
+        <h3>¿Quieres saber cuándo hay novedades?</h3>
+        <p>Sigue <a href="https://x.com/fromnotesapp" target="_blank" style="color: var(--accent);">@fromnotesapp</a> en X o activa las notificaciones de GitHub para las nuevas versiones de Mac.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://github.com/getfrom-app/getfrom-app/releases" target="_blank" class="btn-secondary" style="font-size: 13px; padding: 8px 16px;">
+                Releases en GitHub
+            </a>
+            <a href="/app/" class="btn-primary" style="font-size: 13px; padding: 8px 16px;">
+                Usar From Web gratis
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>La app de notas que Mac estaba esperando.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Producto</h4>
+            <a href="/#features">Funciones</a>
+            <a href="pricing.html">Precios</a>
+            <a href="changelog.html">Novedades</a>
+            <a href="#download">Descargar</a>
+            <a href="claude.html">Extensión Claude</a>
+        </div>
+        <div class="footer-col">
+            <h4>Soporte</h4>
+            <a href="docs/index.html">Manual</a>
+            <a href="support.html">Centro de ayuda</a>
+            <a href="mailto:hola@getfrom.app">Contacto</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacidad</a>
+            <a href="terms.html">Términos</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hello@getfrom.app">hello@getfrom.app</a>
+    </div>
+</footer>
+
+</body>
+</html>
