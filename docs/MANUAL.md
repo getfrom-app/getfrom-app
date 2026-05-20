@@ -500,24 +500,51 @@ From puede sincronizar el contenido de cualquier nota con un documento de Google
 ## 18. Sync y cuenta
 
 **Sin cuenta (modo gratuito):**
-- Bullets, nodos y archivos ilimitados en local.
-- Sin sincronización entre dispositivos ni IA.
+- Hasta 1.000 nodos sincronizados entre dispositivos.
+- Sin funcionalidades de IA ni archivos adjuntos.
 
 **Con cuenta:**
 - Los cambios se sincronizan automáticamente entre Mac e iPhone cada pocos minutos.
 - El sync es delta: solo viajan los cambios, no toda la base de datos.
 
-**Planes:**
+---
 
-| Plan | Precio | Incluye |
-|---|---|---|
-| Gratuito | €0 | Nodos y archivos locales, sin sync |
-| Suscripción | €7/mes | Sync + IA con tokens gestionados |
-| Licencia | €59 única | Sync + IA con tu propia API key |
+## Planes y precios
 
-**Tokens de IA (plan suscripción):**
-- El uso del chat consume tokens prepago incluidos en la suscripción.
-- Puedes comprar recargas adicionales desde **Ajustes → Cuenta**.
+From está disponible en cuatro planes:
+
+### Gratis
+- Sync de hasta 1.000 nodos entre dispositivos
+- App completa en Mac, iPhone y web
+- Sin funcionalidades de IA
+- Sin archivos adjuntos
+
+### Pro — €7/mes o €49/año
+- Nodos ilimitados
+- IA completa (Claude + GPT) con tokens mensuales incluidos
+- Archivos adjuntos
+- Publicar notas con URL pública
+- Soporte prioritario
+
+### Lifetime — €149 pago único
+- Todo lo de Pro para siempre
+- 3.000.000 tokens IA incluidos (~2-3 años de uso normal)
+- Cuando los tokens se agoten: compra recarga o conecta tu propia API key
+- Actualizaciones incluidas
+
+### Modo invitado (web)
+Puedes usar From Web sin crear cuenta. Los datos se guardan en el navegador
+pero se pierden al cerrar la pestaña. Crea una cuenta gratuita para guardar y sincronizar.
+
+### Gestionar suscripción
+Desde la app: **Ajustes → Cuenta → Suscripción**
+Facturación: [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing)
+
+---
+
+**Tokens de IA (plan Pro y Lifetime):**
+- El uso del chat consume tokens incluidos en el plan.
+- Puedes comprar recargas adicionales o conectar tu propia API key desde **Ajustes → Cuenta**.
 
 **Backup local:**
 - From exporta todos tus nodos a Markdown automáticamente cada 2 horas en:

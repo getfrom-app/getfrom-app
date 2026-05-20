@@ -4,13 +4,275 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Precios — From</title>
-    <meta name="description" content="Precios de From. Licencia perpetua o suscripción con IA gestionada. Sin trucos, sin compromisos.">
+    <meta name="description" content="Elige el plan que mejor se adapta a ti. From gratis para siempre, Pro desde €7/mes, o Lifetime por €149.">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="i18n.js"></script>
+    <style>
+        /* Pricing page overrides */
+        .pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 32px 0 48px;
+        }
+        .pricing-toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        .pricing-toggle-label.active {
+            color: var(--text-primary, #fff);
+        }
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            cursor: pointer;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 13px;
+            border: 1px solid rgba(255,255,255,0.12);
+            transition: background 0.2s;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle-switch input:checked ~ .toggle-track {
+            background: var(--accent, #7c5bf2);
+        }
+        .toggle-switch input:checked ~ .toggle-thumb {
+            transform: translateX(22px);
+        }
+        .save-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #22c55e;
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+
+        /* 4-column pricing grid */
+        .pricing-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 1060px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .pricing-grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 540px) {
+            .pricing-grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 28px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .pricing-card.featured {
+            border-color: var(--accent, #7c5bf2);
+            background: rgba(124,91,242,0.08);
+        }
+        .plan-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            background: var(--accent, #7c5bf2);
+            border-radius: 20px;
+            padding: 3px 12px;
+            white-space: nowrap;
+        }
+        .plan-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+        .plan-price {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text-primary, #fff);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .plan-price sup {
+            font-size: 18px;
+            font-weight: 600;
+            vertical-align: super;
+        }
+        .plan-price-period {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .plan-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .plan-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .plan-feature-icon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            margin-top: 1px;
+        }
+        .plan-feature-icon.check {
+            color: var(--accent, #7c5bf2);
+        }
+        .plan-feature-icon.dash {
+            color: rgba(255,255,255,0.2);
+        }
+        .plan-feature.muted {
+            color: rgba(255,255,255,0.3);
+        }
+        .plan-cta {
+            display: block;
+            text-align: center;
+            padding: 11px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        .plan-cta:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+        .plan-cta.primary {
+            background: var(--accent, #7c5bf2);
+            color: #fff;
+        }
+        .plan-cta.secondary {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-primary, #fff);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .plan-cta.gold {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+        }
+
+        /* Comparison table */
+        .comparison-wrap {
+            max-width: 1060px;
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            text-align: left;
+            color: var(--text-secondary);
+        }
+        .comparison-table thead th {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-primary, #fff);
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .comparison-table thead th.col-featured {
+            background: rgba(124,91,242,0.12);
+            color: var(--accent, #7c5bf2);
+        }
+        .comparison-table td.col-featured {
+            background: rgba(124,91,242,0.04);
+        }
+        .check-icon { color: var(--accent, #7c5bf2); font-size: 16px; }
+        .dash-icon { color: rgba(255,255,255,0.18); }
+
+        /* FAQ */
+        .faq-list {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+        .faq-item {
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            padding: 20px 0;
+        }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-q {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary, #fff);
+            margin: 0 0 8px;
+        }
+        .faq-a {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 0;
+        }
+    </style>
 </head>
 <body data-page="pricing">
 
@@ -34,202 +296,306 @@
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
-            <a href="index.html#download" class="btn-nav" data-i18n="nav.download">Descargar</a>
+            <a href="app/" class="btn-nav">Abrir app</a>
         </div>
     </div>
 </nav>
 
 <!-- Hero -->
 <div class="page-hero">
-    <span class="hero-badge" data-i18n="pricing.hero_badge">Precios</span>
-    <h1 data-i18n="pricing.hero_title">Simple y transparente</h1>
-    <p data-i18n-html="pricing.hero_subtitle">¿Ya tienes suscripción a Claude, ChatGPT o Gemini? Compra la licencia y conecta tu propia API key.<br>¿Prefieres no pagar otra suscripción de IA? Suscríbete a From y la IA va incluida.</p>
+    <span class="hero-badge">Precios</span>
+    <h1>Elige el plan que mejor<br>se adapta a ti</h1>
+    <p>Empieza gratis. Actualiza cuando lo necesites.</p>
+
+    <!-- Toggle mensual / anual -->
+    <div class="pricing-toggle">
+        <span class="pricing-toggle-label active" id="label-monthly">Mensual</span>
+        <label class="toggle-switch" aria-label="Cambiar a anual">
+            <input type="checkbox" id="billing-toggle" onchange="toggleBilling(this)">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+        </label>
+        <span class="pricing-toggle-label" id="label-annual">Anual &nbsp;<span class="save-badge">Ahorra 30%</span></span>
+    </div>
 </div>
 
 <!-- Pricing cards -->
 <section class="section" style="padding-top: 0;">
-    <div class="pricing-grid">
-        <!-- Perpetual -->
+    <div class="pricing-grid-4">
+
+        <!-- Free -->
         <div class="pricing-card">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                <h3 data-i18n="pricing.perpetual_title">Licencia perpetua</h3>
-                <span id="license-badge" style="font-size:11px; font-weight:700; color:#ff9500; background:rgba(255,149,0,0.12); border:1px solid rgba(255,149,0,0.3); border-radius:20px; padding:3px 10px; white-space:nowrap;" data-i18n="pricing.perpetual_badge">50 licencias · Acceso fundadores</span>
-            </div>
-            <p class="pricing-desc" data-i18n="pricing.perpetual_desc">Para quienes ya tienen su propia suscripción de IA</p>
-            <div class="pricing-price">&euro;199 <span>EUR</span></div>
-            <p class="pricing-period" data-i18n="pricing.perpetual_period">Pago único. Para siempre.</p>
-            <ul class="pricing-features">
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f1">App completa sin límite de tiempo</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f2">Notas, tareas, vistas y timeline</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f3">Integración Apple Calendar y Recordatorios</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f4">Google Drive y Google Docs</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f5">Canvas infinito y backups automáticos</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f6">Agentes autónomos</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f7">IA con tu propia API key (Anthropic, OpenAI, Google)</li>
-                <li class="pricing-feature" data-i18n="pricing.perpetual_f8">Actualizaciones incluidas</li>
+            <div class="plan-name">Gratis</div>
+            <div class="plan-price"><sup>€</sup>0</div>
+            <div class="plan-price-period">para siempre</div>
+            <div class="plan-desc">Lo esencial para empezar. Sin tarjeta.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    1.000 nodos sincronizados
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Mac, iPhone y web
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Tareas, notas y diario
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    Sin IA
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    Sin archivos adjuntos
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    Sin publicar notas
+                </li>
             </ul>
-            <a href="https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520" class="btn-secondary" data-i18n="pricing.perpetual_btn">Comprar licencia</a>
+            <a href="app/" class="plan-cta secondary">Empezar gratis</a>
         </div>
 
-        <!-- Subscription -->
-        <div class="pricing-card featured">
-            <h3 data-i18n="pricing.sub_title">Suscripción</h3>
-            <p class="pricing-desc" data-i18n="pricing.sub_desc">IA de From incluida. Sin suscripción propia de IA.</p>
-            <div class="pricing-price">&euro;7 <span>/mes</span></div>
-            <p class="pricing-period" data-i18n="pricing.sub_period">Cancela cuando quieras</p>
-            <ul class="pricing-features">
-                <li class="pricing-feature" data-i18n="pricing.sub_f1">Todas las funciones de la app incluidas</li>
-                <li class="pricing-feature" data-i18n="pricing.sub_f2">2 millones de tokens IA/mes incluidos</li>
-                <li class="pricing-feature" data-i18n="pricing.sub_f3">Sin API key ni suscripción propia de IA necesaria</li>
-                <li class="pricing-feature" data-i18n="pricing.sub_f4">Modelos de última generación</li>
-                <li class="pricing-feature" data-i18n="pricing.sub_f5">Agentes con ejecución automática en la nube</li>
-                <li class="pricing-feature" data-i18n="pricing.sub_f6">Soporte prioritario</li>
+        <!-- Pro Mensual (oculto cuando billing=annual) -->
+        <div class="pricing-card" id="card-monthly">
+            <div class="plan-name">Pro Mensual</div>
+            <div class="plan-price"><sup>€</sup>7</div>
+            <div class="plan-price-period">al mes · cancela cuando quieras</div>
+            <div class="plan-desc">Todo From sin límites, con IA incluida.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Nodos ilimitados
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    IA completa (Claude + GPT)
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Archivos adjuntos
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Publicar notas con URL
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Soporte prioritario
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    API key propia compatible
+                </li>
             </ul>
-            <a href="https://from.lemonsqueezy.com/checkout/buy/1182c3fa-554f-49c8-8922-153caffaac60" class="btn-primary" data-i18n="pricing.sub_btn">Suscribirse</a>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/1553200" class="plan-cta primary">Suscribirse</a>
+        </div>
+
+        <!-- Pro Anual (destacado, visible siempre) -->
+        <div class="pricing-card featured" id="card-annual">
+            <div class="plan-badge">⭐ Recomendado</div>
+            <div class="plan-name">Pro Anual</div>
+            <div class="plan-price" id="annual-price"><sup>€</sup>49</div>
+            <div class="plan-price-period" id="annual-period">al año · €4,08/mes</div>
+            <div class="plan-desc">El mejor precio. 30% de ahorro frente al mensual.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Nodos ilimitados
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    IA completa (Claude + GPT)
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Archivos adjuntos
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Publicar notas con URL
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Soporte prioritario
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    API key propia compatible
+                </li>
+            </ul>
+            <a href="#" class="plan-cta primary" id="annual-btn">Suscribirse — €49/año</a>
+        </div>
+
+        <!-- Lifetime -->
+        <div class="pricing-card">
+            <div class="plan-name">Lifetime</div>
+            <div class="plan-price"><sup>€</sup>149</div>
+            <div class="plan-price-period">pago único · para siempre</div>
+            <div class="plan-desc">Todo Pro + 3M tokens IA de regalo. Sin suscripciones.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Todo lo de Pro, siempre
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    3.000.000 tokens IA incluidos
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    API key propia compatible
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Actualizaciones para siempre
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Recarga tokens cuando quieras
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Soporte prioritario
+                </li>
+            </ul>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/1553210" class="plan-cta gold">Comprar Lifetime</a>
         </div>
 
     </div>
 </section>
 
-<!-- Comparison -->
+<!-- Comparison table -->
 <div class="section-alt">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <h2 data-i18n="pricing.comparison_title">Comparativa de planes</h2>
+            <h2>Comparativa de planes</h2>
         </div>
-        <table class="comparison-table">
-            <thead>
-                <tr>
-                    <th data-i18n="pricing.comp_feature_col">Función</th>
-                    <th data-i18n="pricing.comp_perpetual_col">Licencia perpetua</th>
-                    <th data-i18n="pricing.comp_sub_col">Suscripción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td data-i18n="pricing.comp_row1">Notas, tareas, timeline</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row2">Vistas (kanban, calendario, lista, tarjetas)</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row3">Apple Calendar y Recordatorios</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row4">Google Drive y Docs</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row5">Agentes autónomos</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row6">Historial de versiones</td>
-                    <td>&check;</td>
-                    <td>&check;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row7">IA con API key propia</td>
-                    <td>&check;</td>
-                    <td>&mdash;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row8">Conectar suscripción de Claude</td>
-                    <td>&check;</td>
-                    <td>&mdash;</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row9">IA gestionada (sin API key)</td>
-                    <td>&mdash;</td>
-                    <td data-i18n="pricing.comp_row9_sub">&check; 2M tokens/mes</td>
-                </tr>
-                <tr>
-                    <td data-i18n="pricing.comp_row10">Soporte prioritario</td>
-                    <td>&mdash;</td>
-                    <td>&check;</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="comparison-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="width:35%; text-align:left;">Función</th>
+                        <th>Gratis</th>
+                        <th>Pro Mensual</th>
+                        <th class="col-featured">Pro Anual</th>
+                        <th>Lifetime</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nodos sincronizados</td>
+                        <td>1.000</td>
+                        <td>Ilimitados</td>
+                        <td class="col-featured">Ilimitados</td>
+                        <td>Ilimitados</td>
+                    </tr>
+                    <tr>
+                        <td>Dispositivos (Mac, iPhone, Web)</td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>IA (Claude + GPT)</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Tokens IA incluidos</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td>Mensuales</td>
+                        <td class="col-featured">Mensuales</td>
+                        <td>3.000.000</td>
+                    </tr>
+                    <tr>
+                        <td>Archivos adjuntos</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Publicar notas con URL</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>API key propia</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Soporte</td>
+                        <td>Comunidad</td>
+                        <td>Prioritario</td>
+                        <td class="col-featured">Prioritario</td>
+                        <td>Prioritario</td>
+                    </tr>
+                    <tr>
+                        <td>Actualizaciones</td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td>Mientras estés suscrito</td>
+                        <td class="col-featured">Mientras estés suscrito</td>
+                        <td>Siempre</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 </div>
 
-<!-- API key mode explanation -->
+<!-- FAQ -->
 <section class="section">
     <div class="section-header">
-        <h2 data-i18n="pricing.ai_modes_title">Tres formas de usar la IA</h2>
-        <p data-i18n="pricing.ai_modes_subtitle">Tú eliges cómo quieres que funcione la inteligencia artificial en From.</p>
+        <h2>Preguntas frecuentes</h2>
     </div>
-    <div class="features-grid" style="max-width: 900px;">
-        <div class="card">
-            <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3 15.6V15a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1.51 1.08 1.65 1.65 0 0 0 1.82-.33"/></svg>
-            </div>
-            <h3 data-i18n="pricing.mode_auto_title">Automático (Suscripción)</h3>
-            <p data-i18n="pricing.mode_auto_body">Sin configurar nada. From gestiona las API keys y los modelos por ti. Solo suscríbete y empieza a usar la IA con tokens incluidos.</p>
+    <div class="faq-list">
+        <div class="faq-item">
+            <h3 class="faq-q">¿Qué pasa cuando termina mi suscripción?</h3>
+            <p class="faq-a">Tus datos no se borran. El sync se pausa y la IA deja de estar disponible, pero sigues accediendo a todo tu contenido en el plan gratis (hasta 1.000 nodos). Reactiva cuando quieras.</p>
         </div>
-        <div class="card">
-            <div class="card-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <h3 data-i18n="pricing.mode_manual_title">Manual (API key propia)</h3>
-            <p data-i18n="pricing.mode_manual_body">Introduce tu API key de Anthropic, OpenAI o Google. Control total sobre el proveedor, modelo y costes. Funciona con la licencia perpetua.</p>
+        <div class="faq-item">
+            <h3 class="faq-q">¿Puedo cambiar de plan?</h3>
+            <p class="faq-a">Sí, en cualquier momento desde <strong>Ajustes → Cuenta → Suscripción</strong>. Puedes pasar de mensual a anual, cancelar o actualizar a Lifetime sin perder nada.</p>
         </div>
-        <div class="card">
-            <div class="card-icon" style="background: rgba(88,86,214,0.1); color: var(--indigo);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <h3 data-i18n="pricing.mode_oauth_title">Claude OAuth</h3>
-            <p data-i18n="pricing.mode_oauth_body">Conecta tu suscripción de Claude Pro o Max directamente. Usa tu cuota de Claude sin API key, sin coste extra.</p>
+        <div class="faq-item">
+            <h3 class="faq-q">¿Funciona sin internet?</h3>
+            <p class="faq-a">Mac e iPhone funcionan en local aunque no haya conexión — From es local-first. Los cambios se sincronizan en cuanto vuelve la red. La versión web necesita conexión para funcionar.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">¿Qué son los tokens IA?</h3>
+            <p class="faq-a">Los tokens son la unidad de consumo de los modelos de lenguaje (Claude, GPT). Cada mensaje del chat, edición con IA o agente consume tokens. 3M tokens equivalen a aproximadamente 2-3 años de uso normal. Si los agotas, puedes comprar una recarga o conectar tu propia API key.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">¿El plan Lifetime incluye actualizaciones futuras?</h3>
+            <p class="faq-a">Sí. El Lifetime incluye todas las actualizaciones de From para siempre. Pro incluye actualizaciones mientras estés suscrito.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">¿Puedo usar mi propia API key de Claude u OpenAI?</h3>
+            <p class="faq-a">Sí. En cualquier plan Pro o Lifetime puedes conectar tu API key de Anthropic, OpenAI o Google en <strong>Ajustes → IA</strong>. Los tokens que uses irán a tu cuenta del proveedor, no a la de From.</p>
         </div>
     </div>
 </section>
 
-<!-- FAQ Pricing -->
-<section class="section-alt">
-    <section class="section" style="padding-top: 0; padding-bottom: 0;">
-        <div class="section-header">
-            <h2 data-i18n="pricing.faq_title">Preguntas sobre precios</h2>
-        </div>
-        <div class="faq">
-            <div class="faq-item">
-                <h3 data-i18n="pricing.faq1_q">¿Puedo usar From sin pagar?</h3>
-                <p data-i18n="pricing.faq1_a">Sí. Puedes descargar From y usar todas sus funciones sin pagar nada — notas, tareas, vistas, proyectos y agentes. La IA requiere un plan: licencia perpetua para usar tu propia API key, o suscripción para IA gestionada sin configurar nada.</p>
-            </div>
-            <div class="faq-item">
-                <h3 data-i18n="pricing.faq2_q">¿La licencia perpetua incluye actualizaciones?</h3>
-                <p data-i18n="pricing.faq2_a">Sí. Todas las actualizaciones están incluidas. Paga una vez, usa From para siempre con todas las mejoras futuras.</p>
-            </div>
-            <div class="faq-item">
-                <h3 data-i18n="pricing.faq3_q">¿Qué pasa si cancelo la suscripción?</h3>
-                <p data-i18n="pricing.faq3_a">Sigues usando From con todas sus funciones sin IA gestionada. Si quieres seguir usando la IA, puedes adquirir la licencia perpetua y conectar tu propia API key.</p>
-            </div>
-            <div class="faq-item">
-                <h3 data-i18n="pricing.faq4_q">¿Puedo cambiar de plan?</h3>
-                <p data-i18n="pricing.faq4_a">Sí. Puedes pasar de licencia perpetua a suscripción o viceversa en cualquier momento desde tu cuenta.</p>
-            </div>
-            <div class="faq-item">
-                <h3 data-i18n="pricing.faq5_q">¿Qué son los tokens?</h3>
-                <p data-i18n="pricing.faq5_a">Los tokens son la unidad de medida de la IA. Cada pregunta al chat, edición con IA o ejecución de agente consume tokens. 2M de tokens al mes cubre un uso normal con margen. Si necesitas más, puedes recargar 5M adicionales por €5.</p>
-            </div>
-        </div>
-    </section>
-</section>
-
-<!-- CTA -->
+<!-- CTA final -->
 <section class="cta">
-    <h2 data-i18n="pricing.cta_title">Empieza hoy</h2>
-    <p data-i18n="pricing.cta_body">Descarga From gratis y decide después qué plan se adapta a ti.</p>
-    <a href="index.html#download" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span data-i18n="pricing.cta_btn">Descargar para macOS</span>
+    <h2>Empieza gratis hoy</h2>
+    <p>Sin tarjeta de crédito. Sin límite de tiempo. Decide después.</p>
+    <a href="app/" class="btn-primary" style="font-size: 16px; padding: 14px 32px;">
+        Abrir From en el navegador
+    </a>
+    <a href="index.html#download" style="display:inline-block; margin-top:12px; font-size:14px; color:var(--text-secondary); text-decoration:none;">
+        O descarga para macOS →
     </a>
 </section>
 
@@ -268,6 +634,17 @@
         © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hello@getfrom.app">hello@getfrom.app</a>
     </div>
 </footer>
+
+<script>
+function toggleBilling(checkbox) {
+    const isAnnual = checkbox.checked;
+    document.getElementById('label-monthly').classList.toggle('active', !isAnnual);
+    document.getElementById('label-annual').classList.toggle('active', isAnnual);
+    document.getElementById('card-monthly').style.display = isAnnual ? 'none' : 'flex';
+}
+// Init: show monthly card, both are visible by default
+document.getElementById('card-monthly').style.display = 'flex';
+</script>
 
 </body>
 </html>
