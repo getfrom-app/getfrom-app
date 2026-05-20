@@ -133,6 +133,24 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         />
       </div>
 
+      {/* Recurrencia — solo para tareas */}
+      {node.status !== null && (
+        <div className="prop-row">
+          <span className="prop-label">Repetir</span>
+          <select
+            className="prop-select"
+            value={node.recurrence || ''}
+            onChange={e => store.updateNode(node.id, { recurrence: e.target.value || null })}
+          >
+            <option value="">Sin repetición</option>
+            <option value="daily">Cada día</option>
+            <option value="weekly">Cada semana</option>
+            <option value="monthly">Cada mes</option>
+            <option value="yearly">Cada año</option>
+          </select>
+        </div>
+      )}
+
       {/* Tipos / Tags */}
       <div className="prop-row prop-row--column">
         <span className="prop-label">Tipos</span>

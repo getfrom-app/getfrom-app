@@ -18,6 +18,7 @@ import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
+import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -151,6 +152,7 @@ export default function MainLayout() {
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
+      <OnboardingTooltip />
     </div>
   )
 }
