@@ -582,6 +582,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
             <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => window.open('https://getfrom.app/claude', '_blank')} />
             <SettingRow icon="📅" label="Google Calendar" onClick={() => navigate('/account')} />
             <SettingRow icon="📤" label="Exportar datos" onClick={() => navigate('/account')} />
+            <SettingRow icon="🗑" label="Papelera" onClick={() => navigate('/trash')} />
           </div>
 
           {/* Ayuda */}

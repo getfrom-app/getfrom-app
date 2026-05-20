@@ -3027,11 +3027,22 @@ mark.inline-highlight {
 .diary-panel-stat-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
 
 /* ── Diary nav (Tarea 3) ──────────────────────────────────────────────────── */
-.diary-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.diary-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .diary-nav button { padding: 4px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .diary-nav button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .diary-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 .diary-date-label { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 80px; text-align: center; }
+.diary-week-nav { display: flex; gap: 4px; margin-left: auto; }
+.diary-week-btn { font-size: 11px; color: var(--text-tertiary); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); background: transparent; cursor: pointer; }
+.diary-week-btn:hover { background: var(--bg-hover); }
+.diary-week-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.diary-history { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.diary-history-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.diary-history-list { display: flex; flex-direction: column; gap: 2px; }
+.diary-history-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 6px; cursor: pointer; border: none; background: transparent; text-align: left; width: 100%; }
+.diary-history-item:hover { background: var(--bg-hover); }
+.diary-history-date { font-size: 13px; color: var(--text-secondary); }
+.diary-history-count { font-size: 12px; color: var(--text-tertiary); }
 
 /* ── Status bar ────────────────────────────────────────────────────────────── */
 .status-bar { display: flex; align-items: center; gap: 16px; padding: 3px 16px; font-size: 11px; color: var(--text-tertiary); border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg-primary); }
@@ -4593,3 +4604,21 @@ mark.inline-highlight {
 .inbox-action-btn--keep:hover { background: rgba(251,191,36,0.2); border-color: #f59e0b; }
 .inbox-action-btn--done:hover { background: rgba(34,197,94,0.2); border-color: #22c55e; }
 .inbox-action-btn--delete:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; }
+
+/* ── TrashView ─────────────────────────────────────────────────────────── */
+.trash-header-row { display: flex; align-items: center; gap: 12px; }
+.trash-count { font-size: 13px; color: var(--text-tertiary); }
+.trash-actions-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.trash-confirm-row { display: flex; align-items: center; gap: 6px; }
+.trash-list { display: flex; flex-direction: column; gap: 4px; }
+.trash-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); transition: background 0.1s; }
+.trash-item:hover { background: var(--bg-hover); }
+.trash-item-info { flex: 1; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; min-width: 0; }
+.trash-item-icon { font-size: 14px; color: var(--text-tertiary); flex-shrink: 0; padding-top: 2px; }
+.trash-item-content { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.trash-item-title { font-size: 13px; color: var(--text-secondary); text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-item-preview { font-size: 11px; color: var(--text-tertiary); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-item-date { font-size: 11px; color: var(--text-tertiary); }
+.trash-item-actions { flex-shrink: 0; }
+.trash-restore-btn { font-size: 12px; color: var(--text-secondary); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; cursor: pointer; transition: background 0.1s; }
+.trash-restore-btn:hover { background: var(--bg-hover); color: var(--text-primary); }

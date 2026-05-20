@@ -816,6 +816,15 @@ export default function DiaryView() {
                 >
                   Mañana →
                 </button>
+                {/* Week navigation */}
+                <div className="diary-week-nav">
+                  <button className="diary-week-btn" onClick={() => setDateOffset(d => d - 7)} title="Semana anterior">
+                    ← Semana anterior
+                  </button>
+                  <button className="diary-week-btn" onClick={() => setDateOffset(d => d + 7)} disabled={dateOffset >= -6} title="Semana siguiente">
+                    Semana siguiente →
+                  </button>
+                </div>
                 {/* Date picker */}
                 <input
                   type="date"
@@ -869,6 +878,37 @@ export default function DiaryView() {
                 <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
                   No hay entrada de diario para este día
                 </p>
+              </div>
+            )}
+
+            {/* Historial de entradas recientes */}
+            {dateOffset === 0 && (
+              <div className="diary-history">
+                <div className="diary-history-label">Entradas recientes</div>
+                <div className="diary-history-list">
+                  {s.allActive()
+                    .filter(n => n.isDiaryEntry && n.diaryDate && !n.deletedAt)
+                    .sort((a, b) => (b.diaryDate ?? '').localeCompare(a.diaryDate ?? ''))
+                    .slice(1, 8)
+                    .map(entry => {
+                      const d = new Date(entry.diaryDate!)
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      const diff = Math.round((d.getTime() - today.getTime()) / 86400000)
+                      const label = diff === -1 ? 'Ayer' : diff === -2 ? 'Hace 2 días' : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+                      const childCount = store.children(entry.id).length
+                      return (
+                        <button
+                          key={entry.id}
+                          className="diary-history-item"
+                          onClick={() => setDateOffset(diff)}
+                        >
+                          <span className="diary-history-date">{label}</span>
+                          <span className="diary-history-count">{childCount} bullet{childCount !== 1 ? 's' : ''}</span>
+                        </button>
+                      )
+                    })}
+                </div>
               </div>
             )}
           </div>

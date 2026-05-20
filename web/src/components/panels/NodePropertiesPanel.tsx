@@ -58,6 +58,20 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
     store.updateNode(node.id, { isEvent: !node.isEvent })
   }
 
+  const isLocked = (() => {
+    try { return JSON.parse(node.extraData || '{}').locked === true } catch { return false }
+  })()
+
+  function toggleLocked() {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      ed.locked = !isLocked
+      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    } catch {
+      store.updateNode(node.id, { extraData: JSON.stringify({ locked: !isLocked }) })
+    }
+  }
+
   function addType(type: string) {
     const t = type.trim().toLowerCase()
     if (!t || (node.types || []).includes(t)) return
@@ -127,6 +141,13 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           title={node.isEvent ? 'Quitar evento' : 'Marcar como evento'}
         >
           📅 Evento
+        </button>
+        <button
+          className={`prop-icon-btn ${isLocked ? 'active' : ''}`}
+          onClick={toggleLocked}
+          title={isLocked ? 'Desbloquear nota' : 'Bloquear nota (solo lectura)'}
+        >
+          {isLocked ? '🔒 Bloqueado' : '🔓 Bloquear'}
         </button>
       </div>
 

@@ -147,6 +147,11 @@ export default function NodeView() {
     try { return JSON.parse(node?.extraData || '{}').icon || null } catch { return null }
   }, [node?.extraData])
 
+  // Lock state
+  const isLocked = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').locked === true } catch { return false }
+  }, [node?.extraData])
+
   if (!node || node.deletedAt) {
     return <div className="view-empty">Nodo no encontrado</div>
   }
@@ -751,10 +756,10 @@ export default function NodeView() {
             <h1
               ref={titleRef}
               className="node-title"
-              contentEditable
+              contentEditable={!isLocked ? 'true' : 'false'}
               suppressContentEditableWarning
-              onInput={handleTitleInput}
-              onBlur={handleTitleInput}
+              onInput={isLocked ? undefined : handleTitleInput}
+              onBlur={isLocked ? undefined : handleTitleInput}
             >
               {node.text || ''}
             </h1>
@@ -905,6 +910,11 @@ export default function NodeView() {
             </div>
           )}
 
+          {/* Locked badge */}
+          {isLocked && (
+            <div className="node-locked-badge">🔒 Nota bloqueada — solo lectura</div>
+          )}
+
           {/* Relative timestamp */}
           <div className="node-updated-at">
             {(() => {
@@ -923,7 +933,7 @@ export default function NodeView() {
         <div className="view-body">
           {/* Body editor */}
           <div className="node-body-editor">
-            {bodyEditing ? (
+            {bodyEditing && !isLocked ? (
               <>
                 <div className="node-body-toolbar">
                   <button
@@ -1025,7 +1035,7 @@ export default function NodeView() {
             ) : (
               <div
                 className={`node-body-rendered ${!hasBody ? 'node-body-empty' : ''}`}
-                onDoubleClick={() => {
+                onDoubleClick={isLocked ? undefined : () => {
                   setBodyEditing(true)
                   setBodyValue(node.body || '')
                 }}
