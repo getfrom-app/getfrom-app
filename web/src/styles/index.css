@@ -4881,3 +4881,53 @@ select:focus { outline: none; }
 .toast.removing { animation: toastOut 0.2s ease forwards; }
 @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(20px); } }
+
+/* ── TasksView quick dates on hover ─────────────────────────────────────── */
+.task-quick-dates { display: flex; gap: 2px; align-items: center; margin-left: 4px; }
+.task-quick-date-btn {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.task-quick-date-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.task-quick-date-btn--clear:hover { background: #ef4444; border-color: #ef4444; }
+
+/* ── QuickCapturePanel ─────────────────────────────────────────────────── */
+.quick-capture-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 9000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 120px;
+  backdrop-filter: blur(2px);
+  animation: modalBg 0.15s ease;
+}
+.quick-capture-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalSlide 0.15s ease;
+  overflow: hidden;
+}
+.quick-capture-header { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 8px; }
+.quick-capture-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.quick-capture-toggles { display: flex; gap: 4px; margin-left: auto; }
+.quick-capture-toggle { font-size: 12px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; color: var(--text-secondary); }
+.quick-capture-toggle.active { background: var(--accent); color: white; border-color: var(--accent); }
+.quick-capture-close { font-size: 18px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; padding: 0 4px; }
+.quick-capture-close:hover { color: var(--text-primary); }
+.quick-capture-textarea { width: 100%; padding: 16px; font-size: 14px; line-height: 1.6; border: none; resize: none; background: transparent; color: var(--text-primary); outline: none; min-height: 100px; box-sizing: border-box; }
+.quick-capture-actions { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--bg-tertiary); }
+.quick-capture-hints { font-size: 11px; color: var(--text-tertiary); display: flex; gap: 8px; flex-wrap: wrap; }
+.quick-capture-hints kbd { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 10px; }

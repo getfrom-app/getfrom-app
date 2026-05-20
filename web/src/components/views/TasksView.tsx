@@ -96,6 +96,7 @@ interface TaskRowProps {
 
 function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
   const navigate = useNavigate()
+  const [hovered, setHovered] = useState(false)
 
   function toggleDone(e: React.MouseEvent) {
     e.stopPropagation()
@@ -104,11 +105,20 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
 
   const isDone = task.status === 'done'
 
+  function setQuickDate(days: number) {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    d.setHours(days === 0 ? 23 : 9, 59, 0, 0)
+    store.updateNode(task.id, { due: d.toISOString() })
+  }
+
   return (
     <div
       className={`task-item task-item--sectioned ${isDone ? 'task-item--done' : ''} ${selected ? 'task-item--selected' : ''}`}
       style={depth > 0 ? { paddingLeft: `${depth * 20}px` } : undefined}
       onClick={() => navigate(`/node/${task.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {onToggleSelect && (
         <input
@@ -151,6 +161,15 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
             </span>
           )}
           <PriorityBadge priority={task.priority} />
+          {/* Quick date buttons on hover (only for pending tasks) */}
+          {hovered && !isDone && (
+            <div className="task-quick-dates" onClick={e => e.stopPropagation()}>
+              <button className="task-quick-date-btn" title="Hoy" onClick={e => { e.stopPropagation(); setQuickDate(0) }}>Hoy</button>
+              <button className="task-quick-date-btn" title="Mañana" onClick={e => { e.stopPropagation(); setQuickDate(1) }}>+1</button>
+              <button className="task-quick-date-btn" title="Esta semana" onClick={e => { e.stopPropagation(); setQuickDate(7) }}>+7</button>
+              {task.due && <button className="task-quick-date-btn task-quick-date-btn--clear" title="Quitar fecha" onClick={e => { e.stopPropagation(); store.updateNode(task.id, { due: null }) }}>✕</button>}
+            </div>
+          )}
         </div>
       </div>
     </div>

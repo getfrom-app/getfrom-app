@@ -25,6 +25,7 @@ import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
+import QuickCapturePanel from '../modals/QuickCapturePanel'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 import StatusBar from './StatusBar'
@@ -43,6 +44,7 @@ export default function MainLayout() {
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const prevIsSyncing = useRef(false)
 
@@ -103,6 +105,10 @@ export default function MainLayout() {
       if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowVoiceCapture(true)
+      }
+      if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowQuickCapture(v => !v)
       }
       // Cmd+[ → Atrás en la navegación
       if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
@@ -179,7 +185,7 @@ export default function MainLayout() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts])
+  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture])
 
   // Detectar cambio isSyncing true → false para mostrar "✓ Guardado"
   useEffect(() => {
@@ -297,6 +303,7 @@ export default function MainLayout() {
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      {showQuickCapture && <QuickCapturePanel onClose={() => setShowQuickCapture(false)} />}
       <button
         className="mobile-fab"
         onClick={() => setShowCommandPalette(true)}

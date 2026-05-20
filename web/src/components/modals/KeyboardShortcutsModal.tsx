@@ -30,6 +30,7 @@ const GROUPS: ShortcutGroup[] = [
       { keys: '⌘T', desc: 'Nueva tarea rápida' },
       { keys: '⌘E', desc: 'Nuevo evento' },
       { keys: '⌘R', desc: 'Captura de voz' },
+      { keys: '⌘Q', desc: 'Captura rápida flotante' },
     ],
   },
   {
