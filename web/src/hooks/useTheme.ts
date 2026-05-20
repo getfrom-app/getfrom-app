@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark' | 'system'
 export type Density = 'normal' | 'compact' | 'comfortable'
 export type AccentColor = 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
 
@@ -10,7 +10,15 @@ const ACCENT_KEY = 'from_accent'
 
 export function getStoredTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY)
-  return (stored === 'dark') ? 'dark' : 'light'
+  if (stored === 'dark' || stored === 'system') return stored
+  return 'light'
+}
+
+export function getEffectiveTheme(theme: Theme): 'light' | 'dark' {
+  if (theme === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return theme
 }
 
 export function getStoredDensity(): Density {
@@ -25,7 +33,8 @@ export function getStoredAccent(): AccentColor {
 }
 
 export function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme)
+  const effective = getEffectiveTheme(theme)
+  document.documentElement.setAttribute('data-theme', effective)
   localStorage.setItem(THEME_KEY, theme)
 }
 
@@ -63,12 +72,19 @@ export function useTheme() {
     applyAccent(a)
   }
 
-  // Apply on mount
+  // Apply on mount + watch system theme changes
   useEffect(() => {
     applyTheme(theme)
     applyDensity(density)
     applyAccent(accent)
-  }, []) // eslint-disable-line
+
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = () => applyTheme('system')
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    }
+  }, [theme, density, accent]) // eslint-disable-line
 
   return { theme, setTheme, density, setDensity, accent, setAccent }
 }

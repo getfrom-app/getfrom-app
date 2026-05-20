@@ -549,6 +549,10 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 className={`settings-theme-btn ${theme === 'dark' ? 'active' : ''}`}
                 onClick={() => setTheme('dark')}
               >🌙 Oscuro</button>
+              <button
+                className={`settings-theme-btn ${theme === 'system' ? 'active' : ''}`}
+                onClick={() => setTheme('system')}
+              >💻 Auto</button>
             </div>
             <div className="settings-density-row">
               <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>Densidad:</span>
