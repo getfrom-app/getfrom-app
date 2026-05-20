@@ -533,10 +533,30 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           <div className="node-text node-text--divider">
             <hr className="block-divider" />
           </div>
-        ) : (
+        ) : isEditing ? (
+          /* Modo edición: contentEditable puro sin hijos React — evita el bug removeChild */
           <div
+            key={`edit-${node.id}`}
             ref={contentRef}
-            className={`node-text ${isEditing ? '' : 'node-text--rendered'}`}
+            className="node-text"
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            data-gramm="false"
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            data-placeholder="Escribe algo..."
+          />
+        ) : (
+          /* Modo lectura: div no editable con InlineRenderer */
+          <div
+            key={`view-${node.id}`}
+            ref={contentRef}
+            className="node-text node-text--rendered"
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
@@ -549,9 +569,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
             onBlur={handleBlur}
             data-placeholder="Escribe algo..."
           >
-            {!isEditing && node.text ? (
-              <InlineRenderer text={node.text} />
-            ) : null}
+            {node.text ? <InlineRenderer text={node.text} /> : null}
           </div>
         )}
 
