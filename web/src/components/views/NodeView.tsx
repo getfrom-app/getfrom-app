@@ -150,6 +150,11 @@ export default function NodeView() {
     try { return JSON.parse(node?.extraData || '{}').icon || null } catch { return null }
   }, [node?.extraData])
 
+  // Color del nodo (extraData.color)
+  const nodeColor = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').color || null } catch { return null }
+  }, [node?.extraData])
+
   // Lock state
   const isLocked = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').locked === true } catch { return false }
@@ -719,6 +724,9 @@ export default function NodeView() {
               Despublicar
             </button>
           </div>
+        )}
+        {nodeColor && (
+          <div className="node-color-band" style={{ background: nodeColor + '20', borderBottom: `2px solid ${nodeColor}` }} />
         )}
         <div className="view-header">
           {crumbs.length > 0 && (

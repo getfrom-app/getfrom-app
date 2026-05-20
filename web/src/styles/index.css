@@ -4931,3 +4931,18 @@ select:focus { outline: none; }
 .quick-capture-actions { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--bg-tertiary); }
 .quick-capture-hints { font-size: 11px; color: var(--text-tertiary); display: flex; gap: 8px; flex-wrap: wrap; }
 .quick-capture-hints kbd { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 10px; }
+
+/* ── Recurrence chips ── */
+.prop-recurrence-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.prop-recurrence-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; }
+.prop-recurrence-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+.prop-recurrence-chip:hover:not(.active) { border-color: var(--accent); color: var(--text-accent); }
+
+/* ── Node color chips ── */
+.prop-color-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.prop-color-chip { width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: all 0.1s; border: 2px solid transparent; }
+.prop-color-chip:hover { opacity: 1; transform: scale(1.1); }
+.prop-color-chip.active { opacity: 1; outline: 2px solid white; outline-offset: 1px; box-shadow: 0 0 0 3px var(--text-tertiary); }
+
+/* ── Node color band (NodeView header) ── */
+.node-color-band { height: 4px; width: 100%; margin-bottom: 8px; border-radius: 4px; }

@@ -193,6 +193,11 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     try { return JSON.parse(node.extraData || '{}').icon || null } catch { return null }
   }, [node.extraData])
 
+  // Color del nodo (extraData.color)
+  const nodeColor = useMemo(() => {
+    try { return JSON.parse(node.extraData || '{}').color || null } catch { return null }
+  }, [node.extraData])
+
   // Filter: if filterText is active and this node doesn't match, hide it
   // But keep parent visible if any descendant matches
   const activeFilter = filterText && filterText.trim()
@@ -1009,6 +1014,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onShiftSelect(node.id)
           }
         }}
+        style={nodeColor ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: 4 } : undefined}
       >
 
         {/* Collapse toggle — hidden for headings and dividers */}
@@ -1108,13 +1114,16 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onClick={e => {
               const target = e.target as HTMLElement
 
-              // Click en mention-inline → navegar al nodo referenciado
+              // Click en mention-inline → navegar al nodo referenciado (@ o [[wiki]])
               const mentionEl = target.classList.contains('mention-inline')
                 ? target
                 : target.closest('.mention-inline') as HTMLElement | null
               if (mentionEl && !isEditing) {
                 e.preventDefault()
-                const mentionText = mentionEl.textContent?.replace(/^@/, '') || ''
+                // Extraer texto: quitar @ al inicio, o [[...]]
+                const rawText = mentionEl.textContent || ''
+                const refText = mentionEl.dataset.refText ||
+                  rawText.replace(/^@/, '').replace(/^\[\[/, '').replace(/\]\]$/, '')
                 // Buscar en extraData.refs primero
                 try {
                   const ed = JSON.parse(node.extraData || '{}')
@@ -1122,8 +1131,10 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
                   const refNode = refIds.map(id => store.getNode(id)).find(n => n && !n.deletedAt)
                   if (refNode) { navigate(`/node/${refNode.id}`); return }
                 } catch { /* ignore */ }
-                // Buscar por texto
-                const found = store.allActive().find(n => n.text === mentionText && !n.deletedAt)
+                // Buscar por texto exacto o parcial
+                const found = store.allActive().find(n =>
+                  (n.text === refText || n.text.toLowerCase().includes(refText.toLowerCase())) && !n.deletedAt
+                )
                 if (found) navigate(`/node/${found.id}`)
                 return
               }

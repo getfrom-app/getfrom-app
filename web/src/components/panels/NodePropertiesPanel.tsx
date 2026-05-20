@@ -252,17 +252,59 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
       {node.status !== null && (
         <div className="prop-section">
           <div className="prop-section-label">Repetición</div>
-          <select
-            className="prop-select"
-            value={node.recurrence || ''}
-            onChange={e => store.updateNode(node.id, { recurrence: e.target.value || null })}
-          >
+          <div className="prop-recurrence-chips">
             {recurrenceOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <button
+                key={opt.value}
+                className={`prop-recurrence-chip ${(node.recurrence || '') === opt.value ? 'active' : ''}`}
+                onClick={() => store.updateNode(node.id, { recurrence: opt.value || null })}
+                title={opt.label}
+              >
+                {opt.label}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       )}
+
+      {/* Color del nodo */}
+      {(() => {
+        const nodeColor = (() => {
+          try { return JSON.parse(node.extraData || '{}').color || null } catch { return null }
+        })()
+
+        const colors = [null, '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
+
+        function setColor(color: string | null) {
+          try {
+            const ed = JSON.parse(node.extraData || '{}')
+            if (color) ed.color = color
+            else delete ed.color
+            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+          } catch {
+            if (color) store.updateNode(node.id, { extraData: JSON.stringify({ color }) })
+          }
+        }
+
+        return (
+          <div className="prop-section">
+            <div className="prop-section-label">Color</div>
+            <div className="prop-color-chips">
+              {colors.map(c => (
+                <button
+                  key={c || 'none'}
+                  className={`prop-color-chip ${(nodeColor || null) === c ? 'active' : ''}`}
+                  style={{ background: c || 'transparent', border: c ? 'none' : '1px solid var(--border)' }}
+                  onClick={() => setColor(c)}
+                  title={c || 'Sin color'}
+                >
+                  {!c && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>✕</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Área */}
       <div className="prop-section">
