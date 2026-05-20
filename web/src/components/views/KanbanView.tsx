@@ -337,9 +337,27 @@ export default function KanbanView() {
     <div className="view kanban-view">
       <div className="view-header">
         <h1 className="view-title">Kanban</h1>
-        <div className="kanban-stats">
-          <span className="kanban-stat">{totalPending} pendientes</span>
-          <span className="kanban-stat kanban-stat--done">{totalDone} completadas</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="kanban-stats">
+            <span className="kanban-stat">{totalPending} pendientes</span>
+            <span className="kanban-stat kanban-stat--done">{totalDone} completadas</span>
+          </div>
+          <div className="kanban-view-mode-toggle">
+            <button
+              className={`kanban-view-mode-btn ${viewMode === 'board' ? 'active' : ''}`}
+              onClick={() => setViewMode('board')}
+              title="Vista Kanban"
+            >
+              Kanban
+            </button>
+            <button
+              className={`kanban-view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Vista Tabla"
+            >
+              Tabla
+            </button>
+          </div>
         </div>
       </div>
 
@@ -365,18 +383,22 @@ export default function KanbanView() {
         </div>
       </div>
 
-      {/* Columns */}
-      <div className="kanban-board">
-        {COLUMNS.map(col => (
-          <KanbanColumn
-            key={col.status ?? 'null'}
-            column={col}
-            tasks={tasksByStatus(col.status)}
-            onDrop={handleDrop}
-            onCreateTask={handleCreateTask}
-          />
-        ))}
-      </div>
+      {/* Board or Table */}
+      {viewMode === 'board' ? (
+        <div className="kanban-board">
+          {COLUMNS.map(col => (
+            <KanbanColumn
+              key={col.status ?? 'null'}
+              column={col}
+              tasks={tasksByStatus(col.status)}
+              onDrop={handleDrop}
+              onCreateTask={handleCreateTask}
+            />
+          ))}
+        </div>
+      ) : (
+        <KanbanTable tasks={filteredTasks} />
+      )}
     </div>
   )
 }

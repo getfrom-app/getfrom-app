@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
@@ -127,6 +127,21 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const usedTags = s.allUsedTags()
   const pendingCount = s.pendingTasks().length
   const showUpgrade = isGuest || !us.isPremium
+
+  const todayTasksCount = useMemo(() => {
+    return s.pendingTasks().filter(n => {
+      if (!n.due) return false
+      const d = new Date(n.due)
+      const today = new Date()
+      return d.toDateString() === today.toDateString()
+    }).length
+  }, [s])
+
+  const activeBuclesCount = useMemo(() => {
+    return s.allActive().filter(n =>
+      (n.types || []).includes('bucle') && n.status !== 'done' && !n.deletedAt
+    ).length
+  }, [s])
 
   // Get root notes (parentId === null, not diary, not tag definitions)
   const allNodes = s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt)
@@ -312,6 +327,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           <div className="sidebar-stat">
             <span className="sidebar-stat-value">{pendingCount}</span>
             <span className="sidebar-stat-label">pendientes</span>
+          </div>
+          <div className="sidebar-stat">
+            <span className="sidebar-stat-value" style={{ color: '#3b82f6' }}>{todayTasksCount}</span>
+            <span className="sidebar-stat-label" style={{ color: '#3b82f6' }}>hoy</span>
+          </div>
+          <div className="sidebar-stat">
+            <span className="sidebar-stat-value" style={{ color: '#8b5cf6' }}>{activeBuclesCount}</span>
+            <span className="sidebar-stat-label" style={{ color: '#8b5cf6' }}>bucles</span>
           </div>
         </div>
       </div>
