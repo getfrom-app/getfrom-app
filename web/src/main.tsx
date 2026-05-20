@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/index.css'
+import { getStoredTheme, applyTheme } from './hooks/useTheme'
+applyTheme(getStoredTheme())
 
 // GitHub Pages SPA redirect: restore path from ?p= param
 ;(function () {

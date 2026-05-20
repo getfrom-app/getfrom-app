@@ -32,11 +32,20 @@ interface AuthResponse {
   refreshToken: string
 }
 
-export default function AuthPage() {
+interface AuthPageProps {
+  initialMode?: 'login' | 'register'
+}
+
+export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const locationState = location.state as { message?: string } | null
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode)
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('register') === '1') setMode('register')
+  }, [location.search])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

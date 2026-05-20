@@ -2,6 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../../store/userStore'
 import { getToken, changePlan, changePlanAnnual, changePlanLifetime } from '../../api/client'
 
+const LS_MONTHLY  = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f'
+const LS_ANNUAL   = 'https://from.lemonsqueezy.com/checkout/buy/1182c3fa-554f-49c8-8922-153caffaac60'
+const LS_LIFETIME = 'https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520'
+
 interface PlanFeature {
   text: string
   included: boolean
@@ -25,35 +29,28 @@ export default function PricingView() {
   const us = useUserStore()
   const isGuest = !getToken()
 
-  async function handleMonthly() {
-    if (isGuest) { navigate('/login?mode=register'); return }
+  async function handleCheckout(plan: 'monthly' | 'annual' | 'lifetime') {
+    if (isGuest) {
+      const urls = { monthly: LS_MONTHLY, annual: LS_ANNUAL, lifetime: LS_LIFETIME }
+      window.open(urls[plan], '_blank')
+      return
+    }
+    const fns = {
+      monthly: changePlan,
+      annual: changePlanAnnual,
+      lifetime: changePlanLifetime,
+    }
     try {
-      const res = await changePlan()
+      const res = await fns[plan]()
       if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
     } catch (err) {
       console.error('Error al iniciar checkout:', err)
     }
   }
 
-  async function handleAnnual() {
-    if (isGuest) { navigate('/login?mode=register'); return }
-    try {
-      const res = await changePlanAnnual()
-      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
-    } catch (err) {
-      console.error('Error al iniciar checkout:', err)
-    }
-  }
-
-  async function handleLifetime() {
-    if (isGuest) { navigate('/login?mode=register'); return }
-    try {
-      const res = await changePlanLifetime()
-      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
-    } catch (err) {
-      console.error('Error al iniciar checkout:', err)
-    }
-  }
+  const handleMonthly  = () => handleCheckout('monthly')
+  const handleAnnual   = () => handleCheckout('annual')
+  const handleLifetime = () => handleCheckout('lifetime')
 
   const isFree = !us.isPremium
   const isLifetime = us.user?.licenseStatus === 'active'
@@ -71,9 +68,9 @@ export default function PricingView() {
         { text: 'Archivos adjuntos', included: false },
         { text: 'Publicar notas', included: false },
       ],
-      ctaLabel: isFree ? 'Tu plan actual' : 'Plan gratuito',
-      isCurrent: isFree,
-      onCta: () => {},
+      ctaLabel: isFree && !isGuest ? 'Tu plan actual' : 'Empezar gratis',
+      isCurrent: isFree && !isGuest,
+      onCta: isGuest ? () => navigate('/register') : () => {},
     },
     {
       id: 'monthly',
@@ -136,6 +133,12 @@ export default function PricingView() {
           Todos los planes incluyen Mac + iOS + Web · Cancela cuando quieras
         </p>
       </div>
+
+      {isGuest && (
+        <p className="pricing-guest-note">
+          Al completar el pago recibirás un email para crear tu contraseña y acceder a From.
+        </p>
+      )}
 
       <div className="pricing-grid">
         {plans.map(plan => (

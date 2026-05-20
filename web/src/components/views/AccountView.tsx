@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function AccountView() {
   const navigate = useNavigate()
   const us = useUserStore()
+  const { theme, setTheme } = useTheme()
 
   // Change password
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -150,6 +152,24 @@ export default function AccountView() {
       </div>
 
       <div className="view-body account-body">
+
+        {/* ── Apariencia section ── */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">Apariencia</h2>
+          <div className="settings-row">
+            <div className="settings-row-label">Tema</div>
+            <div className="theme-toggle">
+              <button
+                className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
+                onClick={() => setTheme('light')}
+              >☀️ Claro</button>
+              <button
+                className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                onClick={() => setTheme('dark')}
+              >🌙 Oscuro</button>
+            </div>
+          </div>
+        </section>
 
         {/* ── Account section ── */}
         <section className="settings-section">

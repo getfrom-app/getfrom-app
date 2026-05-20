@@ -11,7 +11,7 @@ export default function GuestBanner() {
       <div className="guest-banner-actions">
         <button
           className="guest-banner-btn guest-banner-btn--primary"
-          onClick={() => navigate('/login?mode=register')}
+          onClick={() => navigate('/register')}
         >
           Crear cuenta gratis
         </button>
