@@ -235,13 +235,39 @@ export default function DiaryView() {
     })
     .slice(0, 5)
 
+  // ── Panel stats ────────────────────────────────────────────────────────
+  const todayStartStr = todayStart.toDateString()
+  const doneToday = s.allActive().filter(n => {
+    if (n.status !== 'done' || n.deletedAt) return false
+    if (!n.updatedAt) return false
+    return new Date(n.updatedAt).toDateString() === todayStartStr
+  })
+
   function renderPending() {
     const hasBucles = bucles.length > 0
     const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0
 
+    const statsHeader = (
+      <div className="diary-panel-stats">
+        <div className="diary-panel-stat">
+          <span className="diary-panel-stat-num" style={{ color: 'var(--accent)' }}>{todayTasks.length}</span>
+          <span className="diary-panel-stat-label">hoy</span>
+        </div>
+        <div className="diary-panel-stat">
+          <span className="diary-panel-stat-num" style={{ color: '#22c55e' }}>{doneToday.length}</span>
+          <span className="diary-panel-stat-label">hechas</span>
+        </div>
+        <div className="diary-panel-stat">
+          <span className="diary-panel-stat-num" style={{ color: '#ef4444' }}>{overdue.length}</span>
+          <span className="diary-panel-stat-label">vencidas</span>
+        </div>
+      </div>
+    )
+
     if (!hasAnything) {
       return (
         <div className="diary-panel-content">
+          {statsHeader}
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
             Nada pendiente hoy
           </div>
@@ -270,6 +296,7 @@ export default function DiaryView() {
 
     return (
       <div className="diary-panel-content">
+        {statsHeader}
 
         {/* Bucles abiertos — solo hoy */}
         {hasBucles && (

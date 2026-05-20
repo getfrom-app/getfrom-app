@@ -2777,6 +2777,26 @@ mark.inline-highlight {
 .tasks-filter-chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .tasks-filter-separator { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; align-self: center; }
 
+/* ── Saved views bar ──────────────────────────────────────────────────────── */
+.tasks-saved-views-bar { display: flex; gap: 6px; align-items: center; padding: 0 24px 8px; flex-wrap: wrap; }
+.tasks-saved-view-chip { display: flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 8px 3px 10px; border-radius: 100px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.tasks-saved-view-chip:hover { background: var(--accent); color: #fff; }
+.tasks-saved-view-delete { font-size: 14px; line-height: 1; opacity: 0.6; cursor: pointer; padding: 0 2px; }
+.tasks-saved-view-delete:hover { opacity: 1; }
+
+/* ── Body editor toolbar ──────────────────────────────────────────────────── */
+.node-body-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
+.node-body-toolbar-btn { padding: 3px 8px; font-size: 12px; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s; line-height: 1.4; }
+.node-body-toolbar-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border); }
+.node-body-toolbar-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+.node-body-editor .node-body-toolbar + .node-body-textarea { border-radius: 0 0 var(--radius) var(--radius); }
+
+/* ── Diary panel stats ────────────────────────────────────────────────────── */
+.diary-panel-stats { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.diary-panel-stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+.diary-panel-stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
+.diary-panel-stat-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
+
 /* ── Diary nav (Tarea 3) ──────────────────────────────────────────────────── */
 .diary-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .diary-nav button { padding: 4px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }

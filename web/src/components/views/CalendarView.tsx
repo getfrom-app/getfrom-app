@@ -52,6 +52,19 @@ function formatMonthShort(date: Date): string {
   return date.toLocaleDateString('es-ES', { month: 'short' })
 }
 
+function formatWeekLabel(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6)
+  const startDay = weekStart.getDate()
+  const endDay = weekEnd.getDate()
+  const startMonth = weekStart.toLocaleDateString('es-ES', { month: 'short' })
+  const endMonth = weekEnd.toLocaleDateString('es-ES', { month: 'short' })
+  const year = weekEnd.getFullYear()
+  if (weekStart.getMonth() === weekEnd.getMonth()) {
+    return `${startDay}–${endDay} ${startMonth} ${year}`
+  }
+  return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${year}`
+}
+
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
@@ -117,6 +130,7 @@ interface WeekViewProps {
 
 function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent }: WeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null)
 
   // Eventos y tareas con fecha
   const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
@@ -136,7 +150,7 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
     return getNodesForDay(day).filter(n => n.due && hasTime(n.due))
   }
 
-  const weekLabel = `${formatDate(weekStart)} — ${formatDate(days[6])}`
+  const weekLabel = formatWeekLabel(weekStart)
 
   function handleCellClick(day: Date, hour: number) {
     const d = new Date(day)
@@ -147,10 +161,10 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-7)}>‹</button>
-        <span className="calendar-week-label">{weekLabel}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(7)}>›</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-7)}>← Anterior</button>
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <span className="calendar-week-label">{weekLabel}</span>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(7)}>Siguiente →</button>
       </div>
 
       <div className="view-body calendar-week-body">
@@ -218,23 +232,37 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                   style={{ left: `calc(var(--gutter-width) + ${di} * var(--day-col-width))`, width: 'var(--day-col-width)', height: CELL_HEIGHT * 24 }}
                 >
                   {/* Celdas clicables por hora */}
-                  {HOURS.map(hour => (
-                    <div
-                      key={hour}
-                      className="calendar-timeline-cell"
-                      style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
-                      onClick={() => handleCellClick(day, hour)}
-                      onDragOver={e => e.preventDefault()}
-                      onDrop={e => {
-                        e.preventDefault()
-                        const eventId = e.dataTransfer.getData('eventId')
-                        if (!eventId) return
-                        const newDate = new Date(day)
-                        newDate.setHours(hour, 0, 0, 0)
-                        store.updateNode(eventId, { due: newDate.toISOString() })
-                      }}
-                    />
-                  ))}
+                  {HOURS.map(hour => {
+                    const cellKey = `${di}-${hour}`
+                    const isHovered = hoveredCell === cellKey
+                    const hasTimedEvent = timedNodes.some(n => {
+                      const d2 = new Date(n.due!)
+                      return d2.getHours() === hour
+                    })
+                    return (
+                      <div
+                        key={hour}
+                        className={`calendar-timeline-cell ${isHovered ? 'calendar-timeline-cell--hover' : ''}`}
+                        style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
+                        onClick={() => handleCellClick(day, hour)}
+                        onMouseEnter={() => setHoveredCell(cellKey)}
+                        onMouseLeave={() => setHoveredCell(null)}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={e => {
+                          e.preventDefault()
+                          const eventId = e.dataTransfer.getData('eventId')
+                          if (!eventId) return
+                          const newDate = new Date(day)
+                          newDate.setHours(hour, 0, 0, 0)
+                          store.updateNode(eventId, { due: newDate.toISOString() })
+                        }}
+                      >
+                        {isHovered && !hasTimedEvent && (
+                          <span className="calendar-cell-add-hint">+ Añadir evento</span>
+                        )}
+                      </div>
+                    )
+                  })}
 
                   {/* Eventos con hora */}
                   {timedNodes.map(node => {

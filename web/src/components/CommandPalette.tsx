@@ -153,7 +153,7 @@ export default function CommandPalette({ onClose }: Props) {
       .filter(n => !n.deletedAt)
       .map(n => ({
         id: `recent-${n.id}`,
-        icon: n.isDiaryEntry ? '📓' : n.status !== null ? '✓' : '→',
+        icon: n.isDiaryEntry ? '📓' : n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
         label: n.text || 'Sin título',
         type: 'recent' as const,
         action: () => {
@@ -168,7 +168,7 @@ export default function CommandPalette({ onClose }: Props) {
       .filter(n => !n.isDiaryEntry && !recentIds.includes(n.id))
       .map(n => ({
         id: `note-${n.id}`,
-        icon: n.status !== null ? '✓' : '→',
+        icon: n.status === 'done' ? '✅' : n.status === 'pending' ? '○' : (n.types || []).includes('bucle') ? '↺' : n.isEvent ? '📅' : n.isFavorite ? '★' : '📄',
         label: n.text || 'Sin título',
         type: 'note' as const,
         action: () => {
