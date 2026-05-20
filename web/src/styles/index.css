@@ -201,6 +201,121 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   overflow-y: auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TopBar ───────────────────────────────────────────────────────────────── */
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.top-bar-home-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--bg-secondary);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.top-bar-home-pill:hover {
+  background: var(--bg-tertiary);
+}
+
+.top-bar-home-icon { font-size: 11px; }
+
+.top-bar-shortcut {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.top-bar-dot {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  opacity: 0.4;
+}
+
+.top-bar-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.top-bar-view-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.top-bar-spacer { flex: 1; }
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.top-bar-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.top-bar-action:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.top-bar-shortcut-hint {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+/* ── Slash menu mejorado (grupos) ─────────────────────────────────────────── */
+
+.slash-menu-group {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 10px 2px;
+  opacity: 0.7;
+}
+
+.slash-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.slash-menu-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 12px 14px;
+  text-align: center;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */

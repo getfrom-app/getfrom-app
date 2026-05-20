@@ -1,63 +1,93 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
+export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note'
+
 export interface SlashMenuOption {
   label: string
-  icon: string
+  icon: string | React.ReactNode
   prefix: string
   description: string
+  action?: SlashAction
+  group?: string
 }
 
-const OPTIONS: SlashMenuOption[] = [
-  { label: 'Texto',      icon: 'T',  prefix: '',     description: 'Párrafo normal' },
-  { label: 'Título 1',  icon: 'H1', prefix: '# ',   description: 'Encabezado grande' },
-  { label: 'Título 2',  icon: 'H2', prefix: '## ',  description: 'Encabezado mediano' },
-  { label: 'Título 3',  icon: 'H3', prefix: '### ', description: 'Encabezado pequeño' },
-  { label: 'Tarea',     icon: '☑',  prefix: '',     description: 'Convertir en tarea', isTask: true } as SlashMenuOption & { isTask: boolean },
-  { label: 'Cita',      icon: '"',  prefix: '> ',   description: 'Bloque de cita' },
-  { label: 'Separador', icon: '—',  prefix: '---',  description: 'Línea divisoria' },
+const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
+  // ── Texto ──────────────────────────────────────────────────────────────
+  { group: 'Texto', label: 'Texto',      icon: 'T',   prefix: '',      description: 'Párrafo normal',         action: 'text' },
+  { group: 'Texto', label: 'Título 1',   icon: 'H1',  prefix: '# ',    description: 'Encabezado grande',      action: 'text' },
+  { group: 'Texto', label: 'Título 2',   icon: 'H2',  prefix: '## ',   description: 'Encabezado mediano',     action: 'text' },
+  { group: 'Texto', label: 'Título 3',   icon: 'H3',  prefix: '### ',  description: 'Encabezado pequeño',     action: 'text' },
+  { group: 'Texto', label: 'Cita',       icon: '"',   prefix: '> ',    description: 'Bloque de cita',         action: 'text' },
+  { group: 'Texto', label: 'Código',     icon: '</>',  prefix: '` ',   description: 'Texto monoespaciado',    action: 'text' },
+  { group: 'Texto', label: 'Separador',  icon: '—',   prefix: '---',   description: 'Línea divisoria',        action: 'text' },
+  // ── Objetos ─────────────────────────────────────────────────────────────
+  { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
+  { group: 'Objetos', label: 'Bucle',    icon: '↺',   prefix: '',      description: 'Open loop / seguimiento', action: 'bucle' },
+  { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
 ]
+
+export interface SlashSelectPayload {
+  prefix: string
+  action: SlashAction
+}
 
 interface Props {
   anchorEl: HTMLElement | null
-  onSelect: (prefix: string, isTask?: boolean) => void
+  query: string   // texto que el usuario ha escrito tras '/'
+  onSelect: (payload: SlashSelectPayload) => void
   onClose: () => void
 }
 
-export default function SlashMenu({ anchorEl, onSelect, onClose }: Props) {
-  const [activeIdx, setActiveIdx] = useState(0)
+export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props) {
   const menuRef = useRef<HTMLDivElement>(null)
-
-  // Position menu below anchor
   const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  // Filter by query
+  const filtered = OPTIONS.filter(opt =>
+    !query ||
+    opt.label.toLowerCase().includes(query.toLowerCase()) ||
+    opt.description.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  // Reset selection when filter changes
+  useEffect(() => { setActiveIdx(0) }, [query])
+
+  // Position below anchor
   useEffect(() => {
     if (!anchorEl) return
     const rect = anchorEl.getBoundingClientRect()
-    setPos({ top: rect.bottom + 4, left: rect.left })
+    const menuH = 280
+    const spaceBelow = window.innerHeight - rect.bottom - 8
+    const top = spaceBelow > menuH ? rect.bottom + 4 : rect.top - menuH - 4
+    setPos({ top, left: Math.min(rect.left, window.innerWidth - 240) })
   }, [anchorEl])
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setActiveIdx(i => (i + 1) % OPTIONS.length)
+        e.preventDefault(); e.stopPropagation()
+        setActiveIdx(i => Math.min(i + 1, filtered.length - 1))
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setActiveIdx(i => (i - 1 + OPTIONS.length) % OPTIONS.length)
+        e.preventDefault(); e.stopPropagation()
+        setActiveIdx(i => Math.max(i - 1, 0))
       } else if (e.key === 'Enter') {
-        e.preventDefault()
-        const opt = OPTIONS[activeIdx] as SlashMenuOption & { isTask?: boolean }
-        onSelect(opt.prefix, opt.isTask)
+        e.preventDefault(); e.stopPropagation()
+        if (filtered[activeIdx]) {
+          const opt = filtered[activeIdx]
+          onSelect({ prefix: opt.prefix, action: opt.action })
+        }
       } else if (e.key === 'Escape') {
-        e.preventDefault()
+        e.preventDefault(); e.stopPropagation()
         onClose()
       }
     }
     window.addEventListener('keydown', handleKey, true)
     return () => window.removeEventListener('keydown', handleKey, true)
-  }, [activeIdx, onSelect, onClose])
+  }, [activeIdx, filtered, onSelect, onClose])
 
-  // Click outside closes
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -68,28 +98,49 @@ export default function SlashMenu({ anchorEl, onSelect, onClose }: Props) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
 
+  // Group items
+  const groups = Array.from(new Set(filtered.map(o => o.group)))
+
+  if (filtered.length === 0) {
+    return createPortal(
+      <div ref={menuRef} className="slash-menu" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000 }}>
+        <div className="slash-menu-empty">Sin resultados para &quot;{query}&quot;</div>
+      </div>,
+      document.body
+    )
+  }
+
+  let globalIdx = 0
   return createPortal(
-    <div
-      ref={menuRef}
-      className="slash-menu"
-      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 500 }}
-    >
-      {OPTIONS.map((opt, i) => (
-        <button
-          key={opt.label}
-          className={`slash-menu-item ${i === activeIdx ? 'active' : ''}`}
-          onMouseEnter={() => setActiveIdx(i)}
-          onMouseDown={e => {
-            e.preventDefault()
-            const o = opt as SlashMenuOption & { isTask?: boolean }
-            onSelect(o.prefix, o.isTask)
-          }}
-        >
-          <span className="slash-menu-icon">{opt.icon}</span>
-          <span className="slash-menu-label">{opt.label}</span>
-          <span className="slash-menu-desc">{opt.description}</span>
-        </button>
-      ))}
+    <div ref={menuRef} className="slash-menu" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000 }}>
+      {groups.map(group => {
+        const groupItems = filtered.filter(o => o.group === group)
+        return (
+          <div key={group}>
+            <div className="slash-menu-group">{group}</div>
+            {groupItems.map(opt => {
+              const idx = globalIdx++
+              return (
+                <button
+                  key={opt.label}
+                  className={`slash-menu-item ${idx === activeIdx ? 'active' : ''}`}
+                  onMouseEnter={() => setActiveIdx(idx)}
+                  onMouseDown={e => {
+                    e.preventDefault()
+                    onSelect({ prefix: opt.prefix, action: opt.action })
+                  }}
+                >
+                  <span className="slash-menu-icon">{opt.icon}</span>
+                  <div className="slash-menu-text">
+                    <span className="slash-menu-label">{opt.label}</span>
+                    <span className="slash-menu-desc">{opt.description}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )
+      })}
     </div>,
     document.body
   )

@@ -18,6 +18,7 @@ import NewTaskModal from '../modals/NewTaskModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
+import TopBar from './TopBar'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -141,6 +142,17 @@ export default function MainLayout() {
         />
       )}
       <main className="main-content">
+        {/* TopBar global */}
+        <TopBar
+          onNewNote={() => {
+            const newNode = store.createNode({ text: '', parentId: null })
+            navigate(`/node/${newNode.id}`)
+          }}
+          onCommandPalette={() => setShowCommandPalette(v => !v)}
+          onNewTask={() => setShowNewTask(true)}
+          onNewEvent={() => setShowNewEvent(true)}
+          onVoiceCapture={() => setShowVoiceCapture(true)}
+        />
         {/* Mobile hamburger */}
         <div className="mobile-header">
           <button className="mobile-hamburger" onClick={() => setSidebarOpen(true)}>

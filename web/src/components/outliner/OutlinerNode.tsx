@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
-import SlashMenu from './SlashMenu'
+import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 
 interface Props {
   node: Node
@@ -48,10 +48,14 @@ let _draggedNodeId: string | null = null
 export default function OutlinerNode({ node, depth, isSelected, onSelect, onSelectNext }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
+  // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
+  const nodeTextRef = useRef(node.text)
+  nodeTextRef.current = node.text
   const children = store.children(node.id)
   const isCollapsed = node.isCollapsed && children.length > 0
   const [isEditing, setIsEditing] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDragOverChild, setIsDragOverChild] = useState(false)
@@ -104,12 +108,14 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     store.updateNode(node.id, { text })
 
-    // Show slash menu when user types '/' at the very beginning
-    if (text === '/') {
+    // Slash menu: '/' sola o seguida de query (ej. '/tit', '/tar')
+    if (text.startsWith('/')) {
       setShowSlash(true)
+      setSlashQuery(text.slice(1))  // query = texto tras '/'
       setPicker(null)
-    } else if (!text.startsWith('/')) {
+    } else {
       setShowSlash(false)
+      setSlashQuery('')
     }
 
     // Detect @ and # triggers
@@ -196,11 +202,13 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const handleFocus = useCallback(() => {
     setIsEditing(true)
     onSelect(node.id)
-    // Show plain text in the contentEditable
+    // Usar ref (no closure) para obtener el texto más reciente y evitar
+    // que handleFocus restaure el texto antiguo (e.g., '/') después de
+    // que handleSlashSelect ya lo haya actualizado
     if (contentRef.current) {
-      contentRef.current.textContent = node.text
+      contentRef.current.textContent = nodeTextRef.current
     }
-  }, [node.id, node.text, onSelect])
+  }, [node.id, onSelect]) // nodeTextRef es estable, no necesita estar en deps
 
   const handleBlur = useCallback(() => {
     setIsEditing(false)
@@ -439,17 +447,31 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     navigate(`/node/${node.id}`)
   }
 
-  function handleSlashSelect(prefix: string, isTask?: boolean) {
+  function handleSlashSelect({ prefix, action }: SlashSelectPayload) {
     setShowSlash(false)
-    store.updateNode(node.id, {
-      text: prefix,
-      ...(isTask ? { status: 'pending' } : {}),
-    })
+    setSlashQuery('')
+
+    // Actualizar ref inmediatamente para que handleFocus use el texto correcto
+    nodeTextRef.current = prefix
+
+    const updates: Record<string, unknown> = { text: prefix }
+    if (action === 'task') {
+      updates.status = 'pending'
+    } else if (action === 'bucle') {
+      updates.status = 'pending'
+      const existingTypes = node.types || []
+      if (!existingTypes.includes('bucle')) {
+        updates.types = [...existingTypes, 'bucle']
+      }
+    } else if (action === 'event') {
+      updates.isEvent = true
+      updates.status = 'pending'
+    }
+
+    store.updateNode(node.id, updates)
+
     if (contentRef.current) {
-      // Usar NBSP ( ) para el trailing space del prefijo.
-      // Chrome colapsa los trailing spaces regulares en contentEditable cuando
-      // el usuario escribe el primer carácter. NBSP se preserva correctamente.
-      // handleInput normaliza NBSP → espacio regular antes de guardar en el store.
+      // NBSP para trailing space: Chrome colapsa spaces regulares en contentEditable
       const displayPrefix = prefix.replace(/ $/, ' ')
       contentRef.current.textContent = displayPrefix
       contentRef.current.focus()
@@ -597,8 +619,9 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       {showSlash && (
         <SlashMenu
           anchorEl={contentRef.current}
+          query={slashQuery}
           onSelect={handleSlashSelect}
-          onClose={() => setShowSlash(false)}
+          onClose={() => { setShowSlash(false); setSlashQuery('') }}
         />
       )}
 
