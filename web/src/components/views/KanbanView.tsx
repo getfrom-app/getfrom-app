@@ -91,8 +91,9 @@ interface ColumnConfig {
 }
 
 const COLUMNS: ColumnConfig[] = [
-  { status: 'pending', label: 'Pendiente', color: '#6b7280', icon: '○' },
-  { status: 'done',    label: 'Completado', color: '#22c55e', icon: '✓' },
+  { status: 'pending',   label: 'Activo',      color: '#3b82f6', icon: '●' },
+  { status: 'done',      label: 'Completado',  color: '#22c55e', icon: '✓' },
+  { status: null,        label: 'Sin estado',  color: '#6b7280', icon: '○' },
 ]
 
 function KanbanColumn({

@@ -62,7 +62,13 @@ function PriorityBadge({ priority }: { priority: Node['priority'] }) {
   )
 }
 
-function TaskRow({ task }: { task: Node }) {
+function isSubtask(node: Node): boolean {
+  if (!node.parentId) return false
+  const parent = store.getNode(node.parentId)
+  return parent ? parent.status !== null : false
+}
+
+function TaskRow({ task, depth = 0 }: { task: Node; depth?: number }) {
   const navigate = useNavigate()
 
   function toggleDone(e: React.MouseEvent) {
@@ -75,6 +81,7 @@ function TaskRow({ task }: { task: Node }) {
   return (
     <div
       className={`task-item task-item--sectioned ${isDone ? 'task-item--done' : ''}`}
+      style={depth > 0 ? { paddingLeft: `${depth * 20}px` } : undefined}
       onClick={() => navigate(`/node/${task.id}`)}
     >
       <button
@@ -132,7 +139,17 @@ function TaskSection({ section, collapsed, onToggle }: SectionProps) {
       </button>
       {!collapsed && (
         <div className="tasks-section-body">
-          {section.tasks.map(t => <TaskRow key={t.id} task={t} />)}
+          {section.tasks.map(t => {
+            const subtasks = store.children(t.id).filter(c => c.status !== null)
+            return (
+              <div key={t.id}>
+                <TaskRow task={t} />
+                {subtasks.map(sub => (
+                  <TaskRow key={sub.id} task={sub} depth={1} />
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -182,7 +199,7 @@ export default function TasksView() {
   }
 
   const allTasks = useMemo(() => {
-    let tasks = s.allActive().filter(n => n.status !== null)
+    let tasks = s.allActive().filter(n => n.status !== null && !isSubtask(n))
     // Filter by priority
     if (filterPriority !== 'all') {
       tasks = tasks.filter(n => n.priority === filterPriority)
@@ -255,7 +272,7 @@ export default function TasksView() {
     ]
   }, [allTasks, sortBy, showDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalPending = sections.reduce((acc, s) => acc + s.tasks.length, 0)
+  const totalPending = sections.reduce((acc, s) => acc + s.tasks.filter(t => t.status !== 'done').length, 0)
 
   return (
     <div className="view tasks-view">

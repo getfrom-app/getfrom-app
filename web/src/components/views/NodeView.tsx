@@ -32,6 +32,7 @@ export default function NodeView() {
   const [showProperties, setShowProperties] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   // File attachments state
   const [attachments, setAttachments] = useState<Attachment[]>([])
@@ -66,6 +67,13 @@ export default function NodeView() {
       textareaRef.current.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length)
     }
   }, [bodyEditing])
+
+  // Auto-focus title when node is new and has no text
+  useEffect(() => {
+    if (node && !node.text && titleRef.current) {
+      titleRef.current.focus()
+    }
+  }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attachments on mount / node change
   useEffect(() => {
@@ -293,13 +301,14 @@ export default function NodeView() {
 
           <div className="node-title-row">
             <h1
+              ref={titleRef}
               className="node-title"
               contentEditable
               suppressContentEditableWarning
               onInput={handleTitleInput}
               onBlur={handleTitleInput}
             >
-              {node.text || 'Sin título'}
+              {node.text || ''}
             </h1>
             <div className="node-title-actions">
               {isLoggedIn && (
@@ -350,9 +359,47 @@ export default function NodeView() {
             </div>
           </div>
 
-          {node.status !== null && (
-            <div className={`node-status-badge ${node.status}`}>
-              {node.status === 'pending' ? 'Pendiente' : 'Completado'}
+          {/* Node metadata row: status, priority, tags, due */}
+          {(node.status !== null || node.priority || node.due || (node.types && node.types.filter(t => !['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'].includes(t)).length > 0)) && (
+            <div className="node-header-meta">
+              {node.status !== null && (
+                <button
+                  className={`node-status-badge node-status-badge--btn ${node.status}`}
+                  onClick={() => store.updateNode(node!.id, { status: node!.status === 'done' ? 'pending' : 'done' })}
+                  title="Cambiar estado"
+                >
+                  {node.status === 'pending' ? '○ Pendiente' : '✓ Completado'}
+                </button>
+              )}
+              {node.priority && (
+                <button
+                  className={`node-priority-badge node-priority-badge--btn priority-badge--${node.priority}`}
+                  onClick={() => {
+                    const next: Node['priority'] = node!.priority === 'high' ? 'medium' : node!.priority === 'medium' ? 'low' : null
+                    store.updateNode(node!.id, { priority: next })
+                  }}
+                  title="Cambiar prioridad"
+                >
+                  {node.priority === 'high' ? '↑ Alta' : node.priority === 'medium' ? '→ Media' : '↓ Baja'}
+                </button>
+              )}
+              {node.due && (
+                <span className="node-due-badge">
+                  📅 {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              )}
+              {(node.types || [])
+                .filter(t => !['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'].includes(t))
+                .map(tag => (
+                  <span
+                    key={tag}
+                    className="node-tag-chip"
+                    style={{ backgroundColor: s.tagColor(tag) }}
+                  >
+                    {tag}
+                  </span>
+                ))
+              }
             </div>
           )}
         </div>

@@ -7,9 +7,10 @@ export default function OnboardingTooltip() {
 
   const steps = [
     { text: '👋 Bienvenido a From. Escribe tu primera nota aquí.' },
-    { text: '✅ Crea tareas rápidas con ⌘T. Pruébalo ahora.' },
-    { text: '🏷 El sidebar izquierdo organiza tus tags, favoritos y paneles.' },
-    { text: '🎉 ¡Listo! From sincroniza todo entre Mac, iPhone y navegador.' },
+    { text: '📅 Usa / para acceder al menú de opciones — crea tareas, títulos, bucles...' },
+    { text: '✓ Convierte cualquier bullet en tarea con Cmd+T o escribiendo -t al final' },
+    { text: '🔖 Fija notas importantes con ⌘Shift+F y aparecerán en Fijados' },
+    { text: '🔍 Busca notas, tareas y eventos con Cmd+K o desde Buscar' },
   ]
 
   if (!visible) return null
