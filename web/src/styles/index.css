@@ -2919,9 +2919,19 @@ mark.inline-highlight {
 /* ── NodeContextPanel ───────────────────────────────────────────────────── */
 
 .node-view--with-context { display: flex; flex-direction: row; align-items: stretch; height: 100%; }
-.node-view--focus .view-header { max-width: 800px; margin: 0 auto; padding-right: 0; }
-.node-view--focus .view-body { max-width: 800px; margin: 0 auto; }
+.node-view--focus .view-header { max-width: 700px; margin: 0 auto; padding-right: 0; }
+.node-view--focus .view-body { max-width: 700px; margin: 0 auto; }
 .node-view--focus .node-context-panel { display: none; }
+/* Focus mode word counter */
+.focus-word-counter { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary); padding: 4px 8px; }
+.focus-word-count { font-weight: 600; }
+.focus-word-count--goal-met { color: #22c55e; }
+.focus-progress-bar { width: 60px; height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+.focus-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+.focus-goal-label { opacity: 0.6; }
+.focus-goal-btn { font-size: 11px; color: var(--text-tertiary); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); background: transparent; cursor: pointer; }
+.focus-goal-btn:hover { background: var(--bg-hover); }
+.focus-goal-clear { opacity: 0.5; cursor: pointer; background: none; border: none; font-size: 13px; }
 .node-view--with-context .node-view-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
 /* In-doc search bar (⌘F) */
@@ -3019,6 +3029,9 @@ mark.inline-highlight {
 .body-block-ol { margin: 4px 0; padding-left: 20px; list-style: decimal; }
 .body-block-ul .body-block-li,
 .body-block-ol .body-block-li { display: list-item; padding-left: 0; margin: 2px 0; }
+.body-block-code { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; overflow-x: auto; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 12px; line-height: 1.6; position: relative; margin: 6px 0; }
+.body-code-lang { position: absolute; top: 6px; right: 10px; font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+.body-block-code code { color: var(--text-primary); white-space: pre; display: block; }
 .body-block-table-wrapper { overflow-x: auto; margin: 8px 0; }
 .body-block-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .body-table-th { border: 1px solid var(--border); padding: 6px 12px; background: var(--bg-secondary); font-weight: 600; text-align: left; }

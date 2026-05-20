@@ -48,7 +48,16 @@ export default function NodeContextPanel({ nodeId }: Props) {
     ? s.children(node.parentId).filter(n => !n.deletedAt)
     : []
 
-  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0 || children.length > 0
+  // Outgoing links (refs stored in extraData.refs)
+  const outgoingLinks = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      const refs: string[] = ed.refs || []
+      return refs.map(id => s.getNode(id)).filter((n): n is NonNullable<typeof n> => !!n && !n.deletedAt).slice(0, 5)
+    } catch { return [] }
+  })()
+
+  const hasContent = childTasks.length > 0 || tagNodes.length > 0 || backlinks.length > 0 || relatedByTag.length > 0 || children.length > 0 || outgoingLinks.length > 0
 
   return (
     <div className="node-context-panel">
@@ -75,10 +84,22 @@ export default function NodeContextPanel({ nodeId }: Props) {
         </div>
       ))}
 
+      {/* Outgoing links */}
+      {outgoingLinks.length > 0 && (
+        <div className="context-section">
+          <div className="context-section-label">→ Enlaza a</div>
+          {outgoingLinks.map(n => (
+            <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
+              {n.text || 'Sin título'}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Backlinks */}
       {backlinks.length > 0 && (
         <div className="context-section">
-          <div className="context-section-label">Mencionado en</div>
+          <div className="context-section-label">← Mencionado en</div>
           {backlinks.map(n => (
             <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
               {n.text || 'Sin título'}

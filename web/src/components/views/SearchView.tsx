@@ -193,6 +193,13 @@ const NATURAL_PATTERNS: Array<[RegExp, string]> = [
   [/baja\s+prioridad/i, 'prioridad:baja'],
   [/notas?\s+con\s+cuerpo/i, 'tipo:nota tiene:cuerpo'],
   [/sin\s+fecha/i, 'fecha:sin-fecha'],
+  // More natural patterns
+  [/mi\s+diario|entradas?\s+de\s+diario/i, 'tipo:diario'],
+  [/notas?\s+recientes?/i, 'tipo:nota'],
+  [/mis\s+proyectos?/i, 'tag:proyecto'],
+  [/reuniones?/i, 'tag:reunión'],
+  [/ideas?/i, 'tag:idea'],
+  [/urgent[e]?/i, 'prioridad:alta estado:pendiente'],
 ]
 
 function naturalToFilter(q: string): string | null {

@@ -65,6 +65,9 @@ export default function NodeView() {
   // Chat panel state
   const [showChat, setShowChat] = useState(false)
 
+  // Focus mode word goal state
+  const [wordGoal, setWordGoal] = useState<number | null>(null)
+
   // Record recent visit
   useEffect(() => {
     if (id) recordRecentNode(id)
@@ -544,6 +547,10 @@ export default function NodeView() {
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
   const isLoggedIn = !store.isGuest
 
+  // Word count for focus mode
+  const wordCount = bodyValue.trim() ? bodyValue.trim().split(/\s+/).length : 0
+  const progress = wordGoal ? Math.min(100, Math.round((wordCount / wordGoal) * 100)) : null
+
   // ── Body format helpers ────────────────────────────────────────────────
 
   function applyBodyFormat(prefix: string, suffix?: string) {
@@ -832,6 +839,31 @@ export default function NodeView() {
             </div>
           </div>
 
+          {/* Focus mode word counter */}
+          {focusMode && (
+            <div className="focus-word-counter">
+              <span className={`focus-word-count ${wordGoal && wordCount >= wordGoal ? 'focus-word-count--goal-met' : ''}`}>
+                {wordCount} palabras
+              </span>
+              {wordGoal ? (
+                <>
+                  <div className="focus-progress-bar">
+                    <div className="focus-progress-fill" style={{ width: `${progress}%` }} />
+                  </div>
+                  <span className="focus-goal-label">/{wordGoal} ({progress}%)</span>
+                  <button className="focus-goal-clear" onClick={() => setWordGoal(null)}>×</button>
+                </>
+              ) : (
+                <button className="focus-goal-btn" onClick={() => {
+                  const g = parseInt(prompt('Meta de palabras (ej: 500):', '') || '0')
+                  if (g > 0) setWordGoal(g)
+                }}>
+                  + Meta
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Quick actions bar — visible on hover of .node-title-row */}
           <div className="node-quick-actions">
             <button className="node-quick-action-btn" onClick={handleCopyLink} title="Copiar enlace a este nodo">
@@ -1034,6 +1066,21 @@ export default function NodeView() {
                     title="Importar markdown"
                     onMouseDown={e => { e.preventDefault(); handleImportMarkdown() }}
                   >📥</button>
+                  <button className="node-body-toolbar-btn" title="Bloque de código (```)"
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      const ta = textareaRef.current
+                      if (!ta) return
+                      const pos = ta.selectionStart
+                      const codeBlock = '\n```js\n\n```\n'
+                      ta.setRangeText(codeBlock, pos, pos, 'end')
+                      const newPos = pos + 6
+                      setTimeout(() => {
+                        if (ta) { ta.selectionStart = newPos; ta.selectionEnd = newPos }
+                      }, 0)
+                      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+                    }}
+                  >&lt;/&gt;</button>
                 </div>
                 <textarea
                   ref={textareaRef}
@@ -1078,6 +1125,25 @@ export default function NodeView() {
                     let i = 0
                     while (i < lines.length) {
                       const line = lines[i]
+
+                      // Code block: ```
+                      if (line.startsWith('```')) {
+                        const lang = line.slice(3).trim()
+                        const codeLines: string[] = []
+                        i++
+                        while (i < lines.length && !lines[i].startsWith('```')) {
+                          codeLines.push(lines[i])
+                          i++
+                        }
+                        i++ // skip closing ```
+                        blocks.push(
+                          <pre key={`code-${i}`} className="body-block-code">
+                            {lang && <span className="body-code-lang">{lang}</span>}
+                            <code>{codeLines.join('\n')}</code>
+                          </pre>
+                        )
+                        continue
+                      }
 
                       // Table: line starts with | and next line is separator (---|)
                       if (line.trim().startsWith('|') && i + 1 < lines.length && lines[i + 1].includes('---')) {
