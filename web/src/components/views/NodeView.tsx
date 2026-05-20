@@ -15,6 +15,10 @@ function formatBytes(b: number): string {
   return (b / (1024 * 1024)).toFixed(1) + ' MB'
 }
 
+function isImage(filename: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(filename)
+}
+
 interface Attachment {
   key: string
   filename: string
@@ -31,6 +35,7 @@ export default function NodeView() {
   const [bodyEditing, setBodyEditing] = useState(false)
   const [bodyValue, setBodyValue] = useState('')
   const [showProperties, setShowProperties] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -348,7 +353,7 @@ export default function NodeView() {
   }
 
   return (
-    <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''}`}>
+    <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''} ${focusMode ? 'node-view--focus' : ''}`}>
       <div className="node-view-main">
         {/* In-doc search bar (⌘F) */}
         {showInDocSearch && (
@@ -443,6 +448,14 @@ export default function NodeView() {
                 aria-label="Propiedades"
               >
                 ⋯
+              </button>
+              <button
+                className={`node-props-btn ${focusMode ? 'active' : ''}`}
+                onClick={() => setFocusMode(v => !v)}
+                title="Modo foco"
+                aria-label="Modo foco"
+              >
+                {focusMode ? '⊠' : '⊡'}
               </button>
             </div>
           </div>
@@ -605,16 +618,25 @@ export default function NodeView() {
                     </div>
                   )}
                   {attachments.map(att => (
-                    <div key={att.key} className="attachment-item">
-                      <a
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="attachment-name"
-                        title={att.filename}
-                      >
-                        {att.filename}
-                      </a>
+                    <div key={att.key} className={`attachment-item${isImage(att.filename) ? ' attachment-item--image' : ''}`}>
+                      {isImage(att.filename) ? (
+                        <img
+                          src={att.url}
+                          alt={att.filename}
+                          className="attachment-image-preview"
+                          onClick={() => window.open(att.url, '_blank')}
+                        />
+                      ) : (
+                        <a
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="attachment-name"
+                          title={att.filename}
+                        >
+                          {att.filename}
+                        </a>
+                      )}
                       <span className="attachment-size">{formatBytes(att.size)}</span>
                       <button
                         className="attachment-delete-btn"

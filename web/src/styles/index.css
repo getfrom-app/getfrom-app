@@ -2679,6 +2679,9 @@ mark.search-highlight {
 /* ── NodeContextPanel ───────────────────────────────────────────────────── */
 
 .node-view--with-context { display: flex; flex-direction: row; align-items: stretch; height: 100%; }
+.node-view--focus .view-header { max-width: 800px; margin: 0 auto; padding-right: 0; }
+.node-view--focus .view-body { max-width: 800px; margin: 0 auto; }
+.node-view--focus .node-context-panel { display: none; }
 .node-view--with-context .node-view-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
 /* In-doc search bar (⌘F) */
