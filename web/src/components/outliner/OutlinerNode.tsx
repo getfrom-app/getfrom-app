@@ -41,6 +41,9 @@ function getCursorRect(el: HTMLElement): DOMRect {
   return el.getBoundingClientRect()
 }
 
+// Module-level drag state (shared across all OutlinerNode instances)
+let _draggedNodeId: string | null = null
+
 export default function OutlinerNode({ node, depth, isSelected, onSelect, onSelectNext }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
@@ -49,6 +52,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   const [isEditing, setIsEditing] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
   const [picker, setPicker] = useState<InlinePicker | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -321,6 +325,54 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     }
   }, [node, onSelect, onSelectNext, showSlash, picker]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Drag & Drop ──────────────────────────────────────────────────────────
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>) {
+    _draggedNodeId = node.id
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', node.id)
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    if (!_draggedNodeId || _draggedNodeId === node.id) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setIsDragOver(true)
+  }
+
+  function handleDragLeave() {
+    setIsDragOver(false)
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setIsDragOver(false)
+    const draggedId = _draggedNodeId
+    _draggedNodeId = null
+    if (!draggedId || draggedId === node.id) return
+
+    const draggedNode = store.getNode(draggedId)
+    if (!draggedNode) return
+
+    // Only reorder siblings with the same parent
+    if (draggedNode.parentId !== node.parentId) return
+
+    const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const targetIdx = siblings.findIndex(n => n.id === node.id)
+    if (targetIdx === -1) return
+
+    const before = targetIdx > 0 ? siblings[targetIdx - 1].siblingOrder : siblings[targetIdx].siblingOrder - 1000
+    const newOrder = (before + siblings[targetIdx].siblingOrder) / 2
+    store.updateNode(draggedId, { siblingOrder: newOrder })
+  }
+
+  function handleDragEnd() {
+    _draggedNodeId = null
+    setIsDragOver(false)
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   function toggleCollapse() {
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
   }
@@ -367,6 +419,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     isSelected ? 'selected' : '',
     node.status === 'done' ? 'done' : '',
     isHeading ? `node-row--${blockType}` : '',
+    isDragOver ? 'drag-over' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — relative to the node row
@@ -382,7 +435,15 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
 
   return (
     <div className="outliner-node" style={{ '--depth': depth } as React.CSSProperties}>
-      <div className={nodeRowClass}>
+      <div
+        className={nodeRowClass}
+        draggable={!isDivider && !isHeading}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
+      >
         {/* Collapse toggle — hidden for headings and dividers */}
         {!isDivider && (
           <button

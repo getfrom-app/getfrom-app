@@ -5,6 +5,20 @@ import Outliner from '../outliner/Outliner'
 import InlineRenderer from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import { recordRecentNode } from '../CommandPalette'
+import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream } from '../../api/client'
+
+function formatBytes(b: number): string {
+  if (b < 1024) return b + ' B'
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB'
+  return (b / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+interface Attachment {
+  key: string
+  filename: string
+  size: number
+  url: string
+}
 
 export default function NodeView() {
   const { id } = useParams<{ id: string }>()
@@ -17,6 +31,18 @@ export default function NodeView() {
   const [showProperties, setShowProperties] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // File attachments state
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [attachmentsAvailable, setAttachmentsAvailable] = useState(true)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // AI streaming state
+  const [isAiStreaming, setIsAiStreaming] = useState(false)
+
+  // Share state
+  const [shareCopied, setShareCopied] = useState(false)
 
   // Record recent visit
   useEffect(() => {
@@ -38,16 +64,26 @@ export default function NodeView() {
     }
   }, [bodyEditing])
 
+  // Load attachments on mount / node change
+  useEffect(() => {
+    if (!node || store.isGuest) return
+    getFilesForNode(node.id)
+      .then(setAttachments)
+      .catch(() => {
+        setAttachmentsAvailable(false)
+      })
+  }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Cmd+P → toggle properties panel
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
+    function handleGlobalKeyDown(e: KeyboardEvent) {
       if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowProperties(v => !v)
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
 
   if (!node || node.deletedAt) {
@@ -92,7 +128,116 @@ export default function NodeView() {
     store.updateNode(node!.id, { isFavorite: !node!.isFavorite })
   }
 
+  function handleShare() {
+    const url = `https://getfrom.app/app/node/${node!.id}`
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    }).catch(() => {
+      prompt('Copia este enlace:', url)
+    })
+  }
+
+  // ── File upload ────────────────────────────────────────────────────────
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !node) return
+    setUploading(true)
+    try {
+      const { uploadUrl, key, publicUrl } = await getPresignedUpload(
+        file.name,
+        file.type || 'application/octet-stream'
+      )
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      })
+      setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
+    } catch (err) {
+      console.error('Upload failed', err)
+      setAttachmentsAvailable(false)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDeleteAttachment(key: string) {
+    try {
+      await deleteFile(key)
+      setAttachments(prev => prev.filter(a => a.key !== key))
+    } catch (err) {
+      console.error('Delete failed', err)
+    }
+  }
+
+  // ── AI Inline ──────────────────────────────────────────────────────────
+
+  const handleBodyKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
+      e.preventDefault()
+      if (isAiStreaming || store.isGuest) return
+      setIsAiStreaming(true)
+      const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
+      const context = bodyValue.slice(0, cursorPos)
+      const contextWithTitle = context + '\n\n[Título del nodo: ' + (node?.text || '') + ']'
+      let aiText = ''
+      try {
+        await aiInlineStream(
+          contextWithTitle,
+          undefined,
+          (chunk) => {
+            aiText += chunk
+            setBodyValue(prev => {
+              const before = prev.slice(0, cursorPos)
+              const after = prev.slice(cursorPos)
+              return before + aiText + after
+            })
+          }
+        )
+      } catch (err) {
+        if (err instanceof Error && err.message !== 'AI_LIMIT') {
+          console.error('AI inline error', err)
+        }
+      } finally {
+        setIsAiStreaming(false)
+      }
+    }
+  }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function triggerAiInline() {
+    if (isAiStreaming || store.isGuest) return
+    setIsAiStreaming(true)
+    const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
+    const context = bodyValue.slice(0, cursorPos)
+    const contextWithTitle = context + '\n\n[Título del nodo: ' + (node?.text || '') + ']'
+    let aiText = ''
+    try {
+      await aiInlineStream(
+        contextWithTitle,
+        undefined,
+        (chunk) => {
+          aiText += chunk
+          setBodyValue(prev => {
+            const before = prev.slice(0, cursorPos)
+            const after = prev.slice(cursorPos)
+            return before + aiText + after
+          })
+        }
+      )
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'AI_LIMIT') {
+        console.error('AI inline error', err)
+      }
+    } finally {
+      setIsAiStreaming(false)
+    }
+  }
+
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
+  const isLoggedIn = !store.isGuest
 
   return (
     <div className={`view node-view ${showProperties ? 'node-view--with-panel' : ''}`}>
@@ -126,6 +271,17 @@ export default function NodeView() {
               {node.text || 'Sin título'}
             </h1>
             <div className="node-title-actions">
+              {isLoggedIn && (
+                <button
+                  className="node-fav-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Adjuntar archivo"
+                  aria-label="Adjuntar archivo"
+                  style={{ fontSize: '15px' }}
+                >
+                  📎
+                </button>
+              )}
               <button
                 className={`node-fav-btn ${node.isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
@@ -134,6 +290,24 @@ export default function NodeView() {
               >
                 {node.isFavorite ? '★' : '☆'}
               </button>
+              <div className="node-share-wrapper">
+                <button
+                  className="node-share-btn"
+                  onClick={handleShare}
+                  title="Compartir enlace"
+                  aria-label="Compartir"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="12" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="3" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="12" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M4.5 7L10.5 4M4.5 9L10.5 12" stroke="currentColor" strokeWidth="1.5"/>
+                  </svg>
+                </button>
+                {shareCopied && (
+                  <span className="node-share-tooltip">¡Enlace copiado!</span>
+                )}
+              </div>
               <button
                 className={`node-props-btn ${showProperties ? 'active' : ''}`}
                 onClick={() => setShowProperties(v => !v)}
@@ -156,15 +330,31 @@ export default function NodeView() {
           {/* Body editor */}
           <div className="node-body-editor">
             {bodyEditing ? (
-              <textarea
-                ref={textareaRef}
-                className="node-body-textarea"
-                value={bodyValue}
-                onChange={handleBodyChange}
-                onBlur={handleBodyBlur}
-                placeholder="Añade una descripción o notas..."
-                rows={Math.max(4, bodyValue.split('\n').length + 1)}
-              />
+              <>
+                <textarea
+                  ref={textareaRef}
+                  className={`node-body-textarea ${isAiStreaming ? 'ai-streaming' : ''}`}
+                  value={bodyValue}
+                  onChange={handleBodyChange}
+                  onBlur={handleBodyBlur}
+                  onKeyDown={handleBodyKeyDown}
+                  placeholder={isAiStreaming ? '✨ IA generando...' : 'Añade una descripción o notas... (⌘Space para IA)'}
+                  rows={Math.max(4, bodyValue.split('\n').length + 1)}
+                />
+                {isAiStreaming && (
+                  <span className="ai-streaming-hint">✨ IA generando...</span>
+                )}
+                {isLoggedIn && !isAiStreaming && (
+                  <button
+                    className="ai-inline-trigger-btn"
+                    onClick={triggerAiInline}
+                    title="Completar con IA (⌘Space)"
+                    tabIndex={-1}
+                  >
+                    ✨
+                  </button>
+                )}
+              </>
             ) : (
               <div
                 className={`node-body-rendered ${!hasBody ? 'node-body-empty' : ''}`}
@@ -186,6 +376,62 @@ export default function NodeView() {
               </div>
             )}
           </div>
+
+          {/* Hidden file input */}
+          {isLoggedIn && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
+          )}
+
+          {/* File attachments — only for logged-in users */}
+          {isLoggedIn && (
+            <div className="node-attachments">
+              {!attachmentsAvailable ? (
+                <p className="attachments-unavailable">Adjuntar archivos no disponible</p>
+              ) : (
+                <>
+                  {(attachments.length > 0 || uploading) && (
+                    <div className="node-attachments-header">
+                      <span>📎 Archivos adjuntos</span>
+                      <button
+                        className="node-attachments-upload-btn"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        {uploading ? 'Subiendo...' : '+ Adjuntar'}
+                      </button>
+                    </div>
+                  )}
+                  {attachments.map(att => (
+                    <div key={att.key} className="attachment-item">
+                      <a
+                        href={att.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="attachment-name"
+                        title={att.filename}
+                      >
+                        {att.filename}
+                      </a>
+                      <span className="attachment-size">{formatBytes(att.size)}</span>
+                      <button
+                        className="attachment-delete-btn"
+                        onClick={() => handleDeleteAttachment(att.key)}
+                        title="Eliminar"
+                        aria-label="Eliminar adjunto"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
 
           <Outliner
             parentId={node.id}

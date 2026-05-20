@@ -1968,3 +1968,119 @@ a { color: inherit; text-decoration: none; }
 
 .pricing-guest-note { text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 16px; }
 
+/* ── Drag & drop outliner ───────────────────────────────────────────────── */
+
+.node-row.drag-over { border-top: 2px solid var(--accent); }
+.node-row[draggable="true"] { cursor: grab; }
+.node-row[draggable="true"]:active { cursor: grabbing; }
+
+/* ── File attachments ───────────────────────────────────────────────────── */
+
+.node-attachments { margin: 12px 0; }
+.node-attachments-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.node-attachments-upload-btn { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.node-attachments-upload-btn:hover { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
+.node-attachments-upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.attachment-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface, var(--bg-secondary)); border-radius: 6px; margin-bottom: 4px; font-size: 13px; border: 1px solid var(--border); }
+.attachment-name { flex: 1; color: var(--text-primary); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachment-name:hover { color: var(--text-accent); text-decoration: underline; }
+.attachment-size { color: var(--text-secondary); font-size: 11px; flex-shrink: 0; }
+.attachment-delete-btn { padding: 2px 6px; border-radius: var(--radius); background: transparent; color: var(--text-tertiary); font-size: 14px; cursor: pointer; transition: all 0.1s; flex-shrink: 0; }
+.attachment-delete-btn:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
+.attachments-unavailable { font-size: 12px; color: var(--text-tertiary); font-style: italic; padding: 4px 0; }
+
+/* ── AI inline streaming ────────────────────────────────────────────────── */
+
+@keyframes pulse-border { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.node-body-textarea.ai-streaming { border-color: var(--accent) !important; animation: pulse-border 1s ease-in-out infinite; }
+.ai-streaming-hint { position: absolute; bottom: 10px; left: 12px; font-size: 11px; color: var(--text-accent); pointer-events: none; opacity: 0.8; }
+.ai-inline-trigger-btn { position: absolute; bottom: 8px; right: 8px; padding: 4px 8px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s; opacity: 0; }
+.node-body-editor:hover .ai-inline-trigger-btn,
+.node-body-editor:focus-within .ai-inline-trigger-btn { opacity: 1; }
+.ai-inline-trigger-btn:hover { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
+.ai-inline-trigger-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.node-body-editor { position: relative; }
+
+
+/* ── Kanban view ────────────────────────────────────────────────────────── */
+
+.kanban-view { display: flex; flex-direction: column; height: 100%; }
+.kanban-view .view-header { display: flex; align-items: center; gap: 16px; padding-bottom: 12px; flex-shrink: 0; }
+.kanban-stats { display: flex; gap: 12px; }
+.kanban-stat { font-size: 12px; color: var(--text-secondary); background: var(--bg-secondary); padding: 3px 10px; border-radius: 100px; }
+.kanban-stat--done { color: #22c55e; }
+
+.kanban-filters { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; flex-shrink: 0; flex-wrap: wrap; }
+.kanban-search { flex: 1; min-width: 160px; max-width: 280px; padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none; }
+.kanban-search:focus { border-color: var(--accent); }
+.kanban-priority-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.kanban-filter-btn { padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+.kanban-filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.kanban-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.kanban-board { display: flex; gap: 16px; overflow-x: auto; flex: 1; padding-bottom: 16px; }
+.kanban-column { flex: 0 0 300px; display: flex; flex-direction: column; background: var(--bg-secondary); border-radius: 10px; padding: 12px; min-height: 200px; max-height: calc(100vh - 220px); overflow-y: auto; transition: background 0.15s; }
+.kanban-column--drag-over { background: var(--accent-soft); border: 2px dashed var(--accent); }
+.kanban-column-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-shrink: 0; }
+.kanban-column-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.kanban-column-icon { font-size: 14px; }
+.kanban-column-count { background: var(--bg); color: var(--text-secondary); font-size: 11px; padding: 1px 7px; border-radius: 100px; font-weight: 500; }
+.kanban-add-btn { width: 24px; height: 24px; border-radius: 6px; background: transparent; color: var(--text-tertiary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+.kanban-add-btn:hover { background: var(--bg); color: var(--accent); }
+.kanban-column-body { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.kanban-column-empty { text-align: center; color: var(--text-tertiary); font-size: 12px; padding: 20px 0; }
+
+.kanban-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.15s; }
+.kanban-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.kanban-card--drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.kanban-card-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.kanban-priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.kanban-card-title { font-size: 13px; font-weight: 500; color: var(--text-primary); line-height: 1.4; }
+.kanban-card-due { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.kanban-card-due.overdue { color: #ef4444; }
+.kanban-card-body { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* ── Calendar view ──────────────────────────────────────────────────────── */
+
+.calendar-view .view-header { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.calendar-week-nav { display: flex; align-items: center; gap: 8px; }
+.calendar-nav-btn { width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.calendar-week-label { font-size: 14px; color: var(--text-secondary); min-width: 160px; text-align: center; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+.calendar-day-cell { background: var(--bg-secondary); padding: 10px 8px; min-height: 120px; display: flex; flex-direction: column; gap: 6px; }
+.calendar-day-cell--today { background: var(--accent-soft); border-top: 2px solid var(--accent); }
+.calendar-day-header { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; }
+.calendar-day-name { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+.calendar-day-number { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.calendar-day-cell--today .calendar-day-number { color: var(--accent); }
+.calendar-day-nodes { display: flex; flex-direction: column; gap: 4px; }
+.calendar-day-empty { font-size: 12px; color: var(--text-tertiary); }
+.calendar-node-chip { display: flex; align-items: center; gap: 5px; padding: 4px 6px; border-radius: var(--radius); background: var(--bg-tertiary); border: 1px solid var(--border); font-size: 12px; color: var(--text-primary); text-align: left; cursor: pointer; transition: background 0.1s; width: 100%; overflow: hidden; }
+.calendar-node-chip:hover { background: var(--bg-hover); border-color: var(--accent); }
+.calendar-node-chip--done { opacity: 0.55; text-decoration: line-through; }
+.calendar-node-chip--compact { width: auto; }
+.calendar-node-status { font-size: 10px; color: var(--text-secondary); flex-shrink: 0; }
+.calendar-node-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-nodate-section { padding-top: 16px; border-top: 1px solid var(--border); }
+.calendar-nodate-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+.calendar-nodate-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── Agents view ────────────────────────────────────────────────────────── */
+
+.agents-coming-soon { text-align: center; padding: 60px 20px; max-width: 480px; margin: 0 auto; }
+.agents-icon { font-size: 64px; margin-bottom: 16px; }
+.agents-coming-soon h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+.agents-coming-soon p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; }
+.agents-features-list { text-align: left; margin-top: 20px; line-height: 1.8; padding-left: 24px; color: var(--text-secondary); font-size: 14px; }
+
+/* ── Node share button ──────────────────────────────────────────────────── */
+
+.node-share-wrapper { position: relative; display: flex; align-items: center; }
+.node-share-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s; }
+.node-share-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.node-share-tooltip { position: absolute; top: calc(100% + 6px); right: 0; background: var(--text-primary); color: var(--bg-secondary); font-size: 12px; padding: 4px 8px; border-radius: var(--radius); white-space: nowrap; pointer-events: none; z-index: 10; }
+
+/* ── Account settings hints ─────────────────────────────────────────────── */
+
+.settings-row-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }

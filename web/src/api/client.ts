@@ -270,3 +270,11 @@ export async function getPresignedDownload(key: string): Promise<{ downloadUrl: 
 export async function getFilesUsage(): Promise<{ usedBytes: number; limitBytes: number }> {
   return apiRequest('/files/usage')
 }
+
+export async function getFilesForNode(nodeId: string): Promise<{ key: string; filename: string; size: number; url: string }[]> {
+  return apiRequest(`/files/node/${nodeId}`)
+}
+
+export async function deleteFile(key: string): Promise<void> {
+  return apiRequest(`/files/${encodeURIComponent(key)}`, { method: 'DELETE' })
+}
