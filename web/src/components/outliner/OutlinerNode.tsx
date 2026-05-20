@@ -268,10 +268,10 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         text: node.text,
         parentId: node.parentId,
         siblingOrder: node.siblingOrder + 0.25,
-        status: node.status,
+        isTask: node.status !== null,
         types: node.types,
-        priority: node.priority,
       })
+      store.updateNode(dup.id, { priority: node.priority, status: node.status })
       onSelect(dup.id)
       return
     }

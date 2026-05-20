@@ -18,7 +18,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   // Cerrar al click fuera
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as globalThis.Node)) {
         onClose()
       }
     }
@@ -48,9 +48,13 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       text: node.text,
       parentId: node.parentId,
       siblingOrder: node.siblingOrder + 0.25,
-      status: node.status,
+      isTask: node.status !== null,
       types: node.types,
+    })
+    // Copiar propiedades adicionales post-creación
+    store.updateNode(dup.id, {
       priority: node.priority,
+      status: node.status,
     })
     onSelect(dup.id)
   }
