@@ -6,7 +6,7 @@ import InlineRenderer from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
 import { recordRecentNode } from '../CommandPalette'
-import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream } from '../../api/client'
+import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, getToken } from '../../api/client'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -44,6 +44,8 @@ export default function NodeView() {
 
   // Share state
   const [shareCopied, setShareCopied] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
 
   // Record recent visit
   useEffect(() => {
@@ -129,14 +131,42 @@ export default function NodeView() {
     store.updateNode(node!.id, { isFavorite: !node!.isFavorite })
   }
 
-  function handleShare() {
-    const url = `https://getfrom.app/app/node/${node!.id}`
-    navigator.clipboard.writeText(url).then(() => {
-      setShareCopied(true)
-      setTimeout(() => setShareCopied(false), 2000)
-    }).catch(() => {
-      prompt('Copia este enlace:', url)
-    })
+  async function handleShare() {
+    // Para usuarios logueados: publicar en servidor y obtener URL pública real
+    if (getToken() && node) {
+      if (shareUrl) {
+        // Ya publicada: copiar URL existente
+        navigator.clipboard.writeText(shareUrl).catch(() => {})
+        setShareCopied(true)
+        setTimeout(() => setShareCopied(false), 2000)
+        return
+      }
+      setIsPublishing(true)
+      try {
+        const content = node.body || node.text || ''
+        const result = await publishNote(node.text || 'Nota', content)
+        const url = `https://from-server-production.up.railway.app/p/${result.slug}`
+        setShareUrl(url)
+        navigator.clipboard.writeText(url).catch(() => {})
+        setShareCopied(true)
+        setTimeout(() => setShareCopied(false), 2000)
+      } catch {
+        // Fallback: URL de la app
+        const url = `https://getfrom.app/app/node/${node!.id}`
+        navigator.clipboard.writeText(url).catch(() => {})
+        setShareCopied(true)
+        setTimeout(() => setShareCopied(false), 2000)
+      } finally {
+        setIsPublishing(false)
+      }
+    } else {
+      // Guest: copiar URL de la app
+      const url = `https://getfrom.app/app/node/${node!.id}`
+      navigator.clipboard.writeText(url).then(() => {
+        setShareCopied(true)
+        setTimeout(() => setShareCopied(false), 2000)
+      }).catch(() => { prompt('Copia este enlace:', url) })
+    }
   }
 
   // ── File upload ────────────────────────────────────────────────────────

@@ -196,10 +196,14 @@ export async function searchNodes(q: string, limit = 20): Promise<{ nodes: unkno
 
 // ── Public notes ──────────────────────────────────────────────────────────
 
-export async function publishNote(nodeId: string): Promise<{ slug: string; url: string }> {
+export async function publishNote(
+  title: string,
+  content: string,
+  existingSlug?: string
+): Promise<{ slug: string; url: string }> {
   return apiRequest('/notes/publish', {
     method: 'POST',
-    body: JSON.stringify({ nodeId }),
+    body: JSON.stringify({ title, content, slug: existingSlug }),
   })
 }
 
