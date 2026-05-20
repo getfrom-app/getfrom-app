@@ -163,6 +163,10 @@ export default function TasksView() {
   const [filterPriority, setFilterPriority] = useState<'all'|'high'|'medium'|'low'>(savedFilters.filterPriority || 'all')
   const [showDone, setShowDone] = useState<boolean>(savedFilters.showDone || false)
   const [sortBy, setSortBy] = useState<'date'|'priority'|'created'>(savedFilters.sortBy || 'date')
+  const [filterTag, setFilterTag] = useState<string>('all')
+  const [searchText, setSearchText] = useState<string>('')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
 
   function updateFilter<K extends keyof ReturnType<typeof loadFilters>>(key: K, value: ReturnType<typeof loadFilters>[K]) {
     const current = loadFilters()
@@ -198,6 +202,15 @@ export default function TasksView() {
     return !defaultOpen
   }
 
+  // All tags used across tasks
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    s.allActive().filter(n => n.status !== null).forEach(n => {
+      (n.types || []).forEach(t => tagSet.add(t))
+    })
+    return Array.from(tagSet).sort()
+  }, [s])
+
   const allTasks = useMemo(() => {
     let tasks = s.allActive().filter(n => n.status !== null && !isSubtask(n))
     // Filter by priority
@@ -208,8 +221,31 @@ export default function TasksView() {
     if (!showDone) {
       tasks = tasks.filter(n => n.status !== 'done')
     }
+    // Filter by tag
+    if (filterTag !== 'all') {
+      tasks = tasks.filter(n => (n.types || []).includes(filterTag))
+    }
+    // Filter by text search
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase()
+      tasks = tasks.filter(n => (n.text || '').toLowerCase().includes(q))
+    }
+    // Filter by date range
+    if (dateFrom || dateTo) {
+      tasks = tasks.filter(n => {
+        if (!n.due) return false
+        const d = new Date(n.due)
+        if (dateFrom && d < new Date(dateFrom)) return false
+        if (dateTo) {
+          const toEnd = new Date(dateTo)
+          toEnd.setHours(23, 59, 59, 999)
+          if (d > toEnd) return false
+        }
+        return true
+      })
+    }
     return tasks
-  }, [s, filterPriority, showDone])
+  }, [s, filterPriority, showDone, filterTag, searchText, dateFrom, dateTo])
 
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -323,6 +359,53 @@ export default function TasksView() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Text search + tag filter — always visible */}
+      <div className="tasks-filter-bar tasks-filter-bar--secondary">
+        <input
+          type="text"
+          className="tasks-search-input"
+          placeholder="Buscar en tareas..."
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+        />
+        <select
+          className="tasks-tag-select"
+          value={filterTag}
+          onChange={e => setFilterTag(e.target.value)}
+        >
+          <option value="all">Todos los tags</option>
+          {availableTags.map(tag => (
+            <option key={tag} value={tag}>#{tag}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date range filter */}
+      <div className="tasks-filter-bar tasks-filter-bar--dates">
+        <span className="tasks-filter-date-label">Ver en rango:</span>
+        <input
+          type="date"
+          className="tasks-date-input"
+          value={dateFrom}
+          onChange={e => setDateFrom(e.target.value)}
+        />
+        <span className="tasks-filter-date-sep">–</span>
+        <input
+          type="date"
+          className="tasks-date-input"
+          value={dateTo}
+          onChange={e => setDateTo(e.target.value)}
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            className="tasks-filter-chip"
+            onClick={() => { setDateFrom(''); setDateTo('') }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
       </div>
 
       <div className="view-body">

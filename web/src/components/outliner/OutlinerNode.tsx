@@ -867,9 +867,28 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           />
         )}
 
-        {/* Priority badge */}
-        {node.priority === 'high' && <span className="node-priority-dot high" title="Alta prioridad" />}
-        {node.priority === 'medium' && <span className="node-priority-dot medium" title="Media prioridad" />}
+        {/* Priority badge — click para cambiar */}
+        {node.priority && (
+          <span
+            className={`node-priority-dot ${node.priority}`}
+            title={`Prioridad ${node.priority === 'high' ? 'alta' : node.priority === 'medium' ? 'media' : 'baja'} (click para cambiar)`}
+            onClick={e => {
+              e.stopPropagation()
+              const cycle: Record<string, 'medium' | 'low' | null> = { high: 'medium', medium: 'low', low: null }
+              store.updateNode(node.id, { priority: cycle[node.priority!] })
+            }}
+          />
+        )}
+        {!node.priority && node.status !== null && (
+          <span
+            className="node-priority-dot add"
+            title="Sin prioridad (click para añadir)"
+            onClick={e => {
+              e.stopPropagation()
+              store.updateNode(node.id, { priority: 'high' })
+            }}
+          />
+        )}
 
         {/* Bucle / Evento / Recurrencia badge */}
         {(node.types || []).includes('bucle') && <span className="node-type-badge bucle" title="Bucle">↺</span>}

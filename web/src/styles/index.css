@@ -867,9 +867,13 @@ mark.inline-highlight {
 .node-open-btn:hover { color: var(--text-primary); }
 
 /* Node badges (priority, bucle, event, fav) */
-.node-priority-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.node-priority-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; cursor: pointer; transition: transform 0.1s; }
+.node-priority-dot:hover { transform: scale(1.4); }
 .node-priority-dot.high { background: #ef4444; }
 .node-priority-dot.medium { background: #f59e0b; }
+.node-priority-dot.low { background: #6b7280; }
+.node-priority-dot.add { background: transparent; border: 1.5px dashed var(--text-tertiary); opacity: 0; }
+.node-row:hover .node-priority-dot.add { opacity: 0.5; }
 .node-type-badge { font-size: 11px; opacity: 0.7; flex-shrink: 0; user-select: none; }
 .node-type-badge.bucle { color: var(--accent); }
 .node-type-badge.event { font-size: 12px; }
@@ -2759,6 +2763,12 @@ mark.inline-highlight {
 .diary-nav button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .diary-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
 .diary-date-label { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 80px; text-align: center; }
+
+/* ── Status bar ────────────────────────────────────────────────────────────── */
+.status-bar { display: flex; align-items: center; gap: 16px; padding: 3px 16px; font-size: 11px; color: var(--text-tertiary); border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg-primary); }
+.status-bar-link { background: none; border: none; padding: 0; font-size: 11px; color: var(--text-tertiary); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.status-bar-link:hover { color: var(--text-secondary); }
+.status-bar-sync { margin-left: auto; }
 
 /* ── Sync indicator (Tarea 4) ─────────────────────────────────────────────── */
 .sync-indicator { position: fixed; bottom: 16px; right: 16px; display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--text-secondary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 800; animation: fade-in 0.2s ease; }

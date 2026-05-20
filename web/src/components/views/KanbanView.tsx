@@ -174,6 +174,110 @@ function KanbanColumn({
 // ── Priority filter ──────────────────────────────────────────────────────────
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low'
+type KanbanViewMode = 'board' | 'table'
+
+// ── Status badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: Node['status'] }) {
+  const map: Record<string, { label: string; color: string }> = {
+    pending: { label: 'Activo', color: '#3b82f6' },
+    done: { label: 'Completado', color: '#22c55e' },
+  }
+  const entry = status ? map[status] : null
+  if (!entry) return <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Sin estado</span>
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
+      background: entry.color + '20', color: entry.color,
+    }}>
+      {entry.label}
+    </span>
+  )
+}
+
+// ── Priority badge (for table) ───────────────────────────────────────────────
+
+function PriorityBadge({ priority }: { priority: Node['priority'] }) {
+  if (!priority) return <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>—</span>
+  const map: Record<string, { label: string; color: string }> = {
+    high: { label: 'Alta', color: '#ef4444' },
+    medium: { label: 'Media', color: '#f59e0b' },
+    low: { label: 'Baja', color: '#6b7280' },
+  }
+  const entry = map[priority]
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
+      background: entry.color + '20', color: entry.color,
+    }}>
+      {entry.label}
+    </span>
+  )
+}
+
+// ── Table view ───────────────────────────────────────────────────────────────
+
+function KanbanTable({ tasks }: { tasks: Node[] }) {
+  const navigate = useNavigate()
+
+  function toggleDone(e: React.MouseEvent, task: Node) {
+    e.stopPropagation()
+    store.updateNode(task.id, { status: task.status === 'done' ? 'pending' : 'done' })
+  }
+
+  return (
+    <div className="kanban-table-wrapper">
+      <table className="kanban-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+        <thead>
+          <tr className="kanban-table-head-row">
+            <th className="kanban-table-th" style={{ width: 32 }}></th>
+            <th className="kanban-table-th" style={{ textAlign: 'left' }}>Título</th>
+            <th className="kanban-table-th" style={{ width: 110 }}>Estado</th>
+            <th className="kanban-table-th" style={{ width: 90 }}>Prioridad</th>
+            <th className="kanban-table-th" style={{ width: 110 }}>Fecha límite</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map(task => {
+            const isDone = task.status === 'done'
+            const { label: dueLabel, overdue } = task.due ? formatDue(task.due) : { label: '—', overdue: false }
+            return (
+              <tr
+                key={task.id}
+                className="kanban-table-row"
+                onClick={() => navigate(`/node/${task.id}`)}
+                style={{ opacity: isDone ? 0.6 : 1, cursor: 'pointer' }}
+              >
+                <td className="kanban-table-td" onClick={e => toggleDone(e, task)} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 14, color: isDone ? '#22c55e' : 'var(--text-tertiary)' }}>
+                    {isDone ? '✓' : '○'}
+                  </span>
+                </td>
+                <td className="kanban-table-td">
+                  <span style={{ fontSize: 13, textDecoration: isDone ? 'line-through' : 'none' }}>
+                    {task.text || 'Sin título'}
+                  </span>
+                </td>
+                <td className="kanban-table-td"><StatusBadge status={task.status} /></td>
+                <td className="kanban-table-td"><PriorityBadge priority={task.priority} /></td>
+                <td className="kanban-table-td" style={{ fontSize: 12, color: overdue ? '#ef4444' : 'var(--text-secondary)' }}>
+                  {dueLabel}
+                </td>
+              </tr>
+            )
+          })}
+          {tasks.length === 0 && (
+            <tr>
+              <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>
+                Sin tareas
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 // ── KanbanView (main) ────────────────────────────────────────────────────────
 
@@ -182,6 +286,7 @@ export default function KanbanView() {
   const s = useStore()
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<KanbanViewMode>('board')
 
   const allTasks = useMemo(
     () => s.allActive().filter(n => n.status !== null),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
@@ -21,6 +21,8 @@ import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
+import StatusBar from './StatusBar'
+import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -33,6 +35,10 @@ export default function MainLayout() {
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
+  const prevIsSyncing = useRef(false)
+
+  useTaskNotifications()
 
   useEffect(() => {
     store.isGuest = false
@@ -139,6 +145,16 @@ export default function MainLayout() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts])
 
+  // Detectar cambio isSyncing true → false para mostrar "✓ Guardado"
+  useEffect(() => {
+    if (prevIsSyncing.current && !s.isSyncing) {
+      setShowSaved(true)
+      const t = setTimeout(() => setShowSaved(false), 2000)
+      return () => clearTimeout(t)
+    }
+    prevIsSyncing.current = s.isSyncing
+  }, [s.isSyncing])
+
   function handleLogout() {
     clearTokens()
     userStore.reset()
@@ -210,6 +226,7 @@ export default function MainLayout() {
           <Route path="node/:id" element={<NodeView />} />
           <Route path="tag/:name" element={<TagView />} />
         </Routes>
+        <StatusBar isSyncing={s.isSyncing} />
       </main>
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
@@ -222,10 +239,16 @@ export default function MainLayout() {
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       <OnboardingTooltip />
-      {s.isSyncing && (
+      {(s.isSyncing || showSaved) && (
         <div className="sync-indicator">
-          <div className="sync-spinner" />
-          <span>Sincronizando...</span>
+          {s.isSyncing ? (
+            <>
+              <div className="sync-spinner" />
+              <span>Sincronizando...</span>
+            </>
+          ) : (
+            <span>✓ Guardado</span>
+          )}
         </div>
       )}
     </div>
