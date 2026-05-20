@@ -58,6 +58,16 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+function renderAgentOutput(text: string): string {
+  return text
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>')
+}
+
 export default function AgentsView() {
   const [runs, setRuns] = useState<AgentRun[]>([])
   const [loading, setLoading] = useState(true)
@@ -219,9 +229,10 @@ export default function AgentsView() {
                 </form>
 
                 {runResult && (
-                  <div className="agents-result">
-                    {runResult}
-                  </div>
+                  <div
+                    className="agents-result agents-result--markdown"
+                    dangerouslySetInnerHTML={{ __html: renderAgentOutput(runResult) }}
+                  />
                 )}
                 {runError && (
                   <div className="agents-result" style={{ color: 'var(--red, #dc2626)', borderColor: 'rgba(239,68,68,0.3)' }}>

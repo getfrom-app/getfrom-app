@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import OutlinerNode from './OutlinerNode'
 import type { Node } from '../../types'
@@ -15,7 +15,31 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [localFilterOpen, setLocalFilterOpen] = useState(false)
+  const [localFilterText, setLocalFilterText] = useState('')
+  const localFilterRef = useRef<HTMLInputElement>(null)
   const nodes = s.children(parentId)
+
+  // Effective filter: prefer external prop, fall back to local
+  const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
+
+  // Cmd+F opens local filter when no external filterText prop is provided
+  useEffect(() => {
+    if (filterText !== undefined) return // external filter manages this
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        setLocalFilterOpen(true)
+        setTimeout(() => localFilterRef.current?.focus(), 0)
+      }
+      if (e.key === 'Escape' && localFilterOpen) {
+        setLocalFilterOpen(false)
+        setLocalFilterText('')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [filterText, localFilterOpen])
 
   // Auto-focus or create first node
   useEffect(() => {
@@ -92,6 +116,32 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   return (
     <>
+      {localFilterOpen && filterText === undefined && (
+        <div className="outliner-filter-bar">
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>🔍</span>
+          <input
+            ref={localFilterRef}
+            className="outliner-filter-input"
+            type="text"
+            placeholder="Filtrar notas..."
+            value={localFilterText}
+            onChange={e => setLocalFilterText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') {
+                setLocalFilterOpen(false)
+                setLocalFilterText('')
+              }
+            }}
+          />
+          <button
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14, padding: '0 4px' }}
+            onClick={() => { setLocalFilterOpen(false); setLocalFilterText('') }}
+            title="Cerrar filtro (Escape)"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div
         className={`outliner-container ${className || ''}`}
         onClick={handleContainerClick}
@@ -109,7 +159,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             onSelect={setSelectedId}
             onSelectNext={handleSelectNext}
             onShiftSelect={handleShiftSelect}
-            filterText={filterText}
+            filterText={effectiveFilter}
           />
         ))}
       </div>

@@ -346,10 +346,10 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>‹</button>
-        <span className="calendar-week-label" style={{ textTransform: 'capitalize' }}>{monthLabel}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>›</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← Anterior</button>
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <span className="calendar-week-label" style={{ textTransform: 'capitalize' }}>{monthLabel}</span>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
       </div>
 
       <div className="view-body">
@@ -429,10 +429,10 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>‹</button>
-        <span className="calendar-week-label">{year}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>›</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← Anterior</button>
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <span className="calendar-week-label">{year}</span>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
       </div>
 
       <div className="view-body">
