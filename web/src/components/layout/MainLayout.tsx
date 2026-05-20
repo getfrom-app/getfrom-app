@@ -104,8 +104,11 @@ export default function MainLayout() {
           active?.tagName === 'INPUT' ||
           active?.tagName === 'TEXTAREA' ||
           (active as HTMLElement)?.isContentEditable
-        if (!isInputFocused && !showCommandPalette && !showNewTask && !showNewEvent && !showVoiceCapture) {
-          navigate('/')
+        // Comprobar también si hay algún menú flotante visible en el DOM (slash menu, pickers)
+        const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .mention-picker')
+        if (!isInputFocused && !showCommandPalette && !showNewTask && !showNewEvent && !showVoiceCapture && !hasFloatingMenu) {
+          // setTimeout 0 para dejar que los handlers de Escape actuales completen primero
+          setTimeout(() => navigate('/'), 0)
         }
       }
     }

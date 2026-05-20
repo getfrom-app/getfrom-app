@@ -539,6 +539,10 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
             className={`node-text ${isEditing ? '' : 'node-text--rendered'}`}
             contentEditable
             suppressContentEditableWarning
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            data-gramm="false"
             onInput={handleInput}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
