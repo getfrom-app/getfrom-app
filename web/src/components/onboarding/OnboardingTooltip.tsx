@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export default function OnboardingTooltip() {
   const [step, setStep] = useState(0)
@@ -26,7 +27,8 @@ export default function OnboardingTooltip() {
     setVisible(false)
   }
 
-  return (
+  // Portal para evitar conflictos DOM con scripts de terceros (Google/Apple Sign-In)
+  return createPortal(
     <div className="onboarding-overlay" onClick={dismiss}>
       <div className="onboarding-tooltip" onClick={e => e.stopPropagation()}>
         <p className="onboarding-text">{steps[step].text}</p>
@@ -44,6 +46,7 @@ export default function OnboardingTooltip() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

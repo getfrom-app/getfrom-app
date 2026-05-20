@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
@@ -38,7 +39,7 @@ export default function NewEventModal({ onClose }: Props) {
     if (e.key === 'Escape') onClose()
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card new-event-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
@@ -95,6 +96,7 @@ export default function NewEventModal({ onClose }: Props) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 
 interface Props {
@@ -21,7 +22,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
     navigate('/pricing')
   }
 
-  return (
+  return createPortal(
     <div className="paywall-overlay" onClick={onClose}>
       <div className="paywall-card" onClick={e => e.stopPropagation()}>
         <div className="paywall-icon">✨</div>
@@ -36,6 +37,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
@@ -100,7 +101,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
     if (e.key === 'Escape' && !isRecording) onClose()
   }
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       onClick={isRecording ? undefined : onClose}
@@ -175,6 +176,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

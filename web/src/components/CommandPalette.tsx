@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../store/nodeStore'
@@ -181,7 +182,7 @@ export default function CommandPalette({ onClose }: Props) {
     active?.scrollIntoView({ block: 'nearest' })
   }, [activeIdx])
 
-  return (
+  return createPortal(
     <div className="cmdpalette-overlay" onClick={onClose}>
       <div
         className="cmdpalette-modal"
@@ -225,6 +226,7 @@ export default function CommandPalette({ onClose }: Props) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
