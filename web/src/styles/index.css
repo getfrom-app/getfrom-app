@@ -1486,6 +1486,14 @@ mark.search-highlight {
   color: var(--text-primary);
 }
 
+/* Sidebar tree search */
+.sidebar-tree-search { display: flex; align-items: center; margin: 2px 8px 4px; gap: 4px; }
+.sidebar-tree-search-input { flex: 1; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-secondary); color: var(--text-primary); outline: none; font-family: inherit; }
+.sidebar-tree-search-input:focus { border-color: var(--accent); }
+.sidebar-tree-search-input::placeholder { color: var(--text-tertiary); }
+.sidebar-tree-search-clear { background: none; border: none; font-size: 14px; color: var(--text-tertiary); cursor: pointer; padding: 0 2px; }
+.sidebar-tree-search-clear:hover { color: var(--text-primary); }
+
 .tree-node {
   display: flex;
   flex-direction: column;

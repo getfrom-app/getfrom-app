@@ -12,6 +12,7 @@ import AccountView from '../views/AccountView'
 import CalendarView from '../views/CalendarView'
 import AgentsView from '../views/AgentsView'
 import KanbanView from '../views/KanbanView'
+import TagView from '../views/TagView'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -189,6 +190,7 @@ export default function MainLayout() {
           <Route path="agents" element={<AgentsView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
+          <Route path="tag/:name" element={<TagView />} />
         </Routes>
       </main>
       {paywallReason && (

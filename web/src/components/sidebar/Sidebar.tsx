@@ -121,6 +121,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
+  const [treeSearch, setTreeSearch] = useState('')
 
   const tags = s.tagDefinitions()
   const usedTags = s.allUsedTags()
@@ -225,7 +226,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 <div
                   key={name}
                   className={`sidebar-tag-item ${defNode && isActive(`/node/${defNode.id}`) ? 'active' : ''}`}
-                  onClick={() => defNode ? navigate(`/node/${defNode.id}`) : navigate(`/search?q=%23${name}`)}
+                  onClick={() => defNode ? navigate(`/node/${defNode.id}`) : navigate(`/tag/${name}`)}
                   title={`#${name} · ${count} nodos`}
                 >
                   <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
@@ -270,8 +271,22 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
             +
           </button>
         </div>
+        {/* Mini buscador de notas */}
+        <div className="sidebar-tree-search">
+          <input
+            type="text"
+            className="sidebar-tree-search-input"
+            placeholder="Filtrar notas..."
+            value={treeSearch}
+            onChange={e => setTreeSearch(e.target.value)}
+          />
+          {treeSearch && <button className="sidebar-tree-search-clear" onClick={() => setTreeSearch('')}>×</button>}
+        </div>
         <div className="tree-section">
-          {regularNotes.slice(0, 50).map(node => (
+          {(treeSearch
+            ? s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt && n.text.toLowerCase().includes(treeSearch.toLowerCase()))
+            : regularNotes
+          ).slice(0, 50).map(node => (
             <TreeNodeItem
               key={node.id}
               node={node}

@@ -300,6 +300,12 @@ export default function DiaryView() {
     )
   }
 
+  // ── Diary bullet stats ────────────────────────────────────────────────
+  const diaryChildren = diary ? store.children(diary.id) : []
+  const bulletCount = diaryChildren.length
+  const taskChildren = diaryChildren.filter(n => n.status !== null && !n.deletedAt)
+  const doneChildren = taskChildren.filter(n => n.status === 'done')
+
   return (
     <div className="view diary-view">
       <div className="diary-layout">
@@ -307,23 +313,48 @@ export default function DiaryView() {
         <div className="diary-main">
           <div className="view-header">
             <div className="diary-date">
+              {/* Day name — large emphasis when today */}
+              <span className={`diary-day${dateOffset === 0 ? ' diary-day--today' : ''}`}>
+                {dayName.charAt(0).toUpperCase() + dayName.slice(1)}
+              </span>
+              <span className="diary-full-date">{dateStr}</span>
+
+              {/* Bullet stats */}
+              {diary && bulletCount > 0 && (
+                <span className="diary-bullet-stats">
+                  {bulletCount} {bulletCount === 1 ? 'bullet' : 'bullets'}
+                  {taskChildren.length > 0 && (
+                    <> · {taskChildren.length} {taskChildren.length === 1 ? 'tarea' : 'tareas'} · {doneChildren.length} completadas</>
+                  )}
+                </span>
+              )}
+
               <div className="diary-nav">
-                <button onClick={() => setDateOffset(d => d - 1)} title="Día anterior">
-                  ←
-                </button>
-                <span className="diary-date-label">{formatOffsetLabel()}</span>
                 <button
-                  onClick={() => setDateOffset(d => d + 1)}
-                  disabled={dateOffset >= 0}
-                  title="Día siguiente"
+                  className="diary-nav-btn"
+                  onClick={() => setDateOffset(d => d - 1)}
+                  title="Día anterior"
                 >
-                  →
+                  ← Ayer
                 </button>
-                {dateOffset !== 0 && (
-                  <button onClick={() => setDateOffset(0)} title="Volver a hoy">
+                {dateOffset < 0 && (
+                  <button
+                    className="diary-nav-btn diary-nav-btn--today"
+                    onClick={() => setDateOffset(0)}
+                    title="Volver a hoy"
+                  >
                     Hoy
                   </button>
                 )}
+                <button
+                  className="diary-nav-btn"
+                  onClick={() => setDateOffset(d => d + 1)}
+                  disabled={dateOffset >= 0}
+                  title="Día siguiente"
+                  style={{ opacity: dateOffset >= 0 ? 0.3 : 1 }}
+                >
+                  Mañana →
+                </button>
                 {dateOffset === 0 && (
                   <button
                     className="diary-add-bullet"
@@ -334,10 +365,6 @@ export default function DiaryView() {
                   </button>
                 )}
               </div>
-              <span className="diary-day">
-                {dayName.charAt(0).toUpperCase() + dayName.slice(1)}
-              </span>
-              <span className="diary-full-date">{dateStr}</span>
             </div>
           </div>
 
