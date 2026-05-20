@@ -897,6 +897,20 @@ export default function NodeView() {
               }
             </div>
           )}
+
+          {/* Relative timestamp */}
+          <div className="node-updated-at">
+            {(() => {
+              const d = new Date(node.updatedAt)
+              const now = new Date()
+              const diff = Math.round((now.getTime() - d.getTime()) / 60000)
+              if (diff < 1) return 'Ahora mismo'
+              if (diff < 60) return `Hace ${diff} min`
+              if (diff < 1440) return `Hace ${Math.round(diff / 60)}h`
+              if (diff < 10080) return `Hace ${Math.round(diff / 1440)} días`
+              return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+            })()}
+          </div>
         </div>
 
         <div className="view-body">

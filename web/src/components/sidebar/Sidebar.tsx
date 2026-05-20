@@ -553,17 +553,45 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
             </div>
           </div>
 
+          {/* Estadísticas rápidas */}
+          <div className="settings-section">
+            <div className="settings-section-title">Tu vault</div>
+            <div className="settings-stats-grid">
+              <div className="settings-stat">
+                <span className="settings-stat-value">{s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt).length}</span>
+                <span className="settings-stat-label">Notas</span>
+              </div>
+              <div className="settings-stat">
+                <span className="settings-stat-value">{s.allActive().filter(n => n.status === 'pending').length}</span>
+                <span className="settings-stat-label">Pendientes</span>
+              </div>
+              <div className="settings-stat">
+                <span className="settings-stat-value">{s.allUsedTags().length}</span>
+                <span className="settings-stat-label">Tags</span>
+              </div>
+              <div className="settings-stat">
+                <span className="settings-stat-value">{s.allActive().filter(n => n.isFavorite).length}</span>
+                <span className="settings-stat-label">Fijadas</span>
+              </div>
+            </div>
+          </div>
+
           {/* Integraciones */}
           <div className="settings-section">
             <div className="settings-section-title">Integraciones</div>
             <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => window.open('https://getfrom.app/claude', '_blank')} />
             <SettingRow icon="📅" label="Google Calendar" onClick={() => navigate('/account')} />
+            <SettingRow icon="📤" label="Exportar datos" onClick={() => navigate('/account')} />
           </div>
 
           {/* Ayuda */}
           <div className="settings-section">
             <div className="settings-section-title">Ayuda</div>
             <SettingRow icon="📖" label="Manual de uso" onClick={() => window.open('https://getfrom.app/docs/', '_blank')} />
+            <SettingRow icon="⌨" label="Atajos de teclado" onClick={() => {
+              const event = new KeyboardEvent('keydown', { key: '?', bubbles: true })
+              window.dispatchEvent(event)
+            }} />
             <SettingRow icon="💬" label="Soporte" onClick={() => window.open('mailto:hello@getfrom.app', '_blank')} />
           </div>
 

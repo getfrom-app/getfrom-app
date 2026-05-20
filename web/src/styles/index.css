@@ -4481,3 +4481,40 @@ mark.inline-highlight {
   top: 0;
   min-width: 160px;
 }
+
+/* ── NodeView relative timestamp ──────────────────────────────────────────── */
+.node-updated-at {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 2px 0 8px;
+  opacity: 0.6;
+}
+
+/* ── Sidebar Settings stats grid ─────────────────────────────────────────── */
+.settings-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0;
+}
+.settings-stat {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+}
+.settings-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-accent);
+  line-height: 1;
+}
+.settings-stat-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

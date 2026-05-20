@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -9,6 +10,7 @@ interface Props {
 
 export default function NodePropertiesPanel({ node, onClose }: Props) {
   const s = useStore()
+  const navigate = useNavigate()
   const [newType, setNewType] = useState('')
   const [areaInput, setAreaInput] = useState('')
   const nodeArea = store.getNodeArea(node.id)
@@ -307,6 +309,31 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           </datalist>
         </div>
       </div>
+
+      {/* Notas mencionadas / enlazadas */}
+      {(() => {
+        const refs: string[] = []
+        try { refs.push(...(JSON.parse(node.extraData || '{}').refs || [])) } catch {}
+        const mentionMatches = node.text.match(/@(\w+)/g) || []
+        const mentionedNodes = mentionMatches.length > 0
+          ? s.allActive().filter(n =>
+              n.id !== node.id &&
+              mentionMatches.some(m => n.text.toLowerCase().includes(m.slice(1).toLowerCase()))
+            ).slice(0, 5)
+          : []
+
+        if (refs.length === 0 && mentionedNodes.length === 0) return null
+        return (
+          <div className="prop-section">
+            <div className="prop-section-label">Enlazadas</div>
+            {mentionedNodes.map(n => (
+              <button key={n.id} className="prop-linked-btn" onClick={() => navigate(`/node/${n.id}`)}>
+                📄 {n.text || 'Sin título'}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -19,6 +19,10 @@ const TEMPLATES: Template[] = [
   { id: 'decision', name: 'Decisión', icon: '⚖️', text: 'Decisión: ', body: '## Contexto\n\n## Opciones consideradas\n\n## Decisión tomada\n\n## Motivo\n', types: ['decisión'] },
   { id: 'review', name: 'Revisión semanal', icon: '📊', text: 'Revisión semanal', body: '## Logros\n\n## Pendiente\n\n## Objetivos próxima semana\n' },
   { id: 'idea', name: 'Idea', icon: '💡', text: 'Idea: ', body: '## Descripción\n\n## Siguiente paso\n', types: ['idea'] },
+  { id: 'notes', name: 'Apuntes', icon: '📓', text: 'Apuntes: ', body: '## Contexto\n\n## Puntos clave\n\n## Preguntas\n', types: ['apuntes'] },
+  { id: 'task-list', name: 'Lista de tareas', icon: '✅', text: 'Tareas: ', body: '- [ ] \n- [ ] \n- [ ] \n', types: [] },
+  { id: 'reading', name: 'Lectura', icon: '📚', text: 'Resumen: ', body: '## ¿De qué trata?\n\n## Ideas principales\n\n## Citas\n\n## Acción a tomar\n', types: ['lectura'] },
+  { id: 'daily', name: 'Plan del día', icon: '☀️', text: new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }), body: '## Objetivos\n- \n\n## Tareas\n- [ ] \n- [ ] \n\n## Notas\n', types: [] },
 ]
 
 interface Props {
@@ -28,6 +32,7 @@ interface Props {
 
 export default function NewNoteModal({ parentId, onClose }: Props) {
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<Template>(TEMPLATES[0])
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
@@ -41,8 +46,11 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
       parentId: parentId !== undefined ? parentId : null,
       types: selectedTemplate.types,
     })
-    if (selectedTemplate.body) {
-      store.updateNode(node.id, { body: selectedTemplate.body })
+    const body = description.trim()
+      ? description.trim() + (selectedTemplate.body ? '\n\n' + selectedTemplate.body : '')
+      : selectedTemplate.body
+    if (body) {
+      store.updateNode(node.id, { body })
     }
     navigate(`/node/${node.id}`)
     onClose()
@@ -66,6 +74,17 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose() }}
+          />
+        </div>
+
+        <div className="modal-field">
+          <textarea
+            className="modal-description"
+            placeholder="Descripción (opcional)"
+            value={description}
+            rows={2}
+            onChange={e => setDescription(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') onClose() }}
           />
         </div>
 

@@ -33,7 +33,7 @@ function renderWithTags(text: string, key: number): React.ReactNode {
 
 // Parses inline markdown and returns JSX
 export function renderInline(text: string): React.ReactNode {
-  // Tokenize: bold, italic, code, strikethrough, link
+  // Tokenize: bold, italic, code, strikethrough, link, checkbox, highlight, wiki-link, auto-url
   const tokens: React.ReactNode[] = []
   let remaining = text
   let key = 0
@@ -49,6 +49,14 @@ export function renderInline(text: string): React.ReactNode {
     const codeMatch = remaining.match(/^(.*?)`(.+?)`/)
     // Strikethrough: ~~text~~
     const strikeMatch = remaining.match(/^(.*?)~~(.+?)~~/)
+    // Highlight: ==text==
+    const highlightMatch = remaining.match(/^(.*?)==(.+?)==/)
+    // Wiki-link: [[note name]]
+    const wikiMatch = remaining.match(/^(.*?)\[\[([^\]]+)\]\]/)
+    // Checkbox: [x] or [ ]
+    const checkboxMatch = remaining.match(/^(.*?)(\[[ xX]\])/)
+    // Auto-link URL (not already inside [text](url))
+    const autoUrlMatch = remaining.match(/^(.*?)(https?:\/\/[^\s]+)/)
 
     // Find which match comes first
     const candidates: Array<{ index: number; type: string; match: RegExpMatchArray }> = []
@@ -57,6 +65,10 @@ export function renderInline(text: string): React.ReactNode {
     if (italicMatch) candidates.push({ index: italicMatch[1].length, type: 'italic', match: italicMatch })
     if (codeMatch) candidates.push({ index: codeMatch[1].length, type: 'code', match: codeMatch })
     if (strikeMatch) candidates.push({ index: strikeMatch[1].length, type: 'strike', match: strikeMatch })
+    if (highlightMatch) candidates.push({ index: highlightMatch[1].length, type: 'highlight', match: highlightMatch })
+    if (wikiMatch) candidates.push({ index: wikiMatch[1].length, type: 'wiki', match: wikiMatch })
+    if (checkboxMatch) candidates.push({ index: checkboxMatch[1].length, type: 'checkbox', match: checkboxMatch })
+    if (autoUrlMatch) candidates.push({ index: autoUrlMatch[1].length, type: 'autourl', match: autoUrlMatch })
 
     if (candidates.length === 0) {
       tokens.push(renderWithTags(remaining, key++))
@@ -88,6 +100,9 @@ export function renderInline(text: string): React.ReactNode {
     } else if (best.type === 'strike') {
       tokens.push(<s key={key++}>{renderInline(best.match[2])}</s>)
       remaining = remaining.slice(before.length + best.match[2].length + 4) // ~~x~~
+    } else if (best.type === 'highlight') {
+      tokens.push(<mark key={key++} className="inline-highlight">{best.match[2]}</mark>)
+      remaining = remaining.slice(before.length + best.match[2].length + 4) // ==x==
     } else if (best.type === 'link') {
       tokens.push(
         <a key={key++} href={best.match[3]} target="_blank" rel="noopener noreferrer">
@@ -95,6 +110,31 @@ export function renderInline(text: string): React.ReactNode {
         </a>
       )
       remaining = remaining.slice(before.length + best.match[2].length + best.match[3].length + 4) // [t](u)
+    } else if (best.type === 'wiki') {
+      const refText = best.match[2]
+      tokens.push(
+        <span key={key++} className="mention-inline" data-ref-text={refText}>
+          [[{refText}]]
+        </span>
+      )
+      remaining = remaining.slice(before.length + refText.length + 4) // [[x]]
+    } else if (best.type === 'checkbox') {
+      const raw = best.match[2] // [x] or [ ]
+      const checked = raw[1] === 'x' || raw[1] === 'X'
+      tokens.push(
+        <span key={key++} className={`inline-checkbox ${checked ? 'inline-checkbox--done' : 'inline-checkbox--empty'}`}>
+          {checked ? '✓' : '○'}
+        </span>
+      )
+      remaining = remaining.slice(before.length + 3) // [x] or [ ]
+    } else if (best.type === 'autourl') {
+      const url = best.match[2]
+      tokens.push(
+        <a key={key++} href={url} target="_blank" rel="noopener noreferrer">
+          {url}
+        </a>
+      )
+      remaining = remaining.slice(before.length + url.length)
     }
   }
 

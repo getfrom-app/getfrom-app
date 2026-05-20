@@ -139,6 +139,7 @@ export default function DiaryView() {
   const navigate = useNavigate()
   const [dateOffset, setDateOffset] = useState(0)
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
+  const [pendingSearch, setPendingSearch] = useState('')
 
   const streak = calculateStreak(s)
 
@@ -271,8 +272,29 @@ export default function DiaryView() {
   })
 
   function renderPending() {
-    const hasBucles = bucles.length > 0
-    const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0 || activeProjects.length > 0
+    const searchQ = pendingSearch.trim().toLowerCase()
+    const filterTasks = (tasks: Node[]) =>
+      searchQ ? tasks.filter(t => t.text.toLowerCase().includes(searchQ)) : tasks
+
+    const filteredOverdue = filterTasks(overdue)
+    const filteredToday = filterTasks(todayTasks)
+    const filteredNoDate = filterTasks(noDateTasks)
+
+    const hasBucles = bucles.length > 0 && !searchQ
+    const hasAnything = hasBucles || filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
+
+    const searchInput = (
+      <div className="diary-panel-search">
+        <input
+          className="diary-panel-search-input"
+          type="text"
+          placeholder="Buscar tarea..."
+          value={pendingSearch}
+          onChange={e => setPendingSearch(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Escape') setPendingSearch('') }}
+        />
+      </div>
+    )
 
     const statsHeader = (
       <div className="diary-panel-stats">
@@ -294,9 +316,10 @@ export default function DiaryView() {
     if (!hasAnything) {
       return (
         <div className="diary-panel-content">
+          {searchInput}
           {statsHeader}
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
-            Nada pendiente hoy
+            {searchQ ? 'Sin resultados' : 'Nada pendiente hoy'}
           </div>
           {notesCreatedToday.length > 0 && (
             <div className="diary-pending-section">
@@ -320,6 +343,7 @@ export default function DiaryView() {
 
     return (
       <div className="diary-panel-content">
+        {searchInput}
         {statsHeader}
 
         {/* Bucles abiertos — solo hoy */}
