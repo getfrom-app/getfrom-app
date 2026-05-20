@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 interface FormatToolbarProps {
-  onFormat: (type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link' | 'copy') => void
+  onFormat: (type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'underline' | 'link' | 'copy') => void
 }
 
 // Detecta si hay selección de texto en un contentEditable
@@ -66,9 +66,10 @@ export default function FormatToolbar({ onFormat }: FormatToolbarProps) {
 
   if (!pos) return null
 
-  const buttons: { icon: string; type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link' | 'copy'; title: string }[] = [
+  const buttons: { icon: string; type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'underline' | 'link' | 'copy'; title: string }[] = [
     { icon: 'B', type: 'bold', title: 'Negrita (⌘B)' },
     { icon: 'I', type: 'italic', title: 'Cursiva (⌘I)' },
+    { icon: 'U', type: 'underline', title: 'Subrayado' },
     { icon: '<>', type: 'code', title: 'Código (⌘E)' },
     { icon: 'S̶', type: 'strikethrough', title: 'Tachado' },
     { icon: '🔗', type: 'link', title: 'Enlace (⌘K)' },
@@ -94,6 +95,7 @@ export default function FormatToolbar({ onFormat }: FormatToolbarProps) {
         >
           {btn.icon === 'B' ? <strong>B</strong>
             : btn.icon === 'I' ? <em>I</em>
+            : btn.icon === 'U' ? <u>U</u>
             : btn.icon === 'S̶' ? <s>S</s>
             : btn.icon}
         </button>

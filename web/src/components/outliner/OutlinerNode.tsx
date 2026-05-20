@@ -172,6 +172,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const children = store.children(node.id)
   const isCollapsed = node.isCollapsed && children.length > 0
   const [isEditing, setIsEditing] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [picker, setPicker] = useState<InlinePicker | null>(null)
@@ -991,6 +992,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onDragEnd={handleDragEnd}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY }) }}
         onClick={e => {
           if (e.shiftKey && onShiftSelect) {
@@ -1166,6 +1169,20 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             }}
           />
           </>
+        )}
+
+        {/* Relative time badge on hover */}
+        {hovered && !isDivider && !isEditing && node.updatedAt && (
+          <span className="node-updated-badge" title={new Date(node.updatedAt).toLocaleString('es-ES')}>
+            {(() => {
+              const d = new Date(node.updatedAt)
+              const diff = Math.round((Date.now() - d.getTime()) / 60000)
+              if (diff < 1) return 'ahora'
+              if (diff < 60) return `${diff}m`
+              if (diff < 1440) return `${Math.round(diff / 60)}h`
+              return `${Math.round(diff / 1440)}d`
+            })()}
+          </span>
         )}
 
         {/* Body indicator dot */}

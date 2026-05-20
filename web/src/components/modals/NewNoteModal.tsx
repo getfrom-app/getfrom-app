@@ -33,7 +33,25 @@ interface Props {
 export default function NewNoteModal({ parentId, onClose }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState<Template>(TEMPLATES[0])
+
+  // Cargar plantillas de usuario desde localStorage y combinar con las del sistema
+  const allTemplates: Template[] = (() => {
+    try {
+      const userRaw = JSON.parse(localStorage.getItem('from_custom_templates') || '[]') as Array<{ id: string; name: string; body: string }>
+      const userTemplates: Template[] = userRaw.map(t => ({
+        id: `custom_${t.id}`,
+        name: t.name,
+        icon: '⭐',
+        text: '',
+        body: t.body,
+      }))
+      return [...TEMPLATES, ...userTemplates]
+    } catch {
+      return TEMPLATES
+    }
+  })()
+
+  const [selectedTemplate, setSelectedTemplate] = useState<Template>(allTemplates[0])
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -91,7 +109,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         <div className="note-templates">
           <div className="note-templates-label">Plantilla</div>
           <div className="note-templates-grid">
-            {TEMPLATES.map(t => (
+            {allTemplates.map(t => (
               <button
                 key={t.id}
                 className={`note-template-btn ${selectedTemplate.id === t.id ? 'active' : ''}`}

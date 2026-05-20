@@ -47,6 +47,32 @@ export default function AccountView() {
   const [newExpansion, setNewExpansion] = useState('')
   const [showAddShortcut, setShowAddShortcut] = useState(false)
 
+  // Custom templates
+  interface CustomTemplate { id: string; name: string; body: string }
+  const TEMPLATES_KEY = 'from_custom_templates'
+  function getTemplates(): CustomTemplate[] { try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY) || '[]') } catch { return [] } }
+  function saveTemplates(ts: CustomTemplate[]) { localStorage.setItem(TEMPLATES_KEY, JSON.stringify(ts)) }
+
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>(getTemplates)
+  const [newTemplateName, setNewTemplateName] = useState('')
+  const [newTemplateBody, setNewTemplateBody] = useState('')
+
+  function handleAddTemplate() {
+    if (!newTemplateName.trim()) return
+    const t: CustomTemplate = { id: Date.now().toString(), name: newTemplateName.trim(), body: newTemplateBody.trim() }
+    const updated = [...customTemplates, t]
+    saveTemplates(updated)
+    setCustomTemplates(updated)
+    setNewTemplateName('')
+    setNewTemplateBody('')
+  }
+
+  function deleteTemplate(id: string) {
+    const updated = customTemplates.filter(t => t.id !== id)
+    saveTemplates(updated)
+    setCustomTemplates(updated)
+  }
+
   function handleAddShortcut() {
     if (!newTrigger.trim() || !newExpansion.trim()) return
     const sc: Shortcut = { id: crypto.randomUUID(), trigger: newTrigger.trim(), expansion: newExpansion.trim() }
@@ -614,6 +640,71 @@ export default function AccountView() {
               <button className="btn-secondary" onClick={() => setShowAddShortcut(true)}>Añadir atajo</button>
             </div>
           )}
+        </section>
+
+        {/* ── Plantillas personalizadas ── */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">Plantillas de nodo</h2>
+
+          <div className="settings-row">
+            <div>
+              <div className="settings-row-label">Mis plantillas</div>
+              <div className="settings-row-hint">Define plantillas para crear notas con contenido predefinido. Aparecerán en el modal de nueva nota.</div>
+            </div>
+          </div>
+
+          {customTemplates.length > 0 && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Nombre</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Body</th>
+                  <th style={{ width: 32 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {customTemplates.map(t => (
+                  <tr key={t.id} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '6px 8px' }}>
+                      <span style={{ fontWeight: 500 }}>{t.name}</span>
+                    </td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.body ? t.body.slice(0, 40) + (t.body.length > 40 ? '…' : '') : <em style={{ opacity: 0.5 }}>Sin body</em>}
+                    </td>
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => deleteTemplate(t.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: 0 }}
+                        title="Eliminar plantilla"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div className="inline-form" style={{ gap: 8, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="Nombre de la plantilla"
+                value={newTemplateName}
+                onChange={e => setNewTemplateName(e.target.value)}
+                style={{ flex: '0 0 180px', padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
+              />
+              <textarea
+                placeholder="Body markdown (opcional)..."
+                value={newTemplateBody}
+                onChange={e => setNewTemplateBody(e.target.value)}
+                rows={3}
+                style={{ flex: 1, minWidth: 200, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13, resize: 'vertical' }}
+              />
+              <button className="btn-primary" onClick={handleAddTemplate} style={{ fontSize: 13, padding: '6px 14px', alignSelf: 'flex-end' }}>+ Añadir</button>
+            </div>
+          </div>
         </section>
 
         {/* ── Subscription section ── */}
