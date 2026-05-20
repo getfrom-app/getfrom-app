@@ -491,7 +491,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
               <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
             </svg>
-            <span>From</span>
+            <div className="sidebar-brand-text">
+              <span className="sidebar-brand-name">From</span>
+              {s.workspaces[0]?.name && s.workspaces[0].name !== 'Mi espacio' && (
+                <span className="sidebar-workspace-name">{s.workspaces[0].name}</span>
+              )}
+            </div>
           </div>
         )}
         {open && isSyncing && <div className="sync-dot" title="Sincronizando..." />}

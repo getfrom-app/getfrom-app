@@ -818,6 +818,22 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             data-placeholder="Escribe algo..."
             onPaste={e => {
               const clipText = e.clipboardData.getData('text/plain')
+
+              // Detectar si el texto pegado es una URL y el nodo está vacío
+              const urlRegex = /^https?:\/\/[^\s]+$/
+              const curContent = contentRef.current?.textContent || ''
+              if (urlRegex.test(clipText.trim()) && curContent.trim() === '') {
+                e.preventDefault()
+                const url = clipText.trim()
+                let domain = url
+                try { domain = new URL(url).hostname } catch { /* ignore */ }
+                const linkText = `[${domain}](${url})`
+                nodeTextRef.current = linkText
+                store.updateNode(node.id, { text: linkText })
+                if (contentRef.current) contentRef.current.textContent = linkText
+                return
+              }
+
               const lines = clipText.split('\n').map(l => l.trimEnd()).filter(l => l.length > 0)
               if (lines.length <= 1) return // Paste normal de una línea
               e.preventDefault()

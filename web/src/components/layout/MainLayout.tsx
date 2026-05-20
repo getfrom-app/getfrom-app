@@ -18,6 +18,7 @@ import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
+import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 
@@ -31,6 +32,7 @@ export default function MainLayout() {
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
 
   useEffect(() => {
     store.isGuest = false
@@ -108,6 +110,17 @@ export default function MainLayout() {
           store.collapseAll(null)
         }
       }
+      if (e.key === '?') {
+        const active = document.activeElement
+        const isInputFocused =
+          active?.tagName === 'INPUT' ||
+          active?.tagName === 'TEXTAREA' ||
+          (active as HTMLElement)?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          setShowShortcuts(v => !v)
+        }
+      }
       if (e.key === 'Escape') {
         const active = document.activeElement
         const isInputFocused =
@@ -124,7 +137,7 @@ export default function MainLayout() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture])
+  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts])
 
   function handleLogout() {
     clearTokens()
@@ -207,6 +220,7 @@ export default function MainLayout() {
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
+      {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       <OnboardingTooltip />
       {s.isSyncing && (
         <div className="sync-indicator">
