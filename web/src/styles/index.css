@@ -4829,3 +4829,55 @@ mark.inline-highlight {
 
 /* ── TopBar node title ─────────────────────────────────────────────────────── */
 .top-bar-node-title { font-size: 13px; font-weight: 600; color: var(--text-primary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Smooth transitions global ───────────────────────────────────────────── */
+
+/* Smooth scrolling */
+.main-content { scroll-behavior: smooth; }
+
+/* Fade-in animation for views */
+.view { animation: viewFadeIn 0.15s ease-out; }
+@keyframes viewFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hover transitions */
+.node-row { transition: background 0.1s; }
+.tree-item, .tree-node-row { transition: background 0.1s; }
+.search-result { transition: background 0.1s; }
+.task-item { transition: background 0.1s, opacity 0.2s; }
+.kanban-card { transition: background 0.1s, box-shadow 0.15s; }
+.kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+/* Input focus ring */
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus { outline: none; }
+
+/* Button press effect */
+.btn-primary:active { transform: scale(0.98); }
+.btn-secondary:active { transform: scale(0.98); }
+
+/* Collapse animation */
+.outliner-node { transition: opacity 0.1s; }
+.outliner-node--collapsing { opacity: 0; height: 0; overflow: hidden; }
+
+/* Sync indicator */
+.sync-indicator { animation: syncFadeIn 0.3s ease; }
+@keyframes syncFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Sidebar transition */
+.sidebar { transition: width 0.2s ease; }
+
+/* Modal */
+.modal-overlay { animation: modalBg 0.15s ease; }
+.modal-card, .modal-box { animation: modalSlide 0.15s ease; }
+@keyframes modalBg { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalSlide { from { opacity: 0; transform: scale(0.96) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+/* Toast */
+.toast { animation: toastIn 0.25s ease; }
+.toast.removing { animation: toastOut 0.2s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(20px); } }
