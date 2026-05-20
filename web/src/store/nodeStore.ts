@@ -210,11 +210,35 @@ class NodeStore {
     const node = this.nodes.get(id)
     if (!node) return
     this.snapshot()
-    const updated = { ...node, ...changes, updatedAt: new Date().toISOString(), _isDirty: true }
+
+    // Lógica de recurrencia: cuando se marca done y tiene recurrencia,
+    // calcular la siguiente fecha y dejarla como pending
+    let finalChanges = changes
+    if (changes.status === 'done' && node.recurrence && node.status !== 'done') {
+      const nextDue = this.calculateNextRecurrence(node.recurrence, node.due)
+      if (nextDue) {
+        finalChanges = { ...changes, status: 'pending', due: nextDue }
+      }
+    }
+
+    const updated = { ...node, ...finalChanges, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)
     this.dirtyIds.add(id)
     this.notify()
     this.scheduleSyncDebounced()
+  }
+
+  private calculateNextRecurrence(recurrence: string, currentDue: string | null): string | null {
+    const base = currentDue ? new Date(currentDue) : new Date()
+    const next = new Date(base)
+    const [type, intervalStr] = recurrence.split(':')
+    const interval = parseInt(intervalStr || '1') || 1
+    if (type === 'daily') next.setDate(next.getDate() + interval)
+    else if (type === 'weekly') next.setDate(next.getDate() + 7 * interval)
+    else if (type === 'monthly') next.setMonth(next.getMonth() + interval)
+    else if (type === 'yearly') next.setFullYear(next.getFullYear() + interval)
+    else return null
+    return next.toISOString()
   }
 
   deleteNode(id: string): void {

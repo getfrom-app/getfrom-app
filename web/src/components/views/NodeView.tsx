@@ -49,6 +49,9 @@ export default function NodeView() {
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
 
+  // Quick actions bar state
+  const [quickActionMsg, setQuickActionMsg] = useState<string | null>(null)
+
   // Record recent visit
   useEffect(() => {
     if (id) recordRecentNode(id)
@@ -295,6 +298,55 @@ export default function NodeView() {
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
   const isLoggedIn = !store.isGuest
 
+  // ── Quick actions ──────────────────────────────────────────────────────
+
+  function handleCopyLink() {
+    const url = `${window.location.origin}/app/node/${node!.id}`
+    navigator.clipboard.writeText(url).then(() => {
+      setQuickActionMsg('Enlace copiado')
+      setTimeout(() => setQuickActionMsg(null), 2000)
+    }).catch(() => {
+      prompt('Copia este enlace:', url)
+    })
+  }
+
+  function handleMoveToDiary() {
+    const todayDiary = s.todayDiary ? s.todayDiary() : undefined
+    if (!todayDiary) {
+      setQuickActionMsg('No hay diario hoy')
+      setTimeout(() => setQuickActionMsg(null), 2000)
+      return
+    }
+    if (node!.isDiaryEntry) {
+      setQuickActionMsg('Ya es una entrada de diario')
+      setTimeout(() => setQuickActionMsg(null), 2000)
+      return
+    }
+    const children = s.getChildren ? s.getChildren(todayDiary.id) : []
+    const maxOrder = children.reduce((max: number, n: Node) => Math.max(max, n.siblingOrder), 0)
+    store.createNode({
+      text: node!.text || 'Sin título',
+      parentId: todayDiary.id,
+      siblingOrder: maxOrder + 1000,
+    })
+    setQuickActionMsg('Añadido al diario de hoy')
+    setTimeout(() => setQuickActionMsg(null), 2000)
+  }
+
+  function handleDuplicate() {
+    const newNode = store.createNode({
+      text: (node!.text || 'Sin título') + ' (copia)',
+      parentId: node!.parentId || undefined,
+      siblingOrder: node!.siblingOrder + 1,
+      body: node!.body || undefined,
+    })
+    if (newNode?.id) {
+      navigate(`/node/${newNode.id}`)
+    }
+    setQuickActionMsg('Nota duplicada')
+    setTimeout(() => setQuickActionMsg(null), 2000)
+  }
+
   return (
     <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''}`}>
       <div className="node-view-main">
@@ -393,6 +445,35 @@ export default function NodeView() {
                 ⋯
               </button>
             </div>
+          </div>
+
+          {/* Quick actions bar — visible on hover of .node-title-row */}
+          <div className="node-quick-actions">
+            <button className="node-quick-action-btn" onClick={handleCopyLink} title="Copiar enlace a este nodo">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1.5v1a3.5 3.5 0 0 1-3.5 3.5H4A3.5 3.5 0 0 1 .5 12V6A3.5 3.5 0 0 1 4 2.5h1V4H4z"/>
+                <path d="M7.5 1h4A2.5 2.5 0 0 1 14 3.5v4A2.5 2.5 0 0 1 11.5 10h-4A2.5 2.5 0 0 1 5 7.5v-4A2.5 2.5 0 0 1 7.5 1zm0 1.5A1 1 0 0 0 6.5 3.5v4A1 1 0 0 0 7.5 8.5h4A1 1 0 0 0 12.5 7.5v-4A1 1 0 0 0 11.5 2.5h-4z"/>
+              </svg>
+              Copiar enlace
+            </button>
+            {!node.isDiaryEntry && (
+              <button className="node-quick-action-btn" onClick={handleMoveToDiary} title="Añadir al diario de hoy">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1H2zm13 3H1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5z"/>
+                  <path d="M8 7.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V12a.5.5 0 0 1-1 0v-1.5H6a.5.5 0 0 1 0-1h1.5V8a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+                Mover a diario
+              </button>
+            )}
+            <button className="node-quick-action-btn" onClick={handleDuplicate} title="Duplicar esta nota">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
+              </svg>
+              Duplicar nota
+            </button>
+            {quickActionMsg && (
+              <span className="node-quick-action-feedback">{quickActionMsg}</span>
+            )}
           </div>
 
           {/* Node metadata row: status, priority, tags, due */}

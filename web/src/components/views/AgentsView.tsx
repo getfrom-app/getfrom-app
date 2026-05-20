@@ -13,21 +13,44 @@ interface AgentRun {
   finishedAt?: string
 }
 
+const MODEL_LABEL = 'claude-3-5-haiku'
+
 const SHORTCUTS = [
   {
-    label: 'Resumir diario',
-    systemPrompt: 'Eres un asistente que resume el diario del usuario.',
-    userMessage: 'Resume las notas de hoy con los puntos clave y acciones pendientes.',
+    label: 'Resumir el día',
+    icon: '📋',
+    systemPrompt: 'Eres un asistente que resume el diario del usuario de forma concisa y clara.',
+    userMessage: 'Resume los bullets del diario de hoy con los puntos clave y acciones pendientes.',
   },
   {
-    label: 'Generar tareas',
-    systemPrompt: 'Eres un asistente de productividad.',
-    userMessage: 'A partir de mis notas, genera una lista de tareas concretas y priorizadas.',
+    label: 'Extraer tareas',
+    icon: '✅',
+    systemPrompt: 'Eres un asistente de productividad experto en identificar tareas accionables.',
+    userMessage: 'Identifica todas las tareas y acciones pendientes que aparecen en el texto del día. Devuélvelas como lista numerada.',
   },
   {
-    label: 'Análisis semanal',
-    systemPrompt: 'Eres un coach de productividad.',
-    userMessage: 'Analiza la semana y sugiere qué mejorar la próxima semana.',
+    label: 'Planificar semana',
+    icon: '📅',
+    systemPrompt: 'Eres un coach de productividad especializado en planificación semanal.',
+    userMessage: 'Sugiere una estructura y plan de trabajo para esta semana, considerando mis tareas pendientes y objetivos.',
+  },
+  {
+    label: 'Revisar pendientes',
+    icon: '🔍',
+    systemPrompt: 'Eres un asistente que analiza tareas vencidas y da recomendaciones prácticas.',
+    userMessage: 'Analiza las tareas vencidas o pendientes y dame recomendaciones concretas sobre cómo abordarlas o priorizarlas.',
+  },
+  {
+    label: 'Brainstorming',
+    icon: '💡',
+    systemPrompt: 'Eres un asistente creativo experto en generar ideas y soluciones innovadoras.',
+    userMessage: 'Genera ideas creativas y diversas sobre el tema seleccionado. Incluye al menos 8-10 ideas con diferentes enfoques.',
+  },
+  {
+    label: 'Corregir ortografía',
+    icon: '✏️',
+    systemPrompt: 'Eres un corrector ortográfico y de estilo del español.',
+    userMessage: 'Detecta y corrige los errores ortográficos, gramaticales y de estilo en el texto del día. Muestra los cambios realizados.',
   },
 ]
 
@@ -91,6 +114,10 @@ export default function AgentsView() {
     setUserMessage(s.userMessage)
     setAgentTitle(s.label)
     setShowNewAgent(true)
+    // Scroll to the new agent panel after a tick
+    setTimeout(() => {
+      document.querySelector('.agents-new-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, 50)
   }
 
   return (
@@ -122,35 +149,45 @@ export default function AgentsView() {
           </div>
         ) : (
           <>
-            {/* Shortcuts */}
-            <div className="agents-shortcuts">
-              {SHORTCUTS.map(s => (
-                <button
-                  key={s.label}
-                  className="agent-shortcut-btn"
-                  onClick={() => applyShortcut(s)}
-                >
-                  {s.label}
-                </button>
-              ))}
+            {/* Herramientas rápidas */}
+            <div className="agents-shortcuts-section">
+              <div className="agents-shortcuts-label">Herramientas rápidas</div>
+              <div className="agents-shortcuts">
+                {SHORTCUTS.map(s => (
+                  <button
+                    key={s.label}
+                    className="agent-shortcut-btn"
+                    onClick={() => applyShortcut(s)}
+                    title={s.label}
+                  >
+                    <span className="agent-shortcut-icon">{s.icon}</span>
+                    <span className="agent-shortcut-text">{s.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* New agent panel */}
             {showNewAgent && (
               <div className="agents-new-panel">
-                <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600 }}>Nuevo agente</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Nuevo agente</h3>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 8px', fontFamily: 'monospace' }}>
+                    {MODEL_LABEL}
+                  </span>
+                </div>
                 <form onSubmit={handleRunAgent} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <input
                     type="text"
                     className="input"
-                    placeholder="Nombre (opcional)"
+                    placeholder="Nombre del agente (opcional)"
                     value={agentTitle}
                     onChange={e => setAgentTitle(e.target.value)}
                     style={{ fontSize: 13 }}
                   />
                   <textarea
                     className="input"
-                    placeholder="System prompt — instrucciones del agente"
+                    placeholder="System prompt — instrucciones del agente (ej: Eres un asistente de productividad...)"
                     value={systemPrompt}
                     onChange={e => setSystemPrompt(e.target.value)}
                     rows={3}
@@ -159,14 +196,14 @@ export default function AgentsView() {
                   />
                   <textarea
                     className="input"
-                    placeholder="Mensaje — qué debe hacer el agente"
+                    placeholder="Mensaje — qué debe hacer el agente (ej: Resume mis notas de hoy con los puntos clave...)"
                     value={userMessage}
                     onChange={e => setUserMessage(e.target.value)}
                     rows={3}
                     style={{ fontSize: 13, resize: 'vertical' }}
                     required
                   />
-                  <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
                       type="submit"
                       className="btn btn-primary"
@@ -175,6 +212,9 @@ export default function AgentsView() {
                     >
                       {running ? 'Ejecutando...' : 'Ejecutar'}
                     </button>
+                    {running && (
+                      <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Usando {MODEL_LABEL}...</span>
+                    )}
                   </div>
                 </form>
 
@@ -195,13 +235,14 @@ export default function AgentsView() {
             {loading ? (
               <div className="view-empty">Cargando...</div>
             ) : runs.length === 0 ? (
-              <div className="view-empty">No hay ejecuciones todavía. Crea tu primer agente.</div>
+              <div className="view-empty">No hay ejecuciones todavía. Usa una herramienta rápida o crea tu primer agente.</div>
             ) : (
               <table className="agent-runs-table">
                 <thead>
                   <tr>
                     <th>Agente</th>
                     <th>Estado</th>
+                    <th>Modelo</th>
                     <th>Inicio</th>
                     <th>Tokens</th>
                     <th>Turnos</th>
@@ -215,6 +256,9 @@ export default function AgentsView() {
                         <span className={`agent-run-status agent-run-status--${run.status}`}>
                           {run.status === 'completed' ? 'Completado' : run.status === 'running' ? 'Ejecutando' : 'Error'}
                         </span>
+                      </td>
+                      <td style={{ color: 'var(--text-tertiary)', fontSize: 11, fontFamily: 'monospace' }}>
+                        {run.model || MODEL_LABEL}
                       </td>
                       <td style={{ color: 'var(--text-secondary)' }}>{formatDate(run.startedAt)}</td>
                       <td style={{ color: 'var(--text-secondary)' }}>{run.tokensUsed ?? '—'}</td>

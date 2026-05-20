@@ -80,9 +80,7 @@ export default function DiaryView() {
 
   const diary = dateOffset === 0 ? s.todayDiary() : getDiaryForDate(targetDate)
 
-  if (s.isSyncing && !diary) {
-    return <div className="view-loading">Cargando...</div>
-  }
+  const isLoadingDiary = s.isSyncing && !diary
 
   const date = targetDate
   const dayName = date.toLocaleDateString('es-ES', { weekday: 'long' })

@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
+import { useStore } from '../../store/nodeStore'
 
 interface Props {
   onNewNote: () => void
@@ -32,6 +33,9 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
   const navigate = useNavigate()
   const location = useLocation()
   const { theme, setTheme } = useTheme()
+  const s = useStore()
+  const totalNodes = s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt).length
+  const pendingTasks = s.pendingTasks().length
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isHome = path === '/' || path === ''
 
@@ -63,6 +67,16 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
           {VIEW_LABELS[path] ?? ''}
         </span>
       )}
+
+      {/* Stats rápidos */}
+      <div className="top-bar-stats">
+        <span title={`${totalNodes} notas totales`}>{totalNodes} notas</span>
+        {pendingTasks > 0 && (
+          <span className="top-bar-stats-pending" title={`${pendingTasks} tareas pendientes`}>
+            · {pendingTasks} ✓
+          </span>
+        )}
+      </div>
 
       <div className="top-bar-spacer" />
 
@@ -129,7 +143,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          title={theme === 'dark' ? 'Cambiar a modo claro (⌘⇧S para sidebar)' : 'Cambiar a modo oscuro (⌘⇧S para sidebar)'}
         >
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
