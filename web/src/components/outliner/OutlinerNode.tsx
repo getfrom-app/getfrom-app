@@ -759,7 +759,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   if (activeFilter && !matchesFilter) return null
 
   return (
-    <div className="outliner-node" style={{ '--depth': depth } as React.CSSProperties}>
+    <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>
       <div
         className={nodeRowClass}
         draggable={!isDivider && !isHeading}

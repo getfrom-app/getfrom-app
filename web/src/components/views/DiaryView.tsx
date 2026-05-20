@@ -226,6 +226,15 @@ export default function DiaryView() {
 
   // ── Render panels ──────────────────────────────────────────────────────
 
+  // Nodos raíz con tareas pendientes (proyectos activos)
+  const activeProjects = s.allActive()
+    .filter(n => n.parentId === null && !n.isDiaryEntry && !n.deletedAt && n.status === null)
+    .filter(rootNode => {
+      const children = store.children(rootNode.id)
+      return children.some(c => c.status === 'pending' && !c.deletedAt)
+    })
+    .slice(0, 5)
+
   function renderPending() {
     const hasBucles = bucles.length > 0
     const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0
@@ -236,6 +245,25 @@ export default function DiaryView() {
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
             Nada pendiente hoy
           </div>
+          {activeProjects.length > 0 && (
+            <div className="diary-pending-section">
+              <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Proyectos activos</div>
+              {activeProjects.map(proj => {
+                const pendingCount = store.children(proj.id).filter(c => c.status === 'pending' && !c.deletedAt).length
+                return (
+                  <div
+                    key={proj.id}
+                    className="diary-task-chip"
+                    onClick={() => navigate(`/node/${proj.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="diary-task-text">{proj.text || 'Sin título'}</span>
+                    <span className="diary-task-due" style={{ marginLeft: 'auto' }}>({pendingCount})</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )
     }
@@ -303,6 +331,27 @@ export default function DiaryView() {
             {noDateTasks.map(t => (
               <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
+          </div>
+        )}
+
+        {/* Proyectos activos */}
+        {activeProjects.length > 0 && (
+          <div className="diary-pending-section">
+            <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Proyectos activos</div>
+            {activeProjects.map(proj => {
+              const pendingCount = store.children(proj.id).filter(c => c.status === 'pending' && !c.deletedAt).length
+              return (
+                <div
+                  key={proj.id}
+                  className="diary-task-chip"
+                  onClick={() => navigate(`/node/${proj.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <span className="diary-task-text">{proj.text || 'Sin título'}</span>
+                  <span className="diary-task-due" style={{ marginLeft: 'auto' }}>({pendingCount})</span>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

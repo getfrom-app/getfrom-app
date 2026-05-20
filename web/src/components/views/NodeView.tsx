@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect } from 'react'
 import Outliner from '../outliner/Outliner'
-import InlineRenderer from '../outliner/InlineRenderer'
+import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
 import { recordRecentNode } from '../CommandPalette'
@@ -314,6 +314,11 @@ export default function NodeView() {
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
   const isLoggedIn = !store.isGuest
 
+  // Table of contents: children that are headings
+  const headings = s.children(node.id)
+    .filter(n => ['h1', 'h2', 'h3'].includes(detectBlockType(n.text)))
+    .slice(0, 10)
+
   // ── Quick actions ──────────────────────────────────────────────────────
 
   function handleCopyLink() {
@@ -580,7 +585,7 @@ export default function NodeView() {
             ) : (
               <div
                 className={`node-body-rendered ${!hasBody ? 'node-body-empty' : ''}`}
-                onClick={() => {
+                onDoubleClick={() => {
                   setBodyEditing(true)
                   setBodyValue(node.body || '')
                 }}
@@ -661,6 +666,25 @@ export default function NodeView() {
                   ))}
                 </>
               )}
+            </div>
+          )}
+
+          {headings.length >= 3 && (
+            <div className="node-toc">
+              <div className="node-toc-title">Tabla de contenidos</div>
+              {headings.map(h => {
+                const type = detectBlockType(h.text)
+                const text = h.text.replace(/^#{1,3}\s/, '')
+                return (
+                  <button
+                    key={h.id}
+                    className={`node-toc-item node-toc-item--${type}`}
+                    onClick={() => document.querySelector(`[data-node-id="${h.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                  >
+                    {text}
+                  </button>
+                )
+              })}
             </div>
           )}
 

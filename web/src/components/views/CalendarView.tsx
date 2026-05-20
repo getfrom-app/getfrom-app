@@ -224,6 +224,15 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                       className="calendar-timeline-cell"
                       style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
                       onClick={() => handleCellClick(day, hour)}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => {
+                        e.preventDefault()
+                        const eventId = e.dataTransfer.getData('eventId')
+                        if (!eventId) return
+                        const newDate = new Date(day)
+                        newDate.setHours(hour, 0, 0, 0)
+                        store.updateNode(eventId, { due: newDate.toISOString() })
+                      }}
                     />
                   ))}
 
@@ -246,10 +255,17 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                       <button
                         key={node.id}
                         className="calendar-event-block"
+                        draggable
+                        onDragStart={e => {
+                          e.stopPropagation()
+                          e.dataTransfer.setData('eventId', node.id)
+                          e.dataTransfer.effectAllowed = 'move'
+                        }}
                         style={{
                           top: topPx,
                           height: heightPx,
                           background: priorityBg(node),
+                          cursor: 'grab',
                         }}
                         onClick={e => { e.stopPropagation(); onNodeClick(node.id) }}
                         title={node.text || 'Sin título'}
