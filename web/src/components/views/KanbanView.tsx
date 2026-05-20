@@ -105,9 +105,20 @@ function KanbanColumn({
   column: ColumnConfig
   tasks: Node[]
   onDrop: (id: string, newStatus: Node['status']) => void
-  onCreateTask: (status: Node['status']) => void
+  onCreateTask: (status: Node['status'], text: string) => void
 }) {
   const [colDragOver, setColDragOver] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [newText, setNewText] = useState('')
+
+  function handleAddConfirm() {
+    const trimmed = newText.trim()
+    if (trimmed) {
+      onCreateTask(column.status, trimmed)
+    }
+    setNewText('')
+    setAdding(false)
+  }
 
   return (
     <div
@@ -129,7 +140,7 @@ function KanbanColumn({
         </div>
         <button
           className="kanban-add-btn"
-          onClick={() => onCreateTask(column.status)}
+          onClick={() => { setAdding(true); setNewText('') }}
           title={`Nueva tarea en ${column.label}`}
         >
           +
@@ -139,8 +150,21 @@ function KanbanColumn({
         {tasks.map(t => (
           <KanbanCard key={t.id} task={t} onDrop={onDrop} />
         ))}
-        {tasks.length === 0 && (
+        {tasks.length === 0 && !adding && (
           <div className="kanban-column-empty">Sin tareas</div>
+        )}
+        {adding && (
+          <input
+            className="kanban-add-input"
+            value={newText}
+            onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { handleAddConfirm() }
+              if (e.key === 'Escape') { setAdding(false); setNewText('') }
+            }}
+            autoFocus
+            placeholder="Nombre de la tarea..."
+          />
         )}
       </div>
     </div>
@@ -195,8 +219,8 @@ export default function KanbanView() {
     store.updateNode(taskId, { status: newStatus })
   }
 
-  function handleCreateTask(status: Node['status']) {
-    const newNode = store.createNode({ text: '', parentId: null, isTask: true })
+  function handleCreateTask(status: Node['status'], text: string) {
+    const newNode = store.createNode({ text, parentId: null, isTask: true })
     store.updateNode(newNode.id, { status })
     navigate(`/node/${newNode.id}`)
   }

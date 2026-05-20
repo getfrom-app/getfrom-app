@@ -271,6 +271,12 @@ export default function AccountView() {
               >
                 {exportLoading ? 'Exportando...' : 'Descarga Markdown'}
               </button>
+              <button
+                className="btn-secondary"
+                onClick={exportMarkdown}
+              >
+                Exportar Markdown (local)
+              </button>
             </div>
           </section>
         )}
