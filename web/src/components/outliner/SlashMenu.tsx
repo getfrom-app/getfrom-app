@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface SlashMenuOption {
   label: string
@@ -67,7 +68,7 @@ export default function SlashMenu({ anchorEl, onSelect, onClose }: Props) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
 
-  return (
+  return createPortal(
     <div
       ref={menuRef}
       className="slash-menu"
@@ -89,6 +90,7 @@ export default function SlashMenu({ anchorEl, onSelect, onClose }: Props) {
           <span className="slash-menu-desc">{opt.description}</span>
         </button>
       ))}
-    </div>
+    </div>,
+    document.body
   )
 }

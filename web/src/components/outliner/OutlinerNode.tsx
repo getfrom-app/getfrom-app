@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -584,8 +585,8 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         />
       )}
 
-      {/* Inline picker (@ and #) */}
-      {picker && picker.items.length > 0 && (
+      {/* Inline picker (@ and #) — portal para evitar conflicto DOM */}
+      {picker && picker.items.length > 0 && createPortal(
         <div className="inline-picker" style={pickerStyle}>
           {picker.items.map((item, idx) => (
             <button
@@ -600,7 +601,8 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Children */}
