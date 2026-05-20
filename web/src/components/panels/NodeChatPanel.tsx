@@ -32,8 +32,28 @@ export default function NodeChatPanel({ node, onClose }: Props) {
 
   function buildSystemContext(): string {
     const children = store.children(node.id).slice(0, 10)
+
+    // Get area context if the node has an area
+    let areaContext = ''
+    try {
+      const nodeArea = JSON.parse(node.extraData || '{}').area
+      if (nodeArea) {
+        // Find the area context node (extraData._areaCtx = "1")
+        const areaCtxNode = store.allActive().find(n => {
+          try {
+            const ed = JSON.parse(n.extraData || '{}')
+            return ed.area === nodeArea && ed._areaCtx === '1'
+          } catch { return false }
+        })
+        if (areaCtxNode?.body) {
+          areaContext = `\n**Contexto del área "${nodeArea}":**\n${areaCtxNode.body.slice(0, 300)}`
+        }
+      }
+    } catch { /* ignore */ }
+
     return [
       `Estás asistiendo al usuario con una nota de su gestor personal "From".`,
+      areaContext,
       ``,
       `**Nota actual:**`,
       `Título: "${node.text || 'Sin título'}"`,

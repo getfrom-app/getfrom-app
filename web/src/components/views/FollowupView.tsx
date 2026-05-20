@@ -195,6 +195,8 @@ function BucleRow({ bucle, onMarkDone }: BucleRowProps) {
 
 export default function FollowupView() {
   const s = useStore()
+  const [search, setSearch] = useState('')
+  const [filterPriority, setFilterPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all')
 
   const activeBucles = useMemo(() => {
     return s.allActive()
@@ -207,15 +209,23 @@ export default function FollowupView() {
       })
   }, [s])
 
+  const filteredBucles = useMemo(() => {
+    return activeBucles.filter(b => {
+      if (search && !b.text.toLowerCase().includes(search.toLowerCase())) return false
+      if (filterPriority !== 'all' && b.priority !== filterPriority) return false
+      return true
+    })
+  }, [activeBucles, search, filterPriority])
+
   function handleMarkDone(id: string) {
     store.updateNode(id, { status: 'done' })
   }
 
-  // Group by priority
-  const highPriority = activeBucles.filter(n => n.priority === 'high')
-  const mediumPriority = activeBucles.filter(n => n.priority === 'medium')
-  const lowPriority = activeBucles.filter(n => n.priority === 'low')
-  const noPriority = activeBucles.filter(n => !n.priority)
+  // Group by priority (using filtered list)
+  const highPriority = filteredBucles.filter(n => n.priority === 'high')
+  const mediumPriority = filteredBucles.filter(n => n.priority === 'medium')
+  const lowPriority = filteredBucles.filter(n => n.priority === 'low')
+  const noPriority = filteredBucles.filter(n => !n.priority)
 
   const groups: Array<{ label: string; nodes: Node[]; color?: string }> = []
   if (highPriority.length > 0) groups.push({ label: 'Alta prioridad', nodes: highPriority, color: '#ef4444' })
@@ -237,9 +247,37 @@ export default function FollowupView() {
       </div>
 
       <div className="view-body">
+        {/* Barra de búsqueda y filtro de prioridad */}
+        <div className="followup-filters">
+          <input
+            type="text"
+            className="followup-search"
+            placeholder="Buscar bucle..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <div className="followup-priority-filter">
+            {(['all', 'high', 'medium', 'low'] as const).map(p => (
+              <button
+                key={p}
+                className={`followup-filter-btn ${filterPriority === p ? 'active' : ''}`}
+                onClick={() => setFilterPriority(p)}
+              >
+                {p === 'all' ? 'Todos' : p === 'high' ? '🔴' : p === 'medium' ? '🟡' : '⚪'}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {activeBucles.length === 0 && (
           <div className="view-empty">
             No hay bucles activos. Crea uno escribiendo <code>/bucle</code> en cualquier nota.
+          </div>
+        )}
+
+        {activeBucles.length > 0 && filteredBucles.length === 0 && (
+          <div className="view-empty">
+            Sin resultados para la búsqueda actual.
           </div>
         )}
 

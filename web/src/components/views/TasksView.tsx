@@ -499,12 +499,27 @@ export default function TasksView() {
 
   const totalPending = sections.reduce((acc, s) => acc + s.tasks.filter(t => t.status !== 'done').length, 0)
 
+  const completedToday = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const end = new Date(today)
+    end.setDate(end.getDate() + 1)
+    return s.allActive().filter(n => {
+      if (n.status !== 'done') return false
+      const updated = new Date(n.updatedAt)
+      return updated >= today && updated < end
+    }).length
+  }, [s])
+
   return (
     <div className="view tasks-view" role="main" aria-label="Vista de tareas">
       <div className="view-header">
         <h1 className="view-title">Tareas</h1>
         {totalPending > 0 && (
           <span className="tasks-count">{totalPending} pendiente{totalPending !== 1 ? 's' : ''}</span>
+        )}
+        {completedToday > 0 && (
+          <span className="tasks-completed-today">✓ {completedToday} {completedToday === 1 ? 'completada' : 'completadas'} hoy</span>
         )}
       </div>
 

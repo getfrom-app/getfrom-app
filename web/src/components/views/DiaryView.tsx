@@ -716,6 +716,58 @@ export default function DiaryView() {
           </>
         )}
 
+        {/* Productividad del día — solo hoy */}
+        {dateOffset === 0 && (
+          <>
+            <div className="stats-section-label" style={{ marginTop: 12 }}>Productividad del día</div>
+            <div className="stats-counters">
+              <div className="stats-counter">
+                <div className="stats-counter-value">{diary ? store.children(diary.id).length : 0}</div>
+                <div className="stats-counter-label">Bullets hoy</div>
+              </div>
+              <div className="stats-counter">
+                <div className="stats-counter-value" style={{ color: '#22c55e' }}>
+                  {allNodes.filter(n => {
+                    if (n.status !== 'done') return false
+                    const d = new Date(n.updatedAt)
+                    return d >= todayStart && d <= todayEnd
+                  }).length}
+                </div>
+                <div className="stats-counter-label">Tareas completadas hoy</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Hábitos — grid últimas 4 semanas */}
+        <>
+          <div className="stats-section-label" style={{ marginTop: 12 }}>Hábitos — últimas 4 semanas</div>
+          {(() => {
+            const lastMonth = Array.from({ length: 28 }, (_, i) => {
+              const d = new Date()
+              d.setDate(d.getDate() - 27 + i)
+              d.setHours(0, 0, 0, 0)
+              return d
+            })
+            const diaryDays = new Set(
+              s.allActive()
+                .filter(n => n.isDiaryEntry && n.diaryDate)
+                .map(n => new Date(n.diaryDate!).toDateString())
+            )
+            return (
+              <div className="stats-habit-grid">
+                {lastMonth.map((day, i) => (
+                  <div
+                    key={i}
+                    className={`habit-dot${diaryDays.has(day.toDateString()) ? ' habit-dot--active' : ''}${day.toDateString() === new Date().toDateString() ? ' habit-dot--today' : ''}`}
+                    title={day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  />
+                ))}
+              </div>
+            )
+          })()}
+        </>
+
         {/* Top tags */}
         {topTags.length > 0 && (
           <>
