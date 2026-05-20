@@ -104,6 +104,37 @@ class NodeStore {
     } catch { return null }
   }
 
+  /** Todos los tags únicos usados en types[] de todos los nodos activos */
+  allUsedTags(): string[] {
+    const builtins = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const tagSet = new Set<string>()
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      for (const t of (n.types || [])) {
+        if (!builtins.has(t)) tagSet.add(t)
+      }
+    }
+    return Array.from(tagSet).sort()
+  }
+
+  /** Contar nodos que tienen un tag específico */
+  tagNodeCount(tagName: string): number {
+    let count = 0
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      if ((n.types || []).includes(tagName)) count++
+    }
+    return count
+  }
+
+  /** Color determinista por nombre de tag */
+  tagColor(tagName: string): string {
+    const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']
+    let hash = 0
+    for (let i = 0; i < tagName.length; i++) hash = tagName.charCodeAt(i) + ((hash << 5) - hash)
+    return COLORS[Math.abs(hash) % COLORS.length]
+  }
+
   pendingTasks(): Node[] {
     return this.allActive()
       .filter(n => n.status === 'pending')

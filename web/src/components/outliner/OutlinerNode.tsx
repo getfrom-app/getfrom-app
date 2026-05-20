@@ -6,6 +6,7 @@ import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 import NodeContextMenu from './NodeContextMenu'
+import FormatToolbar from './FormatToolbar'
 
 interface Props {
   node: Node
@@ -254,6 +255,18 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
       }
     }
 
+    // Cmd+B/I/E → formato inline (solo si hay selección)
+    if ((e.key === 'b' || e.key === 'i' || e.key === 'e') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      const sel = window.getSelection()
+      if (sel && !sel.isCollapsed && sel.toString()) {
+        e.preventDefault()
+        if (e.key === 'b') applyFormat('bold')
+        else if (e.key === 'i') applyFormat('italic')
+        else if (e.key === 'e') applyFormat('code')
+        return
+      }
+    }
+
     // Cmd+Shift+F → toggle favorite
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
@@ -498,6 +511,31 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'link') {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed || !contentRef.current) return
+    const selectedText = sel.toString()
+    if (!selectedText) return
+
+    const range = sel.getRangeAt(0)
+    let wrapped = ''
+    if (type === 'bold') wrapped = `**${selectedText}**`
+    else if (type === 'italic') wrapped = `*${selectedText}*`
+    else if (type === 'code') wrapped = `\`${selectedText}\``
+    else if (type === 'strikethrough') wrapped = `~~${selectedText}~~`
+    else if (type === 'link') wrapped = `[${selectedText}](url)`
+
+    // Reemplazar la selección con texto formateado
+    range.deleteContents()
+    range.insertNode(document.createTextNode(wrapped))
+    sel.removeAllRanges()
+
+    // Sincronizar al store
+    const newText = contentRef.current.textContent || ''
+    nodeTextRef.current = newText
+    store.updateNode(node.id, { text: newText })
+  }
+
   function toggleCollapse() {
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
   }
@@ -684,6 +722,9 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
           onDrop={handleDropAsChild}
         />
       )}
+
+      {/* Format toolbar — aparece al seleccionar texto */}
+      {isEditing && <FormatToolbar onFormat={applyFormat} />}
 
       {/* Slash menu */}
       {showSlash && (

@@ -123,6 +123,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const [panels, setPanels] = useState<Panel[]>(getPanels)
 
   const tags = s.tagDefinitions()
+  const usedTags = s.allUsedTags()
   const pendingCount = s.pendingTasks().length
   const showUpgrade = isGuest || !us.isPremium
 
@@ -200,26 +201,43 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   // ── Tab content ────────────────────────────────────────────────────────
 
   function renderTagsTab() {
+    // Combinar tag definitions (con nodo) + used tags (sólo en types[])
+    const tagDefMap = new Map(tags.map(t => [tagName(t), t]))
+    const allTagNames = Array.from(new Set([
+      ...tags.map(t => tagName(t)).filter(Boolean) as string[],
+      ...usedTags,
+    ])).sort()
+
     return (
       <div className="sidebar-tab-content">
         {/* Tags section */}
-        {tags.length > 0 ? (
+        {allTagNames.length > 0 ? (
           <div style={{ marginBottom: 8 }}>
-            {tags.map(tag => (
-              <div
-                key={tag.id}
-                className={`sidebar-tag-item ${isActive(`/node/${tag.id}`) ? 'active' : ''}`}
-                onClick={() => navigate(`/node/${tag.id}`)}
-              >
-                <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>#</span>
-                <span style={{ flex: 1, fontSize: 13 }}>{tagName(tag)}</span>
-                <span className="sidebar-tag-count">{tagChildCount(tag)}</span>
-              </div>
-            ))}
+            <div className="nav-section-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Tags</span>
+              <span style={{ fontSize: 10, opacity: 0.5 }}>{allTagNames.length}</span>
+            </div>
+            {allTagNames.map(name => {
+              const defNode = tagDefMap.get(name)
+              const color = s.tagColor(name)
+              const count = s.tagNodeCount(name)
+              return (
+                <div
+                  key={name}
+                  className={`sidebar-tag-item ${defNode && isActive(`/node/${defNode.id}`) ? 'active' : ''}`}
+                  onClick={() => defNode ? navigate(`/node/${defNode.id}`) : navigate(`/search?q=%23${name}`)}
+                  title={`#${name} · ${count} nodos`}
+                >
+                  <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)' }}>{name}</span>
+                  <span className="sidebar-tag-count" style={{ background: color + '20', color }}>{count}</span>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="tree-empty" style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Sin áreas. Crea un tag en From para Mac.
+            Sin tags aún. Escribe #tag en cualquier nota.
           </div>
         )}
 
@@ -333,62 +351,70 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
 
   function renderSettingsTab() {
     const email = us.user?.email
+    const SettingRow = ({ icon, label, onClick, badge }: { icon: string; label: string; onClick?: () => void; badge?: string }) => (
+      <button
+        className="settings-row"
+        onClick={onClick}
+      >
+        <span className="settings-row-icon">{icon}</span>
+        <span className="settings-row-label">{label}</span>
+        {badge && <span className="settings-row-badge">{badge}</span>}
+        {onClick && <span className="settings-row-arrow">›</span>}
+      </button>
+    )
+
     return (
       <div className="sidebar-tab-content">
         <div className="sidebar-settings">
-          {email && (
-            <div className="sidebar-settings-user">{email}</div>
-          )}
+          {/* Cuenta */}
+          <div className="settings-section">
+            <div className="settings-section-title">Cuenta</div>
+            {email && (
+              <div className="settings-email">{email}</div>
+            )}
+            <SettingRow icon="👤" label="Mi cuenta" onClick={() => navigate('/account')} />
+            {showUpgrade && (
+              <SettingRow icon="✨" label="Actualizar plan" onClick={() => navigate('/pricing')} badge="Free" />
+            )}
+          </div>
 
-          <div className="sidebar-settings-section">
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Apariencia</div>
-            <div style={{ display: 'flex', gap: 6 }}>
+          {/* Apariencia */}
+          <div className="settings-section">
+            <div className="settings-section-title">Apariencia</div>
+            <div className="settings-theme-row">
               <button
-                style={{ flex: 1, padding: '6px 0', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: theme === 'light' ? 'var(--accent)' : 'var(--bg)', color: theme === 'light' ? '#fff' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}
+                className={`settings-theme-btn ${theme === 'light' ? 'active' : ''}`}
                 onClick={() => setTheme('light')}
-              >
-                ☀ Claro
-              </button>
+              >☀️ Claro</button>
               <button
-                style={{ flex: 1, padding: '6px 0', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: theme === 'dark' ? 'var(--accent)' : 'var(--bg)', color: theme === 'dark' ? '#fff' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer' }}
+                className={`settings-theme-btn ${theme === 'dark' ? 'active' : ''}`}
                 onClick={() => setTheme('dark')}
-              >
-                🌙 Oscuro
-              </button>
+              >🌙 Oscuro</button>
+
             </div>
           </div>
 
-          <div className="sidebar-settings-section">
-            <button
-              className="nav-item"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
-              onClick={() => navigate('/account')}
-            >
-              <span className="nav-icon">⚙</span>
-              <span>Ajustes completos</span>
-            </button>
-            {showUpgrade && (
-              <button
-                className="nav-item"
-                style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
-                onClick={() => navigate('/pricing')}
-              >
-                <span className="nav-icon">✨</span>
-                <span>Precios y plan</span>
-              </button>
-            )}
-            <button
-              className="nav-item"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '8px 4px', borderRadius: 'var(--radius)' }}
-              onClick={() => window.open('https://getfrom.app/claude', '_blank')}
-            >
-              <span className="nav-icon">🤖</span>
-              <span>Extensión Claude</span>
-            </button>
+          {/* Integraciones */}
+          <div className="settings-section">
+            <div className="settings-section-title">Integraciones</div>
+            <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => window.open('https://getfrom.app/claude', '_blank')} />
+            <SettingRow icon="📅" label="Google Calendar" onClick={() => navigate('/account')} />
           </div>
 
-          <div style={{ marginTop: 'auto', paddingTop: 16, fontSize: 11, color: 'var(--text-tertiary)' }}>
-            From Web 1.0
+          {/* Ayuda */}
+          <div className="settings-section">
+            <div className="settings-section-title">Ayuda</div>
+            <SettingRow icon="📖" label="Manual de uso" onClick={() => window.open('https://getfrom.app/docs/', '_blank')} />
+            <SettingRow icon="💬" label="Soporte" onClick={() => window.open('mailto:hello@getfrom.app', '_blank')} />
+          </div>
+
+          {/* Sesión */}
+          <div className="settings-section">
+            <SettingRow icon="🚪" label="Cerrar sesión" onClick={onLogout} />
+          </div>
+
+          <div style={{ paddingTop: 8, fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+            From Web · {new Date().getFullYear()}
           </div>
         </div>
       </div>

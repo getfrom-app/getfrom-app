@@ -1,7 +1,144 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
+import type { Node } from '../../types'
 import { apiRequest, aiInlineStream, getToken } from '../../api/client'
+
+// ── DSL Parser ───────────────────────────────────────────────────────────────
+
+interface ParsedQuery {
+  filters: Filter[]
+  text: string
+}
+
+interface Filter {
+  type: 'status' | 'date' | 'priority' | 'kind'
+  value: string
+  raw: string // original token, e.g. "estado:pendiente"
+}
+
+const DSL_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => Filter | null }> = [
+  {
+    regex: /estado:(pendiente|hecho)/gi,
+    parse: m => ({ type: 'status', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /fecha:(hoy|vencida)/gi,
+    parse: m => ({ type: 'date', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /prioridad:(alta|media|baja)/gi,
+    parse: m => ({ type: 'priority', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /tipo:(tarea|bucle|evento|favorito)/gi,
+    parse: m => ({ type: 'kind', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+]
+
+function parseQuery(raw: string): ParsedQuery {
+  const filters: Filter[] = []
+  let remaining = raw
+
+  for (const { regex, parse } of DSL_PATTERNS) {
+    regex.lastIndex = 0
+    let m: RegExpMatchArray | null
+    const copy = new RegExp(regex.source, regex.flags)
+    while ((m = copy.exec(remaining)) !== null) {
+      const filter = parse(m)
+      if (filter) filters.push(filter)
+    }
+    remaining = remaining.replace(new RegExp(regex.source, 'gi'), '').trim()
+  }
+
+  return { filters, text: remaining.trim() }
+}
+
+function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  let result = nodes
+
+  for (const f of parsed.filters) {
+    if (f.type === 'status') {
+      const status = f.value === 'pendiente' ? 'pending' : 'done'
+      result = result.filter(n => n.status === status)
+    } else if (f.type === 'date') {
+      if (f.value === 'hoy') {
+        result = result.filter(n => {
+          if (!n.due) return false
+          const d = new Date(n.due)
+          d.setHours(0, 0, 0, 0)
+          return d.getTime() === today.getTime()
+        })
+      } else if (f.value === 'vencida') {
+        result = result.filter(n => {
+          if (!n.due) return false
+          const d = new Date(n.due)
+          d.setHours(0, 0, 0, 0)
+          return d.getTime() < today.getTime()
+        })
+      }
+    } else if (f.type === 'priority') {
+      const map: Record<string, 'high' | 'medium' | 'low'> = {
+        alta: 'high',
+        media: 'medium',
+        baja: 'low',
+      }
+      result = result.filter(n => n.priority === map[f.value])
+    } else if (f.type === 'kind') {
+      if (f.value === 'tarea') {
+        result = result.filter(n => n.status !== null)
+      } else if (f.value === 'bucle') {
+        result = result.filter(n => n.types.includes('bucle'))
+      } else if (f.value === 'evento') {
+        result = result.filter(n => n.isEvent)
+      } else if (f.value === 'favorito') {
+        result = result.filter(n => n.isFavorite)
+      }
+    }
+  }
+
+  if (parsed.text) {
+    const q = parsed.text.toLowerCase()
+    result = result.filter(
+      n => n.text.toLowerCase().includes(q) || (n.body || '').toLowerCase().includes(q)
+    )
+  }
+
+  return result
+}
+
+// ── Quick chips ───────────────────────────────────────────────────────────────
+
+const QUICK_CHIPS: Array<{ label: string; dsl: string }> = [
+  { label: 'Pendientes', dsl: 'estado:pendiente' },
+  { label: 'Vencidas', dsl: 'fecha:vencida' },
+  { label: 'Favoritos', dsl: 'tipo:favorito' },
+  { label: 'Tareas', dsl: 'tipo:tarea' },
+]
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatDue(due: string): string {
+  const d = new Date(due)
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
+const PRIORITY_LABEL: Record<string, string> = {
+  high: 'Alta',
+  medium: 'Media',
+  low: 'Baja',
+}
+
+const PRIORITY_CLASS: Record<string, string> = {
+  high: 'priority-high',
+  medium: 'priority-medium',
+  low: 'priority-low',
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SearchView() {
   const s = useStore()
@@ -13,7 +150,7 @@ export default function SearchView() {
   const [magicSearching, setMagicSearching] = useState(false)
   const [magicSummary, setMagicSummary] = useState('')
 
-  // Sincroniza URL con el estado del query
+  // Sync URL with query state
   useEffect(() => {
     const urlQ = searchParams.get('q') || ''
     if (urlQ !== query) setQuery(urlQ)
@@ -29,13 +166,28 @@ export default function SearchView() {
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
+  const parsed = useMemo(() => parseQuery(query), [query])
+
   const results = useMemo(() => {
     if (!query.trim()) return []
-    const q = query.toLowerCase()
-    return s.allActive()
-      .filter(n => n.text.toLowerCase().includes(q) || (n.body || '').toLowerCase().includes(q))
-      .slice(0, 50)
-  }, [query, s])
+    const nodes = s.allActive()
+    return applyFilters(nodes, parsed).slice(0, 50)
+  }, [query, parsed, s])
+
+  // Remove a single DSL filter chip
+  function removeFilter(raw: string) {
+    const newQuery = query.replace(raw, '').replace(/\s+/g, ' ').trim()
+    handleQueryChange(newQuery)
+  }
+
+  // Apply a quick chip — toggle if already active
+  function applyQuickChip(dsl: string) {
+    if (query.toLowerCase().includes(dsl.toLowerCase())) {
+      handleQueryChange(query.replace(new RegExp(dsl, 'gi'), '').replace(/\s+/g, ' ').trim())
+    } else {
+      handleQueryChange(query.trim() ? `${query} ${dsl}` : dsl)
+    }
+  }
 
   async function handleMagicSearch() {
     if (!query.trim() || !getToken()) return
@@ -62,6 +214,7 @@ export default function SearchView() {
   }
 
   const isLoggedIn = !!getToken()
+  const hasActiveFilters = parsed.filters.length > 0
 
   return (
     <div className="view search-view">
@@ -75,7 +228,7 @@ export default function SearchView() {
             ref={inputRef}
             type="text"
             className="search-input"
-            placeholder="Buscar notas..."
+            placeholder="Buscar… o usa estado:pendiente, fecha:hoy, prioridad:alta…"
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
           />
@@ -83,6 +236,40 @@ export default function SearchView() {
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
           )}
         </div>
+
+        {/* Quick chips */}
+        <div className="search-quick-chips">
+          {QUICK_CHIPS.map(chip => {
+            const active = query.toLowerCase().includes(chip.dsl.toLowerCase())
+            return (
+              <button
+                key={chip.dsl}
+                className={`search-chip ${active ? 'search-chip--active' : ''}`}
+                onClick={() => applyQuickChip(chip.dsl)}
+              >
+                {chip.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Active DSL filter chips */}
+        {hasActiveFilters && (
+          <div className="search-active-filters">
+            {parsed.filters.map((f, i) => (
+              <span key={i} className="search-filter-chip">
+                {f.raw}
+                <button
+                  className="search-filter-chip-remove"
+                  onClick={() => removeFilter(f.raw)}
+                  aria-label={`Quitar filtro ${f.raw}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {isLoggedIn && query.trim() && (
           <button
@@ -106,18 +293,48 @@ export default function SearchView() {
         {query && results.length === 0 && (
           <div className="view-empty">Sin resultados para "{query}"</div>
         )}
+
+        {!query && (
+          <div className="view-empty">Escribe para buscar o usa los filtros rápidos</div>
+        )}
+
         {results.map(node => (
           <div
             key={node.id}
             className="search-result"
             onClick={() => navigate(`/node/${node.id}`)}
           >
-            <span className="result-text">{highlight(node.text, query)}</span>
-            {node.status !== null && (
-              <span className={`result-badge ${node.status}`}>
-                {node.status === 'pending' ? '○' : '✓'}
+            <div className="search-result-main">
+              <span className="result-text">
+                {parsed.text
+                  ? highlight(node.text, parsed.text)
+                  : node.text}
               </span>
-            )}
+              {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
+            </div>
+            <div className="search-result-meta">
+              {node.status !== null && (
+                <span className={`result-badge status-badge ${node.status}`}>
+                  {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
+                </span>
+              )}
+              {node.priority && (
+                <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
+                  {PRIORITY_LABEL[node.priority]}
+                </span>
+              )}
+              {node.due && (
+                <span className="result-badge due-badge">
+                  📅 {formatDue(node.due)}
+                </span>
+              )}
+              {node.isEvent && (
+                <span className="result-badge event-badge">Evento</span>
+              )}
+              {node.types.includes('bucle') && (
+                <span className="result-badge loop-badge">Bucle</span>
+              )}
+            </div>
           </div>
         ))}
       </div>
