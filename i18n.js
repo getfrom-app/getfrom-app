@@ -32,11 +32,11 @@ const TRANSLATIONS = {
     /* ── index.html ── */
     "index.meta_title":   "From — Tu segundo cerebro. En todos tus dispositivos.",
     "index.meta_desc":    "From es una app nativa para macOS e iPhone que organiza todo en un árbol de nodos con sincronización en tiempo real. IA contextual, agentes autónomos y captura rápida. Tu segundo cerebro.",
-    "index.hero_badge":   "macOS + iPhone · Sync en tiempo real · Árbol de nodos",
-    "index.hero_title":   "Tu segundo cerebro.<br><span>En todos tus dispositivos.</span>",
-    "index.hero_subtitle": "From organiza todo en un árbol de nodos sincronizado en tiempo real entre tu Mac y tu iPhone. Notas, tareas, proyectos y agentes de IA en un solo lugar.",
-    "index.hero_cta_primary":   "Descargar para Mac",
-    "index.hero_cta_secondary": "Cómo funciona",
+    "index.hero_badge":   "✦ Nuevo · Web app disponible · Sync Mac + iPhone + Web",
+    "index.hero_title":   "El outliner que<br><span>Mac estaba esperando.</span>",
+    "index.hero_subtitle": "From redefine cómo capturas, organizas y actúas sobre tus ideas. Notas inteligentes, diario automático y IA que conoce tu contexto. Nativo en Mac, iPhone y web.",
+    "index.hero_cta_primary":   "Descárgala gratis — macOS",
+    "index.hero_cta_secondary": "Usar en el navegador",
     "index.screenshot_placeholder": "Captura de From (próximamente)",
 
     "index.philosophy_label":   "Cómo funciona",
@@ -367,11 +367,11 @@ const TRANSLATIONS = {
     /* ── index.html ── */
     "index.meta_title":   "From — Your second brain. On all your devices.",
     "index.meta_desc":    "From is a native app for macOS and iPhone that organizes everything in a node tree with real-time sync. Contextual AI, autonomous agents, and quick capture. Your second brain.",
-    "index.hero_badge":   "macOS + iPhone · Real-time sync · Node tree",
-    "index.hero_title":   "Your second brain.<br><span>On all your devices.</span>",
-    "index.hero_subtitle": "From organizes everything in a node tree synced in real time between your Mac and iPhone. Notes, tasks, projects, and AI agents — all in one place.",
-    "index.hero_cta_primary":   "Download for Mac",
-    "index.hero_cta_secondary": "How it works",
+    "index.hero_badge":   "✦ New · Web app available · Mac + iPhone + Web sync",
+    "index.hero_title":   "The outliner<br><span>Mac was waiting for.</span>",
+    "index.hero_subtitle": "From redefines how you capture, organize and act on your ideas. Smart notes, automatic diary and AI that knows your context. Native on Mac, iPhone and web.",
+    "index.hero_cta_primary":   "Download free — macOS",
+    "index.hero_cta_secondary": "Use in browser",
     "index.screenshot_placeholder": "From screenshot (coming soon)",
 
     "index.philosophy_label":   "How it works",

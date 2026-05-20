@@ -88,9 +88,7 @@
             gap: 8px;
             border-bottom: 1px solid var(--border);
         }
-        @media (prefers-color-scheme: dark) {
-            .demo-titlebar { background: #2a2a2e; }
-        }
+        /* light mode only — no dark mode override */
         .demo-dot { width: 12px; height: 12px; border-radius: 50%; }
         .demo-dot.red { background: #ff5f57; }
         .demo-dot.yellow { background: #ffbd2e; }
@@ -196,9 +194,7 @@
             font-size: 12px;
             font-family: monospace;
         }
-        @media (prefers-color-scheme: dark) {
-            .step-card code { background: rgba(255,255,255,0.08); }
-        }
+        /* light mode only */
 
         /* Tools */
         .tools-section {
