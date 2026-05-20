@@ -251,6 +251,7 @@ export default function SearchView() {
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
   const [sortBy, setSortBy] = useState<'relevance' | 'updated' | 'due' | 'priority'>('relevance')
+  const [groupResults, setGroupResults] = useState(true)
   const [magicSearching, setMagicSearching] = useState(false)
   const [magicSummary, setMagicSummary] = useState('')
   const [history, setHistory] = useState<string[]>(() => getHistory())
@@ -479,20 +480,32 @@ export default function SearchView() {
           </div>
         )}
 
-        {/* Result count + sort */}
+        {/* Result count + sort + group toggle */}
         {hasQuery && results.length > 0 && (
           <div className="search-result-count">
             <span>{results.length === 60 ? '60+ resultados' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}</span>
-            <select
-              className="search-sort-select"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as typeof sortBy)}
-            >
-              <option value="relevance">Por relevancia</option>
-              <option value="updated">Más recientes</option>
-              <option value="due">Por fecha límite</option>
-              <option value="priority">Por prioridad</option>
-            </select>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <button
+                className={`search-group-btn${groupResults ? ' active' : ''}`}
+                onClick={() => setGroupResults(true)}
+                title="Agrupar por tipo"
+              >⊟</button>
+              <button
+                className={`search-group-btn${!groupResults ? ' active' : ''}`}
+                onClick={() => setGroupResults(false)}
+                title="Lista plana"
+              >≡</button>
+              <select
+                className="search-sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
+              >
+                <option value="relevance">Por relevancia</option>
+                <option value="updated">Más recientes</option>
+                <option value="due">Por fecha límite</option>
+                <option value="priority">Por prioridad</option>
+              </select>
+            </div>
           </div>
         )}
 
@@ -562,6 +575,62 @@ export default function SearchView() {
         )}
 
         {results.length > 0 && (() => {
+          const renderNode = (node: typeof results[0]) => (
+            <div
+              key={node.id}
+              className="search-result"
+              onClick={() => navigate(`/node/${node.id}`)}
+            >
+              <div className="search-result-main">
+                <span className="result-text">
+                  {parsed.text
+                    ? highlight(node.text, parsed.text)
+                    : node.text}
+                </span>
+                {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
+              </div>
+              {/* Body excerpt when match is in body but not in title */}
+              {parsed.text && node.body && !node.text.toLowerCase().includes(parsed.text.toLowerCase()) && node.body.toLowerCase().includes(parsed.text.toLowerCase()) && (() => {
+                const idx = node.body.toLowerCase().indexOf(parsed.text.toLowerCase())
+                const start = Math.max(0, idx - 40)
+                const end = Math.min(node.body.length, idx + parsed.text.length + 60)
+                const excerpt = (start > 0 ? '…' : '') + node.body.slice(start, end) + (end < node.body.length ? '…' : '')
+                return <div className="search-result-excerpt">{highlight(excerpt, parsed.text)}</div>
+              })()}
+              <div className="search-result-meta">
+                {node.status !== null && (
+                  <span className={`result-badge status-badge ${node.status}`}>
+                    {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
+                  </span>
+                )}
+                {node.priority && (
+                  <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
+                    {PRIORITY_LABEL[node.priority]}
+                  </span>
+                )}
+                {node.due && (
+                  <span className="result-badge due-badge">
+                    📅 {formatDue(node.due)}
+                  </span>
+                )}
+                {node.isEvent && (
+                  <span className="result-badge event-badge">Evento</span>
+                )}
+                {node.types.includes('bucle') && (
+                  <span className="result-badge loop-badge">Bucle</span>
+                )}
+              </div>
+            </div>
+          )
+
+          if (!groupResults) {
+            return (
+              <div className="search-results-flat">
+                {results.map(renderNode)}
+              </div>
+            )
+          }
+
           const tasks = results.filter(n => n.status !== null)
           const events = results.filter(n => n.status === null && n.isEvent)
           const notes = results.filter(n => n.status === null && !n.isEvent)
@@ -578,53 +647,7 @@ export default function SearchView() {
                 <span className="search-result-group-label">{group.label}</span>
                 <span className="search-result-group-count">{group.nodes.length}</span>
               </div>
-              {group.nodes.map(node => (
-                <div
-                  key={node.id}
-                  className="search-result"
-                  onClick={() => navigate(`/node/${node.id}`)}
-                >
-                  <div className="search-result-main">
-                    <span className="result-text">
-                      {parsed.text
-                        ? highlight(node.text, parsed.text)
-                        : node.text}
-                    </span>
-                    {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
-                  </div>
-                  {/* Body excerpt when match is in body but not in title */}
-                  {parsed.text && node.body && !node.text.toLowerCase().includes(parsed.text.toLowerCase()) && node.body.toLowerCase().includes(parsed.text.toLowerCase()) && (() => {
-                    const idx = node.body.toLowerCase().indexOf(parsed.text.toLowerCase())
-                    const start = Math.max(0, idx - 40)
-                    const end = Math.min(node.body.length, idx + parsed.text.length + 60)
-                    const excerpt = (start > 0 ? '…' : '') + node.body.slice(start, end) + (end < node.body.length ? '…' : '')
-                    return <div className="search-result-excerpt">{highlight(excerpt, parsed.text)}</div>
-                  })()}
-                  <div className="search-result-meta">
-                    {node.status !== null && (
-                      <span className={`result-badge status-badge ${node.status}`}>
-                        {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
-                      </span>
-                    )}
-                    {node.priority && (
-                      <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
-                        {PRIORITY_LABEL[node.priority]}
-                      </span>
-                    )}
-                    {node.due && (
-                      <span className="result-badge due-badge">
-                        📅 {formatDue(node.due)}
-                      </span>
-                    )}
-                    {node.isEvent && (
-                      <span className="result-badge event-badge">Evento</span>
-                    )}
-                    {node.types.includes('bucle') && (
-                      <span className="result-badge loop-badge">Bucle</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {group.nodes.map(renderNode)}
             </div>
           ))
         })()}

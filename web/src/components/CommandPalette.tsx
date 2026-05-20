@@ -487,7 +487,62 @@ export default function CommandPalette({ onClose }: Props) {
           {items.length === 0 && (
             <div className="cmdpalette-empty">Sin resultados para "{query}"</div>
           )}
-          {items.map((item, idx) => (
+          {!query.trim() ? (() => {
+            // Split items into actions and recents for sectioned display
+            const actionItems = items.filter(i => i.type === 'action')
+            const recentItems = items.filter(i => i.type === 'recent')
+            let globalIdx = 0
+            return (
+              <>
+                {actionItems.length > 0 && (
+                  <>
+                    <div className="cmdpalette-section-label">Acciones rápidas</div>
+                    {actionItems.slice(0, 5).map(item => {
+                      const idx = globalIdx++
+                      return (
+                        <button
+                          key={item.id}
+                          className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
+                          onClick={item.action}
+                          onMouseEnter={() => setActiveIdx(idx)}
+                        >
+                          <span className="cmdpalette-item-icon">{item.icon}</span>
+                          <div className="cmdpalette-item-info">
+                            <span className="cmdpalette-item-label">{item.label}</span>
+                          </div>
+                          {item.id === 'action-new-note' && (
+                            <span className="cmdpalette-item-kbd">⌘N</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </>
+                )}
+                {recentItems.length > 0 && (
+                  <>
+                    <div className="cmdpalette-section-label">Recientes</div>
+                    {recentItems.map(item => {
+                      const idx = globalIdx++
+                      return (
+                        <button
+                          key={item.id}
+                          className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
+                          onClick={item.action}
+                          onMouseEnter={() => setActiveIdx(idx)}
+                        >
+                          <span className="cmdpalette-item-icon">{item.icon}</span>
+                          <div className="cmdpalette-item-info">
+                            <span className="cmdpalette-item-label">{item.label}</span>
+                            {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </>
+                )}
+              </>
+            )
+          })() : items.map((item, idx) => (
             <button
               key={item.id}
               className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
