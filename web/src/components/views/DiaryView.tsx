@@ -116,11 +116,31 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
   )
 }
 
+function calculateStreak(s: ReturnType<typeof useStore>): number {
+  const diaries = s.allActive()
+    .filter(n => n.isDiaryEntry && !n.deletedAt && n.diaryDate)
+    .sort((a, b) => (b.diaryDate ?? '').localeCompare(a.diaryDate ?? ''))
+
+  if (diaries.length === 0) return 0
+  let streak = 1
+  let lastDate = new Date(diaries[0].diaryDate!)
+
+  for (let i = 1; i < diaries.length; i++) {
+    const d = new Date(diaries[i].diaryDate!)
+    const diff = Math.round((lastDate.getTime() - d.getTime()) / 86400000)
+    if (diff === 1) { streak++; lastDate = d }
+    else break
+  }
+  return streak
+}
+
 export default function DiaryView() {
   const s = useStore()
   const navigate = useNavigate()
   const [dateOffset, setDateOffset] = useState(0)
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
+
+  const streak = calculateStreak(s)
 
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() + dateOffset)

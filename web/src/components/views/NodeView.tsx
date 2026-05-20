@@ -113,6 +113,14 @@ export default function NodeView() {
           return !v
         })
       }
+      if (e.key === 'l' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        const url = window.location.href
+        navigator.clipboard.writeText(url).then(() => {
+          setShareCopied(true)
+          setTimeout(() => setShareCopied(false), 2000)
+        }).catch(() => {})
+      }
       if (e.key === 'Escape') {
         setShowInDocSearch(false)
         setInDocSearch('')

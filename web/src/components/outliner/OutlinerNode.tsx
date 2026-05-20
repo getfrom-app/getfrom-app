@@ -10,6 +10,94 @@ import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 
+// ── Smart Dates ───────────────────────────────────────────────────────────────
+function parseInlineDate(text: string): { text: string; due: string | null } {
+  const now = new Date()
+  const patterns: Array<{ regex: RegExp; getDate: (m: RegExpMatchArray | null) => Date }> = [
+    {
+      regex: /\s+@hoy\b/i,
+      getDate: () => { const d = new Date(now); d.setHours(23, 59, 0, 0); return d },
+    },
+    {
+      regex: /\s+@mañana\b/i,
+      getDate: () => { const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d },
+    },
+    {
+      regex: /\s+@lunes\b/i,
+      getDate: () => {
+        const d = new Date(now)
+        const day = d.getDay()
+        const diff = day === 0 ? 1 : day === 1 ? 7 : 8 - day
+        d.setDate(d.getDate() + diff); d.setHours(9, 0, 0, 0); return d
+      },
+    },
+    {
+      regex: /\s+@martes\b/i,
+      getDate: () => {
+        const d = new Date(now)
+        const day = d.getDay()
+        const diff = day < 2 ? 2 - day : 9 - day
+        d.setDate(d.getDate() + diff); d.setHours(9, 0, 0, 0); return d
+      },
+    },
+    {
+      regex: /\s+@miércoles\b/i,
+      getDate: () => {
+        const d = new Date(now)
+        const day = d.getDay()
+        const diff = day < 3 ? 3 - day : 10 - day
+        d.setDate(d.getDate() + diff); d.setHours(9, 0, 0, 0); return d
+      },
+    },
+    {
+      regex: /\s+@jueves\b/i,
+      getDate: () => {
+        const d = new Date(now)
+        const day = d.getDay()
+        const diff = day < 4 ? 4 - day : 11 - day
+        d.setDate(d.getDate() + diff); d.setHours(9, 0, 0, 0); return d
+      },
+    },
+    {
+      regex: /\s+@viernes\b/i,
+      getDate: () => {
+        const d = new Date(now)
+        const day = d.getDay()
+        const diff = day < 5 ? 5 - day : 12 - day
+        d.setDate(d.getDate() + diff); d.setHours(9, 0, 0, 0); return d
+      },
+    },
+    {
+      // @14:30 — hora específica de hoy
+      regex: /\s+@(\d{1,2}):(\d{2})\b/,
+      getDate: (m) => {
+        const d = new Date(now)
+        if (m) { d.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0) }
+        return d
+      },
+    },
+    {
+      // @dd/mm o @dd/mm/yyyy
+      regex: /\s+@(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?/,
+      getDate: (m) => {
+        if (!m) return now
+        const d = new Date(parseInt(m[3] || String(now.getFullYear())), parseInt(m[2]) - 1, parseInt(m[1]))
+        d.setHours(9, 0, 0, 0)
+        return d
+      },
+    },
+  ]
+
+  for (const { regex, getDate } of patterns) {
+    const m = text.match(regex)
+    if (m) {
+      const cleanText = text.replace(regex, '').trim()
+      return { text: cleanText, due: getDate(m).toISOString() }
+    }
+  }
+  return { text, due: null }
+}
+
 interface Props {
   node: Node
   depth: number
@@ -77,6 +165,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const [isDragOverChild, setIsDragOverChild] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [isAiStreaming, setIsAiStreaming] = useState(false)
+  const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -438,8 +527,25 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       return
     }
 
+    // Helper: apply smart date from current text, show badge, update DOM
+    function applySmartDate(currentText: string): boolean {
+      const { text: cleanText, due } = parseInlineDate(currentText)
+      if (!due) return false
+      nodeTextRef.current = cleanText
+      store.updateNode(node.id, { text: cleanText, due, status: node.status ?? 'pending' })
+      if (contentRef.current) contentRef.current.textContent = cleanText
+      const d = new Date(due)
+      const label = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+      setDateAssignedMsg(`📅 ${label}`)
+      setTimeout(() => setDateAssignedMsg(null), 1500)
+      return true
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
+      // Smart date parse FIRST
+      if (applySmartDate(text)) return
+
       // Detect inline shortcuts at end of text: -t (tarea), -b (bucle), -e (evento)
       const trimmed = text.trimEnd()
       if (trimmed.endsWith(' -t') || trimmed.endsWith(' -t')) {
@@ -476,6 +582,9 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
 
     if (e.key === 'Tab') {
       e.preventDefault()
+      // Smart date parse on Tab too
+      if (applySmartDate(text)) return
+
       if (e.shiftKey) {
         // Outdent: move to parent's parent
         if (node.parentId) {
@@ -784,6 +893,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onClick={toggleCollapse}
             tabIndex={-1}
             aria-label="Colapsar"
+            title={isCollapsed ? 'Expandir (click)' : 'Colapsar (click)'}
           >
             <svg
               className={`collapse-arrow ${isCollapsed ? 'collapsed' : ''}`}
@@ -806,7 +916,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             }
             tabIndex={-1}
             aria-label={node.status !== null ? 'Toggle tarea' : 'Bullet'}
-            title={node.status === null && children.length > 0 ? 'Doble-clic para zoom' : undefined}
+            title={
+              node.status !== null
+                ? 'Marcar hecha/pendiente'
+                : children.length > 0
+                  ? 'Doble-click para zoom · Click para crear tarea'
+                  : 'Click para crear tarea'
+            }
           >
             {node.status === 'done' ? (
               <svg width="14" height="14" viewBox="0 0 14 14">
@@ -982,6 +1098,11 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           onDragLeave={() => setIsDragOverChild(false)}
           onDrop={handleDropAsChild}
         />
+      )}
+
+      {/* Smart date assigned badge */}
+      {dateAssignedMsg && (
+        <div className="node-date-assigned-badge">{dateAssignedMsg}</div>
       )}
 
       {/* Format toolbar — aparece al seleccionar texto */}
