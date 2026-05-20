@@ -2779,6 +2779,13 @@ mark.inline-highlight {
 .modal-field { margin-bottom: 14px; }
 .modal-field--half { flex: 1; }
 .modal-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+.modal-label-hint { font-weight: 400; opacity: 0.7; }
+
+/* Event type chips */
+.event-type-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.event-chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+.event-chip:hover { border-color: var(--accent); color: var(--accent); }
+.event-chip--active { border-color: var(--accent); background: rgba(var(--accent-rgb, 99,102,241), 0.12); color: var(--accent); }
 .modal-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text-primary); font-size: 14px; font-family: inherit; box-sizing: border-box; outline: none; }
 .modal-input:focus { border-color: var(--accent); }
 .modal-select { width: 100%; padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text-primary); font-size: 14px; font-family: inherit; cursor: pointer; outline: none; }
@@ -2801,6 +2808,14 @@ mark.inline-highlight {
 .voice-hint { color: var(--text-secondary); font-style: italic; }
 .btn-record { background: #ef4444; }
 .btn-record:hover:not(:disabled) { background: #dc2626; }
+
+/* Audio level meter */
+.voice-level-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+.voice-level-bar-track { width: 100%; max-width: 280px; height: 10px; background: var(--bg-secondary); border-radius: 5px; overflow: hidden; }
+.voice-level-bar-fill { height: 100%; background: var(--accent); border-radius: 5px; transition: width 0.06s ease-out; }
+.voice-recording-text { font-size: 14px; color: #ef4444; font-weight: 600; animation: blink-dot 1s step-end infinite; }
+@keyframes blink-dot { 50% { opacity: 0.3; } }
+.voice-timer { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 2px; color: var(--text-primary); }
 .btn-stop { background: var(--text-secondary); }
 
 /* ── Sidebar 4 tabs ─────────────────────────────────────────────────────── */
@@ -2930,6 +2945,11 @@ mark.inline-highlight {
 .onboarding-skip:hover { color: white; }
 .onboarding-next { font-size: 13px; font-weight: 600; color: white; background: var(--accent); border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
 .onboarding-next:hover { opacity: 0.9; }
+.onboarding-step-icon { font-size: 32px; margin-bottom: 10px; }
+.onboarding-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+.onboarding-prev { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65); background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.onboarding-prev:hover { color: white; border-color: rgba(255,255,255,0.5); }
+.onboarding-dot { cursor: pointer; transition: background 0.15s; }
 
 /* ── Tag inline colors (Tarea 1) ──────────────────────────────────────────── */
 .tag-inline { font-size: 12px; font-weight: 600; padding: 1px 6px; border-radius: 4px; display: inline-block; margin: 0 2px; cursor: pointer; transition: opacity 0.1s; }
@@ -4342,3 +4362,61 @@ mark.inline-highlight {
 
 .agents-result-wrapper { margin-top: 16px; }
 .agents-result-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+
+/* ── Misc UI improvements ───────────────────────────────────────────────── */
+
+/* Transición suave en node-view al abrir/cerrar chat */
+.node-view-main { transition: max-width 0.2s ease; }
+
+/* Highlight del texto buscado con ⌘F dentro del nodo */
+.node-text .search-match { background: rgba(251,191,36,0.4); border-radius: 2px; }
+
+/* Smooth scroll en las secciones de tasks */
+.view-body { scroll-behavior: smooth; }
+
+/* ── FollowupView improvements ───────────────────────────────────────────── */
+
+.followup-child-check {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+.followup-child-check:hover { color: #22c55e; }
+.followup-child-due.overdue { color: #ef4444; }
+.followup-children--empty { padding: 4px 0 0 20px; }
+
+.followup-add-child {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 100%;
+  text-align: left;
+  margin-top: 4px;
+}
+.followup-add-child:hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+.followup-add-child-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+.followup-add-child-input {
+  flex: 1;
+  font-size: 13px;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  background: transparent;
+  color: var(--text-primary);
+  outline: none;
+  padding: 2px 0;
+}

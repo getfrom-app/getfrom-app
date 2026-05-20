@@ -1,7 +1,48 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+
+function QuickAddChild({ bucleId }: { bucleId: string }) {
+  const [text, setText] = useState('')
+  const [adding, setAdding] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleConfirm() {
+    const t = text.trim()
+    if (t) {
+      store.createNode({ text: t, parentId: bucleId, isTask: true })
+    }
+    setText('')
+    setAdding(false)
+  }
+
+  if (!adding) {
+    return (
+      <button className="followup-add-child" onClick={() => { setAdding(true); setTimeout(() => inputRef.current?.focus(), 50) }}>
+        + Añadir tarea al bucle
+      </button>
+    )
+  }
+
+  return (
+    <div className="followup-add-child-input-row">
+      <span style={{ opacity: 0.4, fontSize: 13 }}>○</span>
+      <input
+        ref={inputRef}
+        className="followup-add-child-input"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Nueva tarea..."
+        onKeyDown={e => {
+          if (e.key === 'Enter') handleConfirm()
+          if (e.key === 'Escape') { setAdding(false); setText('') }
+        }}
+        onBlur={() => { if (!text.trim()) setAdding(false) }}
+      />
+    </div>
+  )
+}
 
 function formatDue(due: string): string {
   const d = new Date(due)
@@ -123,13 +164,29 @@ function BucleRow({ bucle, onMarkDone }: BucleRowProps) {
               className="followup-child"
               onClick={() => navigate(`/node/${child.id}`)}
             >
-              <span className="followup-child-bullet">○</span>
+              <button
+                className="followup-child-check"
+                onClick={e => {
+                  e.stopPropagation()
+                  store.updateNode(child.id, { status: 'done' })
+                }}
+                title="Marcar como hecho"
+              >○</button>
               <span className="followup-child-text">{child.text || 'Sin título'}</span>
               {child.due && (
-                <span className="followup-child-due">📅 {formatDue(child.due)}</span>
+                <span className={`followup-child-due ${new Date(child.due) < new Date() ? 'overdue' : ''}`}>
+                  📅 {formatDue(child.due)}
+                </span>
               )}
             </div>
           ))}
+          {/* Quick add child */}
+          <QuickAddChild bucleId={bucle.id} />
+        </div>
+      )}
+      {!collapsed && children.length === 0 && (
+        <div className="followup-children followup-children--empty">
+          <QuickAddChild bucleId={bucle.id} />
         </div>
       )}
     </div>
