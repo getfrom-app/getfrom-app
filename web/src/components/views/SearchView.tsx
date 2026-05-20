@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
+import { apiRequest, aiInlineStream, getToken } from '../../api/client'
 
 export default function SearchView() {
   const s = useStore()
@@ -8,8 +9,9 @@ export default function SearchView() {
   const [searchParams, setSearchParams] = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Inicializa desde ?q= (usado por paneles del sidebar)
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
+  const [magicSearching, setMagicSearching] = useState(false)
+  const [magicSummary, setMagicSummary] = useState('')
 
   // Sincroniza URL con el estado del query
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function SearchView() {
 
   function handleQueryChange(value: string) {
     setQuery(value)
+    setMagicSummary('')
     if (value) setSearchParams({ q: value }, { replace: true })
     else setSearchParams({}, { replace: true })
   }
@@ -33,6 +36,32 @@ export default function SearchView() {
       .filter(n => n.text.toLowerCase().includes(q) || (n.body || '').toLowerCase().includes(q))
       .slice(0, 50)
   }, [query, s])
+
+  async function handleMagicSearch() {
+    if (!query.trim() || !getToken()) return
+    setMagicSearching(true)
+    setMagicSummary('')
+    try {
+      const serverResults = await apiRequest<{ nodes: Array<{ id: string; text: string; body: string | null }> }>(
+        `/search/nodes?q=${encodeURIComponent(query)}&limit=10`
+      )
+      const contextText = (serverResults.nodes || [])
+        .map(n => `**${n.text}**${n.body ? '\n' + n.body.slice(0, 200) : ''}`)
+        .join('\n\n')
+
+      const prompt = `El usuario busca: "${query}"\n\nContenido relevante de su vault:\n\n${contextText}\n\nResponde en español con una síntesis útil y concisa (máximo 150 palabras).`
+
+      await aiInlineStream(prompt, undefined, (chunk) => {
+        setMagicSummary(prev => prev + chunk)
+      })
+    } catch (err) {
+      console.error('Magic search error', err)
+    } finally {
+      setMagicSearching(false)
+    }
+  }
+
+  const isLoggedIn = !!getToken()
 
   return (
     <div className="view search-view">
@@ -54,9 +83,26 @@ export default function SearchView() {
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
           )}
         </div>
+
+        {isLoggedIn && query.trim() && (
+          <button
+            className={`magic-search-btn${magicSearching ? ' loading' : ''}`}
+            onClick={handleMagicSearch}
+            disabled={magicSearching || !query.trim()}
+          >
+            {magicSearching ? '✨ Analizando...' : '✨ Búsqueda IA'}
+          </button>
+        )}
       </div>
 
       <div className="view-body">
+        {magicSummary && (
+          <div className="magic-search-summary">
+            <div className="magic-search-label">✨ Síntesis IA</div>
+            <div className="magic-search-text">{magicSummary}</div>
+          </div>
+        )}
+
         {query && results.length === 0 && (
           <div className="view-empty">Sin resultados para "{query}"</div>
         )}

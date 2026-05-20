@@ -2107,6 +2107,32 @@ a { color: inherit; text-decoration: none; }
 .agents-coming-soon p { color: var(--text-secondary); font-size: 15px; line-height: 1.6; }
 .agents-features-list { text-align: left; margin-top: 20px; line-height: 1.8; padding-left: 24px; color: var(--text-secondary); font-size: 14px; }
 
+/* ── Agents view real ───────────────────────────────────────────────────── */
+
+.agents-view .view-header { display: flex; align-items: center; justify-content: space-between; }
+.agent-runs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.agent-runs-table th { text-align: left; padding: 8px 12px; color: var(--text-secondary); font-weight: 500; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.agent-runs-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.agent-run-status { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+.agent-run-status--completed { background: rgba(34,197,94,0.15); color: #16a34a; }
+.agent-run-status--running { background: rgba(59,130,246,0.15); color: #2563eb; }
+.agent-run-status--failed { background: rgba(239,68,68,0.15); color: #dc2626; }
+.agents-shortcuts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.agent-shortcut-btn { padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.agent-shortcut-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.agents-new-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+.agents-result { margin-top: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+
+/* ── Magic Search ───────────────────────────────────────────────────────── */
+
+.magic-search-btn { padding: 6px 14px; border-radius: 100px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.magic-search-btn:hover { background: var(--accent); color: white; }
+.magic-search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.magic-search-btn.loading { opacity: 0.7; }
+.magic-search-summary { margin: 16px 0; padding: 16px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; }
+.magic-search-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.magic-search-text { font-size: 14px; line-height: 1.6; color: var(--text-primary); }
+
 /* ── Node share button ──────────────────────────────────────────────────── */
 
 .node-share-wrapper { position: relative; display: flex; align-items: center; }
