@@ -562,8 +562,8 @@ export default function DiaryView() {
 
 
   function renderAgenda() {
-    // Próximos 7 días con sus tareas
-    const days = Array.from({ length: 7 }, (_, i) => {
+    // Próximos 14 días con sus tareas (ampliado de 7 a 14)
+    const days = Array.from({ length: 14 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() + i)
       d.setHours(0, 0, 0, 0)
@@ -827,9 +827,24 @@ export default function DiaryView() {
               )}
 
               {/* Streak counter */}
-              {streak >= 2 && (
+              {streak === 0 && dateOffset === 0 && (
+                <div className="diary-streak-zero">
+                  📝 Escribe hoy para empezar tu racha
+                </div>
+              )}
+              {streak >= 1 && streak < 7 && (
                 <span className="diary-streak" title={`${streak} días seguidos escribiendo en el diario`}>
-                  🔥 {streak} días
+                  🔥 {streak} {streak === 1 ? 'día' : 'días'} seguidos
+                </span>
+              )}
+              {streak >= 7 && streak < 30 && (
+                <span className="diary-streak diary-streak--week" title="¡Llevas una semana escribiendo!">
+                  🔥 {streak} días · ¡Una semana!
+                </span>
+              )}
+              {streak >= 30 && (
+                <span className="diary-streak diary-streak--month" title="¡Llevas un mes escribiendo!">
+                  🔥 {streak} días · ¡Un mes!
                 </span>
               )}
 

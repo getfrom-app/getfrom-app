@@ -68,6 +68,43 @@ export default function NodeView() {
   // Focus mode word goal state
   const [wordGoal, setWordGoal] = useState<number | null>(null)
 
+  // Pomodoro timer state
+  const [pomodoroActive, setPomodoroActive] = useState(false)
+  const [pomodoroSeconds, setPomodoroSeconds] = useState(25 * 60)
+  const [pomodoroRunning, setPomodoroRunning] = useState(false)
+  const pomodoroRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Pomodoro: iniciar/pausar
+  function togglePomodoro() {
+    if (pomodoroRunning) {
+      if (pomodoroRef.current) clearInterval(pomodoroRef.current)
+      setPomodoroRunning(false)
+    } else {
+      setPomodoroRunning(true)
+      pomodoroRef.current = setInterval(() => {
+        setPomodoroSeconds(s => {
+          if (s <= 1) {
+            clearInterval(pomodoroRef.current!)
+            setPomodoroRunning(false)
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('🍅 Pomodoro completado', { body: '¡Tiempo! Toma un descanso de 5 minutos.' })
+            }
+            return 25 * 60
+          }
+          return s - 1
+        })
+      }, 1000)
+    }
+  }
+
+  // Limpiar pomodoro al desmontar
+  useEffect(() => {
+    return () => { if (pomodoroRef.current) clearInterval(pomodoroRef.current) }
+  }, [])
+
+  // Formatear tiempo pomodoro
+  const pomodoroLabel = `${String(Math.floor(pomodoroSeconds / 60)).padStart(2, '0')}:${String(pomodoroSeconds % 60).padStart(2, '0')}`
+
   // Record recent visit
   useEffect(() => {
     if (id) recordRecentNode(id)
@@ -913,6 +950,28 @@ export default function NodeView() {
               </svg>
               Chat IA
             </button>
+            <button
+              className={`node-quick-action-btn ${pomodoroRunning ? 'node-quick-action-btn--active' : ''}`}
+              onClick={() => {
+                if (!pomodoroActive) { setPomodoroActive(true); return }
+                togglePomodoro()
+              }}
+              title="Temporizador Pomodoro (25 min)"
+            >
+              🍅 {pomodoroActive ? pomodoroLabel : 'Pomodoro'}
+            </button>
+            {pomodoroActive && (
+              <button
+                className="node-quick-action-btn"
+                onClick={() => {
+                  setPomodoroActive(false)
+                  setPomodoroRunning(false)
+                  setPomodoroSeconds(25 * 60)
+                  if (pomodoroRef.current) clearInterval(pomodoroRef.current)
+                }}
+                title="Resetear pomodoro"
+              >✕</button>
+            )}
             {quickActionMsg && (
               <span className="node-quick-action-feedback">{quickActionMsg}</span>
             )}
