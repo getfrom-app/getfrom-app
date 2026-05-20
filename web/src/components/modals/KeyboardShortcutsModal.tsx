@@ -12,18 +12,20 @@ interface ShortcutGroup {
 
 const GROUPS: ShortcutGroup[] = [
   {
-    title: 'Navegación',
+    title: 'Navegación global',
     shortcuts: [
-      { keys: 'Esc', desc: 'Ir a hoy' },
-      { keys: '⌘K', desc: 'Búsqueda / captura' },
+      { keys: 'Esc', desc: 'Ir a hoy / cerrar modales' },
+      { keys: '⌘K', desc: 'Búsqueda / captura rápida' },
       { keys: '⌘⇧S', desc: 'Toggle sidebar' },
+      { keys: '?', desc: 'Ver atajos de teclado' },
+      { keys: '⌘Z / ⌘⇧Z', desc: 'Deshacer / Rehacer' },
     ],
   },
   {
-    title: 'Notas',
+    title: 'Crear',
     shortcuts: [
-      { keys: '⌘N', desc: 'Nueva nota' },
-      { keys: '⌘T', desc: 'Nueva tarea' },
+      { keys: '⌘N', desc: 'Nueva nota (con plantillas)' },
+      { keys: '⌘T', desc: 'Nueva tarea rápida' },
       { keys: '⌘E', desc: 'Nuevo evento' },
       { keys: '⌘R', desc: 'Captura de voz' },
     ],
@@ -31,23 +33,40 @@ const GROUPS: ShortcutGroup[] = [
   {
     title: 'Outliner',
     shortcuts: [
-      { keys: 'Tab', desc: 'Indentar' },
-      { keys: '⇧Tab', desc: 'Desindentar' },
-      { keys: '⌘↑ / ⌘↓', desc: 'Mover nodo' },
-      { keys: '⌘D', desc: 'Duplicar' },
-      { keys: '⌘B / ⌘I', desc: 'Negrita / cursiva' },
-      { keys: '⌘T', desc: 'Toggle tarea (sin selección)' },
-      { keys: '⌘Enter', desc: 'Marcar done' },
-      { keys: '⌘Space', desc: 'IA inline' },
+      { keys: 'Tab', desc: 'Indentar nodo' },
+      { keys: '⇧Tab', desc: 'Desindentar nodo' },
+      { keys: 'Enter', desc: 'Nuevo nodo hermano' },
+      { keys: '⌘↑ / ⌘↓', desc: 'Mover nodo arriba/abajo' },
+      { keys: '⌘D', desc: 'Duplicar nodo' },
+      { keys: '⌘Enter', desc: 'Marcar tarea done/pending' },
+      { keys: '⌘T', desc: 'Convertir en tarea' },
+      { keys: '⌘⇧F', desc: 'Marcar como favorito' },
+      { keys: '⌘Space', desc: 'IA inline (Fase 2: Tab=aceptar, Esc=descartar)' },
       { keys: '⌘⇧C', desc: 'Colapsar/expandir todo' },
-      { keys: '/', desc: 'Menú de bloques' },
+      { keys: 'Alt+Click', desc: 'Colapsar/expandir subárbol completo' },
+      { keys: '/', desc: 'Menú de bloques (T, H1, H2, Tarea, Evento…)' },
+      { keys: '#tag', desc: 'Añadir tag inline con autocomplete' },
+      { keys: '@nombre', desc: 'Mencionar nota (crea enlace)' },
     ],
   },
   {
-    title: 'Formato',
+    title: 'Nota abierta',
     shortcuts: [
-      { keys: '⌘Z / ⌘⇧Z', desc: 'Deshacer / Rehacer' },
+      { keys: '⌘P', desc: 'Abrir panel de propiedades' },
       { keys: '⌘F', desc: 'Buscar en documento' },
+      { keys: '⌘L', desc: 'Copiar enlace de la nota' },
+      { keys: '⌘J', desc: 'Abrir chat IA de la nota' },
+      { keys: '⌘B / ⌘I / ⌘E', desc: 'Negrita / Cursiva / Código (en body)' },
+      { keys: '⌘⇧K', desc: 'Insertar enlace (en body)' },
+      { keys: 'Tab / ⇧Tab', desc: 'Indentar/desindentar línea (en body)' },
+    ],
+  },
+  {
+    title: 'Calendario',
+    shortcuts: [
+      { keys: 'Click celda', desc: 'Crear evento inline en esa hora' },
+      { keys: 'Click evento', desc: 'Ver detalles del evento (mini-popup)' },
+      { keys: 'Drag evento', desc: 'Mover evento a otra hora/día' },
     ],
   },
 ]

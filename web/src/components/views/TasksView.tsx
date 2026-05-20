@@ -138,7 +138,12 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
       </button>
 
       <div className="task-info">
-        <span className="task-text">{task.text || 'Sin título'}</span>
+        <span className="task-text">
+          {task.text || 'Sin título'}
+          {task.recurrence && (
+            <span className="task-recurrence-badge" title={`Repite: ${task.recurrence}`} style={{ fontSize: 11, marginLeft: 4 }}>🔁</span>
+          )}
+        </span>
         <div className="task-meta">
           {task.due && (
             <span className={`task-due-rel ${new Date(task.due) < new Date() && task.status !== 'done' ? 'overdue' : ''}`}>
