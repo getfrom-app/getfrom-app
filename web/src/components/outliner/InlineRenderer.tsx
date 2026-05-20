@@ -182,6 +182,10 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
       const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]
       return `<span class="tag-inline tag-inline--${color}">${match}</span>`
     })
+    // @menciones con estilo
+    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F ]*)/g, (match) => {
+      return `<span class="mention-inline">${match}</span>`
+    })
 
   // Aplicar highlight de búsqueda si existe
   if (highlight && highlight.trim()) {

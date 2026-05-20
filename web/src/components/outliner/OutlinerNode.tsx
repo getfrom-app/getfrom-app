@@ -8,6 +8,7 @@ import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
+import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 
 interface Props {
   node: Node
@@ -183,6 +184,23 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       setPicker({ type: '#', query, items, activeIdx: 0 })
     } else {
       setPicker(null)
+    }
+
+    // Text expansion: detectar si el texto termina en un trigger configurado
+    const expanded = tryExpand(text, getShortcuts())
+    if (expanded) {
+      nodeTextRef.current = expanded
+      store.updateNode(node.id, { text: expanded })
+      if (contentRef.current) {
+        contentRef.current.textContent = expanded
+        // Cursor al final
+        const range = document.createRange()
+        const sel = window.getSelection()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
     }
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -826,6 +844,18 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onClick={e => {
+              // Click en hashtag inline → navegar a TagView
+              const target = e.target as HTMLElement
+              if (target.classList.contains('tag-inline') || target.closest('.tag-inline')) {
+                const tagEl = target.classList.contains('tag-inline') ? target : target.closest('.tag-inline') as HTMLElement
+                const tagText = tagEl.textContent?.replace(/^#/, '') || ''
+                if (tagText && !isEditing) {
+                  e.preventDefault()
+                  navigate(`/tag/${tagText}`)
+                }
+              }
+            }}
             data-placeholder="Escribe algo..."
             onPaste={e => {
               const clipText = e.clipboardData.getData('text/plain')

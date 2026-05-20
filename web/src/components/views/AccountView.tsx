@@ -4,6 +4,7 @@ import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens, e
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
 import { store } from '../../store/nodeStore'
+import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 
 export default function AccountView() {
   const navigate = useNavigate()
@@ -42,6 +43,29 @@ export default function AccountView() {
 
   // Google Calendar
   const [gcalInfoVisible, setGcalInfoVisible] = useState(false)
+
+  // Text shortcuts
+  const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => getShortcuts())
+  const [newTrigger, setNewTrigger] = useState('')
+  const [newExpansion, setNewExpansion] = useState('')
+  const [showAddShortcut, setShowAddShortcut] = useState(false)
+
+  function handleAddShortcut() {
+    if (!newTrigger.trim() || !newExpansion.trim()) return
+    const sc: Shortcut = { id: crypto.randomUUID(), trigger: newTrigger.trim(), expansion: newExpansion.trim() }
+    const updated = [...shortcuts, sc]
+    setShortcuts(updated)
+    saveShortcuts(updated)
+    setNewTrigger('')
+    setNewExpansion('')
+    setShowAddShortcut(false)
+  }
+
+  function handleDeleteShortcut(id: string) {
+    const updated = shortcuts.filter(s => s.id !== id)
+    setShortcuts(updated)
+    saveShortcuts(updated)
+  }
 
   // Claude API token (MCP)
   const [mcpToken, setMcpToken] = useState<string | null>(null)
@@ -464,6 +488,77 @@ export default function AccountView() {
                 </button>
               </div>
             </>
+          )}
+        </section>
+
+        {/* ── Atajos de texto ── */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">Atajos de texto</h2>
+
+          <div className="settings-row">
+            <div>
+              <div className="settings-row-label">Expansión de texto</div>
+              <div className="settings-row-hint">Define atajos que se expanden automáticamente mientras escribes. Ej: <code>;firma</code> → <em>Un saludo, Alberto</em></div>
+            </div>
+          </div>
+
+          {shortcuts.length > 0 && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Trigger</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Expansión</th>
+                  <th style={{ width: 32 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {shortcuts.map(sc => (
+                  <tr key={sc.id} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '6px 8px' }}>
+                      <code style={{ background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>{sc.trigger}</code>
+                    </td>
+                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)' }}>{sc.expansion}</td>
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleDeleteShortcut(sc.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: 0 }}
+                        title="Eliminar atajo"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {showAddShortcut ? (
+            <div className="inline-form" style={{ gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Trigger (ej: ;firma)"
+                  value={newTrigger}
+                  onChange={e => setNewTrigger(e.target.value)}
+                  style={{ flex: '0 0 140px', padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
+                />
+                <input
+                  type="text"
+                  placeholder="Expansión"
+                  value={newExpansion}
+                  onChange={e => setNewExpansion(e.target.value)}
+                  style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddShortcut() }}
+                />
+                <button className="btn-primary" onClick={handleAddShortcut} style={{ fontSize: 13, padding: '6px 14px' }}>Guardar</button>
+                <button className="btn-secondary" onClick={() => setShowAddShortcut(false)} style={{ fontSize: 13, padding: '6px 14px' }}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div className="settings-actions">
+              <button className="btn-secondary" onClick={() => setShowAddShortcut(true)}>Añadir atajo</button>
+            </div>
           )}
         </section>
 
