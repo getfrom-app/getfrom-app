@@ -29,6 +29,12 @@
   --radius: 6px;
   --radius-lg: 10px;
 
+  /* Aliases para compatibilidad — apuntan a las vars principales */
+  --bg:      var(--bg-primary);
+  --bg-alt:  var(--bg-secondary);
+  --surface: var(--bg-secondary);
+  --text:    var(--text-primary);
+
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
   line-height: 1.6;
@@ -54,6 +60,12 @@
   --success:  #4ade80;
   --warning:  #fbbf24;
   --danger:   #f87171;
+
+  /* Aliases para compatibilidad — apuntan a las vars principales */
+  --bg:      var(--bg-primary);
+  --bg-alt:  var(--bg-secondary);
+  --surface: var(--bg-secondary);
+  --text:    var(--text-primary);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

@@ -282,3 +282,13 @@ export async function getFilesForNode(nodeId: string): Promise<{ key: string; fi
 export async function deleteFile(key: string): Promise<void> {
   return apiRequest(`/files/${encodeURIComponent(key)}`, { method: 'DELETE' })
 }
+
+// ── Claude API token ──────────────────────────────────────────────────────
+
+export async function getApiToken(): Promise<{ token: string | null }> {
+  return apiRequest('/auth/api-token')
+}
+
+export async function generateApiToken(): Promise<{ token: string }> {
+  return apiRequest('/auth/api-token/generate', { method: 'POST' })
+}

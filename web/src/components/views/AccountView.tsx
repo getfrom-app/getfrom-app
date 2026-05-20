@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens, exportNodes, getToken } from '../../api/client'
+import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens, exportNodes, getToken, getApiToken, generateApiToken } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
 
@@ -39,8 +39,22 @@ export default function AccountView() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  // Claude API token (MCP)
+  const [mcpToken, setMcpToken] = useState<string | null>(null)
+  const [mcpCopied, setMcpCopied] = useState(false)
+  const [generatingMcp, setGeneratingMcp] = useState(false)
+  const [mcpLoaded, setMcpLoaded] = useState(false)
+
   useEffect(() => {
     userStore.fetchMe()
+  }, [])
+
+  useEffect(() => {
+    if (!getToken()) return
+    getApiToken().then(d => {
+      setMcpToken(d.token)
+      setMcpLoaded(true)
+    }).catch(() => setMcpLoaded(true))
   }, [])
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -165,6 +179,25 @@ export default function AccountView() {
       setDeleteError(err instanceof Error ? err.message : 'Error desconocido')
       setDeleteLoading(false)
     }
+  }
+
+  async function handleGenerateMcpToken() {
+    setGeneratingMcp(true)
+    try {
+      const result = await generateApiToken()
+      setMcpToken(result.token)
+    } catch (err) {
+      console.error('Error generating MCP token', err)
+    } finally {
+      setGeneratingMcp(false)
+    }
+  }
+
+  function copyMcpToken() {
+    if (!mcpToken) return
+    navigator.clipboard.writeText(mcpToken).catch(() => {})
+    setMcpCopied(true)
+    setTimeout(() => setMcpCopied(false), 2000)
   }
 
   const { user } = us
@@ -398,6 +431,47 @@ export default function AccountView() {
             </a>
           </div>
         </section>
+
+        {/* ── Extensión Claude — MCP token ── */}
+        {getToken() && (
+          <section className="settings-section">
+            <h2 className="settings-section-title">Extensión Claude</h2>
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">Token de API para Claude</div>
+                <div className="settings-row-hint">
+                  Conecta Claude con tu vault de From.{' '}
+                  <a href="https://getfrom.app/claude" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>
+                    Ver instrucciones →
+                  </a>
+                </div>
+              </div>
+            </div>
+            {mcpLoaded && (
+              mcpToken ? (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
+                      {mcpToken}
+                    </code>
+                    <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
+                      {mcpCopied ? '✓ Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                  <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
+                    {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+                  </button>
+                </div>
+              ) : (
+                <div className="settings-actions">
+                  <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
+                    {generatingMcp ? 'Generando...' : 'Generar token de API'}
+                  </button>
+                </div>
+              )
+            )}
+          </section>
+        )}
 
         {/* ── Danger zone ── */}
         <section className="settings-section danger-zone">
