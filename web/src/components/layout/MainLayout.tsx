@@ -249,6 +249,7 @@ export default function MainLayout() {
             <span>From</span>
           </div>
         </div>
+        <Suspense fallback={<div className="view-loading">Cargando...</div>}>
         <Routes>
           <Route index element={<DiaryView />} />
           <Route path="tasks" element={<TasksView />} />
@@ -282,6 +283,7 @@ export default function MainLayout() {
             </div>
           } />
         </Routes>
+        </Suspense>
         <StatusBar isSyncing={s.isSyncing} />
       </main>
       {paywallReason && (
@@ -295,6 +297,14 @@ export default function MainLayout() {
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      <button
+        className="mobile-fab"
+        onClick={() => setShowCommandPalette(true)}
+        title="Búsqueda rápida"
+        aria-label="Abrir búsqueda"
+      >
+        +
+      </button>
       <OnboardingTooltip />
       {(s.isSyncing || showSaved) && (
         <div className="sync-indicator">
