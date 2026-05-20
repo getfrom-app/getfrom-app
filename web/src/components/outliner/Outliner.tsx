@@ -12,6 +12,18 @@ interface Props {
   compact?: boolean
 }
 
+type SortMode = 'none' | 'alpha' | 'due' | 'priority' | 'status'
+
+const SORT_LABELS: Record<SortMode, string> = {
+  none: 'Sin orden',
+  alpha: 'A-Z',
+  due: 'Por fecha',
+  priority: 'Por prioridad',
+  status: 'Por estado',
+}
+
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
+
 export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, compact }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -19,7 +31,37 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const [localFilterOpen, setLocalFilterOpen] = useState(false)
   const [localFilterText, setLocalFilterText] = useState('')
   const localFilterRef = useRef<HTMLInputElement>(null)
-  const nodes = s.children(parentId)
+  const [sortMode, setSortMode] = useState<SortMode>('none')
+  const rawNodes = s.children(parentId)
+
+  // Apply visual sort without modifying siblingOrder
+  const nodes = (() => {
+    if (sortMode === 'none') return rawNodes
+    const sorted = [...rawNodes]
+    if (sortMode === 'alpha') {
+      sorted.sort((a, b) => (a.text || '').localeCompare(b.text || '', 'es', { sensitivity: 'base' }))
+    } else if (sortMode === 'due') {
+      sorted.sort((a, b) => {
+        if (!a.due && !b.due) return 0
+        if (!a.due) return 1
+        if (!b.due) return -1
+        return a.due < b.due ? -1 : 1
+      })
+    } else if (sortMode === 'priority') {
+      sorted.sort((a, b) => {
+        const pa = PRIORITY_ORDER[a.priority || ''] ?? 3
+        const pb = PRIORITY_ORDER[b.priority || ''] ?? 3
+        return pa - pb
+      })
+    } else if (sortMode === 'status') {
+      sorted.sort((a, b) => {
+        // pending first, then null (notes), then done
+        const order = (s: string | null) => s === 'pending' ? 0 : s === null ? 1 : 2
+        return order(a.status) - order(b.status)
+      })
+    }
+    return sorted
+  })()
 
   // Effective filter: prefer external prop, fall back to local
   const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
@@ -134,6 +176,17 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
               }
             }}
           />
+          <select
+            className="outliner-sort-select"
+            value={sortMode}
+            onChange={e => setSortMode(e.target.value as SortMode)}
+            title="Ordenar hijos"
+            style={{ fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+          >
+            {(Object.keys(SORT_LABELS) as SortMode[]).map(m => (
+              <option key={m} value={m}>{SORT_LABELS[m]}</option>
+            ))}
+          </select>
           <button
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14, padding: '0 4px' }}
             onClick={() => { setLocalFilterOpen(false); setLocalFilterText('') }}
@@ -141,6 +194,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           >
             ×
           </button>
+        </div>
+      )}
+      {!localFilterOpen && filterText === undefined && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 4px 2px' }}>
+          <select
+            className="outliner-sort-select"
+            value={sortMode}
+            onChange={e => setSortMode(e.target.value as SortMode)}
+            title="Ordenar hijos"
+            style={{ fontSize: 11, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', opacity: sortMode !== 'none' ? 1 : 0.4 }}
+          >
+            {(Object.keys(SORT_LABELS) as SortMode[]).map(m => (
+              <option key={m} value={m}>{SORT_LABELS[m]}</option>
+            ))}
+          </select>
         </div>
       )}
       <div

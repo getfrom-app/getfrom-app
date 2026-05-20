@@ -11,6 +11,7 @@ import SearchView from '../views/SearchView'
 import AccountView from '../views/AccountView'
 import CalendarView from '../views/CalendarView'
 import AgentsView from '../views/AgentsView'
+import ChatView from '../views/ChatView'
 import KanbanView from '../views/KanbanView'
 import TagView from '../views/TagView'
 import FollowupView from '../views/FollowupView'
@@ -224,6 +225,7 @@ export default function MainLayout() {
           <Route path="calendar" element={<CalendarView />} />
           <Route path="kanban" element={<KanbanView />} />
           <Route path="agents" element={<AgentsView />} />
+          <Route path="chat" element={<ChatView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
           <Route path="tag/:name" element={<TagView />} />

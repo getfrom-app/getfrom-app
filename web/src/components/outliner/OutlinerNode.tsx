@@ -149,6 +149,20 @@ function getCursorRect(el: HTMLElement): DOMRect {
 // Module-level drag state (shared across all OutlinerNode instances)
 let _draggedNodeId: string | null = null
 
+function getAllDescendants(nodeId: string): string[] {
+  const result: string[] = []
+  const queue = [nodeId]
+  while (queue.length > 0) {
+    const id = queue.shift()!
+    const children = store.children(id)
+    for (const child of children) {
+      result.push(child.id)
+      queue.push(child.id)
+    }
+  }
+  return result
+}
+
 export default function OutlinerNode({ node, depth, isSelected, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
@@ -543,6 +557,15 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
       store.updateNode(node.id, { isFavorite: !node.isFavorite })
+      return
+    }
+
+    // Cmd+Shift+C → copiar enlace del nodo al clipboard
+    if (e.key === 'c' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      const url = `${window.location.origin}/app/node/${node.id}`
+      navigator.clipboard.writeText(url).catch(() => {})
       return
     }
 
@@ -952,10 +975,22 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         {!isDivider && (
           <button
             className={`collapse-btn ${(hasChildren && !isHeading) ? '' : 'invisible'}`}
-            onClick={toggleCollapse}
+            onClick={e => {
+              if (e.altKey) {
+                // Alt+Click: colapsar/expandir todo el subárbol
+                const allDesc = getAllDescendants(node.id)
+                const anyExpanded = allDesc.some(id => !store.getNode(id)?.isCollapsed)
+                for (const id of allDesc) {
+                  store.updateNode(id, { isCollapsed: anyExpanded })
+                }
+                store.updateNode(node.id, { isCollapsed: anyExpanded })
+              } else {
+                toggleCollapse()
+              }
+            }}
             tabIndex={-1}
             aria-label="Colapsar"
-            title={isCollapsed ? 'Expandir (click)' : 'Colapsar (click)'}
+            title={isCollapsed ? 'Expandir (click) · Alt+click: expandir todo' : 'Colapsar (click) · Alt+click: colapsar todo'}
             style={{ position: 'relative' }}
           >
             <svg
