@@ -1,9 +1,71 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-18
+> Última actualización: 2026-05-20
+
+---
+
+## Política de desarrollo multiplataforma (a partir de 2026-05-20)
+
+**A partir de esta fecha, todos los desarrollos deben hacerse para Mac Y Web simultáneamente, y para iOS si aplica.**
+
+### Plataformas activas
+
+| Plataforma | Repo | Stack | URL/Distribución |
+|---|---|---|---|
+| **Mac** | `from-app` | SwiftUI + SQLite + Sparkle | getfrom.app (descarga DMG) |
+| **Web** | `getfrom-app` | React 18 + Vite + TypeScript | getfrom.app/app |
+| **iOS** | `from-app` | SwiftUI + SQLite + App Store | App Store (pendiente) |
+| **Server** | `from-server` | Hono + Bun + PostgreSQL | Railway (from-server-production) |
+
+### Reglas de paridad
+
+1. Cualquier feature nueva en Mac debe evaluarse para Web (y viceversa)
+2. Los features de IA (inline, agentes, grabación) deben estar en ambas plataformas
+3. La documentación (MANUAL.md, DOCUMENTACION.md) refleja todas las plataformas
+4. La landing page (getfrom.app) tiene accesos e información a las tres plataformas
+
+### Accesos a plataformas en landing
+- getfrom.app → Mac (descarga DMG)
+- getfrom.app/app → Web
+- getfrom.app/claude → Extensión MCP para Claude
+- getfrom.app/pricing → Precios (único para todas las plataformas)
+
+---
 
 ## Changelog
+
+### v3.12 / Web 1.0 — 2026-05-20
+
+**Plataformas: Mac + Web + iOS**
+
+**Mac 3.12**
+- Login con email/contraseña + Google Sign-In (además de Apple ID)
+- Precios actualizados: Free, Pro €7/mes, Anual €49/año, Lifetime €149
+- Checkout sin cuenta: guests van directo a LemonSqueezy, webhook crea cuenta automáticamente
+
+**From Web** (nuevo — getfrom.app/app)
+- Editor outliner completo: jerarquía, Tab/indent, collapse, tipos de bloque
+- Markdown inline: bold, italic, code, strike, links
+- Slash menu (/), Cmd+K command palette, Cmd+N nueva nota
+- Vista Tareas (secciones por fecha), Calendario semana, Kanban
+- Panel propiedades: estado, prioridad, fecha, tipo
+- AI inline (Cmd+Space): streaming Claude Haiku en el editor
+- Adjuntar archivos (R2), compartir nota (copy link)
+- Sidebar 4 tabs: Tags, Fijados, Paneles, Ajustes
+- Panel derecho en diary: Pendiente + Timeline
+- Modales Cmd+T (tarea), Cmd+E (evento), Escape→home
+- Grabación de voz (Web Speech API, Chrome/Edge)
+- Exportar/backup datos (JSON + Markdown)
+- Light/dark mode con toggle en ajustes
+- Agentes (placeholder), Exportar datos
+
+**iOS 1.2**
+- Tab Tareas: secciones Vencidas/Hoy/Semana/Sin fecha
+- AI inline en editor: botón ✨ con streaming
+- ShareLink en menú de nodo
+- Pantalla de carga animada al iniciar
+- Google Sign-In + indicador de plan en ajustes
 
 ### v3.10.1 — 2026-05-18
 
