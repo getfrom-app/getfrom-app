@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
@@ -172,6 +172,11 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
+
+  // Icono del nodo (extraData.icon)
+  const nodeIcon = useMemo(() => {
+    try { return JSON.parse(node.extraData || '{}').icon || null } catch { return null }
+  }, [node.extraData])
 
   // Filter: if filterText is active and this node doesn't match, hide it
   const activeFilter = filterText && filterText.trim()
@@ -1006,11 +1011,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             <hr className="block-divider" />
           </div>
         ) : (
-          /* contentEditable SIN hijos React — el contenido se gestiona
-             via useEffect (innerHTML) para evitar el bug removeChild del reconciler */
-          <div
-            ref={contentRef}
-            className={`node-text ${!isEditing ? 'node-text--rendered' : ''}`}
+          <>
+            {/* Icono inline del nodo */}
+            {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
+            {/* contentEditable SIN hijos React — el contenido se gestiona
+               via useEffect (innerHTML) para evitar el bug removeChild del reconciler */}
+            <div
+              ref={contentRef}
+              className={`node-text ${!isEditing ? 'node-text--rendered' : ''}`}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
@@ -1093,6 +1101,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
               onSelect(lastId)
             }}
           />
+          </>
         )}
 
         {/* Priority badge — click para cambiar */}

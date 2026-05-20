@@ -1,13 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
 import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
-import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, getToken } from '../../api/client'
+import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
+import EmojiPicker from '../EmojiPicker'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -56,6 +57,9 @@ export default function NodeView() {
 
   // Quick actions bar state
   const [quickActionMsg, setQuickActionMsg] = useState<string | null>(null)
+
+  // Emoji picker state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
   // Record recent visit
   useEffect(() => {
@@ -130,6 +134,11 @@ export default function NodeView() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
 
+  // Icono del nodo (extraData.icon)
+  const nodeIcon = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').icon || null } catch { return null }
+  }, [node?.extraData])
+
   if (!node || node.deletedAt) {
     return <div className="view-empty">Nodo no encontrado</div>
   }
@@ -173,26 +182,29 @@ export default function NodeView() {
   }
 
   async function handleShare() {
-    // Para usuarios logueados: publicar en servidor y obtener URL pública real
-    if (getToken() && node) {
-      if (shareUrl) {
-        // Ya publicada: copiar URL existente
-        navigator.clipboard.writeText(shareUrl).catch(() => {})
-        setShareCopied(true)
-        setTimeout(() => setShareCopied(false), 2000)
-        return
-      }
+    if (!node) return
+    // Si ya está publicada, copiar URL
+    const existingSlug = node.publicSlug || shareUrl?.split('/p/')[1]
+    if (existingSlug) {
+      const url = `https://getfrom.app/p/${existingSlug}`
+      navigator.clipboard.writeText(url).catch(() => {})
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+      return
+    }
+    if (getToken()) {
       setIsPublishing(true)
       try {
         const content = node.body || node.text || ''
         const result = await publishNote(node.text || 'Nota', content)
-        const url = `https://from-server-production.up.railway.app/p/${result.slug}`
+        const url = `https://getfrom.app/p/${result.slug}`
+        // Guardar slug en el nodo
+        store.updateNode(node.id, { publicSlug: result.slug })
         setShareUrl(url)
         navigator.clipboard.writeText(url).catch(() => {})
         setShareCopied(true)
         setTimeout(() => setShareCopied(false), 2000)
       } catch {
-        // Fallback: URL de la app
         const url = `https://getfrom.app/app/node/${node!.id}`
         navigator.clipboard.writeText(url).catch(() => {})
         setShareCopied(true)
@@ -201,12 +213,22 @@ export default function NodeView() {
         setIsPublishing(false)
       }
     } else {
-      // Guest: copiar URL de la app
       const url = `https://getfrom.app/app/node/${node!.id}`
       navigator.clipboard.writeText(url).then(() => {
         setShareCopied(true)
         setTimeout(() => setShareCopied(false), 2000)
       }).catch(() => { prompt('Copia este enlace:', url) })
+    }
+  }
+
+  async function handleUnpublish() {
+    if (!node?.publicSlug) return
+    try {
+      await unpublishNote(node.publicSlug)
+      store.updateNode(node.id, { publicSlug: null })
+      setShareUrl('')
+    } catch (e) {
+      console.error('Unpublish failed', e)
     }
   }
 
@@ -622,8 +644,16 @@ export default function NodeView() {
             <button
               className="node-published-copy"
               onClick={() => navigator.clipboard.writeText(`https://getfrom.app/p/${node.publicSlug!}`)}
+              title="Copiar enlace"
             >
               📋
+            </button>
+            <button
+              className="node-published-unpublish"
+              onClick={handleUnpublish}
+              title="Despublicar nota"
+            >
+              Despublicar
             </button>
           </div>
         )}
@@ -646,6 +676,32 @@ export default function NodeView() {
           )}
 
           <div className="node-title-row">
+            {/* Icono del nodo */}
+            <div className="node-icon-wrapper">
+              <button
+                className="node-icon-btn"
+                data-has-icon={nodeIcon ? 'true' : 'false'}
+                onClick={() => setShowEmojiPicker(v => !v)}
+                title="Añadir icono"
+              >
+                {nodeIcon || '✦'}
+              </button>
+              {showEmojiPicker && (
+                <EmojiPicker
+                  onSelect={emoji => {
+                    setShowEmojiPicker(false)
+                    const ed = JSON.parse(node.extraData || '{}')
+                    if (emoji) {
+                      ed.icon = emoji
+                    } else {
+                      delete ed.icon
+                    }
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                  }}
+                  onClose={() => setShowEmojiPicker(false)}
+                />
+              )}
+            </div>
             <h1
               ref={titleRef}
               className="node-title"

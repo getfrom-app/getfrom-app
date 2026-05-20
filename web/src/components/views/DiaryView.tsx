@@ -632,6 +632,22 @@ export default function DiaryView() {
                 >
                   Mañana →
                 </button>
+                {/* Date picker */}
+                <input
+                  type="date"
+                  className="diary-date-picker"
+                  value={targetDate.toISOString().slice(0, 10)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={e => {
+                    if (!e.target.value) return
+                    const picked = new Date(e.target.value + 'T00:00:00')
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const diff = Math.round((picked.getTime() - today.getTime()) / 86400000)
+                    setDateOffset(diff)
+                  }}
+                  title="Ir a una fecha"
+                />
                 {dateOffset === 0 && (
                   <button
                     className="diary-add-bullet"
