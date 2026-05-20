@@ -721,6 +721,27 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
             onFocus={handleFocus}
             onBlur={handleBlur}
             data-placeholder="Escribe algo..."
+            onPaste={e => {
+              const clipText = e.clipboardData.getData('text/plain')
+              const lines = clipText.split('\n').map(l => l.trimEnd()).filter(l => l.length > 0)
+              if (lines.length <= 1) return // Paste normal de una línea
+              e.preventDefault()
+              // La primera línea va al nodo actual
+              const curText = contentRef.current?.textContent || ''
+              const firstLine = (curText + lines[0]).trim()
+              nodeTextRef.current = firstLine
+              store.updateNode(node.id, { text: firstLine })
+              if (contentRef.current) contentRef.current.textContent = firstLine
+              // Las líneas siguientes crean nodos hermanos
+              let prevOrder = node.siblingOrder
+              let lastId = node.id
+              for (let i = 1; i < lines.length; i++) {
+                prevOrder += 0.5
+                const newNode = store.createNode({ text: lines[i].trim(), parentId: node.parentId, siblingOrder: prevOrder })
+                lastId = newNode.id
+              }
+              onSelect(lastId)
+            }}
           />
         )}
 
@@ -728,9 +749,20 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         {node.priority === 'high' && <span className="node-priority-dot high" title="Alta prioridad" />}
         {node.priority === 'medium' && <span className="node-priority-dot medium" title="Media prioridad" />}
 
-        {/* Bucle / Evento badge */}
+        {/* Bucle / Evento / Recurrencia badge */}
         {(node.types || []).includes('bucle') && <span className="node-type-badge bucle" title="Bucle">↺</span>}
         {node.isEvent && !((node.types || []).includes('bucle')) && <span className="node-type-badge event" title="Evento">📅</span>}
+        {node.recurrence && !((node.types || []).includes('bucle')) && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
+
+        {/* Fecha de vencimiento */}
+        {node.due && !node.isEvent && (() => {
+          const d = new Date(node.due)
+          const now = new Date()
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          const overdue = d < todayStart && node.status !== 'done'
+          const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+          return <span className={`node-due-chip ${overdue ? 'overdue' : ''}`} title={d.toLocaleDateString('es-ES', { dateStyle: 'full' })}>📅 {label}</span>
+        })()}
 
         {/* Favorito badge */}
         {node.isFavorite && <span className="node-fav-badge" title="Fijado">★</span>}
