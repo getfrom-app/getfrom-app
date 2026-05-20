@@ -568,6 +568,13 @@ export default function DiaryView() {
                 </span>
               )}
 
+              {/* Streak counter */}
+              {streak >= 2 && (
+                <span className="diary-streak" title={`${streak} días seguidos escribiendo en el diario`}>
+                  🔥 {streak} días
+                </span>
+              )}
+
               {/* Tag counter */}
               {diary && dayTags.length > 0 && (
                 <div className="diary-day-tags">

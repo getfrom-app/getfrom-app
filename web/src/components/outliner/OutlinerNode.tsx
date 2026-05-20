@@ -1073,7 +1073,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         })()}
 
         {/* Favorito badge */}
-        {node.isFavorite && <span className="node-fav-badge" title="Fijado">★</span>}
+        {node.isFavorite && (
+          <span
+            className="node-fav-badge"
+            title="Fijado (click para quitar)"
+            onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
+          >★</span>
+        )}
 
         {/* Open node button */}
         {!isDivider && (
