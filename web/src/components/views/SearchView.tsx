@@ -12,7 +12,7 @@ interface ParsedQuery {
 }
 
 interface Filter {
-  type: 'status' | 'date' | 'priority' | 'kind'
+  type: 'status' | 'date' | 'priority' | 'kind' | 'tag' | 'has'
   value: string
   raw: string // original token, e.g. "estado:pendiente"
 }
@@ -23,7 +23,7 @@ const DSL_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => Filte
     parse: m => ({ type: 'status', value: m[1].toLowerCase(), raw: m[0] }),
   },
   {
-    regex: /fecha:(hoy|vencida)/gi,
+    regex: /fecha:(hoy|vencida|esta-semana|mañana|sin-fecha)/gi,
     parse: m => ({ type: 'date', value: m[1].toLowerCase(), raw: m[0] }),
   },
   {
@@ -31,8 +31,16 @@ const DSL_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => Filte
     parse: m => ({ type: 'priority', value: m[1].toLowerCase(), raw: m[0] }),
   },
   {
-    regex: /tipo:(tarea|bucle|evento|favorito)/gi,
+    regex: /tipo:(tarea|bucle|evento|favorito|nota|diario)/gi,
     parse: m => ({ type: 'kind', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /tag:(\S+)/gi,
+    parse: m => ({ type: 'tag', value: m[1].toLowerCase(), raw: m[0] }),
+  },
+  {
+    regex: /tiene:(cuerpo|fecha|adjuntos)/gi,
+    parse: m => ({ type: 'has', value: m[1].toLowerCase(), raw: m[0] }),
   },
 ]
 
@@ -57,6 +65,10 @@ function parseQuery(raw: string): ParsedQuery {
 function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const weekEnd = new Date(today)
+  weekEnd.setDate(weekEnd.getDate() + 7)
 
   let result = nodes
 
@@ -72,6 +84,13 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
           d.setHours(0, 0, 0, 0)
           return d.getTime() === today.getTime()
         })
+      } else if (f.value === 'mañana') {
+        result = result.filter(n => {
+          if (!n.due) return false
+          const d = new Date(n.due)
+          d.setHours(0, 0, 0, 0)
+          return d.getTime() === tomorrow.getTime()
+        })
       } else if (f.value === 'vencida') {
         result = result.filter(n => {
           if (!n.due) return false
@@ -79,6 +98,14 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
           d.setHours(0, 0, 0, 0)
           return d.getTime() < today.getTime()
         })
+      } else if (f.value === 'esta-semana') {
+        result = result.filter(n => {
+          if (!n.due) return false
+          const d = new Date(n.due)
+          return d >= today && d < weekEnd
+        })
+      } else if (f.value === 'sin-fecha') {
+        result = result.filter(n => !n.due)
       }
     } else if (f.type === 'priority') {
       const map: Record<string, 'high' | 'medium' | 'low'> = {
@@ -96,6 +123,18 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
         result = result.filter(n => n.isEvent)
       } else if (f.value === 'favorito') {
         result = result.filter(n => n.isFavorite)
+      } else if (f.value === 'nota') {
+        result = result.filter(n => n.status === null && !n.isEvent && !n.isDiaryEntry)
+      } else if (f.value === 'diario') {
+        result = result.filter(n => n.isDiaryEntry)
+      }
+    } else if (f.type === 'tag') {
+      result = result.filter(n => (n.types || []).some(t => t.toLowerCase().includes(f.value)))
+    } else if (f.type === 'has') {
+      if (f.value === 'cuerpo') {
+        result = result.filter(n => n.body && n.body.trim().length > 0)
+      } else if (f.value === 'fecha') {
+        result = result.filter(n => !!n.due)
       }
     }
   }
@@ -133,6 +172,8 @@ function removeFromHistory(q: string) {
 
 const NATURAL_PATTERNS: Array<[RegExp, string]> = [
   [/tareas?\s+(de\s+)?(hoy|para hoy)/i, 'fecha:hoy tipo:tarea'],
+  [/tareas?\s+(de\s+)?mañana/i, 'fecha:mañana tipo:tarea'],
+  [/tareas?\s+esta\s+semana/i, 'fecha:esta-semana tipo:tarea'],
   [/vencid[oa]s?/i, 'fecha:vencida'],
   [/pendientes?/i, 'estado:pendiente'],
   [/complet[ao]d[oa]s?|hech[oa]s?/i, 'estado:hecho'],
@@ -140,6 +181,10 @@ const NATURAL_PATTERNS: Array<[RegExp, string]> = [
   [/bucles?\s+(activ[oa]s?)?/i, 'tipo:bucle estado:pendiente'],
   [/event[oa]s?/i, 'tipo:evento'],
   [/alta\s+prioridad/i, 'prioridad:alta'],
+  [/media\s+prioridad/i, 'prioridad:media'],
+  [/baja\s+prioridad/i, 'prioridad:baja'],
+  [/notas?\s+con\s+cuerpo/i, 'tipo:nota tiene:cuerpo'],
+  [/sin\s+fecha/i, 'fecha:sin-fecha'],
 ]
 
 function naturalToFilter(q: string): string | null {
@@ -151,11 +196,15 @@ function naturalToFilter(q: string): string | null {
 
 // ── Quick chips ───────────────────────────────────────────────────────────────
 
-const QUICK_CHIPS: Array<{ label: string; dsl: string }> = [
-  { label: 'Pendientes', dsl: 'estado:pendiente' },
-  { label: 'Vencidas', dsl: 'fecha:vencida' },
-  { label: 'Favoritos', dsl: 'tipo:favorito' },
-  { label: 'Tareas', dsl: 'tipo:tarea' },
+const QUICK_CHIPS: Array<{ label: string; dsl: string; icon?: string }> = [
+  { label: 'Pendientes', dsl: 'estado:pendiente', icon: '○' },
+  { label: 'Vencidas', dsl: 'fecha:vencida', icon: '⚠' },
+  { label: 'Esta semana', dsl: 'fecha:esta-semana', icon: '📅' },
+  { label: 'Favoritos', dsl: 'tipo:favorito', icon: '★' },
+  { label: 'Tareas', dsl: 'tipo:tarea', icon: '✓' },
+  { label: 'Bucles', dsl: 'tipo:bucle', icon: '↺' },
+  { label: 'Alta prioridad', dsl: 'prioridad:alta', icon: '▲' },
+  { label: 'Con contenido', dsl: 'tiene:cuerpo', icon: '📝' },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -186,6 +235,7 @@ export default function SearchView() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
+  const [sortBy, setSortBy] = useState<'relevance' | 'updated' | 'due' | 'priority'>('relevance')
   const [magicSearching, setMagicSearching] = useState(false)
   const [magicSummary, setMagicSummary] = useState('')
   const [history, setHistory] = useState<string[]>(() => getHistory())
@@ -239,10 +289,36 @@ export default function SearchView() {
   const allNodes = useMemo(() => s.allActive(), [s])
   const totalNodeCount = allNodes.length
 
+  const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
+
   const results = useMemo(() => {
     if (!query.trim()) return []
-    return applyFilters(allNodes, parsed).slice(0, 50)
-  }, [query, parsed, allNodes])
+    const filtered = applyFilters(allNodes, parsed)
+    // Sort
+    filtered.sort((a, b) => {
+      if (sortBy === 'updated') return b.updatedAt.localeCompare(a.updatedAt)
+      if (sortBy === 'due') {
+        if (!a.due && !b.due) return 0
+        if (!a.due) return 1
+        if (!b.due) return -1
+        return a.due.localeCompare(b.due)
+      }
+      if (sortBy === 'priority') {
+        const pa = PRIORITY_RANK[a.priority ?? ''] ?? 3
+        const pb = PRIORITY_RANK[b.priority ?? ''] ?? 3
+        return pa - pb
+      }
+      // relevance: favor exact text match
+      const q = parsed.text.toLowerCase()
+      if (q) {
+        const aExact = a.text.toLowerCase().startsWith(q) ? 0 : 1
+        const bExact = b.text.toLowerCase().startsWith(q) ? 0 : 1
+        if (aExact !== bExact) return aExact - bExact
+      }
+      return b.updatedAt.localeCompare(a.updatedAt)
+    })
+    return filtered.slice(0, 60)
+  }, [query, parsed, allNodes, sortBy])
 
   // For empty-state tag suggestions
   const availableTags = useMemo(() => s.allUsedTags().slice(0, 8), [s])
@@ -344,6 +420,7 @@ export default function SearchView() {
                 className={`search-chip ${active ? 'search-chip--active' : ''}`}
                 onClick={() => applyQuickChip(chip.dsl)}
               >
+                {chip.icon && <span style={{ marginRight: 3 }}>{chip.icon}</span>}
                 {chip.label}
               </button>
             )
@@ -387,10 +464,20 @@ export default function SearchView() {
           </div>
         )}
 
-        {/* Result count */}
+        {/* Result count + sort */}
         {hasQuery && results.length > 0 && (
           <div className="search-result-count">
-            {results.length === 50 ? '50+ resultados' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}
+            <span>{results.length === 60 ? '60+ resultados' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}</span>
+            <select
+              className="search-sort-select"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as typeof sortBy)}
+            >
+              <option value="relevance">Por relevancia</option>
+              <option value="updated">Más recientes</option>
+              <option value="due">Por fecha límite</option>
+              <option value="priority">Por prioridad</option>
+            </select>
           </div>
         )}
 

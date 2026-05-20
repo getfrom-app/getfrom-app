@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../store/nodeStore'
+import { useToast } from './Toast'
 
 interface Props {
   onClose: () => void
@@ -11,7 +12,7 @@ interface PaletteItem {
   id: string
   icon: string
   label: string
-  type: 'action' | 'note' | 'recent'
+  type: 'action' | 'note' | 'recent' | 'create'
   action: () => void
 }
 
@@ -42,8 +43,142 @@ function fuzzyMatch(haystack: string, needle: string): boolean {
   return true
 }
 
+// ── Natural language parsing ─────────────────────────────────────────────────
+
+interface ParsedQuery {
+  /** Texto limpio sin flags ni tokens de fecha */
+  cleanText: string
+  isTask: boolean
+  isEvent: boolean
+  isBucle: boolean
+  isFavorite: boolean
+  due: string | null        // ISO string or null
+  /** Label legible de fecha para el chip, e.g. "mañana" */
+  dateLabel: string | null
+}
+
+const DAY_NAMES: Record<string, number> = {
+  domingo: 0, lunes: 1, martes: 2, miércoles: 3,
+  jueves: 4, viernes: 5, sábado: 6,
+}
+
+function nextWeekday(dayIndex: number): Date {
+  const now = new Date()
+  const today = now.getDay()
+  let diff = dayIndex - today
+  if (diff <= 0) diff += 7
+  const result = new Date(now)
+  result.setDate(result.getDate() + diff)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Set<number> } {
+  const used = new Set<number>()
+  let date: Date | null = null
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i].toLowerCase()
+
+    if (t === 'hoy') {
+      const d = new Date(); d.setHours(0, 0, 0, 0)
+      date = d; used.add(i); continue
+    }
+    if (t === 'mañana') {
+      const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0)
+      date = d; used.add(i); continue
+    }
+    if (DAY_NAMES[t] !== undefined) {
+      date = nextWeekday(DAY_NAMES[t]); used.add(i); continue
+    }
+    // dd/mm
+    if (/^\d{1,2}\/\d{1,2}$/.test(t)) {
+      const [dd, mm] = t.split('/').map(Number)
+      const d = new Date()
+      d.setMonth(mm - 1, dd)
+      d.setHours(0, 0, 0, 0)
+      // If date already passed this year, go next year
+      if (d < new Date()) d.setFullYear(d.getFullYear() + 1)
+      date = d; used.add(i); continue
+    }
+    // HH:MM
+    if (/^\d{1,2}:\d{2}$/.test(t)) {
+      const [hh, min] = t.split(':').map(Number)
+      if (!date) { date = new Date(); date.setHours(0, 0, 0, 0) }
+      date.setHours(hh, min, 0, 0)
+      used.add(i); continue
+    }
+  }
+
+  return { date, usedTokens: used }
+}
+
+function parseQuery(raw: string): ParsedQuery {
+  // Extract flags at the end (order insensitive, anywhere after last word)
+  const flagRegex = /\s+-(t|e|b|f)\b/gi
+  let isTask = false
+  let isEvent = false
+  let isBucle = false
+  let isFavorite = false
+
+  let stripped = raw
+  let match: RegExpExecArray | null
+  const re = /\s*-(t|e|b|f)\b/gi
+  while ((match = re.exec(raw)) !== null) {
+    const flag = match[1].toLowerCase()
+    if (flag === 't') isTask = true
+    else if (flag === 'e') isEvent = true
+    else if (flag === 'b') isBucle = true
+    else if (flag === 'f') isFavorite = true
+  }
+  stripped = raw.replace(flagRegex, '').trim()
+  // Also handle flags at end without leading space but with leading dash
+  stripped = stripped.replace(/\s*-(t|e|b|f)\b/gi, '').trim()
+
+  // Parse date tokens
+  const tokens = stripped.split(/\s+/)
+  const { date, usedTokens } = parseNaturalDate(tokens)
+
+  const cleanTokens = tokens.filter((_, i) => !usedTokens.has(i))
+  const cleanText = cleanTokens.join(' ').trim()
+
+  // Build date label
+  let dateLabel: string | null = null
+  if (date) {
+    const now = new Date(); now.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1)
+    if (date.toDateString() === now.toDateString()) dateLabel = 'hoy'
+    else if (date.toDateString() === tomorrow.toDateString()) dateLabel = 'mañana'
+    else {
+      const dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado']
+      const dayN = dayNames[date.getDay()]
+      const dd = String(date.getDate()).padStart(2, '0')
+      const mm = String(date.getMonth() + 1).padStart(2, '0')
+      dateLabel = `${dayN} ${dd}/${mm}`
+    }
+  }
+
+  return {
+    cleanText,
+    isTask,
+    isEvent,
+    isBucle,
+    isFavorite,
+    due: date ? date.toISOString() : null,
+    dateLabel,
+  }
+}
+
+function getCreateLabel(parsed: ParsedQuery): { icon: string; label: string } {
+  if (parsed.isEvent) return { icon: '📅', label: 'Evento' }
+  if (parsed.isBucle) return { icon: '↺', label: 'Bucle' }
+  if (parsed.isTask) return { icon: '○', label: 'Tarea' }
+  return { icon: '📄', label: 'Nota' }
+}
+
 export default function CommandPalette({ onClose }: Props) {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -52,6 +187,33 @@ export default function CommandPalette({ onClose }: Props) {
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  const parsed = parseQuery(query)
+  const hasFlags = parsed.isTask || parsed.isEvent || parsed.isBucle || parsed.isFavorite
+  const { icon: createIcon, label: createLabel } = getCreateLabel(parsed)
+
+  const doCreate = useCallback(() => {
+    const text = parsed.cleanText || query.trim()
+    if (!text) return
+
+    const diaryNode = store.todayDiary()
+    const types: string[] = parsed.isBucle ? ['bucle'] : []
+
+    const node = store.createNode({
+      text,
+      parentId: diaryNode?.id || null,
+      isTask: parsed.isTask || parsed.isBucle,
+      due: parsed.due,
+      types,
+    })
+
+    if (parsed.isEvent) store.updateNode(node.id, { isEvent: true })
+    if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
+
+    const label = createLabel
+    showToast(`✓ ${label} creada`)
+    onClose()
+  }, [parsed, query, createLabel, showToast, onClose])
 
   const buildItems = useCallback((): PaletteItem[] => {
     const items: PaletteItem[] = []
@@ -179,19 +341,30 @@ export default function CommandPalette({ onClose }: Props) {
         },
       }))
 
-    if (!query) {
+    if (!query.trim()) {
       // No query: actions + recent
       items.push(...actions, ...recentItems)
     } else {
-      // Filter everything by fuzzy match
-      const filteredActions = actions.filter(a => fuzzyMatch(a.label, query))
-      const filteredRecent = recentItems.filter(r => fuzzyMatch(r.label, query))
-      const filteredNotes = allNotes.filter(n => fuzzyMatch(n.label, query))
+      // First item: crear (siempre que haya query)
+      const displayText = parsed.cleanText || query.trim()
+      items.push({
+        id: 'create-item',
+        icon: createIcon,
+        label: `Crear ${createLabel.toLowerCase()}: ${displayText}`,
+        type: 'create',
+        action: doCreate,
+      })
+
+      // Filter rest by fuzzy match against CLEAN text (sin flags)
+      const searchTerm = parsed.cleanText || query.trim()
+      const filteredActions = actions.filter(a => fuzzyMatch(a.label, searchTerm))
+      const filteredRecent = recentItems.filter(r => fuzzyMatch(r.label, searchTerm))
+      const filteredNotes = allNotes.filter(n => fuzzyMatch(n.label, searchTerm))
       items.push(...filteredActions, ...filteredRecent, ...filteredNotes)
     }
 
     return items
-  }, [query, navigate, onClose])
+  }, [query, parsed, createIcon, createLabel, doCreate, navigate, onClose])
 
   const items = buildItems()
 
@@ -228,6 +401,8 @@ export default function CommandPalette({ onClose }: Props) {
     active?.scrollIntoView({ block: 'nearest' })
   }, [activeIdx])
 
+  const showChips = query.trim() && (hasFlags || parsed.due)
+
   return createPortal(
     <div className="cmdpalette-overlay" onClick={onClose}>
       <div
@@ -242,7 +417,7 @@ export default function CommandPalette({ onClose }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder="Buscar o crear..."
+            placeholder="Buscar o crear... (-t tarea, -e evento, -b bucle, -f favorito)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -251,6 +426,18 @@ export default function CommandPalette({ onClose }: Props) {
             <button className="cmdpalette-clear" onClick={() => setQuery('')}>×</button>
           )}
         </div>
+
+        {showChips && (
+          <div className="cmdpalette-chips">
+            {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
+            {parsed.isEvent && <span className="cmdpalette-chip">📅 Evento</span>}
+            {parsed.isBucle && <span className="cmdpalette-chip">↺ Bucle</span>}
+            {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
+            {parsed.dateLabel && (
+              <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>
+            )}
+          </div>
+        )}
 
         <div ref={listRef} className="cmdpalette-results">
           {items.length === 0 && (

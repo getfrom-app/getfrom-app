@@ -25,6 +25,7 @@ import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 import StatusBar from './StatusBar'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
+import { ToastProvider } from '../Toast'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -173,6 +174,7 @@ export default function MainLayout() {
   }
 
   return (
+    <ToastProvider>
     <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
       <Sidebar
         open={sidebarOpen}
@@ -253,5 +255,6 @@ export default function MainLayout() {
         </div>
       )}
     </div>
+    </ToastProvider>
   )
 }

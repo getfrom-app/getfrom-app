@@ -165,6 +165,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const [isDragOverChild, setIsDragOverChild] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [isAiStreaming, setIsAiStreaming] = useState(false)
+  const [aiPendingText, setAiPendingText] = useState<string | null>(null)
+  const aiOriginalText = useRef<string>('')
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
 
   const blockType = detectBlockType(node.text)
@@ -376,6 +378,40 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const text = contentRef.current?.textContent || ''
 
+    // AI pending state: Tab=accept, Escape=discard, any other key=accept then type
+    if (aiPendingText !== null && !isAiStreaming) {
+      const clearPending = () => {
+        if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
+        setAiPendingText(null)
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        // Aceptar: guardar en store
+        const finalText = aiPendingText.replace(/ /g, ' ')
+        nodeTextRef.current = finalText
+        store.updateNode(node.id, { text: finalText })
+        clearPending()
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        // Descartar: restaurar texto original
+        if (contentRef.current) contentRef.current.textContent = aiOriginalText.current
+        nodeTextRef.current = aiOriginalText.current
+        clearPending()
+        return
+      }
+      // Ignorar teclas modificadoras solas y Cmd+Space (regenerar, manejado abajo)
+      if (!['Meta', 'Control', 'Alt', 'Shift'].includes(e.key) && !(e.key === ' ' && (e.metaKey || e.ctrlKey))) {
+        // Cualquier otra tecla: aceptar texto IA y continuar escribiendo
+        const finalText = aiPendingText.replace(/ /g, ' ')
+        nodeTextRef.current = finalText
+        store.updateNode(node.id, { text: finalText })
+        clearPending()
+        // No preventDefault — la tecla sigue su curso normal
+      }
+    }
+
     // If slash menu is open, let it handle arrow keys and Enter/Escape
     if (showSlash) {
       if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key)) {
@@ -438,6 +474,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       e.stopPropagation()
       const currentText = contentRef.current?.textContent || ''
       if (!currentText.trim()) return
+      // Si hay texto pendiente, descartar y regenerar
+      if (aiPendingText !== null) {
+        if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
+        setAiPendingText(null)
+        if (contentRef.current) contentRef.current.textContent = aiOriginalText.current
+      }
+      aiOriginalText.current = currentText
       setIsAiStreaming(true)
       let aiText = ''
       aiInlineStream(
@@ -460,9 +503,23 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           }
         }
       ).then(() => {
-        const finalText = (currentText + aiText).replace(/ /g, ' ')
-        nodeTextRef.current = finalText
-        store.updateNode(node.id, { text: finalText })
+        const fullText = (currentText + aiText).replace(/ /g, ' ')
+        // Fase 2: modo ghost — NO guardar en store todavía
+        setAiPendingText(fullText)
+        if (contentRef.current) {
+          contentRef.current.textContent = fullText
+          contentRef.current.classList.add('node-text--ai-pending')
+          // Cursor al final
+          const range = document.createRange()
+          const sel = window.getSelection()
+          const textNode = contentRef.current.firstChild
+          if (textNode) {
+            range.setStart(textNode, contentRef.current.textContent?.length || 0)
+            range.collapse(true)
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+        }
       }).catch(console.error).finally(() => setIsAiStreaming(false))
       return
     }
@@ -660,7 +717,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         }
       }
     }
-  }, [node, onSelect, onSelectNext, showSlash, picker]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node, onSelect, onSelectNext, showSlash, picker, aiPendingText, isAiStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag & Drop ──────────────────────────────────────────────────────────
 
@@ -894,6 +951,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             tabIndex={-1}
             aria-label="Colapsar"
             title={isCollapsed ? 'Expandir (click)' : 'Colapsar (click)'}
+            style={{ position: 'relative' }}
           >
             <svg
               className={`collapse-arrow ${isCollapsed ? 'collapsed' : ''}`}
@@ -901,6 +959,9 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             >
               <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
             </svg>
+            {isCollapsed && children.length > 0 && (
+              <span className="node-children-count">{children.length}</span>
+            )}
           </button>
         )}
 
@@ -1079,6 +1140,18 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             title="Fijado (click para quitar)"
             onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
           >★</span>
+        )}
+
+        {/* Zoom-in button — solo si tiene hijos */}
+        {!isDivider && children.length > 0 && (
+          <button
+            className="node-zoom-btn"
+            onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+            tabIndex={-1}
+            title="Entrar en nodo"
+          >
+            ⟶
+          </button>
         )}
 
         {/* Open node button */}

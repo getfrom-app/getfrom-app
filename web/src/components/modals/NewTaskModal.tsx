@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
+import { useToast } from '../Toast'
 
 interface Props {
   onClose: () => void
@@ -13,7 +13,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
   const [due, setDue] = useState('')
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const navigate = useNavigate()
+  const { showToast } = useToast()
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -30,7 +30,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
       due: due ? new Date(due).toISOString() : null,
     })
     if (priority) store.updateNode(node.id, { priority: priority as 'high' | 'medium' | 'low' })
-    navigate(`/node/${node.id}`)
+    showToast('✓ Tarea creada')
     onClose()
   }
 
