@@ -18,10 +18,61 @@ function getDiaryForDate(date: Date): Node | null {
   return null
 }
 
+function isBucle(n: Node): boolean {
+  return (n.types?.includes('bucle') ?? false) && n.status !== 'done' && !n.deletedAt
+}
+
+function hasLoopAncestor(nodeId: string): boolean {
+  let current = store.getNode(nodeId)
+  while (current?.parentId) {
+    const parent = store.getNode(current.parentId)
+    if (!parent) break
+    if (parent.types?.includes('bucle')) return true
+    current = parent
+  }
+  return false
+}
+
+function formatDue(due: string): string {
+  const d = new Date(due)
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+  if (d >= todayStart && d <= todayEnd) {
+    return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+  }
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
+function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boolean; toggleTask: (id: string, status: string | null) => void }) {
+  const navigate = useNavigate()
+  return (
+    <div
+      className={`diary-task-chip${indented ? ' indented' : ''}`}
+      onClick={() => navigate(`/node/${task.id}`)}
+    >
+      <input
+        type="checkbox"
+        className="diary-task-check"
+        checked={task.status === 'done'}
+        onChange={e => {
+          e.stopPropagation()
+          toggleTask(task.id, task.status)
+        }}
+        onClick={e => e.stopPropagation()}
+      />
+      <span className={`diary-task-text${task.status === 'done' ? ' done' : ''}`}>
+        {task.text || 'Sin título'}
+      </span>
+      {task.due && <span className="diary-task-due">{formatDue(task.due)}</span>}
+    </div>
+  )
+}
+
 export default function DiaryView() {
   const s = useStore()
   const navigate = useNavigate()
-  const [dateOffset, setDateOffset] = useState(0) // 0 = hoy, -1 = ayer, etc.
+  const [dateOffset, setDateOffset] = useState(0)
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
 
   const targetDate = new Date()
@@ -44,40 +95,75 @@ export default function DiaryView() {
     return dateStr
   }
 
-  // ── Pending tasks logic ────────────────────────────────────────────────
+  // ── Time boundaries ────────────────────────────────────────────────────
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
-
-  const allTasks = s.allActive().filter(n => n.status !== null && n.status !== 'done' && !n.deletedAt)
-
-  const overdue = allTasks.filter(n => {
-    if (!n.due) return false
-    return new Date(n.due) < todayStart
-  })
-
-  const todayTasks = allTasks.filter(n => {
-    if (!n.due) return false
-    const d = new Date(n.due)
-    return d >= todayStart && d <= todayEnd
-  })
-
-  const openLoops = allTasks.filter(n => !n.due).slice(0, 10)
 
   function toggleTask(id: string, currentStatus: string | null) {
     const newStatus = currentStatus === 'done' ? 'pending' : 'done'
     store.updateNode(id, { status: newStatus })
   }
 
+  // ── Pending tasks logic ────────────────────────────────────────────────
+
+  // All active bucles
+  const bucles = dateOffset === 0
+    ? s.allActive().filter(n => isBucle(n))
+    : []
+
+  // For each bucle, get its pending children
+  function getBucleChildren(bucleId: string): Node[] {
+    return store.children(bucleId).filter(
+      n => n.status !== null && n.status !== 'done' && !n.deletedAt
+    )
+  }
+
+  const allPending = s.allActive().filter(
+    n => n.status === 'pending' && !n.deletedAt
+  )
+
+  const overdue = allPending.filter(n => {
+    if (!n.due) return false
+    if (hasLoopAncestor(n.id)) return false
+    return new Date(n.due) < todayStart
+  })
+
+  const todayTasks = allPending.filter(n => {
+    if (!n.due) return false
+    if (hasLoopAncestor(n.id)) return false
+    const d = new Date(n.due)
+    return d >= todayStart && d <= todayEnd
+  })
+
+  const noDateTasks = allPending.filter(n => {
+    if (n.due) return false
+    if (isBucle(n)) return false
+    if (hasLoopAncestor(n.id)) return false
+    return true
+  }).slice(0, 10)
+
+  // ── Add bullet to today's diary ────────────────────────────────────────
+  function handleAddBullet() {
+    const todayDiary = s.todayDiary()
+    if (!todayDiary) return
+    const children = store.children(todayDiary.id)
+    const maxOrder = children.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
+    store.createNode({
+      text: '',
+      parentId: todayDiary.id,
+      siblingOrder: maxOrder + 1000,
+    })
+  }
+
   // ── Timeline logic ─────────────────────────────────────────────────────
-  const hours = Array.from({ length: 15 }, (_, i) => i + 8) // 8 to 22
+  const hours = Array.from({ length: 15 }, (_, i) => i + 8)
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()
 
   const allDayTasks = s.allActive().filter(n => n.status !== null && !n.deletedAt && n.due)
 
-  // Group today's tasks by hour
-  const tasksByHour: Record<number, typeof allDayTasks> = {}
+  const tasksByHour: Record<number, Node[]> = {}
   for (const h of hours) {
     tasksByHour[h] = []
   }
@@ -93,14 +179,17 @@ export default function DiaryView() {
     }
   })
 
+  // ── Render panels ──────────────────────────────────────────────────────
+
   function renderPending() {
-    const hasAnything = overdue.length > 0 || todayTasks.length > 0 || openLoops.length > 0
+    const hasBucles = bucles.length > 0
+    const hasAnything = hasBucles || overdue.length > 0 || todayTasks.length > 0 || noDateTasks.length > 0
 
     if (!hasAnything) {
       return (
         <div className="diary-panel-content">
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
-            Nada pendiente hoy 🎉
+            Nada pendiente hoy
           </div>
         </div>
       )
@@ -108,62 +197,66 @@ export default function DiaryView() {
 
     return (
       <div className="diary-panel-content">
+
+        {/* Bucles abiertos — solo hoy */}
+        {hasBucles && (
+          <div className="diary-pending-section">
+            <div className="diary-pending-label" style={{ color: 'var(--accent)' }}>Bucles abiertos</div>
+            {bucles.map(bucle => {
+              const children = getBucleChildren(bucle.id)
+              return (
+                <div key={bucle.id} className="diary-bucle-section">
+                  <div
+                    className="diary-bucle-header"
+                    onClick={() => navigate(`/node/${bucle.id}`)}
+                  >
+                    <span className="diary-bucle-icon">↺</span>
+                    <span className="diary-bucle-text">{bucle.text || 'Sin título'}</span>
+                  </div>
+                  {children.length > 0 && (
+                    <div className="diary-bucle-children">
+                      {children.map(child => (
+                        <TaskChip
+                          key={child.id}
+                          task={child}
+                          indented
+                          toggleTask={toggleTask}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Vencidas */}
         {overdue.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label" style={{ color: '#ef4444' }}>Vencidas</div>
             {overdue.map(t => (
-              <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
-                <input
-                  type="checkbox"
-                  className="diary-task-check"
-                  checked={t.status === 'done'}
-                  onChange={e => { e.stopPropagation(); toggleTask(t.id, t.status) }}
-                  onClick={e => e.stopPropagation()}
-                />
-                <span style={{ fontSize: 13, color: t.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
-                  {t.text || 'Sin título'}
-                </span>
-              </div>
+              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
 
+        {/* Para hoy */}
         {todayTasks.length > 0 && (
           <div className="diary-pending-section">
-            <div className="diary-pending-label">Hoy</div>
+            <div className="diary-pending-label">Para hoy</div>
             {todayTasks.map(t => (
-              <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
-                <input
-                  type="checkbox"
-                  className="diary-task-check"
-                  checked={t.status === 'done'}
-                  onChange={e => { e.stopPropagation(); toggleTask(t.id, t.status) }}
-                  onClick={e => e.stopPropagation()}
-                />
-                <span style={{ fontSize: 13, color: t.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
-                  {t.text || 'Sin título'}
-                </span>
-              </div>
+              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
 
-        {openLoops.length > 0 && (
+        {/* Sin fecha */}
+        {noDateTasks.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label">Sin fecha</div>
-            {openLoops.map(t => (
-              <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
-                <input
-                  type="checkbox"
-                  className="diary-task-check"
-                  checked={t.status === 'done'}
-                  onChange={e => { e.stopPropagation(); toggleTask(t.id, t.status) }}
-                  onClick={e => e.stopPropagation()}
-                />
-                <span style={{ fontSize: 13, color: t.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: t.status === 'done' ? 'line-through' : 'none' }}>
-                  {t.text || 'Sin título'}
-                </span>
-              </div>
+            {noDateTasks.map(t => (
+              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
@@ -180,7 +273,10 @@ export default function DiaryView() {
           return (
             <div key={h}>
               {isCurrentHour && (
-                <div className="timeline-now-line" title={`${currentHour}:${String(currentMinutes).padStart(2, '0')}`} />
+                <div
+                  className="timeline-now-line"
+                  title={`${currentHour}:${String(currentMinutes).padStart(2, '0')}`}
+                />
               )}
               <div className="timeline-row">
                 <span className="timeline-hour-label">{String(h).padStart(2, '0')}:00</span>
@@ -212,21 +308,35 @@ export default function DiaryView() {
           <div className="view-header">
             <div className="diary-date">
               <div className="diary-nav">
-                <button
-                  onClick={() => setDateOffset(d => d - 1)}
-                  title="Día anterior"
-                >←</button>
+                <button onClick={() => setDateOffset(d => d - 1)} title="Día anterior">
+                  ←
+                </button>
                 <span className="diary-date-label">{formatOffsetLabel()}</span>
                 <button
                   onClick={() => setDateOffset(d => d + 1)}
                   disabled={dateOffset >= 0}
                   title="Día siguiente"
-                >→</button>
+                >
+                  →
+                </button>
                 {dateOffset !== 0 && (
-                  <button onClick={() => setDateOffset(0)} title="Volver a hoy">Hoy</button>
+                  <button onClick={() => setDateOffset(0)} title="Volver a hoy">
+                    Hoy
+                  </button>
+                )}
+                {dateOffset === 0 && (
+                  <button
+                    className="diary-add-bullet"
+                    onClick={handleAddBullet}
+                    title="Añadir bullet"
+                  >
+                    +
+                  </button>
                 )}
               </div>
-              <span className="diary-day">{dayName.charAt(0).toUpperCase() + dayName.slice(1)}</span>
+              <span className="diary-day">
+                {dayName.charAt(0).toUpperCase() + dayName.slice(1)}
+              </span>
               <span className="diary-full-date">{dateStr}</span>
             </div>
           </div>
@@ -253,13 +363,13 @@ export default function DiaryView() {
         <div className="diary-right-panel">
           <div className="diary-panel-tabs">
             <button
-              className={`diary-panel-tab ${panelTab === 'pending' ? 'active' : ''}`}
+              className={`diary-panel-tab${panelTab === 'pending' ? ' active' : ''}`}
               onClick={() => setPanelTab('pending')}
             >
               Pendiente
             </button>
             <button
-              className={`diary-panel-tab ${panelTab === 'timeline' ? 'active' : ''}`}
+              className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
               onClick={() => setPanelTab('timeline')}
             >
               Timeline

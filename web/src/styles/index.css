@@ -2342,7 +2342,23 @@ a { color: inherit; text-decoration: none; }
 .diary-pending-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
 .diary-task-chip { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius); cursor: pointer; font-size: 13px; transition: background 0.1s; }
 .diary-task-chip:hover { background: var(--bg-hover); }
-.diary-task-check { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.diary-task-chip.indented { padding-left: 22px; }
+.diary-task-check { width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; accent-color: var(--accent); }
+.diary-task-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.diary-task-text.done { color: var(--text-tertiary); text-decoration: line-through; }
+.diary-task-due { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ── Bucles en panel diario ──────────────────────────────────────────────── */
+.diary-bucle-section { margin-bottom: 12px; border-left: 2px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding-left: 4px; }
+.diary-bucle-header { display: flex; align-items: center; gap: 6px; padding: 5px 8px; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; border-radius: var(--radius); transition: background 0.1s; }
+.diary-bucle-header:hover { background: var(--accent-soft); }
+.diary-bucle-icon { font-size: 14px; opacity: 0.8; }
+.diary-bucle-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diary-bucle-children { padding-left: 4px; }
+
+/* ── Botón añadir bullet ─────────────────────────────────────────────────── */
+.diary-add-bullet { display: flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 12px; color: var(--text-tertiary); border: none; background: transparent; cursor: pointer; border-radius: var(--radius); transition: color 0.1s, background 0.1s; margin-left: 8px; }
+.diary-add-bullet:hover { color: var(--accent); background: var(--accent-soft); }
 .timeline-row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px; min-height: 32px; }
 .timeline-hour-label { width: 40px; font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; padding-top: 2px; }
 .timeline-now-line { border-top: 2px solid #ef4444; margin: 2px 8px; }
