@@ -3368,6 +3368,13 @@ mark.inline-highlight {
   vertical-align: middle;
 }
 
+.followup-filters { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.followup-search { flex: 1; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; background: var(--bg-secondary); color: var(--text-primary); }
+.followup-search:focus { outline: none; border-color: var(--accent); }
+.followup-priority-filter { display: flex; gap: 2px; }
+.followup-filter-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 12px; color: var(--text-primary); }
+.followup-filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
 .followup-group {
   margin-bottom: 24px;
 }
@@ -4448,6 +4455,11 @@ mark.inline-highlight {
 .stats-tag-bar { height: 4px; border-radius: 2px; flex-shrink: 0; }
 .stats-tag-name { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 .stats-tag-count { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
+
+.stats-habit-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding: 4px 0; }
+.habit-dot { width: 14px; height: 14px; border-radius: 3px; background: var(--bg-tertiary); }
+.habit-dot--active { background: var(--accent); opacity: 0.8; }
+.habit-dot--today { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ── AgentsView improvements ─────────────────────────────────────────────── */
 
