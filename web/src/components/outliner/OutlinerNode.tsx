@@ -99,7 +99,9 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
   }
 
   const handleInput = useCallback(() => {
-    const text = contentRef.current?.textContent || ''
+    // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
+    // para evitar que el browser colapse el trailing space en contentEditable)
+    const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     store.updateNode(node.id, { text })
 
     // Show slash menu when user types '/' at the very beginning
@@ -439,19 +441,28 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
 
   function handleSlashSelect(prefix: string, isTask?: boolean) {
     setShowSlash(false)
-    const newText = prefix
     store.updateNode(node.id, {
-      text: newText,
+      text: prefix,
       ...(isTask ? { status: 'pending' } : {}),
     })
-    // Restore cursor position in contentEditable
     if (contentRef.current) {
-      contentRef.current.textContent = newText
+      // Usar NBSP ( ) para el trailing space del prefijo.
+      // Chrome colapsa los trailing spaces regulares en contentEditable cuando
+      // el usuario escribe el primer carácter. NBSP se preserva correctamente.
+      // handleInput normaliza NBSP → espacio regular antes de guardar en el store.
+      const displayPrefix = prefix.replace(/ $/, ' ')
+      contentRef.current.textContent = displayPrefix
       contentRef.current.focus()
+      const textNode = contentRef.current.firstChild
       const range = document.createRange()
       const sel = window.getSelection()
-      range.selectNodeContents(contentRef.current)
-      range.collapse(false)
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        range.setStart(textNode, displayPrefix.length)
+        range.collapse(true)
+      } else {
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+      }
       sel?.removeAllRanges()
       sel?.addRange(range)
     }
