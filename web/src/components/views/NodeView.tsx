@@ -6,6 +6,7 @@ import InlineRenderer from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
 import { recordRecentNode } from '../CommandPalette'
+import type { Node } from '../../types'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, getToken } from '../../api/client'
 
 function formatBytes(b: number): string {
