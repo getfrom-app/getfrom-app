@@ -849,3 +849,55 @@ a { color: inherit; text-decoration: none; }
   .view-header { padding: 24px 20px 0; }
   .view-body   { padding: 16px 20px 40px; }
 }
+
+/* ── Social Auth ──────────────────────────────────────────────────────────── */
+
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.15s, background 0.15s;
+  width: 100%;
+}
+.social-btn:disabled { opacity: 0.5; cursor: default; }
+
+.social-btn--google {
+  background: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+}
+.social-btn--google:hover:not(:disabled) { background: #f8f9fa; }
+
+.social-btn--apple {
+  background: #000;
+  color: #fff;
+}
+.social-btn--apple:hover:not(:disabled) { background: #1a1a1a; }
+
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.social-divider::before,
+.social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
