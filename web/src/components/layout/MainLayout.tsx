@@ -72,6 +72,11 @@ export default function MainLayout() {
         e.preventDefault()
         setShowCommandPalette(v => !v)
       }
+      // Cmd+Shift+S → toggle sidebar
+      if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault()
+        setSidebarOpen(v => !v)
+      }
       if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowNewTask(true)

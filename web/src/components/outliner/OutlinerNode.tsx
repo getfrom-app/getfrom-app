@@ -19,10 +19,19 @@ interface Props {
 
 const COMMON_TYPES = ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota']
 
+interface PickerItem {
+  id: string
+  label: string
+  // Extra metadata shown only for @ mentions
+  status?: string | null
+  types?: string[]
+  bodyPreview?: string
+}
+
 interface InlinePicker {
   type: '@' | '#'
   query: string
-  items: Array<{ id: string; label: string }>
+  items: PickerItem[]
   activeIdx: number
 }
 
@@ -99,7 +108,7 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
     }
   }, [isSelected]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function buildPickerItems(type: '@' | '#', query: string): Array<{ id: string; label: string }> {
+  function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '#') {
       // Combinar tags del usuario (allUsedTags) + tipos comunes, filtrar por query
       const userTags = store.allUsedTags()
@@ -109,11 +118,17 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
         .slice(0, 10)
         .map(t => ({ id: t, label: t }))
     }
-    // @ — search nodes
+    // @ — search nodes, include status/types/body preview
     return store.allActive()
       .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 8)
-      .map(n => ({ id: n.id, label: n.text }))
+      .map(n => ({
+        id: n.id,
+        label: n.text,
+        status: n.status,
+        types: n.types || [],
+        bodyPreview: n.body ? n.body.slice(0, 30) : undefined,
+      }))
   }
 
   const handleInput = useCallback(() => {
@@ -852,7 +867,24 @@ export default function OutlinerNode({ node, depth, isSelected, onSelect, onSele
               }}
             >
               <span className="inline-picker-icon">{picker.type === '#' ? '#' : '@'}</span>
-              {item.label}
+              <span className="inline-picker-content">
+                <span className="inline-picker-label">{item.label}</span>
+                {picker.type === '@' && (
+                  <span className="inline-picker-meta">
+                    {item.status === 'pending' && <span className="inline-picker-badge status-pending">○</span>}
+                    {item.status === 'done' && <span className="inline-picker-badge status-done">✓</span>}
+                    {(item.types || []).includes('bucle') && <span className="inline-picker-badge type-bucle">↺</span>}
+                    {(item.types || []).some(t => ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota'].includes(t)) && (
+                      <span className="inline-picker-badge type-label">
+                        {(item.types || []).find(t => ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota'].includes(t))}
+                      </span>
+                    )}
+                    {item.bodyPreview && (
+                      <span className="inline-picker-preview">{item.bodyPreview}{(item.bodyPreview?.length ?? 0) >= 30 ? '…' : ''}</span>
+                    )}
+                  </span>
+                )}
+              </span>
             </button>
           ))}
         </div>,
