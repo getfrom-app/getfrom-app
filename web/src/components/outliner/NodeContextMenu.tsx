@@ -207,6 +207,26 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       </div>
       <div className="context-menu-separator" />
       <div className="context-menu-section">
+        <div className="context-menu-section-label">Plantilla rápida</div>
+        {[
+          { label: '📋 Reunión', body: '## Objetivo\n\n## Asistentes\n\n## Notas\n\n## Próximos pasos' },
+          { label: '🚀 Proyecto', body: '## Objetivo\n\n## Alcance\n\n## Tareas clave\n\n## Notas' },
+          { label: '💡 Idea', body: '## Descripción\n\n## Ventajas\n\n## Siguiente paso' },
+        ].map(template => (
+          <button
+            key={template.label}
+            className="context-menu-item"
+            onClick={() => {
+              store.updateNode(node.id, { body: template.body })
+              onClose()
+            }}
+          >
+            {template.label}
+          </button>
+        ))}
+      </div>
+      <div className="context-menu-separator" />
+      <div className="context-menu-section">
         <button className="context-menu-item context-menu-item--danger" onClick={action(deleteNode)}>
           <span className="context-menu-icon">🗑</span> Eliminar
         </button>

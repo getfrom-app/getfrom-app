@@ -222,7 +222,18 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
     .replace(/~~(.+?)~~/g, '<s>$1</s>')
     .replace(/==(.+?)==/g, '<mark class="inline-highlight">$1</mark>')
     .replace(/`(.+?)`/g, '<code>$1</code>')
+    // checkboxes inline: [x] y [ ]
+    .replace(/\[([xX ])\]/g, (_, c) => {
+      const checked = c === 'x' || c === 'X'
+      return `<span class="inline-checkbox ${checked ? 'inline-checkbox--done' : 'inline-checkbox--empty'}">${checked ? '\u2713' : '\u25cb'}</span>`
+    })
+    // wiki-links [[nombre de nota]]
+    .replace(/\[\[([^\]]+)\]\]/g, (_, refText) => {
+      return `<span class="mention-inline" data-ref-text="${refText}">[[${refText}]]</span>`
+    })
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    // auto-link URLs no ya dentro de [text](url)
+    .replace(/(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
     // hashtags con color
     .replace(/#([\wÀ-ɏ]+)/g, (match, tag) => {
       const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]

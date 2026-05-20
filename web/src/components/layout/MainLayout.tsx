@@ -131,6 +131,25 @@ export default function MainLayout() {
           setShowShortcuts(v => !v)
         }
       }
+      // Ctrl+1-9 → cambiar de vista (SIN Cmd, para no interferir con el sistema)
+      if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        const viewMap: Record<string, string> = {
+          '1': '/', '2': '/tasks', '3': '/calendar',
+          '4': '/search', '5': '/kanban', '6': '/followup',
+          '7': '/agents', '8': '/chat',
+        }
+        if (viewMap[e.key]) {
+          const active = document.activeElement
+          const isInputFocused =
+            active?.tagName === 'INPUT' ||
+            active?.tagName === 'TEXTAREA' ||
+            (active as HTMLElement)?.isContentEditable
+          if (!isInputFocused) {
+            e.preventDefault()
+            navigate(viewMap[e.key])
+          }
+        }
+      }
       if (e.key === 'Escape') {
         const active = document.activeElement
         const isInputFocused =

@@ -193,8 +193,15 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   }, [node.extraData])
 
   // Filter: if filterText is active and this node doesn't match, hide it
+  // But keep parent visible if any descendant matches
   const activeFilter = filterText && filterText.trim()
   const matchesFilter = !activeFilter || node.text.toLowerCase().includes(filterText!.toLowerCase())
+  const anyDescendantMatches = activeFilter && !matchesFilter
+    ? getAllDescendants(node.id).some(id => {
+        const n = store.getNode(id)
+        return n && !n.deletedAt && n.text.toLowerCase().includes(filterText!.toLowerCase())
+      })
+    : false
 
   // Sync DOM text with node.text when not editing
   // Setear contenido via innerHTML cuando NO editando — evita poner hijos React

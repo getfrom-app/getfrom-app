@@ -380,37 +380,37 @@ export default function DiaryView() {
         )}
 
         {/* Vencidas */}
-        {overdue.length > 0 && (
+        {filteredOverdue.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label" style={{ color: '#ef4444' }}>Vencidas</div>
-            {overdue.map(t => (
+            {filteredOverdue.map(t => (
               <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
 
         {/* Para hoy */}
-        {todayTasks.length > 0 && (
+        {filteredToday.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label">Para hoy</div>
-            {todayTasks.map(t => (
+            {filteredToday.map(t => (
               <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
 
         {/* Sin fecha */}
-        {noDateTasks.length > 0 && (
+        {filteredNoDate.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label">Sin fecha</div>
-            {noDateTasks.map(t => (
+            {filteredNoDate.map(t => (
               <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
             ))}
           </div>
         )}
 
         {/* Proyectos activos */}
-        {activeProjects.length > 0 && (
+        {!searchQ && activeProjects.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Proyectos activos</div>
             {activeProjects.map(proj => {
@@ -431,7 +431,7 @@ export default function DiaryView() {
         )}
 
         {/* Notas de hoy */}
-        {notesCreatedToday.length > 0 && (
+        {!searchQ && notesCreatedToday.length > 0 && (
           <div className="diary-pending-section">
             <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Notas de hoy</div>
             {notesCreatedToday.map(note => (

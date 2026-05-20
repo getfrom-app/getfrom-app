@@ -69,6 +69,19 @@ const GROUPS: ShortcutGroup[] = [
       { keys: 'Drag evento', desc: 'Mover evento a otra hora/día' },
     ],
   },
+  {
+    title: 'Cambiar vista (Ctrl+N)',
+    shortcuts: [
+      { keys: 'Ctrl+1', desc: 'Ir a Hoy (diario)' },
+      { keys: 'Ctrl+2', desc: 'Ir a Tareas' },
+      { keys: 'Ctrl+3', desc: 'Ir a Calendario' },
+      { keys: 'Ctrl+4', desc: 'Ir a Búsqueda' },
+      { keys: 'Ctrl+5', desc: 'Ir a Kanban' },
+      { keys: 'Ctrl+6', desc: 'Ir a Seguimiento' },
+      { keys: 'Ctrl+7', desc: 'Ir a Agentes' },
+      { keys: 'Ctrl+8', desc: 'Ir a Chat IA' },
+    ],
+  },
 ]
 
 export default function KeyboardShortcutsModal({ onClose }: Props) {

@@ -334,6 +334,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .context-menu-section { padding: 2px 0; }
+.context-menu-section-label { padding: 4px 12px 2px; font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; pointer-events: none; }
 
 .context-menu-separator {
   height: 1px;
@@ -2972,6 +2973,9 @@ mark.inline-highlight {
 .tag-inline:hover { opacity: 0.75; text-decoration: underline; }
 .mention-inline { color: var(--accent); font-weight: 500; cursor: pointer; border-bottom: 1px dotted var(--accent); }
 .mention-inline:hover { opacity: 0.8; }
+.inline-checkbox { font-size: 12px; vertical-align: middle; margin-right: 3px; }
+.inline-checkbox--done { color: #22c55e; }
+.inline-checkbox--empty { color: var(--text-tertiary); }
 .tag-inline--blue   { background: rgba(59,130,246,0.15); color: #3b82f6; }
 .tag-inline--green  { background: rgba(34,197,94,0.15);  color: #16a34a; }
 .tag-inline--orange { background: rgba(249,115,22,0.15); color: #ea580c; }
@@ -4518,3 +4522,16 @@ mark.inline-highlight {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* ── NewNoteModal description ─────────────────────────────────────────────── */
+.modal-description { width: 100%; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; background: var(--bg-primary); color: var(--text-primary); resize: none; line-height: 1.5; box-sizing: border-box; }
+.modal-description:focus { outline: none; border-color: var(--accent); }
+
+/* NodePropertiesPanel links */
+.prop-linked-btn { width: 100%; text-align: left; font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-linked-btn:hover { background: var(--bg-hover); }
+
+/* DiaryView search */
+.diary-panel-search { margin-bottom: 8px; }
+.diary-panel-search-input { width: 100%; font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); box-sizing: border-box; }
+.diary-panel-search-input:focus { outline: none; border-color: var(--accent); }
