@@ -97,6 +97,51 @@ export default function CommandPalette({ onClose }: Props) {
         type: 'action',
         action: () => { navigate('/account'); onClose() },
       },
+      {
+        id: 'action-calendar',
+        icon: '📅',
+        label: 'Abrir calendario',
+        type: 'action',
+        action: () => { navigate('/calendar'); onClose() },
+      },
+      {
+        id: 'action-kanban',
+        icon: '📋',
+        label: 'Abrir kanban',
+        type: 'action',
+        action: () => { navigate('/kanban'); onClose() },
+      },
+      {
+        id: 'action-agents',
+        icon: '🤖',
+        label: 'Agentes IA',
+        type: 'action',
+        action: () => { navigate('/agents'); onClose() },
+      },
+      {
+        id: 'action-new-task',
+        icon: '☑',
+        label: 'Nueva tarea rápida',
+        type: 'action',
+        action: () => {
+          const today = store.todayDiary()
+          const node = store.createNode({ text: '', parentId: today?.id || null, isTask: true })
+          navigate(`/node/${node.id}`)
+          onClose()
+        },
+      },
+      {
+        id: 'action-toggle-theme',
+        icon: '🌙',
+        label: 'Cambiar tema (claro/oscuro)',
+        type: 'action',
+        action: () => {
+          const current = document.documentElement.getAttribute('data-theme')
+          document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark')
+          localStorage.setItem('from_theme', current === 'dark' ? 'light' : 'dark')
+          onClose()
+        },
+      },
     ]
 
     // Recent nodes

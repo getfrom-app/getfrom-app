@@ -87,11 +87,27 @@ export default function NodeView() {
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cmd+P → toggle properties panel
+  // Cmd+F → toggle in-doc search
+  const [inDocSearch, setInDocSearch] = useState('')
+  const [showInDocSearch, setShowInDocSearch] = useState(false)
+  const inDocSearchRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowProperties(v => !v)
+      }
+      if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowInDocSearch(v => {
+          if (!v) setTimeout(() => inDocSearchRef.current?.focus(), 50)
+          return !v
+        })
+      }
+      if (e.key === 'Escape') {
+        setShowInDocSearch(false)
+        setInDocSearch('')
       }
     }
     window.addEventListener('keydown', handleGlobalKeyDown)
@@ -282,6 +298,25 @@ export default function NodeView() {
   return (
     <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''}`}>
       <div className="node-view-main">
+        {/* In-doc search bar (⌘F) */}
+        {showInDocSearch && (
+          <div className="in-doc-search-bar">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: 0.5, flexShrink: 0 }}>
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+            <input
+              ref={inDocSearchRef}
+              type="text"
+              className="in-doc-search-input"
+              placeholder="Buscar en esta nota..."
+              value={inDocSearch}
+              onChange={e => setInDocSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') { setShowInDocSearch(false); setInDocSearch('') } }}
+            />
+            {inDocSearch && <span className="in-doc-search-hint">⌘F para cerrar</span>}
+            <button className="in-doc-search-close" onClick={() => { setShowInDocSearch(false); setInDocSearch('') }}>×</button>
+          </div>
+        )}
         <div className="view-header">
           {crumbs.length > 0 && (
             <nav className="breadcrumb">
