@@ -92,6 +92,16 @@ export default function MainLayout() {
         e.preventDefault()
         store.redo()
       }
+      // Cmd+Shift+C → colapsar todos / expandir todos (toggle)
+      if (e.key === 'c' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault()
+        const anyCollapsed = store.allActive().some(n => n.isCollapsed)
+        if (anyCollapsed) {
+          store.expandAll(null)
+        } else {
+          store.collapseAll(null)
+        }
+      }
       if (e.key === 'Escape') {
         const active = document.activeElement
         const isInputFocused =

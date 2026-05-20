@@ -221,6 +221,26 @@ class NodeStore {
     this.updateNode(id, { deletedAt: new Date().toISOString() })
   }
 
+  /** Colapsar todos los nodos que tienen hijos */
+  collapseAll(parentId: string | null): void {
+    const toCollapse = this.allActive().filter(n => n.parentId === parentId || !parentId)
+    toCollapse.forEach(n => {
+      if (this.children(n.id).length > 0) {
+        this.updateNode(n.id, { isCollapsed: true })
+      }
+    })
+  }
+
+  /** Expandir todos los nodos */
+  expandAll(parentId: string | null): void {
+    const toExpand = this.allActive().filter(n => parentId ? n.parentId === parentId : true)
+    toExpand.forEach(n => {
+      if (n.isCollapsed) {
+        this.updateNode(n.id, { isCollapsed: false })
+      }
+    })
+  }
+
   // ── Sync ──────────────────────────────────────────────────────────────────
 
   private scheduleSyncDebounced() {
