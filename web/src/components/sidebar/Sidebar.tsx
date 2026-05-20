@@ -127,7 +127,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const location = useLocation()
   const s = useStore()
   const us = useUserStore()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, density, setDensity } = useTheme()
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
@@ -549,7 +549,18 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 className={`settings-theme-btn ${theme === 'dark' ? 'active' : ''}`}
                 onClick={() => setTheme('dark')}
               >🌙 Oscuro</button>
-
+            </div>
+            <div className="settings-density-row">
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>Densidad:</span>
+              {(['compact', 'normal', 'comfortable'] as const).map(d => (
+                <button
+                  key={d}
+                  className={`settings-theme-btn ${density === d ? 'active' : ''}`}
+                  onClick={() => setDensity(d)}
+                >
+                  {d === 'compact' ? '— Compacto' : d === 'normal' ? '○ Normal' : '◎ Amplio'}
+                </button>
+              ))}
             </div>
           </div>
 

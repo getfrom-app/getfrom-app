@@ -1146,6 +1146,11 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           </>
         )}
 
+        {/* Body indicator dot */}
+        {node.body && node.body.trim().length > 0 && !isDivider && (
+          <span className="node-body-dot" title={`Con descripción (${node.body.split(/\s+/).filter(Boolean).length} palabras)`} />
+        )}
+
         {/* Priority badge — click para cambiar */}
         {node.priority && (
           <span

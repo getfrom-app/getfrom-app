@@ -790,6 +790,34 @@ export default function DiaryView() {
                 </div>
               )}
 
+              {/* Stats header widget (solo para hoy) */}
+              {dateOffset === 0 && diary && (
+                <div className="diary-day-stats-widget">
+                  <div className="diary-stat-chip">
+                    <span className="diary-stat-chip-icon">📝</span>
+                    <span>{bulletCount} bullet{bulletCount !== 1 ? 's' : ''}</span>
+                  </div>
+                  {taskChildren.length > 0 && (
+                    <div className="diary-stat-chip">
+                      <span className="diary-stat-chip-icon">✓</span>
+                      <span>{doneChildren.length}/{taskChildren.length}</span>
+                      <div className="diary-stat-progress">
+                        <div
+                          className="diary-stat-progress-fill"
+                          style={{ width: `${taskChildren.length > 0 ? (doneChildren.length / taskChildren.length) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {streak >= 2 && (
+                    <div className="diary-stat-chip diary-stat-chip--accent">
+                      <span>🔥</span>
+                      <span>{streak} días</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="diary-nav">
                 <button
                   className="diary-nav-btn"
@@ -878,6 +906,26 @@ export default function DiaryView() {
                 <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
                   No hay entrada de diario para este día
                 </p>
+              </div>
+            )}
+
+            {/* Quick capture bar — solo para hoy */}
+            {dateOffset === 0 && diary && (
+              <div className="diary-quick-capture">
+                <input
+                  type="text"
+                  className="diary-quick-input"
+                  placeholder="Añadir bullet rápido... (Enter para guardar)"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      const text = e.currentTarget.value.trim()
+                      e.currentTarget.value = ''
+                      const children = store.children(diary.id)
+                      const maxOrder = children.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
+                      store.createNode({ text, parentId: diary.id, siblingOrder: maxOrder + 1000 })
+                    }
+                  }}
+                />
               </div>
             )}
 

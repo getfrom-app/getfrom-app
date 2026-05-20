@@ -4623,3 +4623,44 @@ mark.inline-highlight {
 .trash-item-actions { flex-shrink: 0; }
 .trash-restore-btn { font-size: 12px; color: var(--text-secondary); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; cursor: pointer; transition: background 0.1s; }
 .trash-restore-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── DiaryView — stats widget ──────────────────────────────────────────── */
+.diary-day-stats-widget { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.diary-stat-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
+.diary-stat-chip--accent { border-color: var(--accent); color: var(--text-accent); }
+.diary-stat-chip-icon { font-size: 11px; }
+.diary-stat-progress { width: 40px; height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+.diary-stat-progress-fill { height: 100%; background: #22c55e; border-radius: 2px; transition: width 0.3s; }
+
+/* ── DiaryView — quick capture bar ────────────────────────────────────── */
+.diary-quick-capture { padding: 8px 0 16px; }
+.diary-quick-input { width: 100%; font-size: 14px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--bg-secondary); color: var(--text-primary); transition: border-color 0.15s; box-sizing: border-box; }
+.diary-quick-input:focus { outline: none; border-color: var(--accent); }
+.diary-quick-input::placeholder { color: var(--text-tertiary); }
+
+/* ── OutlinerNode — body indicator dot ────────────────────────────────── */
+.node-body-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; opacity: 0.4; margin-left: 2px; }
+.node-row:hover .node-body-dot { opacity: 0.8; }
+
+/* ── Large screen outliner ─────────────────────────────────────────────── */
+@media (min-width: 1400px) {
+  .outliner-container { max-width: 800px; }
+  .node-view-main { max-width: none; }
+}
+
+/* ── Density modes ───────────────────────────────────────────────────────── */
+
+[data-density="compact"] .node-row { min-height: 28px; padding: 1px 0; }
+[data-density="compact"] .node-text { font-size: 13px; min-height: 28px; }
+[data-density="compact"] .outliner-node { margin-bottom: 0; }
+
+[data-density="comfortable"] .node-row { min-height: 40px; padding: 4px 0; }
+[data-density="comfortable"] .node-text { font-size: 15px; line-height: 1.6; }
+[data-density="comfortable"] .outliner-node { margin-bottom: 2px; }
+.settings-density-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
