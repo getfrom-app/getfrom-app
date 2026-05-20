@@ -4319,3 +4319,26 @@ mark.inline-highlight {
   color: var(--text-tertiary);
   text-align: center;
 }
+
+/* ── DiaryView Stats Panel ─────────────────────────────────────────────── */
+
+.stats-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: 6px; }
+
+.stats-week-chart { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0 12px; }
+.stats-week-label { font-size: 11px; color: var(--text-tertiary); }
+
+.stats-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.stats-counter { background: var(--bg-secondary); border-radius: 8px; padding: 10px 12px; }
+.stats-counter-value { font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+.stats-counter-label { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+.stats-tags-list { display: flex; flex-direction: column; gap: 6px; }
+.stats-tag-row { display: flex; align-items: center; gap: 4px; }
+.stats-tag-bar { height: 4px; border-radius: 2px; flex-shrink: 0; }
+.stats-tag-name { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.stats-tag-count { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ── AgentsView improvements ─────────────────────────────────────────────── */
+
+.agents-result-wrapper { margin-top: 16px; }
+.agents-result-actions { display: flex; gap: 8px; margin-bottom: 8px; }

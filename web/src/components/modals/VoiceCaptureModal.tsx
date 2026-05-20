@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 
@@ -32,17 +32,81 @@ export default function VoiceCaptureModal({ onClose }: Props) {
   const [finalText, setFinalText] = useState('')
   const [error, setError] = useState('')
   const [phase, setPhase] = useState<'idle' | 'recording' | 'done'>('idle')
+  const [audioLevel, setAudioLevel] = useState(0)
+  const [elapsed, setElapsed] = useState(0)
+
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const animFrameRef = useRef<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const navigate = useNavigate()
 
-  const SpeechRecognitionAPI: SpeechRecognitionConstructor | undefined = window.SpeechRecognition || window.webkitSpeechRecognition
+  const SpeechRecognitionAPI: SpeechRecognitionConstructor | undefined =
+    window.SpeechRecognition || window.webkitSpeechRecognition
   const isSupported = !!SpeechRecognitionAPI
 
-  function startRecording() {
+  // Format elapsed seconds as MM:SS
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0')
+    const s = (secs % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  // Audio level polling loop
+  function startAudioMeter(stream: MediaStream) {
+    try {
+      const ctx = new AudioContext()
+      const source = ctx.createMediaStreamSource(stream)
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 256
+      source.connect(analyser)
+      audioContextRef.current = ctx
+      analyserRef.current = analyser
+
+      const data = new Uint8Array(analyser.frequencyBinCount)
+      function tick() {
+        analyser.getByteFrequencyData(data)
+        const avg = data.reduce((a, b) => a + b, 0) / data.length
+        setAudioLevel(avg / 128) // normalize 0–1 (approx)
+        animFrameRef.current = requestAnimationFrame(tick)
+      }
+      animFrameRef.current = requestAnimationFrame(tick)
+    } catch {
+      // AudioContext not available — degrade gracefully
+    }
+  }
+
+  function stopAudioMeter() {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = null
+    }
+    analyserRef.current = null
+    audioContextRef.current?.close().catch(() => {})
+    audioContextRef.current = null
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+    setAudioLevel(0)
+  }
+
+  async function startRecording() {
     if (!SpeechRecognitionAPI) {
       setError('Tu navegador no soporta grabación de voz. Usa Chrome.')
       return
     }
+
+    // Try to get microphone stream for the level meter
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+      startAudioMeter(stream)
+    } catch {
+      // getUserMedia denied — still allow speech recognition without meter
+    }
+
     const recognition = new SpeechRecognitionAPI()
     recognition.continuous = true
     recognition.interimResults = true
@@ -64,21 +128,54 @@ export default function VoiceCaptureModal({ onClose }: Props) {
     }
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       setError('Error: ' + e.error)
-      setIsRecording(false)
+      stopRecordingInternal()
     }
-    recognition.onend = () => setIsRecording(false)
+    recognition.onend = () => {
+      stopRecordingInternal()
+    }
 
     recognitionRef.current = recognition
     recognition.start()
     setIsRecording(true)
     setPhase('recording')
     setError('')
+    setElapsed(0)
+
+    timerRef.current = setInterval(() => {
+      setElapsed(s => s + 1)
+    }, 1000)
+  }
+
+  function stopRecordingInternal() {
+    setIsRecording(false)
+    setPhase('done')
+    stopAudioMeter()
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
   }
 
   function stopRecording() {
     recognitionRef.current?.stop()
-    setIsRecording(false)
-    setPhase('done')
+    stopRecordingInternal()
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop()
+      stopAudioMeter()
+      if (timerRef.current !== null) clearInterval(timerRef.current)
+    }
+  }, [])
+
+  function resetRecording() {
+    setPhase('idle')
+    setTranscript('')
+    setFinalText('')
+    setElapsed(0)
+    setError('')
   }
 
   function saveNote() {
@@ -100,6 +197,11 @@ export default function VoiceCaptureModal({ onClose }: Props) {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape' && !isRecording) onClose()
   }
+
+  // Audio level bar width: 0%–100%, with a minimum pulse when recording
+  const levelPercent = isRecording
+    ? Math.max(8, Math.min(100, audioLevel * 100))
+    : 0
 
   return createPortal(
     <div
@@ -125,27 +227,40 @@ export default function VoiceCaptureModal({ onClose }: Props) {
 
         {error && <div className="auth-error">{error}</div>}
 
+        {/* ── Visualizer ─────────────────────────────────────── */}
         <div className="voice-visualizer">
           {isRecording ? (
-            <div className="voice-wave-animation">
-              <div className="wave-bar" />
-              <div className="wave-bar" />
-              <div className="wave-bar" />
-              <div className="wave-bar" />
-              <div className="wave-bar" />
+            <div className="voice-level-wrap">
+              {audioContextRef.current ? (
+                <div className="voice-level-bar-track">
+                  <div
+                    className="voice-level-bar-fill"
+                    style={{ width: `${levelPercent}%` }}
+                  />
+                </div>
+              ) : (
+                <span className="voice-recording-text">● Grabando...</span>
+              )}
+              <span className="voice-timer">{formatTime(elapsed)}</span>
             </div>
+          ) : phase === 'done' ? (
+            <div className="voice-mic-idle">✓</div>
           ) : (
             <div className="voice-mic-idle">🎙</div>
           )}
         </div>
 
+        {/* ── Transcript ─────────────────────────────────────── */}
         <div className="voice-transcript">
           {transcript
             ? transcript
-            : <span className="voice-hint">{isRecording ? 'Habla ahora...' : 'Pulsa para grabar'}</span>
+            : <span className="voice-hint">
+                {isRecording ? 'Habla ahora...' : phase === 'done' ? 'Transcripción vacía' : 'Pulsa para grabar'}
+              </span>
           }
         </div>
 
+        {/* ── Actions ────────────────────────────────────────── */}
         <div className="modal-actions">
           {phase === 'idle' && (
             <button
@@ -153,23 +268,25 @@ export default function VoiceCaptureModal({ onClose }: Props) {
               onClick={startRecording}
               disabled={!isSupported}
             >
-              ● Empezar a grabar
+              🎙 Empezar a grabar
             </button>
           )}
           {phase === 'recording' && (
-            <button className="btn-primary btn-stop" onClick={stopRecording}>
-              ■ Parar
-            </button>
-          )}
-          {phase === 'done' && transcript && (
             <>
-              <button
-                className="btn-secondary"
-                onClick={() => { setPhase('idle'); setTranscript(''); setFinalText('') }}
-              >
+              <button className="btn-secondary" onClick={onClose}>
+                Cancelar
+              </button>
+              <button className="btn-primary btn-stop" onClick={stopRecording}>
+                ■ Parar
+              </button>
+            </>
+          )}
+          {phase === 'done' && (
+            <>
+              <button className="btn-secondary" onClick={resetRecording}>
                 Grabar de nuevo
               </button>
-              <button className="btn-primary" onClick={saveNote}>
+              <button className="btn-primary" onClick={saveNote} disabled={!transcript.trim()}>
                 Guardar como nota
               </button>
             </>

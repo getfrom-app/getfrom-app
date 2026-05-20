@@ -192,18 +192,67 @@ export default function AccountView() {
     }
   }
 
-  function exportMarkdown() {
-    const nodes = store.allActive().filter(n => !n.deletedAt && !n.isDiaryEntry)
-    const lines = nodes.map(n => {
-      const prefix = n.status !== null ? (n.status === 'done' ? '- [x] ' : '- [ ] ') : '- '
-      return prefix + (n.text || '')
-    })
-    const content = lines.join('\n')
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+  async function handleExportMarkdownLocal() {
+    setExportError('')
+    setExportLoading(true)
+    try {
+      const nodes = store.allActive().filter(n => !n.deletedAt)
+      const date = new Date()
+      const lines: string[] = [
+        `# From Export — ${date.toLocaleDateString('es-ES')}`,
+        `Exportado: ${nodes.length} notas · ${date.toISOString()}`,
+        '',
+      ]
+
+      function renderNode(node: typeof nodes[0], depth: number): string[] {
+        const indent = '  '.repeat(depth)
+        const prefix = node.status === 'done' ? '[x] ' : node.status === 'pending' ? '[ ] ' : ''
+        const result = [`${indent}${prefix}${node.text || 'Sin título'}`]
+        if (node.body) {
+          result.push('')
+          node.body.split('\n').forEach(l => result.push(`${indent}  ${l}`))
+          result.push('')
+        }
+        const children = nodes
+          .filter(n => n.parentId === node.id)
+          .sort((a, b) => a.siblingOrder - b.siblingOrder)
+        children.forEach(child => result.push(...renderNode(child, depth + 1)))
+        return result
+      }
+
+      const roots = nodes
+        .filter(n => !n.parentId)
+        .sort((a, b) => a.siblingOrder - b.siblingOrder)
+
+      roots.forEach(root => {
+        lines.push(...renderNode(root, 0))
+        lines.push('')
+      })
+
+      const content = lines.join('\n')
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `from-export-${new Date().toISOString().slice(0, 10)}.md`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err: unknown) {
+      setExportError(err instanceof Error ? err.message : 'Error al exportar')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  function handleExportJsonLocal() {
+    const nodes = store.allActive().filter(n => !n.deletedAt)
+    const blob = new Blob([JSON.stringify(nodes, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `from-export-${new Date().toISOString().slice(0, 10)}.md`
+    a.download = `from-export-${new Date().toISOString().slice(0, 10)}.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -294,9 +343,17 @@ export default function AccountView() {
               </button>
               <button
                 className="btn-secondary"
-                onClick={exportMarkdown}
+                onClick={handleExportMarkdownLocal}
+                disabled={exportLoading}
               >
-                Exportar Markdown (local)
+                {exportLoading ? 'Exportando...' : 'Exportar Markdown (local)'}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={handleExportJsonLocal}
+                disabled={exportLoading}
+              >
+                Exportar JSON (local)
               </button>
             </div>
           </section>

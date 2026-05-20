@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiRequest, getToken } from '../../api/client'
+import { store } from '../../store/nodeStore'
 
 interface AgentRun {
   id: string
@@ -19,38 +20,74 @@ const SHORTCUTS = [
   {
     label: 'Resumir el día',
     icon: '📋',
-    systemPrompt: 'Eres un asistente que resume el diario del usuario de forma concisa y clara.',
-    userMessage: 'Resume los bullets del diario de hoy con los puntos clave y acciones pendientes.',
+    systemPrompt: 'Eres un asistente que resume el diario del usuario de forma concisa y clara en español.',
+    userMessage: 'Resume los puntos clave del día: logros, aprendizajes y acciones pendientes.',
   },
   {
     label: 'Extraer tareas',
     icon: '✅',
-    systemPrompt: 'Eres un asistente de productividad experto en identificar tareas accionables.',
-    userMessage: 'Identifica todas las tareas y acciones pendientes que aparecen en el texto del día. Devuélvelas como lista numerada.',
+    systemPrompt: 'Eres un asistente de productividad experto en identificar tareas accionables. Respondes en español.',
+    userMessage: 'Identifica todas las tareas y acciones pendientes. Devuélvelas como lista con prioridad (alta/media/baja) y fecha sugerida.',
   },
   {
     label: 'Planificar semana',
-    icon: '📅',
-    systemPrompt: 'Eres un coach de productividad especializado en planificación semanal.',
-    userMessage: 'Sugiere una estructura y plan de trabajo para esta semana, considerando mis tareas pendientes y objetivos.',
+    icon: '🗓',
+    systemPrompt: 'Eres un coach de productividad especializado en planificación semanal. Respondes en español.',
+    userMessage: 'Sugiere una estructura de semana productiva con bloques de tiempo para trabajo profundo, reuniones, revisión y descanso.',
   },
   {
     label: 'Revisar pendientes',
     icon: '🔍',
-    systemPrompt: 'Eres un asistente que analiza tareas vencidas y da recomendaciones prácticas.',
-    userMessage: 'Analiza las tareas vencidas o pendientes y dame recomendaciones concretas sobre cómo abordarlas o priorizarlas.',
+    systemPrompt: 'Eres un asistente que analiza tareas y prioriza con metodología GTD. Respondes en español.',
+    userMessage: 'Analiza las tareas vencidas y pendientes. ¿Cuáles hay que hacer ya, delegar, posponer o eliminar? Da una recomendación clara.',
   },
   {
     label: 'Brainstorming',
     icon: '💡',
-    systemPrompt: 'Eres un asistente creativo experto en generar ideas y soluciones innovadoras.',
-    userMessage: 'Genera ideas creativas y diversas sobre el tema seleccionado. Incluye al menos 8-10 ideas con diferentes enfoques.',
+    systemPrompt: 'Eres un facilitador creativo experto en técnicas de ideación. Respondes en español.',
+    userMessage: 'Genera 10 ideas diversas y creativas. Incluye ideas convencionales, disruptivas y combinaciones inesperadas.',
   },
   {
-    label: 'Corregir ortografía',
-    icon: '✏️',
-    systemPrompt: 'Eres un corrector ortográfico y de estilo del español.',
-    userMessage: 'Detecta y corrige los errores ortográficos, gramaticales y de estilo en el texto del día. Muestra los cambios realizados.',
+    label: 'Mejorar texto',
+    icon: '✍️',
+    systemPrompt: 'Eres un editor profesional experto en escritura clara y persuasiva en español.',
+    userMessage: 'Mejora el texto manteniendo el significado original: hazte más claro, conciso y con mejor flujo. Muestra el antes/después.',
+  },
+  {
+    label: 'Análisis DAFO',
+    icon: '⚖️',
+    systemPrompt: 'Eres un consultor estratégico especializado en análisis DAFO. Respondes en español.',
+    userMessage: 'Realiza un análisis DAFO completo (Debilidades, Amenazas, Fortalezas, Oportunidades) del tema o proyecto indicado.',
+  },
+  {
+    label: 'Definir objetivos',
+    icon: '🎯',
+    systemPrompt: 'Eres un coach de metas especializado en metodología OKR y SMART. Respondes en español.',
+    userMessage: 'Ayúdame a definir objetivos SMART para el próximo mes: específicos, medibles, alcanzables, relevantes y con plazo.',
+  },
+  {
+    label: 'Reflexión diaria',
+    icon: '🧘',
+    systemPrompt: 'Eres un coach personal que facilita la reflexión y el autoconocimiento. Respondes en español.',
+    userMessage: '¿Qué fue lo mejor del día? ¿Qué aprendí? ¿Qué haría diferente? Dame 3 preguntas de reflexión profunda para responder.',
+  },
+  {
+    label: 'Resumen ejecutivo',
+    icon: '📊',
+    systemPrompt: 'Eres un asistente especializado en comunicación ejecutiva concisa. Respondes en español.',
+    userMessage: 'Crea un resumen ejecutivo de máximo 5 bullet points con lo más importante. Para una audiencia directiva que tiene 30 segundos.',
+  },
+  {
+    label: 'Próximos pasos',
+    icon: '🚀',
+    systemPrompt: 'Eres un asistente de acción orientado a resultados. Respondes en español.',
+    userMessage: 'Define los 3-5 próximos pasos concretos y accionables para avanzar en el proyecto o situación. Que cada paso sea específico y asignable.',
+  },
+  {
+    label: 'Email profesional',
+    icon: '📧',
+    systemPrompt: 'Eres un especialista en comunicación profesional escrita en español.',
+    userMessage: 'Redacta un email profesional, claro y efectivo sobre el tema indicado. Incluye asunto, cuerpo y cierre apropiado.',
   },
 ]
 
@@ -229,10 +266,30 @@ export default function AgentsView() {
                 </form>
 
                 {runResult && (
-                  <div
-                    className="agents-result agents-result--markdown"
-                    dangerouslySetInnerHTML={{ __html: renderAgentOutput(runResult) }}
-                  />
+                  <div className="agents-result-wrapper">
+                    <div className="agents-result-actions">
+                      <button
+                        className="btn-secondary btn-sm"
+                        onClick={() => navigator.clipboard.writeText(runResult)}
+                        title="Copiar resultado"
+                      >📋 Copiar</button>
+                      <button
+                        className="btn-secondary btn-sm"
+                        onClick={() => {
+                          const diary = store.todayDiary()
+                          if (!diary) return
+                          const current = diary.body || ''
+                          const sep = current.trim() ? '\n\n' : ''
+                          store.updateNode(diary.id, { body: current + sep + `## ${agentTitle || 'Resultado IA'}\n\n${runResult}` })
+                        }}
+                        title="Insertar en diario de hoy"
+                      >↓ Al diario</button>
+                    </div>
+                    <div
+                      className="agents-result agents-result--markdown"
+                      dangerouslySetInnerHTML={{ __html: renderAgentOutput(runResult) }}
+                    />
+                  </div>
                 )}
                 {runError && (
                   <div className="agents-result" style={{ color: 'var(--red, #dc2626)', borderColor: 'rgba(239,68,68,0.3)' }}>

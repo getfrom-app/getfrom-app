@@ -1,26 +1,50 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
+const STEPS = [
+  {
+    icon: '✏️',
+    title: 'Escribe tu primer bullet',
+    text: 'Haz clic en el área principal y empieza a escribir. Cada línea es un nodo que puedes anidar, editar y conectar.',
+  },
+  {
+    icon: '✅',
+    title: 'Crea una tarea con ⌘T',
+    text: 'Pulsa ⌘T sobre cualquier bullet para convertirlo en tarea. También puedes escribir -t al final de la línea.',
+  },
+  {
+    icon: '🔍',
+    title: 'Busca con ⌘K',
+    text: 'Accede al buscador global con ⌘K. Encuentra notas, tareas y eventos al instante.',
+  },
+  {
+    icon: '📅',
+    title: 'El Diario es tu hub diario',
+    text: 'Cada día tiene su propia página de diario. Tus tareas de hoy, eventos y notas rápidas viven ahí.',
+  },
+  {
+    icon: '✨',
+    title: 'IA con ⌘J y ⌘Space',
+    text: 'Pulsa ⌘Space para abrir el chat de IA. Usa ⌘J dentro del editor para completar o transformar texto con IA.',
+  },
+]
+
 export default function OnboardingTooltip() {
   const [step, setStep] = useState(0)
   const [visible, setVisible] = useState(() => localStorage.getItem('from_onboarding_done') !== '1')
 
-  const steps = [
-    { text: '👋 Bienvenido a From. Escribe tu primera nota aquí.' },
-    { text: '📅 Usa / para acceder al menú de opciones — crea tareas, títulos, bucles...' },
-    { text: '✓ Convierte cualquier bullet en tarea con Cmd+T o escribiendo -t al final' },
-    { text: '🔖 Fija notas importantes con ⌘Shift+F y aparecerán en Fijados' },
-    { text: '🔍 Busca notas, tareas y eventos con Cmd+K o desde Buscar' },
-  ]
-
   if (!visible) return null
 
   function next() {
-    if (step < steps.length - 1) {
+    if (step < STEPS.length - 1) {
       setStep(s => s + 1)
     } else {
       dismiss()
     }
+  }
+
+  function prev() {
+    if (step > 0) setStep(s => s - 1)
   }
 
   function dismiss() {
@@ -28,21 +52,33 @@ export default function OnboardingTooltip() {
     setVisible(false)
   }
 
+  const current = STEPS[step]
+  const isLast = step === STEPS.length - 1
+
   // Portal para evitar conflictos DOM con scripts de terceros (Google/Apple Sign-In)
   return createPortal(
     <div className="onboarding-overlay" onClick={dismiss}>
       <div className="onboarding-tooltip" onClick={e => e.stopPropagation()}>
-        <p className="onboarding-text">{steps[step].text}</p>
+        <div className="onboarding-step-icon">{current.icon}</div>
+        <p className="onboarding-title">{current.title}</p>
+        <p className="onboarding-text">{current.text}</p>
         <div className="onboarding-footer">
           <span className="onboarding-dots">
-            {steps.map((_, i) => (
-              <span key={i} className={`onboarding-dot ${i === step ? 'active' : ''}`} />
+            {STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={`onboarding-dot ${i === step ? 'active' : ''}`}
+                onClick={e => { e.stopPropagation(); setStep(i) }}
+              />
             ))}
           </span>
           <div className="onboarding-actions">
             <button className="onboarding-skip" onClick={dismiss}>Saltar</button>
+            {step > 0 && (
+              <button className="onboarding-prev" onClick={prev}>← Anterior</button>
+            )}
             <button className="onboarding-next" onClick={next}>
-              {step < steps.length - 1 ? 'Siguiente →' : 'Empezar'}
+              {isLast ? 'Empezar' : 'Siguiente →'}
             </button>
           </div>
         </div>

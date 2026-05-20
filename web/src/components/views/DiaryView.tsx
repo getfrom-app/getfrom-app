@@ -4,7 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 
-type DiaryPanelTab = 'pending' | 'timeline' | 'agenda'
+type DiaryPanelTab = 'pending' | 'timeline' | 'agenda' | 'stats'
 
 function getDiaryForDate(date: Date): Node | null {
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -567,6 +567,153 @@ export default function DiaryView() {
     )
   }
 
+  // ── Stats panel ────────────────────────────────────────────────────────
+  function renderStats() {
+    const allNodes = s.allActive()
+
+    // Weekly bar chart — count non-diary, non-deleted nodes updated each day
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - 6 + i)
+      d.setHours(0, 0, 0, 0)
+      return d
+    })
+    const weekCounts = weekDays.map(day => {
+      const end = new Date(day.getTime() + 86400000)
+      return allNodes.filter(n => {
+        if (n.isDiaryEntry || n.deletedAt) return false
+        const updated = new Date(n.updatedAt)
+        return updated >= day && updated < end
+      }).length
+    })
+    const maxCount = Math.max(...weekCounts, 1)
+    const barHeight = 40
+    const barWidth = 24
+    const gap = 4
+
+    // Global counters
+    const totalNotes = allNodes.filter(n => !n.isDiaryEntry && n.status === null).length
+    const totalTasks = allNodes.filter(n => n.status !== null).length
+    const doneTasks = allNodes.filter(n => n.status === 'done').length
+    const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+
+    // Top 5 tags
+    const topTags = s.allUsedTags()
+      .map(t => ({ tag: t, count: s.tagNodeCount(t) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+    const maxTagCount = topTags.length > 0 ? topTags[0].count : 1
+
+    // Streak
+    const currentStreak = calculateStreak(s)
+
+    return (
+      <div className="diary-panel-content">
+        {/* Weekly bar chart */}
+        <div className="stats-section-label">Últimos 7 días</div>
+        <div className="stats-week-chart">
+          <svg width={(barWidth + gap) * 7 - gap} height={barHeight + 20}>
+            {weekDays.map((day, i) => {
+              const h = Math.max(2, (weekCounts[i] / maxCount) * barHeight)
+              const isToday = i === 6
+              return (
+                <g key={i}>
+                  <rect
+                    x={i * (barWidth + gap)}
+                    y={barHeight - h}
+                    width={barWidth}
+                    height={h}
+                    rx={3}
+                    fill={isToday ? 'var(--accent)' : weekCounts[i] > 0 ? 'var(--accent-soft, #c4b5fd)' : 'var(--bg-tertiary)'}
+                  />
+                  <text
+                    x={i * (barWidth + gap) + barWidth / 2}
+                    y={barHeight + 14}
+                    textAnchor="middle"
+                    fontSize={10}
+                    fill={isToday ? 'var(--text-accent, var(--accent))' : 'var(--text-tertiary)'}
+                  >
+                    {day.toLocaleDateString('es-ES', { weekday: 'narrow' })}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+          <div className="stats-week-label">
+            {weekCounts.reduce((a, b) => a + b, 0)} actividades esta semana
+          </div>
+        </div>
+
+        {/* Global counters */}
+        <div className="stats-section-label" style={{ marginTop: 12 }}>Global</div>
+        <div className="stats-counters">
+          <div className="stats-counter">
+            <div className="stats-counter-value">{totalNotes}</div>
+            <div className="stats-counter-label">Notas</div>
+          </div>
+          <div className="stats-counter">
+            <div className="stats-counter-value">{totalTasks}</div>
+            <div className="stats-counter-label">Tareas</div>
+          </div>
+          <div className="stats-counter">
+            <div className="stats-counter-value">{doneTasks}</div>
+            <div className="stats-counter-label">Completadas</div>
+          </div>
+          <div className="stats-counter">
+            <div className="stats-counter-value">{completionRate}%</div>
+            <div className="stats-counter-label">Tasa completado</div>
+          </div>
+        </div>
+
+        {/* Streak */}
+        {currentStreak >= 1 && (
+          <>
+            <div className="stats-section-label" style={{ marginTop: 12 }}>Racha</div>
+            <div className="stats-counter" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <div className="stats-counter-value" style={{ fontSize: 28 }}>🔥</div>
+              <div>
+                <div className="stats-counter-value">{currentStreak} {currentStreak === 1 ? 'día' : 'días'}</div>
+                <div className="stats-counter-label">Racha actual de diario</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Top tags */}
+        {topTags.length > 0 && (
+          <>
+            <div className="stats-section-label" style={{ marginTop: 12 }}>Tags más usados</div>
+            <div className="stats-tags-list">
+              {topTags.map(({ tag, count }) => (
+                <div key={tag} className="stats-tag-row">
+                  <span className="stats-tag-name" style={{ color: store.tagColor(tag) }}>#{tag}</span>
+                  <div
+                    className="stats-tag-bar"
+                    style={{
+                      flex: 1,
+                      background: 'var(--bg-tertiary)',
+                      marginLeft: 6,
+                      marginRight: 6,
+                    }}
+                  >
+                    <div
+                      className="stats-tag-bar"
+                      style={{
+                        width: `${(count / maxTagCount) * 100}%`,
+                        background: store.tagColor(tag) || 'var(--accent)',
+                      }}
+                    />
+                  </div>
+                  <span className="stats-tag-count">{count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="view diary-view">
       <div className="diary-layout">
@@ -711,8 +858,17 @@ export default function DiaryView() {
             >
               Agenda
             </button>
+            <button
+              className={`diary-panel-tab${panelTab === 'stats' ? ' active' : ''}`}
+              onClick={() => setPanelTab('stats')}
+            >
+              Stats
+            </button>
           </div>
-          {panelTab === 'pending' ? renderPending() : panelTab === 'timeline' ? renderTimeline() : renderAgenda()}
+          {panelTab === 'pending' ? renderPending()
+            : panelTab === 'timeline' ? renderTimeline()
+            : panelTab === 'agenda' ? renderAgenda()
+            : renderStats()}
         </div>
       </div>
     </div>
