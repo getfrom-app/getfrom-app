@@ -127,7 +127,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
   const location = useLocation()
   const s = useStore()
   const us = useUserStore()
-  const { theme, setTheme, density, setDensity } = useTheme()
+  const { theme, setTheme, density, setDensity, accent, setAccent } = useTheme()
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
@@ -560,6 +560,32 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 >
                   {d === 'compact' ? '— Compacto' : d === 'normal' ? '○ Normal' : '◎ Amplio'}
                 </button>
+              ))}
+            </div>
+            <div className="settings-density-row" style={{ marginTop: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>Color:</span>
+              {([
+                ['purple', '#8b5cf6'],
+                ['blue', '#3b82f6'],
+                ['green', '#22c55e'],
+                ['orange', '#f97316'],
+                ['rose', '#f43f5e'],
+                ['teal', '#14b8a6'],
+              ] as const).map(([a, color]) => (
+                <button
+                  key={a}
+                  onClick={() => setAccent(a)}
+                  title={a}
+                  style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: color,
+                    border: accent === a ? `2px solid ${color}` : '2px solid transparent',
+                    outline: accent === a ? `2px solid ${color}` : '2px solid transparent',
+                    outlineOffset: 1,
+                    cursor: 'pointer',
+                    boxShadow: accent === a ? `0 0 0 2px white, 0 0 0 4px ${color}` : 'none',
+                  }}
+                />
               ))}
             </div>
           </div>
