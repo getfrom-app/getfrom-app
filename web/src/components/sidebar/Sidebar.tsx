@@ -475,35 +475,44 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
     )
   }
 
+  const DEFAULT_PANEL: Panel = {
+    id: '__today_tasks__',
+    name: 'Tareas de hoy',
+    query: 'fecha:hoy tipo:tarea',
+    createdAt: '',
+  }
+
   function renderPanelsTab() {
+    const allPanels = [DEFAULT_PANEL, ...panels]
     return (
       <div className="sidebar-tab-content">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 8px' }}>
           <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Paneles</span>
           <button className="sidebar-panel-create-btn" onClick={handleCreatePanel} title="Nuevo panel">+</button>
         </div>
-        {panels.length > 0 ? (
-          panels.map(panel => (
+        {allPanels.map(panel => {
+          const isDefault = panel.id === '__today_tasks__'
+          const isActivePath = location.search === `?q=${encodeURIComponent(panel.query)}` && location.pathname === '/search'
+          return (
             <div
               key={panel.id}
-              className="sidebar-panel-item"
+              className={`sidebar-panel-item${isActivePath ? ' active' : ''}`}
               onClick={() => navigate(`/search?q=${encodeURIComponent(panel.query)}`)}
             >
+              <span style={{ fontSize: 13, flexShrink: 0 }}>{isDefault ? '📅' : '🔍'}</span>
               <span style={{ flex: 1, fontSize: 13 }}>{panel.name}</span>
-              <button
-                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
-                onClick={e => { e.stopPropagation(); handleDeletePanel(panel.id) }}
-                title="Eliminar panel"
-              >
-                ×
-              </button>
+              {!isDefault && (
+                <button
+                  style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
+                  onClick={e => { e.stopPropagation(); handleDeletePanel(panel.id) }}
+                  title="Eliminar panel"
+                >
+                  ×
+                </button>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            No hay paneles. Guarda una búsqueda como panel.
-          </div>
-        )}
+          )
+        })}
       </div>
     )
   }

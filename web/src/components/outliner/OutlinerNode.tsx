@@ -109,7 +109,11 @@ interface Props {
   filterText?: string
 }
 
-const COMMON_TYPES = ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota']
+const COMMON_TYPES = [
+  'tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota',
+  'reunión', 'idea', 'decisión', 'lectura', 'apuntes', 'recurso',
+  'pendiente', 'importante', 'trabajo', 'personal',
+]
 
 interface PickerItem {
   id: string
