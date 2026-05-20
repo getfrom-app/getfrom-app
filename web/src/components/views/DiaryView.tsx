@@ -46,10 +46,13 @@ function formatDue(due: string): string {
 
 function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boolean; toggleTask: (id: string, status: string | null) => void }) {
   const navigate = useNavigate()
+  const [hovered, setHovered] = useState(false)
   return (
     <div
       className={`diary-task-chip${indented ? ' indented' : ''}`}
       onClick={() => navigate(`/node/${task.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <input
         type="checkbox"
@@ -65,6 +68,50 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
         {task.text || 'Sin título'}
       </span>
       {task.due && <span className="diary-task-due">{formatDue(task.due)}</span>}
+      {hovered && task.status !== 'done' && (
+        <div className="task-chip-quick-dates" onClick={e => e.stopPropagation()}>
+          <button
+            className="quick-date-btn"
+            title="Hoy"
+            onClick={e => {
+              e.stopPropagation()
+              store.updateNode(task.id, { due: new Date(new Date().setHours(23, 59, 0, 0)).toISOString() })
+            }}
+          >⏰</button>
+          <button
+            className="quick-date-btn"
+            title="Mañana"
+            onClick={e => {
+              e.stopPropagation()
+              const t = new Date()
+              t.setDate(t.getDate() + 1)
+              t.setHours(9, 0, 0, 0)
+              store.updateNode(task.id, { due: t.toISOString() })
+            }}
+          >☀️</button>
+          <button
+            className="quick-date-btn"
+            title="Próxima semana"
+            onClick={e => {
+              e.stopPropagation()
+              const t = new Date()
+              const day = t.getDay()
+              const daysUntilMonday = day === 0 ? 1 : 8 - day
+              t.setDate(t.getDate() + daysUntilMonday)
+              t.setHours(9, 0, 0, 0)
+              store.updateNode(task.id, { due: t.toISOString() })
+            }}
+          >📅</button>
+          <button
+            className="quick-date-btn"
+            title="Sin fecha"
+            onClick={e => {
+              e.stopPropagation()
+              store.updateNode(task.id, { due: null })
+            }}
+          >✕</button>
+        </div>
+      )}
     </div>
   )
 }

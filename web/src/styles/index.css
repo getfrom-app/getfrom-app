@@ -777,9 +777,9 @@ mark.search-highlight {
   transition: background 0.1s;
   min-height: 26px;
 }
-.node-row:hover { background: var(--bg-hover); }
+.node-row:hover { background: var(--bg-hover); border-left: 2px solid var(--accent); padding-left: calc(var(--depth, 0) * 22px - 2px); }
 .node-row:hover .node-open-btn { opacity: 1; }
-.node-row.selected { background: rgba(139,92,246,0.08); }
+.node-row.selected { background: rgba(139,92,246,0.1); border-left: 2px solid var(--accent); padding-left: calc(var(--depth, 0) * 22px - 2px); }
 .node-row.done .node-text { color: var(--text-tertiary); text-decoration: line-through; }
 
 .collapse-btn {
@@ -2451,11 +2451,24 @@ mark.search-highlight {
 .agent-run-status--completed { background: rgba(34,197,94,0.15); color: #16a34a; }
 .agent-run-status--running { background: rgba(59,130,246,0.15); color: #2563eb; }
 .agent-run-status--failed { background: rgba(239,68,68,0.15); color: #dc2626; }
-.agents-shortcuts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-.agent-shortcut-btn { padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.agents-shortcuts-section { margin-bottom: 24px; }
+.agents-shortcuts-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+.agents-shortcuts { display: flex; gap: 8px; flex-wrap: wrap; }
+.agent-shortcut-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); font-size: 13px; cursor: pointer; color: var(--text-primary); transition: border-color 0.12s, background 0.12s, color 0.12s; }
 .agent-shortcut-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.agent-shortcut-icon { font-size: 14px; line-height: 1; }
+.agent-shortcut-text { font-size: 13px; }
 .agents-new-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
 .agents-result { margin-top: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+
+/* ── Node quick actions bar ─────────────────────────────────────────────── */
+
+.node-quick-actions { display: flex; align-items: center; gap: 2px; height: 0; overflow: hidden; opacity: 0; transition: height 0.15s ease, opacity 0.15s ease; padding: 0 2px; }
+.node-title-row:hover ~ .node-quick-actions,
+.node-quick-actions:hover { height: 28px; opacity: 1; }
+.node-quick-action-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 5px; border: none; background: transparent; font-size: 12px; color: var(--text-tertiary); cursor: pointer; transition: background 0.1s, color 0.1s; }
+.node-quick-action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.node-quick-action-feedback { font-size: 11px; color: var(--accent); margin-left: 6px; animation: fadeIn 0.2s ease; }
 
 /* ── Magic Search ───────────────────────────────────────────────────────── */
 
@@ -2664,3 +2677,29 @@ mark.search-highlight {
 .sync-spinner { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Sidebar stats widget ─────────────────────────────────────────────────── */
+.sidebar-stats-widget { display: flex; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--border); margin-top: 8px; }
+.sidebar-stat { display: flex; flex-direction: column; align-items: center; }
+.sidebar-stat-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.sidebar-stat-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── Task chip quick date buttons ────────────────────────────────────────── */
+.task-chip-quick-dates { display: flex; gap: 2px; align-items: center; flex-shrink: 0; margin-left: 4px; }
+.quick-date-btn { font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer; border: 1px solid var(--border); transition: background 0.1s, border-color 0.1s; line-height: 1.4; }
+.quick-date-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+/* ── Outliner depth guide lines ──────────────────────────────────────────── */
+.outliner-node { position: relative; }
+.outliner-node::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--depth, 0) * 22px + 10px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  pointer-events: none;
+  opacity: 0.5;
+  display: var(--show-guide, none);
+}

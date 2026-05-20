@@ -302,6 +302,18 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
             </div>
           )}
         </div>
+
+        {/* Stats widget */}
+        <div className="sidebar-stats-widget">
+          <div className="sidebar-stat">
+            <span className="sidebar-stat-value">{regularNotes.length + favorites.length}</span>
+            <span className="sidebar-stat-label">notas</span>
+          </div>
+          <div className="sidebar-stat">
+            <span className="sidebar-stat-value">{pendingCount}</span>
+            <span className="sidebar-stat-label">pendientes</span>
+          </div>
+        </div>
       </div>
     )
   }

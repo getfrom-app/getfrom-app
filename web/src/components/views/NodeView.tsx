@@ -311,7 +311,7 @@ export default function NodeView() {
   }
 
   function handleMoveToDiary() {
-    const todayDiary = s.todayDiary ? s.todayDiary() : undefined
+    const todayDiary = store.todayDiary()
     if (!todayDiary) {
       setQuickActionMsg('No hay diario hoy')
       setTimeout(() => setQuickActionMsg(null), 2000)
