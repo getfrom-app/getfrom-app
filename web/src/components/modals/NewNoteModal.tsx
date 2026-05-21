@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 
@@ -33,6 +33,15 @@ interface Props {
 export default function NewNoteModal({ parentId, onClose }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+
+  // Detección de duplicados
+  const duplicates = useMemo(() => {
+    if (!title.trim() || title.trim().length < 3) return []
+    const q = title.trim().toLowerCase()
+    return store.allActive()
+      .filter(n => !n.isDiaryEntry && !n.deletedAt && n.text.toLowerCase().includes(q))
+      .slice(0, 3)
+  }, [title])
 
   // Cargar plantillas de usuario desde localStorage y combinar con las del sistema
   const allTemplates: Template[] = (() => {
@@ -94,6 +103,23 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose() }}
           />
         </div>
+
+        {/* Duplicate warning */}
+        {duplicates.length > 0 && (
+          <div className="modal-duplicates-warning">
+            <span className="modal-dup-icon">⚠</span>
+            <span className="modal-dup-label">Notas similares:</span>
+            {duplicates.map(d => (
+              <button
+                key={d.id}
+                className="modal-dup-link"
+                onClick={() => { navigate(`/node/${d.id}`); onClose() }}
+              >
+                {d.text}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="modal-field">
           <textarea

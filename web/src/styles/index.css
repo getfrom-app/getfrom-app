@@ -5058,3 +5058,34 @@ select:focus { outline: none; }
 .tree-item-count { font-size: 10px; opacity: 0.5; margin-left: auto; }
 .tree-item-icon { font-size: 12px; flex-shrink: 0; }
 .tree-item-name { flex: 1; font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.tree-item { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; cursor: pointer; padding: 4px 12px; text-align: left; }
+
+/* ── NewNoteModal duplicate warning ─────────────────────────────────────── */
+.modal-duplicates-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 6px;
+  margin: 0 0 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.modal-dup-icon { color: #f59e0b; }
+.modal-dup-label { color: var(--text-secondary); }
+.modal-dup-link {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 12px;
+  padding: 0;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.modal-dup-link:hover { opacity: 0.8; }
