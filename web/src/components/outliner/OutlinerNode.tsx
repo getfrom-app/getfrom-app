@@ -677,6 +677,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
 
     if (e.key === 'Enter') {
       e.preventDefault()
+
+      // Enter en bullet vacío → eliminar y mover cursor al bullet anterior (al final de su texto)
+      if (text === '') {
+        onSelectNext(node.id, 'up')
+        store.deleteNode(node.id)
+        return
+      }
+
       // Smart date parse FIRST
       if (applySmartDate(text)) return
 
