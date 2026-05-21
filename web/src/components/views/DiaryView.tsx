@@ -178,8 +178,10 @@ export default function DiaryView() {
 
   // Breadcrumb temporal labels
   const yearLabel = targetDate.getFullYear().toString()
-  const monthLabel = targetDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-    .replace(/^\w/, c => c.toUpperCase())
+  const monthLabel = (() => {
+    const month = targetDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
+    return `${month} ${targetDate.getFullYear()}`
+  })()
   const weekNumber = (() => {
     const d = new Date(targetDate)
     d.setHours(0, 0, 0, 0)

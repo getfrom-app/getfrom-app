@@ -222,8 +222,10 @@ export default function NodeView() {
   if (node.isDiaryEntry && node.diaryDate) {
     const diaryDate = new Date(node.diaryDate)
     const yearLabel = diaryDate.getFullYear().toString()
-    const monthLabel = diaryDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-      .replace(/^\w/, c => c.toUpperCase())
+    const monthLabel = (() => {
+      const m = diaryDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
+      return `${m} ${diaryDate.getFullYear()}`
+    })()
     const weekNumber = (() => {
       const d = new Date(diaryDate)
       d.setHours(0, 0, 0, 0)
