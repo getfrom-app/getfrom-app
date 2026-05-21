@@ -924,12 +924,28 @@ mark.inline-highlight {
 .bullet-btn.task  { color: var(--text-secondary); }
 
 .bullet-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.6;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Lista de elementos: bullet siempre visible, no interactivo */
+.node-row--bullet .bullet-btn {
+  cursor: default;
+  pointer-events: none;
+}
+.node-row--bullet .bullet-btn:hover {
+  color: inherit;
+  background: none;
+}
+.node-row--bullet .bullet-dot {
   width: 5px;
   height: 5px;
-  border-radius: 50%;
-  background: currentColor;
   opacity: 0.5;
-  display: block;
 }
 
 .bullet-placeholder {
@@ -3479,6 +3495,9 @@ mark.inline-highlight {
 .node-row--h1 .bullet-btn,
 .node-row--h2 .bullet-btn,
 .node-row--h3 .bullet-btn { display: none; }
+
+/* ── Lista de elementos (- ): sin nav-dot ────────────────────────────────── */
+.node-row--bullet .bullet-nav-dot { display: none; }
 
 .node-row--h1 { padding-top: 16px !important; padding-bottom: 4px; }
 .node-row--h2 { padding-top: 12px !important; padding-bottom: 2px; }

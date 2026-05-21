@@ -708,6 +708,26 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     if (e.key === 'Enter') {
       e.preventDefault()
 
+      // Lista de elementos (- ): Enter continúa lista o sale si está vacío
+      if (isBullet) {
+        const bulletContent = text.startsWith('- ') ? text.slice(2).trim() : text.trim()
+        if (bulletContent === '') {
+          // Bullet vacío → salir de la lista: convertir a nodo de texto normal
+          nodeTextRef.current = ''
+          store.updateNode(node.id, { text: '' })
+          if (contentRef.current) contentRef.current.textContent = ''
+          return
+        }
+        // Bullet con contenido → crear siguiente elemento de lista
+        const newBullet = store.createNode({
+          text: '- ',
+          parentId: node.parentId,
+          siblingOrder: node.siblingOrder + 0.5,
+        })
+        onSelect(newBullet.id)
+        return
+      }
+
       // Enter en bullet vacío:
       // - Si está indentado (depth > 0) → desindentar (igual que Backspace)
       // - Si está al nivel raíz → borrar y cursor al anterior
@@ -1046,6 +1066,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     isMultiSelected ? 'multi-selected' : '',
     node.status === 'done' ? 'done' : '',
     isHeading ? `node-row--${blockType}` : '',
+    isBullet ? 'node-row--bullet' : '',
     isDragOver ? 'drag-over' : '',
   ].filter(Boolean).join(' ')
 
@@ -1089,8 +1110,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           }
         }}
         style={nodeColor
-          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + 4 }
-          : { paddingLeft: depth * 22 }
+          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + (isBullet ? 12 : 4) }
+          : { paddingLeft: depth * 22 + (isBullet ? 8 : 0) }
         }
       >
 
