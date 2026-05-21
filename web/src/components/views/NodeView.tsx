@@ -226,34 +226,50 @@ export default function NodeView() {
     return <div className="view-empty">Nodo no encontrado</div>
   }
 
-  // Breadcrumb: walk up the parent chain
+  // ── Breadcrumb: buscar ancestro diario (incluyendo el nodo actual) ──────
+  const diaryAncestor = node.isDiaryEntry ? node : (() => {
+    let c = node
+    while (c.parentId) {
+      const p = s.getNode(c.parentId)
+      if (!p) break
+      if (p.isDiaryEntry) return p
+      c = p
+    }
+    return null
+  })()
+
+  // Crumbs temporales: Año / Mes / Semana (a partir del ancestro diario)
+  const diaryTemporalCrumbs: { label: string }[] = []
+  if (diaryAncestor?.diaryDate) {
+    const diaryDate = new Date(diaryAncestor.diaryDate)
+    const yearLabel = diaryDate.getFullYear().toString()
+    const monthLabel = diaryDate.toLocaleDateString('es-ES', { month: 'long' })
+      .replace(/^\w/, c => c.toUpperCase())
+    const weekNumber = (() => {
+      const d = new Date(diaryDate); d.setHours(0, 0, 0, 0)
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
+      const week1 = new Date(d.getFullYear(), 0, 4)
+      return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+    })()
+    diaryTemporalCrumbs.push({ label: yearLabel }, { label: monthLabel }, { label: `Semana ${weekNumber}` })
+  }
+
+  // Crumbs de nodos: cadena de padres, deteniéndose en el ancestro diario
+  // Si el nodo actual NO es diario y tiene un ancestro diario, lo incluimos como crumb
   const crumbs: { id: string; text: string }[] = []
   let cur = node
   while (cur.parentId) {
     const parent = s.getNode(cur.parentId)
     if (!parent) break
+    if (parent.isDiaryEntry) {
+      // Añadir el diario como crumb (navegable al día) solo si no estamos ya en él
+      if (!node.isDiaryEntry) {
+        crumbs.unshift({ id: parent.id, text: parent.text || 'Diario' })
+      }
+      break
+    }
     crumbs.unshift({ id: parent.id, text: parent.text || 'Sin título' })
     cur = parent
-  }
-
-  // Temporal breadcrumb labels for diary entries
-  const diaryTemporalCrumbs: { label: string }[] = []
-  if (node.isDiaryEntry && node.diaryDate) {
-    const diaryDate = new Date(node.diaryDate)
-    const yearLabel = diaryDate.getFullYear().toString()
-    const monthLabel = (() => {
-      const m = diaryDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
-      return `${m} ${diaryDate.getFullYear()}`
-    })()
-    const weekNumber = (() => {
-      const d = new Date(diaryDate)
-      d.setHours(0, 0, 0, 0)
-      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
-      const week1 = new Date(d.getFullYear(), 0, 4)
-      return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
-    })()
-    const weekLabel = `Semana ${weekNumber}`
-    diaryTemporalCrumbs.push({ label: yearLabel }, { label: monthLabel }, { label: weekLabel })
   }
 
   function findOrCreateTemporalNodeInView(text: string): void {
@@ -935,11 +951,10 @@ export default function NodeView() {
           <div className="breadcrumb-row">
             {(crumbs.length > 0 || diaryTemporalCrumbs.length > 0) && (
               <nav className="breadcrumb">
-                <button className="breadcrumb-home" onClick={() => navigate('/')}>Inicio</button>
-                {/* Temporal crumbs for diary entries */}
-                {diaryTemporalCrumbs.map((c) => (
+                {/* Temporal crumbs: Año / Mes / Semana */}
+                {diaryTemporalCrumbs.map((c, i) => (
                   <span key={c.label}>
-                    <span className="breadcrumb-sep">/</span>
+                    {i > 0 && <span className="breadcrumb-sep">/</span>}
                     <button
                       className="breadcrumb-item"
                       onClick={() => findOrCreateTemporalNodeInView(c.label)}
@@ -948,18 +963,10 @@ export default function NodeView() {
                     </button>
                   </span>
                 ))}
-                {crumbs.length > 0 && (
-                  <button
-                    className="breadcrumb-root-btn"
-                    onClick={() => navigate(`/node/${crumbs[0].id}`)}
-                    title="Ir al nodo raíz"
-                  >
-                    ⇑
-                  </button>
-                )}
-                {crumbs.map((c) => (
+                {/* Nodos padres: incluye el día diario si la nota es hija de él */}
+                {crumbs.map((c, i) => (
                   <span key={c.id}>
-                    <span className="breadcrumb-sep">/</span>
+                    {(diaryTemporalCrumbs.length > 0 || i > 0) && <span className="breadcrumb-sep">/</span>}
                     <button
                       className="breadcrumb-item"
                       onClick={() => navigate(`/node/${c.id}`)}
