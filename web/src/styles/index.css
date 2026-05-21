@@ -938,6 +938,39 @@ mark.inline-highlight {
   flex-shrink: 0;
 }
 
+/* Bullet navegador — reemplaza el placeholder en texto normal */
+.bullet-nav-dot {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  position: relative;
+}
+.bullet-nav-dot::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  display: block;
+}
+/* Con hijos: siempre un poco visible */
+.bullet-nav-dot--has-children {
+  opacity: 0.35;
+}
+/* En hover del node-row: visible */
+.node-row:hover .bullet-nav-dot {
+  opacity: 1;
+}
+
 .node-text--nota {
   color: var(--text-primary);
 }

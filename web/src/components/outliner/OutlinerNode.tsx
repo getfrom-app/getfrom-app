@@ -1174,8 +1174,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
                 <span className="bullet-dot" />
               </button>
             ) : (
-              // Texto normal: espacio vacío para mantener alineamiento
-              <span className="bullet-placeholder" />
+              // Texto normal: dot navegador (visible en hover, o siempre si tiene hijos)
+              <button
+                className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                tabIndex={-1}
+                title="Abrir nota"
+              />
             )}
           </>
         )}
@@ -1362,33 +1367,6 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           >★</span>
         )}
 
-        {/* Zoom-in button — solo si tiene hijos */}
-        {!isDivider && children.length > 0 && (
-          <button
-            className="node-zoom-btn"
-            onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
-            tabIndex={-1}
-            title="Entrar en nodo"
-            aria-label="Entrar en nodo"
-          >
-            ⟶
-          </button>
-        )}
-
-        {/* Open node button */}
-        {!isDivider && (
-          <button
-            className="node-open-btn"
-            onClick={openNode}
-            tabIndex={-1}
-            title="Abrir nodo"
-            aria-label="Abrir nodo en vista detalle"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12">
-              <path d="M5 2H2v8h8V7M7 1h4m0 0v4m0-4L5.5 6.5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-            </svg>
-          </button>
-        )}
       </div>
 
       {/* Drop zone: make child */}
