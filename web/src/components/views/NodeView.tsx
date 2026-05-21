@@ -5,6 +5,7 @@ import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
 import NodePropertiesPanel from '../panels/NodePropertiesPanel'
 import NodeContextPanel from '../panels/NodeContextPanel'
+import DiaryRightPanel from '../panels/DiaryRightPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
@@ -1543,7 +1544,11 @@ export default function NodeView() {
         />
       )}
 
-      <NodeContextPanel nodeId={node.id} />
+      {node.isDiaryEntry ? (
+        <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
+      ) : (
+        <NodeContextPanel nodeId={node.id} />
+      )}
 
       {showProperties && (
         <NodePropertiesPanel
