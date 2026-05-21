@@ -835,6 +835,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               <span className="nav-icon">📎</span>
               <span>Archivos</span>
             </button>
+            <button
+              className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
+              onClick={() => navigate('/trash')}
+              title="Papelera"
+            >
+              <span className="nav-icon">🗑</span>
+              <span>Papelera</span>
+            </button>
             {!isGuest && (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
                 <span className="nav-icon">↩</span>
@@ -907,6 +915,13 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               title="Archivos"
             >
               <span className="nav-icon">📎</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
+              onClick={() => navigate('/trash')}
+              title="Papelera"
+            >
+              <span className="nav-icon">🗑</span>
             </button>
           </nav>
           <div className="sidebar-footer">
