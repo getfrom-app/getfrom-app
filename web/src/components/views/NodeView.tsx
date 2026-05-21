@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import Outliner from '../outliner/Outliner'
-import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
+import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
@@ -105,12 +105,12 @@ export default function NodeView() {
     }
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync title DOM when not focused — avoids cursor reset on every keystroke
+  // Sync title DOM when not focused — renderiza con tags coloreados
   useEffect(() => {
     if (!titleEditing && titleRef.current) {
-      const desired = node?.text || ''
-      if (titleRef.current.textContent !== desired) {
-        titleRef.current.textContent = desired
+      const rendered = renderInlineToHtml(node?.text || '')
+      if (titleRef.current.innerHTML !== rendered) {
+        titleRef.current.innerHTML = rendered
       }
     }
   }, [node?.text, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -873,43 +873,58 @@ export default function NodeView() {
           <div className="node-color-band" style={{ background: nodeColor + '20', borderBottom: `2px solid ${nodeColor}` }} />
         )}
         <div className="view-header">
-          {(crumbs.length > 0 || diaryTemporalCrumbs.length > 0) && (
-            <nav className="breadcrumb">
-              <button className="breadcrumb-home" onClick={() => navigate('/')}>Inicio</button>
-              {/* Temporal crumbs for diary entries */}
-              {diaryTemporalCrumbs.map((c) => (
-                <span key={c.label}>
-                  <span className="breadcrumb-sep">/</span>
+          <div className="breadcrumb-row">
+            {(crumbs.length > 0 || diaryTemporalCrumbs.length > 0) && (
+              <nav className="breadcrumb">
+                <button className="breadcrumb-home" onClick={() => navigate('/')}>Inicio</button>
+                {/* Temporal crumbs for diary entries */}
+                {diaryTemporalCrumbs.map((c) => (
+                  <span key={c.label}>
+                    <span className="breadcrumb-sep">/</span>
+                    <button
+                      className="breadcrumb-item"
+                      onClick={() => findOrCreateTemporalNodeInView(c.label)}
+                    >
+                      {c.label}
+                    </button>
+                  </span>
+                ))}
+                {crumbs.length > 0 && (
                   <button
-                    className="breadcrumb-item"
-                    onClick={() => findOrCreateTemporalNodeInView(c.label)}
+                    className="breadcrumb-root-btn"
+                    onClick={() => navigate(`/node/${crumbs[0].id}`)}
+                    title="Ir al nodo raíz"
                   >
-                    {c.label}
+                    ⇑
                   </button>
-                </span>
-              ))}
-              {crumbs.length > 0 && (
-                <button
-                  className="breadcrumb-root-btn"
-                  onClick={() => navigate(`/node/${crumbs[0].id}`)}
-                  title="Ir al nodo raíz"
-                >
-                  ⇑
-                </button>
-              )}
-              {crumbs.map((c) => (
-                <span key={c.id}>
-                  <span className="breadcrumb-sep">/</span>
-                  <button
-                    className="breadcrumb-item"
-                    onClick={() => navigate(`/node/${c.id}`)}
-                  >
-                    {c.text || 'Sin título'}
-                  </button>
-                </span>
-              ))}
-            </nav>
-          )}
+                )}
+                {crumbs.map((c) => (
+                  <span key={c.id}>
+                    <span className="breadcrumb-sep">/</span>
+                    <button
+                      className="breadcrumb-item"
+                      onClick={() => navigate(`/node/${c.id}`)}
+                    >
+                      {c.text || 'Sin título'}
+                    </button>
+                  </span>
+                ))}
+              </nav>
+            )}
+            {/* Timestamp — extremo derecho de la fila del breadcrumb */}
+            <span className="node-updated-at-inline">
+              {(() => {
+                const d = new Date(node.updatedAt)
+                const now = new Date()
+                const diff = Math.round((now.getTime() - d.getTime()) / 60000)
+                if (diff < 1) return 'Ahora mismo'
+                if (diff < 60) return `Hace ${diff} min`
+                if (diff < 1440) return `Hace ${Math.round(diff / 60)}h`
+                if (diff < 10080) return `Hace ${Math.round(diff / 1440)} días`
+                return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+              })()}
+            </span>
+          </div>
 
           {/* Node header badges: area, locked — sin contador de bullets */}
           {(nodeArea || isLocked) && (
@@ -952,7 +967,21 @@ export default function NodeView() {
               className="node-title"
               contentEditable={!isLocked ? 'true' : 'false'}
               suppressContentEditableWarning
-              onFocus={() => setTitleEditing(true)}
+              onFocus={() => {
+                setTitleEditing(true)
+                // Mostrar texto raw para editar (sin HTML de tags)
+                if (titleRef.current) {
+                  const raw = node?.text || ''
+                  titleRef.current.textContent = raw
+                  // Cursor al final
+                  const range = document.createRange()
+                  const sel = window.getSelection()
+                  range.selectNodeContents(titleRef.current)
+                  range.collapse(false)
+                  sel?.removeAllRanges()
+                  sel?.addRange(range)
+                }
+              }}
               onInput={isLocked ? undefined : handleTitleInput}
               onBlur={isLocked ? undefined : (e => {
                 setTitleEditing(false)
@@ -1165,18 +1194,6 @@ export default function NodeView() {
                   📅 {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               )}
-              {(node.types || [])
-                .filter(t => !['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'].includes(t))
-                .map(tag => (
-                  <span
-                    key={tag}
-                    className="node-tag-chip"
-                    style={{ backgroundColor: s.tagColor(tag) }}
-                  >
-                    {tag}
-                  </span>
-                ))
-              }
             </div>
           )}
 
@@ -1185,19 +1202,6 @@ export default function NodeView() {
             <div className="node-locked-badge">🔒 Nota bloqueada — solo lectura</div>
           )}
 
-          {/* Relative timestamp */}
-          <div className="node-updated-at">
-            {(() => {
-              const d = new Date(node.updatedAt)
-              const now = new Date()
-              const diff = Math.round((now.getTime() - d.getTime()) / 60000)
-              if (diff < 1) return 'Ahora mismo'
-              if (diff < 60) return `Hace ${diff} min`
-              if (diff < 1440) return `Hace ${Math.round(diff / 60)}h`
-              if (diff < 10080) return `Hace ${Math.round(diff / 1440)} días`
-              return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
-            })()}
-          </div>
         </div>
 
         <div className="view-body">
