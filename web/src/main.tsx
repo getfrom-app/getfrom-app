@@ -25,3 +25,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>
 )
+
+// Ocultar el loading screen al montar la app
+const loadingEl = document.getElementById('app-loading')
+if (loadingEl) {
+  loadingEl.style.opacity = '0'
+  setTimeout(() => loadingEl.remove(), 300)
+}

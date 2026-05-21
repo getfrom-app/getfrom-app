@@ -976,6 +976,13 @@ export default function DiaryView() {
               </div>
             )}
 
+            {/* Motivador de escritura — solo hoy con 10+ bullets */}
+            {dateOffset === 0 && diary && bulletCount >= 10 && (
+              <div className="diary-milestone" style={{ textAlign: 'center', padding: '8px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>
+                🎯 {bulletCount} bullets hoy · ¡Excelente día de escritura!
+              </div>
+            )}
+
             {/* Quick capture bar — solo para hoy */}
             {dateOffset === 0 && diary && (
               <div className="diary-quick-capture">

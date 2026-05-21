@@ -255,6 +255,7 @@ export default function SearchView() {
   const [magicSearching, setMagicSearching] = useState(false)
   const [magicSummary, setMagicSummary] = useState('')
   const [history, setHistory] = useState<string[]>(() => getHistory())
+  const [showHelp, setShowHelp] = useState(false)
 
   // Detect natural language and compute the auto-converted DSL hint
   const naturalHint = useMemo(() => {
@@ -396,7 +397,7 @@ export default function SearchView() {
   return (
     <div className="view search-view" role="main" aria-label="Vista de búsqueda">
       <div className="view-header">
-        <div className="search-bar">
+        <div className="search-bar" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 16 16" className="search-icon">
             <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
             <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -411,8 +412,34 @@ export default function SearchView() {
             onBlur={e => commitSearch(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') commitSearch(query) }}
           />
+          <button
+            className="search-help-btn"
+            onClick={() => setShowHelp(v => !v)}
+            title="Ayuda con la sintaxis"
+          >?</button>
           {query && (
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
+          )}
+          {showHelp && (
+            <div className="search-help-tooltip" onClick={() => setShowHelp(false)}>
+              <div className="search-help-title">Sintaxis de búsqueda</div>
+              <div className="search-help-grid">
+                <code>estado:pendiente</code><span>Tareas pendientes</span>
+                <code>fecha:hoy</code><span>Con fecha hoy</span>
+                <code>fecha:vencida</code><span>Con fecha pasada</span>
+                <code>fecha:esta-semana</code><span>Esta semana</span>
+                <code>prioridad:alta</code><span>Prioridad alta</span>
+                <code>tipo:tarea</code><span>Solo tareas</span>
+                <code>tipo:evento</code><span>Solo eventos</span>
+                <code>tag:nombre</code><span>Por tag específico</span>
+                <code>tiene:cuerpo</code><span>Con descripción</span>
+                <code>area:nombre</code><span>Por área</span>
+                <code>#tag</code><span>Buscar por tag</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 8 }}>
+                También puedes escribir lenguaje natural: "tareas de hoy", "vencidas", etc.
+              </div>
+            </div>
           )}
         </div>
 
