@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note'
+export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet'
 
 export interface SlashMenuOption {
   label: string
@@ -15,6 +15,7 @@ export interface SlashMenuOption {
 const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   // ── Texto ──────────────────────────────────────────────────────────────
   { group: 'Texto', label: 'Texto',      icon: 'T',   prefix: '',      description: 'Párrafo normal',         action: 'text' },
+  { group: 'Texto', label: 'Bullet',    icon: '•',   prefix: '- ',    description: 'Lista con viñeta',       action: 'text' },
   { group: 'Texto', label: 'Título 1',   icon: 'H1',  prefix: '# ',    description: 'Encabezado grande',      action: 'text' },
   { group: 'Texto', label: 'Título 2',   icon: 'H2',  prefix: '## ',   description: 'Encabezado mediano',     action: 'text' },
   { group: 'Texto', label: 'Título 3',   icon: 'H3',  prefix: '### ',  description: 'Encabezado pequeño',     action: 'text' },
@@ -22,6 +23,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Texto', label: 'Código',     icon: '</>',  prefix: '` ',   description: 'Texto monoespaciado',    action: 'text' },
   { group: 'Texto', label: 'Separador',  icon: '—',   prefix: '---',   description: 'Línea divisoria',        action: 'text' },
   // ── Objetos ─────────────────────────────────────────────────────────────
+  { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
   { group: 'Objetos', label: 'Bucle',    icon: '↺',   prefix: '',      description: 'Open loop / seguimiento', action: 'bucle' },
   { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },

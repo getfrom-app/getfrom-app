@@ -191,6 +191,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
+  const isBullet = blockType === 'bullet'
+  const isNota = (node.types || []).includes('nota')
 
   // Icono del nodo (extraData.icon)
   const nodeIcon = useMemo(() => {
@@ -966,6 +968,16 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     } else if (action === 'event') {
       updates.isEvent = true
       updates.status = 'pending'
+    } else if (action === 'nota') {
+      // Crear nodo vacío con tipo nota y navegar inmediatamente
+      const existingTypes = node.types || []
+      if (!existingTypes.includes('nota')) {
+        updates.types = [...existingTypes, 'nota']
+      }
+      updates.text = prefix // prefix = '' para nota
+      store.updateNode(node.id, updates)
+      navigate(`/node/${node.id}`)
+      return
     }
 
     store.updateNode(node.id, updates)
@@ -1079,39 +1091,55 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           </button>
         )}
 
-        {/* Bullet / task checkbox — hidden for headings and dividers */}
+        {/* Bullet / task checkbox / nota icon — hidden for headings and dividers */}
         {!isDivider && !isHeading && (
-          <button
-            className={`bullet-btn ${node.status !== null ? 'task' : ''}`}
-            onClick={node.status !== null ? toggleTask : undefined}
-            onDoubleClick={
-              node.status === null
-                ? (children.length > 0 ? () => navigate(`/node/${node.id}`) : toggleTask)
-                : undefined
-            }
-            tabIndex={-1}
-            aria-label={node.status !== null ? 'Toggle tarea' : 'Bullet'}
-            title={
-              node.status !== null
-                ? 'Marcar hecha/pendiente'
-                : children.length > 0
-                  ? 'Doble-click para zoom · Click para crear tarea'
-                  : 'Click para crear tarea'
-            }
-          >
-            {node.status === 'done' ? (
-              <svg width="14" height="14" viewBox="0 0 14 14">
-                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                <path d="M4 7l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              </svg>
-            ) : node.status === 'pending' ? (
-              <svg width="14" height="14" viewBox="0 0 14 14">
-                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-              </svg>
+          <>
+            {node.status !== null ? (
+              // Tarea: checkbox
+              <button
+                className="bullet-btn task"
+                onClick={toggleTask}
+                tabIndex={-1}
+                aria-label="Toggle tarea"
+                title="Marcar hecha/pendiente"
+              >
+                {node.status === 'done' ? (
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    <path d="M4 7l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                  </svg>
+                )}
+              </button>
+            ) : isNota ? (
+              // Nota hija: icono de página, click navega
+              <button
+                className="bullet-btn nota-btn"
+                onClick={() => navigate(`/node/${node.id}`)}
+                tabIndex={-1}
+                aria-label="Abrir nota"
+                title="Clic para abrir esta nota"
+              >
+                <span style={{ fontSize: 12 }}>📄</span>
+              </button>
+            ) : isBullet ? (
+              // Bullet explícito: punto •
+              <button
+                className="bullet-btn"
+                onClick={undefined}
+                tabIndex={-1}
+                aria-label="Bullet"
+              >
+                <span className="bullet-dot" />
+              </button>
             ) : (
-              <span className="bullet-dot" />
+              // Texto normal: espacio vacío para mantener alineamiento
+              <span className="bullet-placeholder" />
             )}
-          </button>
+          </>
         )}
 
         {/* Text area — divider shows hr */}
@@ -1123,8 +1151,18 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           <>
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
-            {/* contentEditable SIN hijos React — el contenido se gestiona
-               via useEffect (innerHTML) para evitar el bug removeChild del reconciler */}
+            {/* Nodo tipo 'nota': texto clicable no editable que navega */}
+            {isNota ? (
+              <div
+                className="node-text node-text--nota"
+                onClick={() => navigate(`/node/${node.id}`)}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                {node.text || 'Sin título'}
+              </div>
+            ) : (
+            /* contentEditable SIN hijos React — el contenido se gestiona
+               via useEffect (innerHTML) para evitar el bug removeChild del reconciler */
             <div
               ref={contentRef}
               className={`node-text ${!isEditing ? 'node-text--rendered' : ''}`}
@@ -1215,6 +1253,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
               onSelect(lastId)
             }}
           />
+            )}
           </>
         )}
 

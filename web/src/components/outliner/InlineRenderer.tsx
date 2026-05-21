@@ -147,7 +147,7 @@ interface Props {
 }
 
 // Detect block type from text prefix
-export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 'code' | 'text'
+export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 'code' | 'bullet' | 'text'
 
 export function detectBlockType(text: string): BlockType {
   if (text === '---') return 'divider'
@@ -157,6 +157,7 @@ export function detectBlockType(text: string): BlockType {
   if (text.startsWith('> ')) return 'quote'
   if (/^\d+\.\s/.test(text)) return 'numbered'
   if (text.startsWith('` ')) return 'code'
+  if (text.startsWith('- ') || text === '-') return 'bullet'
   return 'text'
 }
 
@@ -167,6 +168,7 @@ export function getBlockContent(text: string, type: BlockType): string {
   if (type === 'quote') return text.slice(2)
   if (type === 'numbered') return text.replace(/^\d+\.\s/, '')
   if (type === 'code') return text.slice(2)
+  if (type === 'bullet') return text.slice(2)
   return text
 }
 

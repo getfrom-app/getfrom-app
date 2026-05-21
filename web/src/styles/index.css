@@ -931,6 +931,20 @@ mark.inline-highlight {
   display: block;
 }
 
+.bullet-placeholder {
+  display: inline-flex;
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.node-text--nota {
+  color: var(--text-primary);
+}
+.node-text--nota:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--text-tertiary);
+}
+
 .node-text {
   flex: 1;
   min-height: 22px;

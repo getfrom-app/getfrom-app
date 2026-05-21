@@ -918,6 +918,18 @@ export default function NodeView() {
               suppressContentEditableWarning
               onInput={isLocked ? undefined : handleTitleInput}
               onBlur={isLocked ? undefined : handleTitleInput}
+              onKeyDown={isLocked ? undefined : (e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const firstNodeText = document.querySelector('.outliner-container .node-text') as HTMLElement | null
+                  if (firstNodeText) {
+                    firstNodeText.focus()
+                  } else {
+                    setBodyEditing(true)
+                    setTimeout(() => textareaRef.current?.focus(), 50)
+                  }
+                }
+              })}
             >
               {node.text || ''}
             </h1>
