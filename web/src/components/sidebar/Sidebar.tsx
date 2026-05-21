@@ -708,7 +708,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           </svg>
         </button>
         {open && (
-          <div className="sidebar-brand">
+          <button
+            className="sidebar-brand"
+            onClick={() => navigate('/')}
+            title="Ir al diario de hoy"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
             <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
               <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
@@ -719,7 +724,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
                 <span className="sidebar-workspace-name">{s.workspaces[0].name}</span>
               )}
             </div>
-          </div>
+          </button>
         )}
         {open && isSyncing && <div className="sync-dot" title="Sincronizando..." />}
       </div>
