@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
-import DiaryView from '../views/DiaryView'
 import NodeView from '../views/NodeView'
+
+// Redirige / → /node/{diario de hoy}. Si no existe, lo crea y redirige.
+function DiaryRedirect() {
+  const navigate = useNavigate()
+  const s = useStore()
+  useEffect(() => {
+    const diary = s.todayDiary()
+    if (diary) {
+      navigate(`/node/${diary.id}`, { replace: true })
+    } else {
+      // Crear el diario de hoy y redirigir
+      store.initialLoad().then(() => {
+        const d = s.todayDiary()
+        if (d) navigate(`/node/${d.id}`, { replace: true })
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className="view-loading">Cargando diario...</div>
+}
 const TasksView = lazy(() => import('../views/TasksView'))
 const SearchView = lazy(() => import('../views/SearchView'))
 const AccountView = lazy(() => import('../views/AccountView'))
@@ -257,7 +275,7 @@ export default function MainLayout() {
         </div>
         <Suspense fallback={<div className="view-loading">Cargando...</div>}>
         <Routes>
-          <Route index element={<DiaryView />} />
+          <Route index element={<DiaryRedirect />} />
           <Route path="tasks" element={<TasksView />} />
           <Route path="followup" element={<FollowupView />} />
           <Route path="search" element={<SearchView />} />
