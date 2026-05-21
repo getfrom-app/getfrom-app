@@ -1065,7 +1065,10 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             onShiftSelect(node.id)
           }
         }}
-        style={nodeColor ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: 4 } : undefined}
+        style={nodeColor
+          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + 4 }
+          : { paddingLeft: depth * 22 }
+        }
       >
 
         {/* Collapse toggle — hidden for headings and dividers */}

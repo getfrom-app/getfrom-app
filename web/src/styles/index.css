@@ -877,7 +877,6 @@ mark.inline-highlight {
   align-items: flex-start;
   gap: 0;
   padding: 1px 0;
-  padding-left: calc(var(--depth, 0) * 22px);
   border-radius: 4px;
   transition: background 0.1s;
   min-height: 26px;
