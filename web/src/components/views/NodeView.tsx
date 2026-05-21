@@ -1154,19 +1154,17 @@ export default function NodeView() {
               </div>
 
               {/* ── Seguimiento ── */}
-              {!node.isDiaryEntry && (
-                <button
-                  className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
-                  onClick={toggleSeguimiento}
-                  title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
-                  style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-              )}
+              <button
+                className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
+                onClick={toggleSeguimiento}
+                title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
+                style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
 
               {/* ── ··· Más opciones ── */}
               <div style={{ position: 'relative' }}>
@@ -1217,11 +1215,15 @@ export default function NodeView() {
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/></svg>
                       Imprimir
                     </button>
-                    <div className="node-more-sep"/>
-                    <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
-                      Eliminar nota
-                    </button>
+                    {!node.isDiaryEntry && (
+                      <>
+                        <div className="node-more-sep"/>
+                        <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
+                          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
+                          Eliminar nota
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
