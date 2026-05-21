@@ -280,10 +280,13 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     store.updateNode(node.id, { text })
 
-    // Slash menu: '/' sola o seguida de query (ej. '/tit', '/tar')
-    if (text.startsWith('/')) {
+    // Slash menu: '/' en cualquier posición del cursor
+    const slashPos = getCaretPosition(contentRef.current!)
+    const beforeSlashCheck = text.slice(0, slashPos)
+    const slashDetect = beforeSlashCheck.match(/(^|[\s])\/([^\s]*)$/)
+    if (slashDetect) {
       setShowSlash(true)
-      setSlashQuery(text.slice(1))  // query = texto tras '/'
+      setSlashQuery(slashDetect[2])
       setPicker(null)
     } else {
       setShowSlash(false)
@@ -364,19 +367,20 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     const after = text.slice(pos)
 
     if (picker.type === '#') {
-      // Insertar #tag completo en el texto + añadir a types
+      // Tag siempre al final del texto, no inline donde se escribió
       const tagText = `#${item.id}`
-      const newText = newBefore + tagText + after
+      const cleanText = (newBefore + after).trim()
+      const newText = cleanText + (cleanText ? ' ' : '') + tagText
       const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
       if (contentRef.current) {
         contentRef.current.textContent = newText
-        const insertPos = newBefore.length + tagText.length
+        // Cursor al final
         const range = document.createRange()
         const sel = window.getSelection()
         const textNode = contentRef.current.firstChild
-        if (textNode) {
-          range.setStart(textNode, Math.min(insertPos, textNode.textContent?.length || 0))
+        if (textNode && textNode.textContent) {
+          range.setStart(textNode, textNode.textContent.length)
           range.collapse(true)
           sel?.removeAllRanges()
           sel?.addRange(range)
@@ -1001,10 +1005,21 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     setShowSlash(false)
     setSlashQuery('')
 
-    // Actualizar ref inmediatamente para que handleFocus use el texto correcto
-    nodeTextRef.current = prefix
+    // Preserve existing text: remove the slash+query and apply prefix to the rest
+    const currentText = contentRef.current?.textContent || nodeTextRef.current || ''
+    const curPos = (() => {
+      try { return getCaretPosition(contentRef.current!) } catch { return currentText.length }
+    })()
+    const beforeCursor = currentText.slice(0, curPos)
+    const slashIdx = beforeCursor.lastIndexOf('/')
+    const beforeSlash = slashIdx >= 0 ? currentText.slice(0, slashIdx).trimEnd() : ''
+    const afterCursor = currentText.slice(curPos).trimStart()
+    const existingContent = (beforeSlash + (afterCursor ? ' ' + afterCursor : '')).trimStart()
+    const newText = (prefix + existingContent).trimEnd()
 
-    const updates: Record<string, unknown> = { text: prefix }
+    nodeTextRef.current = newText
+
+    const updates: Record<string, unknown> = { text: newText }
     if (action === 'task') {
       updates.status = 'pending'
     } else if (action === 'bucle') {
@@ -1031,15 +1046,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     store.updateNode(node.id, updates)
 
     if (contentRef.current) {
-      // NBSP para trailing space: Chrome colapsa spaces regulares en contentEditable
-      const displayPrefix = prefix.replace(/ $/, ' ')
-      contentRef.current.textContent = displayPrefix
+      const displayText = newText.replace(/ $/, ' ')
+      contentRef.current.textContent = displayText
       contentRef.current.focus()
       const textNode = contentRef.current.firstChild
       const range = document.createRange()
       const sel = window.getSelection()
       if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-        range.setStart(textNode, displayPrefix.length)
+        range.setStart(textNode, displayText.length)
         range.collapse(true)
       } else {
         range.selectNodeContents(contentRef.current)

@@ -10,6 +10,7 @@ import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
+import SlashMenu from '../outliner/SlashMenu'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -73,6 +74,10 @@ export default function NodeView() {
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false)
 
+  const [titleEditing, setTitleEditing] = useState(false)
+  const [showTitleSlash, setShowTitleSlash] = useState(false)
+  const [titleSlashQuery, setTitleSlashQuery] = useState('')
+
   // Record recent visit
   useEffect(() => {
     if (id) recordRecentNode(id)
@@ -99,6 +104,16 @@ export default function NodeView() {
       titleRef.current.focus()
     }
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync title DOM when not focused — avoids cursor reset on every keystroke
+  useEffect(() => {
+    if (!titleEditing && titleRef.current) {
+      const desired = node?.text || ''
+      if (titleRef.current.textContent !== desired) {
+        titleRef.current.textContent = desired
+      }
+    }
+  }, [node?.text, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attachments on mount / node change
   useEffect(() => {
@@ -219,6 +234,22 @@ export default function NodeView() {
   function handleTitleInput(e: React.FormEvent<HTMLHeadingElement>) {
     const text = e.currentTarget.textContent || ''
     store.updateNode(node!.id, { text })
+
+    // Detect '/' for slash menu — at cursor position
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0)
+      const pos = range.endOffset
+      const before = text.slice(0, pos)
+      const slashMatch = before.match(/(^|[\s])\/([^\s]*)$/)
+      if (slashMatch) {
+        setShowTitleSlash(true)
+        setTitleSlashQuery(slashMatch[2])
+      } else {
+        setShowTitleSlash(false)
+        setTitleSlashQuery('')
+      }
+    }
   }
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -921,8 +952,13 @@ export default function NodeView() {
               className="node-title"
               contentEditable={!isLocked ? 'true' : 'false'}
               suppressContentEditableWarning
+              onFocus={() => setTitleEditing(true)}
               onInput={isLocked ? undefined : handleTitleInput}
-              onBlur={isLocked ? undefined : handleTitleInput}
+              onBlur={isLocked ? undefined : (e => {
+                setTitleEditing(false)
+                setShowTitleSlash(false)
+                handleTitleInput(e)
+              })}
               onKeyDown={isLocked ? undefined : (e => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
@@ -934,10 +970,37 @@ export default function NodeView() {
                     setTimeout(() => textareaRef.current?.focus(), 50)
                   }
                 }
+                if (e.key === 'Escape') {
+                  setShowTitleSlash(false)
+                  setTitleSlashQuery('')
+                }
               })}
             >
-              {node.text || ''}
+              {/* content managed via useEffect — no React children to avoid cursor reset */}
             </h1>
+            {showTitleSlash && (
+              <SlashMenu
+                anchorEl={titleRef.current}
+                query={titleSlashQuery}
+                onSelect={({ prefix, action }) => {
+                  setShowTitleSlash(false)
+                  setTitleSlashQuery('')
+                  if (!titleRef.current) return
+                  const currentText = titleRef.current.textContent || ''
+                  // Remove the slash+query from the text
+                  const sel = window.getSelection()
+                  const pos = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).endOffset : currentText.length
+                  const before = currentText.slice(0, pos)
+                  const slashIdx = before.lastIndexOf('/')
+                  const cleanContent = (slashIdx >= 0 ? currentText.slice(0, slashIdx) : currentText).trimEnd()
+                  const newText = prefix + cleanContent.trimStart()
+                  store.updateNode(node!.id, { text: newText, ...(action === 'task' ? { status: 'pending' } : {}) })
+                  titleRef.current.textContent = newText
+                  setTitleEditing(false)
+                }}
+                onClose={() => { setShowTitleSlash(false); setTitleSlashQuery('') }}
+              />
+            )}
             <div className="node-title-actions">
               <button
                 className={`node-fav-btn ${node.isFavorite ? 'active' : ''}`}
