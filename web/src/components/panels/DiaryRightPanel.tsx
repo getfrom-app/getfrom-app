@@ -47,9 +47,10 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
 
 export interface DiaryRightPanelProps {
   diaryDate: Date
+  rangeType?: 'day' | 'week' | 'month'
 }
 
-export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
+export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryRightPanelProps) {
   const s = useStore()
   const navigate = useNavigate()
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
@@ -59,11 +60,27 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
 
   // Determine if diaryDate is today
-  const isToday = diaryDate.toDateString() === now.toDateString()
+  const isToday = rangeType === 'day' && diaryDate.toDateString() === now.toDateString()
 
-  // Boundaries for the diary date
-  const dateStart = new Date(diaryDate.getFullYear(), diaryDate.getMonth(), diaryDate.getDate())
-  const dateEnd = new Date(dateStart.getTime() + 86400000)
+  // Compute range boundaries based on rangeType
+  const { dateStart, dateEnd } = (() => {
+    if (rangeType === 'week') {
+      // ISO week: Mon–Sun
+      const d = new Date(diaryDate)
+      const dow = (d.getDay() + 6) % 7 // Mon=0
+      const start = new Date(d); start.setDate(d.getDate() - dow); start.setHours(0, 0, 0, 0)
+      const end = new Date(start); end.setDate(start.getDate() + 7)
+      return { dateStart: start, dateEnd: end }
+    }
+    if (rangeType === 'month') {
+      const start = new Date(diaryDate.getFullYear(), diaryDate.getMonth(), 1)
+      const end = new Date(diaryDate.getFullYear(), diaryDate.getMonth() + 1, 1)
+      return { dateStart: start, dateEnd: end }
+    }
+    // day (default)
+    const start = new Date(diaryDate.getFullYear(), diaryDate.getMonth(), diaryDate.getDate())
+    return { dateStart: start, dateEnd: new Date(start.getTime() + 86400000) }
+  })()
 
   function toggleTask(id: string, currentStatus: string | null) {
     const newStatus = currentStatus === 'done' ? 'pending' : 'done'
@@ -92,11 +109,15 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     return new Date(n.due) < todayStart
   })
 
+  // Para semana/mes: mostrar tareas del rango en lugar de solo hoy
   const todayTasks = allPending.filter(n => {
     if (!n.due) return false
-    if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
-    if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
+    if (seguimientoIds.has(n.id)) return false
+    if (hasSeguimientoAncestor(n.id)) return false
     const d = new Date(n.due)
+    if (rangeType === 'week' || rangeType === 'month') {
+      return d >= dateStart && d < dateEnd
+    }
     return d >= todayStart && d <= todayEnd
   })
 
@@ -513,6 +534,10 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     )
   }
 
+  // Para notas de semana/mes: solo Agenda (sin Timeline)
+  const agendaLabel = rangeType === 'week' ? 'Semana' : rangeType === 'month' ? 'Mes' : 'Agenda'
+  const showTimeline = rangeType === 'day'
+
   return (
     <div className="diary-right-panel">
       <div className="diary-panel-tabs">
@@ -520,16 +545,18 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
           className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
           onClick={() => setPanelTab('agenda')}
         >
-          Agenda
+          {agendaLabel}
         </button>
-        <button
-          className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
-          onClick={() => setPanelTab('timeline')}
-        >
-          Timeline
-        </button>
+        {showTimeline && (
+          <button
+            className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
+            onClick={() => setPanelTab('timeline')}
+          >
+            Timeline
+          </button>
+        )}
       </div>
-      {panelTab === 'agenda' ? renderAgenda() : renderTimeline()}
+      {(!showTimeline || panelTab === 'agenda') ? renderAgenda() : renderTimeline()}
     </div>
   )
 }

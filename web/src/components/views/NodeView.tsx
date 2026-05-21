@@ -238,20 +238,35 @@ export default function NodeView() {
     return null
   })()
 
+  // Detect temporal node type (when viewing a year/month/week node directly)
+  const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  const temporalNodeType: 'year' | 'month' | 'week' | null = (() => {
+    const t = node.text || ''
+    if (/^\d{4}$/.test(t)) return 'year'
+    if (MONTHS_ES.some(m => m.toLowerCase() === t.toLowerCase())) return 'month'
+    if (/^Semana \d+$/i.test(t)) return 'week'
+    return null
+  })()
+
   // Crumbs temporales: Año / Mes / Semana (a partir del ancestro diario)
-  const diaryTemporalCrumbs: { label: string }[] = []
+  const diaryTemporalCrumbs: { label: string; type: 'year' | 'month' | 'week' }[] = []
+  let diaryDateRef: Date | null = null
   if (diaryAncestor?.diaryDate) {
-    const diaryDate = new Date(diaryAncestor.diaryDate)
+    diaryDateRef = new Date(diaryAncestor.diaryDate)
+    const diaryDate = diaryDateRef
     const yearLabel = diaryDate.getFullYear().toString()
-    const monthLabel = diaryDate.toLocaleDateString('es-ES', { month: 'long' })
-      .replace(/^\w/, c => c.toUpperCase())
+    const monthLabel = diaryDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
     const weekNumber = (() => {
       const d = new Date(diaryDate); d.setHours(0, 0, 0, 0)
       d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
       const week1 = new Date(d.getFullYear(), 0, 4)
       return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
     })()
-    diaryTemporalCrumbs.push({ label: yearLabel }, { label: monthLabel }, { label: `Semana ${weekNumber}` })
+    diaryTemporalCrumbs.push(
+      { label: yearLabel, type: 'year' },
+      { label: monthLabel, type: 'month' },
+      { label: `Semana ${weekNumber}`, type: 'week' },
+    )
   }
 
   // Crumbs de nodos: cadena de padres, deteniéndose en el ancestro diario
@@ -272,16 +287,45 @@ export default function NodeView() {
     cur = parent
   }
 
-  function findOrCreateTemporalNodeInView(text: string): void {
-    const existing = [...store.nodes.values()].find(
-      n => !n.deletedAt && !n.isDiaryEntry && n.text?.toLowerCase() === text.toLowerCase()
-    )
-    if (existing) {
-      navigate(`/node/${existing.id}`)
-    } else {
-      const newNode = store.createNode({ text, parentId: null })
-      navigate(`/node/${newNode.id}`)
-    }
+  // Helper: find week number from date
+  function weekNumberFromDate(d: Date): number {
+    const date = new Date(d); date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7))
+    const week1 = new Date(date.getFullYear(), 0, 4)
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+  }
+
+  // Navigate to a temporal node (year/month/week), creating proper hierarchy
+  function navigateToTemporalNode(type: 'year' | 'month' | 'week', fromDate: Date): void {
+    const allNodes = [...store.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
+
+    const yearStr = fromDate.getFullYear().toString()
+    const monthStr = fromDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
+    const weekStr = `Semana ${weekNumberFromDate(fromDate)}`
+
+    // Year node — always top-level (no parent)
+    let yearNode = allNodes.find(n => n.text === yearStr && !n.parentId)
+      ?? allNodes.find(n => n.text === yearStr)
+    if (!yearNode) yearNode = store.createNode({ text: yearStr, parentId: null })
+    else if (yearNode.parentId) store.updateNode(yearNode.id, { parentId: null })
+
+    if (type === 'year') { navigate(`/node/${yearNode.id}`); return }
+
+    // Month node — child of year
+    let monthNode = allNodes.find(n => n.text === monthStr && n.parentId === yearNode!.id)
+      ?? allNodes.find(n => n.text === monthStr)
+    if (!monthNode) monthNode = store.createNode({ text: monthStr, parentId: yearNode.id })
+    else if (monthNode.parentId !== yearNode.id) store.updateNode(monthNode.id, { parentId: yearNode.id })
+
+    if (type === 'month') { navigate(`/node/${monthNode.id}`); return }
+
+    // Week node — child of month
+    let weekNode = allNodes.find(n => n.text === weekStr && n.parentId === monthNode!.id)
+      ?? allNodes.find(n => n.text === weekStr)
+    if (!weekNode) weekNode = store.createNode({ text: weekStr, parentId: monthNode.id })
+    else if (weekNode.parentId !== monthNode.id) store.updateNode(weekNode.id, { parentId: monthNode.id })
+
+    navigate(`/node/${weekNode.id}`)
   }
 
   function handleTitleInput(e: React.FormEvent<HTMLHeadingElement>) {
@@ -957,7 +1001,7 @@ export default function NodeView() {
                     {i > 0 && <span className="breadcrumb-sep">/</span>}
                     <button
                       className="breadcrumb-item"
-                      onClick={() => findOrCreateTemporalNodeInView(c.label)}
+                      onClick={() => diaryDateRef && navigateToTemporalNode(c.type, diaryDateRef)}
                     >
                       {c.label}
                     </button>
@@ -975,6 +1019,13 @@ export default function NodeView() {
                     </button>
                   </span>
                 ))}
+                {/* Self-breadcrumb for temporal nodes: show current node in its own path */}
+                {temporalNodeType && (
+                  <span>
+                    {(crumbs.length > 0 || diaryTemporalCrumbs.length > 0) && <span className="breadcrumb-sep">/</span>}
+                    <span className="breadcrumb-item breadcrumb-item--current">{node.text}</span>
+                  </span>
+                )}
               </nav>
             )}
             {/* Timestamp — extremo derecho de la fila del breadcrumb */}
@@ -1681,7 +1732,32 @@ export default function NodeView() {
         <div className="right-panel-content">
           {node.isDiaryEntry ? (
             <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
-          ) : (
+          ) : temporalNodeType === 'week' ? (
+            // Week temporal node: DiaryRightPanel with week range
+            (() => {
+              // Find the week date from parentId chain or use current date
+              const inferWeekDate = (): Date => {
+                const num = parseInt((node.text || '').replace(/Semana /i, '')) || 1
+                const yearNode = node.parentId ? s.getNode(node.parentId) : null
+                const monthNode = yearNode?.parentId ? s.getNode(yearNode.parentId) : null
+                // Walk up: week → month → year
+                let yearNum = new Date().getFullYear()
+                if (monthNode && /^\d{4}$/.test(monthNode.text || '')) yearNum = parseInt(monthNode.text!)
+                else if (yearNode && /^\d{4}$/.test(yearNode.text || '')) yearNum = parseInt(yearNode.text!)
+                const jan4 = new Date(yearNum, 0, 4)
+                return new Date(jan4.getTime() + (num - 1) * 7 * 86400000)
+              }
+              return <DiaryRightPanel diaryDate={inferWeekDate()} rangeType="week" />
+            })()
+          ) : temporalNodeType === 'month' ? (
+            (() => {
+              const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+              const monthIdx = MONTHS.findIndex(m => m === (node.text || '').toLowerCase())
+              const parentNode = node.parentId ? s.getNode(node.parentId) : null
+              const yearNum = (parentNode && /^\d{4}$/.test(parentNode.text || '')) ? parseInt(parentNode.text!) : new Date().getFullYear()
+              return <DiaryRightPanel diaryDate={new Date(yearNum, monthIdx < 0 ? new Date().getMonth() : monthIdx, 1)} rangeType="month" />
+            })()
+          ) : temporalNodeType === 'year' ? null : (
             <NodeRightPanel node={node} />
           )}
         </div>
