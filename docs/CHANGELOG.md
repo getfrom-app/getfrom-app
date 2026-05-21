@@ -4,6 +4,151 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web 1.2 — 21 mayo 2026
+
+**Plataforma: Web** (getfrom.app/app) · Gran actualización de paridad Mac→Web
+
+### Nuevas vistas
+- **ChatView** — Chat IA global con historial de conversación, streaming y 4 sugerencias rápidas
+- **FilesView** — Notas recientes con archivos adjuntos
+- **InboxView** — Bandeja de entrada: notas sin procesar (últimos 30 días) con acciones ★/📓/✓/✕
+- **TrashView** — Papelera con restore y "vaciar papelera"
+- **TagView** — Vista filtrada por tag con estadísticas, filtros de tipo y ordenación
+
+### Outliner y editor de bullets
+- **IA Inline fase 2** — Tab acepta texto fantasma, Esc descarta; el texto sugerido aparece en gris mientras se genera
+- **Zoom en nodo** — Botón ⟶ visible en hover para navegar dentro de cualquier nodo con hijos
+- **Badge de hijos** — Contador de hijos visibles sobre el bullet colapsado
+- **Alt+Click** — Colapsa/expande todo el subárbol de golpe
+- **⌘⇧C** — Copia enlace directo al nodo al portapapeles
+- **⌘/** — Cicla entre H1 → H2 → H3 → texto normal
+- **Wiki-links `[[nombre]]`** — Click navega directamente al nodo referenciado
+- **Indicador de body** — Punto visual en el bullet cuando el nodo tiene body
+- **Timestamp en hover** — Fecha de modificación relativa al pasar el ratón
+- **Text expansion hints** — Clase visual cuando el texto termina en un atajo expandible
+- **Color de nodo** — Borde izquierdo coloreado desde `extraData.color`
+- **Icono de nodo** — Emoji mostrado inline antes del texto (desde `extraData.icon`)
+- **Orden visual** — Modos: ninguno / alfabético / por fecha / por prioridad / por estado
+- **Multi-selección** — Shift+Click selecciona varios nodos; barra de acciones en masa (completar, favorito, eliminar)
+- **Filtro local ⌘F** — Barra de búsqueda dentro del outliner sin salir de la vista
+
+### Vista de nota (NodeView)
+- **Chat por nota ⌘J** — Panel lateral de chat IA con contexto de la nota actual, historial de sesión
+- **Emoji picker** — Selector de emoji como icono de la nota (7 categorías, botón "Quitar")
+- **Banda de color** — Cabecera de la nota coloreada según `extraData.color`
+- **Badge de área** — Muestra el área asignada a la nota
+- **Bloqueo de nota** — Toggle en propiedades + indicador "🔒 Nota bloqueada" cuando está en solo lectura
+- **Temporizador Pomodoro** — 25 min con notificación al terminar, integrado en la vista de nota
+- **Meta de palabras en modo foco** — Barra de progreso personalizable en focus mode
+- **Exportar markdown** — Descarga la nota como .md
+- **Seguimiento** — Toggle para marcar notas en seguimiento activo (aparecen en FollowupView)
+- **Imprimir** — Abre ventana de impresión con HTML limpio (sin sidebar ni toolbar)
+- **Menú compartir** — Copiar enlace, abrir en pestaña, publicar con URL pública
+- **Barra de acciones rápidas** — copyLink, mover al diario, duplicar, imprimir, exportar, seguimiento, chat, pomodoro
+- **Toolbar del body** — Botones H1, H2, línea divisoria `---`, checkbox `[ ]`, bloque de código
+- **Renderizado avanzado del body** — Checkboxes clicables, listas agrupadas ul/ol, bloques de código con \`\`\`, tablas markdown `| |`
+- **Importar markdown** — Importa texto markdown al body de la nota
+- **Auto-foco en título** — Al crear una nota nueva el cursor va directo al título
+
+### Panel de propiedades
+- **Botones de fecha rápida** — Hoy / Mañana / Próx. lunes / +Semana / ✕ con un solo clic
+- **Picker de área** — Datalist con todas las áreas existentes
+- **Notas enlazadas** — Detecta @menciones en el body y las muestra como referencias
+- **Recurrencia como chips** — Chips visuales en lugar de `<select>` para diaria/semanal/mensual/anual
+- **Selector de color** — 8 colores en `extraData.color` con preview visual
+- **Toggle bloqueo** — Activa `extraData.locked` desde propiedades
+- **Toggle seguimiento** — `isSeguimiento` directamente desde propiedades
+
+### CommandPalette (⌘K)
+- **Flags NLP** — `-t` (tarea), `-e` (evento), `-b` (bucle), `-f` (favorito)
+- **Fechas en lenguaje natural** — hoy, mañana, lunes, martes…domingo, HH:MM, dd/mm
+- **Crea sin navegar** — Al crear con flags, la nota se crea y aparece un toast, sin redirigir
+- **`# prefix`** — Filtra por tag directamente
+- **`/template` o `/plantilla`** — Muestra todas las plantillas disponibles
+- **Subnombre de padre** — Muestra el nombre del nodo padre bajo cada resultado
+- **Secciones** — "Acciones rápidas" y "Recientes" cuando no hay query
+
+### Diario
+- **URL sync** — `?offset=N` en la URL permite deep-link a días anteriores
+- **Picker de fecha** — Input date para navegar a cualquier día directamente
+- **Navegación ±7 días** — Botones de semana anterior/siguiente
+- **Historial reciente** — Últimas 7 entradas de diario en panel lateral
+- **Agenda de 14 días** — Eventos futuros en un rango más amplio
+- **Quick capture mejorado** — Soporta flags `-t`, `-e`, `@hoy`, `@mañana`
+- **Panel de estadísticas** — Gráfico semanal en SVG, contadores, grid de hábito 28 días, top tags
+- **Milestone** — Badge "¡Excelente día!" al alcanzar ≥10 bullets en el día
+- **Streak coloreado** — Ámbar si ≥7 días seguidos, rojo si ≥30 días
+
+### Búsqueda
+- **DSL completo** — `status:`, `date:`, `priority:`, `kind:`, `tag:`, `has:`, `area:`, `fecha:mañana`, `fecha:esta-semana`, `fecha:sin-fecha`, `tipo:nota`, `tipo:diario`, `tiene:cuerpo`, `tiene:fecha`
+- **14+ patrones NLP** — "notas del diario", "proyectos", "reuniones", "ideas", "urgente", etc.
+- **8 chips rápidos** — Accesos rápidos con iconos a búsquedas frecuentes
+- **Orden por relevancia** — Ranking en 3 niveles (título exacto > título parcial > body)
+- **Vistas agrupada/plana** — Toggle ⊟/≡ para ver resultados en grupos o lista plana
+- **Extracto de body** — Muestra fragmento del body cuando la coincidencia está en el cuerpo
+- **Tooltip de ayuda DSL** — Botón `?` con sintaxis completa del DSL
+
+### Calendario
+- **EventPopup** — Popup al hacer clic en un evento con título, detalles y acciones
+- **QuickEventCreate** — Crear evento directamente haciendo clic en una celda de hora
+- **Auto-scroll** — Desplaza automáticamente a la hora actual en la vista semana
+- **Puntos de diario** — En vista mes: 📓 con número de hijos; clic navega al diario del día
+- **Colores por prioridad/estado** — Eventos=ámbar, hecho=gris, alta=rojo, media=naranja, baja=verde
+- **Leyenda de colores** — En el footer de la vista semana
+
+### Tareas
+- **Quick add inline** — Botón `+` en cada sección para crear tarea directamente allí
+- **Fechas rápidas en hover** — Hoy / +1 / +7 / ✕ al pasar el ratón sobre una tarea
+- **Chip "completadas hoy"** — Contador verde en la cabecera cuando hay tareas terminadas hoy
+- **Badge 🔁** — Indicador visual inline de recurrencia
+
+### Bucles / Seguimiento
+- **Búsqueda en FollowupView** — Input de filtro en tiempo real
+- **Filtros de prioridad** — Botones Alta/Media/Baja/Todas
+- **Sección Seguimiento** — Nodos marcados con `isSeguimiento` en sección dedicada "👁 En seguimiento"
+- **Quick add a bucle** — Botón para añadir tarea hija a un bucle directamente
+
+### Kanban
+- **Agrupación flexible** — Selector: por estado / por prioridad / por tag
+- **Columnas de prioridad** — Alta / Media / Baja / Sin prioridad
+- **Columnas por tag** — Una columna por tag único + "Sin tag"
+
+### Agentes
+- **13 herramientas** incluyendo "Revisión Semanal" con datos en vivo del vault
+- **Copiar resultado** — Botón para copiar la respuesta del agente
+- **Insertar al diario** — Botón para insertar la respuesta en el diario de hoy
+- **Medidor de coste visual** — Barra ▓/░ con estimación de tokens
+
+### Sidebar
+- **Secciones colapsables** — Tags/Fijados/Notas con estado persistido en localStorage
+- **Sección Áreas** — Con badges de conteo por área
+- **Tab Paneles** — Búsquedas guardadas con panel "Tareas de hoy" por defecto
+- **Proyectos activos** — Top 5 proyectos en curso en el sidebar
+- **Recientes** — Tiempo relativo + botón "Ver todos →"
+- **Grid de estadísticas** — 4 métricas en la pestaña Ajustes
+- **Pickers densidad + acento** — Directamente en el sidebar
+- **Botón "💻 Auto"** — Activa el tema del sistema
+- **Links a /files, /inbox, /trash, /chat** — Accesos directos en sidebar
+
+### Captura rápida y notificaciones
+- **QuickCapturePanel** — Panel flotante (portal), ⌘Q, ⌘Enter guardar, ⌘⇧Enter guardar+abrir
+- **Toggle tarea/favorito** — En el panel de captura rápida
+- **Multi-línea** — Primera línea = título, resto = body
+- **Toast notifications** — Auto-dismiss 2.5s, tipos success/error/info, animaciones slide-in/out
+- **Notificaciones de tareas** — Persistencia en localStorage, agrupación cuando >5 vencidas, ventana de 9:00 AM
+
+### UX y rendimiento
+- **Sin FOUC** — Tema/densidad/acento aplicados en `main.tsx` antes de montar React
+- **StatusBar contextual** — Palabras y tiempo de lectura en /node/:id; stats en /tasks
+- **TopBar** — Muestra título del nodo actual en /node/:id
+- **Move modal mejorado** — Navegación ↑↓Enter, breadcrumb de ancestro, recientes sin query
+- **Lazy loading** — 12 vistas cargadas con React.lazy() + Suspense
+- **Bundle -16%** — 390KB vs 467KB original (gzip)
+- **Undo/redo global** — ⌘Z / ⌘⇧Z con historial de 50 estados
+- **Modal de nueva nota** — 10 plantillas + plantillas de usuario; detección de duplicados
+
+---
+
 ## Web 1.0 — 20 mayo 2026
 
 **Plataforma: Web** (getfrom.app/app)

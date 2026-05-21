@@ -1,10 +1,53 @@
 # From — Manual de usuario
 
-> Versión 3.12 · macOS 14+ · iOS 17+
+> Versión 3.12 / Web 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
 
 ---
 
-## Novedades en 3.12
+## Novedades en Web 1.2 (21 mayo 2026)
+
+La versión 1.2 de From Web es una actualización masiva de paridad con la app Mac. Aquí los cambios más importantes:
+
+**Nuevas vistas**
+- **Chat** (⌘⇧C desde sidebar) — Chat IA global con historial de conversación y sugerencias
+- **Bandeja de entrada** — Notas sin procesar de los últimos 30 días con acciones rápidas
+- **Papelera** — Recupera notas eliminadas o vacía la papelera
+- **Vista por tag** — Haz clic en cualquier tag del sidebar para ver todos los nodos de ese tag
+
+**Editor mejorado**
+- **IA Inline fase 2** — Tab acepta la sugerencia, Esc la descarta
+- **Zoom en nodo** — Botón ⟶ en hover para entrar en un nodo como si fuera la raíz
+- **⌘/** — Cicla H1 → H2 → H3 → texto desde cualquier bullet
+- **Multi-selección** — Shift+Click para seleccionar varios bullets y aplicar acciones en masa
+- **Color e icono por nodo** — Asigna un emoji y un color a cada nota desde el panel de propiedades
+- **Wiki-links `[[nombre]]`** — Haz clic en `[[nombre]]` para navegar directamente a esa nota
+
+**Nota individual mejorada**
+- **Chat por nota (⌘J)** — Chat IA con el contexto específico de la nota abierta
+- **Pomodoro** — Temporizador de 25 minutos con notificación
+- **Exportar / Importar markdown** — Descarga la nota como .md o importa markdown al body
+- **Imprimir** — Vista de impresión limpia sin sidebar ni toolbar
+- **Bloquear nota** — Evita ediciones accidentales con un toggle en propiedades
+
+**Diario**
+- **Estadísticas** — Panel con gráfico semanal, grid de hábito (28 días) y top tags
+- **Navegación por fecha** — Selector de fecha y botones de ±7 días
+- **Quick capture con flags** — `-t` para tarea, `-e` para evento, `@hoy`, `@mañana`
+- **Milestone** — Badge especial cuando escribes ≥10 bullets en un día
+
+**Búsqueda**
+- **DSL potente** — `fecha:esta-semana`, `area:trabajo`, `tiene:cuerpo`, `tipo:diario`...
+- **Ayuda DSL** — Pulsa `?` en la búsqueda para ver toda la sintaxis
+- **Ordenación** — Por relevancia, fecha de modificación, vencimiento o prioridad
+
+**Otros**
+- Captura rápida flotante con **⌘Q** — Guarda con ⌘Enter, abre la nota con ⌘⇧Enter
+- Notificaciones toast — Feedback inmediato en acciones (crear, mover, eliminar...)
+- StatusBar — Palabras y tiempo de lectura en notas, estadísticas de tareas en /tasks
+
+---
+
+## Novedades en 3.12 / Web 1.0 (20 mayo 2026)
 
 **Mac 3.12**
 - Inicio de sesión con email/contraseña — ya no hace falta Apple ID o Google para entrar
@@ -18,25 +61,12 @@
 - Login con Google — nueva opción de autenticación
 - Indicador de plan: Free / Pro / Lifetime en Ajustes
 
-**From Web** (getfrom.app/app)
-- Editor completo con 20 funcionalidades: outliner, markdown, slash menu, Cmd+K, arrastrar y soltar
+**From Web 1.0** (getfrom.app/app)
+- Editor completo con outliner, markdown, slash menu, ⌘K, drag & drop
 - Vista calendario semana · Vista kanban por estado
 - Exportar datos (JSON/Markdown) · Compartir enlace de nota
 - Modo claro/oscuro · Checkout directo sin cuenta
-- AI inline (Cmd+Space) · Adjuntar archivos
-
-**Web 1.0 — features adicionales:**
-- Sidebar con 4 tabs: Tags, Fijados, Paneles, Ajustes
-- Panel derecho en diario: Pendiente + Timeline del día
-- Panel contextual en notas: subtareas, áreas relacionadas, backlinks
-- Colores en tags inline (#palabras con 8 colores deterministas)
-- Filtros en Tareas: prioridad, estado, ordenación (persistidos en localStorage)
-- Diario navegable: botones ← → para ver días anteriores
-- Recurrencia en tareas: diaria, semanal, mensual, anual
-- Onboarding: 4 pasos para usuarios nuevos
-- Indicador de sync animado en esquina inferior derecha
-- Grabación de voz → nota (Web Speech API, Chrome/Edge)
-- ⌘T nueva tarea · ⌘E nuevo evento · ⌘R grabar voz · Escape → hoy
+- AI inline (Cmd+Space) · Grabación de voz (Chrome/Edge)
 - Publicar nota con URL pública real (getfrom.app/p/SLUG)
 
 ---
