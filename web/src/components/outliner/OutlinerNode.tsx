@@ -225,8 +225,11 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   }, [node.text, isEditing, filterText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus when selected + scroll into view
+  // Sin guarda !isEditing: el efecto sólo corre cuando isSelected CAMBIA (dep array),
+  // no en cada render. Al deseleccionar reseteamos isEditing para que el siguiente
+  // ciclo de selección siempre funcione.
   useEffect(() => {
-    if (isSelected && contentRef.current && !isEditing) {
+    if (isSelected && contentRef.current) {
       setIsEditing(true)
       contentRef.current.focus()
       // Scroll the node into view
@@ -237,6 +240,8 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       range.collapse(false)
       sel?.removeAllRanges()
       sel?.addRange(range)
+    } else if (!isSelected) {
+      setIsEditing(false)
     }
   }, [isSelected]) // eslint-disable-line react-hooks/exhaustive-deps
 
