@@ -89,6 +89,39 @@ const SHORTCUTS = [
     systemPrompt: 'Eres un especialista en comunicación profesional escrita en español.',
     userMessage: 'Redacta un email profesional, claro y efectivo sobre el tema indicado. Incluye asunto, cuerpo y cierre apropiado.',
   },
+  {
+    label: 'Revisión semanal',
+    icon: '📊',
+    systemPrompt: 'Eres un asistente de productividad experto en revisiones semanales. Respondes en español.',
+    userMessage: (() => {
+      // Calcular datos de la semana
+      const weekStart = new Date()
+      weekStart.setDate(weekStart.getDate() - 7)
+      weekStart.setHours(0, 0, 0, 0)
+
+      const allNodes = store.allActive()
+      const thisWeekNotes = allNodes.filter(n => !n.isDiaryEntry && new Date(n.updatedAt) > weekStart)
+      const completedTasks = allNodes.filter(n => n.status === 'done' && new Date(n.updatedAt) > weekStart)
+      const pendingTasks = store.overdueTasks()
+
+      return `Haz una revisión semanal basada en estos datos:
+
+NOTAS EDITADAS ESTA SEMANA (${thisWeekNotes.length}):
+${thisWeekNotes.slice(0, 10).map(n => `- ${n.text}`).join('\n')}
+
+TAREAS COMPLETADAS (${completedTasks.length}):
+${completedTasks.slice(0, 10).map(n => `- ${n.text}`).join('\n')}
+
+TAREAS PENDIENTES VENCIDAS (${pendingTasks.length}):
+${pendingTasks.slice(0, 5).map(n => `- ${n.text}${n.due ? ` (${new Date(n.due).toLocaleDateString('es-ES')})` : ''}`).join('\n')}
+
+Por favor:
+1. Resume los logros de la semana
+2. Identifica los puntos de mejora
+3. Sugiere prioridades para la próxima semana
+4. Da 3 acciones concretas para el lunes`
+    })(),
+  },
 ]
 
 function formatDate(iso: string) {
