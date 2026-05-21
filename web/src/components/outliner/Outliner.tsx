@@ -314,6 +314,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             node={node}
             depth={0}
             isSelected={selectedId === node.id}
+            selectedId={selectedId}
             isMultiSelected={selectedIds.has(node.id)}
             onSelect={setSelectedId}
             onSelectNext={handleSelectNext}

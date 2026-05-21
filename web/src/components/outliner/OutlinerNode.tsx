@@ -102,6 +102,7 @@ interface Props {
   node: Node
   depth: number
   isSelected: boolean
+  selectedId?: string | null  // para propagar isSelected a nodos hijos
   isMultiSelected?: boolean
   onSelect: (id: string) => void
   onSelectNext: (id: string, dir: 'up' | 'down') => void
@@ -167,7 +168,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -709,10 +710,16 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       if (isBullet) {
         const bulletContent = text.startsWith('- ') ? text.slice(2).trim() : text.trim()
         if (bulletContent === '') {
-          // Bullet vacío → salir de la lista: convertir a nodo de texto normal
-          nodeTextRef.current = ''
-          store.updateNode(node.id, { text: '' })
-          if (contentRef.current) contentRef.current.textContent = ''
+          // Bullet vacío → igual que nodo vacío: navegar al anterior y borrar
+          if (depth > 0) {
+            const parent = store.getNode(node.parentId!)
+            if (parent) {
+              store.updateNode(node.id, { parentId: parent.parentId, siblingOrder: parent.siblingOrder + 0.5 })
+              return
+            }
+          }
+          onSelectNext(node.id, 'up')
+          store.deleteNode(node.id)
           return
         }
         // Bullet con contenido → crear siguiente elemento de lista
@@ -1507,13 +1514,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         document.body
       )}
 
-      {/* Children */}
+      {/* Children — selectedId se propaga para que los hijos sepan si están seleccionados */}
       {!isCollapsed && children.map(child => (
         <OutlinerNode
           key={child.id}
           node={child}
           depth={depth + 1}
-          isSelected={isSelected && false} // selection handled by parent
+          isSelected={selectedId === child.id}
+          selectedId={selectedId}
           isMultiSelected={isMultiSelected}
           onSelect={onSelect}
           onSelectNext={onSelectNext}
