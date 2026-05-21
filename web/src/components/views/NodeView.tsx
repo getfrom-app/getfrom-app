@@ -38,6 +38,7 @@ export default function NodeView() {
   const [bodyValue, setBodyValue] = useState('')
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
+  const [rightCollapsed, setRightCollapsed] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -1498,11 +1499,23 @@ export default function NodeView() {
         />
       )}
 
-      {node.isDiaryEntry ? (
-        <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
-      ) : (
-        <NodeRightPanel node={node} />
-      )}
+      <div className={`right-panel-area${rightCollapsed ? ' right-panel-area--collapsed' : ''}`}>
+        <button
+          className="right-panel-toggle"
+          onClick={() => setRightCollapsed(v => !v)}
+          title={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
+          aria-label={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
+        >
+          {rightCollapsed ? '›' : '‹'}
+        </button>
+        <div className="right-panel-content">
+          {node.isDiaryEntry ? (
+            <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
+          ) : (
+            <NodeRightPanel node={node} />
+          )}
+        </div>
+      </div>
     </div>
   )
 }

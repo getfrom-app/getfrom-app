@@ -3087,7 +3087,7 @@ mark.inline-highlight {
 .diary-view { overflow: hidden; }
 .diary-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .diary-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
-.diary-right-panel { width: 280px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; }
+.diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; }
 .diary-panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .diary-panel-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; font-family: inherit; }
 .diary-panel-tab:hover { color: var(--text-primary); }
@@ -3226,6 +3226,55 @@ mark.inline-highlight {
   font-size: 13px;
 }
 
+/* ── Wrapper colapsable del panel derecho ─────────────────────────────────── */
+.right-panel-area {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+}
+.right-panel-content {
+  width: 440px;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.right-panel-area--collapsed .right-panel-content {
+  width: 0;
+}
+/* Handler: círculo centrado en el borde izquierdo del panel */
+.right-panel-toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  padding: 0;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.right-panel-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+/* Focus mode: ocultar wrapper entero */
+.node-view--focus .right-panel-area { display: none; }
+
 /* "Ver área completa" link */
 .prop-area-link {
   display: flex;
@@ -3262,6 +3311,7 @@ mark.inline-highlight {
 @media (max-width: 1100px) {
   .node-context-panel { display: none; }
   .node-right-panel { display: none; }
+  .right-panel-area { display: none; }
 }
 
 /* ── Recurrencia selector ─────────────────────────────────────────────────── */
