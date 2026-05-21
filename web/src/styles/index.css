@@ -882,9 +882,9 @@ mark.inline-highlight {
   transition: background 0.1s;
   min-height: 26px;
 }
-.node-row:hover { background: var(--bg-hover); border-left: 2px solid var(--accent); padding-left: calc(var(--depth, 0) * 22px - 2px); }
+.node-row:hover { background: var(--bg-hover); }
 .node-row:hover .node-open-btn { opacity: 1; }
-.node-row.selected { background: rgba(139,92,246,0.1); border-left: 2px solid var(--accent); padding-left: calc(var(--depth, 0) * 22px - 2px); }
+.node-row.selected { background: transparent; }
 .node-row.done .node-text { color: var(--text-tertiary); text-decoration: line-through; }
 
 .collapse-btn {
