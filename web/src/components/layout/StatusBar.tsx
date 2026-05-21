@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v1.2'
+export const WEB_VERSION = 'v1.3'
 
 interface StatusBarProps {
   isSyncing: boolean
