@@ -68,7 +68,7 @@
             <a href="changelog.html" class="active">Novedades</a>
             <a href="docs/index.html">Manual</a>
             <a href="support.html">Soporte</a>
-            <a href="/app/" class="btn-nav-outline">Acceder</a>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
             <a href="#download" class="btn-nav">Descargar From</a>
         </div>
     </div>
