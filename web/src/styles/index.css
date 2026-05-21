@@ -958,16 +958,28 @@ mark.inline-highlight {
   word-break: break-word;
   color: var(--text-primary);
 }
+/* Eliminar TODOS los outlines de foco en el outliner */
+.node-text,
 .node-text:focus,
 .node-text:focus-visible,
+.node-text:focus-within,
+[contenteditable],
 [contenteditable]:focus,
-[contenteditable]:focus-visible { outline: none !important; border: none !important; box-shadow: none !important; }
-/* Suprimir cualquier indicador de foco en toda la zona del outliner */
+[contenteditable]:focus-visible {
+  outline: 0 !important;
+  outline-width: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.outliner-node,
 .outliner-node:focus,
 .outliner-node:focus-visible,
 .outliner-node:focus-within,
+.node-row,
 .node-row:focus,
-.node-row:focus-visible { outline: none !important; border: none !important; box-shadow: none !important; }
+.node-row:focus-visible,
+.node-row:focus-within { outline: 0 !important; border: none !important; box-shadow: none !important; }
 
 .node-text:empty::before {
   content: attr(data-placeholder);

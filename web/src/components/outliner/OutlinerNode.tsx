@@ -1187,8 +1187,7 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             autoCorrect="off"
             autoCapitalize="off"
             data-gramm="false"
-            // Eliminar outline del sistema en todos los navegadores
-            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+            style={{ outline: 0, outlineWidth: 0, border: 'none', boxShadow: 'none', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
