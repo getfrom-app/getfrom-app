@@ -5081,9 +5081,8 @@ mark.inline-highlight {
 .node-body-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; opacity: 0.4; margin-left: 2px; }
 .node-row:hover .node-body-dot { opacity: 0.8; }
 
-/* ── Large screen outliner ─────────────────────────────────────────────── */
+/* ── Large screen outliner — sin max-width, el hover llega al borde ──────── */
 @media (min-width: 1400px) {
-  .outliner-container { max-width: 800px; }
   .node-view-main { max-width: none; }
 }
 

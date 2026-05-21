@@ -1373,19 +1373,6 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
           </>
         )}
 
-        {/* Relative time badge on hover */}
-        {hovered && !isDivider && !isEditing && node.updatedAt && (
-          <span className="node-updated-badge" title={new Date(node.updatedAt).toLocaleString('es-ES')}>
-            {(() => {
-              const d = new Date(node.updatedAt)
-              const diff = Math.round((Date.now() - d.getTime()) / 60000)
-              if (diff < 1) return 'ahora'
-              if (diff < 60) return `${diff}m`
-              if (diff < 1440) return `${Math.round(diff / 60)}h`
-              return `${Math.round(diff / 1440)}d`
-            })()}
-          </span>
-        )}
 
         {/* Body indicator dot */}
         {node.body && node.body.trim().length > 0 && !isDivider && (
