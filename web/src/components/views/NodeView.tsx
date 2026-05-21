@@ -738,8 +738,12 @@ export default function NodeView() {
   }
 
   function toggleSeguimiento() {
-    store.updateNode(node!.id, { isSeguimiento: !node!.isSeguimiento })
-    setQuickActionMsg(node!.isSeguimiento ? '✓ Seguimiento quitado' : '✓ En seguimiento')
+    const newVal = !node!.isSeguimiento
+    // Al activar seguimiento, quitar el status de tarea para evitar duplicidades
+    const updates: Record<string, unknown> = { isSeguimiento: newVal }
+    if (newVal && node!.status !== null) updates.status = null
+    store.updateNode(node!.id, updates as Parameters<typeof store.updateNode>[1])
+    setQuickActionMsg(newVal ? '✓ En seguimiento' : '✓ Seguimiento quitado')
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 

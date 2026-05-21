@@ -82,15 +82,20 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     n => n.status === 'pending' && !n.deletedAt && n.due
   )
 
+  // Set de IDs de nodos que SON seguimiento (para excluirlos de overdue/today)
+  const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
+
   const overdue = allPending.filter(n => {
     if (!n.due) return false
-    if (hasSeguimientoAncestor(n.id)) return false
+    if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
+    if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
     return new Date(n.due) < todayStart
   })
 
   const todayTasks = allPending.filter(n => {
     if (!n.due) return false
-    if (hasSeguimientoAncestor(n.id)) return false
+    if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
+    if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
     const d = new Date(n.due)
     return d >= todayStart && d <= todayEnd
   })
@@ -128,7 +133,7 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
           return (
             <div key={node.id}>
               <div className="diary-agenda-seguimiento" onClick={() => navigate(`/node/${node.id}`)}>
-                <span className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento">👁</span>
+                <span className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento"></span>
                 <span className="diary-agenda-text">{node.text || 'Sin título'}</span>
                 {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
               </div>

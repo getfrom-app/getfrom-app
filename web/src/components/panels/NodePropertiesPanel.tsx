@@ -151,7 +151,13 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         </button>
         <button
           className={`prop-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
-          onClick={() => store.updateNode(node.id, { isSeguimiento: !node.isSeguimiento })}
+          onClick={() => {
+            const newVal = !node.isSeguimiento
+            // Al activar seguimiento, quitar el status de tarea para evitar duplicidades
+            const updates: Record<string, unknown> = { isSeguimiento: newVal }
+            if (newVal && node.status !== null) updates.status = null
+            store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
+          }}
           title={node.isSeguimiento ? 'Quitar de seguimiento' : 'Añadir a seguimiento'}
         >
           👁 Seguim.

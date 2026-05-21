@@ -3021,25 +3021,26 @@ mark.inline-highlight {
 .diary-agenda-task--indented { padding-left: 28px; }
 
 /* Checkboxes cuadrados con colores */
+/* Checkboxes rellenos, sin borde, colores pastel — igual que Mac */
 .diary-agenda-checkbox {
   width: 14px;
   height: 14px;
-  border: 1.5px solid currentColor;
+  border: none;
   border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
-  background: none;
   font-size: 9px;
   font-weight: 700;
-  transition: background 0.1s;
+  color: transparent; /* el tick es invisible en vacío */
+  transition: opacity 0.1s;
 }
-.diary-agenda-checkbox--seguimiento { color: var(--accent); }
-.diary-agenda-checkbox--overdue     { color: #f97316; }
-.diary-agenda-checkbox--today       { color: #f59e0b; }
-.diary-agenda-checkbox--done        { color: #22c55e; background: #22c55e20; }
+.diary-agenda-checkbox--seguimiento { background: #c4b5fd; } /* lila pastel */
+.diary-agenda-checkbox--overdue     { background: #fdba74; } /* naranja pastel */
+.diary-agenda-checkbox--today       { background: #fcd34d; } /* amarillo pastel */
+.diary-agenda-checkbox--done        { background: #86efac; color: #166534; } /* verde pastel + tick */
 
 .diary-agenda-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .diary-agenda-text.done { text-decoration: line-through; opacity: 0.4; }
