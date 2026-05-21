@@ -1133,25 +1133,33 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
         {!isDivider && !isHeading && (
           <>
             {node.status !== null ? (
-              // Tarea: checkbox
-              <button
-                className="bullet-btn task"
-                onClick={toggleTask}
-                tabIndex={-1}
-                aria-label="Toggle tarea"
-                title="Marcar hecha/pendiente"
-              >
-                {node.status === 'done' ? (
-                  <svg width="14" height="14" viewBox="0 0 14 14">
-                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <path d="M4 7l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 14 14">
-                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                  </svg>
-                )}
-              </button>
+              // Tarea: nav-dot (navega al nodo) + checkbox (toggle estado)
+              <>
+                <button
+                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  tabIndex={-1}
+                  title="Abrir nota"
+                />
+                <button
+                  className="bullet-btn task"
+                  onClick={toggleTask}
+                  tabIndex={-1}
+                  aria-label="Toggle tarea"
+                  title="Marcar hecha/pendiente"
+                >
+                  {node.status === 'done' ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                      <path d="M4 7l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    </svg>
+                  )}
+                </button>
+              </>
             ) : isNota ? (
               // Nota hija: icono de página, click navega
               <button
