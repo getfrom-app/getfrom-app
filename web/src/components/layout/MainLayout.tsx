@@ -44,6 +44,7 @@ import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import QuickCapturePanel from '../modals/QuickCapturePanel'
+import SettingsModal from '../modals/SettingsModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 import StatusBar from './StatusBar'
@@ -63,6 +64,7 @@ export default function MainLayout() {
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const prevIsSyncing = useRef(false)
 
@@ -133,6 +135,11 @@ export default function MainLayout() {
       if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowVoiceCapture(true)
+      }
+      // Cmd+, → Ajustes
+      if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowSettings(v => !v)
       }
       if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -249,6 +256,7 @@ export default function MainLayout() {
         onLogout={handleLogout}
         isSyncing={s.isSyncing}
         isGuest={false}
+        onOpenSettings={() => setShowSettings(true)}
       />
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -331,6 +339,7 @@ export default function MainLayout() {
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showQuickCapture && <QuickCapturePanel onClose={() => setShowQuickCapture(false)} />}
       <button
         className="mobile-fab"

@@ -11,6 +11,7 @@ interface Props {
   onLogout: () => void
   isSyncing: boolean
   isGuest?: boolean
+  onOpenSettings?: () => void
 }
 
 interface TreeNodeProps {
@@ -122,7 +123,7 @@ function savePanels(panels: Panel[]) {
 
 type SidebarTab = 'tags' | 'favorites' | 'panels' | 'settings'
 
-export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }: Props) {
+export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, onOpenSettings }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const s = useStore()
@@ -585,7 +586,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
             {email && (
               <div className="settings-email">{email}</div>
             )}
-            <SettingRow icon="👤" label="Mi cuenta" onClick={() => navigate('/account')} />
+            <SettingRow icon="👤" label="Mi cuenta" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
             {showUpgrade && (
               <SettingRow icon="✨" label="Actualizar plan" onClick={() => navigate('/pricing')} badge="Free" />
             )}
@@ -675,8 +676,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           <div className="settings-section">
             <div className="settings-section-title">Integraciones</div>
             <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => window.open('https://getfrom.app/claude', '_blank')} />
-            <SettingRow icon="📅" label="Google Calendar" onClick={() => navigate('/account')} />
-            <SettingRow icon="📤" label="Exportar datos" onClick={() => navigate('/account')} />
+            <SettingRow icon="📅" label="Google Calendar" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
+            <SettingRow icon="📤" label="Exportar datos" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
             <SettingRow icon="🗑" label="Papelera" onClick={() => navigate('/trash')} />
           </div>
 
