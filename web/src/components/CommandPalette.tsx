@@ -12,8 +12,7 @@ interface PaletteItem {
   id: string
   label: string
   sublabel?: string
-  type: 'note' | 'recent' | 'create'
-  /** null = no task, 'pending' = tarea pendiente, 'done' = tarea hecha */
+  type: 'note' | 'tag' | 'create'
   taskStatus?: 'pending' | 'done' | null
   action: () => void
   score: number
@@ -31,25 +30,30 @@ export function recordRecentNode(id: string) {
   localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, 10)))
 }
 
-// ── Scoring ──────────────────────────────────────────────────────────────────
+// ── Scoring estricto — sin fuzzy char-by-char ────────────────────────────────
+// Solo coincide si el texto contiene la query (o todas sus palabras)
 
 function scoreMatch(haystack: string, needle: string): number {
-  if (!needle) return 1
+  if (!needle.trim()) return 0
   const h = haystack.toLowerCase()
-  const n = needle.toLowerCase()
+  const n = needle.toLowerCase().trim()
+
   if (h === n) return 100
   if (h.startsWith(n)) return 80
   if (h.includes(n)) return 60
-  // fuzzy
-  let hi = 0, consec = 0, score = 0
-  for (let i = 0; i < n.length; i++) {
-    const idx = h.indexOf(n[i], hi)
-    if (idx === -1) return 0
-    consec = idx === hi ? consec + 1 : 0
-    score += consec * 2
-    hi = idx + 1
+
+  // Todas las palabras del query deben estar en el texto como substrings
+  const words = n.split(/\s+/).filter(w => w.length > 1)
+  if (words.length >= 2 && words.every(w => h.includes(w))) {
+    return 30 + Math.round(20 * n.length / Math.max(h.length, 1))
   }
-  return score + 10
+
+  // Una sola palabra corta → coincidencia parcial solo si ≥3 caracteres
+  if (words.length === 1 && words[0].length >= 3 && h.includes(words[0])) {
+    return 20
+  }
+
+  return 0 // Sin coincidencia
 }
 
 // ── Natural language parsing ─────────────────────────────────────────────────
@@ -70,14 +74,10 @@ const DAY_NAMES: Record<string, number> = {
 }
 
 function nextWeekday(dayIndex: number): Date {
-  const now = new Date()
-  const today = now.getDay()
+  const now = new Date(), today = now.getDay()
   let diff = dayIndex - today
   if (diff <= 0) diff += 7
-  const result = new Date(now)
-  result.setDate(result.getDate() + diff)
-  result.setHours(0, 0, 0, 0)
-  return result
+  const d = new Date(now); d.setDate(d.getDate() + diff); d.setHours(0, 0, 0, 0); return d
 }
 
 function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Set<number> } {
@@ -95,27 +95,26 @@ function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Se
       date = d; used.add(i); continue
     }
     if (/^\d{1,2}:\d{2}$/.test(t)) {
-      const [hh, min] = t.split(':').map(Number)
+      const [hh, mn] = t.split(':').map(Number)
       if (!date) { date = new Date(); date.setHours(0,0,0,0) }
-      date.setHours(hh, min, 0, 0); used.add(i); continue
+      date.setHours(hh, mn, 0, 0); used.add(i); continue
     }
   }
   return { date, usedTokens: used }
 }
 
 function parseQuery(raw: string): ParsedQuery {
-  const flagRegex = /\s+-(t|e|s|f)\b/gi
   let isTask = false, isEvent = false, isSeguimiento = false, isFavorite = false
-  let match: RegExpExecArray | null
   const re = /\s*-(t|e|s|f)\b/gi
-  while ((match = re.exec(raw)) !== null) {
-    const flag = match[1].toLowerCase()
-    if (flag === 't') isTask = true
-    else if (flag === 'e') isEvent = true
-    else if (flag === 's') isSeguimiento = true
-    else if (flag === 'f') isFavorite = true
+  let m: RegExpExecArray | null
+  while ((m = re.exec(raw)) !== null) {
+    const f = m[1].toLowerCase()
+    if (f === 't') isTask = true
+    else if (f === 'e') isEvent = true
+    else if (f === 's') isSeguimiento = true
+    else if (f === 'f') isFavorite = true
   }
-  const stripped = raw.replace(flagRegex, '').replace(/\s*-(t|e|s|f)\b/gi, '').trim()
+  const stripped = raw.replace(/\s*-(t|e|s|f)\b/gi, '').trim()
   const tokens = stripped.split(/\s+/)
   const { date, usedTokens } = parseNaturalDate(tokens)
   const cleanText = tokens.filter((_, i) => !usedTokens.has(i)).join(' ').trim()
@@ -153,10 +152,7 @@ export default function CommandPalette({ onClose }: Props) {
     if (!text) return
     const diary = store.todayDiary()
     const types: string[] = parsed.isSeguimiento ? ['bucle'] : []
-    const node = store.createNode({
-      text, parentId: diary?.id || null,
-      isTask: parsed.isTask || parsed.isSeguimiento, due: parsed.due, types,
-    })
+    const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask || parsed.isSeguimiento, due: parsed.due, types })
     if (parsed.isEvent) store.updateNode(node.id, { isEvent: true })
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
     const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Seguimiento' : parsed.isTask ? 'Tarea' : 'Nota'
@@ -165,59 +161,90 @@ export default function CommandPalette({ onClose }: Props) {
   }, [parsed, query, showToast, onClose])
 
   const buildItems = useCallback((): PaletteItem[] => {
-    const recentIds = getRecentNodes()
+    const q = query.trim()
 
-    const toItem = (n: ReturnType<typeof store.getNode>, type: 'recent' | 'note', scoreVal: number): PaletteItem | null => {
-      if (!n || n.deletedAt) return null
-      const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
-      return {
-        id: `${type}-${n.id}`,
-        label: n.text || 'Sin título',
-        sublabel: parentText || undefined,
-        type,
-        taskStatus: n.status as 'pending' | 'done' | null ?? null,
-        score: scoreVal,
-        action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
+    // Sin query → lista vacía (sólo el input)
+    if (!q) return []
+
+    // ── Modo tag: query empieza con # ──────────────────────────────────────
+    if (q.startsWith('#')) {
+      const tagQuery = q.slice(1).toLowerCase()
+      const allTags = store.allUsedTags()
+
+      if (!tagQuery) {
+        // Solo '#' → mostrar todos los tags disponibles
+        return allTags.map(tag => ({
+          id: `tag-${tag}`,
+          label: `#${tag}`,
+          type: 'tag' as const,
+          taskStatus: null,
+          score: 100,
+          action: () => {
+            const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag))
+            if (nodes.length === 1) { navigate(`/node/${nodes[0].id}`); onClose(); return }
+            navigate(`/tag/${tag}`); onClose()
+          },
+        }))
       }
+
+      // '#foo' → tags que coincidan + notas con ese tag
+      const matchingTags = allTags.filter(t => t.toLowerCase().includes(tagQuery))
+      const tagItems: PaletteItem[] = matchingTags.map(tag => ({
+        id: `tag-${tag}`,
+        label: `#${tag}`,
+        sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types||[]).includes(tag)).length} notas`,
+        type: 'tag' as const,
+        taskStatus: null,
+        score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60,
+        action: () => { navigate(`/tag/${tag}`); onClose() },
+      }))
+
+      // Notas con ese tag exacto (si hay un match exacto)
+      const exactTag = matchingTags.find(t => t.toLowerCase() === tagQuery)
+      const noteItems: PaletteItem[] = exactTag
+        ? store.allActive()
+            .filter(n => !n.deletedAt && (n.types || []).includes(exactTag))
+            .map(n => ({
+              id: `tagged-${n.id}`,
+              label: n.text || 'Sin título',
+              sublabel: `#${exactTag}`,
+              type: 'note' as const,
+              taskStatus: n.status as 'pending' | 'done' | null ?? null,
+              score: 50,
+              action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
+            }))
+        : []
+
+      return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
     }
 
-    if (!query.trim()) {
-      // Sin query: solo recientes
-      return recentIds
-        .map(id => toItem(store.getNode(id), 'recent', 0))
-        .filter((x): x is PaletteItem => x !== null)
+    // ── Búsqueda estricta por texto ────────────────────────────────────────
+    const searchTerm = parsed.cleanText || q
+
+    const results: PaletteItem[] = []
+    for (const n of store.allActive()) {
+      if (n.isDiaryEntry || n.deletedAt) continue
+      const sc = scoreMatch(n.text || '', searchTerm)
+      if (sc === 0) continue
+      const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
+      results.push({
+        id: `note-${n.id}`,
+        label: n.text || 'Sin título',
+        sublabel: parentText,
+        type: 'note' as const,
+        taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
+        score: sc,
+        action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
+      })
     }
+    results.sort((a, b) => b.score - a.score)
+    results.splice(20)
 
-    const searchTerm = parsed.cleanText || query.trim()
-
-    // Recientes que coincidan
-    const recentMatches: PaletteItem[] = recentIds
-      .map(id => {
-        const n = store.getNode(id)
-        if (!n || n.deletedAt) return null
-        const sc = scoreMatch(n.text || '', searchTerm)
-        if (sc === 0) return null
-        return toItem(n, 'recent', sc + 10)  // +10 bonus por ser reciente
-      })
-      .filter((x): x is PaletteItem => x !== null)
-
-    // Resto de notas
-    const noteMatches: PaletteItem[] = store.allActive()
-      .filter(n => !n.isDiaryEntry && !recentIds.includes(n.id))
-      .map(n => {
-        const sc = scoreMatch(n.text || '', searchTerm)
-        if (sc === 0) return null
-        return toItem(n, 'note', sc)
-      })
-      .filter((x): x is PaletteItem => x !== null)
-
-    const all = [...recentMatches, ...noteMatches].sort((a, b) => b.score - a.score)
-
-    // "Crear nota" solo si NO hay resultados
-    if (all.length === 0) {
-      const displayText = parsed.cleanText || query.trim()
+    // "Crear nota" solo si no hay resultados
+    if (results.length === 0) {
+      const displayText = parsed.cleanText || q
       const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Seguimiento' : parsed.isTask ? 'Tarea' : 'Nota'
-      all.push({
+      results.push({
         id: 'create-item',
         label: `Crear ${label.toLowerCase()}: ${displayText}`,
         type: 'create',
@@ -227,7 +254,7 @@ export default function CommandPalette({ onClose }: Props) {
       })
     }
 
-    return all
+    return results
   }, [query, parsed, doCreate, navigate, onClose])
 
   const items = buildItems()
@@ -252,12 +279,7 @@ export default function CommandPalette({ onClose }: Props) {
 
   return createPortal(
     <div className="cmdpalette-overlay" onClick={onClose}>
-      <div
-        className="cmdpalette-modal"
-        onClick={e => e.stopPropagation()}
-        role="dialog" aria-modal="true" aria-label="Búsqueda"
-      >
-        {/* Search row */}
+      <div className="cmdpalette-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="cmdpalette-search-row">
           <svg className="cmdpalette-search-icon" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="8" cy="8" r="6"/><path d="M14 14l4 4"/>
@@ -265,17 +287,14 @@ export default function CommandPalette({ onClose }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder="Buscar... (-t tarea, -e evento, -s seguimiento, -f favorito)"
+            placeholder="Buscar... (# para tags, -t tarea, -e evento, -s seguimiento)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          {query && (
-            <button className="cmdpalette-clear" onClick={() => setQuery('')}>×</button>
-          )}
+          {query && <button className="cmdpalette-clear" onClick={() => setQuery('')}>×</button>}
         </div>
 
-        {/* Flags chips */}
         {showChips && (
           <div className="cmdpalette-chips">
             {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
@@ -286,34 +305,34 @@ export default function CommandPalette({ onClose }: Props) {
           </div>
         )}
 
-        {/* Results */}
-        <div ref={listRef} className="cmdpalette-results">
-          {items.length === 0 && (
-            <div className="cmdpalette-empty">Sin resultados</div>
-          )}
-          {!query.trim() && items.length > 0 && (
-            <div className="cmdpalette-section-label">Recientes</div>
-          )}
-          {items.map((item, idx) => (
-            <button
-              key={item.id}
-              className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
-              onClick={item.action}
-              onMouseEnter={() => setActiveIdx(idx)}
-            >
-              {/* Indicador de estado — solo para tareas */}
-              {item.taskStatus !== null && item.taskStatus !== undefined ? (
-                <span className={`cmdpalette-task-dot ${item.taskStatus === 'done' ? 'done' : 'pending'}`} />
-              ) : item.type === 'create' ? (
-                <span className="cmdpalette-create-icon">+</span>
-              ) : null}
-              <div className="cmdpalette-item-info">
-                <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''}`}>{item.label}</span>
-                {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
-              </div>
-            </button>
-          ))}
-        </div>
+        {items.length > 0 && (
+          <div ref={listRef} className="cmdpalette-results">
+            {/* Sección label para tags */}
+            {query.startsWith('#') && items[0]?.type === 'tag' && (
+              <div className="cmdpalette-section-label">Tags</div>
+            )}
+            {items.map((item, idx) => (
+              <button
+                key={item.id}
+                className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
+                onClick={item.action}
+                onMouseEnter={() => setActiveIdx(idx)}
+              >
+                {item.type === 'tag' ? (
+                  <span className="cmdpalette-tag-dot" />
+                ) : item.taskStatus !== null && item.taskStatus !== undefined ? (
+                  <span className={`cmdpalette-task-dot ${item.taskStatus === 'done' ? 'done' : 'pending'}`} />
+                ) : item.type === 'create' ? (
+                  <span className="cmdpalette-create-icon">+</span>
+                ) : null}
+                <div className="cmdpalette-item-info">
+                  <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''}`}>{item.label}</span>
+                  {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>,
     document.body
