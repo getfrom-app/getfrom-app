@@ -4,6 +4,30 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web v6.4 + Mac 3.13 — 21 mayo 2026 (sesión 3)
+
+**Plataformas: Web** (getfrom.app/app) · **Mac** (pendiente publicar)
+
+### Web — Ventana de Ajustes completa
+- **Ventana de Ajustes estilo Mac** — Modal full-screen con sidebar de tabs en lugar de vista comprimida en la columna
+- **Cmd+,** abre los ajustes desde cualquier vista
+- **Tab Cuenta** — Estadísticas del vault, cambio de email/contraseña, suscripción, privacidad, eliminar cuenta
+- **Tab Apariencia** — Tema (claro/oscuro), tamaño de fuente (3 opciones), interlineado (3 opciones)
+- **Tab IA** — Token MCP, instrucciones Claude Desktop, balance de tokens
+- **Tab Atajos** — Expansión de texto configurable + tabla completa de atajos de teclado
+- **Tab Plantillas** — Gestión de plantillas de nodo personalizadas
+- **Tab Google** — Instrucciones para conectar Google Calendar
+- **Tab Exportar** — Backup JSON/Markdown del servidor + exportación local
+- **Tab Importar** — Importación de archivos JSON exportados desde From
+
+### Mac — Calendario global y seguimiento
+- **Calendario global** (`⌘5`) — Vista semana/mes/año con sidebar de tareas sin programar. Existía como código inactivo; ahora está wired en la navegación
+- **Botón Calendario** en el sidebar de notas (tab tags) con atajo `⌘5`
+- **Seguimiento integrado en día** — Nodos con `isSeguimiento=true` ahora aparecen en el panel derecho del diario junto a las tareas del día (antes solo aparecían los bucles)
+- **`isLoop` actualizado** — La propiedad ahora incluye `isSeguimiento` para retrocompatibilidad total
+
+---
+
 ## Web 1.3 — 21 mayo 2026 (sesión 2)
 
 **Plataforma: Web** (getfrom.app/app) · Mejoras de UX, editor y panel derecho

@@ -752,21 +752,24 @@ From sincroniza automáticamente entre Mac e iPhone. Los cambios aparecen en seg
 
 ## 20. Ajustes útiles
 
-Accede desde el menú **From → Ajustes** o con `⌘,`.
+Accede desde el menú **From → Ajustes**, con `⌘,`, o desde la rueda dentada del sidebar.
+
+En la **versión web**, los ajustes se abren como una ventana modal completa con sidebar de tabs, igual que en Mac.
 
 | Sección | Qué configuras |
 |---|---|
-| **Cuenta** | Login, suscripción, tokens de IA, API key propia |
-| **Apariencia** | Tema claro/oscuro, tamaño de fuente |
-| **Atajos de teclado** | Reasigna cualquier atajo de la app |
-| **Atajos inline** | Define expansiones de texto propias (abreviación → texto completo) |
-| **Calendario** | Activar sync con Apple Calendar, seleccionar calendarios |
-| **Tipos y estados** | Crear, editar o eliminar tipos de nodo y estados personalizados |
-| **IA** | Agentes, prompts guardados, configuración del asistente |
-| **Integraciones** | Conectar cuenta de Google para Google Docs |
-| **Búsqueda** | Activar/desactivar integración con Spotlight |
-| **Backup** | Estado del backup local, ruta de exportación |
-| **Espacio** | Directorio local para archivos y agentes |
+| **Cuenta** | Login, suscripción, tokens de IA, estadísticas del vault |
+| **Apariencia** | Tema claro/oscuro, tamaño de fuente, interlineado |
+| **IA** | Token MCP para Claude Desktop, API key propia |
+| **Atajos** | Expansiones de texto (abreviación → texto) + referencia de atajos |
+| **Plantillas** | Plantillas de nodo personalizadas |
+| **Google** | Sincronización con Google Calendar |
+| **Exportar** | Backup JSON o Markdown del servidor o local |
+| **Importar** | Importar notas desde JSON exportado |
+| **Calendario** (Mac) | Activar sync con Apple Calendar, seleccionar calendarios |
+| **Tipos y estados** (Mac) | Crear, editar o eliminar tipos de nodo y estados personalizados |
+| **Backup** (Mac) | Estado del backup local, ruta de exportación |
+| **Espacio** (Mac) | Directorio local para archivos y agentes |
 
 **Atajos inline (expansiones de texto):**
 - En **Ajustes → Atajos inline** defines abreviaciones propias: escribe una clave corta y From la expande automáticamente al texto que hayas configurado.
