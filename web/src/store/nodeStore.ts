@@ -234,6 +234,11 @@ class NodeStore {
     if (!n.id) return
     n.types = typeof n.types === 'string' ? JSON.parse(n.types) : (n.types || [])
     n.collections = typeof n.collections === 'string' ? JSON.parse(n.collections) : (n.collections || [])
+    // Auto-migración: notas con 'bucle' en types → isSeguimiento (bucle eliminado de la UI)
+    if (n.types.includes('bucle')) {
+      n.isSeguimiento = true
+      n.types = n.types.filter((t: string) => t !== 'bucle')
+    }
     this.nodes.set(n.id, n)
   }
 

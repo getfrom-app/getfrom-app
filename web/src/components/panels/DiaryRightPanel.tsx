@@ -126,8 +126,15 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
           return (
             <div key={node.id}>
               <div className="diary-agenda-seguimiento" onClick={() => navigate(`/node/${node.id}`)}>
-                <span className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento"></span>
-                <span className="diary-agenda-text">{node.text || 'Sin título'}</span>
+                <span
+                  className={`diary-agenda-checkbox diary-agenda-checkbox--seguimiento${node.status === 'done' ? ' diary-agenda-checkbox--done' : ''}`}
+                  onClick={e => {
+                    e.stopPropagation()
+                    const newStatus = node.status === 'done' ? null : 'done'
+                    store.updateNode(node.id, { status: newStatus })
+                  }}
+                ></span>
+                <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
                 {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
               </div>
               {childTasks.map(task => (

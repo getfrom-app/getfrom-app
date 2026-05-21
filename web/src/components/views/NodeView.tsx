@@ -1001,33 +1001,56 @@ export default function NodeView() {
           )}
 
           <div className="node-title-row">
-            {/* Icono del nodo — solo en notas normales (no en diarios) */}
-            {!node.isDiaryEntry && (
-            <div className="node-icon-wrapper">
+            {/* Icono del nodo — seguimiento muestra checkbox morado, normal muestra emoji */}
+            {node.isSeguimiento ? (
+              // Checkbox morado para seguimiento
               <button
-                className="node-icon-btn"
-                onClick={() => setShowEmojiPicker(v => !v)}
-                title="Cambiar icono"
+                className={`node-seguimiento-title-btn ${node.status === 'done' ? 'done' : ''}`}
+                onClick={() => {
+                  store.updateNode(node!.id, {
+                    status: node.status === 'done' ? null : 'done'
+                  })
+                }}
+                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Seguimiento activo — clic para completar'}
               >
-                {nodeIcon || '📄'}
+                {node.status === 'done' ? (
+                  <svg width="28" height="28" viewBox="0 0 28 28">
+                    <circle cx="14" cy="14" r="12" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.15"/>
+                    <path d="M8 14l4 4 8-8" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="28" height="28" viewBox="0 0 28 28">
+                    <circle cx="14" cy="14" r="12" stroke="var(--accent)" strokeWidth="2" fill="var(--accent)" fillOpacity="0.12"/>
+                  </svg>
+                )}
               </button>
-              {showEmojiPicker && (
-                <EmojiPicker
-                  onSelect={emoji => {
-                    setShowEmojiPicker(false)
-                    const ed = JSON.parse(node.extraData || '{}')
-                    if (emoji) {
-                      ed.icon = emoji
-                    } else {
-                      delete ed.icon
-                    }
-                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                  }}
-                  onClose={() => setShowEmojiPicker(false)}
-                />
-              )}
-            </div>
-            )}
+            ) : !node.isDiaryEntry ? (
+              // Emoji normal para notas no-diario
+              <div className="node-icon-wrapper">
+                <button
+                  className="node-icon-btn"
+                  onClick={() => setShowEmojiPicker(v => !v)}
+                  title="Cambiar icono"
+                >
+                  {nodeIcon || '📄'}
+                </button>
+                {showEmojiPicker && (
+                  <EmojiPicker
+                    onSelect={emoji => {
+                      setShowEmojiPicker(false)
+                      const ed = JSON.parse(node.extraData || '{}')
+                      if (emoji) {
+                        ed.icon = emoji
+                      } else {
+                        delete ed.icon
+                      }
+                      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                    }}
+                    onClose={() => setShowEmojiPicker(false)}
+                  />
+                )}
+              </div>
+            ) : null}
             <h1
               ref={titleRef}
               className="node-title"
@@ -1263,37 +1286,6 @@ export default function NodeView() {
           )}
 
 
-          {/* Node metadata row: status, priority, tags, due */}
-          {(node.status !== null || node.priority || node.due || (node.types && node.types.filter(t => !['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'].includes(t)).length > 0)) && (
-            <div className="node-header-meta">
-              {node.status !== null && (
-                <button
-                  className={`node-status-badge node-status-badge--btn ${node.status}`}
-                  onClick={() => store.updateNode(node!.id, { status: node!.status === 'done' ? 'pending' : 'done' })}
-                  title="Cambiar estado"
-                >
-                  {node.status === 'pending' ? '○ Pendiente' : '✓ Completado'}
-                </button>
-              )}
-              {node.priority && (
-                <button
-                  className={`node-priority-badge node-priority-badge--btn priority-badge--${node.priority}`}
-                  onClick={() => {
-                    const next: Node['priority'] = node!.priority === 'high' ? 'medium' : node!.priority === 'medium' ? 'low' : null
-                    store.updateNode(node!.id, { priority: next })
-                  }}
-                  title="Cambiar prioridad"
-                >
-                  {node.priority === 'high' ? '↑ Alta' : node.priority === 'medium' ? '→ Media' : '↓ Baja'}
-                </button>
-              )}
-              {node.due && (
-                <span className="node-due-badge">
-                  📅 {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Locked badge */}
           {isLocked && (

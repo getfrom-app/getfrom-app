@@ -5977,3 +5977,34 @@ a:focus-visible {
   transition: opacity 0.15s;
 }
 .guest-sync-cta:hover { opacity: 0.85; }
+
+/* ── Seguimiento: checkbox morado en outliner ─────────────────────────────── */
+.bullet-seguimiento-dot {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.12s;
+}
+.bullet-seguimiento-dot:hover { opacity: 0.75; }
+
+/* ── Seguimiento: checkbox morado en título ───────────────────────────────── */
+.node-seguimiento-title-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.node-seguimiento-title-btn:hover { background: var(--bg-hover); }

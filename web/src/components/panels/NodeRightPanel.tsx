@@ -39,14 +39,6 @@ export default function NodeRightPanel({ node }: Props) {
     if (newVal && node.status !== null) updates.status = null
     store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
   }
-  function toggleBucle() {
-    const types = node.types || []
-    if (types.includes('bucle')) {
-      store.updateNode(node.id, { types: types.filter(t => t !== 'bucle') })
-    } else {
-      store.updateNode(node.id, { types: [...types, 'bucle'], status: 'pending' })
-    }
-  }
   function toggleEvent() { store.updateNode(node.id, { isEvent: !node.isEvent }) }
   const isLocked = (() => {
     try { return JSON.parse(node.extraData || '{}').locked === true } catch { return false }
@@ -70,7 +62,6 @@ export default function NodeRightPanel({ node }: Props) {
     store.updateNode(node.id, { types: (node.types || []).filter(t => t !== type) })
   }
 
-  const isBucle = (node.types || []).includes('bucle')
   const usedTags = s.allUsedTags()
 
   // Tag definition nodes → "Ver área completa"
@@ -127,13 +118,20 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
       <div className="prop-row">
         <button className={`prop-icon-btn ${node.isFavorite ? 'active' : ''}`} onClick={toggleFavorite} title="Fijar">
-          {node.isFavorite ? '★' : '☆'} Fijado
+          📌 Fijado
         </button>
-        <button className={`prop-icon-btn ${node.isSeguimiento ? 'active' : ''}`} onClick={toggleSeguimiento} title="Seguimiento">
-          👁 Seguim.
-        </button>
-        <button className={`prop-icon-btn ${isBucle ? 'active bucle' : ''}`} onClick={toggleBucle} title="Bucle">
-          ↺ Bucle
+        <button
+          className={`prop-icon-btn ${node.status !== null ? 'active' : ''}`}
+          onClick={() => {
+            if (node.status !== null) {
+              store.updateNode(node.id, { status: null })
+            } else {
+              store.updateNode(node.id, { status: 'pending', isSeguimiento: false })
+            }
+          }}
+          title="Tarea"
+        >
+          ○ Tarea
         </button>
         <button className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`} onClick={toggleEvent} title="Evento">
           📅 Evento
@@ -144,54 +142,83 @@ export default function NodeRightPanel({ node }: Props) {
       </div>
 
       {/* ── Estado ──────────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Estado</div>
-        <div className="prop-pills">
-          {statusOptions.map(opt => (
-            <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`} onClick={() => setStatus(opt.value)}>
-              {opt.label}
-            </button>
-          ))}
+      {(node.status !== null || node.isSeguimiento) && (
+        <div className="prop-section">
+          <div className="prop-section-label">Estado</div>
+          {node.isSeguimiento && node.status !== 'done' ? (
+            // Seguimiento activo
+            <div className="prop-pills">
+              <button className="prop-pill active" onClick={() => store.updateNode(node.id, { status: null })}>
+                ● Activo
+              </button>
+              <button className="prop-pill" onClick={() => store.updateNode(node.id, { status: 'done' })}>
+                ✓ Completado
+              </button>
+            </div>
+          ) : node.isSeguimiento ? (
+            // Seguimiento completado
+            <div className="prop-pills">
+              <button className="prop-pill" onClick={() => store.updateNode(node.id, { status: null })}>
+                ● Activo
+              </button>
+              <button className="prop-pill active" onClick={() => store.updateNode(node.id, { status: 'done' })}>
+                ✓ Completado
+              </button>
+            </div>
+          ) : (
+            // Tarea: Sin estado / Pendiente / Hecho
+            <div className="prop-pills">
+              {statusOptions.map(opt => (
+                <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`} onClick={() => setStatus(opt.value)}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* ── Prioridad ───────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Prioridad</div>
-        <div className="prop-pills">
-          {priorityOptions.map(opt => (
-            <button key={String(opt.value)} className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`} onClick={() => setPriority(opt.value)} style={opt.style}>
-              {opt.label}
-            </button>
-          ))}
+      {node.status !== null && (
+        <div className="prop-section">
+          <div className="prop-section-label">Prioridad</div>
+          <div className="prop-pills">
+            {priorityOptions.map(opt => (
+              <button key={String(opt.value)} className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`} onClick={() => setPriority(opt.value)} style={opt.style}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Fecha ───────────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Fecha</div>
-        <div className="prop-quick-dates">
-          {[
-            { label: 'Hoy', days: 0 },
-            { label: 'Mañana', days: 1 },
-            { label: 'Prx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
-            { label: 'Prx. semana', days: 7 },
-          ].map(({ label, days }) => {
-            const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
-            const iso = d.toISOString().slice(0, 10)
-            return (
-              <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`} onClick={() => setDue(iso, dueTime || '09:00')}>
-                {label}
-              </button>
-            )
-          })}
-          {dueDate && <button className="prop-quick-date-btn" onClick={() => setDue('', '')}>✕</button>}
+      {node.status !== null && (
+        <div className="prop-section">
+          <div className="prop-section-label">Fecha</div>
+          <div className="prop-quick-dates">
+            {[
+              { label: 'Hoy', days: 0 },
+              { label: 'Mañana', days: 1 },
+              { label: 'Prx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
+              { label: 'Prx. semana', days: 7 },
+            ].map(({ label, days }) => {
+              const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
+              const iso = d.toISOString().slice(0, 10)
+              return (
+                <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`} onClick={() => setDue(iso, dueTime || '09:00')}>
+                  {label}
+                </button>
+              )
+            })}
+            {dueDate && <button className="prop-quick-date-btn" onClick={() => setDue('', '')}>✕</button>}
+          </div>
+          <div className="prop-datetime" style={{ marginTop: 6 }}>
+            <input type="date" className="prop-date-input" value={dueDate} onChange={e => setDue(e.target.value, dueTime)} />
+            <input type="time" className="prop-time-input" value={dueTime} onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+          </div>
         </div>
-        <div className="prop-datetime" style={{ marginTop: 6 }}>
-          <input type="date" className="prop-date-input" value={dueDate} onChange={e => setDue(e.target.value, dueTime)} />
-          <input type="time" className="prop-time-input" value={dueTime} onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
-        </div>
-      </div>
+      )}
 
       {/* ── Fecha fin (evento) ────────────────────────────────────────────── */}
       {(node.isEvent || node.dueEnd) && (

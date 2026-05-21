@@ -1167,7 +1167,31 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {/* Bullet / task checkbox / nota icon — hidden for headings and dividers */}
         {!isDivider && !isHeading && (
           <>
-            {node.status !== null ? (
+            {node.isSeguimiento ? (
+              // Seguimiento: checkbox morado (activo) o verde (completado)
+              <button
+                className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
+                onClick={e => {
+                  e.stopPropagation()
+                  store.updateNode(node.id, {
+                    status: node.status === 'done' ? null : 'done'
+                  })
+                }}
+                tabIndex={-1}
+                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activo — clic para completar'}
+              >
+                {node.status === 'done' ? (
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <circle cx="7" cy="7" r="6" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.15"/>
+                    <path d="M4 7l2 2 4-4" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.12"/>
+                  </svg>
+                )}
+              </button>
+            ) : node.status !== null ? (
               // Tarea: nav-dot (navega al nodo) + checkbox (toggle estado)
               <>
                 <button
@@ -1423,10 +1447,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           />
         )}
 
-        {/* Bucle / Evento / Recurrencia badge */}
-        {(node.types || []).includes('bucle') && <span className="node-type-badge bucle" title="Bucle">↺</span>}
-        {node.isEvent && !((node.types || []).includes('bucle')) && <span className="node-type-badge event" title="Evento">📅</span>}
-        {node.recurrence && !((node.types || []).includes('bucle')) && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
+        {/* Evento / Recurrencia badge */}
+        {node.isEvent && <span className="node-type-badge event" title="Evento">📅</span>}
+        {node.recurrence && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
 
         {/* Fecha de vencimiento */}
         {node.due && !node.isEvent && (() => {
