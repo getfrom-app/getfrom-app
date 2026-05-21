@@ -184,6 +184,16 @@ function KanbanColumn({
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low'
 type KanbanViewMode = 'board' | 'table'
+type KanbanGroupBy = 'status' | 'priority' | 'tag'
+
+// ── Priority columns config ──────────────────────────────────────────────────
+
+const PRIORITY_COLUMNS = [
+  { key: 'high',   label: 'Alta',          color: '#ef4444', icon: '▲' },
+  { key: 'medium', label: 'Media',         color: '#f97316', icon: '●' },
+  { key: 'low',    label: 'Baja',          color: '#6b7280', icon: '▽' },
+  { key: 'none',   label: 'Sin prioridad', color: '#94a3b8', icon: '○' },
+] as const
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
@@ -296,6 +306,7 @@ export default function KanbanView() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<KanbanViewMode>('board')
+  const [groupBy, setGroupBy] = useState<KanbanGroupBy>('status')
 
   const allTasks = useMemo(
     () => s.allActive().filter(n => n.status !== null),
@@ -351,6 +362,17 @@ export default function KanbanView() {
             <span className="kanban-stat">{totalPending} pendientes</span>
             <span className="kanban-stat kanban-stat--done">{totalDone} completadas</span>
           </div>
+          {viewMode === 'board' && (
+            <select
+              className="kanban-group-select"
+              value={groupBy}
+              onChange={e => setGroupBy(e.target.value as KanbanGroupBy)}
+            >
+              <option value="status">Por estado</option>
+              <option value="priority">Por prioridad</option>
+              <option value="tag">Por tag</option>
+            </select>
+          )}
           <div className="kanban-view-mode-toggle">
             <button
               className={`kanban-view-mode-btn ${viewMode === 'board' ? 'active' : ''}`}
@@ -393,7 +415,7 @@ export default function KanbanView() {
       </div>
 
       {/* Board or Table */}
-      {viewMode === 'board' ? (
+      {viewMode === 'board' && groupBy === 'status' && (
         <div className="kanban-board">
           {COLUMNS.map(col => (
             <KanbanColumn
@@ -405,7 +427,78 @@ export default function KanbanView() {
             />
           ))}
         </div>
-      ) : (
+      )}
+
+      {viewMode === 'board' && groupBy === 'priority' && (
+        <div className="kanban-board">
+          {PRIORITY_COLUMNS.map(col => (
+            <div key={col.key} className="kanban-column">
+              <div className="kanban-column-header">
+                <div className="kanban-column-title">
+                  <span className="kanban-column-icon" style={{ color: col.color }}>{col.icon}</span>
+                  <span>{col.label}</span>
+                  <span className="kanban-column-count">
+                    {filteredTasks.filter(t => (t.priority ?? 'none') === col.key).length}
+                  </span>
+                </div>
+              </div>
+              <div className="kanban-column-body">
+                {filteredTasks
+                  .filter(t => (t.priority ?? 'none') === col.key)
+                  .map(t => <KanbanCard key={t.id} task={t} onDrop={handleDrop} />)
+                }
+                {filteredTasks.filter(t => (t.priority ?? 'none') === col.key).length === 0 && (
+                  <div className="kanban-column-empty">Sin tareas</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {viewMode === 'board' && groupBy === 'tag' && (() => {
+        const EXCLUDED_TYPES = ['bucle', 'agente', 'prompt', 'evento', 'tarea']
+        const uniqueTags = [...new Set(
+          filteredTasks.flatMap(t => (t.types || []).filter(ty => !EXCLUDED_TYPES.includes(ty)))
+        )]
+        const untagged = filteredTasks.filter(t =>
+          (t.types || []).filter(ty => !EXCLUDED_TYPES.includes(ty)).length === 0
+        )
+        const allTagCols = [
+          ...uniqueTags.map(tag => ({ key: tag, label: `#${tag}`, isTag: true })),
+          ...(untagged.length > 0 ? [{ key: '__none__', label: 'Sin tag', isTag: false }] : []),
+        ]
+        return (
+          <div className="kanban-board">
+            {allTagCols.map(col => {
+              const colTasks = col.key === '__none__'
+                ? untagged
+                : filteredTasks.filter(t => (t.types || []).includes(col.key))
+              return (
+                <div key={col.key} className="kanban-column">
+                  <div className="kanban-column-header">
+                    <div className="kanban-column-title">
+                      <span>{col.label}</span>
+                      <span className="kanban-column-count">{colTasks.length}</span>
+                    </div>
+                  </div>
+                  <div className="kanban-column-body">
+                    {colTasks.map(t => <KanbanCard key={t.id} task={t} onDrop={handleDrop} />)}
+                    {colTasks.length === 0 && <div className="kanban-column-empty">Sin tareas</div>}
+                  </div>
+                </div>
+              )
+            })}
+            {allTagCols.length === 0 && (
+              <div style={{ padding: '32px', color: 'var(--text-tertiary)', fontSize: 13 }}>
+                Ninguna tarea tiene tags asignados
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {viewMode === 'table' && (
         <KanbanTable tasks={filteredTasks} />
       )}
     </div>

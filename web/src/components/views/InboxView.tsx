@@ -35,6 +35,15 @@ export default function InboxView() {
     markProcessed(node.id)
   }
 
+  function moveToToday(node: Node) {
+    const diary = store.todayDiary()
+    if (!diary) return
+    const children = store.children(diary.id)
+    const maxOrder = children.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
+    store.updateNode(node.id, { parentId: diary.id, siblingOrder: maxOrder + 1000 })
+    markProcessed(node.id)
+  }
+
   return (
     <div className="view inbox-view">
       <div className="view-header">
@@ -73,6 +82,12 @@ export default function InboxView() {
                     onClick={() => store.updateNode(item.id, { isFavorite: true })}
                     title="Marcar como favorito"
                   >★</button>
+                  <button
+                    className="inbox-action-btn"
+                    onClick={() => moveToToday(item)}
+                    title="Mover al diario de hoy"
+                    style={{ fontSize: 14 }}
+                  >📓</button>
                   <button
                     className="inbox-action-btn inbox-action-btn--done"
                     onClick={() => markProcessed(item.id)}

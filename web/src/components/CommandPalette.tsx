@@ -368,6 +368,38 @@ export default function CommandPalette({ onClose }: Props) {
       // No query: actions + recent
       items.push(...actions, ...recentItems)
     } else {
+      // Si el query empieza con /template o /plantilla, mostrar plantillas
+      const queryLower = query.toLowerCase()
+      if (queryLower.startsWith('/template') || queryLower.startsWith('/plantilla')) {
+        const systemTemplates = [
+          { name: 'Reunión', body: '## Objetivo\n\n## Asistentes\n\n## Notas\n\n## Próximos pasos' },
+          { name: 'Proyecto', body: '## Objetivo\n\n## Alcance\n\n## Tareas clave\n\n## Notas' },
+          { name: 'Decisión', body: '## Contexto\n\n## Opciones\n\n## Decisión\n\n## Motivo' },
+          { name: 'Idea', body: '## Descripción\n\n## Ventajas\n\n## Siguiente paso' },
+          { name: 'Daily', body: '## Objetivos\n- \n\n## Tareas\n- [ ] \n\n## Notas\n' },
+        ]
+
+        const userTemplates = (() => {
+          try { return JSON.parse(localStorage.getItem('from_custom_templates') || '[]') } catch { return [] }
+        })() as Array<{ id: string; name: string; body: string }>
+
+        const allTemplates = [...systemTemplates, ...userTemplates]
+
+        return allTemplates.map(t => ({
+          id: `template-${t.name}`,
+          icon: '📋',
+          label: `Nueva nota: ${t.name}`,
+          type: 'action' as const,
+          action: () => {
+            const diary = store.todayDiary()
+            const node = store.createNode({ text: t.name, parentId: diary?.id || null })
+            store.updateNode(node.id, { body: t.body })
+            navigate(`/node/${node.id}`)
+            onClose()
+          },
+        }))
+      }
+
       // First item: crear (siempre que haya query)
       const displayText = parsed.cleanText || query.trim()
       items.push({

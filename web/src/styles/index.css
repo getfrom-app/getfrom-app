@@ -3863,6 +3863,17 @@ mark.inline-highlight {
 .node-published-unpublish { background: none; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; border-radius: 4px; padding: 1px 8px; font-size: 11px; cursor: pointer; opacity: 0.7; }
 .node-published-unpublish:hover { opacity: 1; background: rgba(239,68,68,0.1); }
 
+/* ── Node header badges ──────────────────────────────────────────────────── */
+.node-header-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.node-badge { font-size: 11px; color: var(--text-tertiary); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; }
+.node-badge--area { color: var(--text-accent, var(--accent)); border-color: var(--accent); }
+.node-badge--locked { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+
+/* ── Node share menu ────────────────────────────────────────────────────── */
+.node-share-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 100; min-width: 200px; overflow: hidden; }
+.node-share-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 14px; background: none; border: none; cursor: pointer; font-size: 13px; color: var(--text-primary); text-align: left; transition: background 0.1s; }
+.node-share-menu button:hover { background: var(--bg-hover); }
+
 /* ── DiaryView date picker ───────────────────────────────────────────────── */
 
 .diary-date-picker {

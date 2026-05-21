@@ -55,6 +55,7 @@ export default function NodeView() {
   const [shareCopied, setShareCopied] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [showShareMenu, setShowShareMenu] = useState(false)
 
   // Quick actions bar state
   const [quickActionMsg, setQuickActionMsg] = useState<string | null>(null)
@@ -195,6 +196,11 @@ export default function NodeView() {
   // Lock state
   const isLocked = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').locked === true } catch { return false }
+  }, [node?.extraData])
+
+  // Area del nodo (extraData.area)
+  const nodeArea = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').area || null } catch { return null }
   }, [node?.extraData])
 
   if (!node || node.deletedAt) {
@@ -777,6 +783,13 @@ export default function NodeView() {
               📋
             </button>
             <button
+              className="node-published-copy"
+              onClick={() => window.open(`https://getfrom.app/p/${node.publicSlug!}`, '_blank')}
+              title="Abrir en nueva pestaña"
+            >
+              ↗
+            </button>
+            <button
               className="node-published-unpublish"
               onClick={handleUnpublish}
               title="Despublicar nota"
@@ -812,6 +825,18 @@ export default function NodeView() {
               ))}
             </nav>
           )}
+
+          {/* Node header badges: children count, area, locked */}
+          {(() => {
+            const childrenCount = s.children(node.id).length
+            return (childrenCount > 0 || nodeArea || isLocked) ? (
+              <div className="node-header-badges">
+                {childrenCount > 0 && <span className="node-badge">{childrenCount} bullets</span>}
+                {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
+                {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
+              </div>
+            ) : null
+          })()}
 
           <div className="node-title-row">
             {/* Icono del nodo */}
@@ -870,10 +895,16 @@ export default function NodeView() {
               >
                 {node.isFavorite ? '★' : '☆'}
               </button>
-              <div className="node-share-wrapper">
+              <div className="node-share-wrapper" style={{ position: 'relative' }}>
                 <button
                   className="node-share-btn"
-                  onClick={handleShare}
+                  onClick={() => {
+                    if (node.publicSlug) {
+                      handleShare()
+                    } else {
+                      setShowShareMenu(v => !v)
+                    }
+                  }}
                   title="Compartir enlace"
                   aria-label="Compartir"
                 >
@@ -886,6 +917,16 @@ export default function NodeView() {
                 </button>
                 {shareCopied && (
                   <span className="node-share-tooltip">¡Enlace copiado!</span>
+                )}
+                {showShareMenu && !node.publicSlug && (
+                  <div className="node-share-menu">
+                    <button onClick={() => { handleShare(); setShowShareMenu(false) }}>
+                      🌐 Publicar y copiar enlace
+                    </button>
+                    <button onClick={() => { handleCopyLink(); setShowShareMenu(false) }}>
+                      🔗 Copiar enlace interno
+                    </button>
+                  </div>
                 )}
               </div>
               <button

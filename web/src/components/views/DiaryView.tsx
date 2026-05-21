@@ -982,14 +982,41 @@ export default function DiaryView() {
                 <input
                   type="text"
                   className="diary-quick-input"
-                  placeholder="Añadir bullet rápido... (Enter para guardar)"
+                  placeholder="Añadir bullet... (-t tarea · -e evento · @hoy · @mañana)"
                   onKeyDown={e => {
                     if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      const text = e.currentTarget.value.trim()
+                      let text = e.currentTarget.value.trim()
+
+                      // Detect flags
+                      const isTask  = / -t$| tarea$/i.test(text)
+                      const isEvent = / -e$| evento$/i.test(text)
+                      if (isTask)  text = text.replace(/ (-t|tarea)$/i, '').trim()
+                      if (isEvent) text = text.replace(/ (-e|evento)$/i, '').trim()
+
+                      // Parse @hoy / @mañana
+                      let due: string | undefined
+                      if (/@hoy/i.test(text)) {
+                        text = text.replace(/@hoy/i, '').trim()
+                        const d = new Date(); d.setHours(23, 59, 0, 0)
+                        due = d.toISOString()
+                      } else if (/@mañana/i.test(text)) {
+                        text = text.replace(/@mañana/i, '').trim()
+                        const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0)
+                        due = d.toISOString()
+                      }
+
                       e.currentTarget.value = ''
                       const children = store.children(diary.id)
                       const maxOrder = children.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
-                      store.createNode({ text, parentId: diary.id, siblingOrder: maxOrder + 1000 })
+                      const node = store.createNode({
+                        text,
+                        parentId: diary.id,
+                        siblingOrder: maxOrder + 1000,
+                        isTask: isTask || isEvent || !!due,
+                      })
+                      if (isEvent) store.updateNode(node.id, { isEvent: true, status: 'pending' })
+                      if ((isTask || !!due) && !isEvent) store.updateNode(node.id, { status: 'pending' })
+                      if (due) store.updateNode(node.id, { due })
                     }
                   }}
                 />
