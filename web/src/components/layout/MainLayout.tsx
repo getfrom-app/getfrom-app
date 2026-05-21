@@ -6,22 +6,22 @@ import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
 import NodeView from '../views/NodeView'
 
-// Redirige / → /node/{diario de hoy}. Si no existe, lo crea y redirige.
+// Redirige / → /node/{diario de hoy}.
+// Es REACTIVO: se suscribe al store via useStore() y navega en cuanto
+// el diario esté disponible, evitando que NodeView se renderice con node=undefined.
 function DiaryRedirect() {
   const navigate = useNavigate()
-  const s = useStore()
+  const s = useStore()          // re-renderiza cuando el store cambia
+  const diary = s.todayDiary()  // se recalcula en cada re-render
+
   useEffect(() => {
-    const diary = s.todayDiary()
     if (diary) {
       navigate(`/node/${diary.id}`, { replace: true })
-    } else {
-      // Crear el diario de hoy y redirigir
-      store.initialLoad().then(() => {
-        const d = s.todayDiary()
-        if (d) navigate(`/node/${d.id}`, { replace: true })
-      })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // Si diary es null, el store aún no ha cargado.
+    // Cuando cargue, useStore() provocará un re-render y diary dejará de ser null.
+  }, [diary?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return <div className="view-loading">Cargando diario...</div>
 }
 const TasksView = lazy(() => import('../views/TasksView'))
