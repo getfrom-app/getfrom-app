@@ -4139,6 +4139,9 @@ mark.inline-highlight {
   flex-shrink: 0;
   line-height: 1;
   margin-right: 2px;
+  vertical-align: middle;
+  position: relative;
+  top: 1px; /* compensar que los emojis tienden a renderizarse ligeramente altos */
 }
 .diary-date-picker:focus { outline: none; border-color: var(--accent); opacity: 1; }
 
