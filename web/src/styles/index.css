@@ -957,7 +957,10 @@ mark.inline-highlight {
   word-break: break-word;
   color: var(--text-primary);
 }
-.node-text:focus { outline: none; border: none; box-shadow: none; }
+.node-text:focus,
+.node-text:focus-visible,
+[contenteditable]:focus,
+[contenteditable]:focus-visible { outline: none !important; border: none !important; box-shadow: none !important; }
 
 .node-text:empty::before {
   content: attr(data-placeholder);
