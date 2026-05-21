@@ -4540,6 +4540,16 @@ mark.inline-highlight {
   padding: 2px 0;
 }
 
+.followup-seguimiento-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.followup-seguimiento-item:hover { background: var(--bg-hover); }
+
 /* ── NodeContextPanel additions ─────────────────────────────────────────── */
 
 .context-child {

@@ -25,10 +25,8 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
     return due >= today && due < tomorrow
   }).length
 
-  const overdueCount = allActive.filter(n => {
-    if (n.status !== 'pending' || !n.due) return false
-    return new Date(n.due) < today
-  }).length
+  // Use store helper for overdue
+  const overdueCount = s.overdueTasks().length
 
   // Context-specific extra info
   const path = location.pathname.replace(/^\/app/, '') || '/'

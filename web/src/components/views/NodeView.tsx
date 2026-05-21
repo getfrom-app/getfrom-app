@@ -681,6 +681,29 @@ export default function NodeView() {
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
+  function handleExportMarkdown() {
+    const title = node!.text || 'nota'
+    const body = node!.body || ''
+    const children = store.children(node!.id)
+    const bulletsMd = children.map(c => `- ${c.text}${c.body ? '\n\n  ' + c.body.replace(/\n/g, '\n  ') : ''}`).join('\n')
+    const content = `# ${title}\n\n${body}${bulletsMd ? '\n\n## Bullets\n\n' + bulletsMd : ''}\n`
+    const blob = new Blob([content], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title.slice(0, 40).replace(/[^a-zA-Z0-9áéíóú\s]/g, '').trim()}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    setQuickActionMsg('✓ Exportado')
+    setTimeout(() => setQuickActionMsg(null), 2000)
+  }
+
+  function toggleSeguimiento() {
+    store.updateNode(node!.id, { isSeguimiento: !node!.isSeguimiento })
+    setQuickActionMsg(node!.isSeguimiento ? '✓ Seguimiento quitado' : '✓ En seguimiento')
+    setTimeout(() => setQuickActionMsg(null), 2000)
+  }
+
   function handlePrint() {
     const title = node!.text || 'Sin título'
     const body = node!.body || ''
@@ -949,6 +972,20 @@ export default function NodeView() {
                 <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9.586a1 1 0 0 0 .707-.293l2.414-2.414A1 1 0 0 0 15 10.586V4a2 2 0 0 0-2-2H2zm3 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
               </svg>
               Chat IA
+            </button>
+            <button className="node-quick-action-btn" onClick={handleExportMarkdown} title="Exportar como Markdown">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+              </svg>
+              Exportar
+            </button>
+            <button
+              className={`node-quick-action-btn ${node.isSeguimiento ? 'node-quick-action-btn--active' : ''}`}
+              onClick={toggleSeguimiento}
+              title={node.isSeguimiento ? 'Quitar seguimiento' : 'Añadir seguimiento'}
+            >
+              👁 Seguimiento
             </button>
             <button
               className={`node-quick-action-btn ${pomodoroRunning ? 'node-quick-action-btn--active' : ''}`}

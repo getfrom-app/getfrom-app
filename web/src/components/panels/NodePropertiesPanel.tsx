@@ -149,6 +149,13 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         >
           {isLocked ? '🔒 Bloqueado' : '🔓 Bloquear'}
         </button>
+        <button
+          className={`prop-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
+          onClick={() => store.updateNode(node.id, { isSeguimiento: !node.isSeguimiento })}
+          title={node.isSeguimiento ? 'Quitar de seguimiento' : 'Añadir a seguimiento'}
+        >
+          👁 Seguim.
+        </button>
       </div>
 
       {/* Estado */}

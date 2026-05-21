@@ -185,6 +185,48 @@ class NodeStore {
       })
   }
 
+  /** Get the full breadcrumb path for a node as text */
+  getNodePath(nodeId: string): string {
+    const parts: string[] = []
+    let cur = this.nodes.get(nodeId)
+    while (cur?.parentId) {
+      const parent = this.nodes.get(cur.parentId)
+      if (!parent) break
+      parts.unshift(parent.text || 'Sin título')
+      cur = parent
+    }
+    return parts.join(' / ')
+  }
+
+  /** Recently edited nodes (non-diary, non-deleted), sorted by updatedAt */
+  recentlyEdited(limit = 10): Node[] {
+    return this.allActive()
+      .filter(n => !n.isDiaryEntry)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, limit)
+  }
+
+  /** Total word count across all active notes */
+  totalWordCount(): number {
+    let count = 0
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      if (n.text) count += n.text.trim().split(/\s+/).length
+      if (n.body) count += n.body.trim().split(/\s+/).length
+    }
+    return count
+  }
+
+  /** Overdue pending tasks */
+  overdueTasks(): Node[] {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return this.allActive().filter(n => {
+      if (n.status !== 'pending' || !n.due) return false
+      return new Date(n.due) < today
+    })
+  }
+
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   private applyNode(raw: unknown): void {

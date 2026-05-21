@@ -195,8 +195,15 @@ function BucleRow({ bucle, onMarkDone }: BucleRowProps) {
 
 export default function FollowupView() {
   const s = useStore()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filterPriority, setFilterPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all')
+
+  const seguimientoNodes = useMemo(() => {
+    return s.allActive()
+      .filter(n => n.isSeguimiento && !n.deletedAt && n.status !== 'done')
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }, [s])
 
   const activeBucles = useMemo(() => {
     return s.allActive()
@@ -268,6 +275,29 @@ export default function FollowupView() {
             ))}
           </div>
         </div>
+
+        {seguimientoNodes.length > 0 && (
+          <div className="followup-group">
+            <div className="followup-group-header">
+              <span className="followup-group-label">👁 En seguimiento</span>
+              <span className="followup-group-count">{seguimientoNodes.length}</span>
+            </div>
+            {seguimientoNodes.map(node => (
+              <div key={node.id} className="followup-seguimiento-item" onClick={() => navigate(`/node/${node.id}`)}>
+                <span className="followup-loop-icon">👁</span>
+                <span className="followup-bucle-title">{node.text || 'Sin título'}</span>
+                {node.due && <span className="followup-due">{formatDue(node.due)}</span>}
+                <button
+                  className="followup-close-btn"
+                  onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isSeguimiento: false }) }}
+                  title="Quitar seguimiento"
+                >
+                  ✓ Cerrar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {activeBucles.length === 0 && (
           <div className="view-empty">
