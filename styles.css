@@ -575,6 +575,13 @@ img { max-width: 100%; height: auto; }
     max-width: 900px;
     margin: 0 auto;
 }
+.support-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 960px;
+}
+@media (max-width: 700px) {
+    .support-grid--3 { grid-template-columns: 1fr; }
+}
 .support-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
