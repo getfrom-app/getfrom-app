@@ -3,8 +3,7 @@ import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType } from '../outliner/InlineRenderer'
-import NodePropertiesPanel from '../panels/NodePropertiesPanel'
-import NodeContextPanel from '../panels/NodeContextPanel'
+import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
@@ -37,7 +36,7 @@ export default function NodeView() {
 
   const [bodyEditing, setBodyEditing] = useState(false)
   const [bodyValue, setBodyValue] = useState('')
-  const [showProperties, setShowProperties] = useState(false)
+  const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -120,7 +119,7 @@ export default function NodeView() {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setShowProperties(v => !v)
+        // setShowProperties(v => !v) // panel siempre visible
       }
       if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -779,7 +778,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''} ${focusMode ? 'node-view--focus' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -982,14 +981,6 @@ export default function NodeView() {
                   </div>
                 )}
               </div>
-              <button
-                className={`node-props-btn ${showProperties ? 'active' : ''}`}
-                onClick={() => setShowProperties(v => !v)}
-                title="Propiedades (⌘P)"
-                aria-label="Propiedades"
-              >
-                ⋯
-              </button>
               <button
                 className={`node-props-btn ${focusMode ? 'active' : ''}`}
                 onClick={() => setFocusMode(v => !v)}
@@ -1511,14 +1502,7 @@ export default function NodeView() {
       {node.isDiaryEntry ? (
         <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
       ) : (
-        <NodeContextPanel nodeId={node.id} />
-      )}
-
-      {showProperties && (
-        <NodePropertiesPanel
-          node={node}
-          onClose={() => setShowProperties(false)}
-        />
+        <NodeRightPanel node={node} />
       )}
     </div>
   )
