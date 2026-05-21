@@ -2993,6 +2993,64 @@ mark.inline-highlight {
 .diary-task-text.done { color: var(--text-tertiary); text-decoration: line-through; }
 .diary-task-due { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
 
+/* ── Nuevo diseño Agenda panel ─────────────────────────────────────────── */
+.diary-agenda-seguimiento {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.diary-agenda-seguimiento:hover { background: var(--bg-hover); }
+
+.diary-agenda-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.diary-agenda-task:hover { background: var(--bg-hover); }
+.diary-agenda-task--indented { padding-left: 28px; }
+
+/* Checkboxes cuadrados con colores */
+.diary-agenda-checkbox {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: none;
+  font-size: 9px;
+  font-weight: 700;
+  transition: background 0.1s;
+}
+.diary-agenda-checkbox--seguimiento { color: var(--accent); }
+.diary-agenda-checkbox--overdue     { color: #f97316; }
+.diary-agenda-checkbox--today       { color: #f59e0b; }
+.diary-agenda-checkbox--done        { color: #22c55e; background: #22c55e20; }
+
+.diary-agenda-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diary-agenda-text.done { text-decoration: line-through; opacity: 0.4; }
+
+.diary-agenda-due {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Bucles en panel diario ──────────────────────────────────────────────── */
 /* Agenda tab */
 .agenda-day { margin-bottom: 12px; }

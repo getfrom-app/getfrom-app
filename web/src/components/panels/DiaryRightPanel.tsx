@@ -3,17 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
-type DiaryPanelTab = 'pending' | 'timeline' | 'agenda' | 'stats'
+type DiaryPanelTab = 'agenda' | 'timeline' | 'stats'
 
-function hasLoopAncestor(nodeId: string): boolean {
+function hasSeguimientoAncestor(nodeId: string): string | null {
   let current = store.getNode(nodeId)
   while (current?.parentId) {
     const parent = store.getNode(current.parentId)
     if (!parent) break
-    if (parent.types?.includes('bucle')) return true
+    if (parent.isSeguimiento || (parent.types || []).includes('bucle')) return parent.id
     current = parent
   }
-  return false
+  return null
 }
 
 function formatDue(due: string): string {
@@ -25,78 +25,6 @@ function formatDue(due: string): string {
     return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-}
-
-function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boolean; toggleTask: (id: string, status: string | null) => void }) {
-  const navigate = useNavigate()
-  const [hovered, setHovered] = useState(false)
-  return (
-    <div
-      className={`diary-task-chip${indented ? ' indented' : ''}`}
-      onClick={() => navigate(`/node/${task.id}`)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <input
-        type="checkbox"
-        className="diary-task-check"
-        checked={task.status === 'done'}
-        onChange={e => {
-          e.stopPropagation()
-          toggleTask(task.id, task.status)
-        }}
-        onClick={e => e.stopPropagation()}
-      />
-      <span className={`diary-task-text${task.status === 'done' ? ' done' : ''}`}>
-        {task.text || 'Sin título'}
-      </span>
-      {task.due && <span className="diary-task-due">{formatDue(task.due)}</span>}
-      {hovered && task.status !== 'done' && (
-        <div className="task-chip-quick-dates" onClick={e => e.stopPropagation()}>
-          <button
-            className="quick-date-btn"
-            title="Hoy"
-            onClick={e => {
-              e.stopPropagation()
-              store.updateNode(task.id, { due: new Date(new Date().setHours(23, 59, 0, 0)).toISOString() })
-            }}
-          >⏰</button>
-          <button
-            className="quick-date-btn"
-            title="Mañana"
-            onClick={e => {
-              e.stopPropagation()
-              const t = new Date()
-              t.setDate(t.getDate() + 1)
-              t.setHours(9, 0, 0, 0)
-              store.updateNode(task.id, { due: t.toISOString() })
-            }}
-          >☀️</button>
-          <button
-            className="quick-date-btn"
-            title="Próxima semana"
-            onClick={e => {
-              e.stopPropagation()
-              const t = new Date()
-              const day = t.getDay()
-              const daysUntilMonday = day === 0 ? 1 : 8 - day
-              t.setDate(t.getDate() + daysUntilMonday)
-              t.setHours(9, 0, 0, 0)
-              store.updateNode(task.id, { due: t.toISOString() })
-            }}
-          >📅</button>
-          <button
-            className="quick-date-btn"
-            title="Sin fecha"
-            onClick={e => {
-              e.stopPropagation()
-              store.updateNode(task.id, { due: null })
-            }}
-          >✕</button>
-        </div>
-      )}
-    </div>
-  )
 }
 
 function calculateStreak(s: ReturnType<typeof useStore>): number {
@@ -124,8 +52,7 @@ export interface DiaryRightPanelProps {
 export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
   const s = useStore()
   const navigate = useNavigate()
-  const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
-  const [pendingSearch, setPendingSearch] = useState('')
+  const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
 
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -143,52 +70,34 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     store.updateNode(id, { status: newStatus })
   }
 
-  // ── Pending tasks logic ────────────────────────────────────────────────
+  // ── Agenda logic ───────────────────────────────────────────────────────
 
-  // En seguimiento — solo hoy
-  const seguimientoNodes = isToday
-    ? s.allActive().filter(n => n.isSeguimiento && !n.deletedAt)
-    : []
+  // Nodos de seguimiento
+  const seguimientoNodes = s.allActive().filter(n =>
+    !n.deletedAt &&
+    (n.isSeguimiento || (n.types || []).includes('bucle'))
+  )
 
   const allPending = s.allActive().filter(
-    n => n.status === 'pending' && !n.deletedAt
+    n => n.status === 'pending' && !n.deletedAt && n.due
   )
 
   const overdue = allPending.filter(n => {
     if (!n.due) return false
-    if (hasLoopAncestor(n.id)) return false
+    if (hasSeguimientoAncestor(n.id)) return false
     return new Date(n.due) < todayStart
   })
 
   const todayTasks = allPending.filter(n => {
     if (!n.due) return false
-    if (hasLoopAncestor(n.id)) return false
+    if (hasSeguimientoAncestor(n.id)) return false
     const d = new Date(n.due)
     return d >= todayStart && d <= todayEnd
   })
 
-  const noDateTasks = allPending.filter(n => {
-    if (n.due) return false
-    if (n.isSeguimiento) return false
-    if (hasLoopAncestor(n.id)) return false
-    return true
-  }).slice(0, 10)
-
-  // Nodos raíz con tareas pendientes (proyectos activos)
-  const activeProjects = s.allActive()
-    .filter(n => n.parentId === null && !n.isDiaryEntry && !n.deletedAt && n.status === null)
-    .filter(rootNode => {
-      const children = store.children(rootNode.id)
-      return children.some(c => c.status === 'pending' && !c.deletedAt)
-    })
-    .slice(0, 5)
-
-  // Notas creadas o actualizadas hoy (excluye entradas de diario y tareas)
-  const notesCreatedToday = s.allActive()
-    .filter(n => !n.isDiaryEntry && !n.deletedAt && n.status === null)
-    .filter(n => new Date(n.updatedAt) >= todayStart)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 5)
+  function getChildTasks(nodeId: string): Node[] {
+    return store.children(nodeId).filter(n => n.status === 'pending' && !n.deletedAt)
+  }
 
   // ── Panel stats ────────────────────────────────────────────────────────
   const todayStartStr = todayStart.toDateString()
@@ -198,167 +107,92 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     return new Date(n.updatedAt).toDateString() === todayStartStr
   })
 
-  function renderPending() {
-    const searchQ = pendingSearch.trim().toLowerCase()
-    const filterTasks = (tasks: Node[]) =>
-      searchQ ? tasks.filter(t => t.text.toLowerCase().includes(searchQ)) : tasks
-
-    const filteredOverdue = filterTasks(overdue)
-    const filteredToday = filterTasks(todayTasks)
-    const filteredNoDate = filterTasks(noDateTasks)
-
-    const hasSeguimiento = seguimientoNodes.length > 0 && !searchQ
-    const hasAnything = hasSeguimiento || filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
-
-    const searchInput = (
-      <div className="diary-panel-search">
-        <input
-          className="diary-panel-search-input"
-          type="text"
-          placeholder="Buscar tarea..."
-          value={pendingSearch}
-          onChange={e => setPendingSearch(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Escape') setPendingSearch('') }}
-        />
-      </div>
-    )
-
-    const statsHeader = (
-      <div className="diary-panel-stats">
-        <div className="diary-panel-stat">
-          <span className="diary-panel-stat-num" style={{ color: 'var(--accent)' }}>{todayTasks.length}</span>
-          <span className="diary-panel-stat-label">hoy</span>
-        </div>
-        <div className="diary-panel-stat">
-          <span className="diary-panel-stat-num" style={{ color: '#22c55e' }}>{doneToday.length}</span>
-          <span className="diary-panel-stat-label">hechas</span>
-        </div>
-        <div className="diary-panel-stat">
-          <span className="diary-panel-stat-num" style={{ color: '#ef4444' }}>{overdue.length}</span>
-          <span className="diary-panel-stat-label">vencidas</span>
-        </div>
-      </div>
-    )
+  function renderAgenda() {
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0
 
     if (!hasAnything) {
       return (
         <div className="diary-panel-content">
-          {searchInput}
-          {statsHeader}
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
-            {searchQ ? 'Sin resultados' : 'Nada pendiente hoy'}
+            Nada pendiente hoy
           </div>
-          {notesCreatedToday.length > 0 && (
-            <div className="diary-pending-section">
-              <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Notas de hoy</div>
-              {notesCreatedToday.map(note => (
-                <div
-                  key={note.id}
-                  className="diary-task-chip"
-                  onClick={() => navigate(`/node/${note.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
-                  <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )
     }
 
     return (
       <div className="diary-panel-content">
-        {searchInput}
-        {statsHeader}
-
-        {/* En seguimiento — solo hoy */}
-        {hasSeguimiento && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: 'var(--accent)' }}>En seguimiento</div>
-            {seguimientoNodes.map(node => (
-              <div
-                key={node.id}
-                className="diary-task-chip"
-                onClick={() => navigate(`/node/${node.id}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: 12, marginRight: 4, opacity: 0.7 }}>👁</span>
-                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.text || 'Sin título'}</span>
+        {/* Nodos en seguimiento + sus tareas hijo */}
+        {seguimientoNodes.map(node => {
+          const childTasks = getChildTasks(node.id)
+          return (
+            <div key={node.id}>
+              <div className="diary-agenda-seguimiento" onClick={() => navigate(`/node/${node.id}`)}>
+                <span className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento">👁</span>
+                <span className="diary-agenda-text">{node.text || 'Sin título'}</span>
+                {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Vencidas */}
-        {filteredOverdue.length > 0 && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: '#ef4444' }}>Vencidas</div>
-            {filteredOverdue.map(t => (
-              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
-            ))}
-          </div>
-        )}
-
-        {/* Para hoy */}
-        {filteredToday.length > 0 && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label">Para hoy</div>
-            {filteredToday.map(t => (
-              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
-            ))}
-          </div>
-        )}
-
-        {/* Sin fecha */}
-        {filteredNoDate.length > 0 && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label">Sin fecha</div>
-            {filteredNoDate.map(t => (
-              <TaskChip key={t.id} task={t} toggleTask={toggleTask} />
-            ))}
-          </div>
-        )}
-
-        {/* Proyectos activos */}
-        {!searchQ && activeProjects.length > 0 && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Proyectos activos</div>
-            {activeProjects.map(proj => {
-              const pendingCount = store.children(proj.id).filter(c => c.status === 'pending' && !c.deletedAt).length
-              return (
+              {childTasks.map(task => (
                 <div
-                  key={proj.id}
-                  className="diary-task-chip"
-                  onClick={() => navigate(`/node/${proj.id}`)}
-                  style={{ cursor: 'pointer' }}
+                  key={task.id}
+                  className="diary-agenda-task diary-agenda-task--indented"
+                  onClick={() => navigate(`/node/${task.id}`)}
                 >
-                  <span className="diary-task-text">{proj.text || 'Sin título'}</span>
-                  <span className="diary-task-due" style={{ marginLeft: 'auto' }}>({pendingCount})</span>
+                  <button
+                    className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento"
+                    onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
+                  >
+                    {task.status === 'done' ? '✓' : ''}
+                  </button>
+                  <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
+                    {task.text || 'Sin título'}
+                  </span>
+                  {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
                 </div>
-              )
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )
+        })}
 
-        {/* Notas de hoy */}
-        {!searchQ && notesCreatedToday.length > 0 && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: 'var(--text-secondary)' }}>Notas de hoy</div>
-            {notesCreatedToday.map(note => (
-              <div
-                key={note.id}
-                className="diary-task-chip"
-                onClick={() => navigate(`/node/${note.id}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
-                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
-              </div>
-            ))}
+        {/* Tareas vencidas */}
+        {overdue.map(task => (
+          <div
+            key={task.id}
+            className="diary-agenda-task"
+            onClick={() => navigate(`/node/${task.id}`)}
+          >
+            <button
+              className={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
+              onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
+            >
+              {task.status === 'done' ? '✓' : ''}
+            </button>
+            <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
+              {task.text || 'Sin título'}
+            </span>
+            {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
           </div>
-        )}
+        ))}
+
+        {/* Tareas de hoy */}
+        {todayTasks.map(task => (
+          <div
+            key={task.id}
+            className="diary-agenda-task"
+            onClick={() => navigate(`/node/${task.id}`)}
+          >
+            <button
+              className={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
+              onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
+            >
+              {task.status === 'done' ? '✓' : ''}
+            </button>
+            <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
+              {task.text || 'Sin título'}
+            </span>
+            {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
+          </div>
+        ))}
       </div>
     )
   }
@@ -425,7 +259,6 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     return (
       <div className="diary-panel-content timeline-panel">
         {hours.map(h => {
-          const isCurrentHour = isToday && h === currentHour
           const tasks = tasksByHour[h] || []
           const events = eventsByHour[h] || []
           const allItems = [...events, ...tasks]
@@ -462,49 +295,6 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
                   ))}
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  function renderAgenda() {
-    // Próximos 14 días con sus tareas
-    const days = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date()
-      d.setDate(d.getDate() + i)
-      d.setHours(0, 0, 0, 0)
-      return d
-    })
-    return (
-      <div className="diary-panel-content">
-        {days.map(day => {
-          const dayEnd = new Date(day.getTime() + 86400000)
-          const dayTasks = s.allActive().filter(n => {
-            if (!n.due || n.deletedAt) return false
-            const d = new Date(n.due)
-            return d >= day && d < dayEnd
-          })
-          const isDayToday = day.toDateString() === new Date().toDateString()
-          if (dayTasks.length === 0 && !isDayToday) return null
-          return (
-            <div key={day.toISOString()} className="agenda-day">
-              <div className={`agenda-day-label${isDayToday ? ' today' : ''}`}>
-                {isDayToday ? 'Hoy' : day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
-              </div>
-              {dayTasks.length === 0 && <div className="agenda-empty">Sin tareas</div>}
-              {dayTasks.map(t => (
-                <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
-                  <input type="checkbox" className="diary-task-check"
-                    checked={t.status === 'done'}
-                    onChange={e => { e.stopPropagation(); store.updateNode(t.id, { status: t.status === 'done' ? 'pending' : 'done' }) }}
-                    onClick={e => e.stopPropagation()}
-                  />
-                  <span className={`diary-task-text${t.status === 'done' ? ' done' : ''}`}>{t.text || 'Sin título'}</span>
-                  {t.due && <span className="diary-task-due">{new Date(t.due).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>}
-                </div>
-              ))}
             </div>
           )
         })}
@@ -721,10 +511,10 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     <div className="diary-right-panel">
       <div className="diary-panel-tabs">
         <button
-          className={`diary-panel-tab${panelTab === 'pending' ? ' active' : ''}`}
-          onClick={() => setPanelTab('pending')}
+          className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
+          onClick={() => setPanelTab('agenda')}
         >
-          Pendiente
+          Agenda
         </button>
         <button
           className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
@@ -733,21 +523,14 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
           Timeline
         </button>
         <button
-          className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
-          onClick={() => setPanelTab('agenda')}
-        >
-          Agenda
-        </button>
-        <button
           className={`diary-panel-tab${panelTab === 'stats' ? ' active' : ''}`}
           onClick={() => setPanelTab('stats')}
         >
           Stats
         </button>
       </div>
-      {panelTab === 'pending' ? renderPending()
+      {panelTab === 'agenda' ? renderAgenda()
         : panelTab === 'timeline' ? renderTimeline()
-        : panelTab === 'agenda' ? renderAgenda()
         : renderStats()}
     </div>
   )
