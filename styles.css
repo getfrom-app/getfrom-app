@@ -297,10 +297,10 @@ img { max-width: 100%; height: auto; }
 
 /* ── Hero footnote ── */
 .hero-footnote {
-    font-size: 12px !important;
-    color: var(--text-secondary) !important;
-    margin-top: -20px !important;
-    margin-bottom: 0 !important;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    margin-bottom: 0;
     opacity: 0.7;
 }
 
