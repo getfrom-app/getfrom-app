@@ -4109,13 +4109,81 @@ mark.inline-highlight {
   border-color: rgba(16,163,74,0.25);
 }
 
-.cmdpalette-item--create {
+.cmdpalette-item--create { color: var(--text-secondary); }
+
+/* ── Panel save item ──────────────────────────────────────────────────────── */
+.cmdpalette-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 8px;
+}
+.cmdpalette-panel-icon {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.cmdpalette-item-label.panel-save {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.cmdpalette-item--panel-save:hover .cmdpalette-item-label,
+.cmdpalette-item--panel-save.active .cmdpalette-item-label { color: var(--text-primary); }
+
+/* ── Modo crear panel ─────────────────────────────────────────────────────── */
+.cmdpalette-panel-create {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cmdpalette-panel-create-label {
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
 }
-.cmdpalette-item--create .cmdpalette-item-icon {
-  opacity: 1;
+.cmdpalette-panel-create-input {
+  width: 100%;
+  font-size: 15px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
 }
+.cmdpalette-panel-create-input:focus { border-color: var(--border); outline: none !important; }
+.cmdpalette-panel-create-actions {
+  display: flex;
+  gap: 8px;
+}
+.cmdpalette-panel-create-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.cmdpalette-panel-create-btn:hover { opacity: 0.85; }
+.cmdpalette-panel-create-cancel {
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.cmdpalette-panel-create-cancel:hover { background: var(--bg-hover); }
 
 /* ── SearchView improvements ─────────────────────────────────────────────── */
 

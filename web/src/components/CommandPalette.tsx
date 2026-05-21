@@ -12,10 +12,22 @@ interface PaletteItem {
   id: string
   label: string
   sublabel?: string
-  type: 'note' | 'tag' | 'create'
+  type: 'note' | 'tag' | 'create' | 'panel-save'
   taskStatus?: 'pending' | 'done' | null
   action: () => void
   score: number
+}
+
+// ── Panels storage ───────────────────────────────────────────────────────────
+const PANELS_KEY = 'from_panels'
+function addPanel(name: string, query: string) {
+  try {
+    const panels = JSON.parse(localStorage.getItem(PANELS_KEY) || '[]')
+    panels.push({ id: Date.now().toString(), name, query, createdAt: new Date().toISOString() })
+    localStorage.setItem(PANELS_KEY, JSON.stringify(panels))
+    // Forzar re-render del sidebar via evento
+    window.dispatchEvent(new Event('panels-updated'))
+  } catch { /* ignore */ }
 }
 
 const RECENT_KEY = 'from_recent_nodes'
@@ -139,7 +151,10 @@ export default function CommandPalette({ onClose }: Props) {
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
+  const [creatingPanel, setCreatingPanel] = useState(false)
+  const [panelName, setPanelName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const panelNameRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -254,6 +269,21 @@ export default function CommandPalette({ onClose }: Props) {
       })
     }
 
+    // "Guardar como panel" siempre al final cuando hay query
+    results.push({
+      id: 'panel-save',
+      label: `Guardar como panel`,
+      sublabel: `"${q}"`,
+      type: 'panel-save',
+      taskStatus: null,
+      score: -99,
+      action: () => {
+        setPanelName(q)
+        setCreatingPanel(true)
+        setTimeout(() => panelNameRef.current?.focus(), 0)
+      },
+    })
+
     return results
   }, [query, parsed, doCreate, navigate, onClose])
 
@@ -277,9 +307,39 @@ export default function CommandPalette({ onClose }: Props) {
 
   const showChips = query.trim() && (hasFlags || parsed.due)
 
+  function handleSavePanel() {
+    if (!panelName.trim()) return
+    addPanel(panelName.trim(), query)
+    showToast(`Panel "${panelName.trim()}" guardado`)
+    onClose()
+  }
+
   return createPortal(
     <div className="cmdpalette-overlay" onClick={onClose}>
       <div className="cmdpalette-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+
+        {/* Modo: crear panel */}
+        {creatingPanel ? (
+          <div className="cmdpalette-panel-create">
+            <span className="cmdpalette-panel-create-label">Nombre del panel</span>
+            <input
+              ref={panelNameRef}
+              className="cmdpalette-panel-create-input"
+              placeholder={`Panel para "${query}"`}
+              value={panelName}
+              onChange={e => setPanelName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); handleSavePanel() }
+                if (e.key === 'Escape') { e.preventDefault(); setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }
+              }}
+            />
+            <div className="cmdpalette-panel-create-actions">
+              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>Guardar panel</button>
+              <button className="cmdpalette-panel-create-cancel" onClick={() => { setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }}>Cancelar</button>
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="cmdpalette-search-row">
           <svg className="cmdpalette-search-icon" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="8" cy="8" r="6"/><path d="M14 14l4 4"/>
@@ -311,27 +371,39 @@ export default function CommandPalette({ onClose }: Props) {
             {query.startsWith('#') && items[0]?.type === 'tag' && (
               <div className="cmdpalette-section-label">Tags</div>
             )}
-            {items.map((item, idx) => (
-              <button
-                key={item.id}
-                className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
-                onClick={item.action}
-                onMouseEnter={() => setActiveIdx(idx)}
-              >
-                {item.type === 'tag' ? (
-                  <span className="cmdpalette-tag-dot" />
-                ) : item.taskStatus !== null && item.taskStatus !== undefined ? (
-                  <span className={`cmdpalette-task-dot ${item.taskStatus === 'done' ? 'done' : 'pending'}`} />
-                ) : item.type === 'create' ? (
-                  <span className="cmdpalette-create-icon">+</span>
-                ) : null}
-                <div className="cmdpalette-item-info">
-                  <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''}`}>{item.label}</span>
-                  {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
+            {items.map((item, idx) => {
+              const isPanelSave = item.type === 'panel-save'
+              // Separador antes de "Guardar como panel"
+              const prevItem = items[idx - 1]
+              const showSep = isPanelSave && prevItem && prevItem.type !== 'panel-save'
+              return (
+                <div key={item.id}>
+                  {showSep && <div className="cmdpalette-sep" />}
+                  <button
+                    className={`cmdpalette-item ${idx === activeIdx ? 'active' : ''} cmdpalette-item--${item.type}`}
+                    onClick={item.action}
+                    onMouseEnter={() => setActiveIdx(idx)}
+                  >
+                    {isPanelSave ? (
+                      <span className="cmdpalette-panel-icon">◈</span>
+                    ) : item.type === 'tag' ? (
+                      <span className="cmdpalette-tag-dot" />
+                    ) : item.taskStatus !== null && item.taskStatus !== undefined ? (
+                      <span className={`cmdpalette-task-dot ${item.taskStatus === 'done' ? 'done' : 'pending'}`} />
+                    ) : item.type === 'create' ? (
+                      <span className="cmdpalette-create-icon">+</span>
+                    ) : null}
+                    <div className="cmdpalette-item-info">
+                      <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>
+                      {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
+                    </div>
+                  </button>
                 </div>
-              </button>
-            ))}
+              )
+            })}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>,

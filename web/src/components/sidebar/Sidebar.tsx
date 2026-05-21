@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
@@ -131,6 +131,13 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
+
+  // Refresca paneles cuando CommandPalette crea uno nuevo
+  useEffect(() => {
+    function onPanelsUpdated() { setPanels(getPanels()) }
+    window.addEventListener('panels-updated', onPanelsUpdated)
+    return () => window.removeEventListener('panels-updated', onPanelsUpdated)
+  }, [])
   const [treeSearch, setTreeSearch] = useState('')
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('from_sidebar_collapsed') || '{}') } catch { return {} }
@@ -801,14 +808,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               )}
             </button>
             <button
-              className={`nav-item ${isActive('/search') ? 'active' : ''}`}
-              onClick={() => navigate('/search')}
-              title="Buscar"
-            >
-              <span className="nav-icon">🔍</span>
-              <span>Buscar</span>
-            </button>
-            <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
               onClick={() => navigate('/calendar')}
               title="Calendario"
@@ -893,12 +892,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
               onClick={() => navigate('/calendar')}
             >
               <span className="nav-icon">📅</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/search') ? 'active' : ''}`}
-              onClick={() => navigate('/search')}
-            >
-              <span className="nav-icon">🔍</span>
             </button>
             <button
               className={`nav-item ${isActive('/chat') ? 'active' : ''}`}
