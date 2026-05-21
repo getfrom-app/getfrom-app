@@ -248,6 +248,16 @@ export default function MainLayout() {
         />
       )}
       <main className="main-content">
+        {/* Banner de login cuando no hay cuenta conectada */}
+        {s.isGuest && (
+          <div className="guest-sync-banner">
+            <span className="guest-sync-icon">☁</span>
+            <span className="guest-sync-text">Modo sin cuenta — los cambios solo se guardan en este navegador</span>
+            <button className="guest-sync-cta" onClick={() => navigate('/account')}>
+              Conectar cuenta →
+            </button>
+          </div>
+        )}
         {/* TopBar global */}
         <TopBar
           onNewNote={() => setShowNewNote(true)}
