@@ -5199,11 +5199,12 @@ button.tree-item { display: flex; align-items: center; gap: 6px; width: 100%; ba
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-a:focus-visible,
-[contenteditable]:focus-visible {
+a:focus-visible {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
 }
+/* contenteditable NO tiene outline de foco — el cursor ya indica la posición */
+[contenteditable]:focus-visible { outline: none !important; }
 
 /* Skip link for accessibility */
 .skip-link {
