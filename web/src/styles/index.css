@@ -5099,3 +5099,47 @@ button.tree-item { display: flex; align-items: center; gap: 6px; width: 100%; ba
   white-space: nowrap;
 }
 .modal-dup-link:hover { opacity: 0.8; }
+
+/* ── High contrast accessibility mode ────────────────────────────────────── */
+
+[data-density="compact"] .node-text { font-size: 13px; }
+[data-density="compact"] .diary-task-chip { padding: 3px 0; }
+[data-density="comfortable"] .diary-task-chip { padding: 8px 0; min-height: 40px; }
+[data-density="comfortable"] .task-item { min-height: 50px; }
+
+/* Better focus rings for keyboard navigation */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[contenteditable]:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  border-radius: 0 0 4px 0;
+  z-index: 9999;
+}
+.skip-link:focus { top: 0; }
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+
+@media print {
+  .sidebar, .top-bar, .status-bar, .node-quick-actions, .node-properties-panel, .node-context-panel {
+    display: none !important;
+  }
+  .main-content { padding: 0 !important; }
+  .node-view-main { max-width: 100% !important; }
+  .node-body-textarea { display: none !important; }
+  .node-body-rendered { display: block !important; }
+}
