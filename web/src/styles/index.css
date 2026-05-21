@@ -4038,18 +4038,19 @@ mark.inline-highlight {
   cursor: pointer;
   padding: 4px;
   border-radius: 8px;
-  transition: background 0.15s;
+  transition: background 0.15s, opacity 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-tertiary);
   min-width: 44px;
   min-height: 44px;
+  /* Sin emoji: invisible hasta hover */
+  opacity: 0;
 }
-.node-icon-btn:hover { background: var(--bg-hover); }
-.node-icon-btn[data-has-icon="true"] {
-  color: inherit;
-}
+.node-icon-btn:hover { background: var(--bg-hover); opacity: 1; }
+/* Con emoji: siempre visible */
+.node-icon-btn[data-has-icon="true"] { color: inherit; opacity: 1; }
 
 .emoji-picker {
   position: fixed;

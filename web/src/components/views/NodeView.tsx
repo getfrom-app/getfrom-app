@@ -898,28 +898,25 @@ export default function NodeView() {
             </nav>
           )}
 
-          {/* Node header badges: children count, area, locked */}
-          {(() => {
-            const childrenCount = s.children(node.id).length
-            return (childrenCount > 0 || nodeArea || isLocked) ? (
-              <div className="node-header-badges">
-                {childrenCount > 0 && <span className="node-badge">{childrenCount} bullets</span>}
-                {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
-                {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
-              </div>
-            ) : null
-          })()}
+          {/* Node header badges: area, locked — sin contador de bullets */}
+          {(nodeArea || isLocked) && (
+            <div className="node-header-badges">
+              {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
+              {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
+            </div>
+          )}
 
           <div className="node-title-row">
-            {/* Icono del nodo */}
+            {/* Icono del nodo — solo en notas normales (no en diarios) */}
+            {!node.isDiaryEntry && (
             <div className="node-icon-wrapper">
               <button
                 className="node-icon-btn"
                 data-has-icon={nodeIcon ? 'true' : 'false'}
                 onClick={() => setShowEmojiPicker(v => !v)}
-                title="Añadir icono"
+                title={nodeIcon ? 'Cambiar icono' : 'Añadir icono'}
               >
-                {nodeIcon || '✦'}
+                {nodeIcon || ''}
               </button>
               {showEmojiPicker && (
                 <EmojiPicker
@@ -937,6 +934,7 @@ export default function NodeView() {
                 />
               )}
             </div>
+            )}
             <h1
               ref={titleRef}
               className="node-title"
