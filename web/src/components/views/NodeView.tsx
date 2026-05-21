@@ -1187,21 +1187,6 @@ export default function NodeView() {
                       Mover a…
                     </button>
                     <div className="node-more-sep"/>
-                    {/* Vista */}
-                    <span className="node-more-section">Vista</span>
-                    <button className="node-more-item" onClick={() => setLayout(nodeLayout === 'wide' ? '' : 'wide')}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">{nodeLayout === 'wide' ? <><path d="M5 10h10M5 5l-3 5 3 5M15 5l3 5-3 5"/></> : <><path d="M3 5h14M3 15h14M3 10h14"/></>}</svg>
-                      {nodeLayout === 'wide' ? 'Vista normal' : 'Ancho completo'}
-                    </button>
-                    <button className="node-more-item" onClick={() => setLayout(nodeLayout === 'small' ? '' : 'small')}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6h12M4 10h8M4 14h10"/></svg>
-                      {nodeLayout === 'small' ? 'Texto normal' : 'Texto pequeño'}
-                    </button>
-                    <button className="node-more-item" onClick={() => setFocusMode(v => !v)}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4l4 4M16 4l-4 4M4 16l4-4M16 16l-4-4"/></svg>
-                      {focusMode ? 'Salir de modo foco' : 'Modo foco'}
-                    </button>
-                    <div className="node-more-sep"/>
                     {/* Copiar */}
                     <span className="node-more-section">Copiar</span>
                     <button className="node-more-item" onClick={copyMarkdown}>
@@ -1224,7 +1209,6 @@ export default function NodeView() {
                       Exportar PDF
                     </button>
                     <div className="node-more-sep"/>
-                    {/* Acciones web adicionales */}
                     <button className="node-more-item" onClick={handleDuplicate}>
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="6" y="6" width="11" height="11" rx="2"/><path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>
                       Duplicar
@@ -1233,15 +1217,11 @@ export default function NodeView() {
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/></svg>
                       Imprimir
                     </button>
-                    {!node.isDiaryEntry && (
-                      <>
-                        <div className="node-more-sep"/>
-                        <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
-                          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
-                          Eliminar nota
-                        </button>
-                      </>
-                    )}
+                    <div className="node-more-sep"/>
+                    <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
+                      Eliminar nota
+                    </button>
                   </div>
                 )}
               </div>
