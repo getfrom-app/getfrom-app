@@ -952,9 +952,12 @@ mark.inline-highlight {
   font-size: 14px;
   line-height: 1.55;
   outline: none;
+  border: none;
+  box-shadow: none;
   word-break: break-word;
   color: var(--text-primary);
 }
+.node-text:focus { outline: none; border: none; box-shadow: none; }
 
 .node-text:empty::before {
   content: attr(data-placeholder);
