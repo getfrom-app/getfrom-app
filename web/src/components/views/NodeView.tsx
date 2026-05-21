@@ -217,6 +217,36 @@ export default function NodeView() {
     cur = parent
   }
 
+  // Temporal breadcrumb labels for diary entries
+  const diaryTemporalCrumbs: { label: string }[] = []
+  if (node.isDiaryEntry && node.diaryDate) {
+    const diaryDate = new Date(node.diaryDate)
+    const yearLabel = diaryDate.getFullYear().toString()
+    const monthLabel = diaryDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+      .replace(/^\w/, c => c.toUpperCase())
+    const weekNumber = (() => {
+      const d = new Date(diaryDate)
+      d.setHours(0, 0, 0, 0)
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
+      const week1 = new Date(d.getFullYear(), 0, 4)
+      return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+    })()
+    const weekLabel = `Semana ${weekNumber}`
+    diaryTemporalCrumbs.push({ label: yearLabel }, { label: monthLabel }, { label: weekLabel })
+  }
+
+  function findOrCreateTemporalNodeInView(text: string): void {
+    const existing = [...store.nodes.values()].find(
+      n => !n.deletedAt && !n.isDiaryEntry && n.text?.toLowerCase() === text.toLowerCase()
+    )
+    if (existing) {
+      navigate(`/node/${existing.id}`)
+    } else {
+      const newNode = store.createNode({ text, parentId: null })
+      navigate(`/node/${newNode.id}`)
+    }
+  }
+
   function handleTitleInput(e: React.FormEvent<HTMLHeadingElement>) {
     const text = e.currentTarget.textContent || ''
     store.updateNode(node!.id, { text })
@@ -802,16 +832,30 @@ export default function NodeView() {
           <div className="node-color-band" style={{ background: nodeColor + '20', borderBottom: `2px solid ${nodeColor}` }} />
         )}
         <div className="view-header">
-          {crumbs.length > 0 && (
+          {(crumbs.length > 0 || diaryTemporalCrumbs.length > 0) && (
             <nav className="breadcrumb">
               <button className="breadcrumb-home" onClick={() => navigate('/')}>Inicio</button>
-              <button
-                className="breadcrumb-root-btn"
-                onClick={() => navigate(`/node/${crumbs[0].id}`)}
-                title="Ir al nodo raíz"
-              >
-                ⇑
-              </button>
+              {/* Temporal crumbs for diary entries */}
+              {diaryTemporalCrumbs.map((c) => (
+                <span key={c.label}>
+                  <span className="breadcrumb-sep">/</span>
+                  <button
+                    className="breadcrumb-item"
+                    onClick={() => findOrCreateTemporalNodeInView(c.label)}
+                  >
+                    {c.label}
+                  </button>
+                </span>
+              ))}
+              {crumbs.length > 0 && (
+                <button
+                  className="breadcrumb-root-btn"
+                  onClick={() => navigate(`/node/${crumbs[0].id}`)}
+                  title="Ir al nodo raíz"
+                >
+                  ⇑
+                </button>
+              )}
               {crumbs.map((c) => (
                 <span key={c.id}>
                   <span className="breadcrumb-sep">/</span>

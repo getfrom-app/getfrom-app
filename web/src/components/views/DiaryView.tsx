@@ -134,6 +134,21 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
   return streak
 }
 
+function findOrCreateTemporalNode(
+  text: string,
+  navigate: (path: string) => void
+): void {
+  const existing = [...store.nodes.values()].find(
+    n => !n.deletedAt && !n.isDiaryEntry && n.text?.toLowerCase() === text.toLowerCase()
+  )
+  if (existing) {
+    navigate(`/node/${existing.id}`)
+  } else {
+    const node = store.createNode({ text, parentId: null })
+    navigate(`/node/${node.id}`)
+  }
+}
+
 export default function DiaryView() {
   const s = useStore()
   const navigate = useNavigate()
@@ -160,6 +175,19 @@ export default function DiaryView() {
   targetDate.setDate(targetDate.getDate() + dateOffset)
 
   const diary = dateOffset === 0 ? s.todayDiary() : getDiaryForDate(targetDate)
+
+  // Breadcrumb temporal labels
+  const yearLabel = targetDate.getFullYear().toString()
+  const monthLabel = targetDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    .replace(/^\w/, c => c.toUpperCase())
+  const weekNumber = (() => {
+    const d = new Date(targetDate)
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
+    const week1 = new Date(d.getFullYear(), 0, 4)
+    return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+  })()
+  const weekLabel = `Semana ${weekNumber}`
 
   const isLoadingDiary = s.isSyncing && !diary
 
@@ -810,80 +838,26 @@ export default function DiaryView() {
         <div className="diary-main">
           <div className="view-header">
             <div className="diary-date">
+              {/* Breadcrumb temporal */}
+              <nav className="diary-breadcrumb">
+                <button className="diary-bc-item" onClick={() => findOrCreateTemporalNode(yearLabel, navigate)}>
+                  {yearLabel}
+                </button>
+                <span className="diary-bc-sep">/</span>
+                <button className="diary-bc-item" onClick={() => findOrCreateTemporalNode(monthLabel, navigate)}>
+                  {monthLabel}
+                </button>
+                <span className="diary-bc-sep">/</span>
+                <button className="diary-bc-item" onClick={() => findOrCreateTemporalNode(weekLabel, navigate)}>
+                  {weekLabel}
+                </button>
+              </nav>
+
               {/* Day name — large emphasis when today */}
               <span className={`diary-day${dateOffset === 0 ? ' diary-day--today' : ''}`}>
                 {dayName.charAt(0).toUpperCase() + dayName.slice(1)}
               </span>
               <span className="diary-full-date">{dateStr}</span>
-
-              {/* Bullet stats */}
-              {diary && bulletCount > 0 && (
-                <span className="diary-bullet-stats">
-                  {bulletCount} {bulletCount === 1 ? 'bullet' : 'bullets'}
-                  {taskChildren.length > 0 && (
-                    <> · {taskChildren.length} {taskChildren.length === 1 ? 'tarea' : 'tareas'} · {doneChildren.length} completadas</>
-                  )}
-                </span>
-              )}
-
-              {/* Streak counter */}
-              {streak === 0 && dateOffset === 0 && (
-                <div className="diary-streak-zero">
-                  📝 Escribe hoy para empezar tu racha
-                </div>
-              )}
-              {streak >= 1 && streak < 7 && (
-                <span className="diary-streak" title={`${streak} días seguidos escribiendo en el diario`}>
-                  🔥 {streak} {streak === 1 ? 'día' : 'días'} seguidos
-                </span>
-              )}
-              {streak >= 7 && streak < 30 && (
-                <span className="diary-streak diary-streak--week" title="¡Llevas una semana escribiendo!">
-                  🔥 {streak} días · ¡Una semana!
-                </span>
-              )}
-              {streak >= 30 && (
-                <span className="diary-streak diary-streak--month" title="¡Llevas un mes escribiendo!">
-                  🔥 {streak} días · ¡Un mes!
-                </span>
-              )}
-
-              {/* Tag counter */}
-              {diary && dayTags.length > 0 && (
-                <div className="diary-day-tags">
-                  {dayTags.map(t => (
-                    <span key={t} className="diary-day-tag" style={{ color: store.tagColor(t) }}>#{t}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Stats header widget (solo para hoy) */}
-              {dateOffset === 0 && diary && (
-                <div className="diary-day-stats-widget">
-                  <div className="diary-stat-chip">
-                    <span className="diary-stat-chip-icon">📝</span>
-                    <span>{bulletCount} bullet{bulletCount !== 1 ? 's' : ''}</span>
-                  </div>
-                  {taskChildren.length > 0 && (
-                    <div className="diary-stat-chip">
-                      <span className="diary-stat-chip-icon">✓</span>
-                      <span>{doneChildren.length}/{taskChildren.length}</span>
-                      <div className="diary-stat-progress">
-                        <div
-                          className="diary-stat-progress-fill"
-                          style={{ width: `${taskChildren.length > 0 ? (doneChildren.length / taskChildren.length) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {streak >= 2 && (
-                    <div className="diary-stat-chip diary-stat-chip--accent">
-                      <span>🔥</span>
-                      <span>{streak} días</span>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="diary-nav">
                 <button
@@ -976,90 +950,6 @@ export default function DiaryView() {
               </div>
             )}
 
-            {/* Motivador de escritura — solo hoy con 10+ bullets */}
-            {dateOffset === 0 && diary && bulletCount >= 10 && (
-              <div className="diary-milestone" style={{ textAlign: 'center', padding: '8px 0', color: 'var(--text-tertiary)', fontSize: 12 }}>
-                🎯 {bulletCount} bullets hoy · ¡Excelente día de escritura!
-              </div>
-            )}
-
-            {/* Quick capture bar — solo para hoy */}
-            {dateOffset === 0 && diary && (
-              <div className="diary-quick-capture">
-                <input
-                  type="text"
-                  className="diary-quick-input"
-                  placeholder="Añadir bullet... (-t tarea · -e evento · @hoy · @mañana)"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      let text = e.currentTarget.value.trim()
-
-                      // Detect flags
-                      const isTask  = / -t$| tarea$/i.test(text)
-                      const isEvent = / -e$| evento$/i.test(text)
-                      if (isTask)  text = text.replace(/ (-t|tarea)$/i, '').trim()
-                      if (isEvent) text = text.replace(/ (-e|evento)$/i, '').trim()
-
-                      // Parse @hoy / @mañana
-                      let due: string | undefined
-                      if (/@hoy/i.test(text)) {
-                        text = text.replace(/@hoy/i, '').trim()
-                        const d = new Date(); d.setHours(23, 59, 0, 0)
-                        due = d.toISOString()
-                      } else if (/@mañana/i.test(text)) {
-                        text = text.replace(/@mañana/i, '').trim()
-                        const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0)
-                        due = d.toISOString()
-                      }
-
-                      e.currentTarget.value = ''
-                      const children = store.children(diary.id)
-                      const maxOrder = children.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
-                      const node = store.createNode({
-                        text,
-                        parentId: diary.id,
-                        siblingOrder: maxOrder + 1000,
-                        isTask: isTask || isEvent || !!due,
-                      })
-                      if (isEvent) store.updateNode(node.id, { isEvent: true, status: 'pending' })
-                      if ((isTask || !!due) && !isEvent) store.updateNode(node.id, { status: 'pending' })
-                      if (due) store.updateNode(node.id, { due })
-                    }
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Historial de entradas recientes */}
-            {dateOffset === 0 && (
-              <div className="diary-history">
-                <div className="diary-history-label">Entradas recientes</div>
-                <div className="diary-history-list">
-                  {s.allActive()
-                    .filter(n => n.isDiaryEntry && n.diaryDate && !n.deletedAt)
-                    .sort((a, b) => (b.diaryDate ?? '').localeCompare(a.diaryDate ?? ''))
-                    .slice(1, 8)
-                    .map(entry => {
-                      const d = new Date(entry.diaryDate!)
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      const diff = Math.round((d.getTime() - today.getTime()) / 86400000)
-                      const label = diff === -1 ? 'Ayer' : diff === -2 ? 'Hace 2 días' : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-                      const childCount = store.children(entry.id).length
-                      return (
-                        <button
-                          key={entry.id}
-                          className="diary-history-item"
-                          onClick={() => setDateOffset(diff)}
-                        >
-                          <span className="diary-history-date">{label}</span>
-                          <span className="diary-history-count">{childCount} bullet{childCount !== 1 ? 's' : ''}</span>
-                        </button>
-                      )
-                    })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

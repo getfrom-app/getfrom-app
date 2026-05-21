@@ -303,7 +303,9 @@ export default function SearchView() {
   const effectiveQuery = naturalHint ?? query
   const parsed = useMemo(() => parseQuery(effectiveQuery), [effectiveQuery])
 
-  const allNodes = useMemo(() => s.allActive(), [s])
+  // No useMemo([s]): s es siempre la misma referencia; el componente
+  // ya re-renderiza via forceUpdate cuando el store cambia.
+  const allNodes = s.allActive()
   const totalNodeCount = allNodes.length
 
   const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
@@ -342,8 +344,8 @@ export default function SearchView() {
     return filtered.slice(0, 60)
   }, [query, parsed, allNodes, sortBy])
 
-  // For empty-state tag suggestions
-  const availableTags = useMemo(() => s.allUsedTags().slice(0, 8), [s])
+  // For empty-state tag suggestions (no useMemo([s]) — s ref es estable)
+  const availableTags = s.allUsedTags().slice(0, 8)
 
   // Remove a single DSL filter chip
   function removeFilter(raw: string) {

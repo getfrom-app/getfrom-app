@@ -659,6 +659,32 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-tertiary);
 }
 
+.diary-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.diary-bc-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.diary-bc-item:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+.diary-bc-sep {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  opacity: 0.5;
+}
+
 .node-title {
   font-size: 26px;
   font-weight: 700;

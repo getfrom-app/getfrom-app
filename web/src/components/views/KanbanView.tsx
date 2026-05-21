@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -308,12 +308,11 @@ export default function KanbanView() {
   const [viewMode, setViewMode] = useState<KanbanViewMode>('board')
   const [groupBy, setGroupBy] = useState<KanbanGroupBy>('status')
 
-  const allTasks = useMemo(
-    () => s.allActive().filter(n => n.status !== null),
-    [s]
-  )
+  // No useMemo con [s] — s siempre es la misma referencia; el componente
+  // ya re-renderiza via forceUpdate cuando el store cambia.
+  const allTasks = s.allActive().filter(n => n.status !== null)
 
-  const filteredTasks = useMemo(() => {
+  const filteredTasks = (() => {
     let tasks = allTasks
     if (priorityFilter !== 'all') tasks = tasks.filter(t => t.priority === priorityFilter)
     if (searchQuery.trim()) {
@@ -321,7 +320,7 @@ export default function KanbanView() {
       tasks = tasks.filter(t => (t.text || '').toLowerCase().includes(q) || (t.body || '').toLowerCase().includes(q))
     }
     return tasks
-  }, [allTasks, priorityFilter, searchQuery])
+  })()
 
   function tasksByStatus(status: Node['status']): Node[] {
     return filteredTasks
