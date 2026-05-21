@@ -4,6 +4,36 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web 1.3 — 21 mayo 2026 (sesión 2)
+
+**Plataforma: Web** (getfrom.app/app) · Mejoras de UX, editor y panel derecho
+
+### Editor y outliner
+- **Tipo lista `- `** — Elemento de lista clásico: dot decorativo (no navegable), indentado +8px, Enter continúa lista, Enter en vacío sale de la lista
+- **Slash `/` en cualquier posición** — Abre el menú de conversión desde cualquier punto del texto, preserva el texto existente al aplicar el bloque
+- **Slash en el título** — El menú `/` también funciona desde el h1 del título de la nota
+- **`#tag` siempre al final** — Al seleccionar un tag con `#`, se coloca al final del texto (no inline donde se escribió) y se añade a `node.types`
+- **Tags renderizados en título y nodos** — `#cafe-ole` aparece como pill coloreado (pequeño + bold) tanto en el título como en los bullets
+- **Emoji por defecto `📄`** — Notas sin emoji muestran el icono `📄`; clic abre el picker para cambiarlo. Título correctamente alineado siempre
+- **Bug cursor en título** — Al escribir en el h1, el cursor ya no salta al principio. Contenido gestionado via `useEffect`, no como hijo React
+- **IA inline: input de prompt** — `Espacio` en nodo vacío muestra `✦ Pide a la IA...`; el usuario escribe su prompt y pulsa Enter para lanzar. Igual que Mac
+- **Selección múltiple por arrastre** — Arrastra el ratón sobre nodos (fuera del texto) para seleccionarlos en rango. Backspace borra todos, Cmd+C los copia como texto plano
+- **Selección de texto en nodo** — La selección de texto dentro de un nodo funciona con normalidad (contentEditable sin interferencia)
+- **Propagación de `selectedId` en árbol** — `isSelected` ahora se propaga correctamente a nodos hijos; navegación ArrowUp/Down funciona a cualquier profundidad
+- **Enter en bullet vacío** — Borra el nodo y navega al anterior (incluso si está indentado)
+- **Hover del nodo hasta el borde** — Eliminado `max-width: 800px` del outliner que recortaba el fondo del hover
+- **Badge de tiempo eliminado** — El "2h" en hover ya no aparece
+
+### Panel derecho
+- **Columna derecha unificada** — Una sola columna siempre visible con: "Ver área completa", toggles (Favorito, Seguimiento, Bucle, Evento, Bloquear), Estado, Prioridad, Fecha, Repetición, Color, Área, Tags
+- **Sin ruido** — Eliminadas secciones Bullets, Hermanas, Historial, Backlinks, Relacionadas del panel derecho
+- **Panel colapsable** — Handler `‹/›` (círculo Mac-style) en el borde izquierdo del panel. Aplica a notas normales y diario
+- **Ancho 440px** — Panel derecho el doble de ancho (220px → 440px) en todas las notas
+- **Timestamp en breadcrumb** — "Ahora mismo / Hace Xh" desplazado al extremo derecho de la fila del breadcrumb, encima de los iconos
+- **Tags chip bajo título eliminados** — Los tags redundantes bajo el título ya no aparecen
+
+---
+
 ## Web 1.2 — 21 mayo 2026
 
 **Plataforma: Web** (getfrom.app/app) · Gran actualización de paridad Mac→Web
