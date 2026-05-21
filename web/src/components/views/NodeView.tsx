@@ -774,8 +774,29 @@ export default function NodeView() {
     printWindow.print()
   }
 
+  // Drag & drop de archivos sobre toda la nota
+  function handleViewDragOver(e: React.DragEvent) {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+  function handleViewDrop(e: React.DragEvent) {
+    if (!isLoggedIn) return
+    e.preventDefault()
+    const files = Array.from(e.dataTransfer.files)
+    files.forEach(file => {
+      const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>
+      handleFileUpload(fakeEvent)
+    })
+  }
+
   return (
-    <div className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''} ${focusMode ? 'node-view--focus' : ''}`}>
+    <div
+      className={`view node-view node-view--with-context ${showProperties ? 'node-view--with-panel' : ''} ${focusMode ? 'node-view--focus' : ''}`}
+      onDragOver={handleViewDragOver}
+      onDrop={handleViewDrop}
+    >
       <div className="node-view-main">
         {/* In-doc search bar (⌘F) */}
         {showInDocSearch && (
@@ -935,17 +956,6 @@ export default function NodeView() {
               {node.text || ''}
             </h1>
             <div className="node-title-actions">
-              {isLoggedIn && (
-                <button
-                  className="node-fav-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Adjuntar archivo"
-                  aria-label="Adjuntar archivo"
-                  style={{ fontSize: '15px' }}
-                >
-                  📎
-                </button>
-              )}
               <button
                 className={`node-fav-btn ${node.isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
@@ -1437,9 +1447,7 @@ export default function NodeView() {
                     }
                     return blocks
                   })()
-                ) : (
-                  <span className="node-body-placeholder">Añade una descripción...</span>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -1457,9 +1465,7 @@ export default function NodeView() {
           {/* File attachments — only for logged-in users */}
           {isLoggedIn && (
             <div className="node-attachments">
-              {!attachmentsAvailable ? (
-                <p className="attachments-unavailable">Adjuntar archivos no disponible</p>
-              ) : (
+              {!attachmentsAvailable ? null : (
                 <>
                   {(attachments.length > 0 || uploading) && (
                     <div className="node-attachments-header">

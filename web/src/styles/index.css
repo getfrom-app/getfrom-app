@@ -960,6 +960,12 @@ mark.inline-highlight {
 .node-text:focus-visible,
 [contenteditable]:focus,
 [contenteditable]:focus-visible { outline: none !important; border: none !important; box-shadow: none !important; }
+/* Suprimir cualquier indicador de foco en toda la zona del outliner */
+.outliner-node:focus,
+.outliner-node:focus-visible,
+.outliner-node:focus-within,
+.node-row:focus,
+.node-row:focus-visible { outline: none !important; border: none !important; box-shadow: none !important; }
 
 .node-text:empty::before {
   content: attr(data-placeholder);
