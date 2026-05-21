@@ -5929,3 +5929,23 @@ a:focus-visible {
 .node-more-item--danger svg { color: #ef4444; }
 .node-more-item--danger:hover { background: rgba(239,68,68,0.08); }
 .node-more-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* ── More menu: section labels ─────────────────────────────────────────────── */
+.node-more-section {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  padding: 4px 10px 2px;
+}
+
+/* ── Layout modes: wide / small ───────────────────────────────────────────── */
+.node-view--wide .view-header,
+.node-view--wide .view-body { max-width: none; padding-left: 32px; padding-right: 32px; }
+.node-view--wide .node-title { font-size: 2.2rem; }
+
+.node-view--small .node-text { font-size: 12px; }
+.node-view--small .node-title { font-size: 1.5rem; }
+.node-view--small .view-body { font-size: 12px; }

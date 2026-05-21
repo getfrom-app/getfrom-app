@@ -13,6 +13,7 @@ import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
+import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 
 function formatBytes(b: number): string {
@@ -43,6 +44,7 @@ export default function NodeView() {
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const [showMoveModal, setShowMoveModal] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -77,6 +79,20 @@ export default function NodeView() {
 
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false)
+
+  // Layout del contenido (wide / small / normal)
+  const nodeLayout = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').layout || '' } catch { return '' }
+  }, [node?.extraData])
+
+  function setLayout(value: string) {
+    if (!node) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (value) ed.layout = value; else delete ed.layout
+      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    } catch { store.updateNode(node.id, { extraData: JSON.stringify({ layout: value }) }) }
+  }
 
   // View mode for children (lista / tabla / kanban / calendario)
   const viewBlock = useMemo(() => {
@@ -853,7 +869,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -1165,29 +1181,50 @@ export default function NodeView() {
                 </button>
                 {showMoreMenu && (
                   <div className="node-more-menu" onClick={() => setShowMoreMenu(false)}>
+                    {/* Mover a… */}
+                    <button className="node-more-item" onClick={() => setShowMoveModal(true)}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 10h10M10 5l5 5-5 5"/></svg>
+                      Mover a…
+                    </button>
+                    <div className="node-more-sep"/>
+                    {/* Vista */}
+                    <span className="node-more-section">Vista</span>
+                    <button className="node-more-item" onClick={() => setLayout(nodeLayout === 'wide' ? '' : 'wide')}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">{nodeLayout === 'wide' ? <><path d="M5 10h10M5 5l-3 5 3 5M15 5l3 5-3 5"/></> : <><path d="M3 5h14M3 15h14M3 10h14"/></>}</svg>
+                      {nodeLayout === 'wide' ? 'Vista normal' : 'Ancho completo'}
+                    </button>
+                    <button className="node-more-item" onClick={() => setLayout(nodeLayout === 'small' ? '' : 'small')}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 6h12M4 10h8M4 14h10"/></svg>
+                      {nodeLayout === 'small' ? 'Texto normal' : 'Texto pequeño'}
+                    </button>
                     <button className="node-more-item" onClick={() => setFocusMode(v => !v)}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="5" height="5"/><rect x="12" y="3" width="5" height="5"/><rect x="3" y="12" width="5" height="5"/><rect x="12" y="12" width="5" height="5"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4l4 4M16 4l-4 4M4 16l4-4M16 16l-4-4"/></svg>
                       {focusMode ? 'Salir de modo foco' : 'Modo foco'}
                     </button>
                     <div className="node-more-sep"/>
+                    {/* Copiar */}
+                    <span className="node-more-section">Copiar</span>
                     <button className="node-more-item" onClick={copyMarkdown}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7M8 4V2"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7"/></svg>
                       Copiar Markdown
                     </button>
                     <button className="node-more-item" onClick={handleCopyToClipboard}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7M8 4V2"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7"/></svg>
                       Copiar texto plano
                     </button>
                     <div className="node-more-sep"/>
+                    {/* Exportar */}
+                    <span className="node-more-section">Exportar</span>
                     <button className="node-more-item" onClick={handleExportMarkdown}>
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
-                      Exportar Markdown (.md)
+                      Exportar Markdown
                     </button>
                     <button className="node-more-item" onClick={handleExportPdf}>
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
                       Exportar PDF
                     </button>
                     <div className="node-more-sep"/>
+                    {/* Acciones web adicionales */}
                     <button className="node-more-item" onClick={handleDuplicate}>
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="6" y="6" width="11" height="11" rx="2"/><path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>
                       Duplicar
@@ -1668,6 +1705,14 @@ export default function NodeView() {
           )}
         </div>
       </div>
+
+      {/* Modal: Mover a… */}
+      {showMoveModal && (
+        <MoveNodeModal
+          node={node}
+          onClose={() => setShowMoveModal(false)}
+        />
+      )}
     </div>
   )
 }
