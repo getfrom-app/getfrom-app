@@ -5643,3 +5643,254 @@ a:focus-visible {
 
 /* Smooth node show/hide based on filter */
 .outliner-node { transition: opacity 0.15s; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   NODE VIEW MODES — Lista / Tabla / Kanban / Calendario
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar switcher ─────────────────────────────────────────────────────── */
+.node-view-modes {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.node-view-mode-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: background 0.12s, color 0.12s;
+}
+.node-view-mode-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.node-view-mode-btn.active { color: var(--accent); background: var(--accent-soft); }
+.node-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+.outliner-section--hidden { display: none; }
+
+/* ── Tabla view ───────────────────────────────────────────────────────────── */
+.node-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+.node-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.node-table-th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  white-space: nowrap;
+}
+.node-table-th--title { min-width: 200px; }
+.node-table-row {
+  cursor: pointer;
+  transition: background 0.08s;
+  border-bottom: 1px solid var(--border);
+}
+.node-table-row:last-child { border-bottom: none; }
+.node-table-row:hover { background: var(--bg-hover); }
+.node-table-row--done .node-table-title { color: var(--text-tertiary); text-decoration: line-through; }
+.node-table-td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+.node-table-td--title { display: flex; align-items: center; gap: 6px; }
+.node-table-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.node-table-children-badge {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+.node-table-status { font-size: 12px; white-space: nowrap; }
+.node-table-status--none { color: var(--text-tertiary); }
+.node-table-status--pending { color: var(--accent); }
+.node-table-status--done { color: #22c55e; }
+.node-table-due { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.node-table-empty-cell { color: var(--text-tertiary); font-size: 12px; }
+.node-table-priority { font-size: 12px; white-space: nowrap; }
+.node-table-priority.high { color: #ef4444; }
+.node-table-priority.medium { color: #f59e0b; }
+.node-table-priority.low { color: var(--text-tertiary); }
+.node-table-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.node-table-tag { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
+.node-table-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+
+/* ── Kanban view ──────────────────────────────────────────────────────────── */
+.node-kanban {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+.node-kanban-col {
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.node-kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 8px;
+}
+.node-kanban-col-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.node-kanban-col-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.node-kanban-cards { display: flex; flex-direction: column; gap: 6px; }
+.node-kanban-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: box-shadow 0.12s;
+}
+.node-kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.node-kanban-card-title { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.node-kanban-card-due { font-size: 11px; color: var(--text-tertiary); }
+.node-kanban-card-tag { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 100px; display: inline-block; width: fit-content; }
+.node-kanban-add-btn {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 6px 4px;
+  border-radius: var(--radius);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.1s, color 0.1s;
+}
+.node-kanban-add-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.node-kanban-card-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* ── Calendar view ────────────────────────────────────────────────────────── */
+.node-calendar { margin-bottom: 24px; }
+.node-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.node-calendar-nav-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+.node-calendar-nav-btn:hover { background: var(--bg-hover); }
+.node-calendar-month { font-size: 14px; font-weight: 600; text-transform: capitalize; }
+.node-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--border);
+}
+.node-calendar-dow {
+  background: var(--bg-secondary);
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+.node-calendar-cell {
+  background: var(--bg);
+  min-height: 72px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.node-calendar-cell--empty { background: var(--bg-secondary); }
+.node-calendar-cell--today { background: var(--accent-soft, rgba(139,92,246,0.06)); }
+.node-calendar-day {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  align-self: flex-end;
+  padding: 0 2px;
+}
+.node-calendar-cell--today .node-calendar-day {
+  color: var(--accent);
+  font-weight: 700;
+}
+.node-calendar-event {
+  font-size: 11px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 5px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  line-height: 1.4;
+  transition: opacity 0.1s;
+}
+.node-calendar-event:hover { opacity: 0.75; }
+.node-calendar-event.done { opacity: 0.4; text-decoration: line-through; }
+.node-calendar-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }

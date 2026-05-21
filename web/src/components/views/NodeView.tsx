@@ -3,6 +3,9 @@ import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
+import NodeTableView from './NodeTableView'
+import NodeKanbanView from './NodeKanbanView'
+import NodeCalendarView from './NodeCalendarView'
 import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
@@ -73,6 +76,23 @@ export default function NodeView() {
 
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false)
+
+  // View mode for children (lista / tabla / kanban / calendario)
+  const viewBlock = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { return 'lista' }
+  }, [node?.extraData])
+
+  function setViewBlock(mode: string) {
+    if (!node) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (mode === 'lista') delete ed.viewBlock
+      else ed.viewBlock = mode
+      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    } catch {
+      store.updateNode(node.id, { extraData: JSON.stringify({ viewBlock: mode }) })
+    }
+  }
 
   const [titleEditing, setTitleEditing] = useState(false)
   const [showTitleSlash, setShowTitleSlash] = useState(false)
@@ -1031,6 +1051,34 @@ export default function NodeView() {
               />
             )}
             <div className="node-title-actions">
+              {/* View mode switcher — visible when ≥3 children */}
+              {!node.isDiaryEntry && (() => {
+                const childCount = store.children(node.id).filter(n => !n.deletedAt).length
+                if (childCount < 3) return null
+                const modes = [
+                  { id: 'lista', title: 'Lista', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
+                  { id: 'tabla', title: 'Tabla', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg> },
+                  { id: 'kanban', title: 'Kanban', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg> },
+                  { id: 'calendario', title: 'Calendario', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="2" width="14" height="13" rx="1"/><line x1="1" y1="6" x2="15" y2="6"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg> },
+                ]
+                return (
+                  <>
+                    <div className="node-view-modes">
+                      {modes.map(m => (
+                        <button
+                          key={m.id}
+                          className={`node-view-mode-btn ${viewBlock === m.id ? 'active' : ''}`}
+                          onClick={() => setViewBlock(m.id)}
+                          title={m.title}
+                        >
+                          {m.svg}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="node-toolbar-sep" />
+                  </>
+                )
+              })()}
               <button
                 className={`node-fav-btn ${node.isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
@@ -1550,12 +1598,25 @@ export default function NodeView() {
             </div>
           )}
 
-          <Outliner
-            parentId={node.id}
-            autoFocusEmpty
-            placeholder="Añade contenido..."
-            filterText={inDocSearch || undefined}
-          />
+          {/* Inline view modes */}
+          {viewBlock === 'tabla' && !node.isDiaryEntry && (
+            <NodeTableView parentId={node.id} />
+          )}
+          {viewBlock === 'kanban' && !node.isDiaryEntry && (
+            <NodeKanbanView parentId={node.id} />
+          )}
+          {viewBlock === 'calendario' && !node.isDiaryEntry && (
+            <NodeCalendarView parentId={node.id} />
+          )}
+
+          <div className={`outliner-section${viewBlock !== 'lista' && !node.isDiaryEntry ? ' outliner-section--hidden' : ''}`}>
+            <Outliner
+              parentId={node.id}
+              autoFocusEmpty
+              placeholder="Añade contenido..."
+              filterText={inDocSearch || undefined}
+            />
+          </div>
         </div>
       </div>
 
