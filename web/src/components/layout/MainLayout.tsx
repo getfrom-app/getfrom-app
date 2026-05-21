@@ -91,6 +91,16 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:paywall', handler)
   }, [])
 
+  // Sesión expirada durante el uso → redirigir al login
+  useEffect(() => {
+    const handler = () => {
+      clearTokens()
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('from:unauthorized', handler)
+    return () => window.removeEventListener('from:unauthorized', handler)
+  }, [navigate])
+
   // Cmd+N / Ctrl+N → new note
   // Cmd+K / Ctrl+K → command palette
   // Cmd+T / Ctrl+T → new task
@@ -248,16 +258,6 @@ export default function MainLayout() {
         />
       )}
       <main className="main-content">
-        {/* Banner de login cuando no hay cuenta conectada */}
-        {s.isGuest && (
-          <div className="guest-sync-banner">
-            <span className="guest-sync-icon">☁</span>
-            <span className="guest-sync-text">Modo sin cuenta — los cambios solo se guardan en este navegador</span>
-            <button className="guest-sync-cta" onClick={() => navigate('/account')}>
-              Conectar cuenta →
-            </button>
-          </div>
-        )}
         {/* TopBar global */}
         <TopBar
           onNewNote={() => setShowNewNote(true)}

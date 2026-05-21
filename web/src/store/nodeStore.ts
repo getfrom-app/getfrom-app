@@ -452,9 +452,15 @@ class NodeStore {
         }
       }
     } catch (err: unknown) {
-      // Detectar límite free (402 FREE_LIMIT_REACHED)
-      if (err instanceof Error && err.message === 'FREE_LIMIT_REACHED') {
-        window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
+      if (err instanceof Error) {
+        // Token expirado o inválido → redirigir al login
+        if (err.message === 'UNAUTHORIZED' || err.message.includes('401')) {
+          window.dispatchEvent(new Event('from:unauthorized'))
+        }
+        // Límite free
+        if (err.message === 'FREE_LIMIT_REACHED') {
+          window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
+        }
       }
       console.error('Sync failed:', err)
     } finally {
