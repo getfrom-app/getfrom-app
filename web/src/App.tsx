@@ -7,21 +7,39 @@ import ResetPasswordPage from './components/auth/ResetPasswordPage'
 import MainLayout from './components/layout/MainLayout'
 import PricingView from './components/views/PricingView'
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; didHardReload: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props)
-    this.state = { error: null }
+    this.state = { error: null, didHardReload: false }
   }
   static getDerivedStateFromError(error: Error) { return { error } }
-  componentDidCatch(error: Error, info: ErrorInfo) { console.error('From Web error:', error, info) }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('From Web error:', error, info)
+    // Auto-recuperación: si es un error de chunk dinámico (deploy nuevo), hacer hard reload automático
+    const isChunkError = error?.message?.includes('Failed to fetch dynamically imported module') ||
+                         error?.message?.includes('Importing a module script failed')
+    if (isChunkError && !this.state.didHardReload) {
+      this.setState({ didHardReload: true })
+      // Hard reload sin caché: añadir ?v= timestamp para forzar nueva petición
+      const url = window.location.href.replace(/[?#].*$/, '') + '?v=' + Date.now()
+      window.location.replace(url)
+    }
+  }
   render() {
     if (this.state.error) {
+      const isChunkError = this.state.error?.message?.includes('Failed to fetch dynamically imported module')
       return (
         <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
           <h2 style={{ color: '#8b5cf6' }}>From</h2>
-          <p style={{ color: '#666', margin: '16px 0' }}>Ha ocurrido un error al cargar.</p>
+          <p style={{ color: '#666', margin: '16px 0' }}>
+            {isChunkError ? 'Actualizando la app...' : 'Ha ocurrido un error al cargar.'}
+          </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              // Hard reload para asegurar chunks frescos
+              const url = window.location.href.replace(/[?#].*$/, '') + '?v=' + Date.now()
+              window.location.replace(url)
+            }}
             style={{ padding: '8px 16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
             Reintentar
