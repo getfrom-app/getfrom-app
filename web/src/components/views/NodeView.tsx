@@ -70,42 +70,8 @@ export default function NodeView() {
   // Focus mode word goal state
   const [wordGoal, setWordGoal] = useState<number | null>(null)
 
-  // Pomodoro timer state
-  const [pomodoroActive, setPomodoroActive] = useState(false)
-  const [pomodoroSeconds, setPomodoroSeconds] = useState(25 * 60)
-  const [pomodoroRunning, setPomodoroRunning] = useState(false)
-  const pomodoroRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // Pomodoro: iniciar/pausar
-  function togglePomodoro() {
-    if (pomodoroRunning) {
-      if (pomodoroRef.current) clearInterval(pomodoroRef.current)
-      setPomodoroRunning(false)
-    } else {
-      setPomodoroRunning(true)
-      pomodoroRef.current = setInterval(() => {
-        setPomodoroSeconds(s => {
-          if (s <= 1) {
-            clearInterval(pomodoroRef.current!)
-            setPomodoroRunning(false)
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('🍅 Pomodoro completado', { body: '¡Tiempo! Toma un descanso de 5 minutos.' })
-            }
-            return 25 * 60
-          }
-          return s - 1
-        })
-      }, 1000)
-    }
-  }
-
-  // Limpiar pomodoro al desmontar
-  useEffect(() => {
-    return () => { if (pomodoroRef.current) clearInterval(pomodoroRef.current) }
-  }, [])
-
-  // Formatear tiempo pomodoro
-  const pomodoroLabel = `${String(Math.floor(pomodoroSeconds / 60)).padStart(2, '0')}:${String(pomodoroSeconds % 60).padStart(2, '0')}`
+  // Export menu state
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   // Record recent visit
   useEffect(() => {
@@ -747,6 +713,22 @@ export default function NodeView() {
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
+  function handleExportPdf() {
+    window.print()
+  }
+
+  function handleCopyToClipboard() {
+    const title = node!.text || 'Sin título'
+    const body = node!.body || ''
+    const children = store.children(node!.id)
+    const bullets = children.map(c => `• ${c.text}`).join('\n')
+    const text = [title, body, bullets].filter(Boolean).join('\n\n')
+    navigator.clipboard.writeText(text).then(() => {
+      setQuickActionMsg('Copiado al portapapeles')
+      setTimeout(() => setQuickActionMsg(null), 2000)
+    }).catch(() => {})
+  }
+
   function handlePrint() {
     const title = node!.text || 'Sin título'
     const body = node!.body || ''
@@ -1016,6 +998,61 @@ export default function NodeView() {
               >
                 {focusMode ? '⊠' : '⊡'}
               </button>
+              {/* Duplicar */}
+              <button className="node-action-icon-btn" onClick={handleDuplicate} title="Duplicar nota">
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="6" y="6" width="11" height="11" rx="2"/>
+                  <path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/>
+                </svg>
+              </button>
+              {/* Imprimir */}
+              <button className="node-action-icon-btn" onClick={handlePrint} title="Imprimir">
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/>
+                </svg>
+              </button>
+              {/* Exportar — con dropdown */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  className="node-action-icon-btn"
+                  onClick={() => setShowExportMenu(v => !v)}
+                  title="Exportar"
+                >
+                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M4 16h12M10 3v10M6 9l4 4 4-4"/>
+                  </svg>
+                </button>
+                {showExportMenu && (
+                  <div className="node-export-menu" style={{
+                    position: 'absolute', right: 0, top: '100%', zIndex: 100,
+                    background: 'var(--bg-primary)', border: '1px solid var(--border)',
+                    borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    padding: '4px', minWidth: 160, marginTop: 4
+                  }}>
+                    <button className="node-export-option" onClick={() => { handleExportMarkdown(); setShowExportMenu(false) }}>
+                      📝 Markdown (.md)
+                    </button>
+                    <button className="node-export-option" onClick={() => { handleExportPdf(); setShowExportMenu(false) }}>
+                      📄 PDF
+                    </button>
+                    <button className="node-export-option" onClick={() => { handleCopyToClipboard(); setShowExportMenu(false) }}>
+                      📋 Copiar al portapapeles
+                    </button>
+                  </div>
+                )}
+              </div>
+              {/* Seguimiento */}
+              <button
+                className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
+                onClick={toggleSeguimiento}
+                title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
+                style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
+              >
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M1 10s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z"/>
+                  <circle cx="10" cy="10" r="3"/>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -1044,87 +1081,6 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Quick actions bar — visible on hover of .node-title-row */}
-          <div className="node-quick-actions">
-            <button className="node-quick-action-btn" onClick={handleCopyLink} title="Copiar enlace a este nodo">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M4 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1.5v1a3.5 3.5 0 0 1-3.5 3.5H4A3.5 3.5 0 0 1 .5 12V6A3.5 3.5 0 0 1 4 2.5h1V4H4z"/>
-                <path d="M7.5 1h4A2.5 2.5 0 0 1 14 3.5v4A2.5 2.5 0 0 1 11.5 10h-4A2.5 2.5 0 0 1 5 7.5v-4A2.5 2.5 0 0 1 7.5 1zm0 1.5A1 1 0 0 0 6.5 3.5v4A1 1 0 0 0 7.5 8.5h4A1 1 0 0 0 12.5 7.5v-4A1 1 0 0 0 11.5 2.5h-4z"/>
-              </svg>
-              Copiar enlace
-            </button>
-            {!node.isDiaryEntry && (
-              <button className="node-quick-action-btn" onClick={handleMoveToDiary} title="Añadir al diario de hoy">
-                <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1H2zm13 3H1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5z"/>
-                  <path d="M8 7.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V12a.5.5 0 0 1-1 0v-1.5H6a.5.5 0 0 1 0-1h1.5V8a.5.5 0 0 1 .5-.5z"/>
-                </svg>
-                Mover a diario
-              </button>
-            )}
-            <button className="node-quick-action-btn" onClick={handleDuplicate} title="Duplicar esta nota">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
-              </svg>
-              Duplicar nota
-            </button>
-            <button className="node-quick-action-btn" onClick={handlePrint} title="Imprimir nota">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
-                <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-              </svg>
-              Imprimir
-            </button>
-            <button
-              className={`node-quick-action-btn ${showChat ? 'node-quick-action-btn--active' : ''}`}
-              onClick={() => setShowChat(v => !v)}
-              title="Chat IA sobre esta nota (⌘J)"
-            >
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9.586a1 1 0 0 0 .707-.293l2.414-2.414A1 1 0 0 0 15 10.586V4a2 2 0 0 0-2-2H2zm3 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
-              </svg>
-              Chat IA
-            </button>
-            <button className="node-quick-action-btn" onClick={handleExportMarkdown} title="Exportar como Markdown">
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
-              </svg>
-              Exportar
-            </button>
-            <button
-              className={`node-quick-action-btn ${node.isSeguimiento ? 'node-quick-action-btn--active' : ''}`}
-              onClick={toggleSeguimiento}
-              title={node.isSeguimiento ? 'Quitar seguimiento' : 'Añadir seguimiento'}
-            >
-              👁 Seguimiento
-            </button>
-            <button
-              className={`node-quick-action-btn ${pomodoroRunning ? 'node-quick-action-btn--active' : ''}`}
-              onClick={() => {
-                if (!pomodoroActive) { setPomodoroActive(true); return }
-                togglePomodoro()
-              }}
-              title="Temporizador Pomodoro (25 min)"
-            >
-              🍅 {pomodoroActive ? pomodoroLabel : 'Pomodoro'}
-            </button>
-            {pomodoroActive && (
-              <button
-                className="node-quick-action-btn"
-                onClick={() => {
-                  setPomodoroActive(false)
-                  setPomodoroRunning(false)
-                  setPomodoroSeconds(25 * 60)
-                  if (pomodoroRef.current) clearInterval(pomodoroRef.current)
-                }}
-                title="Resetear pomodoro"
-              >✕</button>
-            )}
-            {quickActionMsg && (
-              <span className="node-quick-action-feedback">{quickActionMsg}</span>
-            )}
-          </div>
 
           {/* Node metadata row: status, priority, tags, due */}
           {(node.status !== null || node.priority || node.due || (node.types && node.types.filter(t => !['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'].includes(t)).length > 0)) && (

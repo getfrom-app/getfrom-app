@@ -2118,6 +2118,35 @@ mark.inline-highlight {
 .node-fav-btn.active { color: var(--warning); }
 .node-props-btn.active { background: var(--accent-soft); color: var(--text-accent); }
 
+.node-action-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.node-action-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.node-action-icon-btn.active { color: var(--accent); }
+
+.node-export-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-radius: 6px;
+}
+.node-export-option:hover { background: var(--bg-hover); }
+
 /* ── Properties Panel ───────────────────────────────────────────────────── */
 
 .properties-panel {

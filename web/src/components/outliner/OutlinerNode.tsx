@@ -497,6 +497,29 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       }
     }
 
+    // Espacio al inicio del bullet (posición 0 y texto vacío) → IA inline
+    if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !showSlash && !picker) {
+      const sel = window.getSelection()
+      const cursorAtStart = sel && sel.focusOffset === 0 && text === ''
+      if (cursorAtStart) {
+        e.preventDefault()
+        setIsAiStreaming(true)
+        let aiText = ''
+        const ctx = `Eres un asistente de escritura. Continúa o genera contenido relevante.`
+        aiInlineStream(ctx, undefined, (chunk) => {
+          aiText += chunk
+          nodeTextRef.current = aiText
+          if (contentRef.current) contentRef.current.textContent = aiText
+        }).catch((err: unknown) => {
+          console.error('AI error:', err)
+        }).finally(() => {
+          setIsAiStreaming(false)
+          store.updateNode(node.id, { text: aiText })
+        })
+        return
+      }
+    }
+
     // Cmd+/ → ciclar heading H1 → H2 → H3 → normal
     if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
