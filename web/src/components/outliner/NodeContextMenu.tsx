@@ -4,6 +4,14 @@ import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+function isTemporalNode(node: Node): boolean {
+  const t = node.text || ''
+  return /^\d{4}$/.test(t) ||
+    MONTHS_ES.some(m => m.toLowerCase() === t.toLowerCase()) ||
+    /^Semana \d+$/i.test(t)
+}
+
 interface Props {
   node: Node
   x: number
@@ -225,12 +233,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </button>
         ))}
       </div>
-      <div className="context-menu-separator" />
-      <div className="context-menu-section">
-        <button className="context-menu-item context-menu-item--danger" onClick={action(deleteNode)}>
-          <span className="context-menu-icon">🗑</span> Eliminar
-        </button>
-      </div>
+      {/* Notas temporales (año/mes/semana) y diarios no se pueden eliminar */}
+      {!node.isDiaryEntry && !isTemporalNode(node) && (
+        <>
+          <div className="context-menu-separator" />
+          <div className="context-menu-section">
+            <button className="context-menu-item context-menu-item--danger" onClick={action(deleteNode)}>
+              <span className="context-menu-icon">🗑</span> Eliminar
+            </button>
+          </div>
+        </>
+      )}
     </div>,
     document.body
   )

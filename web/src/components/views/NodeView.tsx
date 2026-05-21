@@ -1296,7 +1296,8 @@ export default function NodeView() {
                       <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/></svg>
                       Imprimir
                     </button>
-                    {!node.isDiaryEntry && (
+                    {/* Notas temporales (año/mes/semana) y diarios NO se pueden eliminar */}
+                    {!node.isDiaryEntry && !temporalNodeType && (
                       <>
                         <div className="node-more-sep"/>
                         <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
@@ -1732,32 +1733,9 @@ export default function NodeView() {
         <div className="right-panel-content">
           {node.isDiaryEntry ? (
             <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
-          ) : temporalNodeType === 'week' ? (
-            // Week temporal node: DiaryRightPanel with week range
-            (() => {
-              // Find the week date from parentId chain or use current date
-              const inferWeekDate = (): Date => {
-                const num = parseInt((node.text || '').replace(/Semana /i, '')) || 1
-                const yearNode = node.parentId ? s.getNode(node.parentId) : null
-                const monthNode = yearNode?.parentId ? s.getNode(yearNode.parentId) : null
-                // Walk up: week → month → year
-                let yearNum = new Date().getFullYear()
-                if (monthNode && /^\d{4}$/.test(monthNode.text || '')) yearNum = parseInt(monthNode.text!)
-                else if (yearNode && /^\d{4}$/.test(yearNode.text || '')) yearNum = parseInt(yearNode.text!)
-                const jan4 = new Date(yearNum, 0, 4)
-                return new Date(jan4.getTime() + (num - 1) * 7 * 86400000)
-              }
-              return <DiaryRightPanel diaryDate={inferWeekDate()} rangeType="week" />
-            })()
-          ) : temporalNodeType === 'month' ? (
-            (() => {
-              const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-              const monthIdx = MONTHS.findIndex(m => m === (node.text || '').toLowerCase())
-              const parentNode = node.parentId ? s.getNode(node.parentId) : null
-              const yearNum = (parentNode && /^\d{4}$/.test(parentNode.text || '')) ? parseInt(parentNode.text!) : new Date().getFullYear()
-              return <DiaryRightPanel diaryDate={new Date(yearNum, monthIdx < 0 ? new Date().getMonth() : monthIdx, 1)} rangeType="month" />
-            })()
-          ) : temporalNodeType === 'year' ? null : (
+          ) : (
+            // Notas normales Y temporales (año/mes/semana) = mismo panel derecho
+            // La única diferencia: los temporales no tienen botón de eliminar (ya controlado arriba)
             <NodeRightPanel node={node} />
           )}
         </div>
