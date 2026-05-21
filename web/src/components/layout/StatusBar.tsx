@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 
-// Versión del build web — actualizar en cada deploy significativo
-export const WEB_VERSION = 'web 21/05 · 21:10'
+// Versión del build web — incrementar en cada deploy significativo
+export const WEB_VERSION = 'v1.2'
 
 interface StatusBarProps {
   isSyncing: boolean
@@ -81,7 +81,7 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
       <span className="status-bar-sync">
         {isSyncing ? '↻ Sincronizando...' : '✓ Guardado'}
       </span>
-      <span style={{ opacity: 0.3, fontSize: 11, marginLeft: 4 }} title="Versión del build web">
+      <span className="status-bar-version" title="Versión">
         {WEB_VERSION}
       </span>
     </div>
