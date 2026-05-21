@@ -76,6 +76,13 @@ img { max-width: 100%; height: auto; }
     border-radius: 8px; text-decoration: none; transition: background 0.2s;
 }
 .btn-nav:hover { background: var(--accent-light); color: white !important; }
+.btn-nav-outline {
+    font-size: 13px; font-weight: 600; padding: 6px 16px;
+    background: transparent; color: var(--accent) !important;
+    border: 1.5px solid var(--accent); border-radius: 8px;
+    text-decoration: none; transition: all 0.2s;
+}
+.btn-nav-outline:hover { background: var(--accent); color: white !important; }
 .lang-select {
     font-size: 12px; font-weight: 600;
     padding: 5px 22px 5px 8px;
