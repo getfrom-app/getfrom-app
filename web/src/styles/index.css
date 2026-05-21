@@ -2586,9 +2586,9 @@ mark.inline-highlight {
   width: 100%;
   max-width: 560px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-focus);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -2657,18 +2657,33 @@ mark.inline-highlight {
   transition: background 0.08s;
 }
 .cmdpalette-item:hover,
-.cmdpalette-item.active { background: var(--accent-soft); }
-.cmdpalette-item.active .cmdpalette-item-label { color: var(--text-accent); }
+.cmdpalette-item.active { background: var(--bg-hover); }
+.cmdpalette-item.active .cmdpalette-item-label { color: var(--text-primary); }
 
-.cmdpalette-item--action .cmdpalette-item-icon { color: var(--text-accent); }
-.cmdpalette-item--recent .cmdpalette-item-icon { color: var(--text-secondary); }
-.cmdpalette-item--note .cmdpalette-item-icon { color: var(--text-tertiary); }
-
-.cmdpalette-item-icon {
-  width: 20px;
-  text-align: center;
-  font-size: 13px;
+/* Task status dot */
+.cmdpalette-task-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   flex-shrink: 0;
+  border: 1.5px solid var(--text-tertiary);
+}
+.cmdpalette-task-dot.pending { border-color: var(--accent); }
+.cmdpalette-task-dot.done { background: var(--text-tertiary); border-color: var(--text-tertiary); }
+
+/* Crear nota icon */
+.cmdpalette-create-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .cmdpalette-item-info {
@@ -2684,6 +2699,10 @@ mark.inline-highlight {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.cmdpalette-item-label.done {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
 }
 
 .cmdpalette-item-sublabel {
