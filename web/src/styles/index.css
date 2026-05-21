@@ -2965,7 +2965,7 @@ mark.inline-highlight {
 .diary-view { overflow: hidden; }
 .diary-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .diary-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
-.diary-right-panel { width: 280px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
+.diary-right-panel { width: 280px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; }
 .diary-panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .diary-panel-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; font-family: inherit; }
 .diary-panel-tab:hover { color: var(--text-primary); }
