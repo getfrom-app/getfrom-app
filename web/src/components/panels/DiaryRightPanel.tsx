@@ -5,10 +5,6 @@ import type { Node } from '../../types'
 
 type DiaryPanelTab = 'pending' | 'timeline' | 'agenda' | 'stats'
 
-function isBucle(n: Node): boolean {
-  return (n.types?.includes('bucle') ?? false) && n.status !== 'done' && !n.deletedAt
-}
-
 function hasLoopAncestor(nodeId: string): boolean {
   let current = store.getNode(nodeId)
   while (current?.parentId) {
@@ -149,16 +145,10 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
 
   // ── Pending tasks logic ────────────────────────────────────────────────
 
-  // All active bucles (only show for today)
-  const bucles = isToday
-    ? s.allActive().filter(n => isBucle(n))
+  // En seguimiento — solo hoy
+  const seguimientoNodes = isToday
+    ? s.allActive().filter(n => n.isSeguimiento && !n.deletedAt)
     : []
-
-  function getBucleChildren(bucleId: string): Node[] {
-    return store.children(bucleId).filter(
-      n => n.status !== null && n.status !== 'done' && !n.deletedAt
-    )
-  }
 
   const allPending = s.allActive().filter(
     n => n.status === 'pending' && !n.deletedAt
@@ -179,7 +169,7 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
 
   const noDateTasks = allPending.filter(n => {
     if (n.due) return false
-    if (isBucle(n)) return false
+    if (n.isSeguimiento) return false
     if (hasLoopAncestor(n.id)) return false
     return true
   }).slice(0, 10)
@@ -217,8 +207,8 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     const filteredToday = filterTasks(todayTasks)
     const filteredNoDate = filterTasks(noDateTasks)
 
-    const hasBucles = bucles.length > 0 && !searchQ
-    const hasAnything = hasBucles || filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
+    const hasSeguimiento = seguimientoNodes.length > 0 && !searchQ
+    const hasAnything = hasSeguimiento || filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
 
     const searchInput = (
       <div className="diary-panel-search">
@@ -283,36 +273,21 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
         {searchInput}
         {statsHeader}
 
-        {/* Bucles abiertos — solo hoy */}
-        {hasBucles && (
+        {/* En seguimiento — solo hoy */}
+        {hasSeguimiento && (
           <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: 'var(--accent)' }}>Bucles abiertos</div>
-            {bucles.map(bucle => {
-              const children = getBucleChildren(bucle.id)
-              return (
-                <div key={bucle.id} className="diary-bucle-section">
-                  <div
-                    className="diary-bucle-header"
-                    onClick={() => navigate(`/node/${bucle.id}`)}
-                  >
-                    <span className="diary-bucle-icon">↺</span>
-                    <span className="diary-bucle-text">{bucle.text || 'Sin título'}</span>
-                  </div>
-                  {children.length > 0 && (
-                    <div className="diary-bucle-children">
-                      {children.map(child => (
-                        <TaskChip
-                          key={child.id}
-                          task={child}
-                          indented
-                          toggleTask={toggleTask}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            <div className="diary-pending-label" style={{ color: 'var(--accent)' }}>En seguimiento</div>
+            {seguimientoNodes.map(node => (
+              <div
+                key={node.id}
+                className="diary-task-chip"
+                onClick={() => navigate(`/node/${node.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 12, marginRight: 4, opacity: 0.7 }}>👁</span>
+                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.text || 'Sin título'}</span>
+              </div>
+            ))}
           </div>
         )}
 

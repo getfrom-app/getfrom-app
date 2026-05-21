@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v2.6'
+export const WEB_VERSION = 'v2.7'
 
 interface StatusBarProps {
   isSyncing: boolean
@@ -15,7 +15,7 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
 
   const allActive = s.allActive()
   const totalNotes = allActive.filter(n => !n.isDiaryEntry && !n.deletedAt).length
-  const activeBucles = allActive.filter(n => (n.types || []).includes('bucle') && n.status !== 'done').length
+  const activeSeguimiento = allActive.filter(n => n.isSeguimiento && !n.deletedAt).length
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -72,9 +72,9 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
       ) : overdueCount === 0 ? (
         <span style={{ opacity: 0.5 }}>Sin tareas hoy</span>
       ) : null}
-      {activeBucles > 0 && (
+      {activeSeguimiento > 0 && (
         <button className="status-bar-link" onClick={() => navigate('/followup')} style={{ color: 'var(--accent)' }}>
-          ↺ {activeBucles} bucles
+          👁 {activeSeguimiento} seguimiento
         </button>
       )}
       {getContextInfo()}

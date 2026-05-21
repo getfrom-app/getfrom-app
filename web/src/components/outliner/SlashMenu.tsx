@@ -25,7 +25,6 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   // ── Objetos ─────────────────────────────────────────────────────────────
   { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
-  { group: 'Objetos', label: 'Bucle',    icon: '↺',   prefix: '',      description: 'Open loop / seguimiento', action: 'bucle' },
   { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
 ]
 

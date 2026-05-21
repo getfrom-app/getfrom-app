@@ -148,7 +148,7 @@ function BucleRow({ bucle, onMarkDone }: BucleRowProps) {
               e.stopPropagation()
               onMarkDone(bucle.id)
             }}
-            title="Cerrar bucle"
+            title="Cerrar"
           >
             ✓ Cerrar
           </button>
@@ -250,7 +250,7 @@ export default function FollowupView() {
             <span className="followup-total-count">{activeBucles.length}</span>
           )}
         </h1>
-        <p className="view-subtitle">Bucles activos pendientes de cierre</p>
+        <p className="view-subtitle">Nodos en seguimiento activo</p>
       </div>
 
       <div className="view-body">
@@ -259,7 +259,7 @@ export default function FollowupView() {
           <input
             type="text"
             className="followup-search"
-            placeholder="Buscar bucle..."
+            placeholder="Buscar..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -301,7 +301,7 @@ export default function FollowupView() {
 
         {activeBucles.length === 0 && (
           <div className="view-empty">
-            No hay bucles activos. Crea uno escribiendo <code>/bucle</code> en cualquier nota.
+            No hay nodos en seguimiento.
           </div>
         )}
 

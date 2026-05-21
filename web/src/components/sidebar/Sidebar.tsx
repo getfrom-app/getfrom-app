@@ -416,7 +416,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
           </div>
           <div className="sidebar-stat">
             <span className="sidebar-stat-value" style={{ color: '#8b5cf6' }}>{activeBuclesCount}</span>
-            <span className="sidebar-stat-label" style={{ color: '#8b5cf6' }}>bucles</span>
+            <span className="sidebar-stat-label" style={{ color: '#8b5cf6' }}>seguim.</span>
           </div>
         </div>
       </div>
