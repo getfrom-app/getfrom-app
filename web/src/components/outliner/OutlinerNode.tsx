@@ -685,8 +685,17 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
     if (e.key === 'Enter') {
       e.preventDefault()
 
-      // Enter en bullet vacío → eliminar y mover cursor al bullet anterior (al final de su texto)
+      // Enter en bullet vacío:
+      // - Si está indentado (depth > 0) → desindentar (igual que Backspace)
+      // - Si está al nivel raíz → borrar y cursor al anterior
       if (text === '') {
+        if (depth > 0) {
+          const parent = store.getNode(node.parentId!)
+          if (parent) {
+            store.updateNode(node.id, { parentId: parent.parentId, siblingOrder: parent.siblingOrder + 0.5 })
+            return
+          }
+        }
         onSelectNext(node.id, 'up')
         store.deleteNode(node.id)
         return
@@ -773,14 +782,17 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
 
     if (e.key === 'Backspace' && text === '') {
       e.preventDefault()
-      if (node.parentId) {
-        // Nodo vacío y con padre → desindentar en vez de borrar (como en Mac)
-        const parent = store.getNode(node.parentId)
+      if (depth > 0) {
+        // Nodo vacío e INDENTADO (depth > 0) → desindentar un nivel
+        // depth === 0 significa que está al nivel raíz del outliner actual,
+        // aunque tenga parentId (p.ej. diary.id) → en ese caso hay que borrar.
+        const parent = store.getNode(node.parentId!)
         if (parent) {
           store.updateNode(node.id, { parentId: parent.parentId, siblingOrder: parent.siblingOrder + 0.5 })
           return
         }
       }
+      // Nivel raíz del outliner: borrar y mover cursor al bullet anterior
       onSelectNext(node.id, 'up')
       store.deleteNode(node.id)
     }
