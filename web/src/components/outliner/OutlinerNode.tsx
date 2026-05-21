@@ -186,6 +186,10 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
   const [isAiStreaming, setIsAiStreaming] = useState(false)
   const [aiPendingText, setAiPendingText] = useState<string | null>(null)
   const aiOriginalText = useRef<string>('')
+  // IA inline: estado del prompt previo al stream
+  const [isAiPrompting, setIsAiPrompting] = useState(false)
+  const [aiPromptText, setAiPromptText] = useState('')
+  const aiPromptRef = useRef<HTMLInputElement>(null)
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
 
   const blockType = detectBlockType(node.text)
@@ -497,25 +501,14 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
       }
     }
 
-    // Espacio al inicio del bullet (posición 0 y texto vacío) → IA inline
+    // Espacio al inicio del bullet vacío → mostrar input de prompt IA (como Mac)
     if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !showSlash && !picker) {
       const sel = window.getSelection()
       const cursorAtStart = sel && sel.focusOffset === 0 && text === ''
       if (cursorAtStart) {
         e.preventDefault()
-        setIsAiStreaming(true)
-        let aiText = ''
-        const ctx = `Eres un asistente de escritura. Continúa o genera contenido relevante.`
-        aiInlineStream(ctx, undefined, (chunk) => {
-          aiText += chunk
-          nodeTextRef.current = aiText
-          if (contentRef.current) contentRef.current.textContent = aiText
-        }).catch((err: unknown) => {
-          console.error('AI error:', err)
-        }).finally(() => {
-          setIsAiStreaming(false)
-          store.updateNode(node.id, { text: aiText })
-        })
+        setIsAiPrompting(true)
+        setTimeout(() => aiPromptRef.current?.focus(), 0)
         return
       }
     }
@@ -1224,7 +1217,57 @@ export default function OutlinerNode({ node, depth, isSelected, isMultiSelected,
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
-            {isNota ? (
+            {isAiPrompting ? (
+              // Input de prompt IA — igual que Mac: ✦ + escribir prompt + Enter
+              <div className="node-ai-prompt-container">
+                <span className="node-ai-prompt-icon">✦</span>
+                <input
+                  ref={aiPromptRef}
+                  className="node-ai-prompt-input"
+                  placeholder="Pide a la IA..."
+                  value={aiPromptText}
+                  onChange={e => setAiPromptText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (!aiPromptText.trim()) {
+                        setIsAiPrompting(false)
+                        setAiPromptText('')
+                        setTimeout(() => contentRef.current?.focus(), 0)
+                        return
+                      }
+                      const prompt = aiPromptText
+                      setIsAiPrompting(false)
+                      setAiPromptText('')
+                      setIsAiStreaming(true)
+                      let aiText = ''
+                      aiInlineStream(prompt, undefined, (chunk) => {
+                        aiText += chunk
+                        nodeTextRef.current = aiText
+                        if (contentRef.current) contentRef.current.textContent = aiText
+                      }).catch(console.error).finally(() => {
+                        setIsAiStreaming(false)
+                        store.updateNode(node.id, { text: aiText })
+                      })
+                    }
+                    if (e.key === 'Escape') {
+                      setIsAiPrompting(false)
+                      setAiPromptText('')
+                      setTimeout(() => contentRef.current?.focus(), 0)
+                    }
+                  }}
+                  onBlur={() => {
+                    // Si pierde foco sin enviar, cancelar
+                    setTimeout(() => {
+                      if (!aiPromptRef.current || document.activeElement !== aiPromptRef.current) {
+                        setIsAiPrompting(false)
+                        setAiPromptText('')
+                      }
+                    }, 100)
+                  }}
+                />
+              </div>
+            ) : isNota ? (
               <div
                 className="node-text node-text--nota"
                 onClick={() => navigate(`/node/${node.id}`)}
