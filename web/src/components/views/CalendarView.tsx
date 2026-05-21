@@ -165,20 +165,8 @@ function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0)
 }
 
-function startOfYear(date: Date): Date {
-  return new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0)
-}
-
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-}
-
 function formatMonth(date: Date): string {
   return date.toLocaleDateString('es-ES', { month: 'long' })
-}
-
-function formatMonthShort(date: Date): string {
-  return date.toLocaleDateString('es-ES', { month: 'short' })
 }
 
 function formatWeekLabel(weekStart: Date): string {
@@ -195,6 +183,7 @@ function formatWeekLabel(weekStart: Date): string {
 }
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+const DAY_NAMES_UPPER = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
 const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 type ViewType = 'week' | 'month' | 'year'
@@ -317,7 +306,7 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
         <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(7)}>Siguiente →</button>
       </div>
 
-      <div className="view-body calendar-week-body">
+      <div className="calendar-week-body">
         {/* ── Cabecera de días ── */}
         <div className="calendar-timeline-header">
           <div className="calendar-timeline-gutter" />
@@ -394,14 +383,26 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                         onClick={() => { if (!isCreating) handleCellClick(day, hour, cellKey) }}
                         onMouseEnter={() => setHoveredCell(cellKey)}
                         onMouseLeave={() => setHoveredCell(null)}
-                        onDragOver={e => e.preventDefault()}
+                        onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }}
+                        onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
                         onDrop={e => {
                           e.preventDefault()
+                          e.currentTarget.classList.remove('drag-over')
+                          // From side panel
+                          const nodeId = e.dataTransfer.getData('cal-node-id')
+                          if (nodeId) {
+                            const newDate = new Date(day)
+                            newDate.setHours(hour, 0, 0, 0)
+                            store.updateNode(nodeId, { due: newDate.toISOString(), status: 'pending' })
+                            return
+                          }
+                          // Drag between time slots
                           const eventId = e.dataTransfer.getData('eventId')
-                          if (!eventId) return
-                          const newDate = new Date(day)
-                          newDate.setHours(hour, 0, 0, 0)
-                          store.updateNode(eventId, { due: newDate.toISOString() })
+                          if (eventId) {
+                            const newDate = new Date(day)
+                            newDate.setHours(hour, 0, 0, 0)
+                            store.updateNode(eventId, { due: newDate.toISOString() })
+                          }
                         }}
                       >
                         {isHovered && !isCreating && (
@@ -526,7 +527,7 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
   const monthLabel = `${formatMonth(monthStart)} ${monthStart.getFullYear()}`
 
   return (
-    <>
+    <div className="calendar-month-container">
       <div className="calendar-week-nav">
         <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← Anterior</button>
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
@@ -534,73 +535,77 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
         <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
       </div>
 
-      <div className="view-body">
-        <div className="calendar-month-grid">
-          {/* Day headers */}
-          {DAY_NAMES.map(d => (
-            <div key={d} className="calendar-month-day-name">{d}</div>
-          ))}
-
-          {/* Day cells */}
-          {cells.map((day, i) => {
-            const inMonth = isSameMonth(day, monthStart)
-            const isToday = isSameDay(day, today)
-            const dayNodes = getNodesForDay(day)
-            const overflow = dayNodes.length > 3
-            const diaryEntry = inMonth ? getDiaryForDay(day) : undefined
-            const childCount = diaryEntry ? store.children(diaryEntry.id).length : 0
-
-            return (
-              <div
-                key={i}
-                className={`calendar-month-cell ${inMonth ? '' : 'calendar-month-cell--out'} ${isToday ? 'calendar-month-cell--today' : ''}`}
-                onClick={() => onDayClick(day)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => onDrop?.(e, day)}
-              >
-                <div className="calendar-month-cell-header">
-                  <div className="calendar-month-cell-number">{day.getDate()}</div>
-                  {diaryEntry && inMonth && (
-                    <button
-                      className="calendar-diary-dot"
-                      onClick={e => {
-                        e.stopPropagation()
-                        // Navigate to diary view for this date
-                        const today2 = new Date()
-                        today2.setHours(0, 0, 0, 0)
-                        const diff = Math.round((day.getTime() - today2.getTime()) / 86400000)
-                        navigate(`/?offset=${diff}`)
-                      }}
-                      title={`Entrada de diario · ${childCount} bullets`}
-                    >
-                      📓{childCount > 0 && <span className="calendar-diary-count">{childCount}</span>}
-                    </button>
-                  )}
-                </div>
-                <div className="calendar-month-cell-nodes">
-                  {dayNodes.slice(0, 3).map(node => (
-                    <button
-                      key={node.id}
-                      className={`calendar-month-node ${node.status === 'done' ? 'calendar-month-node--done' : ''}`}
-                      onClick={e => { e.stopPropagation(); onNodeClick(node.id) }}
-                      title={node.text}
-                    >
-                      {node.status !== null && (
-                        <span>{node.status === 'done' ? '✓' : '○'} </span>
-                      )}
-                      {node.text || 'Sin título'}
-                    </button>
-                  ))}
-                  {overflow && (
-                    <span className="calendar-month-overflow">+{dayNodes.length - 3} más</span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      {/* Day of week header row */}
+      <div className="calendar-month-dow-row">
+        {DAY_NAMES_UPPER.map(d => (
+          <div key={d} className="calendar-month-dow-cell">{d}</div>
+        ))}
       </div>
-    </>
+
+      <div className="calendar-month-grid">
+        {/* Day cells */}
+        {cells.map((day, i) => {
+          const inMonth = isSameMonth(day, monthStart)
+          const isToday = isSameDay(day, today)
+          const dayNodes = getNodesForDay(day)
+          const overflow = dayNodes.length > 3
+          const diaryEntry = inMonth ? getDiaryForDay(day) : undefined
+          const childCount = diaryEntry ? store.children(diaryEntry.id).length : 0
+
+          return (
+            <div
+              key={i}
+              className={`calendar-month-cell ${inMonth ? '' : 'calendar-month-cell--out'} ${isToday ? 'calendar-month-cell--today' : ''}`}
+              onClick={() => onDayClick(day)}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }}
+              onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
+              onDrop={e => {
+                e.currentTarget.classList.remove('drag-over')
+                onDrop?.(e, day)
+              }}
+            >
+              <div className="calendar-month-cell-header">
+                <div className="calendar-month-cell-number">{day.getDate()}</div>
+                {diaryEntry && inMonth && (
+                  <button
+                    className="calendar-diary-dot"
+                    onClick={e => {
+                      e.stopPropagation()
+                      // Navigate to diary view for this date
+                      const today2 = new Date()
+                      today2.setHours(0, 0, 0, 0)
+                      const diff = Math.round((day.getTime() - today2.getTime()) / 86400000)
+                      navigate(`/?offset=${diff}`)
+                    }}
+                    title={`Entrada de diario · ${childCount} bullets`}
+                  >
+                    📓{childCount > 0 && <span className="calendar-diary-count">{childCount}</span>}
+                  </button>
+                )}
+              </div>
+              <div className="calendar-month-cell-nodes">
+                {dayNodes.slice(0, 3).map(node => (
+                  <button
+                    key={node.id}
+                    className={`calendar-month-node ${node.status === 'done' ? 'calendar-month-node--done' : ''}`}
+                    onClick={e => { e.stopPropagation(); onNodeClick(node.id) }}
+                    title={node.text}
+                  >
+                    {node.status !== null && (
+                      <span>{node.status === 'done' ? '✓' : '○'} </span>
+                    )}
+                    {node.text || 'Sin título'}
+                  </button>
+                ))}
+                {overflow && (
+                  <span className="calendar-month-overflow">+{dayNodes.length - 3} más</span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -613,22 +618,56 @@ interface YearViewProps {
   onNavigate: (years: number) => void
   onGoToToday: () => void
   onMonthClick: (month: Date) => void
+  onDayClick?: (day: Date) => void
 }
 
-function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick }: YearViewProps) {
-  const nodesWithDue = allNodes.filter(n => n.due)
+// L M X J V S D
+const YEAR_DOW_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-  // Build a set of "YYYY-MM-DD" strings with activity
-  const activeDays = new Set<string>()
+function getActivityLevel(count: number): string {
+  if (count === 0) return ''
+  if (count <= 2) return 'calendar-year-day--active-low'
+  if (count <= 5) return 'calendar-year-day--active-med'
+  return 'calendar-year-day--active-high'
+}
+
+function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick, onDayClick }: YearViewProps) {
+  const navigate = useNavigate()
+  const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate && !n.deletedAt)
+
+  // Build activity map: "YYYY-M-D" -> childCount
+  const activityMap = new Map<string, number>()
+  for (const entry of diaryEntries) {
+    if (!entry.diaryDate) continue
+    const d = new Date(entry.diaryDate)
+    if (d.getFullYear() !== year) continue
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    const childCount = store.children(entry.id).length
+    activityMap.set(key, childCount)
+  }
+
+  // Also count nodes with due date
+  const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
   for (const n of nodesWithDue) {
     if (!n.due) continue
     const d = new Date(n.due)
-    if (d.getFullYear() === year) {
-      activeDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
-    }
+    if (d.getFullYear() !== year) continue
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    activityMap.set(key, (activityMap.get(key) ?? 0) + 1)
   }
 
   const months = Array.from({ length: 12 }, (_, m) => new Date(year, m, 1))
+
+  function handleDayClick(day: Date, e: React.MouseEvent) {
+    e.stopPropagation()
+    // Find diary entry for this day
+    const diary = diaryEntries.find(n => n.diaryDate && isSameDay(new Date(n.diaryDate), day))
+    if (diary) {
+      navigate(`/node/${diary.id}`)
+    } else if (onDayClick) {
+      onDayClick(day)
+    }
+  }
 
   return (
     <>
@@ -639,17 +678,25 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
         <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
       </div>
 
-      <div className="view-body">
+      <div className="calendar-year-scroll">
         <div className="calendar-year-grid">
           {months.map((monthDate, mi) => {
             const isCurrentMonth = isSameMonth(monthDate, today)
 
-            // Mini month grid (just dots for days)
+            // Mini month grid
             const firstDay = startOfMonth(monthDate)
             const firstDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
             const gridStart = addDays(firstDay, -firstDow)
-            // 5 rows × 7 = 35 cells
-            const cells = Array.from({ length: 35 }, (_, i) => addDays(gridStart, i))
+            // 6 rows × 7 = 42 cells to be safe
+            const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
+            // Trim trailing rows that are entirely out-of-month
+            let lastCellInMonth = 41
+            while (lastCellInMonth > 0 && !isSameMonth(cells[lastCellInMonth], monthDate)) {
+              lastCellInMonth--
+            }
+            // Round up to complete row
+            const rowsNeeded = Math.ceil((lastCellInMonth + 1) / 7)
+            const trimmedCells = cells.slice(0, rowsNeeded * 7)
 
             return (
               <div
@@ -660,22 +707,32 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
                 <div className="calendar-year-month-name">
                   {MONTH_NAMES_SHORT[mi]}
                 </div>
+                {/* Day of week labels */}
                 <div className="calendar-year-mini-grid">
-                  {cells.map((day, di) => {
+                  {YEAR_DOW_LABELS.map(l => (
+                    <div key={l} className="calendar-year-dow-label">{l}</div>
+                  ))}
+                  {trimmedCells.map((day, di) => {
                     const inMonth = isSameMonth(day, monthDate)
                     const isToday = isSameDay(day, today)
-                    const hasActivity = inMonth && activeDays.has(`${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`)
+                    const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`
+                    const activityCount = inMonth ? (activityMap.get(key) ?? 0) : 0
+                    const activityClass = inMonth ? getActivityLevel(activityCount) : ''
 
                     return (
                       <div
                         key={di}
                         className={[
-                          'calendar-year-dot',
-                          !inMonth ? 'calendar-year-dot--out' : '',
-                          isToday ? 'calendar-year-dot--today' : '',
-                          hasActivity ? 'calendar-year-dot--active' : '',
+                          'calendar-year-day',
+                          !inMonth ? 'calendar-year-day--out' : '',
+                          isToday ? 'calendar-year-day--today' : '',
+                          activityClass,
                         ].filter(Boolean).join(' ')}
-                      />
+                        onClick={inMonth ? e => handleDayClick(day, e) : undefined}
+                        title={inMonth ? `${day.getDate()} ${MONTH_NAMES_SHORT[mi]}${activityCount > 0 ? ` · ${activityCount} elementos` : ''}` : undefined}
+                      >
+                        {inMonth ? day.getDate() : ''}
+                      </div>
                     )
                   })}
                 </div>
@@ -768,9 +825,9 @@ export default function CalendarView() {
   return (
     <div className="view calendar-view calendar-view--with-panel" role="main" aria-label="Vista de calendario">
       <div className="calendar-main-area">
-        <div className="view-header">
+        <div className="calendar-top-bar">
           <div className="calendar-header-row">
-            <h1 className="view-title">Calendario</h1>
+            <h1 className="view-title" style={{ margin: 0 }}>Calendario</h1>
             <div className="calendar-view-tabs">
               {(['week', 'month', 'year'] as ViewType[]).map(v => (
                 <button
@@ -783,7 +840,9 @@ export default function CalendarView() {
               ))}
             </div>
           </div>
+        </div>
 
+        <div className="calendar-view-body">
           {view === 'week' && (
             <WeekView
               weekStart={weekStart}
@@ -818,6 +877,7 @@ export default function CalendarView() {
               onNavigate={navigateYear}
               onGoToToday={goToToday}
               onMonthClick={handleMonthClick}
+              onDayClick={handleDayClick}
             />
           )}
         </div>

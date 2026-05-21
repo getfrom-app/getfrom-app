@@ -6019,7 +6019,7 @@ a:focus-visible {
 .calendar-main-area {
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -6131,3 +6131,214 @@ a:focus-visible {
   .cal-side-panel { display: none; }
   .right-panel-area { display: none; }
 }
+
+/* ── Calendar overhaul — layout fixes ─────────────────────────────────────── */
+
+/* Main area: full width column, no overflow */
+.calendar-view--with-panel .calendar-main-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Top bar: title + tabs */
+.calendar-top-bar {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* View body: fills remaining height */
+.calendar-view-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Week nav bar (shared by week/month/year) */
+.calendar-week-nav {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Week body: full height, no side padding */
+.calendar-week-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Month container: padding around content */
+.calendar-month-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0 16px 0;
+}
+
+/* Day-of-week header row for month view (above the grid) */
+.calendar-month-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 8px 20px 4px;
+  gap: 1px;
+}
+.calendar-month-dow-cell {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Month grid: equal column widths, no overflow */
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  width: calc(100% - 40px);
+  margin: 0 20px;
+}
+.calendar-month-cell {
+  background: var(--bg);
+  min-height: 100px;
+  padding: 6px;
+  overflow: hidden;
+}
+
+/* Month cell drag-over state */
+.calendar-month-cell.drag-over {
+  background: var(--accent-soft) !important;
+  outline: 2px dashed var(--accent);
+}
+
+/* Year view — scrollable */
+.calendar-year-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+/* Year view day cells */
+.calendar-year-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.calendar-year-dow-label {
+  font-size: 8px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  padding-bottom: 2px;
+}
+
+.calendar-year-day {
+  font-size: 9px;
+  text-align: center;
+  padding: 1px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  min-width: 0;
+  line-height: 1.5;
+}
+.calendar-year-day:hover { background: var(--accent-soft); color: var(--accent); }
+.calendar-year-day--today {
+  background: var(--accent) !important;
+  color: white !important;
+  border-radius: 50%;
+  font-weight: 700;
+}
+.calendar-year-day--out {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+.calendar-year-day--active-low { background: rgba(74,144,217,0.15); }
+.calendar-year-day--active-med { background: rgba(74,144,217,0.35); }
+.calendar-year-day--active-high { background: rgba(74,144,217,0.6); color: white; }
+
+/* Week timeline drag-over cells */
+.calendar-timeline-cell.drag-over {
+  background: var(--accent-soft) !important;
+  opacity: 1 !important;
+  border: 2px dashed var(--accent);
+}
+
+/* Dragging task rows */
+.cal-panel-task[draggable="true"] { user-select: none; }
+.cal-panel-task[draggable="true"]:active { opacity: 0.5; }
+
+/* ── Side panel — grouped tasks ───────────────────────────────────────────── */
+
+.cal-panel-group {
+  margin-bottom: 8px;
+}
+
+.cal-panel-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.cal-panel-group-header:hover { background: var(--bg-hover); }
+.cal-panel-group-header--seguimiento { color: var(--accent); }
+
+.cal-panel-seguimiento-icon { font-size: 12px; flex-shrink: 0; }
+.cal-panel-group-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Indented task rows (under a group header) */
+.cal-panel-task--indented {
+  margin-left: 12px;
+}
+
+/* Done tasks in panel */
+.cal-panel-task--done {
+  opacity: 0.5;
+}
+.cal-panel-task--done .cal-panel-task-text {
+  text-decoration: line-through;
+}
+
+/* Checkbox */
+.cal-task-checkbox {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.1s;
+}
+.cal-task-checkbox:hover { background: var(--bg-hover); }
