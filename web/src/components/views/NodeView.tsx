@@ -893,11 +893,10 @@ export default function NodeView() {
             <div className="node-icon-wrapper">
               <button
                 className="node-icon-btn"
-                data-has-icon={nodeIcon ? 'true' : 'false'}
                 onClick={() => setShowEmojiPicker(v => !v)}
-                title={nodeIcon ? 'Cambiar icono' : 'Añadir icono'}
+                title="Cambiar icono"
               >
-                {nodeIcon || ''}
+                {nodeIcon || '📄'}
               </button>
               {showEmojiPicker && (
                 <EmojiPicker
