@@ -2602,6 +2602,8 @@ mark.inline-highlight {
 .kanban-filter-btn { padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; transition: all 0.15s; }
 .kanban-filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
 .kanban-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.kanban-group-select { font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; background: transparent; color: var(--text-secondary); cursor: pointer; font-family: inherit; outline: none; }
+.kanban-group-select:focus { border-color: var(--accent); }
 
 .kanban-board { display: flex; gap: 16px; overflow-x: auto; flex: 1; padding-bottom: 16px; }
 .kanban-column { flex: 0 0 300px; display: flex; flex-direction: column; background: var(--bg-secondary); border-radius: 10px; padding: 12px; min-height: 200px; max-height: calc(100vh - 220px); overflow-y: auto; transition: background 0.15s; }
