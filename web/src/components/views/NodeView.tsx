@@ -42,6 +42,7 @@ export default function NodeView() {
   const [bodyValue, setBodyValue] = useState('')
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -780,6 +781,28 @@ export default function NodeView() {
     }).catch(() => {})
   }
 
+  function copyMarkdown() {
+    if (!node) return
+    function buildMd(parentId: string, depth: number): string {
+      return store.children(parentId).filter(n => !n.deletedAt).map(n => {
+        const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
+        const indent = '  '.repeat(depth)
+        return indent + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
+      }).join('')
+    }
+    const md = `# ${node.text}\n\n${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`
+    navigator.clipboard.writeText(md).catch(() => {})
+    setQuickActionMsg('✓ Markdown copiado')
+    setTimeout(() => setQuickActionMsg(null), 1500)
+  }
+
+  function handleDelete() {
+    if (!node) return
+    if (!window.confirm(`¿Eliminar "${node.text || 'esta nota'}"? Se moverá a la papelera.`)) return
+    store.deleteNode(node.id)
+    navigate(-1)
+  }
+
   function handlePrint() {
     const title = node!.text || 'Sin título'
     const body = node!.body || ''
@@ -1079,111 +1102,112 @@ export default function NodeView() {
                   </>
                 )
               })()}
+              {/* ── Pin (Favorito) — igual que Mac ── */}
               <button
-                className={`node-fav-btn ${node.isFavorite ? 'active' : ''}`}
+                className={`node-action-icon-btn ${node.isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
-                title={node.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-                aria-label="Favorito"
+                title={node.isFavorite ? 'Quitar fijado' : 'Fijar nota'}
+                style={{ color: node.isFavorite ? '#ef4444' : undefined }}
               >
-                {node.isFavorite ? '★' : '☆'}
-              </button>
-              <div className="node-share-wrapper" style={{ position: 'relative' }}>
-                <button
-                  className="node-share-btn"
-                  onClick={() => {
-                    if (node.publicSlug) {
-                      handleShare()
-                    } else {
-                      setShowShareMenu(v => !v)
-                    }
-                  }}
-                  title="Compartir enlace"
-                  aria-label="Compartir"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="12" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <circle cx="3" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <circle cx="12" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M4.5 7L10.5 4M4.5 9L10.5 12" stroke="currentColor" strokeWidth="1.5"/>
-                  </svg>
-                </button>
-                {shareCopied && (
-                  <span className="node-share-tooltip">¡Enlace copiado!</span>
-                )}
-                {showShareMenu && !node.publicSlug && (
-                  <div className="node-share-menu">
-                    <button onClick={() => { handleShare(); setShowShareMenu(false) }}>
-                      🌐 Publicar y copiar enlace
-                    </button>
-                    <button onClick={() => { handleCopyLink(); setShowShareMenu(false) }}>
-                      🔗 Copiar enlace interno
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                className={`node-props-btn ${focusMode ? 'active' : ''}`}
-                onClick={() => setFocusMode(v => !v)}
-                title="Modo foco"
-                aria-label="Modo foco"
-              >
-                {focusMode ? '⊠' : '⊡'}
-              </button>
-              {/* Duplicar */}
-              <button className="node-action-icon-btn" onClick={handleDuplicate} title="Duplicar nota">
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="6" y="6" width="11" height="11" rx="2"/>
-                  <path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="17" x2="12" y2="22"/>
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
                 </svg>
               </button>
-              {/* Imprimir */}
-              <button className="node-action-icon-btn" onClick={handlePrint} title="Imprimir">
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/>
-                </svg>
-              </button>
-              {/* Exportar — con dropdown */}
+
+              {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
                 <button
-                  className="node-action-icon-btn"
-                  onClick={() => setShowExportMenu(v => !v)}
-                  title="Exportar"
+                  className={`node-action-icon-btn ${node.publicSlug || shareUrl ? 'active' : ''}`}
+                  onClick={() => (node.publicSlug || shareUrl) ? handleShare() : setShowShareMenu(v => !v)}
+                  title={(node.publicSlug || shareUrl) ? 'Publicada — copiar enlace' : 'Publicar nota'}
+                  style={{ color: (node.publicSlug || shareUrl) ? '#22c55e' : undefined }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M4 16h12M10 3v10M6 9l4 4 4-4"/>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                   </svg>
                 </button>
-                {showExportMenu && (
-                  <div className="node-export-menu" style={{
-                    position: 'absolute', right: 0, top: '100%', zIndex: 100,
-                    background: 'var(--bg-primary)', border: '1px solid var(--border)',
-                    borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    padding: '4px', minWidth: 160, marginTop: 4
-                  }}>
-                    <button className="node-export-option" onClick={() => { handleExportMarkdown(); setShowExportMenu(false) }}>
-                      📝 Markdown (.md)
-                    </button>
-                    <button className="node-export-option" onClick={() => { handleExportPdf(); setShowExportMenu(false) }}>
-                      📄 PDF
-                    </button>
-                    <button className="node-export-option" onClick={() => { handleCopyToClipboard(); setShowExportMenu(false) }}>
-                      📋 Copiar al portapapeles
-                    </button>
+                {shareCopied && <span className="node-share-tooltip">¡Enlace copiado!</span>}
+                {showShareMenu && (
+                  <div className="node-share-menu">
+                    <button onClick={() => { handleShare(); setShowShareMenu(false) }}>🌐 Publicar y copiar enlace</button>
+                    <button onClick={() => { handleCopyLink(); setShowShareMenu(false) }}>🔗 Copiar enlace interno</button>
                   </div>
                 )}
               </div>
-              {/* Seguimiento */}
-              <button
-                className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
-                onClick={toggleSeguimiento}
-                title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
-                style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
-              >
-                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M1 10s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z"/>
-                  <circle cx="10" cy="10" r="3"/>
-                </svg>
-              </button>
+
+              {/* ── Seguimiento ── */}
+              {!node.isDiaryEntry && (
+                <button
+                  className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
+                  onClick={toggleSeguimiento}
+                  title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
+                  style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              )}
+
+              {/* ── ··· Más opciones ── */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  className={`node-action-icon-btn ${showMoreMenu ? 'active' : ''}`}
+                  onClick={() => setShowMoreMenu(v => !v)}
+                  title="Más opciones"
+                >
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                    <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+                  </svg>
+                </button>
+                {showMoreMenu && (
+                  <div className="node-more-menu" onClick={() => setShowMoreMenu(false)}>
+                    <button className="node-more-item" onClick={() => setFocusMode(v => !v)}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="5" height="5"/><rect x="12" y="3" width="5" height="5"/><rect x="3" y="12" width="5" height="5"/><rect x="12" y="12" width="5" height="5"/></svg>
+                      {focusMode ? 'Salir de modo foco' : 'Modo foco'}
+                    </button>
+                    <div className="node-more-sep"/>
+                    <button className="node-more-item" onClick={copyMarkdown}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7M8 4V2"/></svg>
+                      Copiar Markdown
+                    </button>
+                    <button className="node-more-item" onClick={handleCopyToClipboard}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7M8 4V2"/></svg>
+                      Copiar texto plano
+                    </button>
+                    <div className="node-more-sep"/>
+                    <button className="node-more-item" onClick={handleExportMarkdown}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
+                      Exportar Markdown (.md)
+                    </button>
+                    <button className="node-more-item" onClick={handleExportPdf}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
+                      Exportar PDF
+                    </button>
+                    <div className="node-more-sep"/>
+                    <button className="node-more-item" onClick={handleDuplicate}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="6" y="6" width="11" height="11" rx="2"/><path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>
+                      Duplicar
+                    </button>
+                    <button className="node-more-item" onClick={handlePrint}>
+                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/></svg>
+                      Imprimir
+                    </button>
+                    {!node.isDiaryEntry && (
+                      <>
+                        <div className="node-more-sep"/>
+                        <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
+                          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
+                          Eliminar nota
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -5894,3 +5894,38 @@ a:focus-visible {
 .node-calendar-event:hover { opacity: 0.75; }
 .node-calendar-event.done { opacity: 0.4; text-decoration: line-through; }
 .node-calendar-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+
+/* ── Node toolbar — ··· more menu ─────────────────────────────────────────── */
+.node-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 300;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 4px;
+  min-width: 190px;
+}
+.node-more-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.08s;
+}
+.node-more-item:hover { background: var(--bg-hover); }
+.node-more-item svg { flex-shrink: 0; color: var(--text-tertiary); }
+.node-more-item--danger { color: #ef4444; }
+.node-more-item--danger svg { color: #ef4444; }
+.node-more-item--danger:hover { background: rgba(239,68,68,0.08); }
+.node-more-sep { height: 1px; background: var(--border); margin: 3px 0; }
