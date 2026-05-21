@@ -193,6 +193,10 @@ export default function InlineRenderer({ text, className }: Props) {
     return <span className={`block-quote ${className || ''}`}>{renderInline(content)}</span>
   }
 
+  if (type === 'bullet') {
+    return <span className={className}>{renderInline(content)}</span>
+  }
+
   return <span className={className}>{renderInline(text)}</span>
 }
 
@@ -215,6 +219,7 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
   else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
   else if (type === 'numbered') { content = text.replace(/^\d+\.\s/, ''); wrapClass = 'block-numbered' }
   else if (type === 'code') { content = text.slice(2); wrapClass = 'block-code' }
+  else if (type === 'bullet') { content = text.slice(2); wrapClass = '' }
 
   // Procesar inline markdown
   let html = esc(content)
