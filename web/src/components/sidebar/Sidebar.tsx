@@ -429,6 +429,13 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
     store.updateNode(id, { isFavorite: false })
   }, [])
 
+  function getRelativeTime(updatedAt: string): string {
+    const diff = Math.round((Date.now() - new Date(updatedAt).getTime()) / 60000)
+    if (diff < 60) return `${diff}m`
+    if (diff < 1440) return `${Math.round(diff / 60)}h`
+    return `${Math.round(diff / 1440)}d`
+  }
+
   function renderFavoritesTab() {
     // Recientes: últimas 8 notas visitadas desde localStorage
     const recentIds: string[] = (() => {
@@ -477,19 +484,26 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest }
 
         {recentNodes.length > 0 && (
           <>
-            <div className="nav-section-label" style={{ marginTop: 12 }}>Recientes</div>
+            <div className="nav-section-label" style={{ marginTop: 12, display: 'flex', alignItems: 'center' }}>
+              <span style={{ flex: 1 }}>Recientes</span>
+              <button
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text-tertiary)', padding: '0 4px' }}
+                onClick={() => navigate('/search?q=recientes')}
+                title="Ver todos los recientes"
+              >
+                Ver todos →
+              </button>
+            </div>
             <div className="tree-section">
               {recentNodes.map(node => (
                 <button
                   key={node.id}
                   className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 12px', textAlign: 'left' }}
                   onClick={() => navigate(`/node/${node.id}`)}
                 >
-                  <span style={{ fontSize: 12, flexShrink: 0 }}>{getNodeIcon(node)}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {node.text || 'Sin título'}
-                  </span>
+                  <span className="tree-item-icon">{getNodeIcon(node)}</span>
+                  <span className="tree-item-name">{node.text || 'Sin título'}</span>
+                  <span className="tree-item-time">{getRelativeTime(node.updatedAt)}</span>
                 </button>
               ))}
             </div>
