@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import CalendarSidePanel from '../panels/CalendarSidePanel'
 
 // ── EventPopup ────────────────────────────────────────────────────────────────
 
@@ -260,9 +261,10 @@ interface WeekViewProps {
   onGoToToday: () => void
   onNodeClick: (id: string) => void
   onCreateEvent: (date: Date) => void
+  onDrop?: (e: React.DragEvent, date: Date) => void
 }
 
-function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent }: WeekViewProps) {
+function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
@@ -496,9 +498,10 @@ interface MonthViewProps {
   onGoToToday: () => void
   onNodeClick: (id: string) => void
   onDayClick: (day: Date) => void
+  onDrop?: (e: React.DragEvent, date: Date) => void
 }
 
-function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onDayClick }: MonthViewProps) {
+function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop }: MonthViewProps) {
   const navigate = useNavigate()
   const nodesWithDue = allNodes.filter(n => n.due)
   const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate)
@@ -552,6 +555,8 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
                 key={i}
                 className={`calendar-month-cell ${inMonth ? '' : 'calendar-month-cell--out'} ${isToday ? 'calendar-month-cell--today' : ''}`}
                 onClick={() => onDayClick(day)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => onDrop?.(e, day)}
               >
                 <div className="calendar-month-cell-header">
                   <div className="calendar-month-cell-number">{day.getDate()}</div>
@@ -693,6 +698,7 @@ export default function CalendarView() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()))
   const [year, setYear] = useState(() => new Date().getFullYear())
+  const [panelCollapsed, setPanelCollapsed] = useState(false)
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -744,58 +750,91 @@ export default function CalendarView() {
     navigate(`/node/${node.id}`)
   }
 
+  // Periodo de inicio para overdue (basado en vista actual)
+  const periodStart = view === 'week' ? weekStart
+    : view === 'month' ? monthStart
+    : new Date(year, 0, 1)
+
+  // Handler para drop sobre celdas del calendario (asigna fecha)
+  function handleCalendarDrop(e: React.DragEvent, date: Date) {
+    e.preventDefault()
+    const nodeId = e.dataTransfer.getData('cal-node-id')
+    if (!nodeId) return
+    const d = new Date(date)
+    d.setHours(9, 0, 0, 0)
+    store.updateNode(nodeId, { due: d.toISOString(), status: 'pending' })
+  }
+
   return (
-    <div className="view calendar-view" role="main" aria-label="Vista de calendario">
-      <div className="view-header">
-        <div className="calendar-header-row">
-          <h1 className="view-title">Calendario</h1>
-          <div className="calendar-view-tabs">
-            {(['week', 'month', 'year'] as ViewType[]).map(v => (
-              <button
-                key={v}
-                className={`calendar-view-tab ${view === v ? 'calendar-view-tab--active' : ''}`}
-                onClick={() => setView(v)}
-              >
-                {v === 'week' ? 'Semana' : v === 'month' ? 'Mes' : 'Año'}
-              </button>
-            ))}
+    <div className="view calendar-view calendar-view--with-panel" role="main" aria-label="Vista de calendario">
+      <div className="calendar-main-area">
+        <div className="view-header">
+          <div className="calendar-header-row">
+            <h1 className="view-title">Calendario</h1>
+            <div className="calendar-view-tabs">
+              {(['week', 'month', 'year'] as ViewType[]).map(v => (
+                <button
+                  key={v}
+                  className={`calendar-view-tab ${view === v ? 'calendar-view-tab--active' : ''}`}
+                  onClick={() => setView(v)}
+                >
+                  {v === 'week' ? 'Semana' : v === 'month' ? 'Mes' : 'Año'}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {view === 'week' && (
+            <WeekView
+              weekStart={weekStart}
+              today={today}
+              allNodes={allNodes}
+              onNavigate={navigateWeek}
+              onGoToToday={goToToday}
+              onNodeClick={id => navigate(`/node/${id}`)}
+              onCreateEvent={handleCreateEvent}
+              onDrop={handleCalendarDrop}
+            />
+          )}
+
+          {view === 'month' && (
+            <MonthView
+              monthStart={monthStart}
+              today={today}
+              allNodes={allNodes}
+              onNavigate={navigateMonth}
+              onGoToToday={goToToday}
+              onNodeClick={id => navigate(`/node/${id}`)}
+              onDayClick={handleDayClick}
+              onDrop={handleCalendarDrop}
+            />
+          )}
+
+          {view === 'year' && (
+            <YearView
+              year={year}
+              today={today}
+              allNodes={allNodes}
+              onNavigate={navigateYear}
+              onGoToToday={goToToday}
+              onMonthClick={handleMonthClick}
+            />
+          )}
         </div>
+      </div>
 
-        {view === 'week' && (
-          <WeekView
-            weekStart={weekStart}
-            today={today}
-            allNodes={allNodes}
-            onNavigate={navigateWeek}
-            onGoToToday={goToToday}
-            onNodeClick={id => navigate(`/node/${id}`)}
-            onCreateEvent={handleCreateEvent}
-          />
-        )}
-
-        {view === 'month' && (
-          <MonthView
-            monthStart={monthStart}
-            today={today}
-            allNodes={allNodes}
-            onNavigate={navigateMonth}
-            onGoToToday={goToToday}
-            onNodeClick={id => navigate(`/node/${id}`)}
-            onDayClick={handleDayClick}
-          />
-        )}
-
-        {view === 'year' && (
-          <YearView
-            year={year}
-            today={today}
-            allNodes={allNodes}
-            onNavigate={navigateYear}
-            onGoToToday={goToToday}
-            onMonthClick={handleMonthClick}
-          />
-        )}
+      {/* Panel lateral colapsable */}
+      <div className={`right-panel-area${panelCollapsed ? ' right-panel-area--collapsed' : ''}`}>
+        <button
+          className="right-panel-toggle"
+          onClick={() => setPanelCollapsed(v => !v)}
+          title={panelCollapsed ? 'Expandir panel' : 'Colapsar panel'}
+        >
+          {panelCollapsed ? '›' : '‹'}
+        </button>
+        <div className="right-panel-content">
+          <CalendarSidePanel periodStart={periodStart} view={view} />
+        </div>
       </div>
     </div>
   )
