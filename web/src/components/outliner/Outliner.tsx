@@ -3,6 +3,21 @@ import { store, useStore } from '../../store/nodeStore'
 import OutlinerNode from './OutlinerNode'
 import type { Node } from '../../types'
 
+// ── Helpers para drag-to-select ──────────────────────────────────────────────
+function getNodeIdFromEl(el: Element | null): string | null {
+  return el?.closest('[data-node-id]')?.getAttribute('data-node-id') ?? null
+}
+function isInteractiveEl(target: EventTarget | null): boolean {
+  if (!target || !(target instanceof Element)) return false
+  return !!(
+    target.getAttribute('contenteditable') === 'true' ||
+    target.closest('[contenteditable="true"]') ||
+    (target as HTMLElement).tagName === 'BUTTON' ||
+    (target as HTMLElement).tagName === 'INPUT' ||
+    (target as HTMLElement).tagName === 'TEXTAREA'
+  )
+}
+
 interface Props {
   parentId: string | null
   autoFocusEmpty?: boolean
@@ -28,6 +43,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Drag-to-select state
+  const [isDragSelecting, setIsDragSelecting] = useState(false)
+  const dragAnchorId = useRef<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [localFilterOpen, setLocalFilterOpen] = useState(false)
   const [localFilterText, setLocalFilterText] = useState('')
   const localFilterRef = useRef<HTMLInputElement>(null)
@@ -106,6 +125,90 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     return result
   }
 
+  // IDs de todos los nodos visibles en orden (incluyendo hijos)
+  function flatVisibleIds(): string[] {
+    return flatVisible(nodes).map(n => n.id)
+  }
+
+  // Rango inclusivo entre dos nodo IDs
+  function getRangeIds(id1: string, id2: string): Set<string> {
+    const flat = flatVisibleIds()
+    const i1 = flat.indexOf(id1), i2 = flat.indexOf(id2)
+    if (i1 === -1 || i2 === -1) return new Set([id1, id2])
+    const [lo, hi] = i1 < i2 ? [i1, i2] : [i2, i1]
+    return new Set(flat.slice(lo, hi + 1))
+  }
+
+  // ── Drag-to-select: mouse events ──────────────────────────────────────────
+  function handleContainerMouseDown(e: React.MouseEvent) {
+    if (isInteractiveEl(e.target)) return // no interferir con texto / botones
+    const id = getNodeIdFromEl(e.target as Element)
+    if (!id) return
+    dragAnchorId.current = id
+  }
+
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      if (!dragAnchorId.current) return
+      const el = document.elementFromPoint(e.clientX, e.clientY)
+      const hoveredId = getNodeIdFromEl(el)
+      if (!hoveredId || hoveredId === dragAnchorId.current) {
+        if (!isDragSelecting) return
+      }
+      if (!isDragSelecting) {
+        setIsDragSelecting(true)
+        setSelectedId(null) // deseleccionar selección individual
+      }
+      if (hoveredId) {
+        setSelectedIds(getRangeIds(dragAnchorId.current, hoveredId))
+      }
+    }
+    function onUp() {
+      dragAnchorId.current = null
+      setIsDragSelecting(false)
+    }
+    // Si empieza HTML5 DnD (reordenar nodos), cancelar drag-select
+    function onDragStart() {
+      dragAnchorId.current = null
+      setIsDragSelecting(false)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    document.addEventListener('dragstart', onDragStart)
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('dragstart', onDragStart)
+    }
+  }, [isDragSelecting, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Teclado sobre multi-selección ─────────────────────────────────────────
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (selectedIds.size === 0) return
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        e.stopPropagation()
+        for (const id of selectedIds) store.deleteNode(id)
+        setSelectedIds(new Set())
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+        const flat = flatVisibleIds()
+        const texts = flat
+          .filter(id => selectedIds.has(id))
+          .map(id => store.getNode(id)?.text || '')
+          .filter(Boolean)
+          .join('\n')
+        navigator.clipboard.writeText(texts).catch(() => {})
+      }
+      if (e.key === 'Escape') {
+        setSelectedIds(new Set())
+      }
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [selectedIds, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSelectNext = useCallback((id: string, dir: 'up' | 'down') => {
     const flat = flatVisible(nodes)
     const idx = flat.findIndex(n => n.id === id)
@@ -140,10 +243,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Multi-select actions
   function handleDeleteSelected() {
-    if (!window.confirm(`¿Borrar los ${selectedIds.size} nodos seleccionados?`)) return
-    for (const id of selectedIds) {
-      store.deleteNode(id)
-    }
+    for (const id of selectedIds) store.deleteNode(id)
     setSelectedIds(new Set())
   }
 
@@ -186,8 +286,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         </div>
       )}
       <div
-        className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''}`}
+        ref={containerRef}
+        className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''} ${isDragSelecting ? 'is-drag-selecting' : ''}`}
         onClick={handleContainerClick}
+        onMouseDown={handleContainerMouseDown}
       >
         {nodes.length === 0 && placeholder && (
           <div className="outliner-placeholder">{placeholder}</div>

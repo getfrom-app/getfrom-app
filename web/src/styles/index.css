@@ -876,6 +876,11 @@ mark.inline-highlight {
 .outliner-container {
   min-height: 200px;
 }
+/* Drag-to-select: deshabilitar selección de texto mientras se arrastra */
+.outliner-container.is-drag-selecting {
+  user-select: none;
+  cursor: default;
+}
 
 .outliner-filter-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-bottom: 2px; }
 .outliner-filter-input { flex: 1; font-size: 12px; border: none; background: transparent; color: var(--text-primary); outline: none; font-family: inherit; }
