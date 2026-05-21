@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
-type DiaryPanelTab = 'agenda' | 'timeline' | 'stats'
+type DiaryPanelTab = 'agenda' | 'timeline'
 
 function hasSeguimientoAncestor(nodeId: string): string | null {
   let current = store.getNode(nodeId)
@@ -104,13 +104,6 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     return store.children(nodeId).filter(n => n.status === 'pending' && !n.deletedAt)
   }
 
-  // ── Panel stats ────────────────────────────────────────────────────────
-  const todayStartStr = todayStart.toDateString()
-  const doneToday = s.allActive().filter(n => {
-    if (n.status !== 'done' || n.deletedAt) return false
-    if (!n.updatedAt) return false
-    return new Date(n.updatedAt).toDateString() === todayStartStr
-  })
 
   function renderAgenda() {
     const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0
@@ -307,7 +300,8 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
     )
   }
 
-  function renderStats() {
+  // renderStats() movida a Ajustes (pendiente)
+  function _renderStats_REMOVED() {
     const allNodes = s.allActive()
 
     // Weekly bar chart
@@ -527,16 +521,8 @@ export default function DiaryRightPanel({ diaryDate }: DiaryRightPanelProps) {
         >
           Timeline
         </button>
-        <button
-          className={`diary-panel-tab${panelTab === 'stats' ? ' active' : ''}`}
-          onClick={() => setPanelTab('stats')}
-        >
-          Stats
-        </button>
       </div>
-      {panelTab === 'agenda' ? renderAgenda()
-        : panelTab === 'timeline' ? renderTimeline()
-        : renderStats()}
+      {panelTab === 'agenda' ? renderAgenda() : renderTimeline()}
     </div>
   )
 }
