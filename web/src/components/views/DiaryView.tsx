@@ -912,15 +912,6 @@ export default function DiaryView() {
                   }}
                   title="Ir a una fecha"
                 />
-                {dateOffset === 0 && (
-                  <button
-                    className="diary-add-bullet"
-                    onClick={handleAddBullet}
-                    title="Añadir bullet"
-                  >
-                    +
-                  </button>
-                )}
               </div>
             </div>
           </div>

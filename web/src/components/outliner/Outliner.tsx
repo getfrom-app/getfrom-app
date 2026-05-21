@@ -176,17 +176,6 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
               }
             }}
           />
-          <select
-            className="outliner-sort-select"
-            value={sortMode}
-            onChange={e => setSortMode(e.target.value as SortMode)}
-            title="Ordenar hijos"
-            style={{ fontSize: 12, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
-          >
-            {(Object.keys(SORT_LABELS) as SortMode[]).map(m => (
-              <option key={m} value={m}>{SORT_LABELS[m]}</option>
-            ))}
-          </select>
           <button
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14, padding: '0 4px' }}
             onClick={() => { setLocalFilterOpen(false); setLocalFilterText('') }}
@@ -194,21 +183,6 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           >
             ×
           </button>
-        </div>
-      )}
-      {!localFilterOpen && filterText === undefined && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 4px 2px' }}>
-          <select
-            className="outliner-sort-select"
-            value={sortMode}
-            onChange={e => setSortMode(e.target.value as SortMode)}
-            title="Ordenar hijos"
-            style={{ fontSize: 11, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', opacity: sortMode !== 'none' ? 1 : 0.4 }}
-          >
-            {(Object.keys(SORT_LABELS) as SortMode[]).map(m => (
-              <option key={m} value={m}>{SORT_LABELS[m]}</option>
-            ))}
-          </select>
         </div>
       )}
       <div
