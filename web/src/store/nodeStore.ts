@@ -425,6 +425,41 @@ class NodeStore {
       this.dirtyIds.clear()
 
       // Apply server nodes (merge)
+      // Pre-pass: detectar diarios del servidor que coinciden en fecha con diarios locales.
+      // Si hay un diario local (creado por la web antes de que Mac sincronizara) para el mismo
+      // día que un diario del servidor, reparentar los hijos locales al del servidor
+      // para que la sincronización sea correcta.
+      const serverDiaryByDate = new Map<string, string>() // dateStr → server node id
+      for (const rawNode of res.nodes) {
+        const n = rawNode as Node
+        if (n.isDiaryEntry && n.diaryDate) {
+          const dayStr = new Date(n.diaryDate).toISOString().slice(0, 10)
+          serverDiaryByDate.set(dayStr, n.id)
+        }
+      }
+      // Reparentar hijos de diarios locales al diario del servidor si fecha coincide
+      for (const [dayStr, serverDiaryId] of serverDiaryByDate) {
+        // ¿Tenemos un diario LOCAL diferente para ese mismo día?
+        for (const localNode of this.nodes.values()) {
+          if (!localNode.isDiaryEntry || !localNode.diaryDate || localNode.id === serverDiaryId) continue
+          const localDayStr = new Date(localNode.diaryDate).toISOString().slice(0, 10)
+          if (localDayStr === dayStr) {
+            // Reparentar hijos del diario local al diario del servidor
+            for (const child of this.nodes.values()) {
+              if (child.parentId === localNode.id) {
+                const updated = { ...child, parentId: serverDiaryId, _isDirty: true }
+                this.nodes.set(child.id, updated)
+                this.dirtyIds.add(child.id)
+              }
+            }
+            // Eliminar el diario local duplicado (soft delete)
+            const delNode = { ...localNode, deletedAt: new Date().toISOString(), _isDirty: true }
+            this.nodes.set(localNode.id, delNode)
+            this.dirtyIds.add(localNode.id)
+          }
+        }
+      }
+
       for (const rawNode of res.nodes) {
         const n = rawNode as Node
         if (!this.nodes.has(n.id)) {
