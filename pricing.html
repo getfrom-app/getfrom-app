@@ -307,16 +307,6 @@
     <h1>Elige el plan que mejor<br>se adapta a ti</h1>
     <p>Empieza gratis. Actualiza cuando lo necesites.</p>
 
-    <!-- Toggle mensual / anual -->
-    <div class="pricing-toggle">
-        <span class="pricing-toggle-label active" id="label-monthly">Mensual</span>
-        <label class="toggle-switch" aria-label="Cambiar a anual">
-            <input type="checkbox" id="billing-toggle" onchange="toggleBilling(this)">
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-        </label>
-        <span class="pricing-toggle-label" id="label-annual">Anual &nbsp;<span class="save-badge">Ahorra 30%</span></span>
-    </div>
 </div>
 
 <!-- Pricing cards -->
@@ -358,8 +348,8 @@
             <a href="app/" class="plan-cta secondary">Empezar gratis</a>
         </div>
 
-        <!-- Pro Mensual (oculto cuando billing=annual) -->
-        <div class="pricing-card" id="card-monthly">
+        <!-- Pro Mensual -->
+        <div class="pricing-card">
             <div class="plan-name">Pro Mensual</div>
             <div class="plan-price"><sup>€</sup>7</div>
             <div class="plan-price-period">al mes · cancela cuando quieras</div>
@@ -461,7 +451,7 @@
                     Soporte prioritario
                 </li>
             </ul>
-            <a href="https://from.lemonsqueezy.com/checkout/buy/1553210" class="plan-cta gold">Comprar Lifetime</a>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520" class="plan-cta gold">Comprar Lifetime</a>
         </div>
 
     </div>
@@ -541,13 +531,6 @@
                         <td class="col-featured">Prioritario</td>
                         <td>Prioritario</td>
                     </tr>
-                    <tr>
-                        <td>Actualizaciones</td>
-                        <td><span class="check-icon">✓</span></td>
-                        <td>Mientras estés suscrito</td>
-                        <td class="col-featured">Mientras estés suscrito</td>
-                        <td>Siempre</td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -570,7 +553,7 @@
         </div>
         <div class="faq-item">
             <h3 class="faq-q">¿Funciona sin internet?</h3>
-            <p class="faq-a">Mac e iPhone funcionan en local aunque no haya conexión — From es local-first. Los cambios se sincronizan en cuanto vuelve la red. La versión web necesita conexión para funcionar.</p>
+            <p class="faq-a">Mac e iPhone mantienen una copia local y siguen funcionando sin conexión. Los cambios se sincronizan automáticamente en cuanto vuelve la red. La versión web necesita conexión para funcionar.</p>
         </div>
         <div class="faq-item">
             <h3 class="faq-q">¿Qué son los tokens IA?</h3>
@@ -632,20 +615,10 @@
         </div>
     </div>
     <div class="footer-bottom">
-        © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+        © 2026 Alberto Lezaun Pérez — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
     </div>
 </footer>
 
-<script>
-function toggleBilling(checkbox) {
-    const isAnnual = checkbox.checked;
-    document.getElementById('label-monthly').classList.toggle('active', !isAnnual);
-    document.getElementById('label-annual').classList.toggle('active', isAnnual);
-    document.getElementById('card-monthly').style.display = isAnnual ? 'none' : 'flex';
-}
-// Init: show monthly card, both are visible by default
-document.getElementById('card-monthly').style.display = 'flex';
-</script>
 
 </body>
 </html>
