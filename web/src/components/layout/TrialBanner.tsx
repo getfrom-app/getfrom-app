@@ -22,7 +22,7 @@ export default function TrialBanner() {
       <span>✦ 7 días de prueba gratis · Sin tarjeta de crédito</span>
       <a
         className="trial-banner-cta"
-        href="https://from.lemonsqueezy.com/checkout/buy/1678808"
+        href="https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f"
         target="_blank"
         rel="noopener noreferrer"
       >
