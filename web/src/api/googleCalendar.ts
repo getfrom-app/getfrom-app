@@ -8,7 +8,8 @@ export interface CalendarEvent {
   allDay: boolean
 }
 
-const GOOGLE_CLIENT_ID = '143465280704-27jike0dng73c8sp8ib8elbp0i4s7jrq.apps.googleusercontent.com'
+// Web OAuth client (Aplicación web en Google Cloud Console)
+const GOOGLE_CLIENT_ID = '143465280704-214j5sukru3sh673njls98uudcn1h2ed.apps.googleusercontent.com'
 const GOOGLE_SCOPES = [
   'openid',
   'email',
