@@ -148,10 +148,12 @@ export default function NodeView() {
     if (!titleEditing && titleRef.current) {
       let displayText = node?.text || ''
       if (node?.isDiaryEntry && node?.diaryDate) {
+        // diaryDate puede ser UTC midnight de fecha local ("2026-05-22T00:00:00Z")
+        // o medianoche local en UTC ("2026-05-21T22:00:00Z" para UTC+2).
+        // En ambos casos, new Date().toLocaleDateString() convierte correctamente
+        // a la hora local y muestra el día correcto. No hacer ajuste manual.
         const d = new Date(node.diaryDate)
-        // Ajustar para timezone local (diaryDate es medianoche UTC)
-        const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000)
-        displayText = local.toLocaleDateString('es-ES', {
+        displayText = d.toLocaleDateString('es-ES', {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         }).replace(/^\w/, c => c.toUpperCase())
       }

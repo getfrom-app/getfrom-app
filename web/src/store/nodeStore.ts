@@ -483,14 +483,18 @@ class NodeStore {
     const dateStr = today.toLocaleDateString('es-ES', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     })
-    const diaryDate = new Date(today)
-    diaryDate.setHours(0, 0, 0, 0)
+    // Guardar como UTC midnight de la fecha LOCAL para evitar cruces de día
+    // en servidores/clientes con distintas zonas horarias (e.g. UTC+2 → Z)
+    const y = today.getFullYear()
+    const m = String(today.getMonth() + 1).padStart(2, '0')
+    const d = String(today.getDate()).padStart(2, '0')
+    const diaryDateISO = `${y}-${m}-${d}T00:00:00.000Z`
 
     this.createNode({
       text: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),
       parentId: null,
       isDiaryEntry: true,
-      diaryDate: diaryDate.toISOString(),
+      diaryDate: diaryDateISO,
     })
 
     await this.sync()
