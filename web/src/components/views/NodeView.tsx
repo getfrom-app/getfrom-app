@@ -271,6 +271,18 @@ export default function NodeView() {
 
   // Crumbs de nodos: cadena de padres, deteniéndose en el ancestro diario
   // Si el nodo actual NO es diario y tiene un ancestro diario, lo incluimos como crumb
+  // Regex para detectar nodos temporales (año/mes/semana) que ya aparecen en diaryTemporalCrumbs
+  const MONTHS_ES_SET = new Set(['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'])
+  function isTemporalText(text: string): boolean {
+    const t = (text || '').trim()
+    if (/^\d{4}$/.test(t)) return true
+    // "Mayo" o "Mayo 2026"
+    const words = t.toLowerCase().split(/\s+/)
+    if (MONTHS_ES_SET.has(words[0]) && (words.length === 1 || /^\d{4}$/.test(words[1] || ''))) return true
+    if (/^semana \d+$/i.test(t)) return true
+    return false
+  }
+
   const crumbs: { id: string; text: string }[] = []
   let cur = node
   while (cur.parentId) {
@@ -282,6 +294,12 @@ export default function NodeView() {
         crumbs.unshift({ id: parent.id, text: parent.text || 'Diario' })
       }
       break
+    }
+    // Si ya tenemos crumbs temporales del diaryDate, saltar nodos temporales en el walker
+    // para evitar duplicar "2026 / Mayo / Semana 21" dos veces
+    if (diaryTemporalCrumbs.length > 0 && isTemporalText(parent.text || '')) {
+      cur = parent
+      continue
     }
     crumbs.unshift({ id: parent.id, text: parent.text || 'Sin título' })
     cur = parent
