@@ -472,6 +472,13 @@ class NodeStore {
   async initialLoad(): Promise<void> {
     await this.sync()
 
+    // Limpieza silenciosa: nodo vacío = no existe. Eliminar los que llegaron del servidor.
+    for (const node of this.nodes.values()) {
+      if (!node.deletedAt && !node.isDiaryEntry && !(node.text || '').trim()) {
+        this.deleteNode(node.id)
+      }
+    }
+
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
