@@ -82,7 +82,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ── Tab panes ─────────────────────────────────────────────────────────────────
 
-function CuentaPane() {
+export function CuentaPane() {
   const navigate = useNavigate()
   const us = useUserStore()
   const { user } = us
@@ -303,7 +303,7 @@ function CuentaPane() {
   )
 }
 
-function AparienciaPane() {
+export function AparienciaPane() {
   const { theme, setTheme } = useTheme()
 
   const fontSizeKey = 'from_font_size'
@@ -359,7 +359,7 @@ function AparienciaPane() {
   )
 }
 
-function IAPane() {
+export function IAPane() {
   const us = useUserStore()
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
@@ -441,7 +441,7 @@ function IAPane() {
   )
 }
 
-function AtajosPane() {
+export function AtajosPane() {
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => getShortcuts())
   const [newTrigger, setNewTrigger] = useState('')
   const [newExpansion, setNewExpansion] = useState('')
@@ -526,7 +526,7 @@ function AtajosPane() {
   )
 }
 
-function PlantillasPane() {
+export function PlantillasPane() {
   const [templates, setTemplates] = useState<CustomTemplate[]>(getTemplates)
   const [name, setName] = useState('')
   const [body, setBody] = useState('')
@@ -581,7 +581,7 @@ function PlantillasPane() {
   )
 }
 
-function GooglePane() {
+export function GooglePane() {
   const us = useUserStore()
   const [disconnecting, setDisconnecting] = useState(false)
   const [error, setError] = useState('')
@@ -662,7 +662,7 @@ function GooglePane() {
   )
 }
 
-function ExportarPane() {
+export function ExportarPane() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -734,7 +734,7 @@ function ExportarPane() {
   )
 }
 
-function ImportarPane() {
+export function ImportarPane() {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)

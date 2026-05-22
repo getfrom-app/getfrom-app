@@ -6705,6 +6705,147 @@ a:focus-visible {
   .st-kb-grid { grid-template-columns: 1fr; }
 }
 
+/* ── SettingsView (full-page, replaces modal) ───────────────────────────── */
+
+.settings-view {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.settings-view-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+}
+
+.settings-view-nav-section {
+  margin-bottom: 14px;
+}
+
+.settings-view-nav-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 20px 6px;
+}
+
+.settings-view-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 16px);
+  padding: 7px 12px;
+  margin: 1px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: background 0.1s, color 0.1s;
+}
+.settings-view-nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.settings-view-nav-item.active {
+  background: var(--accent-soft, rgba(139, 92, 246, 0.12));
+  color: var(--accent, #8b5cf6);
+  font-weight: 500;
+}
+
+.settings-view-nav-icon {
+  font-size: 14px;
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.settings-view-nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-view-content {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+  background: var(--bg-primary);
+}
+
+.settings-view-content-inner {
+  max-width: 720px;
+  padding: 36px 44px 64px;
+}
+
+.settings-view-content-header {
+  margin-bottom: 24px;
+}
+
+.settings-view-content-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.settings-view-content-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.settings-view-content-body {
+  /* Reuses .st-pane / .st-section-title / .st-row etc. defined above */
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .settings-view { flex-direction: column; }
+  .settings-view-sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    display: flex;
+    gap: 6px;
+  }
+  .settings-view-nav-section {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .settings-view-nav-section-title { display: none; }
+  .settings-view-nav-item {
+    margin: 0;
+    width: auto;
+    padding: 6px 12px;
+    flex-shrink: 0;
+  }
+  .settings-view-content-inner {
+    padding: 20px 18px 48px;
+  }
+  .settings-view-content-title { font-size: 18px; }
+}
+
 /* ── FollowupView redesign — seguimiento con hijos ──────────────────────── */
 
 /* Item principal (nota de seguimiento) */

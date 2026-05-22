@@ -36,6 +36,7 @@ const FollowupView = lazy(() => import('../views/FollowupView'))
 const FilesView = lazy(() => import('../views/FilesView'))
 const InboxView = lazy(() => import('../views/InboxView'))
 const TrashView = lazy(() => import('../views/TrashView'))
+const SettingsView = lazy(() => import('../views/SettingsView'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -44,7 +45,6 @@ import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import QuickCapturePanel from '../modals/QuickCapturePanel'
-import SettingsModal from '../modals/SettingsModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 import StatusBar from './StatusBar'
@@ -65,7 +65,6 @@ export default function MainLayout() {
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const prevIsSyncing = useRef(false)
 
@@ -137,10 +136,10 @@ export default function MainLayout() {
         e.preventDefault()
         setShowVoiceCapture(true)
       }
-      // Cmd+, → Ajustes
+      // Cmd+, → Ajustes (página completa)
       if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setShowSettings(v => !v)
+        navigate('/settings')
       }
       if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -276,7 +275,7 @@ export default function MainLayout() {
         onLogout={handleLogout}
         isSyncing={s.isSyncing}
         isGuest={false}
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenSettings={() => navigate('/settings')}
       />
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -320,6 +319,7 @@ export default function MainLayout() {
           <Route path="files" element={<FilesView />} />
           <Route path="inbox" element={<InboxView />} />
           <Route path="trash" element={<TrashView />} />
+          <Route path="settings" element={<SettingsView />} />
           <Route path="*" element={
             <div className="view">
               <div className="view-header"><h1 className="view-title">404</h1></div>
@@ -353,7 +353,6 @@ export default function MainLayout() {
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showQuickCapture && <QuickCapturePanel onClose={() => setShowQuickCapture(false)} />}
       <button
         className="mobile-fab"

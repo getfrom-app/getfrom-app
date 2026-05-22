@@ -23,6 +23,7 @@ const VIEW_LABELS: Record<string, string> = {
   '/files': 'Archivos',
   '/inbox': 'Inbox',
   '/trash': 'Papelera',
+  '/settings': 'Ajustes',
 }
 
 function getHourIcon() {
