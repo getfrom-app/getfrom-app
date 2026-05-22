@@ -27,13 +27,14 @@
         <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
             <span></span><span></span><span></span>
         </button>
-        <div class="nav-links">
+                <div class="nav-links">
             <a href="index.html#features" data-i18n="nav.features">Funciones</a>
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
+            <a href="changelog.html">Novedades</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
             <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
-            <a href="index.html#download" class="btn-nav" data-i18n="nav.download">Descargar</a>
+            <a href="index.html#download" class="btn-nav">Descargar gratis</a>
         </div>
     </div>
 </nav>
