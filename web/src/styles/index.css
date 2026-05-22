@@ -6595,3 +6595,158 @@ a:focus-visible {
   .st-stats { grid-template-columns: repeat(3, 1fr); }
   .st-kb-grid { grid-template-columns: 1fr; }
 }
+
+/* ── FollowupView redesign — seguimiento con hijos ──────────────────────── */
+
+/* Item principal (nota de seguimiento) */
+.followup-item {
+  border-radius: 8px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: border-color 0.1s;
+}
+.followup-item:hover { border-color: var(--border); }
+
+.followup-item-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.followup-item-header:hover { background: var(--bg-hover); }
+
+.followup-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+.followup-collapse-btn:hover { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+/* Bullet morado de seguimiento (= Mac purple square) */
+.followup-seguimiento-bullet {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.followup-item-title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Priority dot */
+.followup-priority-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Due date badge */
+.followup-due-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.followup-due-badge--overdue { background: #fee2e2; color: #ef4444; }
+.followup-due-badge--today { background: #fef3c7; color: #d97706; }
+.followup-due-badge--soon { background: #dbeafe; color: #3b82f6; }
+
+/* Pending child count */
+.followup-pending-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: #8b5cf620;
+  color: #8b5cf6;
+  border-radius: 99px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+/* Children container */
+.followup-children {
+  padding: 2px 10px 6px 33px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Child row (task / event) */
+.followup-child-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  min-height: 28px;
+}
+.followup-child-row:hover { background: var(--bg-hover); }
+.followup-child-row--done { opacity: 0.55; }
+
+/* Task checkbox */
+.followup-task-checkbox {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  color: white;
+}
+.followup-task-checkbox:hover { border-color: #22c55e; }
+.followup-task-checkbox--done {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+/* Event calendar icon */
+.followup-child-event-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  width: 15px;
+  text-align: center;
+}
+
+/* Child text */
+.followup-child-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.followup-child-text--done { text-decoration: line-through; color: var(--text-tertiary); }
