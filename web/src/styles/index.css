@@ -6868,3 +6868,48 @@ a:focus-visible {
   flex-shrink: 0;
   text-align: center;
 }
+
+/* ── Trial Banner ─────────────────────────────────────────────────────────── */
+.trial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 36px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #7c3aed, #5b21b6);
+  font-size: 13px;
+  color: white;
+}
+
+.trial-banner-cta {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.trial-banner-cta:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.trial-banner-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+}
+.trial-banner-dismiss:hover {
+  color: white;
+}

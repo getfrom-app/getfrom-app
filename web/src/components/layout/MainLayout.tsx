@@ -48,6 +48,7 @@ import SettingsModal from '../modals/SettingsModal'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import TopBar from './TopBar'
 import StatusBar from './StatusBar'
+import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 
@@ -285,6 +286,7 @@ export default function MainLayout() {
         />
       )}
       <main className="main-content">
+        <TrialBanner />
         {/* Mobile hamburger */}
         <div className="mobile-header">
           <button className="mobile-hamburger" onClick={() => setSidebarOpen(true)}>
