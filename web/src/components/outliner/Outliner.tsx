@@ -141,11 +141,20 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   }
 
   // ── Drag-to-select: mouse events ──────────────────────────────────────────
+  // dragAnchorPos: posición Y del mousedown para detectar dirección del arrastre
+  const dragAnchorPos = useRef<number>(0)
+
   function handleContainerMouseDown(e: React.MouseEvent) {
-    if (isInteractiveEl(e.target)) return // no interferir con texto / botones
+    if (isInteractiveEl(e.target)) return
     const id = getNodeIdFromEl(e.target as Element)
-    if (!id) return
-    dragAnchorId.current = id
+    dragAnchorPos.current = e.clientY
+    if (id) {
+      dragAnchorId.current = id
+    } else if (nodes.length > 0) {
+      // Click en espacio vacío (debajo/encima de todos los nodos):
+      // usar el nodo más cercano en Y como ancla para permitir arrastrar hacia arriba
+      dragAnchorId.current = '__empty__'
+    }
   }
 
   useEffect(() => {
@@ -153,12 +162,29 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if (!dragAnchorId.current) return
       const el = document.elementFromPoint(e.clientX, e.clientY)
       const hoveredId = getNodeIdFromEl(el)
+
+      // Si el ancla es espacio vacío, activamos drag-select cuando hay movimiento
+      // y el cursor pasa sobre algún nodo
+      if (dragAnchorId.current === '__empty__') {
+        if (!hoveredId) return
+        // El ancla real es el primer o último nodo según dirección del arrastre
+        const flat = flatVisibleIds()
+        const isUpward = e.clientY < dragAnchorPos.current
+        const anchorId = isUpward ? flat[flat.length - 1] : flat[0]
+        if (!anchorId) return
+        dragAnchorId.current = anchorId
+        setIsDragSelecting(true)
+        setSelectedId(null)
+        setSelectedIds(getRangeIds(anchorId, hoveredId))
+        return
+      }
+
       if (!hoveredId || hoveredId === dragAnchorId.current) {
         if (!isDragSelecting) return
       }
       if (!isDragSelecting) {
         setIsDragSelecting(true)
-        setSelectedId(null) // deseleccionar selección individual
+        setSelectedId(null)
       }
       if (hoveredId) {
         setSelectedIds(getRangeIds(dragAnchorId.current, hoveredId))
