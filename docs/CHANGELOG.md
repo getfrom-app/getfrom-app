@@ -4,6 +4,32 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Mac 3.15 + iOS (trial banner) — 22 mayo 2026
+
+**Plataformas: Mac** 3.15 · **iOS** (actualización) · **Web** v7.4
+
+### Banner de prueba Pro — 7 días gratis
+- Banner purple slim en Mac (columna izquierda), iPhone (tope de app) y Web (tope del contenido)
+- Solo visible para usuarios con cuenta activa pero sin suscripción
+- CTA directo al checkout de LemonSqueezy con trial de 7 días
+
+### Web — Pricing mejorado
+- Eliminado el toggle Mensual/Anual (ambos planes siempre visibles)
+- Eliminada fila "Actualizaciones" de la tabla comparativa (no aplica a web)
+- FAQs y textos corregidos (eliminado "local-first" incorrecto)
+- URLs de checkout corregidas a formato UUID
+
+### Políticas reescritas
+- **Privacidad** — Refleja arquitectura real: servidor Railway/PostgreSQL, sincronización cloud, Google Calendar vía API, sin iCloud
+- **Términos** — Plan gratis 1.000 nodos, trial 7 días, licencia Lifetime actualizada
+- Entidad legal: Alberto Lezaun Pérez
+
+### Fixes
+- Banner trial solo cuando logueado con cuenta free (no al cerrar sesión)
+- URLs checkout LemonSqueezy con UUID correcto en Mac, iOS y web
+
+---
+
 ## Web v7.3 + Mac 3.14 — 22 mayo 2026
 
 **Plataformas: Web** (getfrom.app/app) · **Mac** 3.14
