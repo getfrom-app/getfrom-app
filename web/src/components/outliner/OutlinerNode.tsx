@@ -108,6 +108,7 @@ interface Props {
   onSelectNext: (id: string, dir: 'up' | 'down') => void
   onShiftSelect?: (id: string) => void
   filterText?: string
+  isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
 }
 
 const COMMON_TYPES = [
@@ -168,7 +169,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, isFirstEmpty }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -1355,7 +1356,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                via useEffect (innerHTML) para evitar el bug removeChild del reconciler */
             <div
               ref={contentRef}
-              className={`node-text ${!isEditing ? 'node-text--rendered' : ''}`}
+              className={`node-text ${!isEditing ? 'node-text--rendered' : ''}${isFirstEmpty ? ' node-text--first-empty' : ''}`}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
@@ -1405,7 +1406,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 }
               }
             }}
-            data-placeholder="Escribe algo..."
+            data-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : "Escribe algo..."}
+            data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : undefined}
             onPaste={e => {
               const clipText = e.clipboardData.getData('text/plain')
 

@@ -106,6 +106,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // Auto-focus or create first node
   useEffect(() => {
     if (autoFocusEmpty && nodes.length === 0) {
+      // Nota vacía: crear primer nodo y enfocarlo
       const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
       setSelectedId(n.id)
     } else if (autoFocusEmpty && nodes.length > 0 && !selectedId) {
@@ -200,6 +201,40 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           .filter(Boolean)
           .join('\n')
         navigator.clipboard.writeText(texts).catch(() => {})
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        e.stopPropagation()
+        const flat = flatVisibleIds()
+        const selected = flat.filter(id => selectedIds.has(id))
+        if (e.shiftKey) {
+          // Desindentar: mover al padre del padre actual
+          for (const id of selected) {
+            const n = store.getNode(id)
+            if (!n || !n.parentId || n.parentId === parentId) continue
+            const grandParent = store.getNode(n.parentId)
+            if (!grandParent) continue
+            const newParentId = grandParent.parentId ?? parentId
+            const siblings = store.children(newParentId || null)
+            const gpIdx = siblings.findIndex(s => s.id === n.parentId)
+            store.updateNode(id, { parentId: newParentId, siblingOrder: (siblings[gpIdx]?.siblingOrder ?? 0) + 0.5 })
+          }
+        } else {
+          // Indentar: mover como hijo del nodo anterior
+          for (const id of selected) {
+            const n = store.getNode(id)
+            if (!n) continue
+            const siblings = store.children(n.parentId || null)
+            const idx = siblings.findIndex(s => s.id === id)
+            if (idx <= 0) continue
+            const prev = siblings[idx - 1]
+            const prevChildren = store.children(prev.id)
+            const newOrder = prevChildren.length > 0
+              ? prevChildren[prevChildren.length - 1].siblingOrder + 1
+              : 1
+            store.updateNode(id, { parentId: prev.id, siblingOrder: newOrder })
+          }
+        }
       }
       if (e.key === 'Escape') {
         setSelectedIds(new Set())
@@ -306,6 +341,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''} ${isDragSelecting ? 'is-drag-selecting' : ''}`}
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
+        onContextMenu={selectedIds.size > 0 ? (e) => {
+          e.preventDefault()
+          const flat = flatVisibleIds()
+          const texts = flat.filter(id => selectedIds.has(id)).map(id => store.getNode(id)?.text || '').filter(Boolean)
+          if (texts.length === 0) return
+          // Crear nota con los nodos seleccionados
+          const title = texts[0]
+          const newNode = store.createNode({ text: title, parentId: null })
+          for (let i = 1; i < texts.length; i++) {
+            store.createNode({ text: texts[i], parentId: newNode.id, siblingOrder: i })
+          }
+          setSelectedIds(new Set())
+          // Navegar a la nueva nota
+          window.location.href = `/app/node/${newNode.id}`
+        } : undefined}
       >
         {nodes.length === 0 && placeholder && (
           <div className="outliner-placeholder">{placeholder}</div>
@@ -324,7 +374,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             </div>
           </div>
         )}
-        {nodes.map(node => (
+        {nodes.map((node, idx) => (
           <OutlinerNode
             key={node.id}
             node={node}
@@ -336,6 +386,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             onSelectNext={handleSelectNext}
             onShiftSelect={handleShiftSelect}
             filterText={effectiveFilter}
+            isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
           />
         ))}
       </div>
@@ -379,6 +430,67 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             title="Toggle favorito"
           >
             ★ Favorito
+          </button>
+          <button
+            className="multi-select-action"
+            onClick={() => {
+              const flat = flatVisibleIds()
+              const selected = flat.filter(id => selectedIds.has(id))
+              for (const id of selected) {
+                const n = store.getNode(id)
+                if (!n) continue
+                const siblings = store.children(n.parentId || null)
+                const idx = siblings.findIndex(s => s.id === id)
+                if (idx <= 0) continue
+                const prev = siblings[idx - 1]
+                const prevChildren = store.children(prev.id)
+                const newOrder = prevChildren.length > 0 ? prevChildren[prevChildren.length - 1].siblingOrder + 1 : 1
+                store.updateNode(id, { parentId: prev.id, siblingOrder: newOrder })
+              }
+            }}
+            title="Indentar (Tab)"
+          >
+            → Indentar
+          </button>
+          <button
+            className="multi-select-action"
+            onClick={() => {
+              const flat = flatVisibleIds()
+              const selected = flat.filter(id => selectedIds.has(id))
+              for (const id of selected) {
+                const n = store.getNode(id)
+                if (!n || !n.parentId || n.parentId === parentId) continue
+                const grandParent = store.getNode(n.parentId)
+                if (!grandParent) continue
+                const newParentId = grandParent.parentId ?? parentId
+                const siblings = store.children(newParentId || null)
+                const gpIdx = siblings.findIndex(s => s.id === n.parentId)
+                store.updateNode(id, { parentId: newParentId, siblingOrder: (siblings[gpIdx]?.siblingOrder ?? 0) + 0.5 })
+              }
+            }}
+            title="Desindentar (Shift+Tab)"
+          >
+            ← Desindentar
+          </button>
+          <button
+            className="multi-select-action"
+            onClick={() => {
+              const flat = flatVisibleIds()
+              const texts = flat
+                .filter(id => selectedIds.has(id))
+                .map(id => store.getNode(id)?.text || '')
+                .filter(Boolean)
+              if (texts.length === 0) return
+              const title = texts[0]
+              const newNode = store.createNode({ text: title, parentId: null })
+              for (let i = 1; i < texts.length; i++) {
+                store.createNode({ text: texts[i], parentId: newNode.id, siblingOrder: i })
+              }
+              setSelectedIds(new Set())
+            }}
+            title="Crear nota con la selección"
+          >
+            ✦ Crear nota
           </button>
           <button
             className="multi-select-action multi-select-action--danger"

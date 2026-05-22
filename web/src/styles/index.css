@@ -1144,6 +1144,12 @@ mark.inline-highlight {
   color: var(--text-tertiary);
   pointer-events: none;
 }
+/* Primer nodo de nota vacía: mostrar placeholder siempre, incluso sin foco */
+.node-text--first-empty:empty::before {
+  content: attr(data-first-placeholder);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
 
 .node-open-btn {
   display: flex;
