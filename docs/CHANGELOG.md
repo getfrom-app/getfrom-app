@@ -4,6 +4,25 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Mac 3.17 + Web v7.5 — 22 mayo 2026
+
+**Plataformas: Mac** 3.17 · **Web** v7.5
+
+### Editor
+- **Primer nodo siempre visible** — notas vacías muestran la primera línea con placeholder "Escribe '/' para comandos" aunque el cursor no esté encima
+- **Auto-create primer nodo** — al abrir una nota sin contenido, se crea automáticamente el primer nodo listo para escribir
+
+### Multi-selección
+- **Tab / Shift+Tab** — indenta o desindenta todos los nodos seleccionados a la vez
+- **Botones en barra**: → Indentar · ← Desindentar · ✦ Crear nota
+- **Clic derecho** con selección activa → crea una nueva nota con los nodos seleccionados y navega a ella
+
+### Mac — Login gate (Sparkle fix)
+- Publicado 3.17 con firma Sparkle correcta (corrige error "improperly signed" de 3.16)
+- Login gate activo: sin sesión → pantalla de login nativa
+
+---
+
 ## Mac 3.16 + iOS 1.1 — 22 mayo 2026
 
 **Plataformas: Mac** 3.16 · **iOS** 1.1
