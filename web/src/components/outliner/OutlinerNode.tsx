@@ -435,7 +435,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setShowSlash(false)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
-  }, [])
+
+    // Nodo vacío = no existe. Si pierde el foco sin contenido, se borra.
+    // Excepción: diarios, raíz sin hijos que sea la única entrada.
+    const currentText = (contentRef.current?.textContent || '').trim()
+    if (currentText === '' && !node.isDiaryEntry) {
+      // Pequeño delay para que los clicks en otros elementos se procesen primero
+      setTimeout(() => {
+        const still = store.getNode(node.id)
+        if (still && !still.deletedAt && !(still.text || '').trim()) {
+          store.deleteNode(node.id)
+        }
+      }, 200)
+    }
+  }, [node.id, node.isDiaryEntry])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const text = contentRef.current?.textContent || ''
@@ -775,14 +788,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
-      // Create sibling below
-      // Si es un heading, el siguiente nodo es texto normal (no hereda el tipo)
-      const newNode = store.createNode({
-        text: '',
-        parentId: node.parentId,
-        siblingOrder: node.siblingOrder + 0.5,
-      })
-      onSelect(newNode.id)
+      // Create sibling below — o navegar al siguiente si ya está vacío
+      // (nodo vacío = no existe, no acumular)
+      const siblings = store.children(node.parentId)
+      const idx = siblings.findIndex(n => n.id === node.id)
+      const nextSibling = siblings[idx + 1]
+      if (nextSibling && !(nextSibling.text || '').trim()) {
+        // El siguiente ya está vacío: navegar a él en lugar de crear otro
+        onSelect(nextSibling.id)
+      } else {
+        const newNode = store.createNode({
+          text: '',
+          parentId: node.parentId,
+          siblingOrder: node.siblingOrder + 0.5,
+        })
+        onSelect(newNode.id)
+      }
     }
 
     if (e.key === 'Tab') {
