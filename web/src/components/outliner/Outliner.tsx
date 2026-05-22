@@ -7,15 +7,27 @@ import type { Node } from '../../types'
 function getNodeIdFromEl(el: Element | null): string | null {
   return el?.closest('[data-node-id]')?.getAttribute('data-node-id') ?? null
 }
-function isInteractiveEl(target: EventTarget | null): boolean {
+
+// Devuelve true SOLO si el target ES el propio elemento de texto/input
+// (no si es un padre que contiene un contenteditable).
+// Esto permite iniciar drag-select desde los márgenes o padding del nodo,
+// pero no desde dentro del texto editable.
+function isDirectTextEl(target: EventTarget | null): boolean {
   if (!target || !(target instanceof Element)) return false
-  return !!(
-    target.getAttribute('contenteditable') === 'true' ||
-    target.closest('[contenteditable="true"]') ||
-    (target as HTMLElement).tagName === 'BUTTON' ||
-    (target as HTMLElement).tagName === 'INPUT' ||
-    (target as HTMLElement).tagName === 'TEXTAREA'
+  const el = target as HTMLElement
+  return (
+    el.getAttribute('contenteditable') === 'true' ||
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA'
   )
+}
+
+// Botones y controles de UI que no deben iniciar drag-select
+function isControlEl(target: EventTarget | null): boolean {
+  if (!target || !(target instanceof Element)) return false
+  const el = target as HTMLElement
+  return !!(el.tagName === 'BUTTON' || el.closest('button') ||
+            el.tagName === 'SELECT' || el.tagName === 'A')
 }
 
 interface Props {
@@ -145,14 +157,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const dragAnchorPos = useRef<number>(0)
 
   function handleContainerMouseDown(e: React.MouseEvent) {
-    if (isInteractiveEl(e.target)) return
+    // Excluir: el propio elemento de texto (contenteditable directo) → text selection normal
+    if (isDirectTextEl(e.target)) return
+    // Excluir: botones y controles de UI → dejan actuar al handler del botón
+    if (isControlEl(e.target)) return
+
     const id = getNodeIdFromEl(e.target as Element)
     dragAnchorPos.current = e.clientY
+
     if (id) {
       dragAnchorId.current = id
+      // Prevenir HTML5 DnD del nodo cuando vamos a hacer drag-select desde el row
+      // (solo si no es el texto — ya excluido arriba)
+      e.preventDefault()
     } else if (nodes.length > 0) {
-      // Click en espacio vacío (debajo/encima de todos los nodos):
-      // usar el nodo más cercano en Y como ancla para permitir arrastrar hacia arriba
+      // Espacio vacío (encima, debajo o entre nodos sin contenido)
       dragAnchorId.current = '__empty__'
     }
   }
@@ -179,15 +198,20 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         return
       }
 
-      if (!hoveredId || hoveredId === dragAnchorId.current) {
-        if (!isDragSelecting) return
-      }
+      // Activar drag-select en cuanto el mouse se mueve más de ~4px del anchor
+      const movedEnough = Math.abs(e.clientY - dragAnchorPos.current) > 4
+      if (!isDragSelecting && !movedEnough) return
+
       if (!isDragSelecting) {
         setIsDragSelecting(true)
         setSelectedId(null)
+        // Incluir el nodo ancla desde el inicio
+        setSelectedIds(new Set([dragAnchorId.current!]))
       }
       if (hoveredId) {
-        setSelectedIds(getRangeIds(dragAnchorId.current, hoveredId))
+        setSelectedIds(getRangeIds(dragAnchorId.current!, hoveredId))
+      } else {
+        // Cursor fuera de cualquier nodo pero drag activo: mantener selección actual
       }
     }
     function onUp() {
