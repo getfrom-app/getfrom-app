@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -43,6 +43,257 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
     else break
   }
   return streak
+}
+
+// ── Task properties popover ────────────────────────────────────────────────────
+
+interface TaskPropsPopoverProps {
+  node: Node
+  onClose: () => void
+  anchorRef: React.RefObject<HTMLButtonElement>
+}
+
+function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as HTMLElement) &&
+        anchorRef.current && !anchorRef.current.contains(e.target as HTMLElement)
+      ) {
+        onClose()
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose, anchorRef])
+
+  const dueValue = node.due
+    ? (() => {
+        const d = new Date(node.due)
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${y}-${m}-${day}`
+      })()
+    : ''
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    if (!val) {
+      store.updateNode(node.id, { due: null })
+    } else {
+      const [y, m, d] = val.split('-').map(Number)
+      const dateObj = new Date(y, m - 1, d, 9, 0, 0, 0)
+      store.updateNode(node.id, { due: dateObj.toISOString() })
+    }
+  }
+
+  const priorities: Array<{ value: 'high' | 'medium' | 'low' | null; label: string }> = [
+    { value: 'high', label: '🔴 Alta' },
+    { value: 'medium', label: '🟡 Media' },
+    { value: 'low', label: '🟢 Baja' },
+    { value: null, label: '— Sin prioridad' },
+  ]
+
+  const statuses: Array<{ value: 'pending' | 'done' | null; label: string }> = [
+    { value: 'pending', label: '⬜ Pendiente' },
+    { value: 'done', label: '✅ Hecha' },
+    { value: null, label: '— Sin estado' },
+  ]
+
+  return (
+    <div
+      ref={popoverRef}
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: '100%',
+        marginTop: 4,
+        zIndex: 1000,
+        background: 'var(--bg-secondary, #1e1e2e)',
+        border: '1px solid var(--border, rgba(255,255,255,0.1))',
+        borderRadius: 8,
+        padding: '10px 12px',
+        minWidth: 200,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Date */}
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha</div>
+        <input
+          type="date"
+          value={dueValue}
+          onChange={handleDateChange}
+          style={{
+            width: '100%',
+            background: 'var(--bg-primary, #13131f)',
+            border: '1px solid var(--border, rgba(255,255,255,0.1))',
+            borderRadius: 5,
+            color: 'var(--text-primary)',
+            fontSize: 12,
+            padding: '4px 6px',
+            outline: 'none',
+            cursor: 'pointer',
+          }}
+        />
+      </div>
+
+      {/* Priority */}
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Prioridad</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {priorities.map(p => (
+            <button
+              key={String(p.value)}
+              onClick={() => store.updateNode(node.id, { priority: p.value })}
+              style={{
+                textAlign: 'left',
+                background: node.priority === p.value ? 'var(--accent-soft, rgba(139,92,246,0.15))' : 'transparent',
+                border: 'none',
+                borderRadius: 4,
+                color: 'var(--text-primary)',
+                fontSize: 12,
+                padding: '3px 6px',
+                cursor: 'pointer',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Status */}
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {statuses.map(st => (
+            <button
+              key={String(st.value)}
+              onClick={() => { store.updateNode(node.id, { status: st.value }); onClose() }}
+              style={{
+                textAlign: 'left',
+                background: node.status === st.value ? 'var(--accent-soft, rgba(139,92,246,0.15))' : 'transparent',
+                border: 'none',
+                borderRadius: 4,
+                color: 'var(--text-primary)',
+                fontSize: 12,
+                padding: '3px 6px',
+                cursor: 'pointer',
+              }}
+            >
+              {st.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Task row with hover props button ──────────────────────────────────────────
+
+interface AgendaTaskRowProps {
+  task: Node
+  checkboxClass: string
+  indented?: boolean
+  isEvent?: boolean
+  onToggle: () => void
+  onClick: () => void
+}
+
+function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onClick }: AgendaTaskRowProps) {
+  const [hovered, setHovered] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const btnRef = useRef<HTMLButtonElement>(null!)
+
+  const rowClass = [
+    'diary-agenda-task',
+    indented ? 'diary-agenda-task--indented' : '',
+    task.status === 'done' ? 'diary-agenda-task--done' : '',
+  ].filter(Boolean).join(' ')
+
+  return (
+    <div
+      className={rowClass}
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false) }}
+      onClick={onClick}
+    >
+      {isEvent ? (
+        <span className="diary-agenda-event-icon">📅</span>
+      ) : (
+        <button
+          className={checkboxClass}
+          onClick={e => { e.stopPropagation(); onToggle() }}
+        >
+          {task.status === 'done' ? '✓' : ''}
+        </button>
+      )}
+
+      <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
+        {task.text || 'Sin título'}
+      </span>
+
+      {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
+
+      {/* Hover props button */}
+      {(hovered || popoverOpen) && (
+        <div style={{ position: 'relative', marginLeft: 'auto', flexShrink: 0 }}>
+          <button
+            ref={btnRef}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-tertiary)',
+              fontSize: 14,
+              padding: '0 4px',
+              lineHeight: 1,
+              borderRadius: 4,
+            }}
+            onClick={e => { e.stopPropagation(); setPopoverOpen(v => !v) }}
+            title="Propiedades de la tarea"
+          >
+            ···
+          </button>
+          {popoverOpen && (
+            <TaskPropsPopover
+              node={task}
+              onClose={() => setPopoverOpen(false)}
+              anchorRef={btnRef}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Sort helper (Mac-style: overdue → today/range → no due) ──────────────────
+
+function sortTasksMacStyle(tasks: Node[], todayStart: Date): Node[] {
+  return [...tasks].sort((a, b) => {
+    const groupOf = (n: Node) => {
+      if (!n.due) return 2
+      return new Date(n.due) < todayStart ? 0 : 1
+    }
+    const ga = groupOf(a)
+    const gb = groupOf(b)
+    if (ga !== gb) return ga - gb
+    if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+    if (a.due && !b.due) return -1
+    if (!a.due && b.due) return 1
+    return 0
+  })
 }
 
 export interface DiaryRightPanelProps {
@@ -108,7 +359,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   // Set de IDs de nodos que SON seguimiento (para excluirlos de overdue/today)
   const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
 
-  const overdue = allPending.filter(n => {
+  const overdueRaw = allPending.filter(n => {
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
     if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
@@ -116,7 +367,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   })
 
   // Para semana/mes: mostrar tareas del rango en lugar de solo hoy
-  const todayTasks = allPending.filter(n => {
+  const todayTasksRaw = allPending.filter(n => {
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false
     if (hasSeguimientoAncestor(n.id)) return false
@@ -125,6 +376,20 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
       return d >= dateStart && d < dateEnd
     }
     return d >= todayStart && d <= todayEnd
+  })
+
+  // Apply Mac-style sort to overdue and today tasks combined (then split back)
+  // For the agenda view: show overdue first (sorted by due asc), then today tasks (sorted by due asc)
+  const overdue = [...overdueRaw].sort((a, b) => {
+    if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+    return 0
+  })
+
+  const todayTasks = [...todayTasksRaw].sort((a, b) => {
+    if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+    if (a.due && !b.due) return -1
+    if (!a.due && b.due) return 1
+    return 0
   })
 
   // Hijos de un nodo de seguimiento: tareas (pending + done) y eventos — igual que Mac
@@ -177,26 +442,15 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                 {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
               </div>
               {childTasks.map(task => (
-                <div
+                <AgendaTaskRow
                   key={task.id}
-                  className={`diary-agenda-task diary-agenda-task--indented${task.status === 'done' ? ' diary-agenda-task--done' : ''}`}
+                  task={task}
+                  checkboxClass={`diary-agenda-checkbox${task.status === 'done' ? ' diary-agenda-checkbox--done' : ' diary-agenda-checkbox--seguimiento'}`}
+                  indented
+                  isEvent={task.isEvent}
+                  onToggle={() => toggleTask(task.id, task.status)}
                   onClick={() => navigate(`/node/${task.id}`)}
-                >
-                  {task.isEvent ? (
-                    <span className="diary-agenda-event-icon">📅</span>
-                  ) : (
-                    <button
-                      className={`diary-agenda-checkbox${task.status === 'done' ? ' diary-agenda-checkbox--done' : ' diary-agenda-checkbox--seguimiento'}`}
-                      onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
-                    >
-                      {task.status === 'done' ? '✓' : ''}
-                    </button>
-                  )}
-                  <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
-                    {task.text || 'Sin título'}
-                  </span>
-                  {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
-                </div>
+                />
               ))}
             </div>
           )
@@ -204,48 +458,30 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
         {/* Tareas vencidas */}
         {overdue.map(task => (
-          <div
+          <AgendaTaskRow
             key={task.id}
-            className="diary-agenda-task"
+            task={task}
+            checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
+            onToggle={() => toggleTask(task.id, task.status)}
             onClick={() => navigate(`/node/${task.id}`)}
-          >
-            <button
-              className={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
-              onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
-            >
-              {task.status === 'done' ? '✓' : ''}
-            </button>
-            <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
-              {task.text || 'Sin título'}
-            </span>
-            {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
-          </div>
+          />
         ))}
 
         {/* Tareas de hoy */}
         {todayTasks.map(task => (
-          <div
+          <AgendaTaskRow
             key={task.id}
-            className="diary-agenda-task"
+            task={task}
+            checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
+            onToggle={() => toggleTask(task.id, task.status)}
             onClick={() => navigate(`/node/${task.id}`)}
-          >
-            <button
-              className={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
-              onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
-            >
-              {task.status === 'done' ? '✓' : ''}
-            </button>
-            <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
-              {task.text || 'Sin título'}
-            </span>
-            {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
-          </div>
+          />
         ))}
       </div>
     )
   }
 
-  // ── Timeline logic ─────────────────────────────────────────────────────
+  // ── Timeline logic ─────────────────────────────────────────────────────────
   const hours = Array.from({ length: 15 }, (_, i) => i + 8)
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()

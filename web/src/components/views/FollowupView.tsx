@@ -139,14 +139,28 @@ function SeguimientoRow({ node }: SeguimientoRowProps) {
 
   // Children: tasks and events (exclude diary/temporal children)
   const children = useMemo(() => {
+    const todayMidnight = new Date()
+    todayMidnight.setHours(0, 0, 0, 0)
+
     return store.children(node.id).filter(n =>
       !n.deletedAt &&
       !n.isDiaryEntry &&
       (n.status !== null || n.isEvent)
     ).sort((a, b) => {
-      // Pending first, then done; within each group by due date
+      // Done tasks always last
       if (a.status === 'done' && b.status !== 'done') return 1
       if (a.status !== 'done' && b.status === 'done') return -1
+
+      // Among pending: Mac-style groups — overdue (0) → today/future (1) → no due (2)
+      const groupOf = (n: Node) => {
+        if (!n.due) return 2
+        return new Date(n.due) < todayMidnight ? 0 : 1
+      }
+      const ga = groupOf(a)
+      const gb = groupOf(b)
+      if (ga !== gb) return ga - gb
+
+      // Within group: due ASC (nulls last)
       if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
       if (a.due && !b.due) return -1
       if (!a.due && b.due) return 1
