@@ -359,6 +359,7 @@ function AparienciaPane() {
 }
 
 function IAPane() {
+  const us = useUserStore()
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
   const [generatingMcp, setGeneratingMcp] = useState(false)
@@ -429,14 +430,11 @@ function IAPane() {
       />
 
       <SectionTitle>Tokens</SectionTitle>
-      {(() => {
-        const us = useUserStore()
-        return us.user?.tokensBalance !== undefined ? (
-          <Row label="Balance de tokens">
-            <span className="st-value">{us.user.tokensBalance.toLocaleString()}</span>
-          </Row>
-        ) : null
-      })()}
+      {us.user?.tokensBalance !== undefined && (
+        <Row label="Balance de tokens">
+          <span className="st-value">{us.user.tokensBalance.toLocaleString()}</span>
+        </Row>
+      )}
       <Row label="¿Qué son los tokens?" hint="Cada operación de IA consume tokens de tu saldo mensual. Con un plan activo recibes tokens mensuales. Puedes usar tu propia API key de Anthropic para no consumirlos." />
     </div>
   )
