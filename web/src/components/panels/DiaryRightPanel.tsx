@@ -89,11 +89,17 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
   // ── Agenda logic ───────────────────────────────────────────────────────
 
-  // Nodos de seguimiento
-  const seguimientoNodes = s.allActive().filter(n =>
-    !n.deletedAt &&
-    (n.isSeguimiento || (n.types || []).includes('bucle'))
-  )
+  // Nodos de seguimiento — ordenados igual que Mac: seguimientoOrder primero, luego updatedAt desc
+  const seguimientoNodes = s.allActive()
+    .filter(n => !n.deletedAt && (n.isSeguimiento || (n.types || []).includes('bucle')))
+    .sort((a, b) => {
+      const ao = (a as any).seguimientoOrder ?? null
+      const bo = (b as any).seguimientoOrder ?? null
+      if (ao !== null && bo !== null) return ao - bo
+      if (ao !== null) return -1
+      if (bo !== null) return 1
+      return b.updatedAt.localeCompare(a.updatedAt)
+    })
 
   const allPending = s.allActive().filter(
     n => n.status === 'pending' && !n.deletedAt && n.due
@@ -121,8 +127,20 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     return d >= todayStart && d <= todayEnd
   })
 
+  // Hijos de un nodo de seguimiento: tareas (pending + done) y eventos — igual que Mac
   function getChildTasks(nodeId: string): Node[] {
-    return store.children(nodeId).filter(n => n.status === 'pending' && !n.deletedAt)
+    return store.children(nodeId)
+      .filter(n => !n.deletedAt && (n.status !== null || n.isEvent))
+      .sort((a, b) => {
+        // Pendientes primero, luego completadas
+        if (a.status !== 'done' && b.status === 'done') return -1
+        if (a.status === 'done' && b.status !== 'done') return 1
+        // Por fecha si tienen
+        if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+        if (a.due && !b.due) return -1
+        if (!a.due && b.due) return 1
+        return a.siblingOrder - b.siblingOrder
+      })
   }
 
 
@@ -161,15 +179,19 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
               {childTasks.map(task => (
                 <div
                   key={task.id}
-                  className="diary-agenda-task diary-agenda-task--indented"
+                  className={`diary-agenda-task diary-agenda-task--indented${task.status === 'done' ? ' diary-agenda-task--done' : ''}`}
                   onClick={() => navigate(`/node/${task.id}`)}
                 >
-                  <button
-                    className="diary-agenda-checkbox diary-agenda-checkbox--seguimiento"
-                    onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
-                  >
-                    {task.status === 'done' ? '✓' : ''}
-                  </button>
+                  {task.isEvent ? (
+                    <span className="diary-agenda-event-icon">📅</span>
+                  ) : (
+                    <button
+                      className={`diary-agenda-checkbox${task.status === 'done' ? ' diary-agenda-checkbox--done' : ' diary-agenda-checkbox--seguimiento'}`}
+                      onClick={e => { e.stopPropagation(); toggleTask(task.id, task.status) }}
+                    >
+                      {task.status === 'done' ? '✓' : ''}
+                    </button>
+                  )}
                   <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
                     {task.text || 'Sin título'}
                   </span>
