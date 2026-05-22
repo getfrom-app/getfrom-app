@@ -4,6 +4,50 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web v7.3 + Mac 3.14 — 22 mayo 2026
+
+**Plataformas: Web** (getfrom.app/app) · **Mac** 3.14
+
+### Unificación de plataformas
+- **Top bar full-width** en web — la barra superior ahora va de lado a lado igual que en Mac
+- **Sidebar rediseñada** — 4 tabs (Tags, Fijados, Paneles, Ajustes) + footer con Hoy/Tareas/Seguimiento/Calendario/Papelera/Salir
+- **Barra de grabación** en web — MediaRecorder API con estados idle/grabando/procesando
+- **Bottom nav en Mac** — igual que web: Hoy, Tareas, Seguimiento, Calendario, Papelera, Salir con badges
+- **Vistas Tareas/Seguimiento/Papelera** en Mac — nuevas vistas globales accesibles desde el nav inferior
+
+### Google Calendar unificado
+- **Una sola conexión Google** — cubre Calendar + Drive simultáneamente
+- **Auto-conexión** — si el usuario inició sesión con Google, el calendario ya está disponible
+- **GoogleCalendarService** en Mac — OAuth via ASWebAuthenticationSession, proxy al servidor
+- **Timeline con Google Calendar** — eventos del calendario aparecen en el timeline del diario
+- **Settings → Google** — sección unificada Calendar + Drive; eliminado el tab "Calendario" separado
+
+### Mac — Top bar igualado con web
+- **Mismo estilo de botones**: icono + ⌘X (⌘K ⌘N ⌘T ⌘E ⌘R 🌙)
+- **⌘K movido** al lado derecho junto al resto de acciones
+- **⌘R** dispara captura de voz directamente
+
+### Columna derecha Mac
+- **Tabs con texto** — "Agenda" y "Timeline" en lugar de iconos
+- **Espacios vacíos eliminados** — subtareas con texto vacío ya no crean filas invisibles
+
+### Nodos vacíos — regla definitiva
+- **Un nodo vacío no existe** — se elimina en 4 capas: editor Mac (blur), servidor (sync), web (blur + startup)
+- **Período de gracia 60s** — nodos recién creados no se borran mientras el cursor está ahí
+
+### Web — Mejoras editor y UX
+- **Click en espacio vacío** activa escritura — clic debajo del último bullet crea o foca nodo vacío
+- **Timeline full-height** — se estira hasta abajo del panel sin espacio vacío inferior
+- **Botón propiedades (···)** en hover sobre tareas del panel derecho (fecha, prioridad, estado)
+- **Ordenación unificada** Mac/web — vencidas → hoy → sin fecha, por due ASC
+
+### Fixes de timezone
+- **Fecha diario correcta** — "Viernes 22 de mayo de 2026" en lugar de "Jueves 21"
+- **Deduplicación de diarios** con +12h offset para todas las zonas horarias
+- **Sync en background** — web polling cada 15s, cambios de Mac aparecen sin refrescar
+
+---
+
 ## Web v6.4 + Mac 3.13 — 21 mayo 2026 (sesión 3)
 
 **Plataformas: Web** (getfrom.app/app) · **Mac** (pendiente publicar)
