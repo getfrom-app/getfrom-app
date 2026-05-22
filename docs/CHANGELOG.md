@@ -4,6 +4,19 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Mac 3.16 + iOS 1.1 — 22 mayo 2026
+
+**Plataformas: Mac** 3.16 · **iOS** 1.1
+
+### Login gate — sin sesión, sin contenido
+- Mac e iPhone ahora muestran pantalla de login cuando no hay sesión activa
+- Nunca se muestra el contenido de From a un usuario no autenticado
+- **Login nativo**: Sign in with Apple, Sign in with Google, email + contraseña
+- Toggle login/crear cuenta en la misma pantalla
+- Comportamiento unificado con la versión web
+
+---
+
 ## Mac 3.15 + iOS (trial banner) — 22 mayo 2026
 
 **Plataformas: Mac** 3.15 · **iOS** (actualización) · **Web** v7.4
