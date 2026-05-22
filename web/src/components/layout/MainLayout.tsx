@@ -260,6 +260,15 @@ export default function MainLayout() {
   return (
     <ToastProvider>
     <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* TopBar — full width, above sidebar + content */}
+      <TopBar
+        onNewNote={() => setShowNewNote(true)}
+        onCommandPalette={() => setShowCommandPalette(v => !v)}
+        onNewTask={() => setShowNewTask(true)}
+        onNewEvent={() => setShowNewEvent(true)}
+        onVoiceCapture={() => setShowVoiceCapture(true)}
+      />
+      <div className="main-body">
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -276,14 +285,6 @@ export default function MainLayout() {
         />
       )}
       <main className="main-content">
-        {/* TopBar global */}
-        <TopBar
-          onNewNote={() => setShowNewNote(true)}
-          onCommandPalette={() => setShowCommandPalette(v => !v)}
-          onNewTask={() => setShowNewTask(true)}
-          onNewEvent={() => setShowNewEvent(true)}
-          onVoiceCapture={() => setShowVoiceCapture(true)}
-        />
         {/* Mobile hamburger */}
         <div className="mobile-header">
           <button className="mobile-hamburger" onClick={() => setSidebarOpen(true)}>
@@ -338,6 +339,7 @@ export default function MainLayout() {
         </Suspense>
         <StatusBar isSyncing={s.isSyncing} />
       </main>
+      </div>{/* .main-body */}
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
       )}

@@ -193,8 +193,16 @@ a { color: inherit; text-decoration: none; }
 
 .main-layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
+}
+
+.main-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .main-content {
@@ -203,7 +211,7 @@ a { color: inherit; text-decoration: none; }
   min-width: 0;
   min-height: 0;
   display: flex;
-  flex-direction: column; /* TopBar / view / StatusBar apilados verticalmente */
+  flex-direction: column; /* view / StatusBar apilados verticalmente */
 }
 
 /* ── TopBar ───────────────────────────────────────────────────────────────── */
@@ -523,6 +531,82 @@ a { color: inherit; text-decoration: none; }
 .sidebar-footer {
   padding: 6px 6px 10px;
   border-top: 1px solid var(--border);
+}
+
+/* ── Recording bar (web) ─────────────────────────────────────────────────── */
+
+.recording-bar-web {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.recording-bar-web .rec-source-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.recording-bar-web .rec-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.recording-bar-web .rec-btn:hover { opacity: 0.85; }
+
+.recording-bar-web .rec-btn--start {
+  background: #ef4444;
+  color: #fff;
+}
+
+.recording-bar-web .rec-btn--stop {
+  background: #6b7280;
+  color: #fff;
+}
+
+.recording-bar-web .rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  animation: rec-pulse 1s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.recording-bar-web .rec-timer {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  min-width: 36px;
+}
+
+.recording-bar-web .rec-saved {
+  font-size: 12px;
+  color: #22c55e;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
 }
 
 /* ── Views ────────────────────────────────────────────────────────────────── */

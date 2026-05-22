@@ -4,6 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
 import type { Node } from '../../types'
+import WebRecordingBar from './WebRecordingBar'
 
 interface Props {
   open: boolean
@@ -779,6 +780,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             {activeTab === 'settings' && renderSettingsTab()}
           </div>
 
+          {/* Recording bar */}
+          <WebRecordingBar />
+
           {/* Footer nav - always visible */}
           <div className="sidebar-footer">
             <button
@@ -817,30 +821,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span>Calendario</span>
             </button>
             <button
-              className={`nav-item ${isActive('/chat') ? 'active' : ''}`}
-              onClick={() => navigate('/chat')}
-              title="Chat IA (⌘J)"
-            >
-              <span className="nav-icon">✦</span>
-              <span>Chat IA</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/inbox') ? 'active' : ''}`}
-              onClick={() => navigate('/inbox')}
-              title="Inbox"
-            >
-              <span className="nav-icon">📥</span>
-              <span>Inbox</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/files') ? 'active' : ''}`}
-              onClick={() => navigate('/files')}
-              title="Archivos"
-            >
-              <span className="nav-icon">📎</span>
-              <span>Archivos</span>
-            </button>
-            <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
               onClick={() => navigate('/trash')}
               title="Papelera"
@@ -848,13 +828,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span className="nav-icon">🗑</span>
               <span>Papelera</span>
             </button>
-            {!isGuest && (
+            {!isGuest ? (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
                 <span className="nav-icon">↩</span>
                 <span>Salir</span>
               </button>
-            )}
-            {isGuest && (
+            ) : (
               <button className="nav-item" onClick={onLogout} title="Iniciar sesión">
                 <span className="nav-icon">↩</span>
                 <span>Iniciar sesión</span>
@@ -869,12 +848,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
               onClick={() => navigate('/')}
+              title="Hoy"
             >
               <span className="nav-icon">📓</span>
             </button>
             <button
               className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
               onClick={() => navigate('/tasks')}
+              title="Tareas"
             >
               <span className="nav-icon">✓</span>
             </button>
@@ -891,29 +872,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
               onClick={() => navigate('/calendar')}
+              title="Calendario"
             >
               <span className="nav-icon">📅</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/chat') ? 'active' : ''}`}
-              onClick={() => navigate('/chat')}
-              title="Chat IA"
-            >
-              <span className="nav-icon">✦</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/inbox') ? 'active' : ''}`}
-              onClick={() => navigate('/inbox')}
-              title="Inbox"
-            >
-              <span className="nav-icon">📥</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/files') ? 'active' : ''}`}
-              onClick={() => navigate('/files')}
-              title="Archivos"
-            >
-              <span className="nav-icon">📎</span>
             </button>
             <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
@@ -924,7 +885,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             </button>
           </nav>
           <div className="sidebar-footer">
-            <button className="nav-item" onClick={onLogout}>
+            <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
               <span className="nav-icon">↩</span>
             </button>
           </div>
