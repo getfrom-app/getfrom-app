@@ -3314,10 +3314,26 @@ mark.inline-highlight {
 /* ── Botón añadir bullet ─────────────────────────────────────────────────── */
 .diary-add-bullet { display: flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 12px; color: var(--text-tertiary); border: none; background: transparent; cursor: pointer; border-radius: var(--radius); transition: color 0.1s, background 0.1s; margin-left: 8px; }
 .diary-add-bullet:hover { color: var(--accent); background: var(--accent-soft); }
-.timeline-row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px; min-height: 32px; }
-.timeline-hour-label { width: 40px; font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; padding-top: 2px; }
-.timeline-now-line { border-top: 2px solid #ef4444; margin: 2px 8px; }
-.timeline-task-chip { font-size: 12px; background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 100px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+/* Timeline full-height: se estira para llenar todo el panel */
+.timeline-panel-full {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100%;
+  overflow-y: auto;
+}
+.timeline-hour-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-top: 1px solid var(--border);
+  min-height: 40px;
+}
+.timeline-row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px; flex: 1; }
+.timeline-hour-label { width: 36px; font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; padding-top: 3px; line-height: 1; }
+.timeline-now-line { position: absolute; left: 0; right: 0; border-top: 2px solid #ef4444; z-index: 2; }
+.timeline-task-chip { font-size: 11px; background: var(--accent-soft); color: var(--accent); padding: 2px 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 
 @media (max-width: 900px) {
   .diary-right-panel { display: none; }

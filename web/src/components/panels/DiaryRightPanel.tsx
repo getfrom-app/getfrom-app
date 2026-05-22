@@ -541,19 +541,19 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
   function renderTimeline() {
     return (
-      <div className="diary-panel-content timeline-panel">
+      <div className="timeline-panel-full">
         {hours.map(h => {
           const tasks = tasksByHour[h] || []
           const events = eventsByHour[h] || []
           const allItems = [...events, ...tasks]
-
           const showNowLine = isToday && h === currentHour
 
           return (
-            <div key={h}>
+            <div key={h} className="timeline-hour-slot">
               {showNowLine && (
                 <div
                   className="timeline-now-line"
+                  style={{ top: `${(currentMinutes / 60) * 100}%` }}
                   title={`Ahora: ${String(currentHour).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`}
                 >
                   <span className="timeline-now-dot" />
@@ -814,7 +814,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
           </button>
         )}
       </div>
-      {(!showTimeline || panelTab === 'agenda') ? renderAgenda() : renderTimeline()}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        {(!showTimeline || panelTab === 'agenda') ? renderAgenda() : renderTimeline()}
+      </div>
     </div>
   )
 }
