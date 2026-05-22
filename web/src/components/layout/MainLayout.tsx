@@ -222,6 +222,16 @@ export default function MainLayout() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture])
 
+  // Polling automático: sync cada 15s para recoger cambios de Mac/iOS sin refrescar
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!store.isSyncing) {
+        store.sync().catch(() => {/* silencioso */})
+      }
+    }, 15_000)
+    return () => clearInterval(id)
+  }, [])
+
   // Detectar cambio isSyncing true → false para mostrar "✓ Guardado"
   useEffect(() => {
     if (prevIsSyncing.current && !s.isSyncing) {

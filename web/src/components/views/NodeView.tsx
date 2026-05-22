@@ -143,14 +143,24 @@ export default function NodeView() {
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync title DOM when not focused — renderiza con tags coloreados
+  // Para notas de diario, siempre muestra la fecha completa con año derivada de diaryDate
   useEffect(() => {
     if (!titleEditing && titleRef.current) {
-      const rendered = renderInlineToHtml(node?.text || '')
+      let displayText = node?.text || ''
+      if (node?.isDiaryEntry && node?.diaryDate) {
+        const d = new Date(node.diaryDate)
+        // Ajustar para timezone local (diaryDate es medianoche UTC)
+        const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000)
+        displayText = local.toLocaleDateString('es-ES', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        }).replace(/^\w/, c => c.toUpperCase())
+      }
+      const rendered = renderInlineToHtml(displayText)
       if (titleRef.current.innerHTML !== rendered) {
         titleRef.current.innerHTML = rendered
       }
     }
-  }, [node?.text, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node?.text, node?.diaryDate, node?.isDiaryEntry, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attachments on mount / node change
   useEffect(() => {
