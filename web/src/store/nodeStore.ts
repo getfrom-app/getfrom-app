@@ -472,10 +472,16 @@ class NodeStore {
   async initialLoad(): Promise<void> {
     await this.sync()
 
-    // Limpieza silenciosa: nodo vacío = no existe. Eliminar los que llegaron del servidor.
+    // Limpieza silenciosa: nodo vacío = no existe.
+    // Período de gracia de 60s — no borrar nodos recién creados donde el cursor
+    // puede estar (el servidor ya aplica la misma lógica en el sync).
+    const graceCutoff = Date.now() - 60_000
     for (const node of this.nodes.values()) {
       if (!node.deletedAt && !node.isDiaryEntry && !(node.text || '').trim()) {
-        this.deleteNode(node.id)
+        const createdMs = node.createdAt ? new Date(node.createdAt).getTime() : 0
+        if (createdMs < graceCutoff) {
+          this.deleteNode(node.id)
+        }
       }
     }
 

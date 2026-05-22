@@ -1,6 +1,7 @@
-import { Component, ErrorInfo, ReactNode } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react'
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken } from './api/client'
+import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
 import ResetPasswordPage from './components/auth/ResetPasswordPage'
@@ -60,6 +61,51 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return getToken() ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+// Maneja el callback de OAuth de Google
+function GoogleCallbackPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (!code) {
+      setError('No se recibió el código de autorización de Google.')
+      return
+    }
+    const redirectUri = window.location.origin + '/app/google-callback'
+    connectGoogle(code, redirectUri)
+      .then(() => {
+        navigate('/app/', { replace: true })
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Error al conectar con Google.')
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (error) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
+        <h2 style={{ color: '#8b5cf6' }}>From</h2>
+        <p style={{ color: '#e53e3e', margin: '16px 0' }}>{error}</p>
+        <button
+          onClick={() => navigate('/app/', { replace: true })}
+          style={{ padding: '8px 16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+        >
+          Volver al inicio
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
+      <h2 style={{ color: '#8b5cf6' }}>From</h2>
+      <p style={{ color: '#666', margin: '16px 0' }}>Conectando con Google...</p>
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -70,6 +116,8 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pricing" element={<PricingView />} />
+        {/* Google OAuth callback — accesible sin estar en MainLayout pero requiere token */}
+        <Route path="/app/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
         {/* Toda la app requiere cuenta */}
         <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
       </Routes>

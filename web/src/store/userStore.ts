@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getMe, type UserProfile } from '../api/client'
+import { getGoogleStatus } from '../api/googleCalendar'
 
 class UserStore {
   user: UserProfile | null = null
   isLoading = false
+  googleConnected = false
+  googleEmail: string | null = null
   private listeners = new Set<() => void>()
 
   private notify() {
@@ -27,6 +30,27 @@ class UserStore {
       this.isLoading = false
       this.notify()
     }
+    // Also fetch Google status in parallel (non-blocking)
+    getGoogleStatus()
+      .then(status => {
+        this.googleConnected = status.connected
+        this.googleEmail = status.email
+        this.notify()
+      })
+      .catch(() => {
+        // Silently ignore — Google integration optional
+      })
+  }
+
+  async refreshGoogleStatus(): Promise<void> {
+    try {
+      const status = await getGoogleStatus()
+      this.googleConnected = status.connected
+      this.googleEmail = status.email
+      this.notify()
+    } catch {
+      // Silently ignore
+    }
   }
 
   get isPremium(): boolean {
@@ -44,6 +68,8 @@ class UserStore {
 
   reset() {
     this.user = null
+    this.googleConnected = false
+    this.googleEmail = null
     this.notify()
   }
 }

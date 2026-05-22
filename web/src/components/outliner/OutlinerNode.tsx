@@ -437,13 +437,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setTimeout(() => setPicker(null), 150)
 
     // Nodo vacío = no existe. Si pierde el foco sin contenido, se borra.
-    // Excepción: diarios, raíz sin hijos que sea la única entrada.
+    // Excepción: diarios, y nodos recién creados (< 2s) — el usuario puede estar
+    // llegando a ellos (e.g., crea con Enter y el foco tarda en llegar).
     const currentText = (contentRef.current?.textContent || '').trim()
     if (currentText === '' && !node.isDiaryEntry) {
+      // Período de gracia: si el nodo se creó hace menos de 2 segundos, no borrar
+      const createdAt = node.createdAt ? new Date(node.createdAt).getTime() : 0
+      const isVeryNew = Date.now() - createdAt < 2000
+      if (isVeryNew) return
+
       // Pequeño delay para que los clicks en otros elementos se procesen primero
       setTimeout(() => {
         const still = store.getNode(node.id)
         if (still && !still.deletedAt && !(still.text || '').trim()) {
+          // Segunda comprobación: si el nodo se creó hace menos de 2s, no borrar
+          const age = Date.now() - (still.createdAt ? new Date(still.createdAt).getTime() : 0)
+          if (age < 2000) return
           store.deleteNode(node.id)
         }
       }, 200)

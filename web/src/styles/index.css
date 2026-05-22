@@ -958,8 +958,11 @@ mark.inline-highlight {
 /* ── Outliner ─────────────────────────────────────────────────────────────── */
 
 .outliner-container {
-  min-height: 200px;
+  min-height: 300px;
+  padding-bottom: 120px; /* área clickable generosa debajo del último nodo */
+  cursor: text;
 }
+.outliner-container [data-node-id] { cursor: default; }
 /* Drag-to-select: deshabilitar selección de texto mientras se arrastra */
 .outliner-container.is-drag-selecting {
   user-select: none;

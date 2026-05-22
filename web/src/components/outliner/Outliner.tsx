@@ -217,12 +217,28 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleContainerClick(e: React.MouseEvent) {
-    // Click below all nodes → create new node
-    if ((e.target as HTMLElement).classList.contains('outliner-container')) {
+    const target = e.target as HTMLElement
+    // Ignorar clicks en nodos, botones, inputs y controles de UI
+    if (
+      target.closest('[data-node-id]') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('.outliner-filter-bar') ||
+      target.closest('.outliner-toolbar') ||
+      target.closest('.outliner-empty-state')
+    ) return
+
+    // Click en espacio vacío (debajo del último nodo o en el padding del contenedor):
+    // Si el último nodo está vacío → focusarlo. Si no → crear uno nuevo y focusarlo.
+    const last = nodes.length > 0 ? nodes[nodes.length - 1] : null
+    if (last && !(last.text || '').trim()) {
+      // Ya existe un nodo vacío al final — solo focusarlo
+      setSelectedId(last.id)
+    } else {
       const n = store.createNode({
         text: '',
         parentId,
-        siblingOrder: nodes.length > 0 ? nodes[nodes.length - 1].siblingOrder + 1 : Date.now(),
+        siblingOrder: last ? last.siblingOrder + 1 : Date.now(),
       })
       setSelectedId(n.id)
     }

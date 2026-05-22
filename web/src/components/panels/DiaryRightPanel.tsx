@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -305,6 +306,22 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   const s = useStore()
   const navigate = useNavigate()
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
+  const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
+
+  // Fetch Google Calendar events when date changes (day view only)
+  useEffect(() => {
+    if (rangeType !== 'day') return
+    let cancelled = false
+    getCalendarEvents(diaryDate)
+      .then(events => {
+        if (!cancelled) setGoogleEvents(events)
+      })
+      .catch(() => {
+        // NOT_CONNECTED or any error: show empty, no noise
+        if (!cancelled) setGoogleEvents([])
+      })
+    return () => { cancelled = true }
+  }, [diaryDate, rangeType])
 
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -522,6 +539,21 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     }
   })
 
+  // ── Google Calendar events for timeline ────────────────────────────────
+  const googleEventsByHour: Record<number, CalendarEvent[]> = {}
+  for (const h of hours) {
+    googleEventsByHour[h] = []
+  }
+  googleEvents.forEach(ev => {
+    if (ev.allDay) return // skip all-day events from hourly slots
+    const d = new Date(ev.start)
+    const h = d.getHours()
+    if (h >= 8 && h <= 22) {
+      googleEventsByHour[h] = googleEventsByHour[h] || []
+      googleEventsByHour[h].push(ev)
+    }
+  })
+
   function handleTimelineHourClick(h: number) {
     const clickDate = new Date(diaryDate)
     clickDate.setHours(h, 0, 0, 0)
@@ -547,6 +579,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
           const events = eventsByHour[h] || []
           const allItems = [...events, ...tasks]
           const showNowLine = isToday && h === currentHour
+
+          const gcalItems = googleEventsByHour[h] || []
 
           return (
             <div key={h} className="timeline-hour-slot">
@@ -577,6 +611,21 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                       {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
                     </span>
                   ))}
+                  {gcalItems.map(ev => {
+                    const startTime = new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    const endTime = new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    return (
+                      <span
+                        key={ev.id}
+                        className="timeline-event-chip"
+                        style={{ background: 'rgba(59,130,246,0.18)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.3)' }}
+                        title={`${ev.title} · ${startTime} – ${endTime} (Google Calendar)`}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        📅 {ev.title} <span style={{ opacity: 0.7, fontSize: 10 }}>{startTime}–{endTime}</span>
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             </div>

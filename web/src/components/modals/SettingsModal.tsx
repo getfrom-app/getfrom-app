@@ -9,6 +9,7 @@ import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
 import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
+import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -581,29 +582,82 @@ function PlantillasPane() {
 }
 
 function GooglePane() {
+  const us = useUserStore()
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    // Refresh status when pane opens
+    userStore.refreshGoogleStatus()
+  }, [])
+
+  async function handleDisconnect() {
+    setError('')
+    setDisconnecting(true)
+    try {
+      await disconnectGoogle()
+      await userStore.refreshGoogleStatus()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al desconectar')
+    } finally {
+      setDisconnecting(false)
+    }
+  }
+
+  function handleConnect() {
+    window.location.href = getGoogleOAuthUrl()
+  }
+
   return (
     <div className="st-pane">
-      <SectionTitle>Google Calendar</SectionTitle>
+      <SectionTitle>Google</SectionTitle>
+
       <Row
-        label="Estado de sincronización"
-        hint="Los eventos de Google Calendar aparecerán en el Calendario cuando inicies sesión con tu cuenta de Google."
+        label="Estado de la conexión"
+        hint="Conectar Google te da acceso a Google Calendar y Google Drive en una sola autorización."
       >
-        <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 99, background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-          No conectado
-        </span>
+        {us.googleConnected ? (
+          <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', color: '#22c55e', whiteSpace: 'nowrap' }}>
+            Conectado
+          </span>
+        ) : (
+          <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 99, background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+            No conectado
+          </span>
+        )}
       </Row>
 
-      <div className="st-info-box">
-        <strong style={{ display: 'block', marginBottom: 6 }}>Cómo sincronizar Google Calendar</strong>
-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-          <li>Cierra sesión en From.</li>
-          <li>Inicia sesión usando el botón <em>Continuar con Google</em>.</li>
-          <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
-        </ol>
-        <a href="https://getfrom.app/docs/google-calendar" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent)', fontSize: 12 }}>
-          Ver documentación →
-        </a>
+      {us.googleConnected && us.googleEmail && (
+        <Row label="Cuenta">
+          <span className="st-value" style={{ fontSize: 12 }}>{us.googleEmail}</span>
+        </Row>
+      )}
+
+      {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
+
+      <div className="st-actions">
+        {us.googleConnected ? (
+          <button className="btn-secondary btn-danger-outline" onClick={handleDisconnect} disabled={disconnecting}>
+            {disconnecting ? 'Desconectando...' : 'Desconectar Google'}
+          </button>
+        ) : (
+          <button className="btn-primary" onClick={handleConnect}>
+            Conectar Google
+          </button>
+        )}
       </div>
+
+      <SectionTitle>Google Calendar</SectionTitle>
+      <Row
+        label="Sincronización de eventos"
+        hint="Cuando Google está conectado, los eventos de tu calendario aparecen en el Timeline del Diario automáticamente."
+      />
+
+      <SectionTitle>Google Drive</SectionTitle>
+      <Row
+        label="Acceso a archivos"
+        hint="La misma autorización permite adjuntar archivos desde Google Drive en tus notas."
+      />
     </div>
   )
 }
