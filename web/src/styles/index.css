@@ -610,76 +610,81 @@ a { color: inherit; text-decoration: none; }
   border-top: 1px solid var(--border);
 }
 
-/* ── Recording bar (web) ─────────────────────────────────────────────────── */
-
-.recording-bar-web {
+/* ── Recording bar (sidebar bottom) ──────────────────────────────────────── */
+.rec-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 6px 8px;
   border-top: 1px solid var(--border);
   background: var(--bg-secondary);
   flex-shrink: 0;
+  min-height: 36px;
 }
-
-.recording-bar-web .rec-source-chip {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  white-space: nowrap;
+.rec-bar--active {
+  background: rgba(239,68,68,0.06);
 }
-
-.recording-bar-web .rec-btn {
-  margin-left: auto;
+.rec-bar-sources {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.rec-bar-source {
+  font-size: 10px;
+  padding: 2px 6px;
   border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+  line-height: 1.4;
+}
+.rec-bar-source:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+.rec-bar-source.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.rec-bar-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 7px;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
   transition: opacity 0.15s;
+  line-height: 1.5;
 }
-.recording-bar-web .rec-btn:hover { opacity: 0.85; }
-
-.recording-bar-web .rec-btn--start {
-  background: #ef4444;
-  color: #fff;
-}
-
-.recording-bar-web .rec-btn--stop {
-  background: #6b7280;
-  color: #fff;
-}
-
-.recording-bar-web .rec-dot {
-  width: 8px;
-  height: 8px;
+.rec-bar-btn:hover { opacity: 0.85; }
+.rec-bar-btn:disabled { opacity: 0.4; cursor: default; }
+.rec-bar-btn--start { background: #ef4444; color: #fff; }
+.rec-bar-btn--stop  { background: #6b7280; color: #fff; }
+.rec-bar-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #ef4444;
   flex-shrink: 0;
   animation: rec-pulse 1s ease-in-out infinite;
 }
-
 @keyframes rec-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 0.5; transform: scale(0.8); }
 }
-
-.recording-bar-web .rec-timer {
-  font-size: 12px;
+.rec-bar-timer {
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-  min-width: 36px;
+  color: #ef4444;
+  font-weight: 600;
+  min-width: 32px;
 }
-
-.recording-bar-web .rec-saved {
-  font-size: 12px;
+.rec-bar-spacer { flex: 1; }
+.rec-bar-saved {
+  font-size: 11px;
   color: #22c55e;
   font-weight: 600;
   flex: 1;

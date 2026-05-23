@@ -1,90 +1,61 @@
-import { useState, useEffect, useRef } from 'react'
+import { useRecordingStore } from '../../store/recordingStore'
+import type { RecordingSource } from '../../store/recordingStore'
 
-type State = 'idle' | 'recording' | 'saved'
+const SOURCES: { value: RecordingSource; label: string }[] = [
+  { value: 'mic',    label: 'Micrófono' },
+  { value: 'system', label: 'Sistema' },
+  { value: 'both',   label: 'Ambas' },
+]
+
+function formatTime(s: number) {
+  const m = Math.floor(s / 60)
+  return `${m}:${(s % 60).toString().padStart(2, '0')}`
+}
 
 export default function WebRecordingBar() {
-  const [state, setState] = useState<State>('idle')
-  const [seconds, setSeconds] = useState(0)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const chunksRef = useRef<Blob[]>([])
+  const r = useRecordingStore()
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-      mediaRecorderRef.current?.stop()
-    }
-  }, [])
-
-  function formatTime(s: number) {
-    const m = Math.floor(s / 60)
-    const ss = s % 60
-    return `${m}:${ss.toString().padStart(2, '0')}`
-  }
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      chunksRef.current = []
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data)
-      }
-
-      recorder.onstop = () => {
-        stream.getTracks().forEach(t => t.stop())
-        // Recording saved — show confirmation briefly
-        setState('saved')
-        setTimeout(() => setState('idle'), 2000)
-      }
-
-      recorder.start()
-      mediaRecorderRef.current = recorder
-      setSeconds(0)
-      setState('recording')
-
-      timerRef.current = setInterval(() => {
-        setSeconds(s => s + 1)
-      }, 1000)
-    } catch {
-      // Permission denied or not available — silently ignore
-    }
-  }
-
-  function stopRecording() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    mediaRecorderRef.current?.stop()
-    mediaRecorderRef.current = null
-  }
-
-  if (state === 'saved') {
+  if (r.phase === 'done') {
     return (
-      <div className="recording-bar-web">
-        <span className="rec-saved">Grabacion guardada</span>
+      <div className="rec-bar">
+        <span className="rec-bar-saved">✓ Grabación guardada</span>
       </div>
     )
   }
 
-  if (state === 'recording') {
+  if (r.phase === 'recording') {
     return (
-      <div className="recording-bar-web">
-        <div className="rec-dot" />
-        <span className="rec-timer">{formatTime(seconds)}</span>
-        <button className="rec-btn rec-btn--stop" onClick={stopRecording}>
+      <div className="rec-bar rec-bar--active">
+        <span className="rec-bar-dot" />
+        <span className="rec-bar-timer">{formatTime(r.elapsed)}</span>
+        <div className="rec-bar-spacer" />
+        <button className="rec-bar-btn rec-bar-btn--stop" onClick={() => r.stopRecording()}>
           Detener
         </button>
       </div>
     )
   }
 
+  // idle state
   return (
-    <div className="recording-bar-web">
-      <span className="rec-source-chip">Microfono</span>
-      <button className="rec-btn rec-btn--start" onClick={startRecording}>
+    <div className="rec-bar">
+      <div className="rec-bar-sources">
+        {SOURCES.map(s => (
+          <button
+            key={s.value}
+            className={`rec-bar-source ${r.source === s.value ? 'active' : ''}`}
+            onClick={() => r.setSource(s.value)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <button
+        className="rec-bar-btn rec-bar-btn--start"
+        onClick={() => r.startRecording()}
+        disabled={!r.isSupported}
+        title="Grabar (⌘R)"
+      >
         Grabar
       </button>
     </div>
