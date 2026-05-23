@@ -4,6 +4,43 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Mac 3.19 + Web v7.12 — 23 mayo 2026
+
+**Plataformas: Mac** 3.19 · **Web** v7.12
+
+### Grabación de voz — estado global compartido
+- **Estado persistente**: la grabación no se interrumpe al cerrar el panel/modal. Puedes minimizar y continúa en el fondo
+- **⌘R unificado**: abre grabación si no está activa; si ya graba, alterna el panel expandido/compacto sin interrumpirla
+- **Web**: `recordingStore` singleton — bar y modal comparten el mismo estado. Abrir el modal mientras se graba muestra la grabación en curso
+- **Mac**: ⌘R ahora inicia grabación correctamente (antes abría el panel de tarea rápida por error)
+- **Selector de fuente**: Micrófono / Sistema / Ambas — misma nomenclatura en Mac y Web
+- **Bar compacto** (Web): punto rojo 6px pulsante + timer + botones pequeños en una línea
+
+### Ajustes (Web)
+- Tab **Estadísticas** — resumen completo del vault (notas, tareas, racha diario, tags, vencidas…)
+- **Color de acento** en pestaña Apariencia — 6 colores con swatches circulares
+- **Cerrar sesión** dentro de pestaña Cuenta
+- Tab **Claude (MCP)** en Integraciones
+
+### Layout (Web)
+- **Resize handle** en borde del sidebar — drag para redimensionar, persiste en localStorage
+- **Edge collapse**: clic en borde izquierdo del sidebar o borde derecho del panel para colapsar
+
+### Tareas (Web)
+- **Estado "Futuro"** — círculo discontinuo azul claro, sección propia en la lista
+- **Checkboxes coloreados**: amarillo (pendiente), naranja (vencida), verde (hecha), azul (futuro)
+- **Fix doble checkbox** — selector múltiple solo aparece en hover
+
+### Google
+- **Fix estado**: conectado si hay `googleRefreshToken`, sin depender del email capturado
+- **Fix OAuth Mac→Servidor**: soporte para `clientType: "mac"` (client_id nativo sin secret)
+- **Refresh resiliente**: prueba cliente web y nativo automáticamente
+
+### Sparkle
+- **Fix firma Mac 3.18**: DMG re-firmado con Developer ID Application + notarizado
+
+---
+
 ## Mac 3.17 + Web v7.5 — 22 mayo 2026
 
 **Plataformas: Mac** 3.17 · **Web** v7.5
