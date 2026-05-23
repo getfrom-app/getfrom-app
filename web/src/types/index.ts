@@ -6,7 +6,7 @@ export interface Node {
   siblingOrder: number
   types: string[]
   collections: string[]
-  status: 'pending' | 'done' | null
+  status: 'pending' | 'done' | 'future' | null
   isActive: boolean
   isEvent: boolean
   isSeguimiento: boolean

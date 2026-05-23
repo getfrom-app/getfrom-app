@@ -71,6 +71,7 @@ export default function NodeRightPanel({ node }: Props) {
   const statusOptions: { value: Node['status']; label: string }[] = [
     { value: null, label: '○ Sin estado' },
     { value: 'pending', label: '● Pendiente' },
+    { value: 'future', label: '◆ Futuro' },
     { value: 'done', label: '✓ Hecho' },
   ]
   const priorityOptions: { value: Node['priority']; label: string; style?: React.CSSProperties }[] = [

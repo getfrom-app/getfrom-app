@@ -45,7 +45,7 @@ function saveSectionState(state: Record<string, boolean>) {
   localStorage.setItem(SECTIONS_KEY, JSON.stringify(state))
 }
 
-type SectionId = 'overdue' | 'today' | 'week' | 'later' | 'nodate'
+type SectionId = 'overdue' | 'today' | 'week' | 'later' | 'nodate' | 'future'
 
 interface Section {
   id: SectionId
@@ -98,12 +98,21 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
 
+  const isDone = task.status === 'done'
+  const isOverdue = task.status === 'pending' && task.due != null && new Date(task.due) < new Date()
+  const statusClass = task.status === 'done' ? 'done'
+    : task.status === 'future' ? 'future'
+    : isOverdue ? 'overdue'
+    : 'pending'
+
   function toggleDone(e: React.MouseEvent) {
     e.stopPropagation()
-    store.updateNode(task.id, { status: task.status === 'done' ? 'pending' : 'done' })
+    if (task.status === 'done') {
+      store.updateNode(task.id, { status: 'pending' })
+    } else {
+      store.updateNode(task.id, { status: 'done' })
+    }
   }
-
-  const isDone = task.status === 'done'
 
   function setQuickDate(days: number) {
     const d = new Date()
@@ -120,32 +129,39 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {onToggleSelect && (
-        <input
-          type="checkbox"
-          className="task-select-checkbox"
-          checked={selected || false}
-          onChange={() => onToggleSelect(task.id)}
-          onClick={e => e.stopPropagation()}
-          aria-label="Seleccionar tarea"
-        />
-      )}
-      <button
-        className="task-check"
-        onClick={toggleDone}
-        aria-label={isDone ? 'Marcar pendiente' : 'Completar'}
-      >
-        {isDone ? (
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-          </svg>
+      <div className="task-check-area">
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            className="task-select-checkbox"
+            checked={selected || false}
+            onChange={() => onToggleSelect(task.id)}
+            onClick={e => e.stopPropagation()}
+            aria-label="Seleccionar tarea"
+          />
         )}
-      </button>
+        <button
+          className={`task-check task-check--${statusClass}`}
+          onClick={toggleDone}
+          aria-label={isDone ? 'Marcar pendiente' : 'Completar'}
+        >
+          {isDone ? (
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.25"/>
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+              <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            </svg>
+          ) : task.status === 'future' ? (
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none" strokeDasharray="3 2"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+            </svg>
+          )}
+        </button>
+      </div>
 
       <div className="task-info">
         <span className="task-text">
@@ -447,9 +463,15 @@ export default function TasksView() {
     const week: Node[] = []
     const later: Node[] = []
     const nodate: Node[] = []
+    const future: Node[] = []
 
     for (const t of allTasks) {
       if (!showDone && t.status === 'done') continue
+      // Future tasks always go to their own section
+      if (t.status === 'future') {
+        future.push(t)
+        continue
+      }
       if (!t.due) {
         nodate.push(t)
         continue
@@ -494,6 +516,7 @@ export default function TasksView() {
       { id: 'week', label: 'Esta semana', tasks: makeSorter(week), defaultOpen: true },
       { id: 'later', label: 'Más tarde', tasks: makeSorter(later), defaultOpen: false },
       { id: 'nodate', label: 'Sin fecha', tasks: makeSorter(nodate), defaultOpen: false },
+      { id: 'future', label: 'Futuro', tasks: makeSorter(future), defaultOpen: false },
     ]
   }, [allTasks, sortBy, showDone]) // eslint-disable-line react-hooks/exhaustive-deps
 

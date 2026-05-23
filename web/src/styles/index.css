@@ -917,12 +917,31 @@ a { color: inherit; text-decoration: none; }
 }
 .task-item:hover { background: var(--bg-hover); }
 
-.task-check {
-  color: var(--text-tertiary);
+.task-check-area {
+  position: relative;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  transition: color 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition: color 0.1s, opacity 0.1s;
 }
 .task-check:hover { color: var(--success); }
+
+.task-check--pending { color: #fbbf24; }
+.task-check--overdue { color: #f97316; }
+.task-check--done    { color: #22c55e; }
+.task-check--future  { color: #60a5fa; }
 
 .task-info {
   flex: 1;
@@ -2687,12 +2706,26 @@ mark.inline-highlight {
 }
 
 .task-select-checkbox {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  margin-right: 4px;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
+  z-index: 2;
+  margin: 0;
   accent-color: var(--accent);
+}
+
+.task-item:hover .task-select-checkbox,
+.task-item--selected .task-select-checkbox {
+  opacity: 1;
+}
+
+.task-item:hover .task-check,
+.task-item--selected .task-check {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .task-bulk-bar {
