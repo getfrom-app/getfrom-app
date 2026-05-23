@@ -578,108 +578,36 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
       </button>
     )
 
+    const goSettings = (tab?: string) => {
+      const url = tab ? `/settings?tab=${tab}` : '/settings'
+      onOpenSettings ? navigate(url) : navigate(url)
+    }
+
     return (
       <div className="sidebar-tab-content">
         <div className="sidebar-settings">
-          {/* Cuenta */}
+          {/* Mi cuenta — sin email ni header */}
           <div className="settings-section">
-            <div className="settings-section-title">Cuenta</div>
-            {email && (
-              <div className="settings-email">{email}</div>
-            )}
-            <SettingRow icon="👤" label="Mi cuenta" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
+            <SettingRow icon="👤" label="Mi cuenta" onClick={() => goSettings('cuenta')} />
             {showUpgrade && (
-              <SettingRow icon="✨" label="Actualizar plan" onClick={() => navigate('/pricing')} badge="Free" />
+              <SettingRow icon="✨" label="Actualizar a Pro" onClick={() => navigate('/pricing')} badge="Free" />
             )}
-          </div>
-
-          {/* Apariencia */}
-          <div className="settings-section">
-            <div className="settings-section-title">Apariencia</div>
-            <div className="settings-theme-row">
-              <button
-                className={`settings-theme-btn ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => setTheme('light')}
-              >☀️ Claro</button>
-              <button
-                className={`settings-theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => setTheme('dark')}
-              >🌙 Oscuro</button>
-              <button
-                className={`settings-theme-btn ${theme === 'system' ? 'active' : ''}`}
-                onClick={() => setTheme('system')}
-              >💻 Auto</button>
-            </div>
-            <div className="settings-density-row">
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>Densidad:</span>
-              {(['compact', 'normal', 'comfortable'] as const).map(d => (
-                <button
-                  key={d}
-                  className={`settings-theme-btn ${density === d ? 'active' : ''}`}
-                  onClick={() => setDensity(d)}
-                >
-                  {d === 'compact' ? '— Compacto' : d === 'normal' ? '○ Normal' : '◎ Amplio'}
-                </button>
-              ))}
-            </div>
-            <div className="settings-density-row" style={{ marginTop: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>Color:</span>
-              {([
-                ['purple', '#8b5cf6'],
-                ['blue', '#3b82f6'],
-                ['green', '#22c55e'],
-                ['orange', '#f97316'],
-                ['rose', '#f43f5e'],
-                ['teal', '#14b8a6'],
-              ] as const).map(([a, color]) => (
-                <button
-                  key={a}
-                  onClick={() => setAccent(a)}
-                  title={a}
-                  style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: color,
-                    border: accent === a ? `2px solid ${color}` : '2px solid transparent',
-                    outline: accent === a ? `2px solid ${color}` : '2px solid transparent',
-                    outlineOffset: 1,
-                    cursor: 'pointer',
-                    boxShadow: accent === a ? `0 0 0 2px white, 0 0 0 4px ${color}` : 'none',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Estadísticas rápidas */}
-          <div className="settings-section">
-            <div className="settings-section-title">Tu vault</div>
-            <div className="settings-stats-grid">
-              <div className="settings-stat">
-                <span className="settings-stat-value">{s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt).length}</span>
-                <span className="settings-stat-label">Notas</span>
-              </div>
-              <div className="settings-stat">
-                <span className="settings-stat-value">{s.allActive().filter(n => n.status === 'pending').length}</span>
-                <span className="settings-stat-label">Pendientes</span>
-              </div>
-              <div className="settings-stat">
-                <span className="settings-stat-value">{s.allUsedTags().length}</span>
-                <span className="settings-stat-label">Tags</span>
-              </div>
-              <div className="settings-stat">
-                <span className="settings-stat-value">{s.allActive().filter(n => n.isFavorite).length}</span>
-                <span className="settings-stat-label">Fijadas</span>
-              </div>
-            </div>
           </div>
 
           {/* Integraciones */}
           <div className="settings-section">
             <div className="settings-section-title">Integraciones</div>
-            <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => window.open('https://getfrom.app/claude', '_blank')} />
-            <SettingRow icon="📅" label="Google Calendar" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
-            <SettingRow icon="📤" label="Exportar datos" onClick={() => onOpenSettings ? onOpenSettings() : navigate('/account')} />
+            <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => goSettings('claude')} />
+            <SettingRow icon="📅" label="Google Calendar" onClick={() => goSettings('google')} />
+            <SettingRow icon="📤" label="Exportar datos" onClick={() => goSettings('exportar')} />
             <SettingRow icon="🗑" label="Papelera" onClick={() => navigate('/trash')} />
+          </div>
+
+          {/* Ajustes */}
+          <div className="settings-section">
+            <div className="settings-section-title">Ajustes</div>
+            <SettingRow icon="🎨" label="Apariencia" onClick={() => goSettings('apariencia')} />
+            <SettingRow icon="📊" label="Estadísticas" onClick={() => goSettings('estadisticas')} />
           </div>
 
           {/* Ayuda */}
@@ -690,16 +618,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               const event = new KeyboardEvent('keydown', { key: '?', bubbles: true })
               window.dispatchEvent(event)
             }} />
-            <SettingRow icon="💬" label="Soporte" onClick={() => window.open('mailto:hello@getfrom.app', '_blank')} />
-          </div>
-
-          {/* Sesión */}
-          <div className="settings-section">
-            <SettingRow icon="🚪" label="Cerrar sesión" onClick={onLogout} />
-          </div>
-
-          <div style={{ paddingTop: 8, fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            From Web · {new Date().getFullYear()}
+            <SettingRow icon="💬" label="Soporte" onClick={() => window.open('mailto:hola@getfrom.app', '_blank')} />
           </div>
         </div>
       </div>
