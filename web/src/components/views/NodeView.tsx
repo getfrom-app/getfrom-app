@@ -1769,6 +1769,13 @@ export default function NodeView() {
             <NodeRightPanel node={node} />
           )}
         </div>
+        {!rightCollapsed && (
+          <div
+            className="right-panel-outer-edge"
+            onClick={() => setRightCollapsed(true)}
+            title="Colapsar panel"
+          />
+        )}
       </div>
 
       {/* Modal: Mover a… */}

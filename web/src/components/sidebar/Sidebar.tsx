@@ -810,6 +810,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           </div>
         </>
       )}
+      {/* Left-edge collapse zone: click the outer-left edge to collapse */}
+      {open && (
+        <div
+          className="sidebar-left-edge-zone"
+          onClick={onToggle}
+          title="Colapsar sidebar"
+        />
+      )}
     </aside>
   )
 }

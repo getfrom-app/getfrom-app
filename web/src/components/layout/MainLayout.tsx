@@ -57,6 +57,31 @@ export default function MainLayout() {
   const s = useStore()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
+
+  // Sidebar resize state
+  const sidebarWidthRef = useRef(parseInt(localStorage.getItem('from_sidebar_width') || '220'))
+  const [sidebarWidth, setSidebarWidthState] = useState(sidebarWidthRef.current)
+  function setSidebarWidth(w: number) { sidebarWidthRef.current = w; setSidebarWidthState(w) }
+
+  function handleDividerMouseDown(e: React.MouseEvent) {
+    if (!sidebarOpen) { setSidebarOpen(true); return }
+    const startX = e.clientX
+    const startW = sidebarWidthRef.current
+    document.body.classList.add('sidebar-resizing')
+    function onMove(ev: MouseEvent) {
+      const w = Math.max(160, Math.min(520, startW + ev.clientX - startX))
+      setSidebarWidth(w)
+    }
+    function onUp() {
+      document.body.classList.remove('sidebar-resizing')
+      localStorage.setItem('from_sidebar_width', String(sidebarWidthRef.current))
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showNewTask, setShowNewTask] = useState(false)
@@ -268,7 +293,7 @@ export default function MainLayout() {
         onNewEvent={() => setShowNewEvent(true)}
         onVoiceCapture={() => setShowVoiceCapture(true)}
       />
-      <div className="main-body">
+      <div className="main-body" style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -277,6 +302,19 @@ export default function MainLayout() {
         isGuest={false}
         onOpenSettings={() => navigate('/settings')}
       />
+      {/* Sidebar resize/collapse handle */}
+      <div
+        className="sidebar-divider"
+        onMouseDown={handleDividerMouseDown}
+      >
+        <button
+          className="sidebar-divider-handle"
+          onClick={e => { e.stopPropagation(); setSidebarOpen(v => !v) }}
+          title={sidebarOpen ? 'Colapsar sidebar (⌘⇧S)' : 'Expandir sidebar (⌘⇧S)'}
+        >
+          {sidebarOpen ? '‹' : '›'}
+        </button>
+      </div>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
