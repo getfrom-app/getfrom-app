@@ -2,9 +2,46 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { useTheme } from '../../hooks/useTheme'
 import type { Node } from '../../types'
 import WebRecordingBar from './WebRecordingBar'
+
+// ── Tag hierarchy helpers ───────────────────────────────────────────────────
+
+interface TagTreeNode {
+  name: string          // full tag name e.g. "la-isla/alumnos"
+  segment: string       // last segment e.g. "alumnos"
+  count: number         // node count for this exact tag
+  children: TagTreeNode[]
+}
+
+function buildTagTree(
+  tagNames: string[],
+  counts: (name: string) => number
+): TagTreeNode[] {
+  const roots: TagTreeNode[] = []
+  for (const full of tagNames) {
+    const parts = full.split('/').filter(Boolean)
+    if (parts.length === 0) continue
+    let siblings = roots
+    let cumulative = ''
+    parts.forEach((seg, i) => {
+      cumulative = i === 0 ? seg : `${cumulative}/${seg}`
+      let node = siblings.find(s => s.segment === seg)
+      if (!node) {
+        node = { name: cumulative, segment: seg, count: 0, children: [] }
+        siblings.push(node)
+      }
+      if (i === parts.length - 1) node.count = counts(full)
+      siblings = node.children
+    })
+  }
+  function sortRec(nodes: TagTreeNode[]) {
+    nodes.sort((a, b) => a.segment.localeCompare(b.segment))
+    nodes.forEach(n => sortRec(n.children))
+  }
+  sortRec(roots)
+  return roots
+}
 
 interface Props {
   open: boolean
@@ -13,86 +50,6 @@ interface Props {
   isSyncing: boolean
   isGuest?: boolean
   onOpenSettings?: () => void
-}
-
-interface TreeNodeProps {
-  node: Node
-  depth: number
-  activePath: string
-  onNavigate: (id: string) => void
-  onCreateChild: (parentId: string) => void
-}
-
-function TreeNodeItem({ node, depth, activePath, onNavigate, onCreateChild }: TreeNodeProps) {
-  const [expanded, setExpanded] = useState(false)
-  const [hovered, setHovered] = useState(false)
-  const children = store.children(node.id).filter(n => !n.deletedAt && !n.isDiaryEntry)
-  const hasChildren = children.length > 0
-  const isActive = activePath === `/node/${node.id}` || activePath.startsWith(`/node/${node.id}/`)
-
-  return (
-    <div className="tree-node">
-      <div
-        className={`tree-node-row ${isActive ? 'active' : ''}`}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        {/* Expand toggle */}
-        <button
-          className={`tree-node-toggle ${hasChildren ? '' : 'invisible'}`}
-          onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
-          tabIndex={-1}
-        >
-          <svg
-            width="10" height="10" viewBox="0 0 10 10"
-            style={{ transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}
-          >
-            <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-          </svg>
-        </button>
-
-        {/* Node label */}
-        <button
-          className="tree-node-label"
-          onClick={() => onNavigate(node.id)}
-        >
-          <span className="tree-node-text">
-            {node.isFavorite && <span className="tree-node-star">★</span>}
-            {node.text || 'Sin título'}
-          </span>
-        </button>
-
-        {/* Add child button */}
-        {hovered && (
-          <button
-            className="tree-node-add"
-            onClick={e => { e.stopPropagation(); onCreateChild(node.id) }}
-            title="Añadir hijo"
-            tabIndex={-1}
-          >
-            +
-          </button>
-        )}
-      </div>
-
-      {/* Children */}
-      {expanded && hasChildren && (
-        <div className="tree-node-children">
-          {children.map(child => (
-            <TreeNodeItem
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              activePath={activePath}
-              onNavigate={onNavigate}
-              onCreateChild={onCreateChild}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 function getNodeIcon(n: Node): string {
@@ -129,7 +86,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
   const location = useLocation()
   const s = useStore()
   const us = useUserStore()
-  const { theme, setTheme, density, setDensity, accent, setAccent } = useTheme()
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
@@ -140,9 +96,11 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     window.addEventListener('panels-updated', onPanelsUpdated)
     return () => window.removeEventListener('panels-updated', onPanelsUpdated)
   }, [])
-  const [treeSearch, setTreeSearch] = useState('')
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('from_sidebar_collapsed') || '{}') } catch { return {} }
+  })
+  const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('from_tags_collapsed') || '{}') } catch { return {} }
   })
 
   function toggleSection(key: string) {
@@ -171,22 +129,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     ).length
   }, [s])
 
-  // Get root notes (parentId === null, not diary, not tag definitions)
-  const allNodes = s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt)
-  const rootNotes = allNodes
-    .filter(n => n.parentId === null)
-    .filter(n => {
-      // Skip tag definitions from the general tree
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        return !ed._tagDefinition
-      } catch { return true }
-    })
-    .sort((a, b) => a.siblingOrder - b.siblingOrder)
-
-  const favorites = rootNotes.filter(n => n.isFavorite)
-  const regularNotes = rootNotes.filter(n => !n.isFavorite)
-
   // Favorites tab: all nodes with isFavorite === true
   const allFavorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt)
 
@@ -198,44 +140,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     return s.tagName(node) || node.text
   }
 
-  function tagChildCount(tagNode: Node) {
-    return s.allActive().filter(n => {
-      const types = n.types || []
-      const name = s.tagName(tagNode) || tagNode.text
-      return types.includes(name || '')
-    }).length
-  }
-
-  function handleCreateRoot() {
-    const newNode = store.createNode({ text: '', parentId: null })
-    navigate(`/node/${newNode.id}`)
-  }
-
-  function handleNavigate(id: string) {
-    navigate(`/node/${id}`)
-  }
-
-  function handleCreateChild(parentId: string) {
-    const newNode = store.createNode({ text: '', parentId })
-    navigate(`/node/${newNode.id}`)
-  }
-
-  function handleCreatePanel() {
-    const name = prompt('Nombre del panel:')
-    if (!name) return
-    const query = prompt('Búsqueda (query):')
-    if (query === null) return
-    const newPanel: Panel = {
-      id: Date.now().toString(),
-      name,
-      query,
-      createdAt: new Date().toISOString(),
-    }
-    const updated = [...panels, newPanel]
-    setPanels(updated)
-    savePanels(updated)
-  }
-
   function handleDeletePanel(id: string) {
     const updated = panels.filter(p => p.id !== id)
     setPanels(updated)
@@ -244,13 +148,61 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
 
   // ── Tab content ────────────────────────────────────────────────────────
 
+  // Tag collapse state (persisted)
+  function getCollapsedTags(): Record<string, boolean> {
+    try { return JSON.parse(localStorage.getItem('from_tags_collapsed') || '{}') } catch { return {} }
+  }
+  function toggleTagCollapsed(name: string) {
+    const next = { ...collapsedTags, [name]: !collapsedTags[name] }
+    setCollapsedTags(next)
+    localStorage.setItem('from_tags_collapsed', JSON.stringify(next))
+  }
+
+  function renderTagTreeNode(node: TagTreeNode, depth: number) {
+    const color = s.tagColor(node.name)
+    const hasChildren = node.children.length > 0
+    const isCollapsed = !!collapsedTags[node.name]
+    const isActiveTag = location.pathname === `/tag/${node.name}`
+    return (
+      <div key={node.name}>
+        <div
+          className={`sidebar-tag-item ${isActiveTag ? 'active' : ''}`}
+          style={{ paddingLeft: 8 + depth * 14 }}
+          onClick={() => navigate(`/tag/${node.name}`)}
+          title={`#${node.name} · ${node.count} nodos`}
+        >
+          {hasChildren ? (
+            <button
+              className="sidebar-tag-chevron"
+              onClick={e => { e.stopPropagation(); toggleTagCollapsed(node.name) }}
+              tabIndex={-1}
+              aria-label={isCollapsed ? 'Expandir' : 'Colapsar'}
+            >
+              <svg width="9" height="9" viewBox="0 0 10 10"
+                style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
+                <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              </svg>
+            </button>
+          ) : (
+            <span className="sidebar-tag-chevron" style={{ visibility: 'hidden' }} />
+          )}
+          <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
+          <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)' }}>{node.segment}</span>
+          {node.count > 0 && (
+            <span className="sidebar-tag-count" style={{ background: color + '20', color }}>{node.count}</span>
+          )}
+        </div>
+        {hasChildren && !isCollapsed && node.children.map(c => renderTagTreeNode(c, depth + 1))}
+      </div>
+    )
+  }
+
   function renderTagsTab() {
-    // Combinar tag definitions (con nodo) + used tags (sólo en types[])
-    const tagDefMap = new Map(tags.map(t => [tagName(t), t]))
     const allTagNames = Array.from(new Set([
       ...tags.map(t => tagName(t)).filter(Boolean) as string[],
       ...usedTags,
     ])).sort()
+    const tree = buildTagTree(allTagNames, name => s.tagNodeCount(name))
 
     return (
       <div className="sidebar-tab-content">
@@ -278,7 +230,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           )
         })()}
 
-        {/* Tags section */}
+        {/* Tags section — hierarchical */}
         {allTagNames.length > 0 ? (
           <div style={{ marginBottom: 8 }}>
             <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('tags')}>
@@ -286,23 +238,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span>Tags</span>
               <span style={{ fontSize: 10, opacity: 0.5 }}>{allTagNames.length}</span>
             </div>
-            {!collapsedSections['tags'] && allTagNames.map(name => {
-              const defNode = tagDefMap.get(name)
-              const color = s.tagColor(name)
-              const count = s.tagNodeCount(name)
-              return (
-                <div
-                  key={name}
-                  className={`sidebar-tag-item ${defNode && isActive(`/node/${defNode.id}`) ? 'active' : ''}`}
-                  onClick={() => defNode ? navigate(`/node/${defNode.id}`) : navigate(`/tag/${name}`)}
-                  title={`#${name} · ${count} nodos`}
-                >
-                  <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
-                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)' }}>{name}</span>
-                  <span className="sidebar-tag-count" style={{ background: color + '20', color }}>{count}</span>
-                </div>
-              )
-            })}
+            {!collapsedSections['tags'] && tree.map(t => renderTagTreeNode(t, 0))}
           </div>
         ) : (
           <div className="tree-empty" style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
@@ -310,110 +246,11 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           </div>
         )}
 
-        {/* Áreas section */}
-        {s.allAreas().length > 0 && (
-          <div style={{ marginBottom: 8 }}>
-            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('areas')}>
-              <span className="nav-section-chevron">{collapsedSections['areas'] ? '▸' : '▾'}</span>
-              <span>Áreas</span>
-              <span style={{ fontSize: 10, opacity: 0.5 }}>{s.allAreas().length}</span>
-            </div>
-            {!collapsedSections['areas'] && (
-              <div className="tree-section">
-                {s.allAreas().map(area => (
-                  <button
-                    key={area}
-                    className={`tree-item ${location.search.includes(`area:${encodeURIComponent(area)}`) ? 'active' : ''}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 12px', fontSize: 13, color: 'var(--text-primary)', textAlign: 'left' }}
-                    onClick={() => navigate(`/search?q=${encodeURIComponent(`area:${area}`)}`)}
-                  >
-                    <span style={{ fontSize: 12 }}>📁</span>
-                    <span style={{ flex: 1 }}>{area}</span>
-                    <span style={{ fontSize: 11, background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', borderRadius: 8, padding: '1px 6px' }}>{s.nodesInArea(area).length}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Full notes tree */}
-        {favorites.length > 0 && (
-          <>
-            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('favorites')}>
-              <span className="nav-section-chevron">{collapsedSections['favorites'] ? '▸' : '▾'}</span>
-              <span>Favoritos</span>
-              <span style={{ fontSize: 10, opacity: 0.5 }}>{favorites.length}</span>
-            </div>
-            {!collapsedSections['favorites'] && (
-              <div className="tree-section">
-                {favorites.map(node => (
-                  <TreeNodeItem
-                    key={node.id}
-                    node={node}
-                    depth={0}
-                    activePath={location.pathname}
-                    onNavigate={handleNavigate}
-                    onCreateChild={handleCreateChild}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="nav-section-label tree-section-header nav-section-label--clickable" onClick={() => toggleSection('notes')}>
-          <span className="nav-section-chevron">{collapsedSections['notes'] ? '▸' : '▾'}</span>
-          <span>Notas</span>
-          <button
-            className="tree-add-root"
-            onClick={e => { e.stopPropagation(); handleCreateRoot() }}
-            title="Nueva nota raíz"
-          >
-            +
-          </button>
-        </div>
-        {/* Mini buscador de notas */}
-        {!collapsedSections['notes'] && (
-          <>
-            <div className="sidebar-tree-search">
-              <input
-                type="text"
-                className="sidebar-tree-search-input"
-                placeholder="Filtrar notas..."
-                value={treeSearch}
-                onChange={e => setTreeSearch(e.target.value)}
-              />
-              {treeSearch && <button className="sidebar-tree-search-clear" onClick={() => setTreeSearch('')}>×</button>}
-            </div>
-            <div className="tree-section">
-              {(treeSearch
-                ? s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt && n.text.toLowerCase().includes(treeSearch.toLowerCase()))
-                : regularNotes
-              ).slice(0, 50).map(node => (
-                <TreeNodeItem
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  activePath={location.pathname}
-                  onNavigate={handleNavigate}
-                  onCreateChild={handleCreateChild}
-                />
-              ))}
-              {regularNotes.length === 0 && (
-                <div className="tree-empty">
-                  Sin notas. Crea una con +
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
         {/* Stats widget */}
         <div className="sidebar-stats-widget">
           <div className="sidebar-stat">
-            <span className="sidebar-stat-value">{regularNotes.length + favorites.length}</span>
-            <span className="sidebar-stat-label">notas</span>
+            <span className="sidebar-stat-value">{allTagNames.length}</span>
+            <span className="sidebar-stat-label">tags</span>
           </div>
           <div className="sidebar-stat">
             <span className="sidebar-stat-value">{pendingCount}</span>
@@ -438,25 +275,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     store.updateNode(id, { isFavorite: false })
   }, [])
 
-  function getRelativeTime(updatedAt: string): string {
-    const diff = Math.round((Date.now() - new Date(updatedAt).getTime()) / 60000)
-    if (diff < 60) return `${diff}m`
-    if (diff < 1440) return `${Math.round(diff / 60)}h`
-    return `${Math.round(diff / 1440)}d`
-  }
-
   function renderFavoritesTab() {
-    // Recientes: últimas 8 notas visitadas desde localStorage
-    const recentIds: string[] = (() => {
-      try { return JSON.parse(localStorage.getItem('from_recent_nodes') || '[]') as string[] } catch { return [] }
-    })()
-    const recentNodes = recentIds
-      .map(id => store.getNode(id))
-      .filter(Boolean)
-      .map(n => n!)
-      .filter(n => !n.deletedAt)
-      .slice(0, 8)
-
     return (
       <div className="sidebar-tab-content">
         {allFavorites.length > 0 ? (
@@ -490,34 +309,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             Fija una nota con ☆ para verla aquí
           </div>
         )}
-
-        {recentNodes.length > 0 && (
-          <>
-            <div className="nav-section-label" style={{ marginTop: 12, display: 'flex', alignItems: 'center' }}>
-              <span style={{ flex: 1 }}>Recientes</span>
-              <button
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text-tertiary)', padding: '0 4px' }}
-                onClick={() => navigate('/search?q=recientes')}
-                title="Ver todos los recientes"
-              >
-                Ver todos →
-              </button>
-            </div>
-            <div className="tree-section">
-              {recentNodes.map(node => (
-                <button
-                  key={node.id}
-                  className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
-                  onClick={() => navigate(`/node/${node.id}`)}
-                >
-                  <span className="tree-item-icon">{getNodeIcon(node)}</span>
-                  <span className="tree-item-name">{node.text || 'Sin título'}</span>
-                  <span className="tree-item-time">{getRelativeTime(node.updatedAt)}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
       </div>
     )
   }
@@ -535,7 +326,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
       <div className="sidebar-tab-content">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 8px' }}>
           <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Paneles</span>
-          <button className="sidebar-panel-create-btn" onClick={handleCreatePanel} title="Nuevo panel">+</button>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Crea paneles desde ⌘K">⌘K</span>
         </div>
         {allPanels.map(panel => {
           const isDefault = panel.id === '__today_tasks__'

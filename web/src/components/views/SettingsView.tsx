@@ -4,6 +4,7 @@ import {
   CuentaPane,
   AparienciaPane,
   IAPane,
+  ClaudeMcpPane,
   AtajosPane,
   PlantillasPane,
   GooglePane,
@@ -91,37 +92,162 @@ const SUBTITLES: Partial<Record<Tab, string>> = {
 
 // ── Extra panes ────────────────────────────────────────────────────────────────
 
+const PERFIL_IA_KEY = 'from_ai_profile'
+
 function PerfilIAPane() {
+  const [text, setText] = useState<string>(() => localStorage.getItem(PERFIL_IA_KEY) || '')
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+
+  function handleSave() {
+    localStorage.setItem(PERFIL_IA_KEY, text)
+    setSavedAt(Date.now())
+    setTimeout(() => setSavedAt(null), 2500)
+  }
+
+  function handleClear() {
+    if (!confirm('¿Borrar todo el perfil IA?')) return
+    setText('')
+    localStorage.removeItem(PERFIL_IA_KEY)
+  }
+
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+
   return (
     <div className="st-pane">
       <div className="st-section-title">Perfil IA</div>
-      <div className="st-row">
-        <div className="st-row-info">
-          <div className="st-row-label">Próximamente en la web</div>
+      <div className="st-row" style={{ display: 'block' }}>
+        <div className="st-row-info" style={{ marginBottom: 10 }}>
+          <div className="st-row-label">Contexto para la IA</div>
           <div className="st-row-hint">
-            Configura un contexto persistente que la IA usará en todas las conversaciones
-            (quién eres, en qué trabajas, cómo prefieres que te responda). Disponible por ahora
-            en la app de escritorio en Ajustes → Perfil IA.
+            Escribe quién eres, en qué trabajas y cómo prefieres que la IA te responda. Este contexto
+            se incluirá automáticamente en todas las conversaciones con la IA.
           </div>
+        </div>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="Ej: Me llamo Alberto, soy presentador de radio y emprendedor. Trabajo en La Isla del Trading (academia de trading). Prefiero respuestas directas, sin rodeos, en español."
+          rows={12}
+          className="st-input"
+          style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+          <button className="btn-primary" onClick={handleSave}>Guardar</button>
+          {text && <button className="btn-secondary btn-danger-outline" onClick={handleClear}>Borrar</button>}
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{wordCount} palabras</span>
+          {savedAt && <span style={{ fontSize: 12, color: '#22c55e' }}>✓ Guardado</span>}
         </div>
       </div>
     </div>
   )
 }
 
+// ── Magic toggles ────────────────────────────────────────────────────────────
+
+interface MagicToggleDef {
+  key: string
+  title: string
+  subtitle: string
+  defaultOn: boolean
+}
+
+const MAGIC_TOGGLES: MagicToggleDef[] = [
+  { key: 'magic.objectDetection', title: 'Detectar objeto desde el texto',
+    subtitle: 'Cuando escribes algo como "Sync con Adrián mañana", From propone #reunión como ghost text. Tab acepta.',
+    defaultOn: true },
+  { key: 'magic.completion', title: 'Completar el pensamiento',
+    subtitle: 'From sugiere cómo terminar la frase con texto en gris cursiva. Tab acepta.',
+    defaultOn: true },
+  { key: 'magic.ambient', title: 'Acciones IA por nodo (botón ✨)',
+    subtitle: 'En hover sobre cada bullet o nota aparece el botón ✨ con acciones precocinadas por tipo (resumir, sugerir subtareas, etc).',
+    defaultOn: true },
+  { key: 'magic.draftSidebar', title: 'Editor lateral para outputs largos',
+    subtitle: 'Cuando la IA genera texto largo, abre un panel lateral editable antes de aplicar. Si lo apagas, todo se aplica directo.',
+    defaultOn: true },
+  { key: 'magic.animatedPill', title: 'Animar el pill al cambiar objeto',
+    subtitle: 'Cuando el objeto detectado cambia, el pill del panel derecho hace un pulso con glow.',
+    defaultOn: true },
+]
+
+function readMagic(key: string, def: boolean): boolean {
+  const v = localStorage.getItem(key)
+  if (v === null) return def
+  return v === 'true'
+}
+
 function MagicPane() {
+  const [values, setValues] = useState<Record<string, boolean>>(() => {
+    const v: Record<string, boolean> = {}
+    MAGIC_TOGGLES.forEach(t => { v[t.key] = readMagic(t.key, t.defaultOn) })
+    return v
+  })
+
+  function setToggle(key: string, val: boolean) {
+    setValues(v => ({ ...v, [key]: val }))
+    localStorage.setItem(key, String(val))
+  }
+
   return (
     <div className="st-pane">
-      <div className="st-section-title">Magic</div>
-      <div className="st-row">
-        <div className="st-row-info">
-          <div className="st-row-label">Próximamente en la web</div>
-          <div className="st-row-hint">
-            Sugerencias automáticas mientras escribes: completado inteligente, acciones rápidas
-            y reescritura. Disponible por ahora en la app de escritorio.
+      <div className="st-section-title">Sugerencias mientras escribes</div>
+      {MAGIC_TOGGLES.slice(0, 2).map(t => (
+        <div key={t.key} className="st-row">
+          <div className="st-row-info">
+            <div className="st-row-label">{t.title}</div>
+            <div className="st-row-hint">{t.subtitle}</div>
+          </div>
+          <div className="st-row-action">
+            <button
+              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
+              onClick={() => setToggle(t.key, !values[t.key])}
+              aria-pressed={values[t.key]}
+              role="switch"
+            >
+              <span className="st-switch-thumb" />
+            </button>
           </div>
         </div>
-      </div>
+      ))}
+
+      <div className="st-section-title" style={{ marginTop: 20 }}>Acciones sobre el contenido</div>
+      {MAGIC_TOGGLES.slice(2, 4).map(t => (
+        <div key={t.key} className="st-row">
+          <div className="st-row-info">
+            <div className="st-row-label">{t.title}</div>
+            <div className="st-row-hint">{t.subtitle}</div>
+          </div>
+          <div className="st-row-action">
+            <button
+              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
+              onClick={() => setToggle(t.key, !values[t.key])}
+              aria-pressed={values[t.key]}
+              role="switch"
+            >
+              <span className="st-switch-thumb" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <div className="st-section-title" style={{ marginTop: 20 }}>Detalles visuales</div>
+      {MAGIC_TOGGLES.slice(4).map(t => (
+        <div key={t.key} className="st-row">
+          <div className="st-row-info">
+            <div className="st-row-label">{t.title}</div>
+            <div className="st-row-hint">{t.subtitle}</div>
+          </div>
+          <div className="st-row-action">
+            <button
+              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
+              onClick={() => setToggle(t.key, !values[t.key])}
+              aria-pressed={values[t.key]}
+              role="switch"
+            >
+              <span className="st-switch-thumb" />
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -303,7 +429,7 @@ export default function SettingsView() {
       case 'plantillas':  return <PlantillasPane />
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />
-      case 'claude':      return <IAPane />
+      case 'claude':      return <ClaudeMcpPane />
     }
   }
 

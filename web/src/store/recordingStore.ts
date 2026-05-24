@@ -21,6 +21,8 @@ declare global { interface Window { SpeechRecognition?: SpeechRecognitionCtor; w
 class RecordingStore {
   phase: RecordingPhase = 'idle'
   source: RecordingSource = 'mic'
+  micEnabled: boolean = true
+  sysEnabled: boolean = true
   transcript = ''
   finalText = ''
   elapsed = 0
@@ -57,8 +59,33 @@ class RecordingStore {
     }
   }
 
+  setMicEnabled(v: boolean) {
+    if (this.phase !== 'idle') return
+    // Don't allow disabling both
+    if (!v && !this.sysEnabled) return
+    this.micEnabled = v
+    this._syncSourceFromToggles()
+    this.notify()
+  }
+
+  setSysEnabled(v: boolean) {
+    if (this.phase !== 'idle') return
+    if (!v && !this.micEnabled) return
+    this.sysEnabled = v
+    this._syncSourceFromToggles()
+    this.notify()
+  }
+
+  private _syncSourceFromToggles() {
+    if (this.micEnabled && this.sysEnabled) this.source = 'both'
+    else if (this.micEnabled) this.source = 'mic'
+    else if (this.sysEnabled) this.source = 'system'
+  }
+
   async startRecording() {
     if (this.phase === 'recording') return // already recording
+    // Always derive source from toggles before starting
+    this._syncSourceFromToggles()
 
     const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechAPI) {

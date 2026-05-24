@@ -359,15 +359,101 @@ export function AparienciaPane() {
   )
 }
 
+const ANTHROPIC_KEY_LS = 'from_anthropic_api_key'
+const AI_LANG_LS = 'from_ai_language'
+
 export function IAPane() {
   const us = useUserStore()
+  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem(ANTHROPIC_KEY_LS) || '')
+  const [showKey, setShowKey] = useState(false)
+  const [keySaved, setKeySaved] = useState(false)
+  const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'es')
+
+  function saveApiKey() {
+    if (apiKey.trim()) localStorage.setItem(ANTHROPIC_KEY_LS, apiKey.trim())
+    else localStorage.removeItem(ANTHROPIC_KEY_LS)
+    setKeySaved(true)
+    setTimeout(() => setKeySaved(false), 2000)
+  }
+  function clearApiKey() {
+    setApiKey('')
+    localStorage.removeItem(ANTHROPIC_KEY_LS)
+  }
+  function setLanguage(v: string) {
+    setLang(v)
+    localStorage.setItem(AI_LANG_LS, v)
+  }
+
+  return (
+    <div className="st-pane">
+      <SectionTitle>Proveedor de IA</SectionTitle>
+      <Row
+        label="Modelo por defecto"
+        hint="From usa los modelos de Anthropic (Claude) para las funciones de IA. Las llamadas se hacen a través de nuestro servidor con tus tokens incluidos, o con tu propia API key si la configuras."
+      >
+        <span className="st-value">Claude (Anthropic)</span>
+      </Row>
+
+      <SectionTitle>API Key propia</SectionTitle>
+      <Row
+        label="Clave de Anthropic"
+        hint="Si añades tu propia API key de Anthropic, From la usará directamente y no consumirá los tokens incluidos en tu plan. Se guarda solo en este navegador."
+      />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+        <input
+          type={showKey ? 'text' : 'password'}
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
+          placeholder="sk-ant-..."
+          className="st-input"
+          style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+        />
+        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? 'Ocultar' : 'Mostrar'}>
+          {showKey ? '🙈' : '👁'}
+        </button>
+      </div>
+      <div className="st-actions">
+        <button className="btn-primary" onClick={saveApiKey}>{keySaved ? '✓ Guardado' : 'Guardar'}</button>
+        {apiKey && <button className="btn-secondary btn-danger-outline" onClick={clearApiKey}>Borrar</button>}
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
+          Obtener key ↗
+        </a>
+      </div>
+
+      <SectionTitle>Tokens incluidos</SectionTitle>
+      {us.user?.tokensBalance !== undefined ? (
+        <Row label="Balance de tokens">
+          <span className="st-value">{us.user.tokensBalance.toLocaleString()}</span>
+        </Row>
+      ) : (
+        <Row label="Balance de tokens" hint="Inicia sesión para ver tu balance." />
+      )}
+      <Row label="¿Qué son los tokens?" hint="Cada operación de IA consume tokens de tu saldo mensual. Con un plan activo recibes tokens cada mes. Puedes añadir tu propia API key arriba para no consumirlos." />
+
+      <SectionTitle>Idioma</SectionTitle>
+      <Row
+        label="Idioma de las respuestas IA"
+        hint="Idioma preferido para las respuestas generadas por la IA. La IA detecta también el idioma del contexto."
+      >
+        <div className="st-segmented">
+          <button className={lang === 'es' ? 'active' : ''} onClick={() => setLanguage('es')}>Español</button>
+          <button className={lang === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>English</button>
+          <button className={lang === 'auto' ? 'active' : ''} onClick={() => setLanguage('auto')}>Auto</button>
+        </div>
+      </Row>
+    </div>
+  )
+}
+
+export function ClaudeMcpPane() {
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
   const [generatingMcp, setGeneratingMcp] = useState(false)
   const [mcpLoaded, setMcpLoaded] = useState(false)
+  const [phraseCopied, setPhraseCopied] = useState(false)
 
   useEffect(() => {
-    if (!getToken()) return
+    if (!getToken()) { setMcpLoaded(true); return }
     getApiToken().then(d => { setMcpToken(d.token); setMcpLoaded(true) }).catch(() => setMcpLoaded(true))
   }, [])
 
@@ -383,60 +469,68 @@ export function IAPane() {
     navigator.clipboard.writeText(mcpToken).catch(() => {})
     setMcpCopied(true); setTimeout(() => setMcpCopied(false), 2000)
   }
+  function copyPhrase() {
+    navigator.clipboard.writeText('Configura From').catch(() => {})
+    setPhraseCopied(true); setTimeout(() => setPhraseCopied(false), 2000)
+  }
 
   return (
     <div className="st-pane">
-      <SectionTitle>Claude Desktop (MCP)</SectionTitle>
-      <Row
-        label="Integración con Claude"
-        hint="Conecta Claude con tu vault de From para acceder a tus notas desde el asistente de IA."
-      >
-        <a href="https://getfrom.app/from.dxt" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
-          Descargar .dxt
-        </a>
-      </Row>
-      <div style={{ padding: '0 0 12px' }}>
-        <div className="st-row-hint" style={{ marginBottom: 8 }}>Token de API — úsalo para configurar el plugin MCP en Claude Desktop.</div>
-        {mcpLoaded && (
-          mcpToken ? (
-            <div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
-                  {mcpToken}
-                </code>
-                <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12 }}>
-                  {mcpCopied ? '✓ Copiado' : 'Copiar'}
-                </button>
-              </div>
-              <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-                {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+      <SectionTitle>1. Token de API</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Genera un token único para que Claude Desktop pueda conectarse a tu vault de From.
+      </div>
+      {mcpLoaded ? (
+        mcpToken ? (
+          <div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
+                {mcpToken}
+              </code>
+              <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12 }}>
+                {mcpCopied ? '✓ Copiado' : 'Copiar'}
               </button>
             </div>
-          ) : (
-            <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-              {generatingMcp ? 'Generando...' : 'Generar token de API'}
+            <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
+              {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
             </button>
-          )
-        )}
-        {!mcpLoaded && <div className="st-row-hint">Cargando...</div>}
-      </div>
-      <Row label="Más información">
-        <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>Ver instrucciones ↗</a>
+          </div>
+        ) : (
+          <button className="btn-primary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
+            {generatingMcp ? 'Generando...' : 'Generar token de API'}
+          </button>
+        )
+      ) : <div className="st-row-hint">Cargando...</div>}
+
+      <SectionTitle>2. Descargar extensión</SectionTitle>
+      <Row
+        label="Extensión Claude Desktop (.dxt)"
+        hint="Con Claude Desktop abierto, haz doble clic en el archivo descargado. Cuando Claude pida el token, pega el del paso 1."
+      >
+        <a href="https://getfrom.app/From.dxt" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12 }}>
+          Descargar From.dxt
+        </a>
       </Row>
 
-      <SectionTitle>API Key propia</SectionTitle>
-      <Row
-        label="Clave de Anthropic"
-        hint="Si quieres usar tu propia clave de Anthropic en lugar de los tokens incluidos en tu plan, puedes añadirla en la app de escritorio en Ajustes → IA → API Key."
-      />
+      <SectionTitle>3. Configurar From en Claude</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 8 }}>
+        Una vez instalado, escribe esta frase en Claude una sola vez:
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <code style={{ flex: 1, padding: '8px 12px', background: 'rgba(139,92,246,0.08)', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.18)' }}>
+          Configura From
+        </code>
+        <button className="btn-secondary" onClick={copyPhrase} style={{ fontSize: 12 }}>
+          {phraseCopied ? '✓ Copiado' : 'Copiar'}
+        </button>
+      </div>
 
-      <SectionTitle>Tokens</SectionTitle>
-      {us.user?.tokensBalance !== undefined && (
-        <Row label="Balance de tokens">
-          <span className="st-value">{us.user.tokensBalance.toLocaleString()}</span>
-        </Row>
-      )}
-      <Row label="¿Qué son los tokens?" hint="Cada operación de IA consume tokens de tu saldo mensual. Con un plan activo recibes tokens mensuales. Puedes usar tu propia API key de Anthropic para no consumirlos." />
+      <SectionTitle>Más información</SectionTitle>
+      <Row label="Documentación completa">
+        <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
+          Ver instrucciones ↗
+        </a>
+      </Row>
     </div>
   )
 }
