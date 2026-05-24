@@ -7,6 +7,20 @@
         <language>en</language>
 
         <item>
+            <title>Version 3.20</title>
+            <pubDate>Sun, 24 May 2026 10:00:00 +0000</pubDate>
+            <sparkle:version>51</sparkle:version>
+            <sparkle:shortVersionString>3.20</sparkle:shortVersionString>
+            <sparkle:releaseNotesLink>https://github.com/getfrom-app/getfrom-app/releases/tag/v3.20</sparkle:releaseNotesLink>
+            <enclosure
+                url="https://github.com/getfrom-app/getfrom-app/releases/download/v3.20/From.dmg"
+                sparkle:edSignature="ykEfRt10vqEO9B06kLq6GG2q8BNF0R7I3nbAIsAj8a36BrQVm7/NgTKeSp5likW+HLbYDN5EuEzpRe6D3DnfAw=="
+                length="13520860"
+                type="application/octet-stream"
+            />
+        </item>
+
+        <item>
             <title>Version 3.19</title>
             <pubDate>Sat, 23 May 2026 16:30:00 +0000</pubDate>
             <sparkle:version>50</sparkle:version>
