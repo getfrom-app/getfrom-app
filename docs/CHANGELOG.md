@@ -4,6 +4,29 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## iOS 1.2 — 24 mayo 2026
+
+**Plataformas: iOS** 1.2 (build 4)
+
+Pone iOS a la altura de Mac 3.20 y la Web en ajustes y grabación.
+
+### Grabación de voz
+- **Barra de iconos** en idle: toggle de micrófono + icono de speaker (informativo, no disponible en iOS) + botón **record.circle.fill** rojo
+- **Stop como icono**: durante la grabación, botón circular rojo con **stop.fill** blanco (sin texto)
+- Eliminado el botón mic pulsante con texto "Toca para detener" en favor del icono explícito
+
+### Ajustes — paridad Mac/Web
+- **Sección IA → Perfil IA**: `TextEditor` real persistido en `from_ai_profile` (sincronizado con Mac y Web)
+- **Sección Magic**: 5 toggles reales con las mismas keys que Mac/Web — `magic.objectDetection`, `magic.completion`, `magic.ambient`, `magic.draftSidebar`, `magic.animatedPill`
+- **From para Claude** sigue en su propia sección (MCP token), separada de IA
+
+### Tags
+- **Vista jerárquica**: tags con `/` (ej. `trabajo/proyectos/from`) se anidan con chevron de expandir/colapsar
+- **Contador agregado**: cada nodo muestra el total de notas del tag + sus descendientes
+- **Detalle de tag**: la vista del tag padre incluye notas de los subtags
+
+---
+
 ## Mac 3.19 + Web v7.12 — 23 mayo 2026
 
 **Plataformas: Mac** 3.19 · **Web** v7.12
