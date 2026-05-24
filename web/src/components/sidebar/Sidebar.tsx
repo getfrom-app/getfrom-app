@@ -122,7 +122,7 @@ function savePanels(panels: Panel[]) {
   localStorage.setItem('from_panels', JSON.stringify(panels))
 }
 
-type SidebarTab = 'tags' | 'favorites' | 'panels' | 'settings'
+type SidebarTab = 'tags' | 'favorites' | 'panels'
 
 export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, onOpenSettings }: Props) {
   const navigate = useNavigate()
@@ -682,13 +682,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             >
               📋
             </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('settings')}
-              title="Ajustes"
-            >
-              ⚙
-            </button>
           </div>
 
           {/* Tab content */}
@@ -696,7 +689,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             {activeTab === 'tags' && renderTagsTab()}
             {activeTab === 'favorites' && renderFavoritesTab()}
             {activeTab === 'panels' && renderPanelsTab()}
-            {activeTab === 'settings' && renderSettingsTab()}
           </div>
 
           {/* Recording bar */}
@@ -746,6 +738,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             >
               <span className="nav-icon">🗑</span>
               <span>Papelera</span>
+            </button>
+            <button
+              className={`nav-item ${isActive('/settings') ? 'active' : ''}`}
+              onClick={() => navigate('/settings')}
+              title="Ajustes"
+            >
+              <span className="nav-icon">⚙</span>
+              <span>Ajustes</span>
             </button>
             {!isGuest ? (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
@@ -804,6 +804,13 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             </button>
           </nav>
           <div className="sidebar-footer">
+            <button
+              className={`nav-item ${isActive('/settings') ? 'active' : ''}`}
+              onClick={() => navigate('/settings')}
+              title="Ajustes"
+            >
+              <span className="nav-icon">⚙</span>
+            </button>
             <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
               <span className="nav-icon">↩</span>
             </button>
