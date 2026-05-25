@@ -6317,10 +6317,11 @@ a:focus-visible {
 }
 .node-table-th--title { min-width: 200px; }
 .node-table-row {
-  cursor: pointer;
+  cursor: default;
   transition: background 0.08s;
   border-bottom: 1px solid var(--border);
 }
+.node-table-td--title { cursor: pointer; }
 .node-table-row:last-child { border-bottom: none; }
 .node-table-row:hover { background: var(--bg-hover); }
 .node-table-row--done .node-table-title { color: var(--text-tertiary); text-decoration: line-through; }
