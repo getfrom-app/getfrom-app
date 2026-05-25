@@ -129,22 +129,27 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
           { label: 'Lunes', days: qNextMondayDays },
           { label: '+7d', days: 7 },
         ].map(({ label, days }) => {
-          const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
-          const iso = d.toISOString().slice(0, 10)
+          const d = new Date(); d.setDate(d.getDate() + days)
+          const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
           return (
             <button key={label} className={`nqp-qbtn${dueDate === iso ? ' active' : ''}`}
-              onClick={() => setDue(iso, dueTime || '09:00')}>{label}</button>
+              onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>{label}</button>
           )
         })}
         {node.due && <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null })}>✕</button>}
       </div>
 
-      {/* Fecha + hora */}
+      {/* Fecha + hora (hora opcional) */}
       <div className="nqp-inputs-row">
         <input type="date" className="nqp-date-input" value={dueDate}
-          onChange={e => setDue(e.target.value, dueTime)} />
-        <input type="time" className="nqp-time-input" value={dueTime}
-          onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+          onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
+        <input type="time" className="nqp-time-input"
+          value={hasLocalTime(node.due) ? dueTime : ''}
+          onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
+        {hasLocalTime(node.due) && (
+          <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+            onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+        )}
       </div>
 
       {/* Prioridad */}
