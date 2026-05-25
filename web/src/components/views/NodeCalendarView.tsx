@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { store } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
+import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
+interface CalendarEntry {
+  node: Node
+  date: Date
+  source: 'due' | string  // '__due' o id de columna custom
+  sourceLabel: string
+}
+
 export default function NodeCalendarView({ parentId }: Props) {
+  useStore()  // suscripción
   const navigate = useNavigate()
   const [viewDate, setViewDate] = useState(new Date())
   const [quickCreate, setQuickCreate] = useState<{ day: number; text: string } | null>(null)
-  const children = store.children(parentId).filter(n => !n.deletedAt && n.due)
+
+  const allChildren = store.children(parentId).filter(n => !n.deletedAt)
+  const customCols = store.getPropSchema(parentId)
+  const dateCols = customCols.filter(c => c.type === 'date')
+
+  // Construye lista de entradas: cada nodo puede aparecer en MÚLTIPLES fechas
+  // (due builtin + cada columna date custom)
+  const entries: CalendarEntry[] = useMemo(() => {
+    const out: CalendarEntry[] = []
+    for (const n of allChildren) {
+      if (n.due) {
+        out.push({ node: n, date: new Date(n.due), source: 'due', sourceLabel: 'Fecha' })
+      }
+      for (const col of dateCols) {
+        const v = store.getPropValue(n.id, col.id)
+        if (v) {
+          out.push({ node: n, date: new Date(String(v)), source: col.id, sourceLabel: col.name })
+        }
+      }
+    }
+    return out
+  }, [allChildren, dateCols])
 
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
@@ -22,11 +52,10 @@ export default function NodeCalendarView({ parentId }: Props) {
     ...Array.from({ length: lastDay.getDate() }, (_, i) => i + 1),
   ]
 
-  function getNodesForDay(day: number) {
-    return children.filter(n => {
-      const d = new Date(n.due!)
-      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
-    })
+  function getEntriesForDay(day: number): CalendarEntry[] {
+    return entries.filter(e =>
+      e.date.getFullYear() === year && e.date.getMonth() === month && e.date.getDate() === day
+    )
   }
 
   function handleCellClick(day: number) {
@@ -61,7 +90,7 @@ export default function NodeCalendarView({ parentId }: Props) {
         ))}
         {days.map((day, i) => {
           if (!day) return <div key={`pad-${i}`} className="node-calendar-cell node-calendar-cell--empty" />
-          const nodes = getNodesForDay(day)
+          const dayEntries = getEntriesForDay(day)
           const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year
           const isQuick = quickCreate?.day === day
           return (
@@ -71,14 +100,15 @@ export default function NodeCalendarView({ parentId }: Props) {
               onClick={e => { if (e.target === e.currentTarget && !isQuick) handleCellClick(day) }}
             >
               <span className="node-calendar-day">{day}</span>
-              {nodes.map(n => (
+              {dayEntries.map((entry, idx) => (
                 <button
-                  key={n.id}
-                  className={`node-calendar-event ${n.status === 'done' ? 'done' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${n.id}`) }}
-                  title={n.text}
+                  key={`${entry.node.id}-${entry.source}-${idx}`}
+                  className={`node-calendar-event ${entry.node.status === 'done' ? 'done' : ''}`}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${entry.node.id}`) }}
+                  title={`${entry.node.text || 'Sin título'}${entry.source !== 'due' ? ` — ${entry.sourceLabel}` : ''}`}
                 >
-                  {n.text?.slice(0, 20) || 'Sin título'}
+                  {entry.source !== 'due' && <span className="node-calendar-event-source">{entry.sourceLabel}: </span>}
+                  {entry.node.text?.slice(0, 20) || 'Sin título'}
                 </button>
               ))}
               {isQuick ? (

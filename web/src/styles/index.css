@@ -6714,6 +6714,7 @@ a:focus-visible {
 }
 .node-calendar-event:hover { opacity: 0.75; }
 .node-calendar-event.done { opacity: 0.4; text-decoration: line-through; }
+.node-calendar-event-source { color: var(--accent); font-weight: 600; margin-right: 2px; opacity: 0.8; }
 .node-calendar-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
 .node-calendar-cell { cursor: pointer; position: relative; }
 .node-calendar-quick-add {

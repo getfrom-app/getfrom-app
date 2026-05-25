@@ -7,6 +7,27 @@ interface Props { parentId: string }
 
 const NODE_BUILTIN_TYPES = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'])
 
+function dateBucket(d: Date): string {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(today.getTime() + 86400000)
+  const weekEnd = new Date(today.getTime() + 7 * 86400000)
+  if (d < today) return 'overdue'
+  if (d < tomorrow) return 'today'
+  if (d < weekEnd) return 'thisweek'
+  return 'later'
+}
+
+function dateForBucket(bucket: string): Date | null {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  if (bucket === 'overdue') return new Date(today.getTime() - 86400000)
+  if (bucket === 'today') return today
+  if (bucket === 'thisweek') return new Date(today.getTime() + 3 * 86400000)
+  if (bucket === 'later') return new Date(today.getTime() + 14 * 86400000)
+  return null
+}
+
 type GroupBy = '__status' | '__priority' | string  // string = custom col id
 
 interface ColDef {
@@ -27,6 +48,7 @@ export default function NodeKanbanView({ parentId }: Props) {
   const children = store.children(parentId).filter(n => !n.deletedAt)
   const customCols = store.getPropSchema(parentId)
   const selectCols = customCols.filter(c => c.type === 'select')
+  const dateCols = customCols.filter(c => c.type === 'date')
 
   const [groupBy, setGroupBy] = useState<GroupBy>('__status')
 
@@ -48,7 +70,17 @@ export default function NodeKanbanView({ parentId }: Props) {
         { key: 'high',   label: '↑ Alta',  color: '#fda4af' },
       ]
     }
+    // Group by built-in due date OR custom date col → buckets temporales
     const col = customCols.find(c => c.id === groupBy)
+    if (groupBy === '__due' || col?.type === 'date') {
+      return [
+        { key: 'overdue',  label: 'Vencidas',    color: '#fda4af' },
+        { key: 'today',    label: 'Hoy',         color: '#fcd34d' },
+        { key: 'thisweek', label: 'Esta semana', color: '#86efac' },
+        { key: 'later',    label: 'Más adelante', color: '#93c5fd' },
+        { key: '__null',   label: 'Sin fecha' },
+      ]
+    }
     if (!col || col.type !== 'select') return []
     return [
       { key: '__null', label: 'Sin valor' },
@@ -59,6 +91,13 @@ export default function NodeKanbanView({ parentId }: Props) {
   function getCardKey(node: Node): string {
     if (groupBy === '__status') return node.status === null ? '__null' : String(node.status)
     if (groupBy === '__priority') return node.priority === null ? '__null' : String(node.priority)
+    // Date bucket: built-in due o columna custom date
+    const col = customCols.find(c => c.id === groupBy)
+    if (groupBy === '__due' || col?.type === 'date') {
+      const dateVal = groupBy === '__due' ? node.due : (store.getPropValue(node.id, groupBy) as string | undefined)
+      if (!dateVal) return '__null'
+      return dateBucket(new Date(String(dateVal)))
+    }
     const v = store.getPropValue(node.id, groupBy)
     return (v === undefined || v === null || v === '') ? '__null' : String(v)
   }
@@ -85,6 +124,18 @@ export default function NodeKanbanView({ parentId }: Props) {
     if (groupBy === '__priority') {
       const priority = colKey === '__null' ? null : (colKey as 'low' | 'medium' | 'high')
       store.updateNode(nodeId, { priority })
+      return
+    }
+    // Date grouping: drag to bucket → asignar fecha representativa
+    const col = customCols.find(c => c.id === groupBy)
+    if (groupBy === '__due' || col?.type === 'date') {
+      const newDate = dateForBucket(colKey)
+      const isoOrNull = newDate ? newDate.toISOString() : null
+      if (groupBy === '__due') {
+        store.updateNode(nodeId, { due: isoOrNull })
+      } else {
+        store.setPropValue(nodeId, groupBy, isoOrNull)
+      }
       return
     }
     store.setPropValue(nodeId, groupBy, colKey === '__null' ? null : colKey)
@@ -157,7 +208,17 @@ export default function NodeKanbanView({ parentId }: Props) {
         }}>
           <option value="__status">Estado</option>
           <option value="__priority">Prioridad</option>
-          {selectCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          <option value="__due">Fecha (built-in)</option>
+          {dateCols.length > 0 && (
+            <optgroup label="Fechas custom">
+              {dateCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </optgroup>
+          )}
+          {selectCols.length > 0 && (
+            <optgroup label="Select custom">
+              {selectCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </optgroup>
+          )}
           <option value="__new__">＋ Nueva agrupación…</option>
         </select>
       </div>
@@ -234,12 +295,17 @@ export default function NodeKanbanView({ parentId }: Props) {
             </div>
           )
         })}
-        {/* + Columna: solo si la agrupación actual es un select custom */}
-        {groupBy !== '__status' && groupBy !== '__priority' && (
-          <button className="node-kanban-add-col" onClick={handleAddColumnOption} title="Añadir columna">
-            ＋ Columna
-          </button>
-        )}
+        {/* + Columna: solo si la agrupación actual es un select custom (no fechas/builtin) */}
+        {(() => {
+          const col = customCols.find(c => c.id === groupBy)
+          const canAdd = col?.type === 'select'
+          if (!canAdd) return null
+          return (
+            <button className="node-kanban-add-col" onClick={handleAddColumnOption} title="Añadir columna">
+              ＋ Columna
+            </button>
+          )
+        })()}
       </div>
     </div>
   )
