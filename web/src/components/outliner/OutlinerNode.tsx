@@ -902,7 +902,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
-        store.updateNode(node.id, { text: cleanText, isEvent: true, status: 'pending' })
+        const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+        store.updateNode(node.id, { text: cleanText, isEvent: true, status: "pending", due: todayISO })
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
@@ -1177,6 +1178,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     } else if (action === 'event') {
       updates.isEvent = true
       updates.status = 'pending'
+      if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
       const existingTypes = node.types || []

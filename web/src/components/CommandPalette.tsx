@@ -168,7 +168,10 @@ export default function CommandPalette({ onClose }: Props) {
     const diary = store.todayDiary()
     const types: string[] = parsed.isSeguimiento ? ['bucle'] : []
     const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask || parsed.isSeguimiento, due: parsed.due, types })
-    if (parsed.isEvent) store.updateNode(node.id, { isEvent: true })
+    if (parsed.isEvent) {
+      const eventDue = parsed.due ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+      store.updateNode(node.id, { isEvent: true, due: eventDue })
+    }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
     const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Seguimiento' : parsed.isTask ? 'Tarea' : 'Nota'
     showToast(`✓ ${label} creada`)
