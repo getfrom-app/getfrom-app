@@ -6866,6 +6866,15 @@ a:focus-visible {
 .reminder-editor-chip:hover { background: var(--accent-soft, rgba(139,92,246,0.1)); color: var(--accent); }
 .reminder-editor-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 .reminder-editor-row { display: flex; gap: 6px; }
+.reminder-editor-rec-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.reminder-editor-rec-n {
+  width: 56px; padding: 4px 6px; text-align: center;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg-secondary); color: var(--text-primary);
+  font-size: 12px; outline: none;
+}
+.reminder-editor-rec-n:focus { border-color: var(--accent); }
+.reminder-editor-rec-n:disabled { opacity: 0.4; }
 .reminder-editor-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
 .reminder-editor-clear { padding: 4px 8px; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; font-size: 11px; margin-right: auto; }
 .reminder-editor-cancel { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 11px; }

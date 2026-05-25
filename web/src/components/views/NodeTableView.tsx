@@ -91,9 +91,22 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
     const mm = String(d.getMinutes()).padStart(2, '0')
     return d.getHours() === 0 && d.getMinutes() === 0 ? '' : `${hh}:${mm}`
   })() : ''
+  // Parsear recurrencia legacy: "daily" | "weekly" | "daily:3" | "weekly:2" | null
+  type RecUnit = 'daily' | 'weekly' | 'monthly' | 'yearly' | ''
+  const parseRec = (r: string | null | undefined): { n: number; unit: RecUnit } => {
+    if (!r) return { n: 1, unit: '' }
+    const [unit, nStr] = r.split(':')
+    const n = parseInt(nStr || '1') || 1
+    if (unit === 'daily' || unit === 'weekly' || unit === 'monthly' || unit === 'yearly') {
+      return { n, unit }
+    }
+    return { n: 1, unit: '' }
+  }
+  const initRec = parseRec(existing?.recurrence)
   const [date, setDate] = useState(initialDate)
   const [time, setTime] = useState(initialTime)
-  const [rec, setRec] = useState<string | null>(existing?.recurrence || null)
+  const [recN, setRecN] = useState<number>(initRec.n)
+  const [recUnit, setRecUnit] = useState<RecUnit>(initRec.unit)
 
   function quickDate(days: number) {
     const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + days)
@@ -105,21 +118,22 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
     const iso = time
       ? new Date(`${date}T${time}:00`).toISOString()
       : new Date(`${date}T00:00:00`).toISOString()
-    onSave({ due: iso, recurrence: rec })
+    const recurrence = recUnit ? (recN === 1 ? recUnit : `${recUnit}:${recN}`) : null
+    onSave({ due: iso, recurrence })
   }
 
-  const recOpts: [string | null, string][] = [
-    [null, 'No'],
-    ['daily', 'Cada día'],
-    ['weekly', 'Cada semana'],
-    ['monthly', 'Cada mes'],
-    ['yearly', 'Cada año'],
+  const recUnits: { key: 'daily' | 'weekly' | 'monthly' | 'yearly'; label: string }[] = [
+    { key: 'daily',   label: 'días' },
+    { key: 'weekly',  label: 'sem.' },
+    { key: 'monthly', label: 'mes.' },
+    { key: 'yearly',  label: 'años' },
   ]
 
   return (
     <div className="reminder-editor" onMouseDown={e => e.stopPropagation()}>
       <div className="reminder-editor-title">⏰ {colName}</div>
 
+      <div className="reminder-editor-label">Fecha rápida</div>
       <div className="reminder-editor-quick">
         {[['Hoy', 0], ['Mañana', 1], ['+7d', 7], ['+30d', 30]].map(([label, days]) => (
           <button key={String(label)} className="reminder-editor-chip" onClick={() => quickDate(days as number)}>
@@ -133,13 +147,30 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
         <input type="time" className="node-table-cell-editor" value={time} onChange={e => setTime(e.target.value)} disabled={!date} />
       </div>
 
-      <div className="reminder-editor-label">Repetir</div>
-      <div className="reminder-editor-quick">
-        {recOpts.map(([val, label]) => (
+      <div className="reminder-editor-label">Repetir cada</div>
+      <div className="reminder-editor-rec-row">
+        <button
+          className={`reminder-editor-chip ${!recUnit ? 'active' : ''}`}
+          onClick={() => setRecUnit('')}
+        >No</button>
+        <input
+          type="number"
+          min={1}
+          max={999}
+          className="reminder-editor-rec-n"
+          value={recN}
+          disabled={!recUnit}
+          onChange={e => {
+            const v = Math.max(1, parseInt(e.target.value) || 1)
+            setRecN(v)
+            if (!recUnit) setRecUnit('daily')
+          }}
+        />
+        {recUnits.map(({ key, label }) => (
           <button
-            key={String(val)}
-            className={`reminder-editor-chip ${rec === val ? 'active' : ''}`}
-            onClick={() => setRec(val)}
+            key={key}
+            className={`reminder-editor-chip ${recUnit === key ? 'active' : ''}`}
+            onClick={() => setRecUnit(key)}
           >{label}</button>
         ))}
       </div>
