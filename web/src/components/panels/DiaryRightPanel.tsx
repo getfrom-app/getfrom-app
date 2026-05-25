@@ -796,6 +796,50 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
             </React.Fragment>
           )
         })}
+
+        {/* Recursos pendientes / en progreso */}
+        {pendingResources.length > 0 && (
+          <div className="diary-agenda-resources-section">
+            <div className="diary-agenda-section-label">Recursos</div>
+            {pendingResources.map(node => {
+              let ed: Record<string, unknown> = {}
+              try { ed = JSON.parse(node.extraData || '{}') } catch {}
+              const status = (ed._resourceStatus as string) || 'pending'
+              const meta = ed._resourceMeta as { title?: string; image?: string; domain?: string; channel?: string } | null
+              const type = (ed._resourceType as string) || 'url'
+              const url = (ed._resourceUrl as string) || ''
+              const typeIcon = type === 'youtube' ? '▶️' : type === 'book' ? '📚' : type === 'podcast' ? '🎙' : type === 'document' ? '📄' : '🔗'
+              const statusColor = status === 'consuming' ? '#3b82f6' : '#06b6d4'
+              return (
+                <div
+                  key={node.id}
+                  className="diary-agenda-resource-row"
+                  onClick={() => navigate(`/node/${node.id}`)}
+                >
+                  <span className="diary-agenda-resource-icon">{typeIcon}</span>
+                  <span className="diary-agenda-resource-title">
+                    {meta?.title || node.text || 'Sin título'}
+                  </span>
+                  <span
+                    className="diary-agenda-resource-status"
+                    style={{ color: statusColor, borderColor: statusColor }}
+                  >
+                    {status === 'consuming' ? 'En progreso' : 'Pendiente'}
+                  </span>
+                  {url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="diary-agenda-resource-open"
+                      onClick={e => e.stopPropagation()}
+                    >↗</a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }

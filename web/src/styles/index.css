@@ -4085,6 +4085,14 @@ mark.inline-highlight {
 
 /* ── GCal section en Agenda ──────────────────────────────────────────────── */
 .diary-agenda-gcal-section { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle, var(--border)); }
+.diary-agenda-resources-section { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+.diary-agenda-resource-row { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 6px; cursor: pointer; transition: background 0.1s; }
+.diary-agenda-resource-row:hover { background: var(--bg-hover); }
+.diary-agenda-resource-icon { font-size: 12px; flex-shrink: 0; }
+.diary-agenda-resource-title { flex: 1; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.diary-agenda-resource-status { font-size: 10px; padding: 1px 6px; border-radius: 8px; border: 1px solid; flex-shrink: 0; }
+.diary-agenda-resource-open { font-size: 12px; color: var(--text-tertiary); text-decoration: none; flex-shrink: 0; }
+.diary-agenda-resource-open:hover { color: var(--accent); }
 .diary-agenda-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); padding: 0 8px 4px; }
 .diary-agenda-gcal-row {
   display: flex; align-items: center; gap: 6px; padding: 5px 8px;
