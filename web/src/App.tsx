@@ -76,7 +76,8 @@ function GoogleCallbackPage() {
     const redirectUri = window.location.origin + '/app/google-callback'
     connectGoogle(code, redirectUri)
       .then(() => {
-        navigate('/', { replace: true })
+        // Hard reload para que DiaryRightPanel refetche con la nueva conexión Google
+        window.location.replace(window.location.origin + '/app/')
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Error al conectar con Google.')
