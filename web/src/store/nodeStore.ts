@@ -522,7 +522,6 @@ class NodeStore {
       this.updateNode(child.id, {
         due: iso,
         status: 'pending',
-        isTask: true,
       })
       return child.id
     }
