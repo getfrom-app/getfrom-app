@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 
@@ -370,7 +371,7 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
       )}
 
       <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
-        {task.text || 'Sin título'}
+        {task.text ? renderInline(task.text) : 'Sin título'}
       </span>
 
       {parentNote && (
@@ -711,7 +712,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                     store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
                   }}
                 ></span>
-                <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
+                <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text ? renderInline(node.text) : 'Sin título'}</span>
                 {getParentNote(node) && (
                   <span className="diary-agenda-parent-note" title={getParentNote(node)}>{getParentNote(node)}</span>
                 )}

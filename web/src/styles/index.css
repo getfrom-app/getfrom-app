@@ -7797,3 +7797,6 @@ a:focus-visible {
 .resource-card-add-task:hover { background: var(--accent); color: white; border-color: var(--accent); }
 .resource-card-open { font-size: 13px; color: var(--text-tertiary); text-decoration: none; }
 .resource-card-open:hover { color: var(--accent); }
+
+/* Tags inline más compactos y en negrita en la agenda diaria */
+.diary-agenda-text .tag-inline { font-size: 0.75em !important; font-weight: 700 !important; padding: 0 4px !important; }
