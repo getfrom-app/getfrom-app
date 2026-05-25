@@ -1188,24 +1188,36 @@ export default function NodeView() {
                 </svg>
               </div>
             ) : node.status !== null ? (
-              // Checkbox circular para tareas
-              <button
-                className={`node-task-title-btn ${node.status === 'done' ? 'done' : ''}`}
-                onClick={() => store.updateNode(node!.id, { status: node.status === 'done' ? 'pending' : 'done' })}
-                title={node.status === 'done' ? 'Completada — clic para reabrir' : 'Marcar como hecha'}
-                style={{ flexShrink: 0, marginRight: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}
-              >
-                {node.status === 'done' ? (
-                  <svg width="26" height="26" viewBox="0 0 26 26">
-                    <circle cx="13" cy="13" r="11" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.15"/>
-                    <path d="M8 13l3.5 3.5 7-7" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="26" height="26" viewBox="0 0 26 26">
-                    <circle cx="13" cy="13" r="11" stroke="var(--text-tertiary)" strokeWidth="1.8" fill="none"/>
-                  </svg>
-                )}
-              </button>
+              // Checkbox cuadrado para tareas — mismos colores que el outliner
+              (() => {
+                const isOverdue = !!node.due && node.status !== 'done' && (() => {
+                  const now = new Date()
+                  return new Date(node.due!) < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                })()
+                const sqClass = node.status === 'done' ? 'task-sq--done'
+                  : node.status === 'future' ? 'task-sq--future'
+                  : isOverdue ? 'task-sq--overdue'
+                  : 'task-sq--pending'
+                return (
+                  <button
+                    className={`bullet-btn task ${sqClass}`}
+                    onClick={() => store.updateNode(node!.id, { status: node.status === 'done' ? 'pending' : 'done' })}
+                    title={node.status === 'done' ? 'Completada — clic para reabrir' : 'Marcar como hecha'}
+                    style={{ flexShrink: 0, marginRight: 8, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    {node.status === 'done' ? (
+                      <svg width="20" height="20" viewBox="0 0 14 14">
+                        <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15"/>
+                        <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 14 14">
+                        <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })()
             ) : !node.isDiaryEntry ? (
               // Emoji normal para notas no-diario
               <div className="node-icon-wrapper">
