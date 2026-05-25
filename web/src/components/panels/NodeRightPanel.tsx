@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { createCalendarEvent } from '../../api/googleCalendar'
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '../../api/googleCalendar'
 
 interface Props {
   node: Node
@@ -360,35 +360,77 @@ export default function NodeRightPanel({ node }: Props) {
                 else delete ed.location
                 store.updateNode(node.id, { extraData: JSON.stringify(ed) })
               }}
+              onBlur={async () => {
+                if (!gcalEventId || !node.due) return
+                try {
+                  await updateCalendarEvent(gcalEventId, {
+                    title: node.text || 'Evento',
+                    start: node.due,
+                    end: node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString(),
+                    location: evtLocation_stored || undefined,
+                  })
+                  setEvtMsg('✓ Actualizado en Google Calendar')
+                  setTimeout(() => setEvtMsg(null), 2500)
+                } catch { /* sin conexión — silencioso */ }
+              }}
             />
           </div>
 
-          {/* Acción: (re)sincronizar con GCal */}
-          <button
-            className="prop-event-sync-btn"
-            onClick={async () => {
-              if (!node.due) return
-              const endFallback = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
-              setEvtSyncing(true)
-              setEvtMsg(null)
-              try {
-                await createCalendarEvent({
-                  title: node.text || 'Evento',
-                  start: node.due,
-                  end: endFallback,
-                  description: node.body || undefined,
-                })
-                setEvtMsg('✓ Sincronizado con Google Calendar')
-              } catch {
-                setEvtMsg('No conectado a Google Calendar')
-              } finally {
-                setEvtSyncing(false)
-              }
-            }}
-            disabled={evtSyncing || !node.due}
-          >
-            {evtSyncing ? '↻ Sincronizando...' : '↑ Sincronizar con Google Calendar'}
-          </button>
+          {/* Acciones: sincronizar / eliminar */}
+          <div className="prop-event-actions">
+            <button
+              className="prop-event-sync-btn"
+              onClick={async () => {
+                if (!node.due) return
+                const endFallback = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
+                const loc = evtLocation_stored || undefined
+                setEvtSyncing(true); setEvtMsg(null)
+                try {
+                  if (gcalEventId) {
+                    await updateCalendarEvent(gcalEventId, {
+                      title: node.text || 'Evento', start: node.due, end: endFallback,
+                      description: node.body || undefined, location: loc,
+                    })
+                  } else {
+                    const result = await createCalendarEvent({
+                      title: node.text || 'Evento', start: node.due, end: endFallback,
+                      description: node.body || undefined, location: loc,
+                    })
+                    let ed: Record<string, unknown> = {}
+                    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+                    ed.gcalEventId = result.id
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                  }
+                  setEvtMsg('✓ Sincronizado')
+                } catch {
+                  setEvtMsg('No conectado a Google Calendar')
+                } finally {
+                  setEvtSyncing(false)
+                  setTimeout(() => setEvtMsg(null), 2500)
+                }
+              }}
+              disabled={evtSyncing || !node.due}
+            >
+              {evtSyncing ? '↻ Sincronizando...' : gcalEventId ? '↑ Actualizar en GCal' : '↑ Sincronizar con GCal'}
+            </button>
+            <button
+              className="prop-event-delete-btn"
+              title="Eliminar evento (y de Google Calendar si está sincronizado)"
+              onClick={async () => {
+                if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
+                if (gcalEventId) {
+                  try { await deleteCalendarEvent(gcalEventId) } catch { /* sin conexión — seguimos */ }
+                }
+                store.updateNode(node.id, { isEvent: false, due: null, dueEnd: null })
+                let ed: Record<string, unknown> = {}
+                try { ed = JSON.parse(node.extraData || '{}') } catch {}
+                delete ed.gcalEventId; delete ed.location
+                store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+              }}
+            >
+              🗑 Eliminar evento
+            </button>
+          </div>
           {evtMsg && <div className="prop-event-msg">{evtMsg}</div>}
         </div>
       )}

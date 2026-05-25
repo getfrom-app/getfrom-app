@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
+import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -199,6 +199,90 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
   )
 }
 
+// ── GCal event editor popup ────────────────────────────────────────────────────
+
+interface GCalEventEditorProps {
+  event: CalendarEvent
+  onClose: () => void
+  onUpdated: (updated: CalendarEvent) => void
+  onDeleted: (id: string) => void
+}
+
+function GCalEventEditor({ event, onClose, onUpdated, onDeleted }: GCalEventEditorProps) {
+  const [title, setTitle] = useState(event.title)
+  const [startDate, setStartDate] = useState(event.start ? event.start.slice(0, 10) : '')
+  const [startTime, setStartTime] = useState(event.start ? event.start.slice(11, 16) : '')
+  const [endDate, setEndDate] = useState(event.end ? event.end.slice(0, 10) : '')
+  const [endTime, setEndTime] = useState(event.end ? event.end.slice(11, 16) : '')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as globalThis.Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  async function save() {
+    if (!startDate) return
+    setSaving(true); setMsg(null)
+    try {
+      const start = startTime ? `${startDate}T${startTime}:00` : `${startDate}T00:00:00`
+      const end = endDate
+        ? (endTime ? `${endDate}T${endTime}:00` : `${endDate}T23:59:00`)
+        : new Date(new Date(start).getTime() + 3600000).toISOString().slice(0, 19)
+      const updated = await updateCalendarEvent(event.id, {
+        title, start: new Date(start).toISOString(), end: new Date(end).toISOString()
+      })
+      onUpdated(updated)
+      setMsg('✓ Guardado')
+      setTimeout(onClose, 800)
+    } catch { setMsg('Error al guardar') }
+    finally { setSaving(false) }
+  }
+
+  async function remove() {
+    if (!window.confirm(`¿Eliminar "${event.title}" de Google Calendar?`)) return
+    setSaving(true)
+    try {
+      await deleteCalendarEvent(event.id)
+      onDeleted(event.id)
+    } catch { setMsg('Error al eliminar') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div ref={ref} className="gcal-editor-popup" onClick={e => e.stopPropagation()}>
+      <div className="gcal-editor-title">📅 Editar evento GCal</div>
+      <input className="gcal-editor-name" value={title} onChange={e => setTitle(e.target.value)}
+        placeholder="Título del evento"
+        onKeyDown={e => { if (e.key === 'Enter') save() }}
+      />
+      <div className="gcal-editor-row">
+        <span className="gcal-editor-label">Inicio</span>
+        <input type="date" className="nqp-date-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} />
+      </div>
+      <div className="gcal-editor-row">
+        <span className="gcal-editor-label">Fin</span>
+        <input type="date" className="nqp-date-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} />
+      </div>
+      {msg && <div className={`gcal-editor-msg${msg.startsWith('✓') ? ' ok' : ''}`}>{msg}</div>}
+      <div className="gcal-editor-actions">
+        <button className="gcal-editor-delete" onClick={remove} disabled={saving}>🗑</button>
+        <button className="gcal-editor-cancel" onClick={onClose}>Cancelar</button>
+        <button className="gcal-editor-save" onClick={save} disabled={saving || !title || !startDate}>
+          {saving ? '↻' : 'Guardar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Task row with hover props button ──────────────────────────────────────────
 
 interface AgendaTaskRowProps {
@@ -307,6 +391,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   const navigate = useNavigate()
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
+  const [editingGCalEvent, setEditingGCalEvent] = useState<CalendarEvent | null>(null)
 
   // Fetch Google Calendar events when date changes (day view only)
   useEffect(() => {
@@ -440,7 +525,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
 
   function renderAgenda() {
-    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0
+    const gcalToday = googleEvents.filter(ev => !ev.allDay)
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || gcalToday.length > 0
 
     if (!hasAnything) {
       return (
@@ -454,6 +540,47 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
     return (
       <div className="diary-panel-content">
+        {/* Eventos de Google Calendar — editables desde aquí */}
+        {gcalToday.length > 0 && (
+          <div className="diary-agenda-gcal-section">
+            <div className="diary-agenda-section-label">Google Calendar</div>
+            {gcalToday.sort((a, b) => a.start.localeCompare(b.start)).map(ev => {
+              const startStr = ev.start ? new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
+              const endStr = ev.end ? new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
+              return (
+                <div key={ev.id} className="diary-agenda-gcal-row" style={{ position: 'relative' }}>
+                  <span className="diary-agenda-gcal-dot" />
+                  <span className="diary-agenda-gcal-title">{ev.title}</span>
+                  <span className="diary-agenda-gcal-time">{startStr}{endStr ? `–${endStr}` : ''}</span>
+                  <div className="diary-agenda-gcal-btns">
+                    <button className="diary-agenda-gcal-btn" title="Editar"
+                      onClick={e => { e.stopPropagation(); setEditingGCalEvent(ev) }}>✎</button>
+                    <button className="diary-agenda-gcal-btn diary-agenda-gcal-btn--del" title="Eliminar"
+                      onClick={async e => {
+                        e.stopPropagation()
+                        if (!window.confirm(`¿Eliminar "${ev.title}" de Google Calendar?`)) return
+                        try {
+                          await deleteCalendarEvent(ev.id)
+                          setGoogleEvents(prev => prev.filter(x => x.id !== ev.id))
+                        } catch { alert('Error al eliminar') }
+                      }}>🗑</button>
+                  </div>
+                  {editingGCalEvent?.id === ev.id && (
+                    <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 200 }}>
+                      <GCalEventEditor
+                        event={ev}
+                        onClose={() => setEditingGCalEvent(null)}
+                        onUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
+                        onDeleted={id => { setGoogleEvents(prev => prev.filter(x => x.id !== id)); setEditingGCalEvent(null) }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* Nodos en seguimiento + sus tareas hijo */}
         {seguimientoNodes.map(node => {
           const childTasks = getChildTasks(node.id)
@@ -630,12 +757,24 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                     return (
                       <span
                         key={ev.id}
-                        className="timeline-event-chip"
-                        style={{ background: 'rgba(59,130,246,0.18)', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.3)' }}
-                        title={`${ev.title} · ${startTime} – ${endTime} (Google Calendar)`}
-                        onClick={e => e.stopPropagation()}
+                        className="timeline-event-chip timeline-event-chip--gcal"
+                        title={`${ev.title} · ${startTime} – ${endTime} · Click para editar`}
+                        onClick={e => { e.stopPropagation(); setEditingGCalEvent(ev) }}
                       >
                         📅 {ev.title} <span style={{ opacity: 0.7, fontSize: 10 }}>{startTime}–{endTime}</span>
+                        {editingGCalEvent?.id === ev.id && (
+                          <span
+                            style={{ position: 'absolute', left: 0, top: '100%', zIndex: 300 }}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <GCalEventEditor
+                              event={ev}
+                              onClose={() => setEditingGCalEvent(null)}
+                              onUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
+                              onDeleted={id => { setGoogleEvents(prev => prev.filter(x => x.id !== id)); setEditingGCalEvent(null) }}
+                            />
+                          </span>
+                        )}
                       </span>
                     )
                   })}

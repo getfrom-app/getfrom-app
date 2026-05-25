@@ -60,9 +60,26 @@ export async function createCalendarEvent(event: {
   start: string
   end: string
   description?: string
+  location?: string
 }): Promise<CalendarEvent> {
   return apiRequest<CalendarEvent>('/google/calendar/events', {
     method: 'POST',
     body: JSON.stringify(event),
+  })
+}
+
+export async function updateCalendarEvent(
+  id: string,
+  event: { title?: string; start?: string; end?: string; description?: string; location?: string }
+): Promise<CalendarEvent> {
+  return apiRequest<CalendarEvent>(`/google/calendar/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(event),
+  })
+}
+
+export async function deleteCalendarEvent(id: string): Promise<void> {
+  await apiRequest<{ ok: boolean }>(`/google/calendar/events/${id}`, {
+    method: 'DELETE',
   })
 }
