@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
-import { isoToLocalDate, isoToLocalTime } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -84,7 +84,7 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    store.updateNode(node.id, { due: new Date(`${date}T${time || '09:00'}:00`).toISOString() })
+    store.updateNode(node.id, { due: makeDueISO(date, time) })
   }
 
   // Recurrencia helpers
@@ -499,10 +499,19 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   // Set de IDs de nodos que SON seguimiento (para excluirlos de overdue/today)
   const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
 
+  /** True si el padre directo del nodo es una tarea (status !== null, no diario, no seguimiento) */
+  function hasTaskParent(node: Node): boolean {
+    if (!node.parentId) return false
+    const parent = s.getNode(node.parentId)
+    if (!parent || parent.deletedAt) return false
+    return parent.status !== null && !parent.isDiaryEntry && !parent.isSeguimiento
+  }
+
   const overdueRaw = allPending.filter(n => {
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
     if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
+    if (hasTaskParent(n)) return false                // es hijo de tarea → se muestra bajo ella
     return new Date(n.due) < todayStart
   })
 
@@ -511,6 +520,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false
     if (hasSeguimientoAncestor(n.id)) return false
+    if (hasTaskParent(n)) return false                // es hijo de tarea → se muestra bajo ella
     const d = new Date(n.due)
     if (rangeType === 'week' || rangeType === 'month') {
       return d >= dateStart && d < dateEnd
@@ -694,31 +704,65 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
           )
         })}
 
-        {/* Tareas vencidas */}
-        {overdue.map(task => (
-          <AgendaTaskRow
-            key={task.id}
-            task={task}
-            checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
-            onToggle={() => toggleTask(task.id, task.status)}
-            onClick={() => navigate(`/node/${task.id}`)}
-            onDropBefore={draggedId => dropBefore(draggedId, task.id)}
-            onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
-          />
-        ))}
+        {/* Tareas vencidas + sus hijos de tarea */}
+        {overdue.map(task => {
+          const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
+          return (
+            <React.Fragment key={task.id}>
+              <AgendaTaskRow
+                task={task}
+                checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
+                onToggle={() => toggleTask(task.id, task.status)}
+                onClick={() => navigate(`/node/${task.id}`)}
+                onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+                onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
+              />
+              {taskKids.map(child => (
+                <AgendaTaskRow
+                  key={child.id}
+                  task={child}
+                  checkboxClass={childTaskCheckboxClass(child)}
+                  indented
+                  isEvent={child.isEvent}
+                  onToggle={() => toggleTask(child.id, child.status)}
+                  onClick={() => navigate(`/node/${child.id}`)}
+                  onDropBefore={draggedId => dropBefore(draggedId, child.id)}
+                  onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
+                />
+              ))}
+            </React.Fragment>
+          )
+        })}
 
-        {/* Tareas de hoy */}
-        {todayTasks.map(task => (
-          <AgendaTaskRow
-            key={task.id}
-            task={task}
-            checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
-            onToggle={() => toggleTask(task.id, task.status)}
-            onClick={() => navigate(`/node/${task.id}`)}
-            onDropBefore={draggedId => dropBefore(draggedId, task.id)}
-            onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
-          />
-        ))}
+        {/* Tareas de hoy + sus hijos de tarea */}
+        {todayTasks.map(task => {
+          const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
+          return (
+            <React.Fragment key={task.id}>
+              <AgendaTaskRow
+                task={task}
+                checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
+                onToggle={() => toggleTask(task.id, task.status)}
+                onClick={() => navigate(`/node/${task.id}`)}
+                onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+                onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
+              />
+              {taskKids.map(child => (
+                <AgendaTaskRow
+                  key={child.id}
+                  task={child}
+                  checkboxClass={childTaskCheckboxClass(child)}
+                  indented
+                  isEvent={child.isEvent}
+                  onToggle={() => toggleTask(child.id, child.status)}
+                  onClick={() => navigate(`/node/${child.id}`)}
+                  onDropBefore={draggedId => dropBefore(draggedId, child.id)}
+                  onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
+                />
+              ))}
+            </React.Fragment>
+          )
+        })}
       </div>
     )
   }

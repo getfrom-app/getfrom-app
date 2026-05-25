@@ -3955,7 +3955,7 @@ mark.inline-highlight {
 /* ── GCal event editor popup ─────────────────────────────────────────────── */
 /* ── Task properties popup (Agenda panel) ────────────────────────────────── */
 .task-props-popup {
-  background: var(--bg-card, var(--bg-secondary));
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 8px 28px rgba(0,0,0,0.22);
@@ -3999,7 +3999,7 @@ mark.inline-highlight {
 .tpp-open-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 .gcal-editor-popup {
-  background: var(--bg-card, var(--bg-secondary));
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.22);
@@ -4760,7 +4760,7 @@ mark.inline-highlight {
 
 /* ── Popup creación de evento ────────────────────────────────────────────── */
 .evt-popup {
-  background: var(--bg-card, var(--bg-secondary));
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.2);
@@ -6544,7 +6544,7 @@ a:focus-visible {
 
 /* Popup quick-props */
 .node-qp-popup {
-  background: var(--bg-card);
+  background: var(--bg-secondary);    /* sólido — --bg-card no está definido */
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.18);

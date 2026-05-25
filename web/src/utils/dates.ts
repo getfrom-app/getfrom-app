@@ -31,3 +31,18 @@ export function hasLocalTime(iso: string | null | undefined): boolean {
   const d = new Date(iso)
   return d.getHours() !== 0 || d.getMinutes() !== 0
 }
+
+/**
+ * Crea un ISO UTC a partir de una fecha local y una hora OPCIONAL.
+ * Si no hay hora, usa medianoche local (= "solo fecha").
+ * Usar en todos los setDue / setEvtDue para consistencia.
+ */
+export function makeDueISO(date: string, time: string): string {
+  if (!date) return ''
+  if (time) {
+    return new Date(`${date}T${time}:00`).toISOString()
+  }
+  // Medianoche local → hasLocalTime() devolverá false → se muestra como "solo fecha"
+  const [y, m, d] = date.split('-').map(Number)
+  return new Date(y, m - 1, d, 0, 0, 0).toISOString()
+}

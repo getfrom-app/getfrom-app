@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
-import { isoToLocalDate, isoToLocalTime } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 
 interface Props {
   node: Node
@@ -23,8 +23,7 @@ export default function NodeRightPanel({ node }: Props) {
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    const iso = time ? new Date(`${date}T${time}:00`).toISOString() : new Date(`${date}T00:00:00`).toISOString()
-    store.updateNode(node.id, { due: iso })
+    store.updateNode(node.id, { due: makeDueISO(date, time) })
   }
   function setDueEnd(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { dueEnd: null }); return }
@@ -341,7 +340,7 @@ export default function NodeRightPanel({ node }: Props) {
               const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
               const iso = d.toISOString().slice(0, 10)
               return (
-                <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`} onClick={() => setDue(iso, dueTime || '09:00')}>
+                <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`} onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>
                   {label}
                 </button>
               )
@@ -349,8 +348,14 @@ export default function NodeRightPanel({ node }: Props) {
             {dueDate && <button className="prop-quick-date-btn" onClick={() => setDue('', '')}>✕</button>}
           </div>
           <div className="prop-datetime" style={{ marginTop: 6 }}>
-            <input type="date" className="prop-date-input" value={dueDate} onChange={e => setDue(e.target.value, dueTime)} />
-            <input type="time" className="prop-time-input" value={dueTime} onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+            <input type="date" className="prop-date-input" value={dueDate}
+              onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
+            <input type="time" className="prop-time-input"
+              value={hasLocalTime(node.due) ? dueTime : ''}
+              onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
+            {hasLocalTime(node.due) && dueDate && (
+              <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+            )}
           </div>
         </div>
       )}

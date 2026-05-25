@@ -10,7 +10,7 @@ import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
-import { isoToLocalDate, isoToLocalTime, hasLocalTime } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -304,12 +304,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function setEvtDueField(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    store.updateNode(node.id, { due: new Date(`${date}T${time || '00:00'}:00`).toISOString() })
+    store.updateNode(node.id, { due: makeDueISO(date, time) })
     scheduleGCalSync()
   }
   function setEvtEndField(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { dueEnd: null }); return }
-    store.updateNode(node.id, { dueEnd: new Date(`${date}T${time || '23:59'}:00`).toISOString() })
+    store.updateNode(node.id, { dueEnd: makeDueISO(date, time) })
     scheduleGCalSync()
   }
   function setEvtLocationField(loc: string) {
@@ -1224,10 +1224,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const qDueTime = isoToLocalTime(node.due)
   function setQDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    const iso = time
-      ? new Date(`${date}T${time}:00`).toISOString()
-      : new Date(`${date}T00:00:00`).toISOString()
-    store.updateNode(node.id, { due: iso })
+    store.updateNode(node.id, { due: makeDueISO(date, time) })
   }
   const qDueBadgeLabel = node.due
     ? new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
@@ -1674,11 +1671,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     {/* Fechas rápidas */}
                     <div className="nqp-quick-row">
                       {[{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'Lunes', days: qNextMondayDays }].map(({ label, days }) => {
-                        const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
-                        const iso = d.toISOString().slice(0, 10)
+                        const d = new Date(); d.setDate(d.getDate() + days)
+                        const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
                         return (
                           <button key={label} className={`nqp-qbtn${evtDueDate === iso ? ' active' : ''}`}
-                            onClick={() => setEvtDueField(iso, evtDueTime || '09:00')}>{label}</button>
+                            onClick={() => setEvtDueField(iso, hasLocalTime(node.due) ? evtDueTime : '')}>{label}</button>
                         )
                       })}
                       {node.due && (
@@ -1689,17 +1686,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     <div className="nqp-label">Inicio</div>
                     <div className="nqp-inputs-row">
                       <input type="date" className="nqp-date-input" value={evtDueDate}
-                        onChange={e => setEvtDueField(e.target.value, evtDueTime)} />
-                      <input type="time" className="nqp-time-input" value={evtDueTime}
-                        onChange={e => setEvtDueField(evtDueDate, e.target.value)} disabled={!evtDueDate} />
+                        onChange={e => setEvtDueField(e.target.value, hasLocalTime(node.due) ? evtDueTime : '')} />
+                      <input type="time" className="nqp-time-input"
+                        value={hasLocalTime(node.due) ? evtDueTime : ''}
+                        onChange={e => setEvtDueField(evtDueDate, e.target.value)} disabled={!evtDueDate}
+                        placeholder="HH:MM" />
+                      {hasLocalTime(node.due) && (
+                        <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+                          onClick={() => setEvtDueField(evtDueDate, '')} title="Quitar hora">✕h</button>
+                      )}
                     </div>
                     {/* Fin */}
                     <div className="nqp-label">Fin</div>
                     <div className="nqp-inputs-row">
                       <input type="date" className="nqp-date-input" value={evtEndDate}
-                        onChange={e => setEvtEndField(e.target.value, evtEndTime)} disabled={!evtDueDate} />
-                      <input type="time" className="nqp-time-input" value={evtEndTime}
-                        onChange={e => setEvtEndField(evtEndDate, e.target.value)} disabled={!evtEndDate} />
+                        onChange={e => setEvtEndField(e.target.value, hasLocalTime(node.dueEnd) ? evtEndTime : '')} disabled={!evtDueDate} />
+                      <input type="time" className="nqp-time-input"
+                        value={hasLocalTime(node.dueEnd) ? evtEndTime : ''}
+                        onChange={e => setEvtEndField(evtEndDate, e.target.value)} disabled={!evtEndDate}
+                        placeholder="HH:MM" />
+                      {hasLocalTime(node.dueEnd) && (
+                        <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+                          onClick={() => setEvtEndField(evtEndDate, '')} title="Quitar hora">✕h</button>
+                      )}
                     </div>
                     {/* Lugar */}
                     <div className="nqp-label">Lugar</div>
@@ -1784,13 +1793,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         { label: 'Lunes', days: qNextMondayDays },
                         { label: '+7 días', days: 7 },
                       ].map(({ label, days }) => {
-                        const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
-                        const iso = d.toISOString().slice(0, 10)
+                        const d = new Date(); d.setDate(d.getDate() + days)
+                        const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
                         return (
                           <button
                             key={label}
                             className={`nqp-qbtn${qDueDate === iso ? ' active' : ''}`}
-                            onClick={() => setQDue(iso, qDueTime || '09:00')}
+                            onClick={() => setQDue(iso, hasLocalTime(node.due) ? qDueTime : '')}
                           >{label}</button>
                         )
                       })}
@@ -1798,12 +1807,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null, recurrence: null })}>✕</button>
                       )}
                     </div>
-                    {/* Inputs fecha + hora */}
+                    {/* Inputs fecha + hora (hora opcional) */}
                     <div className="nqp-inputs-row">
                       <input type="date" className="nqp-date-input" value={qDueDate}
-                        onChange={e => setQDue(e.target.value, qDueTime)} />
-                      <input type="time" className="nqp-time-input" value={qDueTime}
-                        onChange={e => setQDue(qDueDate, e.target.value)} disabled={!qDueDate} />
+                        onChange={e => setQDue(e.target.value, hasLocalTime(node.due) ? qDueTime : '')} />
+                      <input type="time" className="nqp-time-input"
+                        value={hasLocalTime(node.due) ? qDueTime : ''}
+                        onChange={e => setQDue(qDueDate, e.target.value)} disabled={!qDueDate}
+                        placeholder="HH:MM" />
+                      {hasLocalTime(node.due) && (
+                        <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+                          onClick={() => setQDue(qDueDate, '')} title="Quitar hora">✕h</button>
+                      )}
                     </div>
                     {/* Repetición: número + unidad */}
                     <div className="nqp-label">Repetición</div>
