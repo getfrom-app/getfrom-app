@@ -2021,8 +2021,9 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Multi-view tabs (Notion-style) — solo si ≥3 hijos */}
-          {!node.isDiaryEntry && store.children(node.id).filter(n => !n.deletedAt).length >= 3 && (
+          {/* Multi-view tabs (Notion-style) — solo si usuario ha creado vistas custom.
+              Lista por defecto NO tiene cabecera (es la vista raw). */}
+          {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
             <NodeViewTabs
               parentId={node.id}
               activeViewId={activeViewId}
