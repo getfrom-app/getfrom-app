@@ -54,13 +54,16 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
 
 // ── Task properties popover ────────────────────────────────────────────────────
 
-interface TaskPropsPopoverProps {
+export interface TaskPropsPopoverProps {
   node: Node
   onClose: () => void
-  anchorRef: React.RefObject<HTMLButtonElement>
+  anchorRef: React.RefObject<HTMLButtonElement | HTMLElement>
+  allowRename?: boolean
+  allowDelete?: boolean
+  onDeleted?: () => void
 }
 
-function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
+export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
@@ -121,8 +124,26 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      {/* Título */}
-      <div className="tpp-title">{node.text || 'Sin título'}</div>
+      {/* Título / rename */}
+      {allowRename ? (
+        <input
+          className="tpp-title-input"
+          defaultValue={node.text}
+          autoFocus
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { (e.target as HTMLInputElement).blur() }
+            if (e.key === 'Escape') { onClose() }
+          }}
+          onBlur={e => {
+            const v = e.target.value
+            if (v !== node.text) store.updateNode(node.id, { text: v })
+          }}
+          placeholder="Sin título"
+        />
+      ) : (
+        <div className="tpp-title">{node.text || 'Sin título'}</div>
+      )}
 
       {/* Fechas rápidas */}
       <div className="tpp-section-label">Fecha</div>
@@ -206,6 +227,21 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
           >{opt.l}</button>
         ))}
       </div>
+
+      {allowDelete && (
+        <>
+          <div className="tpp-divider" />
+          <button
+            className="tpp-delete-btn"
+            onClick={e => {
+              e.stopPropagation()
+              store.deleteNode(node.id)
+              onClose()
+              onDeleted?.()
+            }}
+          >🗑 Eliminar</button>
+        </>
+      )}
 
     </div>,
     document.body

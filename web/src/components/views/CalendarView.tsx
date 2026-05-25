@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
+import DiaryRightPanel from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 
@@ -189,7 +190,7 @@ const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const DAY_NAMES_UPPER = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
 const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
-type ViewType = 'week' | 'month' | 'year'
+type ViewType = 'day' | 'week' | 'month' | 'year'
 
 // ── NodeChip ──────────────────────────────────────────────────────────────────
 
@@ -250,6 +251,10 @@ interface WeekViewProps {
   today: Date
   allNodes: Node[]
   googleEvents: CalendarEvent[]
+  navLabel: string
+  navUnit: number  // días que avanza/retrocede al pulsar prev/next (7 para semana, 1 para día)
+  dayCount?: number  // número de columnas (default 7)
+  showDayNames?: boolean
   onNavigate: (offset: number) => void
   onGoToToday: () => void
   onNodeClick: (id: string) => void
@@ -257,8 +262,9 @@ interface WeekViewProps {
   onDrop?: (e: React.DragEvent, date: Date) => void
 }
 
-function WeekView({ weekStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit, dayCount = 7, showDayNames = true, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
+  const days = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i))
+  const colWidthExpr = `calc((100% - var(--gutter-width)) / ${dayCount})`
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
@@ -302,7 +308,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, onNavigate, onGoTo
   function getGoogleAllDay(day: Date) { return getGoogleForDay(day).filter(ev => ev.allDay) }
   function getGoogleTimed(day: Date) { return getGoogleForDay(day).filter(ev => !ev.allDay) }
 
-  const weekLabel = formatWeekLabel(weekStart)
+  const weekLabel = navLabel
 
   function handleCellClick(day: Date, hour: number, cellKey: string) {
     if (quickCreate?.cellKey === cellKey) { setQuickCreate(null); return }
@@ -315,21 +321,23 @@ function WeekView({ weekStart, today, allNodes, googleEvents, onNavigate, onGoTo
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-7)}>← Anterior</button>
+        <button className="btn-secondary" onClick={() => onNavigate(-navUnit)}>← Anterior</button>
         <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
         <span className="calendar-week-label">{weekLabel}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(7)}>Siguiente →</button>
+        <button className="btn-secondary" onClick={() => onNavigate(navUnit)}>Siguiente →</button>
       </div>
 
-      <div className="calendar-week-body">
+      <div className="calendar-week-body" style={{ ['--day-col-width' as string]: colWidthExpr }}>
         {/* ── Cabecera de días ── */}
         <div className="calendar-timeline-header">
           <div className="calendar-timeline-gutter" />
           {days.map((day, i) => {
             const isToday = isSameDay(day, today)
+            // Index Mon=0..Sun=6
+            const dow = (day.getDay() + 6) % 7
             return (
               <div key={i} className={`calendar-timeline-day-header ${isToday ? 'calendar-timeline-day-header--today' : ''}`}>
-                <span className="calendar-day-name">{DAY_NAMES[i]}</span>
+                {showDayNames && <span className="calendar-day-name">{DAY_NAMES[dow]}</span>}
                 <span className={`calendar-day-number ${isToday ? 'calendar-day-number--today' : ''}`}>{day.getDate()}</span>
               </div>
             )
@@ -343,7 +351,27 @@ function WeekView({ weekStart, today, allNodes, googleEvents, onNavigate, onGoTo
             const allDayNodes = getAllDayNodes(day)
             const gcalAllDay = getGoogleAllDay(day)
             return (
-              <div key={i} className="calendar-allday-cell">
+              <div
+                key={i}
+                className="calendar-allday-cell"
+                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }}
+                onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
+                onDrop={e => {
+                  e.preventDefault()
+                  e.currentTarget.classList.remove('drag-over')
+                  const newDate = new Date(day)
+                  newDate.setHours(0, 0, 0, 0)
+                  const nodeId = e.dataTransfer.getData('cal-node-id')
+                  if (nodeId) {
+                    store.updateNode(nodeId, { due: newDate.toISOString(), status: 'pending' })
+                    return
+                  }
+                  const eventId = e.dataTransfer.getData('eventId')
+                  if (eventId) {
+                    store.updateNode(eventId, { due: newDate.toISOString() })
+                  }
+                }}
+              >
                 {allDayNodes.map(node => (
                   <button
                     key={node.id}
@@ -804,6 +832,7 @@ export default function CalendarView() {
   const us = useUserStore()
 
   const [view, setView] = useState<ViewType>('week')
+  const [dayDate, setDayDate] = useState(() => { const d = new Date(); d.setHours(0,0,0,0); return d })
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()))
   const [year, setYear] = useState(() => new Date().getFullYear())
@@ -820,7 +849,10 @@ export default function CalendarView() {
     if (!us.googleConnected) { setGoogleEvents([]); return }
     let cancelled = false
     let rStart: Date, rEnd: Date
-    if (view === 'week') {
+    if (view === 'day') {
+      rStart = dayDate
+      rEnd = dayDate
+    } else if (view === 'week') {
       rStart = weekStart
       rEnd = addDays(weekStart, 6)
     } else if (view === 'month') {
@@ -837,9 +869,11 @@ export default function CalendarView() {
       .then(evs => { if (!cancelled) setGoogleEvents(evs) })
       .catch(() => { if (!cancelled) setGoogleEvents([]) })
     return () => { cancelled = true }
-  }, [weekStart, monthStart, year, view, us.googleConnected])
+  }, [dayDate, weekStart, monthStart, year, view, us.googleConnected])
 
   function goToToday() {
+    const d = new Date(); d.setHours(0,0,0,0)
+    setDayDate(d)
     setWeekStart(startOfWeek(new Date()))
     setMonthStart(startOfMonth(new Date()))
     setYear(new Date().getFullYear())
@@ -871,6 +905,10 @@ export default function CalendarView() {
     setYear(y => y + offset)
   }
 
+  function navigateDay(offset: number) {
+    setDayDate(d => addDays(d, offset))
+  }
+
   function handleCreateEvent(date: Date) {
     const diary = store.todayDiary()
     const node = store.createNode({
@@ -886,7 +924,8 @@ export default function CalendarView() {
   }
 
   // Periodo de inicio para overdue (basado en vista actual)
-  const periodStart = view === 'week' ? weekStart
+  const periodStart = view === 'day' ? dayDate
+    : view === 'week' ? weekStart
     : view === 'month' ? monthStart
     : new Date(year, 0, 1)
 
@@ -907,13 +946,13 @@ export default function CalendarView() {
           <div className="calendar-header-row">
             <h1 className="view-title" style={{ margin: 0 }}>Calendario</h1>
             <div className="calendar-view-tabs">
-              {(['week', 'month', 'year'] as ViewType[]).map(v => (
+              {(['day', 'week', 'month', 'year'] as ViewType[]).map(v => (
                 <button
                   key={v}
                   className={`calendar-view-tab ${view === v ? 'calendar-view-tab--active' : ''}`}
                   onClick={() => setView(v)}
                 >
-                  {v === 'week' ? 'Semana' : v === 'month' ? 'Mes' : 'Año'}
+                  {v === 'day' ? 'Día' : v === 'week' ? 'Semana' : v === 'month' ? 'Mes' : 'Año'}
                 </button>
               ))}
             </div>
@@ -921,12 +960,33 @@ export default function CalendarView() {
         </div>
 
         <div className="calendar-view-body">
+          {view === 'day' && (
+            <WeekView
+              weekStart={dayDate}
+              today={today}
+              allNodes={allNodes}
+              googleEvents={googleEvents}
+              navLabel={dayDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              navUnit={1}
+              dayCount={1}
+              showDayNames
+              onNavigate={navigateDay}
+              onGoToToday={goToToday}
+              onNodeClick={id => navigate(`/node/${id}`)}
+              onCreateEvent={handleCreateEvent}
+              onDrop={handleCalendarDrop}
+            />
+          )}
+
           {view === 'week' && (
             <WeekView
               weekStart={weekStart}
               today={today}
               allNodes={allNodes}
               googleEvents={googleEvents}
+              navLabel={formatWeekLabel(weekStart)}
+              navUnit={7}
+              dayCount={7}
               onNavigate={navigateWeek}
               onGoToToday={goToToday}
               onNodeClick={id => navigate(`/node/${id}`)}
@@ -973,7 +1033,11 @@ export default function CalendarView() {
           {panelCollapsed ? '›' : '‹'}
         </button>
         <div className="right-panel-content">
-          <CalendarSidePanel periodStart={periodStart} view={view} />
+          {view === 'day' ? (
+            <DiaryRightPanel diaryDate={dayDate} rangeType="day" />
+          ) : (
+            <CalendarSidePanel periodStart={periodStart} view={view} />
+          )}
         </div>
       </div>
     </div>

@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { TaskPropsPopover } from './DiaryRightPanel'
 
 interface Props {
   periodStart: Date   // inicio del periodo visible (lunes, 1 de mes, 1 de año)
-  view: 'week' | 'month' | 'year'
+  view: 'day' | 'week' | 'month' | 'year'
 }
 
 // ID de arrastre compartido (módulo-level, igual que en OutlinerNode)
@@ -90,30 +90,43 @@ interface TaskRowProps {
 }
 
 function TaskRow({ node, checkColor, indented }: TaskRowProps) {
-  const navigate = useNavigate()
   const isDone = node.status === 'done'
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const rowRef = useRef<HTMLDivElement>(null!)
 
   return (
-    <div
-      className={`cal-panel-task ${indented ? 'cal-panel-task--indented' : ''} ${isDone ? 'cal-panel-task--done' : ''}`}
-      draggable
-      onDragStart={e => {
-        calDragNodeId = node.id
-        e.dataTransfer.setData('cal-node-id', node.id)
-        e.dataTransfer.effectAllowed = 'move'
-      }}
-      onDragEnd={() => { calDragNodeId = null }}
-      onClick={() => navigate(`/node/${node.id}`)}
-      title={node.text || 'Sin título'}
-    >
-      <TaskCheckbox node={node} color={checkColor} />
-      <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
-      {node.due && (
-        <span className="cal-panel-task-date">
-          {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-        </span>
+    <>
+      <div
+        ref={rowRef}
+        className={`cal-panel-task ${indented ? 'cal-panel-task--indented' : ''} ${isDone ? 'cal-panel-task--done' : ''}`}
+        draggable
+        onDragStart={e => {
+          calDragNodeId = node.id
+          e.dataTransfer.setData('cal-node-id', node.id)
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        onDragEnd={() => { calDragNodeId = null }}
+        onClick={() => setPopoverOpen(v => !v)}
+        title={node.text || 'Sin título'}
+      >
+        <TaskCheckbox node={node} color={checkColor} />
+        <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
+        {node.due && (
+          <span className="cal-panel-task-date">
+            {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+      </div>
+      {popoverOpen && (
+        <TaskPropsPopover
+          node={node}
+          onClose={() => setPopoverOpen(false)}
+          anchorRef={rowRef}
+          allowRename
+          allowDelete
+        />
       )}
-    </div>
+    </>
   )
 }
 
@@ -125,8 +138,6 @@ interface GroupedSectionProps {
 }
 
 function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
-  const navigate = useNavigate()
-
   return (
     <>
       {groups.map((group, gi) => (
@@ -134,7 +145,6 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
           {group.parentId && (
             <div
               className={`cal-panel-group-header ${group.parentIsSeguimiento ? 'cal-panel-group-header--seguimiento' : ''}`}
-              onClick={() => navigate(`/node/${group.parentId}`)}
               title={group.parentText}
             >
               {group.parentIsSeguimiento && <span className="cal-panel-seguimiento-icon">👁</span>}
@@ -169,7 +179,8 @@ export default function CalendarSidePanel({ periodStart, view }: Props) {
   const overdueGroups = buildGroups(overdue, allNodes)
   const unscheduledGroups = buildGroups(unscheduled, allNodes)
 
-  const label = view === 'week' ? 'semana pasada y anteriores'
+  const label = view === 'day' ? 'pendientes anteriores'
+    : view === 'week' ? 'semana pasada y anteriores'
     : view === 'month' ? 'mes pasado y anteriores'
     : 'año pasado y anteriores'
 
