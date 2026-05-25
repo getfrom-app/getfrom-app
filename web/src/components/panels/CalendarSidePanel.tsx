@@ -14,14 +14,21 @@ function isResourceNode(n: Node): boolean {
   try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
 }
 
-// Color del checkbox según el tipo de nodo (igual que la agenda diaria)
-function checkboxColorForNode(n: Node): string {
-  if (isResourceNode(n)) return '#06b6d4'        // cian — recurso
-  if (n.isSeguimiento) return '#8b5cf6'           // morado — activa/seguimiento
-  if (n.priority === 'high') return '#ef4444'     // rojo — alta prioridad
-  if (n.priority === 'medium') return '#f97316'   // naranja — media
-  if (n.priority === 'low') return '#22c55e'      // verde — baja
-  return '#3b82f6'                                 // azul — tarea default
+// Clase de checkbox al estilo agenda diaria (colores pastel, cuadrados rellenos)
+function checkboxClassForNode(n: Node, todayStart: Date, todayEnd: Date): string {
+  if (n.status === 'done') return 'diary-agenda-checkbox diary-agenda-checkbox--done'
+  if (n.isSeguimiento || n.status === 'pending' && !n.due) {
+    // Activa (seguimiento) — siempre lila
+    if (n.isSeguimiento) return 'diary-agenda-checkbox diary-agenda-checkbox--seguimiento'
+  }
+  if (n.status === 'future') return 'diary-agenda-checkbox diary-agenda-checkbox--future'
+  if (n.due) {
+    const d = new Date(n.due)
+    if (d < todayStart) return 'diary-agenda-checkbox diary-agenda-checkbox--overdue'  // naranja
+    if (d <= todayEnd)  return 'diary-agenda-checkbox diary-agenda-checkbox--today'    // amarillo
+    return 'diary-agenda-checkbox diary-agenda-checkbox--future'                       // azul (futura)
+  }
+  return 'diary-agenda-checkbox diary-agenda-checkbox--today'                          // sin fecha → amarillo
 }
 function getResourceStatus(n: Node): string {
   // Modelo unificado: node.status manda. Si no hay, leemos legacy _resourceStatus
@@ -86,30 +93,25 @@ function buildGroups(tasks: Node[], allNodes: Node[]): TaskGroup[] {
 
 interface TaskCheckboxProps {
   node: Node
-  color: string
 }
 
-function TaskCheckbox({ node, color }: TaskCheckboxProps) {
+function TaskCheckbox({ node }: TaskCheckboxProps) {
   const isDone = node.status === 'done'
-  const isActive = node.isSeguimiento || color === '#8b5cf6'
+  // Calcular hoy
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayEnd = new Date(todayStart.getTime() + 86400000 - 1)
+  const cls = checkboxClassForNode(node, todayStart, todayEnd)
   return (
     <button
-      className={`cal-task-checkbox ${isDone ? 'cal-task-checkbox--done' : ''}`}
-      style={{
-        borderColor: color,
-        background: isDone ? color : (isActive && !isDone ? color : 'transparent'),
-      } as React.CSSProperties}
+      className={cls}
       onClick={e => {
         e.stopPropagation()
         store.updateNode(node.id, { status: isDone ? 'pending' : 'done' })
       }}
       title={isDone ? 'Marcar como pendiente' : 'Marcar como hecho'}
     >
-      {isDone && (
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
+      {isDone && '✓'}
     </button>
   )
 }
@@ -142,7 +144,7 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
         onClick={() => setPopoverOpen(v => !v)}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} color={checkboxColorForNode(node)} />
+        <TaskCheckbox node={node} />
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
         {node.due && (
           <span className="cal-panel-task-date">
@@ -180,7 +182,6 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
               className={`cal-panel-group-header ${group.parentIsSeguimiento ? 'cal-panel-group-header--seguimiento' : ''}`}
               title={group.parentText}
             >
-              {group.parentIsSeguimiento && <span className="cal-panel-seguimiento-icon">👁</span>}
               <span className="cal-panel-group-title">{group.parentText}</span>
               <span className="cal-panel-count">{group.tasks.length}</span>
             </div>
@@ -216,7 +217,7 @@ function ResourceRow({ node }: { node: Node }) {
         onClick={() => setPopoverOpen(v => !v)}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} color={'#06b6d4'} />
+        <TaskCheckbox node={node} />
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
       </div>
       {popoverOpen && (
