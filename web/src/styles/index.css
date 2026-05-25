@@ -1137,6 +1137,19 @@ mark.inline-highlight {
 }
 .collapse-btn:hover { color: var(--text-secondary); }
 .collapse-btn.invisible { visibility: hidden; }
+/* Drag handle — aparece en hover sobre collapse-btn area */
+.collapse-btn[draggable],
+.node-row[draggable="true"] .collapse-btn { cursor: grab; }
+.node-row[draggable="true"]:hover .collapse-btn::before {
+  content: '⠿';
+  position: absolute;
+  left: -2px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  pointer-events: none;
+  line-height: 1;
+}
 
 .collapse-arrow {
   transition: transform 0.15s;
@@ -3018,8 +3031,10 @@ mark.inline-highlight {
 .node-row.drag-over { border-top: 2px solid var(--accent); }
 .node-row[draggable="true"] { cursor: grab; }
 .node-row[draggable="true"]:active { cursor: grabbing; }
-.drop-as-child { height: 6px; margin-left: 32px; border-radius: 3px; transition: background 0.1s; }
-.drop-as-child.active { background: var(--accent); opacity: 0.6; }
+.drop-as-child { height: 10px; margin-left: 32px; border-radius: 3px; transition: background 0.1s; cursor: copy; }
+.drop-as-child.active { background: var(--accent); opacity: 0.7; height: 14px; }
+/* Indicador de línea drag-over en node-row */
+.node-row.drag-over::before { content: ''; display: block; height: 2px; background: var(--accent); border-radius: 1px; position: absolute; left: 0; right: 0; top: -1px; pointer-events: none; }
 
 /* ── File attachments ───────────────────────────────────────────────────── */
 
@@ -3374,7 +3389,7 @@ mark.inline-highlight {
 .diary-view { overflow: hidden; }
 .diary-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .diary-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
-.diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; }
+.diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; flex: 1; }
 .diary-panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .diary-panel-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; font-family: inherit; }
 .diary-panel-tab:hover { color: var(--text-primary); }
@@ -3932,6 +3947,51 @@ mark.inline-highlight {
 .timeline-event-chip--gcal:hover { background: rgba(59,130,246,0.25); }
 
 /* ── GCal event editor popup ─────────────────────────────────────────────── */
+/* ── Task properties popup (Agenda panel) ────────────────────────────────── */
+.task-props-popup {
+  background: var(--bg-card, var(--bg-secondary));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+  padding: 14px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tpp-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tpp-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.tpp-open-btn {
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle, var(--bg-hover));
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s;
+}
+.tpp-open-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
 .gcal-editor-popup {
   background: var(--bg-card, var(--bg-secondary));
   border: 1px solid var(--border);

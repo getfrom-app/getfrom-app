@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -56,146 +57,152 @@ interface TaskPropsPopoverProps {
 
 function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        popoverRef.current && !popoverRef.current.contains(e.target as HTMLElement) &&
-        anchorRef.current && !anchorRef.current.contains(e.target as HTMLElement)
-      ) {
-        onClose()
-      }
+    // Posicionar via portal relativo al botón ancla
+    if (anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect()
+      setPos({
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.right - 280, window.innerWidth - 292)),
+      })
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    function handler(e: MouseEvent) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as globalThis.Node) &&
+        anchorRef.current && !anchorRef.current.contains(e.target as globalThis.Node)
+      ) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [onClose, anchorRef])
 
-  const dueValue = node.due
-    ? (() => {
-        const d = new Date(node.due)
-        const y = d.getFullYear()
-        const m = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${y}-${m}-${day}`
-      })()
-    : ''
+  const dueDate = node.due ? node.due.slice(0, 10) : ''
+  const dueTime = node.due ? node.due.slice(11, 16) : ''
 
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value
-    if (!val) {
-      store.updateNode(node.id, { due: null })
-    } else {
-      const [y, m, d] = val.split('-').map(Number)
-      const dateObj = new Date(y, m - 1, d, 9, 0, 0, 0)
-      store.updateNode(node.id, { due: dateObj.toISOString() })
-    }
+  function setDue(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { due: null }); return }
+    store.updateNode(node.id, { due: new Date(`${date}T${time || '09:00'}:00`).toISOString() })
   }
 
-  const priorities: Array<{ value: 'high' | 'medium' | 'low' | null; label: string }> = [
-    { value: 'high', label: '🔴 Alta' },
-    { value: 'medium', label: '🟡 Media' },
-    { value: 'low', label: '🟢 Baja' },
-    { value: null, label: '— Sin prioridad' },
+  // Recurrencia helpers
+  function parseRec(r: string) {
+    const [unit, nStr] = r.split(':')
+    return { n: parseInt(nStr || '1') || 1, unit }
+  }
+  function applyRec(n: number, unit: string) {
+    const safe = Math.max(1, n)
+    store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
+  }
+  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'mes.'], ['yearly', 'año']]
+
+  const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
+
+  const priorityOpts: { v: Node['priority']; l: string; c: string }[] = [
+    { v: null,     l: '–',    c: '' },
+    { v: 'low',    l: 'Baja',  c: '#6b7280' },
+    { v: 'medium', l: 'Media', c: '#f59e0b' },
+    { v: 'high',   l: 'Alta',  c: '#ef4444' },
   ]
 
-  const statuses: Array<{ value: 'pending' | 'done' | null; label: string }> = [
-    { value: 'pending', label: '⬜ Pendiente' },
-    { value: 'done', label: '✅ Hecha' },
-    { value: null, label: '— Sin estado' },
-  ]
+  if (!pos) return null
 
-  return (
+  return createPortal(
     <div
       ref={popoverRef}
-      style={{
-        position: 'absolute',
-        right: 0,
-        top: '100%',
-        marginTop: 4,
-        zIndex: 1000,
-        background: 'var(--bg-secondary, #1e1e2e)',
-        border: '1px solid var(--border, rgba(255,255,255,0.1))',
-        borderRadius: 8,
-        padding: '10px 12px',
-        minWidth: 200,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-      }}
+      className="task-props-popup"
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 500 }}
+      onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      {/* Date */}
-      <div>
-        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fecha</div>
-        <input
-          type="date"
-          value={dueValue}
-          onChange={handleDateChange}
-          style={{
-            width: '100%',
-            background: 'var(--bg-primary, #13131f)',
-            border: '1px solid var(--border, rgba(255,255,255,0.1))',
-            borderRadius: 5,
-            color: 'var(--text-primary)',
-            fontSize: 12,
-            padding: '4px 6px',
-            outline: 'none',
-            cursor: 'pointer',
+      {/* Título */}
+      <div className="tpp-title">{node.text || 'Sin título'}</div>
+
+      {/* Fechas rápidas */}
+      <div className="tpp-section-label">Fecha</div>
+      <div className="nqp-quick-row">
+        {[
+          { label: 'Hoy', days: 0 },
+          { label: 'Mañana', days: 1 },
+          { label: 'Lunes', days: qNextMondayDays },
+          { label: '+7d', days: 7 },
+        ].map(({ label, days }) => {
+          const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
+          const iso = d.toISOString().slice(0, 10)
+          return (
+            <button key={label} className={`nqp-qbtn${dueDate === iso ? ' active' : ''}`}
+              onClick={() => setDue(iso, dueTime || '09:00')}>{label}</button>
+          )
+        })}
+        {node.due && <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null })}>✕</button>}
+      </div>
+
+      {/* Fecha + hora */}
+      <div className="nqp-inputs-row">
+        <input type="date" className="nqp-date-input" value={dueDate}
+          onChange={e => setDue(e.target.value, dueTime)} />
+        <input type="time" className="nqp-time-input" value={dueTime}
+          onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+      </div>
+
+      {/* Prioridad */}
+      <div className="tpp-section-label">Prioridad</div>
+      <div className="nqp-chips-row">
+        {priorityOpts.map(opt => (
+          <button key={String(opt.v)}
+            className={`nqp-chip${node.priority === opt.v ? ' active' : ''}`}
+            style={opt.c ? { color: opt.c, ...(node.priority === opt.v ? { borderColor: opt.c, background: opt.c + '20' } : {}) } : {}}
+            onClick={() => store.updateNode(node.id, { priority: opt.v })}
+          >{opt.l}</button>
+        ))}
+      </div>
+
+      {/* Repetición */}
+      <div className="tpp-section-label">Repetición</div>
+      <div className="nqp-rec-row">
+        <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
+          onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
+        <input type="number" className="nqp-rec-n" min={1} max={999}
+          value={node.recurrence ? parseRec(node.recurrence).n : 1}
+          disabled={!node.recurrence}
+          onClick={e => e.stopPropagation()}
+          onChange={e => {
+            const n = Math.max(1, parseInt(e.target.value) || 1)
+            const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
+            applyRec(n, unit)
           }}
         />
+        {recUnits.map(([unit, label]) => (
+          <button key={unit}
+            className={`nqp-chip${!!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+            onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
+          >{label}</button>
+        ))}
       </div>
 
-      {/* Priority */}
-      <div>
-        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Prioridad</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {priorities.map(p => (
-            <button
-              key={String(p.value)}
-              onClick={() => store.updateNode(node.id, { priority: p.value })}
-              style={{
-                textAlign: 'left',
-                background: node.priority === p.value ? 'var(--accent-soft, rgba(139,92,246,0.15))' : 'transparent',
-                border: 'none',
-                borderRadius: 4,
-                color: 'var(--text-primary)',
-                fontSize: 12,
-                padding: '3px 6px',
-                cursor: 'pointer',
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+      {/* Estado */}
+      <div className="tpp-section-label">Estado</div>
+      <div className="nqp-chips-row">
+        {([
+          { v: 'pending' as const, l: '○ Pendiente' },
+          { v: 'done'    as const, l: '✓ Hecha' },
+          { v: 'future'  as const, l: '◆ Futura' },
+          { v: null,               l: '– Sin estado' },
+        ] as { v: Node['status']; l: string }[]).map(opt => (
+          <button key={String(opt.v)}
+            className={`nqp-chip${node.status === opt.v ? ' active' : ''}`}
+            onClick={() => { store.updateNode(node.id, { status: opt.v }); if (opt.v !== null) onClose() }}
+          >{opt.l}</button>
+        ))}
       </div>
 
-      {/* Status */}
-      <div>
-        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {statuses.map(st => (
-            <button
-              key={String(st.value)}
-              onClick={() => { store.updateNode(node.id, { status: st.value }); onClose() }}
-              style={{
-                textAlign: 'left',
-                background: node.status === st.value ? 'var(--accent-soft, rgba(139,92,246,0.15))' : 'transparent',
-                border: 'none',
-                borderRadius: 4,
-                color: 'var(--text-primary)',
-                fontSize: 12,
-                padding: '3px 6px',
-                cursor: 'pointer',
-              }}
-            >
-              {st.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+      {/* Abrir nota */}
+      <button className="tpp-open-btn" onClick={() => { onClose(); window.location.href = `/app/node/${node.id}` }}>
+        Abrir nota →
+      </button>
+    </div>,
+    document.body
   )
 }
 
