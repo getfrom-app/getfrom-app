@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet'
+export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet' | 'view-table' | 'view-kanban' | 'view-calendar'
 
 export interface SlashMenuOption {
   label: string
@@ -26,6 +26,10 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
   { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
+  // ── Vistas (inline blocks) ──────────────────────────────────────────────
+  { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
+  { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
+  { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
 ]
 
 export interface SlashSelectPayload {

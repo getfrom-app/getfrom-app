@@ -6372,6 +6372,14 @@ a:focus-visible {
 .node-table-tag { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
 .node-table-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
 
+/* Inline view blocks (slash /tabla, /kanban, /calendario en outliner) */
+.outliner-inline-view {
+  margin-top: 8px; margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+
 /* Sorting + interactive headers */
 .node-table-th { user-select: none; cursor: pointer; transition: background 0.08s; }
 .node-table-th:hover { background: var(--bg-hover); }

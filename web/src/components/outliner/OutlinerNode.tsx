@@ -6,6 +6,9 @@ import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
+import NodeTableView from '../views/NodeTableView'
+import NodeKanbanView from '../views/NodeKanbanView'
+import NodeCalendarView from '../views/NodeCalendarView'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
@@ -1234,6 +1237,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, updates)
       navigate(`/node/${node.id}`)
       return
+    } else if (action === 'view-table' || action === 'view-kanban' || action === 'view-calendar') {
+      // Marcar este nodo como bloque vista inline. Guardamos viewBlock+_inline
+      // en extraData. Los componentes inline renderizan el nodo como tabla/
+      // kanban/calendario en lugar de su texto plano.
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed.viewBlock = action === 'view-table' ? 'tabla'
+        : action === 'view-kanban' ? 'kanban'
+        : 'calendario'
+      ed._inline = '1'
+      // Si el nodo no tiene texto aún, ponerle un título descriptivo
+      const defaultLabel = action === 'view-table' ? 'Tabla'
+        : action === 'view-kanban' ? 'Kanban' : 'Calendario'
+      const finalText = (node.text || '').trim() || defaultLabel
+      store.updateNode(node.id, {
+        text: finalText,
+        extraData: JSON.stringify(ed),
+      })
+      // Forzar re-render del contenido
+      if (contentRef.current) contentRef.current.textContent = finalText
+      return
     }
 
     store.updateNode(node.id, updates)
@@ -2075,21 +2099,59 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         document.body
       )}
 
-      {/* Children — selectedId se propaga para que los hijos sepan si están seleccionados */}
-      {!isCollapsed && children.map(child => (
-        <OutlinerNode
-          key={child.id}
-          node={child}
-          depth={depth + 1}
-          isSelected={selectedId === child.id}
-          selectedId={selectedId}
-          isMultiSelected={isMultiSelected}
-          onSelect={onSelect}
-          onSelectNext={onSelectNext}
-          onShiftSelect={onShiftSelect}
-          filterText={filterText}
-        />
-      ))}
+      {/* Inline view block — renderiza tabla/kanban/calendar EN VEZ de los hijos como bullets */}
+      {!isCollapsed && (() => {
+        try {
+          const ed = JSON.parse(node.extraData || '{}')
+          if (ed._inline !== '1') return null
+          const kind = ed.viewBlock
+          if (kind === 'tabla') {
+            return (
+              <div className="outliner-inline-view" style={{ marginLeft: (depth + 1) * 22 }} onClick={e => e.stopPropagation()}>
+                <NodeTableView parentId={node.id} />
+              </div>
+            )
+          }
+          if (kind === 'kanban') {
+            return (
+              <div className="outliner-inline-view" style={{ marginLeft: (depth + 1) * 22 }} onClick={e => e.stopPropagation()}>
+                <NodeKanbanView parentId={node.id} />
+              </div>
+            )
+          }
+          if (kind === 'calendario') {
+            return (
+              <div className="outliner-inline-view" style={{ marginLeft: (depth + 1) * 22 }} onClick={e => e.stopPropagation()}>
+                <NodeCalendarView parentId={node.id} />
+              </div>
+            )
+          }
+          return null
+        } catch { return null }
+      })()}
+
+      {/* Children — selectedId se propaga para que los hijos sepan si están seleccionados.
+          Si este nodo es un inline view block, no renderizamos hijos como bullets (los muestra la vista). */}
+      {!isCollapsed && (() => {
+        try {
+          const ed = JSON.parse(node.extraData || '{}')
+          if (ed._inline === '1') return null
+        } catch { /* fallthrough */ }
+        return children.map(child => (
+          <OutlinerNode
+            key={child.id}
+            node={child}
+            depth={depth + 1}
+            isSelected={selectedId === child.id}
+            selectedId={selectedId}
+            isMultiSelected={isMultiSelected}
+            onSelect={onSelect}
+            onSelectNext={onSelectNext}
+            onShiftSelect={onShiftSelect}
+            filterText={filterText}
+          />
+        ))
+      })()}
 
       {/* Context menu */}
       {contextMenu && (
