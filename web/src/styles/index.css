@@ -3472,6 +3472,17 @@ mark.inline-highlight {
   white-space: nowrap;
   flex-shrink: 0;
 }
+.diary-agenda-parent-note {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  flex-shrink: 1;
+  opacity: 0.75;
+  margin-left: auto;
+}
 
 /* ── Bucles en panel diario ──────────────────────────────────────────────── */
 /* Agenda tab */

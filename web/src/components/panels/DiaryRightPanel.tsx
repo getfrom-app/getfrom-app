@@ -25,6 +25,8 @@ function formatDue(due: string): string {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
   if (d >= todayStart && d <= todayEnd) {
+    // Todo el día (medianoche local) → "Hoy", con hora → mostrar hora
+    if (d.getHours() === 0 && d.getMinutes() === 0) return 'Hoy'
     return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
@@ -302,13 +304,14 @@ interface AgendaTaskRowProps {
   checkboxClass: string
   indented?: boolean
   isEvent?: boolean
+  parentNote?: string   // nombre de la nota padre (si no es diario)
   onToggle: () => void
   onClick: () => void
   onDropBefore?: (draggedId: string) => void  // soltar antes de esta fila
   onDropAsChild?: (draggedId: string) => void // soltar como hijo (solo seguimiento)
 }
 
-function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onClick, onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
+function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onToggle, onClick, onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -370,6 +373,9 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onCli
         {task.text || 'Sin título'}
       </span>
 
+      {parentNote && (
+        <span className="diary-agenda-parent-note" title={parentNote}>{parentNote}</span>
+      )}
       {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
 
       {/* Hover props button */}
@@ -577,6 +583,14 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   }
 
 
+  // ── Helper: nombre de la nota padre (si no es diario ni raíz) ──────────────
+  function getParentNote(node: Node): string | undefined {
+    if (!node.parentId) return undefined
+    const parent = s.getNode(node.parentId)
+    if (!parent || parent.deletedAt || parent.isDiaryEntry) return undefined
+    return parent.text?.trim() || undefined
+  }
+
   // ── Helpers de drag para la Agenda ──────────────────────────────────────────
 
   /** Mover el nodo draggedId para que quede justo antes de targetId */
@@ -690,6 +704,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                   }}
                 ></span>
                 <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
+                {getParentNote(node) && (
+                  <span className="diary-agenda-parent-note" title={getParentNote(node)}>{getParentNote(node)}</span>
+                )}
                 {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
               </div>
               {childTasks.map(task => (
@@ -705,6 +722,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                   onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
                 />
               ))}
+
             </div>
           )
         })}
@@ -717,6 +735,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
               <AgendaTaskRow
                 task={task}
                 checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
+                parentNote={getParentNote(task)}
                 onToggle={() => toggleTask(task.id, task.status)}
                 onClick={() => navigate(`/node/${task.id}`)}
                 onDropBefore={draggedId => dropBefore(draggedId, task.id)}
@@ -747,6 +766,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
               <AgendaTaskRow
                 task={task}
                 checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
+                parentNote={getParentNote(task)}
                 onToggle={() => toggleTask(task.id, task.status)}
                 onClick={() => navigate(`/node/${task.id}`)}
                 onDropBefore={draggedId => dropBefore(draggedId, task.id)}
