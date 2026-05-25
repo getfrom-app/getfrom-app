@@ -46,12 +46,20 @@ export async function disconnectGoogle(): Promise<void> {
   await apiRequest('/google/disconnect', { method: 'DELETE' })
 }
 
+function toDateStr(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 export async function getCalendarEvents(date: Date): Promise<CalendarEvent[]> {
-  const yyyy = date.getFullYear()
-  const mm = String(date.getMonth() + 1).padStart(2, '0')
-  const dd = String(date.getDate()).padStart(2, '0')
-  const dateStr = `${yyyy}-${mm}-${dd}`
-  const res = await apiRequest<{ events: CalendarEvent[] }>(`/google/calendar/events?date=${dateStr}`)
+  const res = await apiRequest<{ events: CalendarEvent[] }>(`/google/calendar/events?date=${toDateStr(date)}`)
+  return res.events
+}
+
+export async function getCalendarEventsRange(start: Date, end: Date): Promise<CalendarEvent[]> {
+  const res = await apiRequest<{ events: CalendarEvent[] }>(
+    `/google/calendar/events/range?start=${toDateStr(start)}&end=${toDateStr(end)}`
+  )
   return res.events
 }
 

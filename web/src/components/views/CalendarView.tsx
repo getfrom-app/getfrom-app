@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
+import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 
 // ── EventPopup ────────────────────────────────────────────────────────────────
 
@@ -246,6 +247,7 @@ interface WeekViewProps {
   weekStart: Date
   today: Date
   allNodes: Node[]
+  googleEvents: CalendarEvent[]
   onNavigate: (offset: number) => void
   onGoToToday: () => void
   onNodeClick: (id: string) => void
@@ -253,7 +255,7 @@ interface WeekViewProps {
   onDrop?: (e: React.DragEvent, date: Date) => void
 }
 
-function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
+function WeekView({ weekStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
@@ -286,6 +288,17 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
   function getTimedNodes(day: Date): Node[] {
     return getNodesForDay(day).filter(n => n.due && hasTime(n.due))
   }
+
+  // Google Calendar events para un día
+  function getGoogleForDay(day: Date) {
+    return googleEvents.filter(ev => {
+      if (!ev.start) return false
+      const d = new Date(ev.start)
+      return isSameDay(d, day)
+    })
+  }
+  function getGoogleAllDay(day: Date) { return getGoogleForDay(day).filter(ev => ev.allDay) }
+  function getGoogleTimed(day: Date) { return getGoogleForDay(day).filter(ev => !ev.allDay) }
 
   const weekLabel = formatWeekLabel(weekStart)
 
@@ -326,6 +339,7 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
           <div className="calendar-timeline-gutter calendar-allday-label">Todo el día</div>
           {days.map((day, i) => {
             const allDayNodes = getAllDayNodes(day)
+            const gcalAllDay = getGoogleAllDay(day)
             return (
               <div key={i} className="calendar-allday-cell">
                 {allDayNodes.map(node => (
@@ -338,6 +352,11 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                   >
                     {node.text || 'Sin título'}
                   </button>
+                ))}
+                {gcalAllDay.map(ev => (
+                  <div key={ev.id} className="calendar-event-chip calendar-event-chip--gcal" title={ev.title}>
+                    {ev.title}
+                  </div>
                 ))}
               </div>
             )
@@ -419,21 +438,17 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                     )
                   })}
 
-                  {/* Eventos con hora */}
+                  {/* Eventos con hora — From */}
                   {timedNodes.map(node => {
                     const d = new Date(node.due!)
                     const topPx = (d.getHours() + d.getMinutes() / 60) * CELL_HEIGHT
-
-                    // Duración: si tiene dueEnd, calcular; si no, 1h por defecto
                     let durationH = 1
                     if (node.dueEnd) {
                       const end = new Date(node.dueEnd)
                       durationH = Math.max(0.5, (end.getTime() - d.getTime()) / 3600000)
                     }
                     const heightPx = durationH * CELL_HEIGHT
-
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-
                     return (
                       <button
                         key={node.id}
@@ -444,12 +459,7 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                           e.dataTransfer.setData('eventId', node.id)
                           e.dataTransfer.effectAllowed = 'move'
                         }}
-                        style={{
-                          top: topPx,
-                          height: heightPx,
-                          background: priorityBg(node),
-                          cursor: 'grab',
-                        }}
+                        style={{ top: topPx, height: heightPx, background: priorityBg(node), cursor: 'grab' }}
                         onClick={e => {
                           e.stopPropagation()
                           setQuickCreate(null)
@@ -460,6 +470,30 @@ function WeekView({ weekStart, today, allNodes, onNavigate, onGoToToday, onNodeC
                         <span className="calendar-event-time">{timeLabel}</span>
                         <span className="calendar-event-text">{node.text || 'Sin título'}</span>
                       </button>
+                    )
+                  })}
+
+                  {/* Eventos con hora — Google Calendar */}
+                  {getGoogleTimed(day).map(ev => {
+                    const d = new Date(ev.start)
+                    const topPx = (d.getHours() + d.getMinutes() / 60) * CELL_HEIGHT
+                    let durationH = 1
+                    if (ev.end) {
+                      const end = new Date(ev.end)
+                      durationH = Math.max(0.25, (end.getTime() - d.getTime()) / 3600000)
+                    }
+                    const heightPx = durationH * CELL_HEIGHT
+                    const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    return (
+                      <div
+                        key={ev.id}
+                        className="calendar-event-block calendar-event-block--gcal"
+                        style={{ top: topPx, height: heightPx }}
+                        title={ev.title}
+                      >
+                        <span className="calendar-event-time">{timeLabel}</span>
+                        <span className="calendar-event-text">{ev.title}</span>
+                      </div>
                     )
                   })}
                 </div>
@@ -756,11 +790,23 @@ export default function CalendarView() {
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()))
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [panelCollapsed, setPanelCollapsed] = useState(false)
+  const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const allNodes = s.allActive().filter(n => !n.deletedAt)
+
+  // Fetch Google Calendar events para la semana visible
+  useEffect(() => {
+    if (view !== 'week') return
+    let cancelled = false
+    const end = addDays(weekStart, 6)
+    getCalendarEventsRange(weekStart, end)
+      .then(evs => { if (!cancelled) setGoogleEvents(evs) })
+      .catch(() => { if (!cancelled) setGoogleEvents([]) })
+    return () => { cancelled = true }
+  }, [weekStart, view])
 
   function goToToday() {
     setWeekStart(startOfWeek(new Date()))
@@ -848,6 +894,7 @@ export default function CalendarView() {
               weekStart={weekStart}
               today={today}
               allNodes={allNodes}
+              googleEvents={googleEvents}
               onNavigate={navigateWeek}
               onGoToToday={goToToday}
               onNodeClick={id => navigate(`/node/${id}`)}
