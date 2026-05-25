@@ -1219,33 +1219,44 @@ export default function NodeView() {
                   </button>
                 )
               })()
-            ) : !node.isDiaryEntry ? (
+            ) : (() => {
+              // ¿Nodo de definición de tag? → mostrar # en color del tag
+              try {
+                const ed = JSON.parse(node.extraData || '{}')
+                if (ed._tagDefinition) {
+                  const tagColor = s.tagColor(ed._tagDefinition)
+                  return (
+                    <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
+                      <span style={{ fontSize: 26, fontWeight: 800, color: tagColor, lineHeight: 1 }}>#</span>
+                    </div>
+                  )
+                }
+              } catch {}
               // Emoji normal para notas no-diario
-              <div className="node-icon-wrapper">
-                <button
-                  className="node-icon-btn"
-                  onClick={() => setShowEmojiPicker(v => !v)}
-                  title="Cambiar icono"
-                >
-                  {nodeIcon || '📄'}
-                </button>
-                {showEmojiPicker && (
-                  <EmojiPicker
-                    onSelect={emoji => {
-                      setShowEmojiPicker(false)
-                      const ed = JSON.parse(node.extraData || '{}')
-                      if (emoji) {
-                        ed.icon = emoji
-                      } else {
-                        delete ed.icon
-                      }
-                      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                    }}
-                    onClose={() => setShowEmojiPicker(false)}
-                  />
-                )}
-              </div>
-            ) : null}
+              if (node.isDiaryEntry) return null
+              return (
+                <div className="node-icon-wrapper">
+                  <button
+                    className="node-icon-btn"
+                    onClick={() => setShowEmojiPicker(v => !v)}
+                    title="Cambiar icono"
+                  >
+                    {nodeIcon || '📄'}
+                  </button>
+                  {showEmojiPicker && (
+                    <EmojiPicker
+                      onSelect={emoji => {
+                        setShowEmojiPicker(false)
+                        const ed = JSON.parse(node.extraData || '{}')
+                        if (emoji) { ed.icon = emoji } else { delete ed.icon }
+                        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                      }}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  )}
+                </div>
+              )
+            })()}
             <h1
               ref={titleRef}
               className="node-title"
