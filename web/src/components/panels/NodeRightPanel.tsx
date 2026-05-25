@@ -382,13 +382,24 @@ export default function NodeRightPanel({ node }: Props) {
             <span className="prop-event-field-label">Inicio</span>
             <div className="prop-datetime">
               <input type="date" className="prop-date-input" value={dueDate}
-                onChange={e => setDue(e.target.value, dueTime)} />
-              <input type="time" className="prop-time-input" value={dueTime}
-                onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+                onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
+              {hasLocalTime(node.due) ? (
+                <>
+                  <input type="time" className="prop-time-input" value={dueTime}
+                    onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
+                  <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+                </>
+              ) : (
+                <button className="prop-quick-date-btn" onClick={() => {
+                  const now = new Date(); const h = now.getHours(); const m = Math.ceil(now.getMinutes() / 15) * 15
+                  setDue(dueDate, `${String(h).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`)
+                }} title="Añadir hora" disabled={!dueDate}>+ hora</button>
+              )}
             </div>
           </div>
 
-          {/* Fecha fin */}
+          {/* Fecha fin — solo si hay hora de inicio */}
+          {hasLocalTime(node.due) && (
           <div className="prop-event-row">
             <span className="prop-event-field-label">Fin</span>
             <div className="prop-datetime">
@@ -398,6 +409,7 @@ export default function NodeRightPanel({ node }: Props) {
                 onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
             </div>
           </div>
+          )}
 
           {/* Localización */}
           <div className="prop-event-row">
