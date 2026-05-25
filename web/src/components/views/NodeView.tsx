@@ -164,7 +164,10 @@ export default function NodeView() {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         }).replace(/^\w/, c => c.toUpperCase())
       }
-      const rendered = renderInlineToHtml(displayText)
+      // Si el texto completo ES una URL, no auto-enlazar — se muestra como recurso
+      const rendered = isUrl(displayText.trim())
+        ? displayText
+        : renderInlineToHtml(displayText)
       if (titleRef.current.innerHTML !== rendered) {
         titleRef.current.innerHTML = rendered
       }
@@ -398,7 +401,13 @@ export default function NodeView() {
   }
 
   function handleTitleInput(e: React.FormEvent<HTMLHeadingElement>) {
-    const text = e.currentTarget.textContent || ''
+    // Si el h1 tiene un único <a> (URL auto-enlazada), recuperar el href completo
+    const el = e.currentTarget
+    const anchors = el.querySelectorAll('a')
+    const rawText = el.textContent || ''
+    const text = anchors.length === 1 && !rawText.startsWith('http')
+      ? (anchors[0].getAttribute('href') || rawText)
+      : rawText
     store.updateNode(node!.id, { text })
 
     const sel = window.getSelection()
