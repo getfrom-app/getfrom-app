@@ -1851,7 +1851,7 @@ export default function NodeView() {
           title={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
           aria-label={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
         >
-          {rightCollapsed ? '›' : '‹'}
+          {rightCollapsed ? '‹' : '›'}
         </button>
         <div className="right-panel-content">
           {node.isDiaryEntry ? (
