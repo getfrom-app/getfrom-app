@@ -24,8 +24,8 @@ const STEPS = [
   },
   {
     icon: '✨',
-    title: 'IA con ⌘J y ⌘Space',
-    text: 'Pulsa ⌘Space para abrir el chat de IA. Usa ⌘J dentro del editor para completar o transformar texto con IA.',
+    title: 'IA inline y chat',
+    text: 'Pulsa Espacio al inicio de un bullet vacío para activar la IA inline. Usa ⌘K para abrir el chat de IA global.',
   },
 ]
 

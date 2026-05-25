@@ -1750,7 +1750,7 @@ export default function NodeView() {
                   onChange={handleBodyChange}
                   onBlur={handleBodyBlur}
                   onKeyDown={handleBodyKeyDown}
-                  placeholder={isAiStreaming ? '✨ IA generando...' : 'Añade una descripción o notas... (⌘Space para IA)'}
+                  placeholder={isAiStreaming ? '✨ IA generando...' : 'Añade una descripción o notas... (IA en el outliner: Espacio al inicio)'}
                   rows={Math.max(4, bodyValue.split('\n').length + 1)}
                 />
                 {isAiStreaming && (
@@ -1760,7 +1760,7 @@ export default function NodeView() {
                   <button
                     className="ai-inline-trigger-btn"
                     onClick={triggerAiInline}
-                    title="Completar con IA (⌘Space)"
+                    title="Completar con IA"
                     tabIndex={-1}
                   >
                     ✨
