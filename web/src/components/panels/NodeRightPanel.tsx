@@ -270,9 +270,6 @@ export default function NodeRightPanel({ node }: Props) {
 
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
       <div className="prop-row">
-        <button className={`prop-icon-btn ${node.isFavorite ? 'active' : ''}`} onClick={toggleFavorite} title="Fijar">
-          📌 Fijado
-        </button>
         <button
           className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento ? 'active' : ''}`}
           onClick={() => {
@@ -293,9 +290,6 @@ export default function NodeRightPanel({ node }: Props) {
           title={node.isEvent ? 'Quitar evento' : 'Convertir en evento'}
         >
           📅 Evento
-        </button>
-        <button className={`prop-icon-btn ${isLocked ? 'active' : ''}`} onClick={toggleLocked} title={isLocked ? 'Desbloquear' : 'Bloquear'}>
-          {isLocked ? '🔒' : '🔓'} {isLocked ? 'Bloqueado' : 'Bloquear'}
         </button>
         <button className={`prop-icon-btn ${isResource ? 'active resource' : ''}`} onClick={toggleResource} title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}>
           🔗 Recurso
