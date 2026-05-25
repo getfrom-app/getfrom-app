@@ -147,10 +147,6 @@ export default function MainLayout() {
         e.preventDefault()
         navigate('/settings')
       }
-      if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowQuickCapture(v => !v)
-      }
       // Cmd+[ → Atrás en la navegación
       if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()

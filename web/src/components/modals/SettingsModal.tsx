@@ -556,7 +556,6 @@ export function AtajosPane() {
 
   const KB_SHORTCUTS = [
     { key: '⌘K', desc: 'Búsqueda y comandos' },
-    { key: '⌘Q', desc: 'Captura rápida' },
     { key: '⌘Z', desc: 'Deshacer' },
     { key: '⌘⇧Z', desc: 'Rehacer' },
     { key: '⌘⇧S', desc: 'Mostrar/ocultar sidebar' },
