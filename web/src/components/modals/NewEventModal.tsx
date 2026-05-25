@@ -22,11 +22,27 @@ const DURATION_OPTIONS = [
   { value: 'custom', label: 'Personalizada' },
 ]
 
+function todayDateStr() {
+  const now = new Date()
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+function nowTimeStr() {
+  const now = new Date()
+  // Redondear a la próxima hora en punto
+  now.setMinutes(0, 0, 0)
+  now.setHours(now.getHours() + 1)
+  return `${now.getHours().toString().padStart(2, '0')}:00`
+}
+
 export default function NewEventModal({ onClose }: Props) {
   const [title, setTitle] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [startDate, setStartDate] = useState(todayDateStr())  // siempre YYYY-MM-DD
+  const [startTime, setStartTime] = useState(nowTimeStr())    // HH:MM, solo si hasTime
+  const [hasTime, setHasTime] = useState(false)
   const [duration, setDuration] = useState('60')
+  const [endDate, setEndDate] = useState('')
   const [description, setDescription] = useState('')
   const [eventType, setEventType] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -36,17 +52,30 @@ export default function NewEventModal({ onClose }: Props) {
     inputRef.current?.focus()
   }, [])
 
-  // When startDate or duration changes, auto-calculate endDate (unless custom)
+  // Auto-calcular fin cuando cambia fecha, hora o duración
   useEffect(() => {
-    if (!startDate || duration === 'custom') return
-    const end = new Date(new Date(startDate).getTime() + parseInt(duration) * 60000)
-    // Format to datetime-local string (YYYY-MM-DDTHH:MM)
+    if (!hasTime || !startDate || !startTime || duration === 'custom') {
+      setEndDate('')
+      return
+    }
+    const start = new Date(`${startDate}T${startTime}`)
+    const end = new Date(start.getTime() + parseInt(duration) * 60000)
     const pad = (n: number) => n.toString().padStart(2, '0')
-    const formatted =
+    setEndDate(
       `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}` +
       `T${pad(end.getHours())}:${pad(end.getMinutes())}`
-    setEndDate(formatted)
-  }, [startDate, duration])
+    )
+  }, [hasTime, startDate, startTime, duration])
+
+  function toggleTime() {
+    setHasTime(prev => {
+      if (!prev) {
+        // Al activar hora: resetear duración a 1h
+        setDuration('60')
+      }
+      return !prev
+    })
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,13 +87,17 @@ export default function NewEventModal({ onClose }: Props) {
       description.trim(),
     ].filter(Boolean).join('\n\n') || undefined
 
+    const dueISO = hasTime
+      ? new Date(`${startDate}T${startTime}`).toISOString()
+      : startDate ? new Date(`${startDate}T00:00:00`).toISOString() : null
+
     const node = store.createNode({
       text: title.trim(),
       parentId: diaryNode?.id || null,
-      due: startDate ? new Date(startDate).toISOString() : null,
+      due: dueISO,
       isTask: true,
     })
-    if (endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
+    if (hasTime && endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
     if (body) store.updateNode(node.id, { body })
     navigate(`/node/${node.id}`)
     onClose()
@@ -113,45 +146,75 @@ export default function NewEventModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Start date + duration */}
+          {/* Fecha */}
           <div className="modal-row">
-            <div className="modal-field modal-field--half">
-              <label className="modal-label">Inicio</label>
+            <div className={`modal-field ${hasTime ? 'modal-field--half' : ''}`}>
+              <label className="modal-label">Fecha</label>
               <input
-                type="datetime-local"
+                type="date"
                 className="modal-input"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
               />
             </div>
-            <div className="modal-field modal-field--half">
-              <label className="modal-label">Duración</label>
-              <select
-                className="modal-input"
-                value={duration}
-                onChange={e => setDuration(e.target.value)}
-              >
-                {DURATION_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
+
+            {/* Hora — solo si hasTime */}
+            {hasTime && (
+              <div className="modal-field modal-field--half">
+                <label className="modal-label">Hora inicio</label>
+                <input
+                  type="time"
+                  className="modal-input"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
-          {/* End date: editable when custom, or read-only auto-calculated */}
+          {/* Toggle añadir/quitar hora */}
           <div className="modal-field">
-            <label className="modal-label">
-              Fin {duration !== 'custom' && startDate && <span className="modal-label-hint">(calculado)</span>}
-            </label>
-            <input
-              type="datetime-local"
-              className="modal-input"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              readOnly={duration !== 'custom'}
-              style={duration !== 'custom' ? { opacity: 0.6 } : undefined}
-            />
+            <button
+              type="button"
+              className={`event-chip ${hasTime ? 'event-chip--active' : ''}`}
+              onClick={toggleTime}
+            >
+              ⏱ {hasTime ? 'Quitar hora' : 'Añadir hora'}
+            </button>
           </div>
+
+          {/* Duración + fin — solo si hasTime */}
+          {hasTime && (
+            <>
+              <div className="modal-row">
+                <div className="modal-field modal-field--half">
+                  <label className="modal-label">Duración</label>
+                  <select
+                    className="modal-input"
+                    value={duration}
+                    onChange={e => setDuration(e.target.value)}
+                  >
+                    {DURATION_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="modal-field modal-field--half">
+                  <label className="modal-label">
+                    Fin {duration !== 'custom' && <span className="modal-label-hint">(calculado)</span>}
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="modal-input"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    readOnly={duration !== 'custom'}
+                    style={duration !== 'custom' ? { opacity: 0.6 } : undefined}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Description */}
           <div className="modal-field">
