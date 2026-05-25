@@ -3482,6 +3482,28 @@ mark.inline-highlight {
 .diary-agenda-checkbox--future      { background: #93c5fd; } /* azul pastel — futura */
 .diary-agenda-checkbox--resource    { background: #67e8f9; } /* cian pastel — recurso */
 
+/* Animación de despedida al marcar done en la columna derecha del calendario */
+.cal-panel-task--leaving {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease;
+  max-height: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cal-panel-check-pulse {
+  animation: cal-check-pulse 0.45s ease-out;
+}
+@keyframes cal-check-pulse {
+  0%   { transform: scale(0.6); }
+  50%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
 .diary-agenda-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .diary-agenda-text.done { text-decoration: line-through; opacity: 0.4; }
 

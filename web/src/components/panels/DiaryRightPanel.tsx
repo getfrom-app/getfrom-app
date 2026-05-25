@@ -386,13 +386,25 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
   const [hovered, setHovered] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const btnRef = useRef<HTMLButtonElement>(null!)
+
+  function handleToggle() {
+    // Si ya está done o es evento → toggle inmediato
+    if (task.status === 'done' || isEvent) { onToggle(); return }
+    // Marcar done con animación de despedida
+    if (leaving) return
+    setLeaving('pulse')
+    setTimeout(() => setLeaving('fade'), 700)
+    setTimeout(() => { onToggle() }, 1200)
+  }
 
   const rowClass = [
     'diary-agenda-task',
     indented ? 'diary-agenda-task--indented' : '',
-    task.status === 'done' ? 'diary-agenda-task--done' : '',
+    (task.status === 'done' || leaving) ? 'diary-agenda-task--done' : '',
     isDragOver ? 'diary-agenda-task--drop' : '',
+    leaving === 'fade' ? 'cal-panel-task--leaving' : '',
   ].filter(Boolean).join(' ')
 
   return (
@@ -432,10 +444,12 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
     >
       {isEvent ? (
         <span className="diary-agenda-event-icon">📅</span>
+      ) : leaving ? (
+        <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
       ) : (
         <button
           className={checkboxClass}
-          onClick={e => { e.stopPropagation(); onToggle() }}
+          onClick={e => { e.stopPropagation(); handleToggle() }}
         >
           {task.status === 'done' ? '✓' : ''}
         </button>
