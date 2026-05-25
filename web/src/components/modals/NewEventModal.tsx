@@ -95,8 +95,8 @@ export default function NewEventModal({ onClose }: Props) {
       text: title.trim(),
       parentId: diaryNode?.id || null,
       due: dueISO,
-      isTask: true,
     })
+    store.updateNode(node.id, { isEvent: true })
     if (hasTime && endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
     if (body) store.updateNode(node.id, { body })
     navigate(`/node/${node.id}`)
