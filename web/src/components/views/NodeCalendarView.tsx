@@ -39,7 +39,9 @@ export default function NodeCalendarView({ parentId }: Props) {
     if (!text) { setQuickCreate(null); return }
     const due = new Date(year, month, quickCreate.day, 0, 0, 0).toISOString()
     const node = store.createNode({ text, parentId, siblingOrder: Date.now() })
-    store.updateNode(node.id, { due, status: 'pending' })
+    // Nodo normal con fecha (NO tarea). El usuario puede convertirlo en tarea
+    // después si quiere desde el panel derecho.
+    store.updateNode(node.id, { due })
     setQuickCreate(null)
   }
 
