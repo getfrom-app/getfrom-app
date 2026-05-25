@@ -571,9 +571,20 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
 
   // ── Agenda logic ───────────────────────────────────────────────────────
 
-  // Nodos de seguimiento — ordenados igual que Mac: seguimientoOrder primero, luego updatedAt desc
+  // Nodos de seguimiento — filtrar por día (sin due → hoy + overdue, con due → ese día)
+  const isThisDayToday = diaryDate.toDateString() === now.toDateString()
   const seguimientoNodes = s.allActive()
     .filter(n => !n.deletedAt && (n.isSeguimiento || (n.types || []).includes('bucle')))
+    .filter(n => {
+      // Sin fecha: solo en el panel de HOY
+      if (!n.due) return isThisDayToday
+      const due = new Date(n.due)
+      // Cae en este día: mostrar
+      if (due >= dateStart && due < dateEnd) return true
+      // Overdue (due < hoy) y estamos en HOY: traer de vuelta a hoy
+      if (isThisDayToday && due < todayStart) return true
+      return false
+    })
     .sort((a, b) => {
       const ao = (a as any).seguimientoOrder ?? null
       const bo = (b as any).seguimientoOrder ?? null

@@ -246,12 +246,23 @@ function priorityBg(node: Node): string {
   if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f59e0b)'
   // Tasks done: muted
   if (node.status === 'done') return '#6b7280'
+  // Seguimiento (activa): morado distintivo
+  if (node.isSeguimiento) return '#8b5cf6'
+  // Recurso: cian
+  try { if (JSON.parse(node.extraData || '{}')._resource) return '#06b6d4' } catch { /* ignore */ }
   // Priority colors
   if (node.priority === 'high') return '#ef4444'
   if (node.priority === 'medium') return '#f97316'
   if (node.priority === 'low') return '#22c55e'
-  // Default: accent
-  return 'var(--accent, #8b5cf6)'
+  // Default tarea: azul
+  return '#3b82f6'
+}
+
+function nodeIcon(node: Node): string {
+  if (node.isEvent && !node.status) return '📅'
+  if (node.isSeguimiento) return '👁'
+  try { if (JSON.parse(node.extraData || '{}')._resource) return '◆' } catch { /* ignore */ }
+  return ''
 }
 
 // Returns true if the ISO date string has a time component (non-midnight)
@@ -404,7 +415,9 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   }
                 }}
               >
-                {allDayNodes.map(node => (
+                {allDayNodes.map(node => {
+                  const icon = nodeIcon(node)
+                  return (
                   <button
                     key={node.id}
                     className="calendar-event-chip"
@@ -422,9 +435,11 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     }}
                     title={node.text || 'Sin título'}
                   >
+                    {icon && <span style={{ marginRight: 4 }}>{icon}</span>}
                     {node.text || 'Sin título'}
                   </button>
-                ))}
+                  )
+                })}
                 {gcalAllDay.map(ev => (
                   <div key={ev.id} className="calendar-event-chip calendar-event-chip--gcal" title={ev.title}>
                     {ev.title}
@@ -540,7 +555,10 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         title={node.text || 'Sin título'}
                       >
                         <span className="calendar-event-time">{timeLabel}</span>
-                        <span className="calendar-event-text">{node.text || 'Sin título'}</span>
+                        <span className="calendar-event-text">
+                          {nodeIcon(node) && <span style={{ marginRight: 4 }}>{nodeIcon(node)}</span>}
+                          {node.text || 'Sin título'}
+                        </span>
                       </button>
                     )
                   })}

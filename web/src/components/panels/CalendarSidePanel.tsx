@@ -118,7 +118,8 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
         onClick={() => setPopoverOpen(v => !v)}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} color={checkColor} />
+        <TaskCheckbox node={node} color={node.isSeguimiento ? '#8b5cf6' : checkColor} />
+        {node.isSeguimiento && <span style={{ color: '#8b5cf6', fontSize: 11, flexShrink: 0 }}>👁</span>}
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
         {node.due && (
           <span className="cal-panel-task-date">
