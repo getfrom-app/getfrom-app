@@ -5,14 +5,14 @@ import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
-type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url'
+type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag'
 type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
 
 const COL_TYPE_LABELS: Record<ColType, string> = {
   text: 'Texto', number: 'Número', select: 'Select', multi_select: 'Multi-select',
-  date: 'Fecha', checkbox: 'Checkbox', url: 'URL',
+  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag',
 }
 
 const BUILTIN_COLS = [
@@ -26,11 +26,62 @@ const NODE_BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tare
 
 // ── Cell renderers/editors ───────────────────────────────────────────────────
 
-function CellEditor({ node, def, onClose }: { node: Node; def: PropDef; onClose: () => void }) {
+function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
+  currentValueId: string
+  options: SelectOption[]
+  onPick: (id: string) => void
+  onCreate: (label: string) => void
+  onClose: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+  const filtered = options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+  const exact = options.find(o => o.label.toLowerCase() === query.trim().toLowerCase())
+  return (
+    <div className="select-editor" onMouseDown={e => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        className="node-table-cell-editor"
+        placeholder="Buscar o crear opción..."
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            if (filtered.length > 0) onPick(filtered[0].id)
+            else if (query.trim()) onCreate(query.trim())
+          }
+          if (e.key === 'Escape') onClose()
+        }}
+      />
+      <div className="select-editor-list">
+        {currentValueId && (
+          <button className="select-editor-item select-editor-item--clear" onClick={() => onPick('')}>— Sin valor</button>
+        )}
+        {filtered.map(o => (
+          <button key={o.id} className="select-editor-item" onClick={() => onPick(o.id)}>
+            <span className="select-editor-dot" style={{ background: o.color || '#94a3b8' }} />
+            {o.label}
+          </button>
+        ))}
+        {query.trim() && !exact && (
+          <button className="select-editor-item select-editor-item--create" onClick={() => onCreate(query.trim())}>
+            ＋ Crear "{query.trim()}"
+          </button>
+        )}
+        {filtered.length === 0 && !query.trim() && (
+          <div className="select-editor-empty">Sin opciones todavía. Escribe para crear una.</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef; parentId: string; onClose: () => void }) {
   const current = store.getPropValue(node.id, def.id)
   const [val, setVal] = useState<string>(current === undefined || current === null ? '' : String(current))
   const ref = useRef<HTMLInputElement | HTMLSelectElement>(null)
-  useEffect(() => { ref.current?.focus(); if (ref.current && 'select' in ref.current) ref.current.select() }, [])
+  useEffect(() => { ref.current?.focus(); if (ref.current && 'select' in ref.current && def.type !== 'select') ref.current.select() }, [def.type])
   function commit(v: string) {
     let stored: unknown = v
     if (def.type === 'number') stored = v === '' ? null : Number(v)
@@ -39,17 +90,52 @@ function CellEditor({ node, def, onClose }: { node: Node; def: PropDef; onClose:
     onClose()
   }
   if (def.type === 'select') {
+    const options = def.options || []
     return (
-      <select
-        ref={ref as React.RefObject<HTMLSelectElement>}
-        defaultValue={String(current ?? '')}
-        onBlur={onClose}
-        onChange={e => commit(e.target.value)}
+      <SelectEditor
+        currentValueId={String(current ?? '')}
+        options={options}
+        onPick={optId => { commit(optId) }}
+        onCreate={(label) => {
+          // Crear nueva opción en el schema
+          const newOpt: SelectOption = { id: 'opt_' + Math.random().toString(36).slice(2, 8), label }
+          const schema = store.getPropSchema(parentId)
+          const colDef = schema.find(c => c.id === def.id)
+          if (colDef) {
+            colDef.options = [...(colDef.options || []), newOpt]
+            store.setPropSchema(parentId, schema)
+          }
+          commit(newOpt.id)
+        }}
+        onClose={onClose}
+      />
+    )
+  }
+  if (def.type === 'tag') {
+    // Tag editor: input texto con autocompletar de tags globales, escribe en node.types[]
+    const allTags = store.allUsedTags ? store.allUsedTags() : []
+    const currentTags = (node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t))
+    return (
+      <input
+        ref={ref as React.RefObject<HTMLInputElement>}
+        type="text"
+        defaultValue={currentTags.join(' ')}
+        list="all-tags-datalist"
+        placeholder="tag1 tag2..."
         className="node-table-cell-editor"
-      >
-        <option value="">—</option>
-        {(def.options || []).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-      </select>
+        onBlur={e => {
+          const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
+          const builtin = (node.types || []).filter(t => NODE_BUILTIN_TYPES.has(t))
+          store.updateNode(node.id, { types: [...builtin, ...newTags] })
+          // dataset autocompletar opcional via datalist global (no esencial)
+          void allTags
+          onClose()
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+          if (e.key === 'Escape') onClose()
+        }}
+      />
     )
   }
   if (def.type === 'checkbox') {
@@ -81,6 +167,18 @@ function CellEditor({ node, def, onClose }: { node: Node; def: PropDef; onClose:
 }
 
 function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () => void }) {
+  // Tag: lee de node.types[] no de _props
+  if (def.type === 'tag') {
+    const tags = (node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t))
+    if (tags.length === 0) return <span className="node-table-empty-cell" onClick={onEdit}>—</span>
+    return (
+      <div className="node-table-tags" onClick={onEdit}>
+        {tags.map(t => (
+          <span key={t} className="node-table-tag" style={{ background: store.tagColor(t) + '20', color: store.tagColor(t) }}>#{t}</span>
+        ))}
+      </div>
+    )
+  }
   const v = store.getPropValue(node.id, def.id)
   if (v === undefined || v === null || v === '') {
     return <span className="node-table-empty-cell" onClick={onEdit}>—</span>
@@ -461,7 +559,7 @@ export default function NodeTableView({ parentId }: Props) {
                       <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />
                       {isEditing && (
                         <div className="node-table-cell-overlay">
-                          <CellEditor node={node} def={col} onClose={() => setEditingCell(null)} />
+                          <CellEditor node={node} def={col} parentId={parentId} onClose={() => setEditingCell(null)} />
                         </div>
                       )}
                     </td>
