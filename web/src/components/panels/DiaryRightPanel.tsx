@@ -425,6 +425,19 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
       })
   }
 
+  // Clase de checkbox para tareas hijo de seguimiento — COMO TAREA, no como seguimiento
+  function childTaskCheckboxClass(task: Node): string {
+    if (task.isEvent) return 'diary-agenda-checkbox'
+    if (task.status === 'done') return 'diary-agenda-checkbox diary-agenda-checkbox--done'
+    if (task.due) {
+      const d = new Date(task.due)
+      if (d < todayStart) return 'diary-agenda-checkbox diary-agenda-checkbox--overdue'  // naranja
+      if (d <= todayEnd)  return 'diary-agenda-checkbox diary-agenda-checkbox--today'    // amarillo
+    }
+    // Sin fecha o futura → amarillo (pendiente)
+    return 'diary-agenda-checkbox diary-agenda-checkbox--today'
+  }
+
 
   function renderAgenda() {
     const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0
@@ -462,7 +475,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                 <AgendaTaskRow
                   key={task.id}
                   task={task}
-                  checkboxClass={`diary-agenda-checkbox${task.status === 'done' ? ' diary-agenda-checkbox--done' : ' diary-agenda-checkbox--seguimiento'}`}
+                  checkboxClass={childTaskCheckboxClass(task)}
                   indented
                   isEvent={task.isEvent}
                   onToggle={() => toggleTask(task.id, task.status)}
