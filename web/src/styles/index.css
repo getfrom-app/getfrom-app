@@ -6576,6 +6576,18 @@ a:focus-visible {
 .bullet-btn.task.task-sq--done     { color: #22c55e; } /* verde */
 .bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro */
 .bullet-btn.task:hover { opacity: 0.75; }
+/* Evento: icono calendario azul como bullet */
+.bullet-btn--event {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px;
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+/* Event badge — igual que task badge pero siempre azul */
+.node-event-qp-badge { color: #3b82f6 !important; }
+.node-event-qp-badge.has-date { background: rgba(59,130,246,0.09) !important; color: #3b82f6 !important; }
+.node-row:hover .node-event-qp-badge { opacity: 1; }
+.node-event-qp-badge { opacity: 0; }
+.node-event-qp-badge.has-date { opacity: 1; }
 
 /* ── Calendar side panel layout ──────────────────────────────────────────── */
 .calendar-view--with-panel {

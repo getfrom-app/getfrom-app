@@ -9,6 +9,7 @@ import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
+import { updateCalendarEvent, createCalendarEvent } from '../../api/googleCalendar'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -198,6 +199,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [quickPropsPos, setQuickPropsPos] = useState<{ top: number; left: number } | null>(null)
   const quickPropsBtnRef = useRef<HTMLButtonElement>(null)
   const quickPropsPopupRef = useRef<HTMLDivElement>(null)
+  // Event badge popup
+  const [showEventProp, setShowEventProp] = useState(false)
+  const [eventPropPos, setEventPropPos] = useState<{ top: number; left: number } | null>(null)
+  const eventBadgeBtnRef = useRef<HTMLButtonElement>(null)
+  const eventBadgePopupRef = useRef<HTMLDivElement>(null)
+  const gcalSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -272,6 +279,75 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showQuickProps])
+
+  // Cerrar event badge popup al hacer click fuera
+  useEffect(() => {
+    if (!showEventProp) return
+    function handler(e: MouseEvent) {
+      if (
+        eventBadgePopupRef.current && !eventBadgePopupRef.current.contains(e.target as globalThis.Node) &&
+        (!eventBadgeBtnRef.current || !eventBadgeBtnRef.current.contains(e.target as globalThis.Node))
+      ) setShowEventProp(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showEventProp])
+
+  // ── Helpers de evento ────────────────────────────────────────────────────
+  const evtDueDate = node.due ? node.due.slice(0, 10) : ''
+  const evtDueTime = node.due ? node.due.slice(11, 16) : ''
+  const evtEndDate = node.dueEnd ? node.dueEnd.slice(0, 10) : ''
+  const evtEndTime = node.dueEnd ? node.dueEnd.slice(11, 16) : ''
+  const evtLocationStored = (() => { try { return JSON.parse(node.extraData || '{}').location || '' } catch { return '' } })()
+  const gcalEventId_evt = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
+
+  function setEvtDueField(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { due: null }); return }
+    store.updateNode(node.id, { due: new Date(`${date}T${time || '00:00'}:00`).toISOString() })
+    scheduleGCalSync()
+  }
+  function setEvtEndField(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { dueEnd: null }); return }
+    store.updateNode(node.id, { dueEnd: new Date(`${date}T${time || '23:59'}:00`).toISOString() })
+    scheduleGCalSync()
+  }
+  function setEvtLocationField(loc: string) {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+    if (loc.trim()) ed.location = loc.trim(); else delete ed.location
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    scheduleGCalSync()
+  }
+  function scheduleGCalSync() {
+    if (gcalSyncTimerRef.current) clearTimeout(gcalSyncTimerRef.current)
+    gcalSyncTimerRef.current = setTimeout(async () => {
+      const due = store.getNode(node.id)?.due
+      if (!due) return
+      const dueEnd = store.getNode(node.id)?.dueEnd
+      const end = dueEnd || new Date(new Date(due).getTime() + 3600000).toISOString()
+      let loc = ''
+      try { loc = JSON.parse(store.getNode(node.id)?.extraData || '{}').location || '' } catch {}
+      const gcalId = (() => { try { return JSON.parse(store.getNode(node.id)?.extraData || '{}').gcalEventId } catch { return null } })()
+      try {
+        if (gcalId) {
+          await updateCalendarEvent(gcalId, { title: node.text || 'Evento', start: due, end, location: loc || undefined })
+        } else {
+          const result = await createCalendarEvent({ title: node.text || 'Evento', start: due, end, location: loc || undefined })
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch {}
+          ed.gcalEventId = result.id
+          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+        }
+      } catch { /* sin conexión GCal */ }
+    }, 900)
+  }
+
+  const evtBadgeLabel = node.due ? (() => {
+    const d = new Date(node.due)
+    const dateStr = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    const timeStr = node.due.slice(11, 16) !== '00:00' ? ' ' + node.due.slice(11, 16) : ''
+    return dateStr + timeStr
+  })() : null
 
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '#') {
@@ -1270,6 +1346,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </svg>
                 )}
               </button>
+            ) : node.isEvent ? (
+              // Evento: nav-dot + icono calendario azul
+              <>
+                <button
+                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  tabIndex={-1}
+                  title="Abrir evento"
+                />
+                <button
+                  className="bullet-btn bullet-btn--event"
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  tabIndex={-1}
+                  title="Evento"
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="2" width="14" height="13" rx="2"/>
+                    <path d="M1 6h14M5 1v3M11 1v3"/>
+                  </svg>
+                </button>
+              </>
             ) : node.status !== null ? (
               // Tarea: nav-dot (navega al nodo) + checkbox cuadrado coloreado
               <>
@@ -1531,8 +1628,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               />
             )}
 
-            {/* Evento / Recurrencia badge */}
-            {node.isEvent && <span className="node-type-badge event" title="Evento">📅</span>}
+            {/* Recurrencia badge */}
             {node.recurrence && (() => {
               const [unit, nStr] = node.recurrence.split(':')
               const n = parseInt(nStr || '1') || 1
@@ -1544,6 +1640,79 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const txt = n === 1 ? sing : `${n} ${plur}`
               return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
             })()}
+
+            {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
+            {node.isEvent && (
+              <div className="node-qp-wrap">
+                <button
+                  ref={eventBadgeBtnRef}
+                  className={`node-qp-badge node-event-qp-badge${node.due ? ' has-date' : ''}`}
+                  onClick={e => {
+                    e.stopPropagation()
+                    if (!showEventProp && eventBadgeBtnRef.current) {
+                      const rect = eventBadgeBtnRef.current.getBoundingClientRect()
+                      setEventPropPos({ top: rect.bottom + 4, left: Math.max(8, Math.min(rect.left, window.innerWidth - 280)) })
+                    }
+                    setShowEventProp(v => !v)
+                  }}
+                  tabIndex={-1}
+                  title="Fecha, lugar y propiedades del evento"
+                >
+                  {evtBadgeLabel ? `📅 ${evtBadgeLabel}` : 'sin fecha'}
+                </button>
+                {showEventProp && eventPropPos && createPortal(
+                  <div
+                    ref={eventBadgePopupRef}
+                    className="node-qp-popup node-evt-popup"
+                    style={{ position: 'fixed', top: eventPropPos.top, left: eventPropPos.left, zIndex: 300 }}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {/* Fechas rápidas */}
+                    <div className="nqp-quick-row">
+                      {[{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'Lunes', days: qNextMondayDays }].map(({ label, days }) => {
+                        const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
+                        const iso = d.toISOString().slice(0, 10)
+                        return (
+                          <button key={label} className={`nqp-qbtn${evtDueDate === iso ? ' active' : ''}`}
+                            onClick={() => setEvtDueField(iso, evtDueTime || '09:00')}>{label}</button>
+                        )
+                      })}
+                      {node.due && (
+                        <button className="nqp-qbtn nqp-clear" onClick={() => { store.updateNode(node.id, { due: null, dueEnd: null, isEvent: false }) }}>✕</button>
+                      )}
+                    </div>
+                    {/* Inicio */}
+                    <div className="nqp-label">Inicio</div>
+                    <div className="nqp-inputs-row">
+                      <input type="date" className="nqp-date-input" value={evtDueDate}
+                        onChange={e => setEvtDueField(e.target.value, evtDueTime)} />
+                      <input type="time" className="nqp-time-input" value={evtDueTime}
+                        onChange={e => setEvtDueField(evtDueDate, e.target.value)} disabled={!evtDueDate} />
+                    </div>
+                    {/* Fin */}
+                    <div className="nqp-label">Fin</div>
+                    <div className="nqp-inputs-row">
+                      <input type="date" className="nqp-date-input" value={evtEndDate}
+                        onChange={e => setEvtEndField(e.target.value, evtEndTime)} disabled={!evtDueDate} />
+                      <input type="time" className="nqp-time-input" value={evtEndTime}
+                        onChange={e => setEvtEndField(evtEndDate, e.target.value)} disabled={!evtEndDate} />
+                    </div>
+                    {/* Lugar */}
+                    <div className="nqp-label">Lugar</div>
+                    <input type="text" className="nqp-date-input" style={{ width: '100%' }}
+                      value={evtLocationStored} placeholder="Añadir lugar..."
+                      onChange={e => setEvtLocationField(e.target.value)} />
+                    {gcalEventId_evt && (
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center', opacity: 0.7 }}>
+                        ↑ Cambios sincronizados con Google Calendar
+                      </div>
+                    )}
+                  </div>,
+                  document.body
+                )}
+              </div>
+            )}
 
             {/* Quick-props badge: tareas — muestra fecha o "sin fecha" en hover, click abre popup */}
             {node.status !== null && !node.isSeguimiento && (
