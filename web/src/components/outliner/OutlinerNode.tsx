@@ -204,6 +204,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Event badge popup
   const [showEventProp, setShowEventProp] = useState(false)
   const [eventPropPos, setEventPropPos] = useState<{ top: number; left: number } | null>(null)
+  const prevIsEventRef = useRef(false)
+  // Auto-open popup cuando el nodo acaba de convertirse en evento (inline -e o /event)
+  useEffect(() => {
+    if (node.isEvent && !prevIsEventRef.current) {
+      setTimeout(() => {
+        if (eventBadgeBtnRef.current) {
+          const rect = eventBadgeBtnRef.current.getBoundingClientRect()
+          setEventPropPos({ top: rect.bottom + 4, left: Math.max(8, Math.min(rect.left, window.innerWidth - 280)) })
+          setShowEventProp(true)
+        }
+      }, 80)
+    }
+    prevIsEventRef.current = node.isEvent
+  }, [node.isEvent]) // eslint-disable-line
   const eventBadgeBtnRef = useRef<HTMLButtonElement>(null)
   const eventBadgePopupRef = useRef<HTMLDivElement>(null)
   const gcalSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -917,7 +931,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
         const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-        store.updateNode(node.id, { text: cleanText, isEvent: true, status: "pending", due: todayISO })
+        store.updateNode(node.id, { text: cleanText, isEvent: true, status: null, due: todayISO })
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
@@ -1195,7 +1209,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     } else if (action === 'event') {
       updates.isEvent = true
-      updates.status = 'pending'
+      updates.status = null
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
@@ -1852,8 +1866,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Quick-props badge: tareas — muestra fecha o "sin fecha" en hover, click abre popup */}
-            {node.status !== null && !node.isSeguimiento && (
+            {/* Quick-props badge: tareas (no eventos, tienen su propio badge) */}
+            {node.status !== null && !node.isSeguimiento && !node.isEvent && (
               <div className="node-qp-wrap">
                 <button
                   ref={quickPropsBtnRef}
