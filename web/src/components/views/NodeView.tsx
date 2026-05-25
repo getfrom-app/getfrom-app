@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
@@ -247,6 +248,30 @@ export default function NodeView() {
   const nodeArea = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').area || null } catch { return null }
   }, [node?.extraData])
+
+  // ── Auto-detect URL en título → marcar como recurso + unfurl ─────────────
+  useEffect(() => {
+    if (!node || node.deletedAt) return
+    const text = (node.text || '').trim()
+    if (!isUrl(text)) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+    // Solo auto-detectar si no está ya marcado como recurso
+    if (ed._resource) return
+    // Marcar como recurso y hacer unfurl
+    ed._resource = true
+    ed._resourceUrl = text
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    unfurlUrl(text)
+      .then(meta => {
+        let ed2: Record<string, unknown> = {}
+        try { ed2 = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch {}
+        ed2._resourceMeta = meta
+        ed2._resourceType = meta.type
+        store.updateNode(node.id, { text: meta.title || text, extraData: JSON.stringify(ed2) })
+      })
+      .catch(() => {})
+  }, [node?.id, node?.text]) // eslint-disable-line
 
   if (!node || node.deletedAt) {
     return <div className="view-empty">Nodo no encontrado</div>

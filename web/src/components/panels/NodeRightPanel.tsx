@@ -5,6 +5,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
+import ResourcePanel from './ResourcePanel'
 
 interface Props {
   node: Node
@@ -14,6 +15,15 @@ export default function NodeRightPanel({ node }: Props) {
   const s = useStore()
   const navigate = useNavigate()
   const [newType, setNewType] = useState('')
+
+  // ── Recurso ──────────────────────────────────────────────────────────────
+  const isResource = (() => { try { return !!JSON.parse(node.extraData || '{}')._resource } catch { return false } })()
+  function toggleResource() {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+    if (ed._resource) { delete ed._resource } else { ed._resource = true }
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+  }
 
   // ── Fecha helpers ────────────────────────────────────────────────────────
   const dueDate    = isoToLocalDate(node.due)
@@ -282,7 +292,13 @@ export default function NodeRightPanel({ node }: Props) {
         <button className={`prop-icon-btn ${isLocked ? 'active' : ''}`} onClick={toggleLocked} title={isLocked ? 'Desbloquear' : 'Bloquear'}>
           {isLocked ? '🔒' : '🔓'} {isLocked ? 'Bloqueado' : 'Bloquear'}
         </button>
+        <button className={`prop-icon-btn ${isResource ? 'active resource' : ''}`} onClick={toggleResource} title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}>
+          🔗 Recurso
+        </button>
       </div>
+
+      {/* ── Panel de recurso ────────────────────────────────────────────────── */}
+      {isResource && <ResourcePanel node={node} />}
 
       {/* ── Estado ──────────────────────────────────────────────────────────── */}
       {(node.status !== null || node.isSeguimiento) && (

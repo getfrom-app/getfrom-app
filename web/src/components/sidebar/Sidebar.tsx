@@ -561,6 +561,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span>Calendario</span>
             </button>
             <button
+              className={`nav-item ${isActive('/resources') ? 'active' : ''}`}
+              onClick={() => navigate('/resources')}
+              title="Recursos"
+            >
+              <span className="nav-icon">🔗</span>
+              <span>Recursos</span>
+            </button>
+            <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
               onClick={() => navigate('/trash')}
               title="Papelera"

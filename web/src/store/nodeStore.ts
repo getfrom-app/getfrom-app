@@ -139,6 +139,26 @@ class NodeStore {
     return null
   }
 
+  // ── Recursos ────────────────────────────────────────────────────────────────
+
+  /** Todos los nodos marcados como recurso */
+  allResources(): Node[] {
+    return this.allActive().filter(n => {
+      if (n.deletedAt) return false
+      try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
+    })
+  }
+
+  /** Tareas vinculadas a un nodo concreto (linkedNodeId) */
+  linkedTasks(nodeId: string): Node[] {
+    return this.allActive().filter(n => {
+      if (n.deletedAt || n.status === null) return false
+      try { return JSON.parse(n.extraData || '{}')._linkedNodeId === nodeId } catch { return false }
+    })
+  }
+
+  // ── Tags ────────────────────────────────────────────────────────────────────
+
   /** Color del tag: primero mira si hay color personalizado en la definición, si no usa hash */
   tagColor(tagName: string): string {
     const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']

@@ -37,6 +37,7 @@ const FilesView = lazy(() => import('../views/FilesView'))
 const InboxView = lazy(() => import('../views/InboxView'))
 const TrashView = lazy(() => import('../views/TrashView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
+const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import NewTaskModal from '../modals/NewTaskModal'
@@ -325,6 +326,7 @@ export default function MainLayout() {
           <Route path="followup" element={<FollowupView />} />
           <Route path="search" element={<SearchView />} />
           <Route path="calendar" element={<CalendarView />} />
+          <Route path="resources" element={<ResourcesView />} />
           <Route path="kanban" element={<KanbanView />} />
           <Route path="agents" element={<AgentsView />} />
           <Route path="chat" element={<ChatView />} />
