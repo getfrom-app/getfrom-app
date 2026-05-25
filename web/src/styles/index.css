@@ -5748,6 +5748,22 @@ select:focus { outline: none; }
 .prop-recurrence-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; }
 .prop-recurrence-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 .prop-recurrence-chip:hover:not(.active) { border-color: var(--accent); color: var(--text-accent); }
+/* Nueva fila de repetición flexible */
+.prop-rec-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.prop-rec-n {
+  width: 52px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.prop-rec-n::-webkit-inner-spin-button,
+.prop-rec-n::-webkit-outer-spin-button { opacity: 0.6; }
+.prop-rec-n:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Node color chips ── */
 .prop-color-chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -6396,6 +6412,28 @@ a:focus-visible {
   color: var(--text-tertiary);
   margin-top: 2px;
 }
+/* Fila recurrencia: – [n] días sem. meses años */
+.nqp-rec-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nqp-rec-n {
+  width: 46px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.nqp-rec-n::-webkit-inner-spin-button,
+.nqp-rec-n::-webkit-outer-spin-button { opacity: 0.6; }
+.nqp-rec-n:disabled { opacity: 0.35; cursor: not-allowed; }
+
 .nqp-chips-row {
   display: flex;
   gap: 4px;

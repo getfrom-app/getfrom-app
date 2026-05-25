@@ -1533,7 +1533,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
             {/* Evento / Recurrencia badge */}
             {node.isEvent && <span className="node-type-badge event" title="Evento">📅</span>}
-            {node.recurrence && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
+            {node.recurrence && (() => {
+              const [unit, nStr] = node.recurrence.split(':')
+              const n = parseInt(nStr || '1') || 1
+              const unitLabels: Record<string, [string, string]> = {
+                daily: ['día', 'días'], weekly: ['sem.', 'sem.'],
+                monthly: ['mes', 'meses'], yearly: ['año', 'años'],
+              }
+              const [sing, plur] = unitLabels[unit] || [unit, unit]
+              const txt = n === 1 ? sing : `${n} ${plur}`
+              return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
+            })()}
 
             {/* Quick-props badge: tareas — muestra fecha o "sin fecha" en hover, click abre popup */}
             {node.status !== null && !node.isSeguimiento && (
@@ -1594,20 +1604,35 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       <input type="time" className="nqp-time-input" value={qDueTime}
                         onChange={e => setQDue(qDueDate, e.target.value)} disabled={!qDueDate} />
                     </div>
-                    {/* Repetición */}
+                    {/* Repetición: número + unidad */}
                     <div className="nqp-label">Repetición</div>
-                    <div className="nqp-chips-row">
-                      {[
-                        { v: '',        l: '–' },
-                        { v: 'daily',   l: 'Diario' },
-                        { v: 'weekly',  l: 'Semanal' },
-                        { v: 'monthly', l: 'Mensual' },
-                        { v: 'yearly',  l: 'Anual' },
-                      ].map(opt => (
-                        <button key={opt.v}
-                          className={`nqp-chip${(node.recurrence || '') === opt.v ? ' active' : ''}`}
-                          onClick={() => store.updateNode(node.id, { recurrence: opt.v || null })}
-                        >{opt.l}</button>
+                    <div className="nqp-rec-row">
+                      <button
+                        className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
+                        onClick={() => store.updateNode(node.id, { recurrence: null })}
+                      >–</button>
+                      <input
+                        type="number"
+                        className="nqp-rec-n"
+                        min={1} max={999}
+                        value={node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1}
+                        disabled={!node.recurrence}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => {
+                          const n = Math.max(1, parseInt(e.target.value) || 1)
+                          const unit = node.recurrence ? node.recurrence.split(':')[0] : 'daily'
+                          store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
+                        }}
+                      />
+                      {([['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']] as [string, string][]).map(([unit, label]) => (
+                        <button
+                          key={unit}
+                          className={`nqp-chip${!!node.recurrence && node.recurrence.split(':')[0] === unit ? ' active' : ''}`}
+                          onClick={() => {
+                            const n = node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1
+                            store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
+                          }}
+                        >{label}</button>
                       ))}
                     </div>
                     {/* Prioridad */}

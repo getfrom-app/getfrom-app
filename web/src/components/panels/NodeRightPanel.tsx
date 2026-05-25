@@ -76,16 +76,17 @@ export default function NodeRightPanel({ node }: Props) {
     { value: 'medium', label: '△ Media', style: { color: '#f59e0b' } },
     { value: 'high', label: '▲ Alta', style: { color: '#ef4444' } },
   ]
-  const recurrenceOptions = [
-    { value: '', label: 'Sin repetición' },
-    { value: 'daily', label: '🔁 Cada día' },
-    { value: 'daily:2', label: '🔁 Cada 2 días' },
-    { value: 'weekly', label: '🔁 Cada semana' },
-    { value: 'weekly:2', label: '🔁 Cada 2 semanas' },
-    { value: 'monthly', label: '🔁 Cada mes' },
-    { value: 'monthly:3', label: '🔁 Cada trimestre' },
-    { value: 'yearly', label: '🔁 Cada año' },
-  ]
+  // Helpers para repetición flexible (x días, x semanas, etc.)
+  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']]
+  function parseRec(r: string | null | undefined) {
+    if (!r) return { n: 1, unit: 'daily' }
+    const [unit, nStr] = r.split(':')
+    return { n: parseInt(nStr || '1') || 1, unit }
+  }
+  function applyRec(n: number, unit: string) {
+    const safe = Math.max(1, Math.round(n) || 1)
+    store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
+  }
   const nodeColor = (() => { try { return JSON.parse(node.extraData || '{}').color || null } catch { return null } })()
   const colors = [null, '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
   function setColor(color: string | null) {
@@ -232,11 +233,32 @@ export default function NodeRightPanel({ node }: Props) {
       {node.status !== null && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Repetición</div>
-          <div className="prop-recurrence-chips">
-            {recurrenceOptions.map(opt => (
-              <button key={opt.value} className={`prop-recurrence-chip ${(node.recurrence || '') === opt.value ? 'active' : ''}`} onClick={() => store.updateNode(node.id, { recurrence: opt.value || null })} title={opt.label}>
-                {opt.label}
-              </button>
+          <div className="prop-rec-row">
+            {/* Sin repetición */}
+            <button
+              className={`prop-pill${!node.recurrence ? ' active' : ''}`}
+              onClick={() => store.updateNode(node.id, { recurrence: null })}
+            >–</button>
+            {/* Número */}
+            <input
+              type="number"
+              className="prop-rec-n"
+              min={1} max={999}
+              value={node.recurrence ? parseRec(node.recurrence).n : 1}
+              onChange={e => {
+                const n = Math.max(1, parseInt(e.target.value) || 1)
+                const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
+                applyRec(n, unit)
+              }}
+              disabled={!node.recurrence}
+            />
+            {/* Unidades */}
+            {recUnits.map(([unit, label]) => (
+              <button
+                key={unit}
+                className={`prop-pill${node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+                onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
+              >{label}</button>
             ))}
           </div>
         </div>
