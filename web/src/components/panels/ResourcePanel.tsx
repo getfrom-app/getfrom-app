@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
+import TaskPropsPopover from './TaskPropsPopover'
 
 export type ResourceType = 'url' | 'youtube' | 'book' | 'podcast' | 'document'
 export type ResourceStatus = 'pending' | 'consuming' | 'done' | 'archived'
@@ -53,6 +54,8 @@ export default function ResourcePanel({ node }: Props) {
   const [loadingMeta, setLoadingMeta] = useState(false)
   const [newTaskText, setNewTaskText] = useState('')
   const [showTaskInput, setShowTaskInput] = useState(false)
+  const [popoverTask, setPopoverTask] = useState<Node | null>(null)
+  const popoverBtnRef = useRef<HTMLButtonElement>(null!)
 
   const linkedTasks = s.linkedTasks(node.id)
 
@@ -205,6 +208,12 @@ export default function ResourcePanel({ node }: Props) {
               key={task.id}
               className={`resource-linked-task${task.status === 'done' ? ' done' : ''}`}
               onClick={() => navigate(`/node/${task.id}`)}
+              onContextMenu={e => {
+                e.preventDefault()
+                if (confirm(`¿Eliminar tarea "${task.text || 'Sin título'}"?`)) {
+                  store.updateNode(task.id, { deletedAt: new Date().toISOString() })
+                }
+              }}
             >
               <button
                 className={`resource-linked-task-check${task.status === 'done' ? ' done' : ''}`}
@@ -221,8 +230,27 @@ export default function ResourcePanel({ node }: Props) {
                   {new Date(task.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                 </span>
               )}
+              {/* Botón de propiedades — visible en hover */}
+              <button
+                ref={popoverTask?.id === task.id ? popoverBtnRef : undefined}
+                className="resource-linked-task-props"
+                onClick={e => {
+                  e.stopPropagation()
+                  setPopoverTask(prev => prev?.id === task.id ? null : task)
+                }}
+                title="Propiedades"
+              >⋯</button>
             </div>
           ))
+        )}
+
+        {/* Popover de propiedades */}
+        {popoverTask && (
+          <TaskPropsPopover
+            node={popoverTask}
+            anchorRef={popoverBtnRef}
+            onClose={() => setPopoverTask(null)}
+          />
         )}
       </div>
     </div>

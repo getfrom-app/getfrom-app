@@ -7729,6 +7729,9 @@ a:focus-visible {
 .resource-linked-task-text { flex: 1; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .resource-linked-task.done .resource-linked-task-text { text-decoration: line-through; }
 .resource-linked-task-date { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; }
+.resource-linked-task-props { display: none; margin-left: 2px; background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-tertiary); padding: 0 3px; border-radius: 4px; flex-shrink: 0; }
+.resource-linked-task-props:hover { background: var(--bg-hover); color: var(--text-primary); }
+.resource-linked-task:hover .resource-linked-task-props { display: block; }
 .prop-icon-btn.active.resource { color: #10b981; }
 
 /* ── ResourcesView ──────────────────────────────────────────────────────────── */
