@@ -389,7 +389,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
-    store.updateNode(node.id, { text })
+    // Auto-sync: extraer #tags del texto y añadir a types[]
+    const hashTags = [...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
+    if (hashTags.length > 0) {
+      const existing = new Set(node.types || [])
+      const toAdd = hashTags.filter(t => !existing.has(t))
+      if (toAdd.length > 0) {
+        store.updateNode(node.id, { text, types: [...existing, ...toAdd] })
+      } else {
+        store.updateNode(node.id, { text })
+      }
+    } else {
+      store.updateNode(node.id, { text })
+    }
 
     // Slash menu: '/' en cualquier posición del cursor
     const slashPos = getCaretPosition(contentRef.current!)

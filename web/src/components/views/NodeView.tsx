@@ -408,7 +408,19 @@ export default function NodeView() {
     const text = anchors.length === 1 && !rawText.startsWith('http')
       ? (anchors[0].getAttribute('href') || rawText)
       : rawText
-    store.updateNode(node!.id, { text })
+    // Auto-sync: extraer #tags del título y añadirlos a types[]
+    const hashTags = [...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
+    if (hashTags.length > 0) {
+      const existing = new Set(node!.types || [])
+      const toAdd = hashTags.filter(t => !existing.has(t))
+      if (toAdd.length > 0) {
+        store.updateNode(node!.id, { text, types: [...existing, ...toAdd] })
+      } else {
+        store.updateNode(node!.id, { text })
+      }
+    } else {
+      store.updateNode(node!.id, { text })
+    }
 
     const sel = window.getSelection()
     if (sel && sel.rangeCount > 0) {
