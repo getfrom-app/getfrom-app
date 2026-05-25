@@ -209,23 +209,35 @@ export default function InlineRenderer({ text, className }: Props) {
 // ── HTML string renderer (para useEffect en contentEditable) ─────────────────
 // Convierte texto con markdown inline a HTML string sin React nodes
 // Evita poner React children dentro de contentEditable (bug removeChild)
-export function renderInlineToHtml(text: string, highlight?: string): string {
-  if (!text) return ''
+export function renderInlineToHtml(text: string, highlight?: string, forcedBlock?: 'bullet' | 'h1' | 'h2' | 'h3'): string {
+  if (!text && !forcedBlock) return ''
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  // Detectar tipo de bloque
-  const type = detectBlockType(text)
+  // Detectar tipo de bloque (con override por forcedBlock vía extraData)
+  const type = forcedBlock ?? detectBlockType(text)
   let content = text
   let wrapClass = ''
 
   if (type === 'divider') return '<hr class="block-divider" />'
-  if (type === 'h1') { content = text.replace(/^#\s*/, ''); wrapClass = 'block-h1' }
-  else if (type === 'h2') { content = text.replace(/^##\s*/, ''); wrapClass = 'block-h2' }
-  else if (type === 'h3') { content = text.replace(/^###\s*/, ''); wrapClass = 'block-h3' }
+  if (type === 'h1') {
+    content = forcedBlock ? text : text.replace(/^#\s*/, '')
+    wrapClass = 'block-h1'
+  }
+  else if (type === 'h2') {
+    content = forcedBlock ? text : text.replace(/^##\s*/, '')
+    wrapClass = 'block-h2'
+  }
+  else if (type === 'h3') {
+    content = forcedBlock ? text : text.replace(/^###\s*/, '')
+    wrapClass = 'block-h3'
+  }
   else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
   else if (type === 'numbered') { content = text.replace(/^\d+\.\s/, ''); wrapClass = 'block-numbered' }
   else if (type === 'code') { content = text.slice(2); wrapClass = 'block-code' }
-  else if (type === 'bullet') { content = text.slice(2); wrapClass = '' }
+  else if (type === 'bullet') {
+    content = forcedBlock ? text : text.slice(2)
+    wrapClass = ''
+  }
 
   // Procesar inline markdown
   let html = esc(content)

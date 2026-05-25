@@ -3176,6 +3176,9 @@ mark.inline-highlight {
 .calendar-allday-label { font-size: 10px; color: var(--text-tertiary); text-align: right; padding: 4px 6px 0; line-height: 1.2; }
 .calendar-allday-cell { flex: 1 1 0; min-width: 0; overflow: hidden; border-left: 1px solid var(--border); padding: 3px; display: flex; flex-direction: column; gap: 2px; min-height: 28px; transition: background 0.1s; box-sizing: border-box; }
 .calendar-allday-cell.drag-over { background: var(--accent-soft); outline: 2px dashed var(--accent); outline-offset: -2px; }
+.calendar-allday-cell { cursor: pointer; }
+.calendar-allday-cell--hover { background: var(--bg-hover); }
+.calendar-allday-add-hint { font-size: 11px; color: var(--text-tertiary); opacity: 0.7; pointer-events: none; padding: 2px 4px; }
 
 /* Chips de eventos (todo el día y sidebar) */
 .calendar-event-chip { display: block; width: 100%; max-width: 100%; box-sizing: border-box; min-width: 0; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: white; text-align: left; cursor: pointer; border: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.92; transition: opacity 0.1s; }
@@ -7035,27 +7038,100 @@ a:focus-visible {
 .node-text-group {
   flex: 1;
   display: flex;
-  align-items: center;      /* badges en línea con el texto (single-line) */
-  flex-wrap: wrap;
-  gap: 2px 5px;
+  align-items: center;
+  flex-wrap: nowrap;        /* no envolver: badge SIEMPRE al lado del texto */
+  gap: 6px;
   min-width: 0;
   cursor: text;
 }
 .node-text-group .node-text {
-  flex: 0 1 auto;
+  flex: 1 1 auto;           /* el texto ocupa todo el espacio disponible */
   min-width: 40px;
-  max-width: 100%;
+  max-width: none;
   cursor: text;
+  overflow-wrap: anywhere;
 }
-/* Cuando está en edición, el texto puede crecer para llenar */
-.node-text-group .node-text:focus,
-.node-text-group .node-text.node-text--rendered:focus-within {
-  flex: 1 1 auto;
+/* Badge siempre pegado al texto, no al extremo derecho */
+.node-text-group .node-qp-wrap {
+  flex-shrink: 0;
+  margin-left: 0;
 }
 /* Click en zona vacía del grupo → no ejecutar nada (el onClick del grupo lo gestiona) */
 .node-text-group { cursor: text; }
 .node-text-group button,
 .node-text-group input { cursor: pointer; }
+
+/* ── Drag handle — agarrador visible en hover, estilo Notion ─────────────── */
+.node-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.1s;
+  border-radius: 4px;
+  user-select: none;
+  letter-spacing: -2px;
+}
+.node-row:hover .node-drag-handle { opacity: 0.55; }
+.node-drag-handle:hover { opacity: 1 !important; background: var(--bg-hover); }
+.node-drag-handle:active { cursor: grabbing; }
+.node-row.multi-selected .node-drag-handle { opacity: 1; color: var(--accent); }
+
+/* Mejor visual feedback para drop targets */
+.node-row.drag-over { box-shadow: inset 0 -2px 0 var(--accent); }
+.drop-as-child.active { background: var(--accent-soft); outline: 2px dashed var(--accent); }
+
+/* Multi-select highlight */
+.node-row.multi-selected { background: var(--accent-soft); border-radius: 6px; }
+
+/* ── Task props como MODAL centrado (calendar popup, etc.) ───────────────── */
+.task-props-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: from-modal-fade 0.12s ease-out;
+}
+@keyframes from-modal-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.task-props-popup.task-props-popup--modal {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: min(440px, 92vw);
+  max-width: 92vw;
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 22px 18px 22px;
+  font-size: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  animation: from-modal-pop 0.15s ease-out;
+}
+@keyframes from-modal-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.task-props-popup--modal .tpp-title,
+.task-props-popup--modal .tpp-title-input { font-size: 18px; font-weight: 600; }
+.task-props-popup--modal .tpp-section-label { font-size: 11px; margin-top: 12px; }
+.task-props-popup--modal .nqp-qbtn,
+.task-props-popup--modal .nqp-chip { font-size: 13px; padding: 6px 12px; }
+.task-props-popup--modal .nqp-rec-n { width: 56px; font-size: 14px; }
+.task-props-popup--modal .nqp-date-input,
+.task-props-popup--modal .nqp-time-input { font-size: 14px; padding: 6px 8px; }
 
 /* ── Quick-props badge y popup en outliner ───────────────────────────────── */
 .node-qp-wrap {

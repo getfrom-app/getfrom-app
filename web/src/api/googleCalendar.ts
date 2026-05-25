@@ -51,14 +51,20 @@ function toDateStr(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+function getTimeZone(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid' } catch { return 'Europe/Madrid' }
+}
+
 export async function getCalendarEvents(date: Date): Promise<CalendarEvent[]> {
-  const res = await apiRequest<{ events: CalendarEvent[] }>(`/google/calendar/events?date=${toDateStr(date)}`)
+  const tz = getTimeZone()
+  const res = await apiRequest<{ events: CalendarEvent[] }>(`/google/calendar/events?date=${toDateStr(date)}&tz=${encodeURIComponent(tz)}`)
   return res.events
 }
 
 export async function getCalendarEventsRange(start: Date, end: Date): Promise<CalendarEvent[]> {
+  const tz = getTimeZone()
   const res = await apiRequest<{ events: CalendarEvent[] }>(
-    `/google/calendar/events/range?start=${toDateStr(start)}&end=${toDateStr(end)}`
+    `/google/calendar/events/range?start=${toDateStr(start)}&end=${toDateStr(end)}&tz=${encodeURIComponent(tz)}`
   )
   return res.events
 }

@@ -232,7 +232,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const eventBadgePopupRef = useRef<HTMLDivElement>(null)
   const gcalSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const blockType = detectBlockType(node.text)
+  // Bloque preferido vía extraData._block (bullet/h1/h2/h3) — Notion-style sin prefijo visible.
+  const extraBlock = (() => {
+    try { return JSON.parse(node.extraData || '{}')._block as string | undefined } catch { return undefined }
+  })()
+  const blockType = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
+    ? (extraBlock as 'bullet' | 'h1' | 'h2' | 'h3')
+    : detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
@@ -264,11 +270,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // dentro de contentEditable (causa bug removeChild en reconciler de React)
   useEffect(() => {
     if (isEditing || !contentRef.current) return
-    const newHtml = renderInlineToHtml(node.text, activeFilter ? filterText : undefined)
+    const forced = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
+      ? extraBlock as 'bullet' | 'h1' | 'h2' | 'h3'
+      : undefined
+    const newHtml = renderInlineToHtml(node.text, activeFilter ? filterText : undefined, forced)
     if (contentRef.current.innerHTML !== newHtml) {
       contentRef.current.innerHTML = newHtml
     }
-  }, [node.text, isEditing, filterText]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node.text, isEditing, filterText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus when selected + scroll into view
   // Sin guarda !isEditing: el efecto sólo corre cuando isSelected CAMBIA (dep array),
@@ -444,12 +453,47 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setSlashQuery('')
     }
 
-    // Auto-conversión markdown al escribir:
-    // '# ' al inicio → H1, '## ' → H2, '### ' → H3, '> ' → quote, '--- ' → divider
+    // Auto-conversión markdown al escribir (estilo Notion: el prefijo desaparece tras el espacio):
     if (!text.startsWith('/')) {
-      if (text === '# ' || text === '## ' || text === '### ' || text === '> ') {
-        // El usuario escribió el markdown prefix → mantener para detectBlockType
-        // No hacer nada aquí, detectBlockType lo manejará en el render
+      const markdownTriggers: Array<[string, 'bullet' | 'h1' | 'h2' | 'h3']> = [
+        ['### ', 'h3'],
+        ['## ', 'h2'],
+        ['# ', 'h1'],
+        ['- ', 'bullet'],
+      ]
+      for (const [prefix, kind] of markdownTriggers) {
+        if (text === prefix) {
+          // Trigger limpio: nodo vacío con sólo el prefijo
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
+          ed._block = kind
+          nodeTextRef.current = ''
+          store.updateNode(node.id, { text: '', extraData: JSON.stringify(ed) })
+          if (contentRef.current) {
+            contentRef.current.textContent = ''
+          }
+          return
+        }
+        if (text.startsWith(prefix) && !extraBlock) {
+          // Prefijo al inicio con contenido detrás → convertir y limpiar
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
+          ed._block = kind
+          const newText = text.slice(prefix.length)
+          nodeTextRef.current = newText
+          store.updateNode(node.id, { text: newText, extraData: JSON.stringify(ed) })
+          if (contentRef.current) {
+            contentRef.current.textContent = newText
+            // Cursor al final
+            const range = document.createRange()
+            const sel = window.getSelection()
+            range.selectNodeContents(contentRef.current)
+            range.collapse(false)
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+          return
+        }
       }
       if (text === '---') {
         // Divider automático
@@ -880,9 +924,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (e.key === 'Enter') {
       e.preventDefault()
 
-      // Lista de elementos (- ): Enter continúa lista o sale si está vacío
+      // Lista de elementos (- o extraBlock=bullet): Enter continúa lista o sale si está vacío
       if (isBullet) {
-        const bulletContent = text.startsWith('- ') ? text.slice(2).trim() : text.trim()
+        const isExtraBullet = extraBlock === 'bullet'
+        const bulletContent = isExtraBullet ? text.trim() : (text.startsWith('- ') ? text.slice(2).trim() : text.trim())
         if (bulletContent === '') {
           // Bullet vacío → igual que nodo vacío: navegar al anterior y borrar
           if (depth > 0) {
@@ -896,11 +941,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           store.deleteNode(node.id)
           return
         }
-        // Bullet con contenido → crear siguiente elemento de lista
+        // Bullet con contenido → crear siguiente elemento de lista (con flag _block=bullet).
+        const sibsB = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+        const idxB = sibsB.findIndex(n => n.id === node.id)
+        const nextB = sibsB[idxB + 1]
+        const newOrderB = nextB ? (node.siblingOrder + nextB.siblingOrder) / 2 : node.siblingOrder + 1
         const newBullet = store.createNode({
-          text: '- ',
+          text: '',
           parentId: node.parentId,
-          siblingOrder: node.siblingOrder + 0.5,
+          siblingOrder: newOrderB,
+          extraData: { _block: 'bullet' },
         })
         onSelect(newBullet.id)
         return
@@ -951,22 +1001,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
-      // Create sibling below — o navegar al siguiente si ya está vacío
-      // (nodo vacío = no existe, no acumular)
-      const siblings = store.children(node.parentId)
+      // Create sibling justo debajo — siempre crea, aunque haya nodos después.
+      // siblingOrder = midpoint entre el actual y el siguiente (o +1 si no hay).
+      const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
       const idx = siblings.findIndex(n => n.id === node.id)
       const nextSibling = siblings[idx + 1]
-      if (nextSibling && !(nextSibling.text || '').trim()) {
-        // El siguiente ya está vacío: navegar a él en lugar de crear otro
-        onSelect(nextSibling.id)
-      } else {
-        const newNode = store.createNode({
-          text: '',
-          parentId: node.parentId,
-          siblingOrder: node.siblingOrder + 0.5,
-        })
-        onSelect(newNode.id)
-      }
+      const newOrder = nextSibling
+        ? (node.siblingOrder + nextSibling.siblingOrder) / 2
+        : node.siblingOrder + 1
+      const newNode = store.createNode({
+        text: '',
+        parentId: node.parentId,
+        siblingOrder: newOrder,
+      })
+      onSelect(newNode.id)
     }
 
     if (e.key === 'Tab') {
@@ -1056,7 +1104,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   // ── Drag & Drop ──────────────────────────────────────────────────────────
 
-  function handleDragStart(e: React.DragEvent<HTMLDivElement>) {
+  function handleDragStart(e: React.DragEvent<HTMLElement>) {
     _draggedNodeId = node.id
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', node.id)
@@ -1207,12 +1255,60 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const beforeSlash = slashIdx >= 0 ? currentText.slice(0, slashIdx).trimEnd() : ''
     const afterCursor = currentText.slice(curPos).trimStart()
     const existingContent = (beforeSlash + (afterCursor ? ' ' + afterCursor : '')).trimStart()
-    const newText = (prefix + existingContent).trimEnd()
+    // No usar trimEnd cuando el prefix termina en espacio (heading, bullet, quote…).
+    // detectBlockType depende del espacio tras `#`/`##`/`###`/`-`/`>` para detectar el bloque.
+    const prefixEndsInSpace = prefix.endsWith(' ')
+    const newText = prefixEndsInSpace && !existingContent
+      ? prefix
+      : (prefix + existingContent).trimEnd()
 
     nodeTextRef.current = newText
 
     const todayISOslash = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
     const updates: Record<string, unknown> = { text: newText }
+    if (action === 'bullet') {
+      // Bullet: marca via extraData._block='bullet'. No usar prefijo "- " visible.
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+      ed._block = 'bullet'
+      updates.text = existingContent
+      updates.extraData = JSON.stringify(ed)
+      nodeTextRef.current = existingContent as string
+      store.updateNode(node.id, updates)
+      if (contentRef.current) {
+        contentRef.current.textContent = existingContent
+        contentRef.current.focus()
+        const sel = window.getSelection()
+        const range = document.createRange()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+      return
+    }
+    if (action === 'heading-1' || action === 'heading-2' || action === 'heading-3') {
+      // Heading: marca via extraData._block='h1'/'h2'/'h3'. Texto sin prefijo "# ".
+      const level = action === 'heading-1' ? 'h1' : action === 'heading-2' ? 'h2' : 'h3'
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+      ed._block = level
+      updates.text = existingContent
+      updates.extraData = JSON.stringify(ed)
+      nodeTextRef.current = existingContent as string
+      store.updateNode(node.id, updates)
+      if (contentRef.current) {
+        contentRef.current.textContent = existingContent
+        contentRef.current.focus()
+        const sel = window.getSelection()
+        const range = document.createRange()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+      return
+    }
     if (action === 'task') {
       updates.status = 'pending'
       if (!node.due) updates.due = todayISOslash
@@ -1384,7 +1480,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     >
       <div
         className={nodeRowClass}
-        draggable={!isDivider && !isHeading}
+        draggable={false}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -1404,6 +1500,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           : { paddingLeft: depth * 22 + (isBullet ? 8 : 0) }
         }
       >
+
+        {/* Drag handle — visible en hover. Sólo este elemento inicia drag (texto + bullet quedan libres). */}
+        {!isDivider && (
+          <span
+            className="node-drag-handle"
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            title="Arrastra para mover · Click para seleccionar"
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); if (onShiftSelect && e.shiftKey) { onShiftSelect(node.id) } else { onSelect(node.id) } }}
+            aria-label="Mover nodo"
+          >⋮⋮</span>
+        )}
 
         {/* Collapse toggle — hidden for headings and dividers */}
         {!isDivider && (

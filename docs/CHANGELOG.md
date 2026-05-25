@@ -4,6 +4,46 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web v8.00 — 26 mayo 2026
+
+**Plataforma: Web** — bloque grande de pulido del editor + calendario + integración Google Calendar.
+
+### Editor — bullets y headings tipo Notion
+
+- Slash `/Bullet`, `/Título 1/2/3` ya no insertan el prefijo `-` / `#` / `##` / `###` en el texto. El cursor entra directamente al contenido y el estilo se aplica automáticamente.
+- Tipear `- `, `# `, `## `, `### ` al inicio de un nodo vacío (o con texto) convierte el bloque sin que quede el prefijo visible.
+- ENTER sobre un nodo crea siempre un nuevo nodo justo debajo, también si ya hay nodos más abajo (que se desplazan visualmente). El cursor salta al nuevo nodo.
+
+### Badges y layout
+
+- La etiqueta de fecha/hora de una tarea queda siempre pegada al texto, no salta al borde derecho del nodo. Click sobre la etiqueta abre el modal de propiedades sin "moverse".
+
+### Modal de propiedades de tarea / evento
+
+- Click sobre la etiqueta de una tarea ahora abre un modal **centrado** con backdrop semitransparente, mucho más cómodo de usar.
+- Click fuera del modal o ESC cierran. ESC ya no navega accidentalmente al diario.
+- Permite editar fecha, hora, repetición (chip `–` + número + días/sem./mes./año), prioridad y estado en el mismo modal.
+
+### Calendario
+
+- Click en la franja **"Todo el día"** del calendario crea una tarea sin hora. Antes solo se podían crear haciendo clic en una hora específica.
+- Por defecto las cosas creadas desde el calendario son **tareas**, no eventos. Para crear un evento usa `/event` desde el slash menu, o el sufijo inline `-e`.
+
+### Google Calendar — fix de timezone
+
+- Los eventos de Google Calendar ahora aparecen correctamente en la zona horaria del usuario (antes podían desaparecer por off-by-one con UTC, sobre todo all-day events).
+- El servidor amplía la ventana de búsqueda ±1 día y refiltra por TZ local para evitar pérdidas.
+- Los eventos creados o editados en From siguen propagándose a Google Calendar a los 900ms (sin cambios).
+
+### Mover nodos y selección múltiple
+
+- Nuevo **drag handle** `⋮⋮` que aparece a la izquierda del nodo al pasar el ratón. Sólo el handle inicia drag, así no hay conflictos con la selección de texto.
+- Drop targets más claros: línea bajo el nodo destino al arrastrar entre hermanos, outline punteado al soltar como hijo.
+- Multi-selección con fondo accent suave y bordes redondeados; el handle se intensifica en color accent al estar seleccionado.
+- Shift+click sigue añadiendo individualmente al set. ESC limpia. Drag desde márgenes/espacio vacío sigue activando rango.
+
+---
+
 ## Web v7.13 → v7.29 — 25 mayo 2026
 
 **Plataforma: Web** — gran tanda de mejoras en eventos, drag & drop, agenda y UX.

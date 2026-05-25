@@ -128,10 +128,11 @@ function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateP
   useEffect(() => { inputRef.current?.focus() }, [])
 
   function handleSubmit() {
-    const t = text.trim() || 'Nuevo evento'
+    const t = text.trim() || 'Nueva tarea'
     const diary = store.todayDiary()
     const node = store.createNode({ text: t, parentId: diary?.id || null })
-    store.updateNode(node.id, { due: date.toISOString(), isEvent: true, status: 'pending' })
+    // Crear como TAREA por defecto (no como evento). El usuario puede convertir luego.
+    store.updateNode(node.id, { due: date.toISOString(), isEvent: false, status: 'pending' })
     onCreate(node.id)
   }
 
@@ -140,7 +141,7 @@ function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateP
       <input
         ref={inputRef}
         className="calendar-quick-create-input"
-        placeholder="Nombre del evento…"
+        placeholder="Nombre de la tarea…"
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={e => {
@@ -306,6 +307,8 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   const HOURS = Array.from({ length: dayEnd - dayStart }, (_, i) => dayStart + i)
   const TIMELINE_HEIGHT = (dayEnd - dayStart) * CELL_HEIGHT
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
+  const [hoveredAllDay, setHoveredAllDay] = useState<number | null>(null)
+  const [allDayQuickCreate, setAllDayQuickCreate] = useState<{ date: Date; col: number } | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
   const [taskPopover, setTaskPopover] = useState<{ node: Node; el: HTMLElement } | null>(null)
@@ -394,7 +397,18 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
             return (
               <div
                 key={i}
-                className="calendar-allday-cell"
+                className={`calendar-allday-cell ${hoveredAllDay === i ? 'calendar-allday-cell--hover' : ''}`}
+                onMouseEnter={() => setHoveredAllDay(i)}
+                onMouseLeave={() => setHoveredAllDay(null)}
+                onClick={(e) => {
+                  // Solo si no se hizo clic sobre un chip existente o el quick-create
+                  const target = e.target as HTMLElement
+                  if (target.closest('button, input, .calendar-event-chip, .calendar-quick-create')) return
+                  const d = new Date(day)
+                  d.setHours(0, 0, 0, 0)
+                  setAllDayQuickCreate({ date: d, col: i })
+                  setQuickCreate(null)
+                }}
                 onDragOver={e => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -455,6 +469,16 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     {ev.title}
                   </div>
                 ))}
+                {allDayQuickCreate && allDayQuickCreate.col === i && (
+                  <QuickEventCreate
+                    date={allDayQuickCreate.date}
+                    onCancel={() => setAllDayQuickCreate(null)}
+                    onCreate={id => { setAllDayQuickCreate(null); onNodeClick(id) }}
+                  />
+                )}
+                {hoveredAllDay === i && !allDayQuickCreate && allDayNodes.length === 0 && gcalAllDay.length === 0 && (
+                  <span className="calendar-allday-add-hint">+ Añadir</span>
+                )}
               </div>
             )
           })}
@@ -1002,12 +1026,13 @@ export default function CalendarView() {
   function handleCreateEvent(date: Date) {
     const diary = store.todayDiary()
     const node = store.createNode({
-      text: 'Nuevo evento',
+      text: 'Nueva tarea',
       parentId: diary?.id || null,
     })
+    // Crear como TAREA por defecto en el calendario.
     store.updateNode(node.id, {
       due: date.toISOString(),
-      isEvent: true,
+      isEvent: false,
       status: 'pending',
     })
     navigate(`/node/${node.id}`)

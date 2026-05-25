@@ -1,8 +1,19 @@
 # From — Manual de usuario
 
-> Versión 3.20 / Web v7.29 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
+> Versión 3.20 / Web v8.00 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
 
 ---
+
+## Novedades en Web v8.00 (26 mayo 2026)
+
+- **Bullets y headings estilo Notion**: al usar el slash menu (`/Bullet`, `/Título 1`, etc.) el prefijo `-` / `#` no se ve en el editor — escribes directamente en el contenido y el formato se aplica solo. Tipear `- ` o `# ` al inicio convierte automáticamente el bloque.
+- **ENTER** crea el siguiente nodo justo debajo, siempre, también cuando hay nodos más abajo (se desplazan visualmente).
+- **Modal centrado** al hacer clic en la etiqueta de fecha de una tarea: más cómodo de usar, click fuera o ESC cierran sin navegar a otra parte.
+- **Calendario**:
+  - Clic en "Todo el día" crea una tarea sin hora.
+  - Las cosas creadas desde el calendario son tareas por defecto; los eventos se siguen creando con `/event` o `-e`.
+  - Los eventos de Google Calendar aparecen correctamente en tu zona horaria.
+- **Drag handle** `⋮⋮` visible al pasar el ratón sobre un nodo. Sólo el handle inicia el arrastre, así no hay conflictos al seleccionar texto.
 
 ## Novedades en Web v7.29 (25 mayo 2026)
 

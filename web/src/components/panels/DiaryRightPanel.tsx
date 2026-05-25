@@ -57,54 +57,29 @@ function calculateStreak(s: ReturnType<typeof useStore>): number {
 export interface TaskPropsPopoverProps {
   node: Node
   onClose: () => void
-  anchorRef: React.RefObject<HTMLButtonElement | HTMLElement>
+  anchorRef?: React.RefObject<HTMLButtonElement | HTMLElement>  // legacy — no usado en modo modal
   allowRename?: boolean
   allowDelete?: boolean
   onDeleted?: () => void
 }
 
-export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
+export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const popNavigate = useNavigate()
 
+  // Modal centrado: ESC cierra (sin propagar a router), click fuera cierra.
   useEffect(() => {
-    // Posicionar via portal relativo al botón ancla — flip arriba si no cabe debajo
-    function reposition() {
-      if (!anchorRef.current) return
-      const rect = anchorRef.current.getBoundingClientRect()
-      // Si el ancla está desmontada o sin tamaño (e.g. tras quitar fecha y desaparecer
-      // del calendario), conservar la posición actual en vez de saltar a 0,0
-      if (rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0) return
-      const popH = popoverRef.current?.offsetHeight || 420
-      const popW = popoverRef.current?.offsetWidth || 290
-      const margin = 8
-      let top = rect.bottom + 6
-      if (top + popH > window.innerHeight - margin) {
-        // No cabe debajo → intentar arriba
-        const topAbove = rect.top - popH - 6
-        if (topAbove >= margin) {
-          top = topAbove
-        } else {
-          // Tampoco cabe arriba → clamp al máximo posible
-          top = Math.max(margin, window.innerHeight - popH - margin)
-        }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
       }
-      const left = Math.max(margin, Math.min(rect.right - popW, window.innerWidth - popW - margin))
-      setPos({ top, left })
     }
-    reposition()
-    // Re-reposicionar tras el primer paint para usar la altura real
-    requestAnimationFrame(reposition)
-    function handler(e: MouseEvent) {
-      if (
-        popoverRef.current && !popoverRef.current.contains(e.target as globalThis.Node) &&
-        anchorRef.current && !anchorRef.current.contains(e.target as globalThis.Node)
-      ) onClose()
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [onClose, anchorRef])
+    // capture: true → atrapamos ESC antes que cualquier otro handler global
+    document.addEventListener('keydown', onKey, { capture: true })
+    return () => document.removeEventListener('keydown', onKey, { capture: true })
+  }, [onClose])
 
   const dueDate = isoToLocalDate(node.due)
   const dueTime = isoToLocalTime(node.due)
@@ -134,13 +109,15 @@ export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowD
     { v: 'high',   l: 'Alta',  c: '#ef4444' },
   ]
 
-  if (!pos) return null
-
   return createPortal(
     <div
+      className="task-props-modal-backdrop"
+      onMouseDown={onClose}
+      onClick={onClose}
+    >
+    <div
       ref={popoverRef}
-      className="task-props-popup"
-      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 500 }}
+      className="task-props-popup task-props-popup--modal"
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
@@ -276,6 +253,7 @@ export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowD
         </>
       )}
 
+    </div>
     </div>,
     document.body
   )

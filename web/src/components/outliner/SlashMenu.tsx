@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet' | 'view-table' | 'view-kanban' | 'view-calendar' | 'loop'
+export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet' | 'heading-1' | 'heading-2' | 'heading-3' | 'view-table' | 'view-kanban' | 'view-calendar' | 'loop'
 
 export interface SlashMenuOption {
   label: string
@@ -15,10 +15,10 @@ export interface SlashMenuOption {
 const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   // ── Texto ──────────────────────────────────────────────────────────────
   { group: 'Texto', label: 'Texto',      icon: 'T',   prefix: '',      description: 'Párrafo normal',         action: 'text' },
-  { group: 'Texto', label: 'Bullet',    icon: '•',   prefix: '- ',    description: 'Lista con viñeta',       action: 'text' },
-  { group: 'Texto', label: 'Título 1',   icon: 'H1',  prefix: '# ',    description: 'Encabezado grande',      action: 'text' },
-  { group: 'Texto', label: 'Título 2',   icon: 'H2',  prefix: '## ',   description: 'Encabezado mediano',     action: 'text' },
-  { group: 'Texto', label: 'Título 3',   icon: 'H3',  prefix: '### ',  description: 'Encabezado pequeño',     action: 'text' },
+  { group: 'Texto', label: 'Bullet',    icon: '•',   prefix: '',      description: 'Lista con viñeta',       action: 'bullet' },
+  { group: 'Texto', label: 'Título 1',   icon: 'H1',  prefix: '# ',    description: 'Encabezado grande',      action: 'heading-1' },
+  { group: 'Texto', label: 'Título 2',   icon: 'H2',  prefix: '## ',   description: 'Encabezado mediano',     action: 'heading-2' },
+  { group: 'Texto', label: 'Título 3',   icon: 'H3',  prefix: '### ',  description: 'Encabezado pequeño',     action: 'heading-3' },
   { group: 'Texto', label: 'Cita',       icon: '"',   prefix: '> ',    description: 'Bloque de cita',         action: 'text' },
   { group: 'Texto', label: 'Código',     icon: '</>',  prefix: '` ',   description: 'Texto monoespaciado',    action: 'text' },
   { group: 'Texto', label: 'Separador',  icon: '—',   prefix: '---',   description: 'Línea divisoria',        action: 'text' },
