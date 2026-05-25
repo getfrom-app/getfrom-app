@@ -127,6 +127,18 @@ class NodeStore {
     return count
   }
 
+  /** Nodo de definición de un tag (con _tagDefinition en extraData) o null */
+  getTagDefNode(tagName: string): Node | null {
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._tagDefinition?.toLowerCase() === tagName.toLowerCase()) return n
+      } catch {}
+    }
+    return null
+  }
+
   /** Color del tag: primero mira si hay color personalizado en la definición, si no usa hash */
   tagColor(tagName: string): string {
     const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']

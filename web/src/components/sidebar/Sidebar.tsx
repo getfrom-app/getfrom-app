@@ -207,13 +207,27 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     const color = s.tagColor(node.name)
     const hasChildren = node.children.length > 0
     const isCollapsed = !!collapsedTags[node.name]
-    const isActiveTag = location.pathname === `/tag/${node.name}`
+    const defNode = s.getTagDefNode(node.name)
+    const isActiveTag = defNode
+      ? location.pathname === `/node/${defNode.id}`
+      : location.pathname === `/tag/${node.name}`
     return (
       <div key={node.name}>
         <div
           className={`sidebar-tag-item ${isActiveTag ? 'active' : ''}`}
           style={{ paddingLeft: 8 + depth * 14 }}
-          onClick={() => navigate(`/tag/${node.name}`)}
+          onClick={() => {
+            // Navegar al nodo de definición del tag (con body/contexto)
+            const defNode = s.getTagDefNode(node.name)
+            if (defNode) {
+              navigate(`/node/${defNode.id}`)
+            } else {
+              // Crear nodo de definición y navegar
+              const newNode = store.createNode({ text: node.name, parentId: null })
+              store.updateNode(newNode.id, { extraData: JSON.stringify({ _tagDefinition: node.name }) })
+              navigate(`/node/${newNode.id}`)
+            }
+          }}
           onContextMenu={e => openTagMenu(e, node.name)}
           title={`#${node.name} · ${node.count} nodos`}
         >
