@@ -271,15 +271,20 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
       <div className="prop-row">
         <button
-          className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento ? 'active' : ''}`}
+          className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent ? 'active' : ''}`}
           onClick={() => {
-            if (node.status !== null && !node.isSeguimiento) {
+            // Si ya es tarea pura → quitar status
+            if (node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent) {
               store.updateNode(node.id, { status: null })
+            } else if (isResource || node.isEvent || node.isSeguimiento) {
+              // Es recurso/evento/activa → NO convertir en tarea (el estado se gestiona aparte)
+              return
             } else {
               store.updateNode(node.id, { status: 'pending', isSeguimiento: false, due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
-          title="Tarea"
+          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : 'Tarea'}
+          style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
         >
           ○ Tarea
         </button>
