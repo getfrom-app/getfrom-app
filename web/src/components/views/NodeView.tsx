@@ -952,9 +952,31 @@ export default function NodeView() {
 
   function handleDelete() {
     if (!node) return
-    if (!window.confirm(`¿Eliminar "${node.text || 'esta nota'}"? Se moverá a la papelera.`)) return
-    store.deleteNode(node.id)
-    navigate(-1)
+    const childCount = (() => {
+      let count = 0
+      const q = [node.id]
+      while (q.length) { const id = q.shift()!; count++; store.children(id).forEach(c => q.push(c.id)) }
+      return count - 1 // excluir el propio nodo
+    })()
+    const msg = childCount > 0
+      ? `¿Eliminar "${node.text || 'esta nota'}" y sus ${childCount} nota${childCount === 1 ? '' : 's'} hijas? Se moverán a la papelera.`
+      : `¿Eliminar "${node.text || 'esta nota'}"? Se moverá a la papelera.`
+    if (!window.confirm(msg)) return
+
+    // Navegar primero para evitar re-render sobre nodo borrado
+    const today = store.todayDiary()
+    if (today) navigate(`/node/${today.id}`, { replace: true })
+    else navigate('/', { replace: true })
+
+    // Borrar nodo + todos sus descendientes
+    const toDelete: string[] = []
+    const q = [node.id]
+    while (q.length) {
+      const id = q.shift()!
+      toDelete.push(id)
+      store.children(id).forEach(c => q.push(c.id))
+    }
+    toDelete.forEach(id => store.deleteNode(id))
   }
 
   function handlePrint() {
