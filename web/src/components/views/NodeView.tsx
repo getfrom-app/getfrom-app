@@ -276,6 +276,226 @@ export default function NodeView() {
       .catch(() => {})
   }, [node?.id, node?.text]) // eslint-disable-line
 
+  // [hooks order fix] handleBodyKeyDown movido arriba para llamarlo antes del early-return
+  const handleBodyKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // ── Cmd+Space → AI inline ──────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
+      e.preventDefault()
+      if (isAiStreaming || store.isGuest) return
+      setIsAiStreaming(true)
+      const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
+      const context = bodyValue.slice(0, cursorPos)
+      const contextEnriquecido = buildAiContext(context)
+      let aiText = ''
+      try {
+        await aiInlineStream(
+          contextEnriquecido,
+          undefined,
+          (chunk) => {
+            aiText += chunk
+            setBodyValue(prev => {
+              const before = prev.slice(0, cursorPos)
+              const after = prev.slice(cursorPos)
+              return before + aiText + after
+            })
+          }
+        )
+      } catch (err) {
+        if (err instanceof Error && err.message !== 'AI_LIMIT') {
+          console.error('AI inline error', err)
+        }
+      } finally {
+        setIsAiStreaming(false)
+      }
+      return
+    }
+
+    // ── Cmd+B → negrita ───────────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      e.preventDefault()
+      applyBodyFormat('**')
+      return
+    }
+
+    // ── Cmd+I → cursiva ───────────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+      e.preventDefault()
+      applyBodyFormat('*')
+      return
+    }
+
+    // ── Cmd+E → código inline ─────────────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+      e.preventDefault()
+      applyBodyFormat('`')
+      return
+    }
+
+    // ── Cmd+Shift+K → link template ───────────────────────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'k') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const end = ta.selectionEnd
+      const selected = ta.value.slice(start, end)
+      const linkText = selected || 'texto'
+      const insertion = `[${linkText}](url)`
+      ta.setRangeText(insertion, start, end, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Cmd+] → indentar línea (añadir 2 espacios) ───────────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === ']') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      ta.setRangeText('  ', lineStart, lineStart, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Cmd+[ → des-indentar línea (quitar 2 espacios) ───────────────────
+    if ((e.metaKey || e.ctrlKey) && e.key === '[') {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      const lineContent = ta.value.slice(lineStart)
+      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
+      if (spacesToRemove > 0) {
+        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
+        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      }
+      return
+    }
+
+    // ── Tab → insertar 4 espacios ─────────────────────────────────────────
+    if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      ta.setRangeText('    ', start, start, 'end')
+      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      return
+    }
+
+    // ── Shift+Tab → quitar 4 espacios al inicio de línea ─────────────────
+    if (e.key === 'Tab' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      const ta = textareaRef.current
+      if (!ta) return
+      const start = ta.selectionStart
+      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
+      const lineContent = ta.value.slice(lineStart)
+      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
+      if (spacesToRemove > 0) {
+        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
+        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
+      }
+      return
+    }
+
+    // ── Enter → auto-continuación de listas ──────────────────────────────
+    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      const ta = textareaRef.current
+      if (!ta) return
+      const pos = ta.selectionStart
+      const lines = bodyValue.slice(0, pos).split('\n')
+      const currentLine = lines[lines.length - 1]
+
+      const bulletMatch = currentLine.match(/^(\s*)([-*])\s(.*)/)
+      const numberedMatch = currentLine.match(/^(\s*)(\d+)\.\s(.*)/)
+
+      if (bulletMatch) {
+        if (bulletMatch[3].trim() !== '') {
+          // Continuar lista de viñetas
+          e.preventDefault()
+          const indent = bulletMatch[1]
+          const bullet = bulletMatch[2]
+          const insertion = `\n${indent}${bullet} `
+          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = pos + insertion.length
+              textareaRef.current.selectionEnd = pos + insertion.length
+            }
+          }, 0)
+        } else {
+          // Viñeta vacía → salir de la lista
+          e.preventDefault()
+          const indent = bulletMatch[1]
+          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
+          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const newPos = lineStart + indent.length + 1
+              textareaRef.current.selectionStart = newPos
+              textareaRef.current.selectionEnd = newPos
+            }
+          }, 0)
+        }
+        return
+      }
+
+      if (numberedMatch) {
+        if (numberedMatch[3].trim() !== '') {
+          // Continuar lista numerada
+          e.preventDefault()
+          const indent = numberedMatch[1]
+          const nextNum = parseInt(numberedMatch[2]) + 1
+          const insertion = `\n${indent}${nextNum}. `
+          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = pos + insertion.length
+              textareaRef.current.selectionEnd = pos + insertion.length
+            }
+          }, 0)
+        } else {
+          // Numerada vacía → salir de la lista
+          e.preventDefault()
+          const indent = numberedMatch[1]
+          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
+          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
+          setBodyValue(newValue)
+          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
+          bodyDebounceRef.current = setTimeout(() => {
+            store.updateNode(node!.id, { body: newValue || null })
+          }, 500)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              const newPos = lineStart + indent.length + 1
+              textareaRef.current.selectionStart = newPos
+              textareaRef.current.selectionEnd = newPos
+            }
+          }, 0)
+        }
+        return
+      }
+    }
+  }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!node || node.deletedAt) {
     return <div className="view-empty">Nodo no encontrado</div>
   }
@@ -597,224 +817,6 @@ export default function NodeView() {
     ].filter(Boolean).join('\n')
   }
 
-  const handleBodyKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // ── Cmd+Space → AI inline ──────────────────────────────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
-      e.preventDefault()
-      if (isAiStreaming || store.isGuest) return
-      setIsAiStreaming(true)
-      const cursorPos = textareaRef.current?.selectionStart ?? bodyValue.length
-      const context = bodyValue.slice(0, cursorPos)
-      const contextEnriquecido = buildAiContext(context)
-      let aiText = ''
-      try {
-        await aiInlineStream(
-          contextEnriquecido,
-          undefined,
-          (chunk) => {
-            aiText += chunk
-            setBodyValue(prev => {
-              const before = prev.slice(0, cursorPos)
-              const after = prev.slice(cursorPos)
-              return before + aiText + after
-            })
-          }
-        )
-      } catch (err) {
-        if (err instanceof Error && err.message !== 'AI_LIMIT') {
-          console.error('AI inline error', err)
-        }
-      } finally {
-        setIsAiStreaming(false)
-      }
-      return
-    }
-
-    // ── Cmd+B → negrita ───────────────────────────────────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-      e.preventDefault()
-      applyBodyFormat('**')
-      return
-    }
-
-    // ── Cmd+I → cursiva ───────────────────────────────────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
-      e.preventDefault()
-      applyBodyFormat('*')
-      return
-    }
-
-    // ── Cmd+E → código inline ─────────────────────────────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-      e.preventDefault()
-      applyBodyFormat('`')
-      return
-    }
-
-    // ── Cmd+Shift+K → link template ───────────────────────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'k') {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      const end = ta.selectionEnd
-      const selected = ta.value.slice(start, end)
-      const linkText = selected || 'texto'
-      const insertion = `[${linkText}](url)`
-      ta.setRangeText(insertion, start, end, 'end')
-      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
-      return
-    }
-
-    // ── Cmd+] → indentar línea (añadir 2 espacios) ───────────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === ']') {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
-      ta.setRangeText('  ', lineStart, lineStart, 'end')
-      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
-      return
-    }
-
-    // ── Cmd+[ → des-indentar línea (quitar 2 espacios) ───────────────────
-    if ((e.metaKey || e.ctrlKey) && e.key === '[') {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
-      const lineContent = ta.value.slice(lineStart)
-      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
-      if (spacesToRemove > 0) {
-        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
-        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
-      }
-      return
-    }
-
-    // ── Tab → insertar 4 espacios ─────────────────────────────────────────
-    if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      ta.setRangeText('    ', start, start, 'end')
-      handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
-      return
-    }
-
-    // ── Shift+Tab → quitar 4 espacios al inicio de línea ─────────────────
-    if (e.key === 'Tab' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1
-      const lineContent = ta.value.slice(lineStart)
-      const spacesToRemove = lineContent.startsWith('    ') ? 4 : lineContent.startsWith('  ') ? 2 : lineContent.startsWith(' ') ? 1 : 0
-      if (spacesToRemove > 0) {
-        ta.setRangeText('', lineStart, lineStart + spacesToRemove, 'end')
-        handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
-      }
-      return
-    }
-
-    // ── Enter → auto-continuación de listas ──────────────────────────────
-    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-      const ta = textareaRef.current
-      if (!ta) return
-      const pos = ta.selectionStart
-      const lines = bodyValue.slice(0, pos).split('\n')
-      const currentLine = lines[lines.length - 1]
-
-      const bulletMatch = currentLine.match(/^(\s*)([-*])\s(.*)/)
-      const numberedMatch = currentLine.match(/^(\s*)(\d+)\.\s(.*)/)
-
-      if (bulletMatch) {
-        if (bulletMatch[3].trim() !== '') {
-          // Continuar lista de viñetas
-          e.preventDefault()
-          const indent = bulletMatch[1]
-          const bullet = bulletMatch[2]
-          const insertion = `\n${indent}${bullet} `
-          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
-          setBodyValue(newValue)
-          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
-          bodyDebounceRef.current = setTimeout(() => {
-            store.updateNode(node!.id, { body: newValue || null })
-          }, 500)
-          setTimeout(() => {
-            if (textareaRef.current) {
-              textareaRef.current.selectionStart = pos + insertion.length
-              textareaRef.current.selectionEnd = pos + insertion.length
-            }
-          }, 0)
-        } else {
-          // Viñeta vacía → salir de la lista
-          e.preventDefault()
-          const indent = bulletMatch[1]
-          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
-          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
-          setBodyValue(newValue)
-          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
-          bodyDebounceRef.current = setTimeout(() => {
-            store.updateNode(node!.id, { body: newValue || null })
-          }, 500)
-          setTimeout(() => {
-            if (textareaRef.current) {
-              const newPos = lineStart + indent.length + 1
-              textareaRef.current.selectionStart = newPos
-              textareaRef.current.selectionEnd = newPos
-            }
-          }, 0)
-        }
-        return
-      }
-
-      if (numberedMatch) {
-        if (numberedMatch[3].trim() !== '') {
-          // Continuar lista numerada
-          e.preventDefault()
-          const indent = numberedMatch[1]
-          const nextNum = parseInt(numberedMatch[2]) + 1
-          const insertion = `\n${indent}${nextNum}. `
-          const newValue = bodyValue.slice(0, pos) + insertion + bodyValue.slice(pos)
-          setBodyValue(newValue)
-          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
-          bodyDebounceRef.current = setTimeout(() => {
-            store.updateNode(node!.id, { body: newValue || null })
-          }, 500)
-          setTimeout(() => {
-            if (textareaRef.current) {
-              textareaRef.current.selectionStart = pos + insertion.length
-              textareaRef.current.selectionEnd = pos + insertion.length
-            }
-          }, 0)
-        } else {
-          // Numerada vacía → salir de la lista
-          e.preventDefault()
-          const indent = numberedMatch[1]
-          const lineStart = bodyValue.lastIndexOf('\n', pos - 1) + 1
-          const newValue = bodyValue.slice(0, lineStart) + indent + '\n' + bodyValue.slice(pos)
-          setBodyValue(newValue)
-          if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
-          bodyDebounceRef.current = setTimeout(() => {
-            store.updateNode(node!.id, { body: newValue || null })
-          }, 500)
-          setTimeout(() => {
-            if (textareaRef.current) {
-              const newPos = lineStart + indent.length + 1
-              textareaRef.current.selectionStart = newPos
-              textareaRef.current.selectionEnd = newPos
-            }
-          }, 0)
-        }
-        return
-      }
-    }
-  }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function triggerAiInline() {
     if (isAiStreaming || store.isGuest) return
