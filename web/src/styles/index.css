@@ -6830,6 +6830,36 @@ a:focus-visible {
 .node-table-tasks-text.done { text-decoration: line-through; opacity: 0.5; }
 .node-table-tasks-more { color: var(--text-tertiary); font-size: 10px; padding-left: 16px; }
 
+/* Reminder cell + editor */
+.node-table-reminder {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: 12px; color: var(--text-primary);
+}
+.node-table-reminder.done { opacity: 0.5; text-decoration: line-through; }
+.node-table-reminder-icon { font-size: 11px; }
+.node-table-reminder-date { font-weight: 500; }
+
+.reminder-editor {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 6px; width: 100%; min-width: 240px;
+}
+.reminder-editor-title { font-size: 12px; font-weight: 600; color: var(--accent); }
+.reminder-editor-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.reminder-editor-quick { display: flex; flex-wrap: wrap; gap: 4px; }
+.reminder-editor-chip {
+  padding: 3px 8px; border-radius: 100px;
+  background: var(--bg-hover); border: 1px solid var(--border);
+  font-size: 11px; cursor: pointer; color: var(--text-secondary);
+}
+.reminder-editor-chip:hover { background: var(--accent-soft, rgba(139,92,246,0.1)); color: var(--accent); }
+.reminder-editor-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+.reminder-editor-row { display: flex; gap: 6px; }
+.reminder-editor-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
+.reminder-editor-clear { padding: 4px 8px; border-radius: 6px; border: 1px solid #ef4444; background: transparent; color: #ef4444; cursor: pointer; font-size: 11px; margin-right: auto; }
+.reminder-editor-cancel { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 11px; }
+.reminder-editor-save { padding: 4px 10px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-size: 11px; font-weight: 600; }
+.reminder-editor-save:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Task list editor (popover en celda Tarea) */
 .task-list-editor {
   display: flex; flex-direction: column; gap: 4px;

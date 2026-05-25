@@ -5,14 +5,14 @@ import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
-type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task'
+type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'reminder'
 type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
 
 const COL_TYPE_LABELS: Record<ColType, string> = {
   text: 'Texto', number: 'Número', select: 'Select', multi_select: 'Multi-select',
-  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag', task: 'Tarea',
+  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag', task: 'Tarea', reminder: 'Recordatorio',
 }
 
 const BUILTIN_COLS = [
@@ -72,6 +72,82 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
         {filtered.length === 0 && !query.trim() && (
           <div className="select-editor-empty">Sin opciones todavía. Escribe para crear una.</div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
+  existing: Node | null
+  colName: string
+  onSave: (data: { due: string; recurrence: string | null }) => void
+  onClear: () => void
+  onClose: () => void
+}) {
+  const initialDate = existing?.due ? existing.due.slice(0, 10) : ''
+  const initialTime = existing?.due ? (() => {
+    const d = new Date(existing.due!)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return d.getHours() === 0 && d.getMinutes() === 0 ? '' : `${hh}:${mm}`
+  })() : ''
+  const [date, setDate] = useState(initialDate)
+  const [time, setTime] = useState(initialTime)
+  const [rec, setRec] = useState<string | null>(existing?.recurrence || null)
+
+  function quickDate(days: number) {
+    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + days)
+    setDate(d.toISOString().slice(0, 10))
+  }
+
+  function commit() {
+    if (!date) return
+    const iso = time
+      ? new Date(`${date}T${time}:00`).toISOString()
+      : new Date(`${date}T00:00:00`).toISOString()
+    onSave({ due: iso, recurrence: rec })
+  }
+
+  const recOpts: [string | null, string][] = [
+    [null, 'No'],
+    ['daily', 'Cada día'],
+    ['weekly', 'Cada semana'],
+    ['monthly', 'Cada mes'],
+    ['yearly', 'Cada año'],
+  ]
+
+  return (
+    <div className="reminder-editor" onMouseDown={e => e.stopPropagation()}>
+      <div className="reminder-editor-title">⏰ {colName}</div>
+
+      <div className="reminder-editor-quick">
+        {[['Hoy', 0], ['Mañana', 1], ['+7d', 7], ['+30d', 30]].map(([label, days]) => (
+          <button key={String(label)} className="reminder-editor-chip" onClick={() => quickDate(days as number)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="reminder-editor-row">
+        <input type="date" className="node-table-cell-editor" value={date} onChange={e => setDate(e.target.value)} />
+        <input type="time" className="node-table-cell-editor" value={time} onChange={e => setTime(e.target.value)} disabled={!date} />
+      </div>
+
+      <div className="reminder-editor-label">Repetir</div>
+      <div className="reminder-editor-quick">
+        {recOpts.map(([val, label]) => (
+          <button
+            key={String(val)}
+            className={`reminder-editor-chip ${rec === val ? 'active' : ''}`}
+            onClick={() => setRec(val)}
+          >{label}</button>
+        ))}
+      </div>
+
+      <div className="reminder-editor-actions">
+        {existing && <button className="reminder-editor-clear" onClick={onClear}>🗑 Borrar</button>}
+        <button className="reminder-editor-cancel" onClick={onClose}>Cancelar</button>
+        <button className="reminder-editor-save" onClick={commit} disabled={!date}>Guardar</button>
       </div>
     </div>
   )
@@ -152,6 +228,40 @@ function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef
       />
     )
   }
+  if (def.type === 'reminder') {
+    const reminderTask = findReminderTaskForCol(node.id, def.id)
+    return (
+      <ReminderEditor
+        existing={reminderTask}
+        colName={def.name}
+        onSave={({ due, recurrence }) => {
+          if (reminderTask) {
+            store.updateNode(reminderTask.id, { due, recurrence, status: 'pending' })
+          } else {
+            const child = store.createNode({
+              text: def.name,
+              parentId: node.id,
+              siblingOrder: Date.now(),
+            })
+            // Marcar con _reminderColId para asociar a esta columna
+            const ed: Record<string, unknown> = { _reminderColId: def.id }
+            store.updateNode(child.id, {
+              status: 'pending',
+              due,
+              recurrence,
+              extraData: JSON.stringify(ed),
+            })
+          }
+          onClose()
+        }}
+        onClear={() => {
+          if (reminderTask) store.deleteNode(reminderTask.id)
+          onClose()
+        }}
+        onClose={onClose}
+      />
+    )
+  }
   if (def.type === 'task') {
     // Task editor: lista de tareas hijo + input para crear nueva
     const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
@@ -222,7 +332,42 @@ function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef
   )
 }
 
+// Helpers para Recordatorio: busca la tarea hija que pertenece a esta columna
+function findReminderTaskForCol(rowId: string, colId: string): Node | null {
+  for (const child of store.children(rowId)) {
+    if (child.deletedAt) continue
+    try {
+      const ed = JSON.parse(child.extraData || '{}')
+      if (ed._reminderColId === colId) return child
+    } catch { /* ignore */ }
+  }
+  return null
+}
+
+function formatReminderDate(iso: string, recurrence: string | null | undefined): string {
+  const d = new Date(iso)
+  const datePart = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
+  const timePart = hasTime ? ` ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : ''
+  const recPart = recurrence ? ' · ↻' : ''
+  return `${datePart}${timePart}${recPart}`
+}
+
 function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () => void }) {
+  // Reminder: muestra próxima fecha del recordatorio asociado a esta columna
+  if (def.type === 'reminder') {
+    const reminderTask = findReminderTaskForCol(node.id, def.id)
+    if (!reminderTask || !reminderTask.due) {
+      return <span className="node-table-empty-cell" onClick={onEdit}>＋ Recordatorio</span>
+    }
+    const isDone = reminderTask.status === 'done'
+    return (
+      <div className={`node-table-reminder ${isDone ? 'done' : ''}`} onClick={onEdit}>
+        <span className="node-table-reminder-icon">{isDone ? '✓' : '⏰'}</span>
+        <span className="node-table-reminder-date">{formatReminderDate(reminderTask.due, reminderTask.recurrence)}</span>
+      </div>
+    )
+  }
   // Task: lista compacta de tareas hijas del row (status:pending) + botón añadir
   if (def.type === 'task') {
     const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
