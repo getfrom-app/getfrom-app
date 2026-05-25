@@ -1,15 +1,17 @@
 import React from 'react'
+import { store } from '../../store/nodeStore'
 
-// ── Tag color system (matches From Mac) ──────────────────────────────────────
-const TAG_COLORS = ['blue', 'green', 'orange', 'purple', 'pink', 'red', 'yellow', 'teal']
-
+// Color de tag: usa el del store (custom o hash determinista)
 function getTagColor(tag: string): string {
-  let hash = 0
-  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash)
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]
+  return store.tagColor(tag)
 }
 
-// Render text with colored hashtags
+// Genera inline style para un tag dado su color hex
+function tagStyle(hex: string): string {
+  return `background:${hex}20;color:${hex};border:1px solid ${hex}40;border-radius:4px;padding:0 5px;font-size:0.85em;font-weight:500`
+}
+
+// Render text with colored hashtags (usa color del store)
 function renderWithTags(text: string, key: number): React.ReactNode {
   const parts = text.split(/(#[\wÀ-ɏ/\-]+)/g)
   if (parts.length === 1) return text
@@ -18,9 +20,13 @@ function renderWithTags(text: string, key: number): React.ReactNode {
       {parts.map((part, i) => {
         if (part.startsWith('#') && part.length > 1) {
           const tagName = part.slice(1)
-          const color = getTagColor(tagName)
+          const hex = getTagColor(tagName)
           return (
-            <span key={`tag-${key}-${i}`} className={`tag-inline tag-inline--${color}`}>
+            <span
+              key={`tag-${key}-${i}`}
+              className="tag-inline"
+              style={{ background: hex + '20', color: hex, border: `1px solid ${hex}40`, borderRadius: 4, padding: '0 5px', fontSize: '0.85em', fontWeight: 500 }}
+            >
               {part}
             </span>
           )
@@ -241,10 +247,10 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
     // auto-link URLs no ya dentro de [text](url)
     .replace(/(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
-    // hashtags con color
+    // hashtags con color del store
     .replace(/#([\wÀ-ɏ/\-]+)/g, (match, tag) => {
-      const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]
-      return `<span class="tag-inline tag-inline--${color}">${match}</span>`
+      const hex = store.tagColor(tag)
+      return `<span class="tag-inline" style="${tagStyle(hex)}">${match}</span>`
     })
     // @menciones con estilo
     .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F ]*)/g, (match) => {
