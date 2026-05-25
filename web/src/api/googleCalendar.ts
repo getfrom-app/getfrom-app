@@ -55,12 +55,24 @@ export async function getCalendarEvents(date: Date): Promise<CalendarEvent[]> {
   return res.events
 }
 
+/** Convierte el formato de recurrencia de From ('weekly:2') a RRULE para GCal */
+export function fromRecToRRule(rec: string | null | undefined): string[] {
+  if (!rec) return []
+  const [unit, nStr] = rec.split(':')
+  const n = parseInt(nStr || '1') || 1
+  const freq: Record<string, string> = { daily: 'DAILY', weekly: 'WEEKLY', monthly: 'MONTHLY', yearly: 'YEARLY' }
+  const f = freq[unit]
+  if (!f) return []
+  return [`RRULE:FREQ=${f};INTERVAL=${n}`]
+}
+
 export async function createCalendarEvent(event: {
   title: string
   start: string
   end: string
   description?: string
   location?: string
+  recurrence?: string[] // RRULE strings
 }): Promise<CalendarEvent> {
   return apiRequest<CalendarEvent>('/google/calendar/events', {
     method: 'POST',
@@ -70,7 +82,7 @@ export async function createCalendarEvent(event: {
 
 export async function updateCalendarEvent(
   id: string,
-  event: { title?: string; start?: string; end?: string; description?: string; location?: string }
+  event: { title?: string; start?: string; end?: string; description?: string; location?: string; recurrence?: string[] }
 ): Promise<CalendarEvent> {
   return apiRequest<CalendarEvent>(`/google/calendar/events/${id}`, {
     method: 'PUT',

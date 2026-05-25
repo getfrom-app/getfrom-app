@@ -9,7 +9,7 @@ import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
-import { updateCalendarEvent, createCalendarEvent } from '../../api/googleCalendar'
+import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -329,10 +329,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       try { loc = JSON.parse(store.getNode(node.id)?.extraData || '{}').location || '' } catch {}
       const gcalId = (() => { try { return JSON.parse(store.getNode(node.id)?.extraData || '{}').gcalEventId } catch { return null } })()
       try {
+        const rec = fromRecToRRule(store.getNode(node.id)?.recurrence)
         if (gcalId) {
-          await updateCalendarEvent(gcalId, { title: node.text || 'Evento', start: due, end, location: loc || undefined })
+          await updateCalendarEvent(gcalId, { title: node.text || 'Evento', start: due, end, location: loc || undefined, recurrence: rec })
         } else {
-          const result = await createCalendarEvent({ title: node.text || 'Evento', start: due, end, location: loc || undefined })
+          const result = await createCalendarEvent({ title: node.text || 'Evento', start: due, end, location: loc || undefined, recurrence: rec })
           let ed: Record<string, unknown> = {}
           try { ed = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch {}
           ed.gcalEventId = result.id
@@ -1703,6 +1704,35 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     <input type="text" className="nqp-date-input" style={{ width: '100%' }}
                       value={evtLocationStored} placeholder="Añadir lugar..."
                       onChange={e => setEvtLocationField(e.target.value)} />
+
+                    {/* Recurrencia del evento */}
+                    <div className="nqp-label">Repetición</div>
+                    <div className="nqp-rec-row">
+                      <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
+                        onClick={() => { store.updateNode(node.id, { recurrence: null }); scheduleGCalSync() }}>–</button>
+                      <input type="number" className="nqp-rec-n" min={1} max={999}
+                        value={node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1}
+                        disabled={!node.recurrence}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => {
+                          const n = Math.max(1, parseInt(e.target.value) || 1)
+                          const unit = node.recurrence ? node.recurrence.split(':')[0] : 'daily'
+                          store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
+                          scheduleGCalSync()
+                        }}
+                      />
+                      {([['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']] as [string, string][]).map(([unit, label]) => (
+                        <button key={unit}
+                          className={`nqp-chip${!!node.recurrence && node.recurrence.split(':')[0] === unit ? ' active' : ''}`}
+                          onClick={() => {
+                            const n = node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1
+                            store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
+                            scheduleGCalSync()
+                          }}
+                        >{label}</button>
+                      ))}
+                    </div>
+
                     {gcalEventId_evt && (
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center', opacity: 0.7 }}>
                         ↑ Cambios sincronizados con Google Calendar

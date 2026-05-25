@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '../../api/googleCalendar'
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 
 interface Props {
   node: Node
@@ -74,6 +74,7 @@ export default function NodeRightPanel({ node }: Props) {
       let loc = ''
       try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
       try {
+        const rrule = fromRecToRRule(node.recurrence)
         if (gcalId) {
           await updateCalendarEvent(gcalId, {
             title: node.text || 'Evento',
@@ -81,6 +82,7 @@ export default function NodeRightPanel({ node }: Props) {
             end,
             description: node.body || undefined,
             location: loc || undefined,
+            recurrence: rrule,
           })
         } else {
           // Primera vez — crear y guardar el ID
@@ -90,6 +92,7 @@ export default function NodeRightPanel({ node }: Props) {
             end,
             description: node.body || undefined,
             location: loc || undefined,
+            recurrence: rrule,
           })
           let ed: Record<string, unknown> = {}
           try { ed = JSON.parse(node.extraData || '{}') } catch {}
@@ -99,7 +102,7 @@ export default function NodeRightPanel({ node }: Props) {
       } catch { /* sin conexión GCal — silencioso */ }
     }, 1200)
     return () => clearTimeout(timer)
-  }, [node.isEvent, node.text, node.due, node.dueEnd, node.body, node.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node.isEvent, node.text, node.due, node.dueEnd, node.body, node.extraData, node.recurrence]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openEventPopup() {
     if (node.isEvent) {
@@ -410,6 +413,30 @@ export default function NodeRightPanel({ node }: Props) {
                 } catch { /* sin conexión — silencioso */ }
               }}
             />
+          </div>
+
+          {/* Recurrencia del evento */}
+          <div className="prop-event-row">
+            <span className="prop-event-field-label">Repite</span>
+            <div className="prop-rec-row" style={{ flex: 1 }}>
+              <button className={`prop-pill${!node.recurrence ? ' active' : ''}`}
+                onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
+              <input type="number" className="prop-rec-n" min={1} max={999}
+                value={node.recurrence ? parseRec(node.recurrence).n : 1}
+                onChange={e => {
+                  const n = Math.max(1, parseInt(e.target.value) || 1)
+                  const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
+                  applyRec(n, unit)
+                }}
+                disabled={!node.recurrence}
+              />
+              {recUnits.map(([unit, label]) => (
+                <button key={unit}
+                  className={`prop-pill${node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+                  onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
+                >{label}</button>
+              ))}
+            </div>
           </div>
 
           {/* Solo botón eliminar — el sync es automático */}
