@@ -3478,10 +3478,10 @@ mark.inline-highlight {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
+  max-width: 100px;
   flex-shrink: 1;
   opacity: 0.75;
-  margin-left: auto;
+  margin-left: 5px;
 }
 
 /* ── Bucles en panel diario ──────────────────────────────────────────────── */
