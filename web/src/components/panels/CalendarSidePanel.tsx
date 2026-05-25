@@ -17,10 +17,10 @@ function isResourceNode(n: Node): boolean {
 // Clase de checkbox al estilo agenda diaria (colores pastel, cuadrados rellenos)
 function checkboxClassForNode(n: Node, todayStart: Date, todayEnd: Date): string {
   if (n.status === 'done') return 'diary-agenda-checkbox diary-agenda-checkbox--done'
-  if (n.isSeguimiento || n.status === 'pending' && !n.due) {
-    // Activa (seguimiento) — siempre lila
-    if (n.isSeguimiento) return 'diary-agenda-checkbox diary-agenda-checkbox--seguimiento'
-  }
+  // Recurso: cian (mantiene su identidad de recurso aunque tenga o no fecha)
+  if (isResourceNode(n)) return 'diary-agenda-checkbox diary-agenda-checkbox--resource'
+  // Activa (seguimiento) — lila
+  if (n.isSeguimiento) return 'diary-agenda-checkbox diary-agenda-checkbox--seguimiento'
   if (n.status === 'future') return 'diary-agenda-checkbox diary-agenda-checkbox--future'
   if (n.due) {
     const d = new Date(n.due)

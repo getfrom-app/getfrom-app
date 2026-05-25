@@ -3480,6 +3480,7 @@ mark.inline-highlight {
 .diary-agenda-checkbox--today       { background: #fcd34d; } /* amarillo pastel */
 .diary-agenda-checkbox--done        { background: #86efac; color: #166534; } /* verde pastel + tick */
 .diary-agenda-checkbox--future      { background: #93c5fd; } /* azul pastel — futura */
+.diary-agenda-checkbox--resource    { background: #67e8f9; } /* cian pastel — recurso */
 
 .diary-agenda-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .diary-agenda-text.done { text-decoration: line-through; opacity: 0.4; }
