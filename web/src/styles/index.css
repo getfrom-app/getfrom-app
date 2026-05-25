@@ -5132,6 +5132,7 @@ mark.inline-highlight {
 /* ── MoveNodeModal improvements ──────────────────────────────────────────── */
 
 .move-node-item--active { background: var(--bg-hover); }
+.move-node-item--today { border-left: 2px solid var(--accent); padding-left: 10px; }
 .move-node-info-row { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
 .move-node-path { font-size: 11px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .move-node-info { font-size: 12px; color: var(--text-tertiary); padding: 4px 0 8px; }
