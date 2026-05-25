@@ -9,6 +9,7 @@ import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
+import TagNodesPanel from '../panels/TagNodesPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
@@ -1938,11 +1939,14 @@ export default function NodeView() {
         <div className="right-panel-content">
           {node.isDiaryEntry ? (
             <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
-          ) : (
-            // Notas normales Y temporales (año/mes/semana) = mismo panel derecho
-            // La única diferencia: los temporales no tienen botón de eliminar (ya controlado arriba)
-            <NodeRightPanel node={node} />
-          )}
+          ) : (() => {
+            // ¿Es un nodo de definición de tag?
+            try {
+              const ed = JSON.parse(node.extraData || '{}')
+              if (ed._tagDefinition) return <TagNodesPanel tagName={ed._tagDefinition} />
+            } catch {}
+            return <NodeRightPanel node={node} />
+          })()}
         </div>
         {!rightCollapsed && (
           <div
