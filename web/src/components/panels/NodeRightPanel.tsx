@@ -531,6 +531,39 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
+      {/* ── Propiedades custom del padre (estilo Notion) ───────────────────── */}
+      {node.parentId && (() => {
+        const schema = store.getPropSchema(node.parentId)
+        return (
+          <div className="prop-section">
+            <div className="prop-section-label prop-section-label--row">
+              Propiedades
+              <button
+                className="prop-add-btn"
+                onClick={() => {
+                  const name = prompt('Nombre de la propiedad:')
+                  if (!name || !name.trim()) return
+                  const typeStr = prompt('Tipo (text / number / select / date / checkbox / url / tag):', 'text')
+                  const validTypes = ['text', 'number', 'select', 'multi_select', 'date', 'checkbox', 'url', 'tag']
+                  const type = validTypes.includes(typeStr || '') ? (typeStr as string) : 'text'
+                  store.addPropColumn(node.parentId!, name.trim(), type)
+                }}
+                title="Añadir propiedad"
+              >＋</button>
+            </div>
+            {schema.length === 0 ? (
+              <div className="prop-empty-hint">Sin propiedades. Crea la primera con ＋ — aparecerá también en la tabla del padre.</div>
+            ) : (
+              <div className="prop-custom-list">
+                {schema.map(col => (
+                  <PropertyRow key={col.id} node={node} col={col} />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* ── Color ───────────────────────────────────────────────────────────── */}
       <div className="prop-section">
         <div className="prop-section-label">Color</div>
@@ -620,5 +653,88 @@ export default function NodeRightPanel({ node }: Props) {
       document.body
     )}
     </>
+  )
+}
+
+// ── PropertyRow ─────────────────────────────────────────────────────────────
+// Fila de propiedad custom en el panel derecho.
+
+const NODE_BUILTIN_TYPES = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'])
+
+function PropertyRow({ node, col }: { node: Node; col: { id: string; name: string; type: string; options?: Array<{ id: string; label: string; color?: string }> } }) {
+  // Tag: lee de node.types[]
+  if (col.type === 'tag') {
+    const tags = (node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t))
+    return (
+      <div className="prop-custom-row">
+        <span className="prop-custom-name">{col.name}</span>
+        <input
+          className="prop-custom-input"
+          defaultValue={tags.join(' ')}
+          placeholder="tag1 tag2..."
+          onBlur={e => {
+            const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
+            const builtin = (node.types || []).filter(t => NODE_BUILTIN_TYPES.has(t))
+            store.updateNode(node.id, { types: [...builtin, ...newTags] })
+          }}
+        />
+      </div>
+    )
+  }
+  const v = store.getPropValue(node.id, col.id)
+  function commit(val: unknown) { store.setPropValue(node.id, col.id, val) }
+  return (
+    <div className="prop-custom-row">
+      <span className="prop-custom-name">{col.name}</span>
+      {col.type === 'text' && (
+        <input
+          className="prop-custom-input"
+          defaultValue={v == null ? '' : String(v)}
+          onBlur={e => commit(e.target.value || null)}
+        />
+      )}
+      {col.type === 'number' && (
+        <input
+          className="prop-custom-input"
+          type="number"
+          defaultValue={v == null ? '' : String(v)}
+          onBlur={e => commit(e.target.value === '' ? null : Number(e.target.value))}
+        />
+      )}
+      {col.type === 'checkbox' && (
+        <input
+          type="checkbox"
+          checked={!!v}
+          onChange={e => commit(e.target.checked)}
+        />
+      )}
+      {col.type === 'date' && (
+        <input
+          className="prop-custom-input"
+          type="date"
+          defaultValue={v ? String(v).slice(0, 10) : ''}
+          onBlur={e => commit(e.target.value ? new Date(e.target.value + 'T00:00:00').toISOString() : null)}
+        />
+      )}
+      {col.type === 'url' && (
+        <input
+          className="prop-custom-input"
+          type="url"
+          defaultValue={v == null ? '' : String(v)}
+          onBlur={e => commit(e.target.value || null)}
+          placeholder="https://..."
+        />
+      )}
+      {col.type === 'select' && (
+        <select
+          className="prop-custom-input"
+          value={String(v ?? '')}
+          onChange={e => commit(e.target.value || null)}
+        >
+          <option value="">—</option>
+          {(col.options || []).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+        </select>
+      )}
+    </div>
   )
 }
