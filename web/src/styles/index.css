@@ -6836,6 +6836,8 @@ a:focus-visible {
 .cal-panel-task:active { cursor: grabbing; }
 [draggable="true"].cal-panel-task:hover { border-color: var(--border); }
 
+.cal-panel-resource-icon { font-size: 11px; flex-shrink: 0; width: 14px; text-align: center; }
+.cal-panel-resource { /* hereda de cal-panel-task */ }
 .cal-panel-task-dot {
   width: 8px;
   height: 8px;

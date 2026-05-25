@@ -503,29 +503,25 @@ class NodeStore {
 
   /**
    * Programa un nodo en una fecha del calendario.
-   * - Seguimiento o Recurso: crea una tarea HIJA con esa fecha (timeblock para trabajar en ellos)
-   *   y devuelve el id de la nueva tarea
-   * - Tarea/evento/nota normal: muta `due` directamente y devuelve el mismo id
+   * Modelo: `due` solo significa "cuándo trabajar en esto". NO convierte el
+   * nodo en tarea ni cambia su naturaleza (seguimiento/recurso/nota).
+   * - Seguimiento: mantiene status (pendiente/futuro) y suma due
+   * - Recurso: mantiene _resource y suma due
+   * - Tarea normal: due + status:pending
+   * - Nota plana: solo due
    */
   scheduleNodeAt(nodeId: string, iso: string): string | null {
     const node = this.getNode(nodeId)
     if (!node) return null
+    const updates: Partial<Node> = { due: iso }
+    // Si no tiene status y no es seguimiento/recurso/evento → tratar como tarea (status pendiente)
     let isResource = false
     try { isResource = !!JSON.parse(node.extraData || '{}')._resource } catch { /* ignore */ }
-    if (node.isSeguimiento || isResource) {
-      // Crear tarea hija para timeblock
-      const label = node.isSeguimiento ? 'Trabajar en seguimiento' : 'Trabajar en recurso'
-      const child = this.createNode({
-        text: label,
-        parentId: nodeId,
-      })
-      this.updateNode(child.id, {
-        due: iso,
-        status: 'pending',
-      })
-      return child.id
+    const hasOwnState = node.isSeguimiento || isResource || node.isEvent || node.status !== null
+    if (!hasOwnState) {
+      updates.status = 'pending'
     }
-    this.updateNode(nodeId, { due: iso, status: node.status ?? 'pending' })
+    this.updateNode(nodeId, updates)
     return nodeId
   }
 

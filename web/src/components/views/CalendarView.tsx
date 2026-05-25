@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
-import DiaryRightPanel, { TaskPropsPopover } from '../panels/DiaryRightPanel'
+import { TaskPropsPopover } from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 
@@ -968,11 +968,15 @@ export default function CalendarView() {
     navigate(`/node/${node.id}`)
   }
 
-  // Periodo de inicio para overdue (basado en vista actual)
+  // Rango visible para overdue/futuras (basado en vista actual)
   const periodStart = view === 'day' ? dayDate
     : view === 'week' ? weekStart
     : view === 'month' ? monthStart
     : new Date(year, 0, 1)
+  const periodEnd = view === 'day' ? addDays(dayDate, 1)
+    : view === 'week' ? addDays(weekStart, 7)
+    : view === 'month' ? (() => { const e = new Date(monthStart); e.setMonth(e.getMonth()+1); return e })()
+    : new Date(year + 1, 0, 1)
 
   // Handler para drop sobre celdas del calendario (asigna fecha)
   function handleCalendarDrop(e: React.DragEvent, date: Date) {
@@ -1078,11 +1082,7 @@ export default function CalendarView() {
           {panelCollapsed ? '›' : '‹'}
         </button>
         <div className="right-panel-content">
-          {view === 'day' ? (
-            <DiaryRightPanel diaryDate={dayDate} rangeType="day" />
-          ) : (
-            <CalendarSidePanel periodStart={periodStart} view={view} />
-          )}
+          <CalendarSidePanel periodStart={periodStart} periodEnd={periodEnd} view={view} />
         </div>
       </div>
     </div>

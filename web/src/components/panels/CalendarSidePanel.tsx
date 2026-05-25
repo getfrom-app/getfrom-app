@@ -4,8 +4,17 @@ import type { Node } from '../../types'
 import { TaskPropsPopover } from './DiaryRightPanel'
 
 interface Props {
-  periodStart: Date   // inicio del periodo visible (lunes, 1 de mes, 1 de año)
+  periodStart: Date    // inicio del periodo visible
+  periodEnd?: Date     // fin EXCLUSIVO del periodo visible
   view: 'day' | 'week' | 'month' | 'year'
+}
+
+// Helper: detecta si un nodo es recurso
+function isResourceNode(n: Node): boolean {
+  try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
+}
+function getResourceStatus(n: Node): string {
+  try { return JSON.parse(n.extraData || '{}')._resourceStatus || 'pending' } catch { return 'pending' }
 }
 
 // ID de arrastre compartido (módulo-level, igual que en OutlinerNode)
@@ -163,26 +172,100 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function CalendarSidePanel({ periodStart, view }: Props) {
+// ── Resource row ─────────────────────────────────────────────────────────────
+
+function ResourceRow({ node }: { node: Node }) {
+  const status = getResourceStatus(node)
+  const isInProgress = status === 'in_progress'
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const rowRef = useRef<HTMLDivElement>(null!)
+  return (
+    <>
+      <div
+        ref={rowRef}
+        className="cal-panel-task cal-panel-resource"
+        draggable
+        onDragStart={e => {
+          calDragNodeId = node.id
+          e.dataTransfer.setData('cal-node-id', node.id)
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        onDragEnd={() => { calDragNodeId = null }}
+        onClick={() => setPopoverOpen(v => !v)}
+        title={node.text || 'Sin título'}
+      >
+        <span className="cal-panel-resource-icon" style={{ color: isInProgress ? '#3b82f6' : '#f59e0b' }}>
+          {isInProgress ? '▶' : '◆'}
+        </span>
+        <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
+        {node.due && (
+          <span className="cal-panel-task-date">
+            {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+      </div>
+      {popoverOpen && (
+        <TaskPropsPopover
+          node={node}
+          onClose={() => setPopoverOpen(false)}
+          anchorRef={rowRef}
+          allowRename
+          allowDelete
+        />
+      )}
+    </>
+  )
+}
+
+export default function CalendarSidePanel({ periodStart, periodEnd, view }: Props) {
   const s = useStore()
   const [isDragOver, setIsDragOver] = useState(false)
 
   const allNodes = s.allActive().filter(n => !n.deletedAt)
-  const allPending = allNodes.filter(n => n.status === 'pending')
+  // Programable: pending O seguimiento O recurso (cualquier cosa que se pueda planificar)
+  const schedulable = allNodes.filter(n =>
+    !n.isDiaryEntry &&
+    (n.status === 'pending' || n.status === 'future' || n.isSeguimiento || isResourceNode(n))
+  )
 
-  // Overdue: vencidas ANTES del inicio del periodo visible
-  const overdue = allPending.filter(n => n.due && new Date(n.due) < periodStart)
+  const endBoundary = periodEnd || new Date(periodStart.getTime() + 86400000)
 
-  // Sin fecha: sin due date
-  const unscheduled = allPending.filter(n => !n.due)
+  // Overdue: pending con due ANTES del periodo visible
+  const overdue = schedulable.filter(n =>
+    n.status === 'pending' && n.due && new Date(n.due) < periodStart
+  )
+
+  // Sin fecha: pending/seguimiento sin due (NO recursos — esos van abajo)
+  const unscheduled = schedulable.filter(n =>
+    !n.due && !isResourceNode(n) && (n.status === 'pending' || n.isSeguimiento)
+  )
+
+  // Futuras: tareas con due DESPUÉS del periodo visible
+  const future = schedulable.filter(n =>
+    n.status === 'pending' && n.due && new Date(n.due) >= endBoundary
+  )
+
+  // Recursos pendientes y en progreso
+  const resources = allNodes
+    .filter(n => isResourceNode(n) && !n.deletedAt)
+    .filter(n => {
+      const st = getResourceStatus(n)
+      return st === 'pending' || st === 'in_progress'
+    })
 
   const overdueGroups = buildGroups(overdue, allNodes)
   const unscheduledGroups = buildGroups(unscheduled, allNodes)
+  const futureGroups = buildGroups(future, allNodes)
 
-  const label = view === 'day' ? 'pendientes anteriores'
+  const label = view === 'day' ? 'pendientes anteriores a hoy'
     : view === 'week' ? 'semana pasada y anteriores'
     : view === 'month' ? 'mes pasado y anteriores'
     : 'año pasado y anteriores'
+
+  const futureLabel = view === 'day' ? 'tareas próximas'
+    : view === 'week' ? 'siguientes semanas'
+    : view === 'month' ? 'meses siguientes'
+    : 'años siguientes'
 
   return (
     <div
@@ -222,7 +305,29 @@ export default function CalendarSidePanel({ periodStart, view }: Props) {
         </div>
       )}
 
-      {overdue.length === 0 && unscheduled.length === 0 && (
+      {/* Futuras */}
+      {future.length > 0 && (
+        <div className="cal-panel-section">
+          <div className="cal-panel-label">
+            Futuras — {futureLabel}
+            <span className="cal-panel-count">{future.length}</span>
+          </div>
+          <GroupedSection groups={futureGroups} checkColor="#8b5cf6" />
+        </div>
+      )}
+
+      {/* Recursos */}
+      {resources.length > 0 && (
+        <div className="cal-panel-section">
+          <div className="cal-panel-label">
+            Recursos
+            <span className="cal-panel-count">{resources.length}</span>
+          </div>
+          {resources.map(n => <ResourceRow key={n.id} node={n} />)}
+        </div>
+      )}
+
+      {overdue.length === 0 && unscheduled.length === 0 && future.length === 0 && resources.length === 0 && (
         <div className="cal-panel-empty">
           <span style={{ fontSize: 20, opacity: 0.3 }}>✓</span>
           <span>Todo agendado</span>
