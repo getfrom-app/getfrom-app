@@ -3431,7 +3431,8 @@ mark.inline-highlight {
 }
 .diary-agenda-task:hover { background: var(--bg-hover); }
 .diary-agenda-task--indented { padding-left: 28px; }
-.diary-agenda-task--drop { border-top: 2px solid var(--accent); background: var(--bg-hover); }
+.diary-agenda-task--drop { border-top: 2px solid var(--accent); background: rgba(139,92,246,0.07); }
+.diary-agenda-seguimiento--drop { background: rgba(139,92,246,0.1); outline: 1px solid var(--accent); border-radius: 4px; }
 .diary-agenda-task { cursor: grab; }
 .diary-agenda-task:active { cursor: grabbing; }
 .diary-agenda-seguimiento { cursor: grab; }

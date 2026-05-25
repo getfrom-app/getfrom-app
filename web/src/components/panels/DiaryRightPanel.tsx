@@ -340,11 +340,9 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onCli
         const id = _agendaDragId
         _agendaDragId = null
         if (!id || id === task.id) return
-        // Si el task es un seguimiento → drop como hijo, si no → como hermano anterior
-        if (task.isSeguimiento && onDropAsChild) {
+        // Siempre hacer hijo: drop sobre cualquier nodo lo indenta bajo él
+        if (onDropAsChild) {
           onDropAsChild(id)
-        } else if (onDropBefore) {
-          onDropBefore(id)
         }
       }}
       onMouseEnter={() => setHovered(true)}
@@ -430,6 +428,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
   const [editingGCalEvent, setEditingGCalEvent] = useState<CalendarEvent | null>(null)
+  const [dragOverSegId, setDragOverSegId] = useState<string | null>(null)
 
   // Fetch Google Calendar events when date changes (day view only)
   useEffect(() => {
@@ -647,15 +646,22 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
             <div key={node.id}>
               {/* Header seguimiento — también draggable y acepta drops */}
               <div
-                className="diary-agenda-seguimiento"
+                className={`diary-agenda-seguimiento${dragOverSegId === node.id ? ' diary-agenda-seguimiento--drop' : ''}`}
                 draggable
                 style={{ userSelect: 'none' }}
                 onDragStart={e => { _agendaDragId = node.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', node.id) }}
-                onDragEnd={() => { _agendaDragId = null }}
-                onDragOver={e => { if (_agendaDragId && _agendaDragId !== node.id) { e.preventDefault(); e.dataTransfer.dropEffect = 'move' } }}
+                onDragEnd={() => { _agendaDragId = null; setDragOverSegId(null) }}
+                onDragOver={e => {
+                  if (_agendaDragId && _agendaDragId !== node.id) {
+                    e.preventDefault(); e.dataTransfer.dropEffect = 'move'
+                    setDragOverSegId(node.id)
+                  }
+                }}
+                onDragLeave={() => setDragOverSegId(null)}
                 onDrop={e => {
                   e.preventDefault()
                   const id = _agendaDragId; _agendaDragId = null
+                  setDragOverSegId(null)
                   if (id && id !== node.id) dropAsChild(id, node.id)
                 }}
                 onClick={() => navigate(`/node/${node.id}`)}
