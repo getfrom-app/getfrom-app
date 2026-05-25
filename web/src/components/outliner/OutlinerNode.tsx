@@ -1334,29 +1334,37 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {!isDivider && !isHeading && (
           <>
             {node.isSeguimiento ? (
-              // Seguimiento: checkbox cuadrado morado (activo) o verde (completado)
-              <button
-                className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
-                onClick={e => {
-                  e.stopPropagation()
-                  store.updateNode(node.id, {
-                    status: node.status === 'done' ? null : 'done'
-                  })
-                }}
-                tabIndex={-1}
-                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activo — clic para completar'}
-              >
-                {node.status === 'done' ? (
-                  <svg width="14" height="14" viewBox="0 0 14 14">
-                    <rect x="1" y="1" width="12" height="12" rx="3" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.18"/>
-                    <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 14 14">
-                    <rect x="1" y="1" width="12" height="12" rx="3" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.14"/>
-                  </svg>
-                )}
-              </button>
+              // Seguimiento: nav-dot (navega) + checkbox cuadrado morado/verde
+              <>
+                <button
+                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  tabIndex={-1}
+                  title="Abrir seguimiento"
+                />
+                <button
+                  className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
+                  onClick={e => {
+                    e.stopPropagation()
+                    store.updateNode(node.id, {
+                      status: node.status === 'done' ? null : 'done'
+                    })
+                  }}
+                  tabIndex={-1}
+                  title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activo — clic para completar'}
+                >
+                  {node.status === 'done' ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.18"/>
+                      <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.14"/>
+                    </svg>
+                  )}
+                </button>
+              </>
             ) : node.isEvent ? (
               // Evento: nav-dot + icono calendario azul
               <>
