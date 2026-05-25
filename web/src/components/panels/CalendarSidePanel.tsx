@@ -95,9 +95,8 @@ interface TaskCheckboxProps {
   node: Node
 }
 
-function TaskCheckbox({ node }: TaskCheckboxProps) {
+function TaskCheckbox({ node, onMarkDone }: TaskCheckboxProps & { onMarkDone?: () => void }) {
   const isDone = node.status === 'done'
-  // Calcular hoy
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const todayEnd = new Date(todayStart.getTime() + 86400000 - 1)
@@ -107,7 +106,13 @@ function TaskCheckbox({ node }: TaskCheckboxProps) {
       className={cls}
       onClick={e => {
         e.stopPropagation()
-        store.updateNode(node.id, { status: isDone ? 'pending' : 'done' })
+        if (isDone) {
+          store.updateNode(node.id, { status: 'pending' })
+        } else if (onMarkDone) {
+          onMarkDone()
+        } else {
+          store.updateNode(node.id, { status: 'done' })
+        }
       }}
       title={isDone ? 'Marcar como pendiente' : 'Marcar como hecho'}
     >
@@ -127,24 +132,42 @@ interface TaskRowProps {
 function TaskRow({ node, checkColor, indented }: TaskRowProps) {
   const isDone = node.status === 'done'
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const rowRef = useRef<HTMLDivElement>(null!)
+
+  function markDone() {
+    if (leaving) return
+    setLeaving('pulse')
+    setTimeout(() => setLeaving('fade'), 700)
+    setTimeout(() => {
+      store.updateNode(node.id, { status: 'done' })
+    }, 1200)
+  }
+
+  // Si el nodo está marcando done localmente, render con checkbox verde y fade
+  const showAsDone = isDone || leaving !== null
+  const fadeClass = leaving === 'fade' ? 'cal-panel-task--leaving' : ''
 
   return (
     <>
       <div
         ref={rowRef}
-        className={`cal-panel-task ${indented ? 'cal-panel-task--indented' : ''} ${isDone ? 'cal-panel-task--done' : ''}`}
-        draggable
+        className={`cal-panel-task ${indented ? 'cal-panel-task--indented' : ''} ${showAsDone ? 'cal-panel-task--done' : ''} ${fadeClass}`}
+        draggable={!leaving}
         onDragStart={e => {
           calDragNodeId = node.id
           e.dataTransfer.setData('cal-node-id', node.id)
           e.dataTransfer.effectAllowed = 'move'
         }}
         onDragEnd={() => { calDragNodeId = null }}
-        onClick={() => setPopoverOpen(v => !v)}
+        onClick={() => { if (!leaving) setPopoverOpen(v => !v) }}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} />
+        {leaving ? (
+          <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
+        ) : (
+          <TaskCheckbox node={node} onMarkDone={markDone} />
+        )}
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
         {node.due && (
           <span className="cal-panel-task-date">
@@ -201,23 +224,35 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
 
 function ResourceRow({ node }: { node: Node }) {
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const rowRef = useRef<HTMLDivElement>(null!)
+  function markDone() {
+    if (leaving) return
+    setLeaving('pulse')
+    setTimeout(() => setLeaving('fade'), 700)
+    setTimeout(() => { store.updateNode(node.id, { status: 'done' }) }, 1200)
+  }
+  const fadeClass = leaving === 'fade' ? 'cal-panel-task--leaving' : ''
   return (
     <>
       <div
         ref={rowRef}
-        className="cal-panel-task cal-panel-resource"
-        draggable
+        className={`cal-panel-task cal-panel-resource ${leaving ? 'cal-panel-task--done' : ''} ${fadeClass}`}
+        draggable={!leaving}
         onDragStart={e => {
           calDragNodeId = node.id
           e.dataTransfer.setData('cal-node-id', node.id)
           e.dataTransfer.effectAllowed = 'move'
         }}
         onDragEnd={() => { calDragNodeId = null }}
-        onClick={() => setPopoverOpen(v => !v)}
+        onClick={() => { if (!leaving) setPopoverOpen(v => !v) }}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} />
+        {leaving ? (
+          <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
+        ) : (
+          <TaskCheckbox node={node} onMarkDone={markDone} />
+        )}
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
       </div>
       {popoverOpen && (
