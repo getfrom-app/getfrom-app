@@ -6286,6 +6286,130 @@ a:focus-visible {
 /* Título seguimiento: border-radius cuadrado */
 .node-seguimiento-title-btn { border-radius: 6px; }
 
+/* ── node-text-group: wrapper flex que agrupa texto + badges ────────────── */
+.node-text-group {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  min-width: 0;
+  cursor: text;
+}
+.node-text-group .node-text {
+  flex: 0 1 auto;
+  min-width: 40px;
+  max-width: 100%;
+  cursor: text;
+}
+/* Cuando está en edición, el texto puede crecer para llenar */
+.node-text-group .node-text:focus,
+.node-text-group .node-text.node-text--rendered:focus-within {
+  flex: 1 1 auto;
+}
+/* Click en zona vacía del grupo → no ejecutar nada (el onClick del grupo lo gestiona) */
+.node-text-group { cursor: text; }
+.node-text-group button,
+.node-text-group input { cursor: pointer; }
+
+/* ── Quick-props badge y popup en outliner ───────────────────────────────── */
+.node-qp-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.node-qp-badge {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  padding: 1px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s;
+  line-height: 1.4;
+}
+.node-row:hover .node-qp-badge,
+.node-qp-badge.has-date { opacity: 1; }
+.node-qp-badge.has-date { color: var(--text-secondary); background: var(--bg-subtle); }
+.node-qp-badge.has-date.overdue { color: #ef4444; background: rgba(239,68,68,0.08); }
+.node-qp-badge:hover { background: var(--bg-hover) !important; }
+
+/* Popup quick-props */
+.node-qp-popup {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  padding: 10px;
+  min-width: 220px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nqp-quick-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nqp-qbtn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.nqp-qbtn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nqp-qbtn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.nqp-qbtn.nqp-clear { color: var(--danger); background: rgba(239,68,68,0.07); border-color: transparent; }
+.nqp-inputs-row {
+  display: flex;
+  gap: 6px;
+}
+.nqp-date-input, .nqp-time-input {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.nqp-time-input { flex: 0 0 90px; }
+.nqp-date-input:disabled, .nqp-time-input:disabled { opacity: 0.4; cursor: not-allowed; }
+.nqp-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.nqp-chips-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nqp-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.nqp-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nqp-chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
 /* ── Checkboxes cuadrados de tarea (outliner) ────────────────────────────── */
 /* Color del checkbox según estado — se aplica como clase en bullet-btn.task */
 .bullet-btn.task.task-sq--pending  { color: #fbbf24; } /* amarillo */

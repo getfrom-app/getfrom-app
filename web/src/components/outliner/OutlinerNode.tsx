@@ -193,6 +193,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [aiPromptText, setAiPromptText] = useState('')
   const aiPromptRef = useRef<HTMLInputElement>(null)
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
+  // Quick-props inline popup (fecha/hora/repetición/prioridad)
+  const [showQuickProps, setShowQuickProps] = useState(false)
+  const [quickPropsPos, setQuickPropsPos] = useState<{ top: number; left: number } | null>(null)
+  const quickPropsBtnRef = useRef<HTMLButtonElement>(null)
+  const quickPropsPopupRef = useRef<HTMLDivElement>(null)
 
   const blockType = detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -252,6 +257,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setIsEditing(false)
     }
   }, [isSelected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cerrar quick-props popup al hacer click fuera
+  useEffect(() => {
+    if (!showQuickProps) return
+    function handler(e: MouseEvent) {
+      if (
+        quickPropsPopupRef.current && !quickPropsPopupRef.current.contains(e.target as globalThis.Node) &&
+        (!quickPropsBtnRef.current || !quickPropsBtnRef.current.contains(e.target as globalThis.Node))
+      ) {
+        setShowQuickProps(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showQuickProps])
 
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '#') {
@@ -1120,6 +1140,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ? 'task-sq--overdue'
         : 'task-sq--pending'
 
+  // Quick-props helpers: fecha/hora/repetición/prioridad en el popup inline
+  const qDueDate = node.due ? node.due.slice(0, 10) : ''
+  const qDueTime = node.due ? node.due.slice(11, 16) : ''
+  function setQDue(date: string, time: string) {
+    if (!date) { store.updateNode(node.id, { due: null }); return }
+    const iso = time
+      ? new Date(`${date}T${time}:00`).toISOString()
+      : new Date(`${date}T00:00:00`).toISOString()
+    store.updateNode(node.id, { due: iso })
+  }
+  const qDueBadgeLabel = node.due
+    ? new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    : 'sin fecha'
+  const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
+
   // Determine CSS class for block type
   const nodeRowClass = [
     'node-row',
@@ -1299,13 +1334,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           </>
         )}
 
-        {/* Text area — divider shows hr */}
+        {/* Text area + badges — divider shows hr */}
         {isDivider ? (
           <div className="node-text node-text--divider">
             <hr className="block-divider" />
           </div>
         ) : (
-          <>
+          <div
+            className="node-text-group"
+            onClick={e => {
+              if (!isNota && !isAiPrompting && !(e.target as HTMLElement).closest('button, input, select, [role="button"]')) {
+                contentRef.current?.focus()
+              }
+            }}
+          >
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
@@ -1463,56 +1505,145 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             }}
           />
             )}
-          </>
-        )}
 
+            {/* Body indicator dot */}
+            {node.body && node.body.trim().length > 0 && (
+              <span className="node-body-dot" title={`Con descripción (${node.body.split(/\s+/).filter(Boolean).length} palabras)`} />
+            )}
 
-        {/* Body indicator dot */}
-        {node.body && node.body.trim().length > 0 && !isDivider && (
-          <span className="node-body-dot" title={`Con descripción (${node.body.split(/\s+/).filter(Boolean).length} palabras)`} />
-        )}
+            {/* Priority badge — click para cambiar */}
+            {node.priority && (
+              <span
+                className={`node-priority-dot ${node.priority}`}
+                title={`Prioridad ${node.priority === 'high' ? 'alta' : node.priority === 'medium' ? 'media' : 'baja'} (click para cambiar)`}
+                onClick={e => {
+                  e.stopPropagation()
+                  const cycle: Record<string, 'medium' | 'low' | null> = { high: 'medium', medium: 'low', low: null }
+                  store.updateNode(node.id, { priority: cycle[node.priority!] })
+                }}
+              />
+            )}
+            {!node.priority && node.status !== null && !node.isSeguimiento && (
+              <span
+                className="node-priority-dot add"
+                title="Sin prioridad (click para añadir)"
+                onClick={e => {
+                  e.stopPropagation()
+                  store.updateNode(node.id, { priority: 'high' })
+                }}
+              />
+            )}
 
-        {/* Priority badge — click para cambiar */}
-        {node.priority && (
-          <span
-            className={`node-priority-dot ${node.priority}`}
-            title={`Prioridad ${node.priority === 'high' ? 'alta' : node.priority === 'medium' ? 'media' : 'baja'} (click para cambiar)`}
-            onClick={e => {
-              e.stopPropagation()
-              const cycle: Record<string, 'medium' | 'low' | null> = { high: 'medium', medium: 'low', low: null }
-              store.updateNode(node.id, { priority: cycle[node.priority!] })
-            }}
-          />
-        )}
-        {!node.priority && node.status !== null && (
-          <span
-            className="node-priority-dot add"
-            title="Sin prioridad (click para añadir)"
-            onClick={e => {
-              e.stopPropagation()
-              store.updateNode(node.id, { priority: 'high' })
-            }}
-          />
-        )}
+            {/* Evento / Recurrencia badge */}
+            {node.isEvent && <span className="node-type-badge event" title="Evento">📅</span>}
+            {node.recurrence && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
 
-        {/* Evento / Recurrencia badge */}
-        {node.isEvent && <span className="node-type-badge event" title="Evento">📅</span>}
-        {node.recurrence && <span className="node-type-badge recurrence" title={`Repite: ${node.recurrence}`}>🔁</span>}
+            {/* Quick-props badge: tareas — muestra fecha o "sin fecha" en hover, click abre popup */}
+            {node.status !== null && !node.isSeguimiento && (
+              <div className="node-qp-wrap">
+                <button
+                  ref={quickPropsBtnRef}
+                  className={`node-qp-badge${node.due ? (isOverdue ? ' has-date overdue' : ' has-date') : ''}`}
+                  onClick={e => {
+                    e.stopPropagation()
+                    if (!showQuickProps && quickPropsBtnRef.current) {
+                      const rect = quickPropsBtnRef.current.getBoundingClientRect()
+                      setQuickPropsPos({
+                        top: rect.bottom + 4,
+                        left: Math.max(8, Math.min(rect.left, window.innerWidth - 232))
+                      })
+                    }
+                    setShowQuickProps(v => !v)
+                  }}
+                  tabIndex={-1}
+                  title="Fecha, hora, repetición, prioridad"
+                >
+                  {node.due ? `📅 ${qDueBadgeLabel}` : 'sin fecha'}
+                </button>
+                {showQuickProps && quickPropsPos && createPortal(
+                  <div
+                    ref={quickPropsPopupRef}
+                    className="node-qp-popup"
+                    style={{ position: 'fixed', top: quickPropsPos.top, left: quickPropsPos.left, zIndex: 300 }}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {/* Fechas rápidas */}
+                    <div className="nqp-quick-row">
+                      {[
+                        { label: 'Hoy', days: 0 },
+                        { label: 'Mañana', days: 1 },
+                        { label: 'Lunes', days: qNextMondayDays },
+                        { label: '+7 días', days: 7 },
+                      ].map(({ label, days }) => {
+                        const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
+                        const iso = d.toISOString().slice(0, 10)
+                        return (
+                          <button
+                            key={label}
+                            className={`nqp-qbtn${qDueDate === iso ? ' active' : ''}`}
+                            onClick={() => setQDue(iso, qDueTime || '09:00')}
+                          >{label}</button>
+                        )
+                      })}
+                      {node.due && (
+                        <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null, recurrence: null })}>✕</button>
+                      )}
+                    </div>
+                    {/* Inputs fecha + hora */}
+                    <div className="nqp-inputs-row">
+                      <input type="date" className="nqp-date-input" value={qDueDate}
+                        onChange={e => setQDue(e.target.value, qDueTime)} />
+                      <input type="time" className="nqp-time-input" value={qDueTime}
+                        onChange={e => setQDue(qDueDate, e.target.value)} disabled={!qDueDate} />
+                    </div>
+                    {/* Repetición */}
+                    <div className="nqp-label">Repetición</div>
+                    <div className="nqp-chips-row">
+                      {[
+                        { v: '',        l: '–' },
+                        { v: 'daily',   l: 'Diario' },
+                        { v: 'weekly',  l: 'Semanal' },
+                        { v: 'monthly', l: 'Mensual' },
+                        { v: 'yearly',  l: 'Anual' },
+                      ].map(opt => (
+                        <button key={opt.v}
+                          className={`nqp-chip${(node.recurrence || '') === opt.v ? ' active' : ''}`}
+                          onClick={() => store.updateNode(node.id, { recurrence: opt.v || null })}
+                        >{opt.l}</button>
+                      ))}
+                    </div>
+                    {/* Prioridad */}
+                    <div className="nqp-label">Prioridad</div>
+                    <div className="nqp-chips-row">
+                      {([
+                        { v: null,     l: '–',    c: '' },
+                        { v: 'low',    l: 'Baja',  c: '#6b7280' },
+                        { v: 'medium', l: 'Media', c: '#f59e0b' },
+                        { v: 'high',   l: 'Alta',  c: '#ef4444' },
+                      ] as { v: Node['priority']; l: string; c: string }[]).map(opt => (
+                        <button key={String(opt.v)}
+                          className={`nqp-chip${node.priority === opt.v ? ' active' : ''}`}
+                          style={opt.c ? { color: opt.c, ...(node.priority === opt.v ? { borderColor: opt.c, background: opt.c + '20' } : {}) } : {}}
+                          onClick={() => store.updateNode(node.id, { priority: opt.v })}
+                        >{opt.l}</button>
+                      ))}
+                    </div>
+                  </div>,
+                  document.body
+                )}
+              </div>
+            )}
 
-        {/* Fecha de vencimiento */}
-        {node.due && !node.isEvent && (() => {
-          const d = new Date(node.due)
-          const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-          return <span className={`node-due-chip ${isOverdue ? 'overdue' : ''}`} title={d.toLocaleDateString('es-ES', { dateStyle: 'full' })}>📅 {label}</span>
-        })()}
-
-        {/* Favorito badge */}
-        {node.isFavorite && (
-          <span
-            className="node-fav-badge"
-            title="Fijado (click para quitar)"
-            onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
-          >★</span>
+            {/* Favorito badge */}
+            {node.isFavorite && (
+              <span
+                className="node-fav-badge"
+                title="Fijado (click para quitar)"
+                onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
+              >★</span>
+            )}
+          </div>
         )}
 
       </div>

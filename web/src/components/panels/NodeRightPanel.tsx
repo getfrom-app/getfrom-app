@@ -176,7 +176,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Prioridad ───────────────────────────────────────────────────────── */}
-      {node.status !== null && (
+      {node.status !== null && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Prioridad</div>
           <div className="prop-pills">
@@ -190,7 +190,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Fecha ───────────────────────────────────────────────────────────── */}
-      {node.status !== null && (
+      {node.status !== null && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">
@@ -229,7 +229,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Repetición ──────────────────────────────────────────────────────── */}
-      {node.status !== null && (
+      {node.status !== null && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Repetición</div>
           <div className="prop-recurrence-chips">
