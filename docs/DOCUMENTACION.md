@@ -1,7 +1,47 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-25 (Web v7.32)
+> Última actualización: 2026-05-25 (Web v7.48)
+
+---
+
+## Sesión 2026-05-25 sesión 7 — Sistema de Recursos + tags + fixes (v7.32→v7.48)
+
+### Sistema de Recursos (feature mayor)
+- Servidor: `GET /unfurl?url=` — Open Graph + YouTube oEmbed (`server/src/routes/unfurl.ts`)
+- Cliente: `api/unfurl.ts`, `panels/ResourcePanel.tsx`, `views/ResourcesView.tsx`
+- Store: `allResources()`, `linkedTasks(nodeId)`
+- Auto-detect URL en título de NodeView y texto de OutlinerNode → marca recurso + unfurl
+- Tipos: url, youtube, book, podcast, document
+- Estados: pending / consuming / done / archived
+- Tareas asociadas: hijas del nodo recurso (parentId = node.id)
+- Indicador visual: checkbox cian (`task-sq--resource` `#06b6d4`) en outliner inline y título de NodeView
+- TaskPropsPopover extraído a componente compartido
+- ResourcesView: layout 2 columnas (centro + sidebar 440px con filtros)
+- Bloque "Recursos" en DiaryRightPanel agenda
+
+### Sistema de tags
+- `handleTitleInput` (NodeView) y `handleInput` (OutlinerNode): auto-extracción de #tags → types[]
+- `allUsedTags()`: escanea también títulos para retrocompatibilidad
+- `InlineRenderer`: `getTagColor()` → `store.tagColor()` con inline style
+- Reactividad: cambiar color de tag actualiza todos los chips en tiempo real
+- DiaryRightPanel: `renderInline()` para tareas y seguimiento — chips coloreados
+
+### Eventos inline
+- Task badge condition: `&& !node.isEvent` para evitar doble badge
+- Eventos creados con `status: null` (no 'pending')
+- `useEffect` detecta transición a isEvent → auto-open popup de fecha
+
+### Atajos IA
+- Espacio al inicio de bullet vacío → IA inline
+- ⌘K → chat IA global (no ⌘J/⌘Space como decía antes)
+- Onboarding, KeyboardShortcutsModal y placeholders corregidos
+
+### Fix crítico de versioning
+- `sed -i ''` fallaba silenciosamente desde sesión 5
+- Versión real estaba en v7.32 aunque el código avanzaba
+- Cada bump ahora usa `Edit` directo en StatusBar.tsx
+- index.html con meta no-cache para mitigar caché CDN
 
 ---
 
