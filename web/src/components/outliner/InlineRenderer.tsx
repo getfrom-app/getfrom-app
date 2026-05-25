@@ -11,7 +11,7 @@ function getTagColor(tag: string): string {
 
 // Render text with colored hashtags
 function renderWithTags(text: string, key: number): React.ReactNode {
-  const parts = text.split(/(#[\wÀ-ɏ]+)/g)
+  const parts = text.split(/(#[\wÀ-ɏ/\-]+)/g)
   if (parts.length === 1) return text
   return (
     <>
@@ -242,7 +242,7 @@ export function renderInlineToHtml(text: string, highlight?: string): string {
     // auto-link URLs no ya dentro de [text](url)
     .replace(/(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
     // hashtags con color
-    .replace(/#([\wÀ-ɏ]+)/g, (match, tag) => {
+    .replace(/#([\wÀ-ɏ/\-]+)/g, (match, tag) => {
       const color = TAG_COLORS[Math.abs(tag.split('').reduce((h: number, c: string) => c.charCodeAt(0) + ((h << 5) - h), 0)) % TAG_COLORS.length]
       return `<span class="tag-inline tag-inline--${color}">${match}</span>`
     })
