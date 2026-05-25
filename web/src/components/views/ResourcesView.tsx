@@ -255,38 +255,40 @@ export default function ResourcesView() {
           ))}
         </div>
 
-        {/* Tags */}
-        {allTags.length > 0 && (
-          <div className="resources-sidebar-section">
-            <div className="resources-sidebar-label">Tags</div>
-            <input
-              className="resources-tag-search"
-              placeholder="Buscar tag..."
-              value={tagSearch}
-              onChange={e => setTagSearch(e.target.value)}
-            />
-            <div className="resources-tag-list">
-              {filteredTags.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>Sin resultados</div>
-              ) : (
-                filteredTags.map(tag => {
-                  const count = resources.filter(n => (n.types || []).includes(tag)).length
-                  const active = selectedTags.has(tag)
-                  return (
-                    <button
-                      key={tag}
-                      className={`resources-sidebar-btn resources-tag-btn${active ? ' active' : ''}`}
-                      onClick={() => toggleTag(tag)}
-                    >
-                      <span>#{tag}</span>
-                      <span className="resources-sidebar-count">{count}</span>
-                    </button>
-                  )
-                })
-              )}
-            </div>
+        {/* Tags — siempre visible */}
+        <div className="resources-sidebar-section">
+          <div className="resources-sidebar-label">Tags</div>
+          <input
+            className="resources-tag-search"
+            placeholder="Buscar tag..."
+            value={tagSearch}
+            onChange={e => setTagSearch(e.target.value)}
+          />
+          <div className="resources-tag-list">
+            {allTags.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>
+                Los recursos sin tag aparecerán aquí
+              </div>
+            ) : filteredTags.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>Sin resultados para "{tagSearch}"</div>
+            ) : (
+              filteredTags.map(tag => {
+                const count = resources.filter(n => (n.types || []).includes(tag)).length
+                const active = selectedTags.has(tag)
+                return (
+                  <button
+                    key={tag}
+                    className={`resources-sidebar-btn resources-tag-btn${active ? ' active' : ''}`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    <span>#{tag}</span>
+                    <span className="resources-sidebar-count">{count}</span>
+                  </button>
+                )
+              })
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
