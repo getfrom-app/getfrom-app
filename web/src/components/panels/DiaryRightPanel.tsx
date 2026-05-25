@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
+import { isoToLocalDate, isoToLocalTime } from '../../utils/dates'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -78,8 +79,8 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose, anchorRef])
 
-  const dueDate = node.due ? node.due.slice(0, 10) : ''
-  const dueTime = node.due ? node.due.slice(11, 16) : ''
+  const dueDate = isoToLocalDate(node.due)
+  const dueTime = isoToLocalTime(node.due)
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }

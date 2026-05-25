@@ -12,6 +12,7 @@ import DiaryRightPanel from '../panels/DiaryRightPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
 import type { Node } from '../../types'
+import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -1287,8 +1288,8 @@ export default function NodeView() {
               const due = node.due
               const dueEnd = node.dueEnd
               const dateStr = new Date(due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-              const timeStr = due.slice(11, 16) !== '00:00' ? due.slice(11, 16) : ''
-              const endTimeStr = dueEnd && dueEnd.slice(11, 16) !== '00:00' ? '–' + dueEnd.slice(11, 16) : ''
+              const timeStr = hasLocalTime(due) ? isoToLocalTime(due) : ''
+              const endTimeStr = dueEnd && hasLocalTime(dueEnd) ? '–' + isoToLocalTime(dueEnd) : ''
               let loc = ''
               try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
               return (

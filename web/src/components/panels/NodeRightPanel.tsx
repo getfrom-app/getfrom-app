@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
+import { isoToLocalDate, isoToLocalTime } from '../../utils/dates'
 
 interface Props {
   node: Node
@@ -15,10 +16,10 @@ export default function NodeRightPanel({ node }: Props) {
   const [newType, setNewType] = useState('')
 
   // ── Fecha helpers ────────────────────────────────────────────────────────
-  const dueDate = node.due ? node.due.slice(0, 10) : ''
-  const dueTime = node.due ? node.due.slice(11, 16) : ''
-  const dueEndDate = node.dueEnd ? node.dueEnd.slice(0, 10) : ''
-  const dueEndTime = node.dueEnd ? node.dueEnd.slice(11, 16) : ''
+  const dueDate    = isoToLocalDate(node.due)
+  const dueTime    = isoToLocalTime(node.due)
+  const dueEndDate = isoToLocalDate(node.dueEnd)
+  const dueEndTime = isoToLocalTime(node.dueEnd)
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
@@ -113,10 +114,10 @@ export default function NodeRightPanel({ node }: Props) {
     const rect = eventBtnRef.current?.getBoundingClientRect()
     if (rect) setEvtPopupPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 280) })
     // Pre-rellenar con datos existentes del nodo
-    setEvtDate(node.due ? node.due.slice(0, 10) : '')
-    setEvtTime(node.due ? node.due.slice(11, 16) || '09:00' : '09:00')
-    setEvtEndDate(node.dueEnd ? node.dueEnd.slice(0, 10) : '')
-    setEvtEndTime(node.dueEnd ? node.dueEnd.slice(11, 16) || '10:00' : '10:00')
+    setEvtDate(isoToLocalDate(node.due) || '')
+    setEvtTime(isoToLocalTime(node.due) || '09:00')
+    setEvtEndDate(isoToLocalDate(node.dueEnd) || '')
+    setEvtEndTime(isoToLocalTime(node.dueEnd) || '10:00')
     try { setEvtLocation(JSON.parse(node.extraData || '{}').location || '') } catch { setEvtLocation('') }
     setEvtMsg(null)
     setShowEventPopup(true)

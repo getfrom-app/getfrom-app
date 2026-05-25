@@ -10,6 +10,7 @@ import FormatToolbar from './FormatToolbar'
 import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime } from '../../utils/dates'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -294,10 +295,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [showEventProp])
 
   // ── Helpers de evento ────────────────────────────────────────────────────
-  const evtDueDate = node.due ? node.due.slice(0, 10) : ''
-  const evtDueTime = node.due ? node.due.slice(11, 16) : ''
-  const evtEndDate = node.dueEnd ? node.dueEnd.slice(0, 10) : ''
-  const evtEndTime = node.dueEnd ? node.dueEnd.slice(11, 16) : ''
+  const evtDueDate = isoToLocalDate(node.due)
+  const evtDueTime = isoToLocalTime(node.due)
+  const evtEndDate = isoToLocalDate(node.dueEnd)
+  const evtEndTime = isoToLocalTime(node.dueEnd)
   const evtLocationStored = (() => { try { return JSON.parse(node.extraData || '{}').location || '' } catch { return '' } })()
   const gcalEventId_evt = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
 
@@ -346,7 +347,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const evtBadgeLabel = node.due ? (() => {
     const d = new Date(node.due)
     const dateStr = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-    const timeStr = node.due.slice(11, 16) !== '00:00' ? ' ' + node.due.slice(11, 16) : ''
+    const localTime = isoToLocalTime(node.due)
+    const timeStr = hasLocalTime(node.due) ? ' ' + localTime : ''
     return dateStr + timeStr
   })() : null
 
@@ -1218,8 +1220,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         : 'task-sq--pending'
 
   // Quick-props helpers: fecha/hora/repetición/prioridad en el popup inline
-  const qDueDate = node.due ? node.due.slice(0, 10) : ''
-  const qDueTime = node.due ? node.due.slice(11, 16) : ''
+  const qDueDate = isoToLocalDate(node.due)
+  const qDueTime = isoToLocalTime(node.due)
   function setQDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
     const iso = time
