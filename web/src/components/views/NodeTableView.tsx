@@ -5,14 +5,14 @@ import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
-type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag'
+type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task'
 type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
 
 const COL_TYPE_LABELS: Record<ColType, string> = {
   text: 'Texto', number: 'Número', select: 'Select', multi_select: 'Multi-select',
-  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag',
+  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag', task: 'Tarea',
 }
 
 const BUILTIN_COLS = [
@@ -77,6 +77,47 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
   )
 }
 
+function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
+  tasks: Node[]
+  onAdd: (text: string) => void
+  onToggle: (t: Node) => void
+  onClose: () => void
+}) {
+  const [text, setText] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+  return (
+    <div className="task-list-editor" onMouseDown={e => e.stopPropagation()}>
+      <div className="task-list-editor-rows">
+        {tasks.map(t => (
+          <div key={t.id} className="task-list-editor-row">
+            <button
+              className={`task-list-editor-check ${t.status === 'done' ? 'done' : ''}`}
+              onClick={() => onToggle(t)}
+            >{t.status === 'done' ? '✓' : ''}</button>
+            <span className={`task-list-editor-text ${t.status === 'done' ? 'done' : ''}`}>{t.text || 'Sin título'}</span>
+          </div>
+        ))}
+      </div>
+      <input
+        ref={inputRef}
+        className="node-table-cell-editor"
+        placeholder="＋ Nueva tarea (Enter para añadir)"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            if (text.trim()) { onAdd(text.trim()); setText('') }
+            else onClose()
+          }
+          if (e.key === 'Escape') onClose()
+        }}
+        onBlur={() => { if (!text.trim()) onClose() }}
+      />
+    </div>
+  )
+}
+
 function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef; parentId: string; onClose: () => void }) {
   const current = store.getPropValue(node.id, def.id)
   const [val, setVal] = useState<string>(current === undefined || current === null ? '' : String(current))
@@ -107,6 +148,21 @@ function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef
           }
           commit(newOpt.id)
         }}
+        onClose={onClose}
+      />
+    )
+  }
+  if (def.type === 'task') {
+    // Task editor: lista de tareas hijo + input para crear nueva
+    const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
+    return (
+      <TaskListEditor
+        tasks={tasks}
+        onAdd={text => {
+          const child = store.createNode({ text: text.trim(), parentId: node.id, siblingOrder: Date.now() })
+          store.updateNode(child.id, { status: 'pending' })
+        }}
+        onToggle={t => store.updateNode(t.id, { status: t.status === 'done' ? 'pending' : 'done' })}
         onClose={onClose}
       />
     )
@@ -167,6 +223,26 @@ function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef
 }
 
 function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () => void }) {
+  // Task: lista compacta de tareas hijas del row (status:pending) + botón añadir
+  if (def.type === 'task') {
+    const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
+    return (
+      <div className="node-table-tasks-cell" onClick={e => { e.stopPropagation(); onEdit() }}>
+        {tasks.slice(0, 3).map(t => (
+          <div key={t.id} className="node-table-tasks-item">
+            <span className={`node-table-tasks-check ${t.status === 'done' ? 'done' : ''}`}>
+              {t.status === 'done' ? '✓' : '○'}
+            </span>
+            <span className={`node-table-tasks-text ${t.status === 'done' ? 'done' : ''}`}>
+              {(t.text || 'Sin título').slice(0, 28)}
+            </span>
+          </div>
+        ))}
+        {tasks.length > 3 && <span className="node-table-tasks-more">+{tasks.length - 3} más</span>}
+        {tasks.length === 0 && <span className="node-table-empty-cell">＋ Tarea</span>}
+      </div>
+    )
+  }
   // Tag: lee de node.types[] no de _props
   if (def.type === 'tag') {
     const tags = (node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t))

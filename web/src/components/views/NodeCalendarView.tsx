@@ -22,22 +22,38 @@ export default function NodeCalendarView({ parentId }: Props) {
   const customCols = store.getPropSchema(parentId)
   const dateCols = customCols.filter(c => c.type === 'date')
 
-  // Construye lista de entradas: cada nodo puede aparecer en MÚLTIPLES fechas
-  // (due builtin + cada columna date custom)
+  // Construye lista de entradas. Cada nodo puede aparecer en MÚLTIPLES fechas:
+  // - due builtin del propio hijo
+  // - cada columna date custom del hijo
+  // - tareas hijas de los hijos (grandchildren con status + due) — para que
+  //   tareas creadas desde la columna "Tarea" de la tabla aparezcan también
   const entries: CalendarEntry[] = useMemo(() => {
     const out: CalendarEntry[] = []
     for (const n of allChildren) {
-      if (n.due) {
-        out.push({ node: n, date: new Date(n.due), source: 'due', sourceLabel: 'Fecha' })
-      }
+      if (n.due) out.push({ node: n, date: new Date(n.due), source: 'due', sourceLabel: 'Fecha' })
       for (const col of dateCols) {
         const v = store.getPropValue(n.id, col.id)
-        if (v) {
-          out.push({ node: n, date: new Date(String(v)), source: col.id, sourceLabel: col.name })
-        }
+        if (v) out.push({ node: n, date: new Date(String(v)), source: col.id, sourceLabel: col.name })
+      }
+      // Tareas hijas (grandchildren) con due
+      const tasks = store.children(n.id).filter(t => !t.deletedAt && t.status !== null && t.due)
+      for (const t of tasks) {
+        out.push({ node: t, date: new Date(t.due!), source: 'task-of-' + n.id, sourceLabel: n.text || 'Sin título' })
       }
     }
     return out
+  }, [allChildren, dateCols])
+
+  // Nodos sin fecha alguna (ni due, ni date col, ni tareas hijas con due)
+  const undatedNodes: Node[] = useMemo(() => {
+    return allChildren.filter(n => {
+      if (n.due) return false
+      for (const col of dateCols) {
+        if (store.getPropValue(n.id, col.id)) return false
+      }
+      // (si tiene tareas con due lo seguimos considerando "sin fecha propia")
+      return true
+    })
   }, [allChildren, dateCols])
 
   const year = viewDate.getFullYear()
@@ -132,6 +148,22 @@ export default function NodeCalendarView({ parentId }: Props) {
           )
         })}
       </div>
+      {undatedNodes.length > 0 && (
+        <div className="node-calendar-undated">
+          <div className="node-calendar-undated-label">Sin fecha <span className="node-calendar-undated-count">{undatedNodes.length}</span></div>
+          <div className="node-calendar-undated-list">
+            {undatedNodes.map(n => (
+              <button
+                key={n.id}
+                className="node-calendar-undated-item"
+                onClick={() => navigate(`/node/${n.id}`)}
+              >
+                {n.text || 'Sin título'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

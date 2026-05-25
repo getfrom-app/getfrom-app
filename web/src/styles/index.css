@@ -6741,6 +6741,66 @@ a:focus-visible {
 .node-calendar-event:hover { opacity: 0.75; }
 .node-calendar-event.done { opacity: 0.4; text-decoration: line-through; }
 .node-calendar-event-source { color: var(--accent); font-weight: 600; margin-right: 2px; opacity: 0.8; }
+
+/* Calendar — sección sin fecha */
+.node-calendar-undated {
+  margin-top: 16px; padding: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+.node-calendar-undated-label {
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.node-calendar-undated-count {
+  background: var(--bg-tertiary); padding: 1px 7px;
+  border-radius: 10px; font-size: 10px;
+}
+.node-calendar-undated-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.node-calendar-undated-item {
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 8px; font-size: 12px;
+  color: var(--text-primary); cursor: pointer; transition: background 0.1s;
+}
+.node-calendar-undated-item:hover { background: var(--accent-soft, rgba(139,92,246,0.08)); border-color: var(--accent); color: var(--accent); }
+
+/* Tabla — celda Tarea */
+.node-table-tasks-cell {
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 11px; cursor: pointer;
+}
+.node-table-tasks-item {
+  display: flex; align-items: center; gap: 4px;
+}
+.node-table-tasks-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 12px; height: 12px; border-radius: 3px;
+  background: #fcd34d; color: transparent; font-size: 9px; font-weight: 700;
+}
+.node-table-tasks-check.done { background: #86efac; color: #166534; }
+.node-table-tasks-text { color: var(--text-primary); }
+.node-table-tasks-text.done { text-decoration: line-through; opacity: 0.5; }
+.node-table-tasks-more { color: var(--text-tertiary); font-size: 10px; padding-left: 16px; }
+
+/* Task list editor (popover en celda Tarea) */
+.task-list-editor {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 4px; width: 100%; max-height: 240px;
+}
+.task-list-editor-rows {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 160px; overflow-y: auto;
+}
+.task-list-editor-row { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.task-list-editor-check {
+  width: 12px; height: 12px; border-radius: 3px;
+  background: #fcd34d; border: none; color: transparent; cursor: pointer;
+  font-size: 9px; font-weight: 700;
+}
+.task-list-editor-check.done { background: #86efac; color: #166534; }
+.task-list-editor-text { font-size: 12px; color: var(--text-primary); flex: 1; }
+.task-list-editor-text.done { text-decoration: line-through; opacity: 0.5; }
 .node-calendar-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
 .node-calendar-cell { cursor: pointer; position: relative; }
 .node-calendar-quick-add {
