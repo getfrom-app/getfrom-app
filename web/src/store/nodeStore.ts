@@ -79,14 +79,63 @@ class NodeStore {
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
+    const matches: Node[] = []
     for (const node of this.nodes.values()) {
       if (!node.isDiaryEntry || node.deletedAt) continue
       if (node.diaryDate) {
         const d = new Date(node.diaryDate)
-        if (d >= today && d < tomorrow) return node
+        if (d >= today && d < tomorrow) matches.push(node)
       }
     }
-    return null
+    if (matches.length === 0) return null
+    if (matches.length === 1) return matches[0]
+    // Duplicados detectados — elegir canónico (más hijos, después más antiguo)
+    matches.sort((a, b) => {
+      const ca = this.children(a.id).length
+      const cb = this.children(b.id).length
+      if (cb !== ca) return cb - ca
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    })
+    return matches[0]
+  }
+
+  /**
+   * Encuentra diarios duplicados para el mismo día local y los fusiona:
+   * - Canónico = más hijos (más contenido), después más antiguo
+   * - Reparenta hijos de los duplicados al canónico
+   * - Soft-delete de los duplicados
+   * Devuelve el número de duplicados fusionados.
+   */
+  mergeDuplicateDiaries(): number {
+    const byDay = new Map<string, Node[]>()
+    for (const node of this.nodes.values()) {
+      if (!node.isDiaryEntry || node.deletedAt || !node.diaryDate) continue
+      const d = new Date(node.diaryDate)
+      // Clave por día local (mismos componentes que usa createTodayDiary)
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      if (!byDay.has(key)) byDay.set(key, [])
+      byDay.get(key)!.push(node)
+    }
+    let merged = 0
+    for (const [, diaries] of byDay) {
+      if (diaries.length < 2) continue
+      diaries.sort((a, b) => {
+        const ca = this.children(a.id).length
+        const cb = this.children(b.id).length
+        if (cb !== ca) return cb - ca
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      })
+      const canonical = diaries[0]
+      for (const dup of diaries.slice(1)) {
+        // Reparentar hijos del duplicado al canónico
+        for (const child of this.children(dup.id)) {
+          this.updateNode(child.id, { parentId: canonical.id })
+        }
+        this.deleteNode(dup.id)
+        merged++
+      }
+    }
+    return merged
   }
 
   tagDefinitions(): Node[] {
@@ -608,14 +657,34 @@ class NodeStore {
       }
     }
 
-    // NOTA: dedupe + reparent automáticos DESACTIVADOS tras causar pérdida de estructura.
+    // Fusionar diarios duplicados (mismo día local) — seguro: solo afecta
+    // a nodos isDiaryEntry, reparenta hijos al canónico, no toca otros nodos.
+    const mergedCount = this.mergeDuplicateDiaries()
+    if (mergedCount > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[diary] fusionados ${mergedCount} diarios duplicados`)
+      await this.sync()
+    }
+
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
     }
   }
 
+  private creatingDiaryPromise: Promise<void> | null = null
   private async createTodayDiary(): Promise<void> {
+    // Lock: si ya hay una creación en curso, esperar a que termine y reverificar
+    if (this.creatingDiaryPromise) {
+      await this.creatingDiaryPromise
+      if (this.todayDiary()) return
+    }
+    this.creatingDiaryPromise = this._createTodayDiaryImpl()
+    try { await this.creatingDiaryPromise }
+    finally { this.creatingDiaryPromise = null }
+  }
+
+  private async _createTodayDiaryImpl(): Promise<void> {
     const today = new Date()
     const dateStr = today.toLocaleDateString('es-ES', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
