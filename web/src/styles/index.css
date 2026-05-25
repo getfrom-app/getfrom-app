@@ -3604,12 +3604,16 @@ mark.inline-highlight {
 }
 /* ── Tag nodes panel ─────────────────────────────────────────────────────── */
 .tag-nodes-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.tag-nodes-panel-header { display: flex; align-items: center; gap: 6px; padding: 12px 14px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.tag-nodes-panel-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.tag-nodes-panel-count { font-size: 11px; color: var(--text-tertiary); background: var(--bg-hover); border-radius: 10px; padding: 1px 7px; }
+.tag-nodes-color-section { padding: 12px 12px 10px; flex-shrink: 0; }
+.tag-nodes-color-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
+.tag-nodes-color-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-nodes-color-swatch { width: 18px; height: 18px; border-radius: 50%; border: none; cursor: pointer; transition: transform 0.1s, opacity 0.1s; flex-shrink: 0; }
+.tag-nodes-color-swatch:hover { transform: scale(1.25); opacity: 1 !important; }
+.tag-nodes-color-reset { background: var(--bg-hover) !important; font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; }
+.tag-nodes-divider { height: 1px; background: var(--border); flex-shrink: 0; }
 .tag-nodes-panel-filters { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px 4px; flex-shrink: 0; }
-.tag-nodes-filter-btn { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; }
-.tag-nodes-filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.tag-nodes-filter-btn { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s; }
+.tag-nodes-filter-btn.active { color: white; }
 .tag-nodes-panel-sort { display: flex; align-items: center; gap: 4px; padding: 4px 10px 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
 .tag-nodes-sort-label { font-size: 11px; color: var(--text-tertiary); margin-right: 2px; }
 .tag-nodes-sort-btn { font-size: 11px; padding: 2px 7px; border-radius: 8px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; }

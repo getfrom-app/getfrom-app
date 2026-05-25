@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '../../store/nodeStore'
+import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
 type SortKey = 'updated' | 'created' | 'alpha' | 'status'
@@ -8,6 +8,18 @@ type SortKey = 'updated' | 'created' | 'alpha' | 'status'
 interface TagNodesPanelProps {
   tagName: string
 }
+
+const TAG_COLORS = [
+  '#8b5cf6', '#7c3aed', '#6d28d9',
+  '#3b82f6', '#2563eb', '#1d4ed8',
+  '#06b6d4', '#0891b2',
+  '#10b981', '#059669', '#16a34a',
+  '#f59e0b', '#d97706', '#f97316',
+  '#ef4444', '#dc2626',
+  '#ec4899', '#db2777',
+  '#84cc16', '#64748b',
+  '#a78bfa', '#fb923c',
+]
 
 function nodeIcon(n: Node): string {
   if (n.isEvent) return '📅'
@@ -35,20 +47,19 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
   const [sort, setSort] = useState<SortKey>('updated')
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'done' | 'notes'>('all')
 
+  const currentColor = s.tagColor(tagName)
+
   const nodes = useMemo(() => {
     let items = s.allActive().filter(n =>
       !n.deletedAt &&
       (n.types || []).includes(tagName) &&
       !n.isDiaryEntry
     )
-
-    // Filtro
     if (filterStatus === 'pending') items = items.filter(n => n.status === 'pending')
     else if (filterStatus === 'done') items = items.filter(n => n.status === 'done')
     else if (filterStatus === 'notes') items = items.filter(n => n.status === null && !n.isEvent)
 
-    // Orden
-    items = [...items].sort((a, b) => {
+    return [...items].sort((a, b) => {
       if (sort === 'updated') return b.updatedAt.localeCompare(a.updatedAt)
       if (sort === 'created') return b.createdAt.localeCompare(a.createdAt)
       if (sort === 'alpha') return (a.text || '').localeCompare(b.text || '', 'es')
@@ -58,8 +69,6 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
       }
       return 0
     })
-
-    return items
   }, [s, tagName, sort, filterStatus])
 
   const counts = useMemo(() => {
@@ -81,11 +90,33 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
 
   return (
     <div className="tag-nodes-panel">
-      {/* Header */}
-      <div className="tag-nodes-panel-header">
-        <span className="tag-nodes-panel-title">#{tagName}</span>
-        <span className="tag-nodes-panel-count">{counts.all}</span>
+      {/* Color del tag */}
+      <div className="tag-nodes-color-section">
+        <span className="tag-nodes-color-label">Color</span>
+        <div className="tag-nodes-color-grid">
+          {TAG_COLORS.map(c => (
+            <button
+              key={c}
+              className="tag-nodes-color-swatch"
+              style={{
+                background: c,
+                outline: currentColor === c ? `2px solid ${c}` : 'none',
+                outlineOffset: 2,
+                opacity: currentColor === c ? 1 : 0.75,
+              }}
+              onClick={() => store.setTagColor(tagName, c)}
+              title={c}
+            />
+          ))}
+          <button
+            className="tag-nodes-color-swatch tag-nodes-color-reset"
+            onClick={() => store.setTagColor(tagName, null)}
+            title="Restablecer color automático"
+          >↺</button>
+        </div>
       </div>
+
+      <div className="tag-nodes-divider" />
 
       {/* Filtros */}
       <div className="tag-nodes-panel-filters">
@@ -93,6 +124,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
           <button
             key={f}
             className={`tag-nodes-filter-btn${filterStatus === f ? ' active' : ''}`}
+            style={filterStatus === f ? { background: currentColor, borderColor: currentColor } : {}}
             onClick={() => setFilterStatus(f)}
           >
             {f === 'all' ? `Todo (${counts.all})`
