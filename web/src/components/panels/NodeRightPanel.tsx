@@ -287,13 +287,6 @@ export default function NodeRightPanel({ node }: Props) {
           ○ Tarea
         </button>
         <button
-          className={`prop-icon-btn ${node.isSeguimiento ? 'active seguimiento' : ''}`}
-          onClick={toggleSeguimiento}
-          title={node.isSeguimiento ? 'Desactivar nota' : 'Marcar como activa'}
-        >
-          ● Activa
-        </button>
-        <button
           ref={eventBtnRef}
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={openEventPopup}

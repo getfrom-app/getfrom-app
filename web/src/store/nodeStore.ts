@@ -690,6 +690,23 @@ class NodeStore {
       await this.sync()
     }
 
+    // Migración: isSeguimiento legacy → status='pending'
+    // En el modelo unificado, "nota activa" = status:pending. Las viejas notas
+    // marcadas como seguimiento (sin status) se promueven a pendientes.
+    let migrated = 0
+    for (const node of this.nodes.values()) {
+      if (node.deletedAt) continue
+      if (node.isSeguimiento && node.status === null) {
+        this.updateNode(node.id, { status: 'pending' })
+        migrated++
+      }
+    }
+    if (migrated > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[migration] ${migrated} notas seguimiento → status:pending`)
+      await this.sync()
+    }
+
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
