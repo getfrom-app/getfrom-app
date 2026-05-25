@@ -4033,6 +4033,19 @@ mark.inline-highlight {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tpp-open-note-btn {
+  background: var(--accent-soft, rgba(139,92,246,0.1));
+  color: var(--accent);
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  transition: background 0.1s, border-color 0.1s;
+}
+.tpp-open-note-btn:hover { background: var(--accent-soft, rgba(139,92,246,0.18)); border-color: var(--accent); }
 .tpp-title-input {
   font-size: 13px;
   font-weight: 600;

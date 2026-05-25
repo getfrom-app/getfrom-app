@@ -66,6 +66,7 @@ export interface TaskPropsPopoverProps {
 export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const popNavigate = useNavigate()
 
   useEffect(() => {
     // Posicionar via portal relativo al botón ancla — flip arriba si no cabe debajo
@@ -143,6 +144,19 @@ export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowD
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
+      {/* Header: abrir nota */}
+      <button
+        className="tpp-open-note-btn"
+        onClick={e => {
+          e.stopPropagation()
+          popNavigate(`/node/${node.id}`)
+          onClose()
+        }}
+        title="Abrir nota completa"
+      >
+        ↗ Abrir nota
+      </button>
+
       {/* Título / rename */}
       {allowRename ? (
         <input
