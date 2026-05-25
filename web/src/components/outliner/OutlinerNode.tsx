@@ -1247,16 +1247,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         : action === 'view-kanban' ? 'kanban'
         : 'calendario'
       ed._inline = '1'
-      // Si el nodo no tiene texto aún, ponerle un título descriptivo
+      // Si el nodo no tiene texto aún (limpiando ya el /tabla/etc), ponerle un título descriptivo
       const defaultLabel = action === 'view-table' ? 'Tabla'
         : action === 'view-kanban' ? 'Kanban' : 'Calendario'
-      const finalText = (node.text || '').trim() || defaultLabel
+      // newText ya viene con el slash query stripped (cálculo de arriba)
+      const finalText = newText.trim() || defaultLabel
       store.updateNode(node.id, {
         text: finalText,
         extraData: JSON.stringify(ed),
       })
-      // Forzar re-render del contenido
+      // Forzar re-render del contenido limpio (sin /ta o lo que fuera)
       if (contentRef.current) contentRef.current.textContent = finalText
+      nodeTextRef.current = finalText
       return
     }
 
