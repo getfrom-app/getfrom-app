@@ -13,6 +13,16 @@ interface Props {
 function isResourceNode(n: Node): boolean {
   try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
 }
+
+// Color del checkbox según el tipo de nodo (igual que la agenda diaria)
+function checkboxColorForNode(n: Node): string {
+  if (isResourceNode(n)) return '#06b6d4'        // cian — recurso
+  if (n.isSeguimiento) return '#8b5cf6'           // morado — activa/seguimiento
+  if (n.priority === 'high') return '#ef4444'     // rojo — alta prioridad
+  if (n.priority === 'medium') return '#f97316'   // naranja — media
+  if (n.priority === 'low') return '#22c55e'      // verde — baja
+  return '#3b82f6'                                 // azul — tarea default
+}
 function getResourceStatus(n: Node): string {
   // Modelo unificado: node.status manda. Si no hay, leemos legacy _resourceStatus
   // y mapeamos: pending→pending, consuming→pending, done→done, archived→done
@@ -81,10 +91,14 @@ interface TaskCheckboxProps {
 
 function TaskCheckbox({ node, color }: TaskCheckboxProps) {
   const isDone = node.status === 'done'
+  const isActive = node.isSeguimiento || color === '#8b5cf6'
   return (
     <button
-      className="cal-task-checkbox"
-      style={{ borderColor: color } as React.CSSProperties}
+      className={`cal-task-checkbox ${isDone ? 'cal-task-checkbox--done' : ''}`}
+      style={{
+        borderColor: color,
+        background: isDone ? color : (isActive && !isDone ? color : 'transparent'),
+      } as React.CSSProperties}
       onClick={e => {
         e.stopPropagation()
         store.updateNode(node.id, { status: isDone ? 'pending' : 'done' })
@@ -93,7 +107,7 @@ function TaskCheckbox({ node, color }: TaskCheckboxProps) {
     >
       {isDone && (
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2 5l2.5 2.5L8 3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
     </button>
@@ -128,8 +142,7 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
         onClick={() => setPopoverOpen(v => !v)}
         title={node.text || 'Sin título'}
       >
-        <TaskCheckbox node={node} color={node.isSeguimiento ? '#8b5cf6' : checkColor} />
-        {node.isSeguimiento && <span style={{ color: '#8b5cf6', fontSize: 11, flexShrink: 0 }}>👁</span>}
+        <TaskCheckbox node={node} color={checkboxColorForNode(node)} />
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
         {node.due && (
           <span className="cal-panel-task-date">
@@ -186,8 +199,6 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
 // ── Resource row ─────────────────────────────────────────────────────────────
 
 function ResourceRow({ node }: { node: Node }) {
-  const status = getResourceStatus(node)
-  const isInProgress = status === 'pending' && !!node.due  // tiene fecha = trabajando en ello
   const [popoverOpen, setPopoverOpen] = useState(false)
   const rowRef = useRef<HTMLDivElement>(null!)
   return (
@@ -205,15 +216,8 @@ function ResourceRow({ node }: { node: Node }) {
         onClick={() => setPopoverOpen(v => !v)}
         title={node.text || 'Sin título'}
       >
-        <span className="cal-panel-resource-icon" style={{ color: isInProgress ? '#3b82f6' : '#f59e0b' }}>
-          {isInProgress ? '▶' : '◆'}
-        </span>
+        <TaskCheckbox node={node} color={'#06b6d4'} />
         <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
-        {node.due && (
-          <span className="cal-panel-task-date">
-            {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-          </span>
-        )}
       </div>
       {popoverOpen && (
         <TaskPropsPopover
@@ -256,9 +260,10 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
     n.status === 'pending' && n.due && new Date(n.due) >= endBoundary
   )
 
-  // Recursos pendientes (no done, no future)
+  // Recursos pendientes SIN agendar (los agendados ya aparecen en el calendario)
   const resources = allNodes
     .filter(n => isResourceNode(n) && !n.deletedAt)
+    .filter(n => !n.due)  // si tiene fecha, ya está en el calendario
     .filter(n => {
       const st = getResourceStatus(n)
       return st === 'pending'

@@ -514,6 +514,9 @@ class NodeStore {
     const node = this.getNode(nodeId)
     if (!node) return null
     const updates: Partial<Node> = { due: iso }
+    // Limpiar dueEnd al reprogramar — si no, una duración antigua haría que el
+    // bloque se extienda al día siguiente y aparezca duplicado en el calendario
+    if (node.dueEnd) updates.dueEnd = null
     // Si no tiene status y no es seguimiento/recurso/evento → tratar como tarea (status pendiente)
     let isResource = false
     try { isResource = !!JSON.parse(node.extraData || '{}')._resource } catch { /* ignore */ }
