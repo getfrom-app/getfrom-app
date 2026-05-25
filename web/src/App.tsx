@@ -117,7 +117,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/pricing" element={<PricingView />} />
         {/* Google OAuth callback — accesible sin estar en MainLayout pero requiere token */}
-        <Route path="/app/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
+        <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
         {/* Toda la app requiere cuenta */}
         <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
       </Routes>

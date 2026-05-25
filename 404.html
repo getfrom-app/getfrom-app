@@ -11,7 +11,9 @@
       if (path.startsWith('/app')) {
         // Extrae la sub-ruta sin el prefijo /app y sin la barra inicial
         var sub = path.replace(/^\/app\/?/, '') || '';
-        var qs = sub ? '?p=' + encodeURIComponent(sub) : '';
+        // Incluir el search string (ej: ?code=...&state=...) para no perder params OAuth
+        var fullSub = sub + (window.location.search || '');
+        var qs = fullSub ? '?p=' + encodeURIComponent(fullSub) : '';
         var hash = window.location.hash || '';
         window.location.replace('/app/' + qs + hash);
       } else {
