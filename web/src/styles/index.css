@@ -7763,7 +7763,16 @@ a:focus-visible {
 .resource-type-label-input { flex: 1; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); font-size: 12px; outline: none; }
 .resource-type-label-input:focus { border-color: var(--accent); }
 .resource-type-add-confirm { padding: 4px 10px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 600; }
-.resource-summary-btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px dashed var(--border); background: var(--bg-tertiary); color: var(--text-tertiary); cursor: not-allowed; font-size: 12px; }
+.resource-summary-btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: background 0.1s; }
+.resource-summary-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.resource-summary-status { font-size: 12px; color: var(--accent); padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+.resource-summary-error { font-size: 12px; color: #ef4444; padding: 6px 0; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.resource-summary-retry { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.resource-summary-loaded { display: flex; gap: 6px; }
+.resource-summary-open { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); cursor: pointer; font-size: 12px; font-weight: 500; }
+.resource-summary-open:hover { background: var(--accent); color: white; }
+.resource-summary-expand { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+.resource-summary-expand:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
 .resource-url-row { display: flex; gap: 6px; }
 .resource-url-input { flex: 1; padding: 5px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
 .resource-url-input:focus { border-color: var(--accent); }
