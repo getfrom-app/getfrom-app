@@ -197,10 +197,6 @@ function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
         ))}
       </div>
 
-      {/* Abrir nota */}
-      <button className="tpp-open-btn" onClick={() => { onClose(); window.location.href = `/app/node/${node.id}` }}>
-        Abrir nota →
-      </button>
     </div>,
     document.body
   )
@@ -290,6 +286,9 @@ function GCalEventEditor({ event, onClose, onUpdated, onDeleted }: GCalEventEdit
   )
 }
 
+// ── Drag state para el panel agenda ───────────────────────────────────────────
+let _agendaDragId: string | null = null
+
 // ── Task row with hover props button ──────────────────────────────────────────
 
 interface AgendaTaskRowProps {
@@ -299,25 +298,57 @@ interface AgendaTaskRowProps {
   isEvent?: boolean
   onToggle: () => void
   onClick: () => void
+  onDropBefore?: (draggedId: string) => void  // soltar antes de esta fila
+  onDropAsChild?: (draggedId: string) => void // soltar como hijo (solo seguimiento)
 }
 
-function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onClick }: AgendaTaskRowProps) {
+function AgendaTaskRow({ task, checkboxClass, indented, isEvent, onToggle, onClick, onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
   const [hovered, setHovered] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null!)
 
   const rowClass = [
     'diary-agenda-task',
     indented ? 'diary-agenda-task--indented' : '',
     task.status === 'done' ? 'diary-agenda-task--done' : '',
+    isDragOver ? 'diary-agenda-task--drop' : '',
   ].filter(Boolean).join(' ')
 
   return (
     <div
       className={rowClass}
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', userSelect: 'none' }}
+      draggable
+      onDragStart={e => {
+        _agendaDragId = task.id
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', task.id)
+      }}
+      onDragEnd={() => { _agendaDragId = null; setIsDragOver(false) }}
+      onDragOver={e => {
+        if (_agendaDragId && _agendaDragId !== task.id) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          setIsDragOver(true)
+        }
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={e => {
+        e.preventDefault()
+        setIsDragOver(false)
+        const id = _agendaDragId
+        _agendaDragId = null
+        if (!id || id === task.id) return
+        // Si el task es un seguimiento → drop como hijo, si no → como hermano anterior
+        if (task.isSeguimiento && onDropAsChild) {
+          onDropAsChild(id)
+        } else if (onDropBefore) {
+          onDropBefore(id)
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false) }}
+      onMouseLeave={() => { setHovered(false); setIsDragOver(false) }}
       onClick={onClick}
     >
       {isEvent ? (
@@ -531,6 +562,27 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   }
 
 
+  // ── Helpers de drag para la Agenda ──────────────────────────────────────────
+
+  /** Mover el nodo draggedId para que quede justo antes de targetId */
+  function dropBefore(draggedId: string, targetId: string) {
+    const target = store.getNode(targetId)
+    if (!target) return
+    const siblings = store.children(target.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const targetIdx = siblings.findIndex(n => n.id === targetId)
+    const before = targetIdx > 0 ? siblings[targetIdx - 1].siblingOrder : (siblings[targetIdx]?.siblingOrder ?? 0) - 1000
+    const after  = siblings[targetIdx]?.siblingOrder ?? before + 2000
+    store.updateNode(draggedId, { parentId: target.parentId, siblingOrder: (before + after) / 2 })
+  }
+
+  /** Mover el nodo draggedId como último hijo de parentId */
+  function dropAsChild(draggedId: string, parentId: string) {
+    const kids = store.children(parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const lastOrder = kids.length > 0 ? kids[kids.length - 1].siblingOrder : 0
+    store.updateNode(draggedId, { parentId, siblingOrder: lastOrder + 1000 })
+    if (store.getNode(parentId)?.isCollapsed) store.updateNode(parentId, { isCollapsed: false })
+  }
+
   function renderAgenda() {
     const gcalToday = googleEvents.filter(ev => !ev.allDay)
     const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || gcalToday.length > 0
@@ -593,13 +645,26 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
           const childTasks = getChildTasks(node.id)
           return (
             <div key={node.id}>
-              <div className="diary-agenda-seguimiento" onClick={() => navigate(`/node/${node.id}`)}>
+              {/* Header seguimiento — también draggable y acepta drops */}
+              <div
+                className="diary-agenda-seguimiento"
+                draggable
+                style={{ userSelect: 'none' }}
+                onDragStart={e => { _agendaDragId = node.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', node.id) }}
+                onDragEnd={() => { _agendaDragId = null }}
+                onDragOver={e => { if (_agendaDragId && _agendaDragId !== node.id) { e.preventDefault(); e.dataTransfer.dropEffect = 'move' } }}
+                onDrop={e => {
+                  e.preventDefault()
+                  const id = _agendaDragId; _agendaDragId = null
+                  if (id && id !== node.id) dropAsChild(id, node.id)
+                }}
+                onClick={() => navigate(`/node/${node.id}`)}
+              >
                 <span
                   className={`diary-agenda-checkbox diary-agenda-checkbox--seguimiento${node.status === 'done' ? ' diary-agenda-checkbox--done' : ''}`}
                   onClick={e => {
                     e.stopPropagation()
-                    const newStatus = node.status === 'done' ? null : 'done'
-                    store.updateNode(node.id, { status: newStatus })
+                    store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
                   }}
                 ></span>
                 <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
@@ -614,6 +679,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
                   isEvent={task.isEvent}
                   onToggle={() => toggleTask(task.id, task.status)}
                   onClick={() => navigate(`/node/${task.id}`)}
+                  onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+                  onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
                 />
               ))}
             </div>
@@ -628,6 +695,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
             checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
             onToggle={() => toggleTask(task.id, task.status)}
             onClick={() => navigate(`/node/${task.id}`)}
+            onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+            onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
           />
         ))}
 
@@ -639,6 +708,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
             checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
             onToggle={() => toggleTask(task.id, task.status)}
             onClick={() => navigate(`/node/${task.id}`)}
+            onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+            onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
           />
         ))}
       </div>

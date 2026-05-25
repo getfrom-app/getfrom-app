@@ -3431,6 +3431,11 @@ mark.inline-highlight {
 }
 .diary-agenda-task:hover { background: var(--bg-hover); }
 .diary-agenda-task--indented { padding-left: 28px; }
+.diary-agenda-task--drop { border-top: 2px solid var(--accent); background: var(--bg-hover); }
+.diary-agenda-task { cursor: grab; }
+.diary-agenda-task:active { cursor: grabbing; }
+.diary-agenda-seguimiento { cursor: grab; }
+.diary-agenda-seguimiento:active { cursor: grabbing; }
 
 /* Checkboxes cuadrados con colores */
 /* Checkboxes rellenos, sin borde, colores pastel — igual que Mac */
