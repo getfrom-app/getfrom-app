@@ -8,6 +8,7 @@ import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
+import NodeViewTabs from './NodeViewTabs'
 import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
 import TagNodesPanel from '../panels/TagNodesPanel'
@@ -98,7 +99,8 @@ export default function NodeView() {
     } catch { store.updateNode(node.id, { extraData: JSON.stringify({ layout: value }) }) }
   }
 
-  // View mode for children (lista / tabla / kanban / calendario)
+  // Legacy: viewBlock single-view (retrocompatible). Si existe sin _views
+  // moderno, se sintetiza una vista única.
   const viewBlock = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { return 'lista' }
   }, [node?.extraData])
@@ -113,6 +115,39 @@ export default function NodeView() {
     } catch {
       store.updateNode(node.id, { extraData: JSON.stringify({ viewBlock: mode }) })
     }
+  }
+
+  // ── Vistas múltiples (Notion-style) ─────────────────────────────────────
+  // activeViewId = id de la vista activa entre las del padre
+  // viewKind = kind resuelto (list/table/kanban/calendar)
+  const activeViewId = useMemo(() => {
+    if (!node) return 'default'
+    const saved = store.getActiveViewId(node.id)
+    if (saved) return saved
+    const views = store.getViews(node.id)
+    if (views.length > 0) return views[0].id
+    // Bridge a legacy viewBlock: si hay viewBlock guardado, usar 'default' que mapea a list
+    return 'default'
+  }, [node?.id, node?.extraData])
+
+  const viewKind = useMemo(() => {
+    if (!node) return 'list'
+    // Si hay _views modernas, usa el kind de la activa
+    const views = store.getViews(node.id)
+    if (views.length > 0) {
+      const v = views.find(x => x.id === activeViewId)
+      return v?.kind || 'list'
+    }
+    // Si no hay _views, mapea desde viewBlock legacy
+    if (viewBlock === 'tabla') return 'table'
+    if (viewBlock === 'kanban') return 'kanban'
+    if (viewBlock === 'calendario') return 'calendar'
+    return 'list'
+  }, [node?.id, node?.extraData, activeViewId, viewBlock])
+
+  function handleSelectView(id: string) {
+    if (!node) return
+    store.setActiveViewId(node.id, id)
   }
 
   const [titleEditing, setTitleEditing] = useState(false)
@@ -1468,10 +1503,12 @@ export default function NodeView() {
               document.body
             )}
             <div className="node-title-actions">
-              {/* View mode switcher — visible when ≥3 children */}
+              {/* View mode switcher legacy — solo si NO hay multi-vista configurada */}
               {!node.isDiaryEntry && (() => {
                 const childCount = store.children(node.id).filter(n => !n.deletedAt).length
                 if (childCount < 3) return null
+                const hasMultiViews = store.getViews(node.id).length > 0
+                if (hasMultiViews) return null  // los tabs abajo se encargan
                 const modes = [
                   { id: 'lista', title: 'Lista', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
                   { id: 'tabla', title: 'Tabla', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg> },
@@ -1984,18 +2021,27 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Inline view modes */}
-          {viewBlock === 'tabla' && !node.isDiaryEntry && (
+          {/* Multi-view tabs (Notion-style) — solo si ≥3 hijos */}
+          {!node.isDiaryEntry && store.children(node.id).filter(n => !n.deletedAt).length >= 3 && (
+            <NodeViewTabs
+              parentId={node.id}
+              activeViewId={activeViewId}
+              onSelect={handleSelectView}
+            />
+          )}
+
+          {/* Inline view modes — driven by viewKind (multi-vista o legacy) */}
+          {viewKind === 'table' && !node.isDiaryEntry && (
             <NodeTableView parentId={node.id} />
           )}
-          {viewBlock === 'kanban' && !node.isDiaryEntry && (
+          {viewKind === 'kanban' && !node.isDiaryEntry && (
             <NodeKanbanView parentId={node.id} />
           )}
-          {viewBlock === 'calendario' && !node.isDiaryEntry && (
+          {viewKind === 'calendar' && !node.isDiaryEntry && (
             <NodeCalendarView parentId={node.id} />
           )}
 
-          <div className={`outliner-section${viewBlock !== 'lista' && !node.isDiaryEntry ? ' outliner-section--hidden' : ''}`}>
+          <div className={`outliner-section${viewKind !== 'list' && !node.isDiaryEntry ? ' outliner-section--hidden' : ''}`}>
             <Outliner
               parentId={node.id}
               autoFocusEmpty

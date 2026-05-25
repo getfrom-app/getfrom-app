@@ -152,9 +152,16 @@ export default function NodeTableView({ parentId }: Props) {
   const [editingCell, setEditingCell] = useState<{ nodeId: string; colId: string } | null>(null)
   const [newColOpen, setNewColOpen] = useState(false)
   const [colMenu, setColMenu] = useState<string | null>(null)
+  const [groupBy, setGroupBy] = useState<string | null>(null)   // null = sin agrupar
+  const [filterText, setFilterText] = useState('')
 
   const children = store.children(parentId).filter(n => !n.deletedAt)
   const customCols = store.getPropSchema(parentId)
+  const groupableCols = [
+    { id: '__status', name: 'Estado' },
+    { id: '__priority', name: 'Prioridad' },
+    ...customCols.filter(c => c.type === 'select'),
+  ]
 
   // Detect builtin cols that have data
   const hasStatus = children.some(n => n.status !== null)
@@ -162,10 +169,16 @@ export default function NodeTableView({ parentId }: Props) {
   const hasPriority = children.some(n => n.priority)
   const hasTags = children.some(n => (n.types || []).some(t => !NODE_BUILTIN_TYPES.has(t)))
 
-  // Sort children
+  // Filter + Sort children
+  const filteredChildren = useMemo(() => {
+    const q = filterText.trim().toLowerCase()
+    if (!q) return children
+    return children.filter(n => (n.text || '').toLowerCase().includes(q))
+  }, [children, filterText])
+
   const sortedChildren = useMemo(() => {
-    if (!sortBy || !sortDir) return children
-    const list = [...children]
+    if (!sortBy || !sortDir) return filteredChildren
+    const list = [...filteredChildren]
     list.sort((a, b) => {
       const va = getCompareValue(a, sortBy, customCols)
       const vb = getCompareValue(b, sortBy, customCols)
@@ -176,7 +189,23 @@ export default function NodeTableView({ parentId }: Props) {
       return sortDir === 'asc' ? cmp : -cmp
     })
     return list
-  }, [children, sortBy, sortDir, customCols])
+  }, [filteredChildren, sortBy, sortDir, customCols])
+
+  // Group children if groupBy set
+  const groupedChildren: Array<{ key: string; label: string; rows: Node[] }> = useMemo(() => {
+    if (!groupBy) return [{ key: '__all', label: '', rows: sortedChildren }]
+    const groups = new Map<string, Node[]>()
+    for (const n of sortedChildren) {
+      const k = getGroupKey(n, groupBy, customCols)
+      if (!groups.has(k)) groups.set(k, [])
+      groups.get(k)!.push(n)
+    }
+    return Array.from(groups.entries()).map(([key, rows]) => ({
+      key,
+      label: getGroupLabel(key, groupBy, customCols),
+      rows,
+    }))
+  }, [sortedChildren, groupBy, customCols])
 
   function toggleSort(colId: string) {
     if (sortBy !== colId) { setSortBy(colId); setSortDir('asc'); return }
@@ -220,6 +249,25 @@ export default function NodeTableView({ parentId }: Props) {
 
   return (
     <div className="node-table-wrapper">
+      <div className="node-table-toolbar">
+        <input
+          className="node-table-filter"
+          placeholder="Filtrar por título..."
+          value={filterText}
+          onChange={e => setFilterText(e.target.value)}
+        />
+        <div className="node-table-toolbar-spacer" />
+        <label className="node-table-toolbar-label">Agrupar:</label>
+        <select className="node-table-toolbar-select" value={groupBy || ''} onChange={e => setGroupBy(e.target.value || null)}>
+          <option value="">Sin agrupar</option>
+          {groupableCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        {sortBy && (
+          <button className="node-table-toolbar-clear" onClick={() => { setSortBy(null); setSortDir(null) }} title="Quitar ordenación">
+            ↕ {sortBy === '__title' ? 'Título' : groupableCols.find(c => c.id === sortBy)?.name || sortBy} {sortDir === 'asc' ? '▲' : '▼'} ✕
+          </button>
+        )}
+      </div>
       <table className="node-table">
         <thead>
           <tr>
@@ -261,7 +309,17 @@ export default function NodeTableView({ parentId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {sortedChildren.map(node => {
+          {groupedChildren.map(group => (
+            <>
+              {groupBy && (
+                <tr key={`group-${group.key}`} className="node-table-group-header">
+                  <td colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
+                    <span className="node-table-group-label">{group.label}</span>
+                    <span className="node-table-group-count">{group.rows.length}</span>
+                  </td>
+                </tr>
+              )}
+              {group.rows.map(node => {
             const grandchildren = store.children(node.id).filter(n => !n.deletedAt).length
             const tags = (node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t))
             return (
@@ -330,6 +388,9 @@ export default function NodeTableView({ parentId }: Props) {
               </tr>
             )
           })}
+              })}
+            </>
+          ))}
           <tr className="node-table-row node-table-row--add" onClick={handleAddRow}>
             <td className="node-table-td node-table-td--title" colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
               ＋ Añadir fila
@@ -365,6 +426,36 @@ function getCompareValue(node: Node, colId: string, customCols: PropDef[]): stri
   if (col.type === 'number') return Number(v)
   if (col.type === 'date') return v ? new Date(String(v)).getTime() : 0
   return String(v).toLowerCase()
+}
+
+function getGroupKey(node: Node, colId: string, customCols: PropDef[]): string {
+  if (colId === '__status') return node.status === null ? '__null' : String(node.status)
+  if (colId === '__priority') return node.priority === null ? '__null' : String(node.priority)
+  const v = store.getPropValue(node.id, colId)
+  if (v === undefined || v === null || v === '') return '__null'
+  return String(v)
+}
+
+function getGroupLabel(key: string, colId: string, customCols: PropDef[]): string {
+  if (key === '__null') return 'Sin valor'
+  if (colId === '__status') {
+    return key === 'pending' ? 'Pendiente'
+      : key === 'future' ? 'Futuro'
+      : key === 'done' ? 'Hecho'
+      : key
+  }
+  if (colId === '__priority') {
+    return key === 'high' ? 'Alta'
+      : key === 'medium' ? 'Media'
+      : key === 'low' ? 'Baja'
+      : key
+  }
+  const col = customCols.find(c => c.id === colId)
+  if (col?.type === 'select') {
+    const opt = col.options?.find(o => o.id === key)
+    if (opt) return opt.label
+  }
+  return key
 }
 
 // Use it (avoid lint warning)
