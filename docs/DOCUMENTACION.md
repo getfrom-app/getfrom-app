@@ -414,15 +414,15 @@ Esta sección describe el estado completo de la aplicación From tal como está 
   - Suscripción €7/mes: sync + 2M tokens IA/mes (Anthropic/Gemini gestionados).
   - Licencia perpetua €59: sync + IA con API key propia del usuario.
 - **LemonSqueezy** para pagos. Variants: suscripción (`1553200`), licencia (`1553210`), topup 5M tokens (`1553900`).
-- **Backup local automático:** `NodeBackupService` exporta todos los nodos a Markdown cada 2 horas en `~/Library/Application Support/From/Backups/`.
-
-**Backup local por workspace:**
-- Snapshots timestampados cada 2h: `~/Documents/From Backup/{Workspace}/{yyyy-MM-dd_HH-mm}/`
-- Cada snapshot: copia SQLite (nodes.db) + Markdown de todos los nodos
-- Historial: 6 snapshots por workspace (12h)
-- Restauración desde Settings sin reinicio
-- Clave lastBackupDate por workspace: `from.nodeBackup.lastDate.{wsId}`
-- Separado por workspace: Personal y Demo tienen historial independiente
+**Backups unificados Mac+web (servidor):**
+- Tabla `node_snapshots(id, user_id, created_at, node_count, source, payload)` en PostgreSQL.
+- `payload` es un JSON con todos los nodos del usuario al momento del snapshot.
+- Retención: últimos 12 snapshots por usuario (DELETE NOT IN top-12 por created_at).
+- Cron interno en `server/src/index.ts`: setInterval 30min que crea snapshot por cada usuario activo si último >1h55min **y** hubo cambios en `sync_nodes.server_updated_at` desde el último snapshot. `source="auto"`.
+- Endpoints `/backups` (Hono): `GET /` (lista), `POST /` (crear con source web/mac/manual), `GET /:id` (payload), `POST /:id/restore` (con snapshot pre-restore automático), `DELETE /:id`.
+- Restore es transaccional: borra `sync_nodes` del usuario y reinserta los del snapshot por lotes de 500.
+- Mac (`NodeBackupService`) y web comparten exactamente la misma lista vía API. Mac dispara snapshot cada 2h cuando está abierta, vía `triggerCloudSnapshot(source: "mac")`. Web: botón en Ajustes → Datos → Backups.
+- Mac ya **no** guarda backups locales en disco — el sistema legacy (`~/Documents/From Backup/`, Markdown + SQLite) se eliminó en build 53 para evitar dos fuentes de verdad.
 
 ---
 
@@ -622,10 +622,9 @@ Mac  ←──── delta sync cada 5min ────→  Railway PostgreSQL  �
 
 **Archivos:** Los archivos nunca pasan por Railway. Flujo: App → `POST /files/presign-upload` (obtiene URL R2) → App sube directamente a R2 → `extraData["r2Key"]` guardado en el nodo.
 
-### Backup local de nodos
+### Backups de nodos
 
-`NodeBackupService` exporta todos los nodos a Markdown cada 2 horas en:
-`~/Library/Application Support/From/Backups/`
+Sistema unificado server-side — ver sección "Backups unificados Mac+web (servidor)" más arriba en el documento.
 
 ---
 

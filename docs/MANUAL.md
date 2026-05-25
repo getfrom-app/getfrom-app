@@ -640,21 +640,26 @@ Facturación: [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billin
 - El uso del chat consume tokens incluidos en el plan.
 - Puedes comprar recargas adicionales o conectar tu propia API key desde **Ajustes → Cuenta**.
 
-**Backup local:**
-- From exporta todos tus nodos a Markdown automáticamente cada 2 horas en:
-  `~/Library/Application Support/From/Backups/`
+### Backups unificados (Mac + web)
 
-### Backup local automático
+From guarda un snapshot completo de tus notas en el servidor cada 2 horas, **sólo cuando hay cambios**. La misma lista se ve y se gestiona desde Mac y desde la web — restaurar desde cualquier dispositivo afecta a todos.
 
-From guarda un snapshot completo de tus notas cada 2 horas en `~/Documents/From Backup/{Workspace}/`. Cada snapshot incluye:
-- Todos tus nodos en Markdown estándar (compatible con Obsidian y cualquier editor)
-- Una copia del archivo de base de datos para restauración instantánea
+**Qué se guarda en cada snapshot**: el estado completo de tus nodos (texto, jerarquía, tareas, eventos, recursos, fechas, etc.).
 
-**Historial**: se conservan los últimos 6 snapshots por workspace (12 horas de historial).
+**Historial**: se conservan los últimos 12 snapshots por usuario (~24 horas de historia continua si trabajas a diario).
 
-**Restaurar**: Ajustes → Datos → Backup → elige el snapshot → pulsa "Restaurar". La app recarga automáticamente.
+**Crear ahora**:
+- Mac: Ajustes → Backup → "Crear snapshot ahora".
+- Web: Ajustes → Datos → Backups → "📸 Crear snapshot ahora".
 
-Tus notas no dependen de ningún servidor. Incluso sin conexión a internet, el backup sigue funcionando.
+**Restaurar**:
+- Elige un snapshot de la lista → "Restaurar".
+- Antes de pisar nada, el servidor crea automáticamente un snapshot de seguridad (`pre-restore`) por si te equivocas y quieres deshacer.
+- Tras restaurar, la app se sincroniza para reflejar el estado restaurado.
+
+**Borrar**: papelera junto a cada snapshot. No afecta a tus notas, solo libera la copia.
+
+> Los snapshots viven solo en el servidor. Necesitas conexión a internet y una cuenta activa para crear, restaurar o ver el historial.
 
 ---
 
