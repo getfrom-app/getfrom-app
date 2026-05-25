@@ -6548,6 +6548,18 @@ a:focus-visible {
   width: 100%; max-width: 480px;
 }
 .modal--small { max-width: 340px; }
+.modal--editor { max-width: 420px; padding: 24px; }
+.modal--editor .reminder-editor,
+.modal--editor .select-editor,
+.modal--editor .task-list-editor {
+  width: 100%; min-width: 0; padding: 0;
+}
+.modal--editor .reminder-editor-title {
+  font-size: 16px; margin-bottom: 12px; color: var(--text-primary);
+}
+.modal--editor .reminder-editor-chip { padding: 6px 12px; font-size: 13px; }
+.modal--editor .reminder-editor-actions { margin-top: 16px; }
+.modal--editor .reminder-editor-actions button { padding: 8px 14px; font-size: 13px; }
 .modal-title { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
 .modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .modal-field label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }

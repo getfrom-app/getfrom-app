@@ -769,6 +769,9 @@ export default function NodeTableView({ parentId }: Props) {
                 )}
                 {customCols.map(col => {
                   const isEditing = editingCell?.nodeId === node.id && editingCell.colId === col.id
+                  // Reminder/Task/Tag/Select usan modal centrado en vez de cell overlay
+                  // porque su UI es más rica y se ve mal pegada a la celda
+                  const useModal = col.type === 'reminder' || col.type === 'task' || col.type === 'tag' || col.type === 'select'
                   return (
                     <td
                       key={col.id}
@@ -776,11 +779,17 @@ export default function NodeTableView({ parentId }: Props) {
                       onClick={e => { e.stopPropagation(); if (!isEditing) setEditingCell({ nodeId: node.id, colId: col.id }) }}
                       style={{ position: 'relative' }}
                     >
-                      {/* Render view siempre — editor flota encima si está activo (evita reflow de columna) */}
                       <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />
-                      {isEditing && (
+                      {isEditing && !useModal && (
                         <div className="node-table-cell-overlay">
                           <CellEditor node={node} def={col} parentId={parentId} onClose={() => setEditingCell(null)} />
+                        </div>
+                      )}
+                      {isEditing && useModal && (
+                        <div className="modal-backdrop" onClick={() => setEditingCell(null)}>
+                          <div className="modal modal--editor" onClick={e => e.stopPropagation()}>
+                            <CellEditor node={node} def={col} parentId={parentId} onClose={() => setEditingCell(null)} />
+                          </div>
                         </div>
                       )}
                     </td>
