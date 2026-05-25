@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useStore, store } from '../../store/nodeStore'
+import { useState, useEffect } from 'react'
+import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
-import TaskPropsPopover from './TaskPropsPopover'
 
-export type ResourceType = 'url' | 'youtube' | 'book' | 'podcast' | 'document'
-export type ResourceStatus = 'pending' | 'consuming' | 'done' | 'archived'
+export type ResourceType = string  // ahora libre — usuario puede definir nuevos
+export type ResourceTypeDef = { key: string; icon: string; label: string }
 
-const RESOURCE_TYPES: { key: ResourceType; icon: string; label: string }[] = [
+// Tipos built-in (no se pueden borrar)
+const BUILTIN_TYPES: ResourceTypeDef[] = [
   { key: 'url',      icon: '🔗', label: 'Enlace' },
   { key: 'youtube',  icon: '▶️', label: 'Vídeo' },
   { key: 'book',     icon: '📚', label: 'Libro' },
@@ -16,30 +15,39 @@ const RESOURCE_TYPES: { key: ResourceType; icon: string; label: string }[] = [
   { key: 'document', icon: '📄', label: 'Documento' },
 ]
 
-const STATUS_OPTIONS: { key: ResourceStatus; label: string; color: string }[] = [
-  { key: 'pending',   label: 'Pendiente',    color: '#f59e0b' },
-  { key: 'consuming', label: 'Leyendo/viendo', color: '#3b82f6' },
-  { key: 'done',      label: 'Hecho',         color: '#22c55e' },
-  { key: 'archived',  label: 'Archivado',     color: '#94a3b8' },
-]
+const CUSTOM_TYPES_KEY = 'from_custom_resource_types'
+
+function loadCustomTypes(): ResourceTypeDef[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_TYPES_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw)
+    if (!Array.isArray(arr)) return []
+    return arr.filter(t => t && typeof t.key === 'string' && typeof t.label === 'string')
+  } catch { return [] }
+}
+function saveCustomTypes(types: ResourceTypeDef[]) {
+  localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(types))
+  window.dispatchEvent(new Event('from-resource-types-updated'))
+}
 
 function getResourceData(node: Node) {
   try {
     const ed = JSON.parse(node.extraData || '{}')
     return {
       type: (ed._resourceType || 'url') as ResourceType,
-      status: (ed._resourceStatus || 'pending') as ResourceStatus,
       url: (ed._resourceUrl || '') as string,
       meta: (ed._resourceMeta || null) as UnfurlMeta | null,
+      summaryGeneratedAt: (ed._summaryGeneratedAt || null) as string | null,
     }
   } catch {
-    return { type: 'url' as ResourceType, status: 'pending' as ResourceStatus, url: '', meta: null }
+    return { type: 'url', url: '', meta: null, summaryGeneratedAt: null }
   }
 }
 
 function setResourceField(node: Node, fields: Record<string, unknown>) {
   let ed: Record<string, unknown> = {}
-  try { ed = JSON.parse(node.extraData || '{}') } catch {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
   Object.assign(ed, fields)
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
@@ -47,17 +55,21 @@ function setResourceField(node: Node, fields: Record<string, unknown>) {
 interface Props { node: Node }
 
 export default function ResourcePanel({ node }: Props) {
-  const s = useStore()
-  const navigate = useNavigate()
-  const { type, status, url, meta } = getResourceData(node)
+  const { type, url, meta } = getResourceData(node)
   const [urlInput, setUrlInput] = useState(url)
   const [loadingMeta, setLoadingMeta] = useState(false)
-  const [newTaskText, setNewTaskText] = useState('')
-  const [showTaskInput, setShowTaskInput] = useState(false)
-  const [popoverTask, setPopoverTask] = useState<Node | null>(null)
-  const popoverBtnRef = useRef<HTMLButtonElement>(null!)
+  const [customTypes, setCustomTypes] = useState<ResourceTypeDef[]>(() => loadCustomTypes())
+  const [addingType, setAddingType] = useState(false)
+  const [newTypeLabel, setNewTypeLabel] = useState('')
+  const [newTypeIcon, setNewTypeIcon] = useState('📌')
 
-  const linkedTasks = s.linkedTasks(node.id)
+  useEffect(() => {
+    function refresh() { setCustomTypes(loadCustomTypes()) }
+    window.addEventListener('from-resource-types-updated', refresh)
+    return () => window.removeEventListener('from-resource-types-updated', refresh)
+  }, [])
+
+  const allTypes = [...BUILTIN_TYPES, ...customTypes]
 
   // Auto-fetch meta si hay URL pero no hay meta
   useEffect(() => {
@@ -65,7 +77,7 @@ export default function ResourcePanel({ node }: Props) {
       setLoadingMeta(true)
       unfurlUrl(url)
         .then(m => setResourceField(node, { _resourceMeta: m, _resourceType: m.type }))
-        .catch(() => {})
+        .catch(() => { /* ignore */ })
         .finally(() => setLoadingMeta(false))
     }
   }, [url]) // eslint-disable-line
@@ -76,40 +88,94 @@ export default function ResourcePanel({ node }: Props) {
     setResourceField(node, { _resourceUrl: urlInput.trim() })
     unfurlUrl(urlInput.trim())
       .then(m => setResourceField(node, { _resourceMeta: m, _resourceType: m.type }))
-      .catch(() => {})
+      .catch(() => { /* ignore */ })
       .finally(() => setLoadingMeta(false))
   }
 
-  function createLinkedTask() {
-    if (!newTaskText.trim()) return
-    const today = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    const task = store.createNode({ text: newTaskText.trim(), parentId: node.id, isTask: true, due: today })
-    let ed: Record<string, unknown> = {}
-    try { ed = JSON.parse(task.extraData || '{}') } catch {}
-    ed._linkedNodeId = node.id
-    store.updateNode(task.id, { extraData: JSON.stringify(ed) })
-    setNewTaskText('')
-    setShowTaskInput(false)
+  function addCustomType() {
+    const label = newTypeLabel.trim()
+    if (!label) return
+    const key = 'custom_' + label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    if (allTypes.some(t => t.key === key)) {
+      // Ya existe — solo seleccionar
+      setResourceField(node, { _resourceType: key })
+      setAddingType(false); setNewTypeLabel('')
+      return
+    }
+    const updated = [...customTypes, { key, icon: newTypeIcon || '📌', label }]
+    saveCustomTypes(updated)
+    setCustomTypes(updated)
+    setResourceField(node, { _resourceType: key })
+    setAddingType(false)
+    setNewTypeLabel('')
+    setNewTypeIcon('📌')
   }
 
-  const currentStatus = STATUS_OPTIONS.find(s => s.key === status)!
+  function deleteCustomType(key: string, e: React.MouseEvent) {
+    e.preventDefault()
+    if (BUILTIN_TYPES.some(t => t.key === key)) return  // built-in no borrable
+    const def = customTypes.find(t => t.key === key)
+    if (!def) return
+    if (!confirm(`¿Eliminar el tipo "${def.label}"? Las notas que lo usaban quedarán como "Enlace".`)) return
+    const updated = customTypes.filter(t => t.key !== key)
+    saveCustomTypes(updated)
+    setCustomTypes(updated)
+    if (type === key) setResourceField(node, { _resourceType: 'url' })
+  }
+
+  const isSummarizable = type === 'youtube' || type === 'podcast'
 
   return (
     <div className="resource-panel">
-      {/* Tipo de recurso */}
+      {/* Tipo de recurso (built-in + custom + añadir) */}
       <div className="resource-panel-section">
         <div className="resource-panel-label">Tipo</div>
         <div className="resource-type-chips">
-          {RESOURCE_TYPES.map(t => (
+          {allTypes.map(t => {
+            const isCustom = !BUILTIN_TYPES.some(b => b.key === t.key)
+            return (
+              <button
+                key={t.key}
+                className={`resource-type-chip${type === t.key ? ' active' : ''}`}
+                onClick={() => setResourceField(node, { _resourceType: t.key })}
+                onContextMenu={isCustom ? e => deleteCustomType(t.key, e) : undefined}
+                title={isCustom ? 'Clic derecho para eliminar' : t.label}
+              >
+                {t.icon} {t.label}
+              </button>
+            )
+          })}
+          {!addingType && (
             <button
-              key={t.key}
-              className={`resource-type-chip${type === t.key ? ' active' : ''}`}
-              onClick={() => setResourceField(node, { _resourceType: t.key })}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
+              className="resource-type-chip resource-type-chip--add"
+              onClick={() => setAddingType(true)}
+              title="Añadir nuevo tipo"
+            >＋</button>
+          )}
         </div>
+        {addingType && (
+          <div className="resource-type-add-row">
+            <input
+              className="resource-type-icon-input"
+              maxLength={2}
+              placeholder="📌"
+              value={newTypeIcon}
+              onChange={e => setNewTypeIcon(e.target.value)}
+            />
+            <input
+              className="resource-type-label-input"
+              placeholder="Nombre del tipo..."
+              value={newTypeLabel}
+              autoFocus
+              onChange={e => setNewTypeLabel(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') addCustomType()
+                if (e.key === 'Escape') { setAddingType(false); setNewTypeLabel('') }
+              }}
+            />
+            <button className="resource-type-add-confirm" onClick={addCustomType}>✓</button>
+          </div>
+        )}
       </div>
 
       {/* URL */}
@@ -134,7 +200,7 @@ export default function ResourcePanel({ node }: Props) {
         </div>
       </div>
 
-      {/* Vista previa / tarjeta */}
+      {/* Vista previa */}
       {meta && (
         <div className="resource-meta-card">
           {meta.image && (
@@ -159,100 +225,18 @@ export default function ResourcePanel({ node }: Props) {
         </div>
       )}
 
-      {/* Estado */}
-      <div className="resource-panel-section">
-        <div className="resource-panel-label">Estado</div>
-        <div className="resource-status-chips">
-          {STATUS_OPTIONS.map(s => (
-            <button
-              key={s.key}
-              className={`resource-status-chip${status === s.key ? ' active' : ''}`}
-              style={status === s.key ? { background: s.color, borderColor: s.color, color: 'white' } : {}}
-              onClick={() => setResourceField(node, { _resourceStatus: s.key })}
-            >
-              {s.label}
-            </button>
-          ))}
+      {/* Resumen automático IA — placeholder hasta que esté el endpoint */}
+      {isSummarizable && url && (
+        <div className="resource-panel-section">
+          <button
+            className="resource-summary-btn"
+            disabled
+            title="Próximamente: From generará un resumen del vídeo/podcast como nodo hijo"
+          >
+            🤖 Generar resumen (próximamente)
+          </button>
         </div>
-      </div>
-
-      {/* Tareas asociadas */}
-      <div className="resource-panel-section resource-tasks-section">
-        <div className="resource-panel-label-row">
-          <span className="resource-panel-label">Tareas asociadas</span>
-          <button className="resource-add-task-btn" onClick={() => setShowTaskInput(v => !v)} title="Añadir tarea vinculada">＋</button>
-        </div>
-
-        {showTaskInput && (
-          <div className="resource-new-task-row">
-            <input
-              autoFocus
-              className="resource-new-task-input"
-              placeholder="Nueva tarea..."
-              value={newTaskText}
-              onChange={e => setNewTaskText(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') createLinkedTask()
-                if (e.key === 'Escape') { setShowTaskInput(false); setNewTaskText('') }
-              }}
-            />
-            <button className="resource-new-task-confirm" onClick={createLinkedTask}>✓</button>
-          </div>
-        )}
-
-        {linkedTasks.length === 0 && !showTaskInput ? (
-          <div className="resource-tasks-empty">Sin tareas asociadas</div>
-        ) : (
-          linkedTasks.map(task => (
-            <div
-              key={task.id}
-              className={`resource-linked-task${task.status === 'done' ? ' done' : ''}`}
-              onClick={() => navigate(`/node/${task.id}`)}
-              onContextMenu={e => {
-                e.preventDefault()
-                if (confirm(`¿Eliminar tarea "${task.text || 'Sin título'}"?`)) {
-                  store.updateNode(task.id, { deletedAt: new Date().toISOString() })
-                }
-              }}
-            >
-              <button
-                className={`resource-linked-task-check${task.status === 'done' ? ' done' : ''}`}
-                onClick={e => {
-                  e.stopPropagation()
-                  store.updateNode(task.id, { status: task.status === 'done' ? 'pending' : 'done' })
-                }}
-              >
-                {task.status === 'done' ? '✓' : '○'}
-              </button>
-              <span className="resource-linked-task-text">{task.text || 'Sin título'}</span>
-              {task.due && (
-                <span className="resource-linked-task-date">
-                  {new Date(task.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                </span>
-              )}
-              {/* Botón de propiedades — visible en hover */}
-              <button
-                ref={popoverTask?.id === task.id ? popoverBtnRef : undefined}
-                className="resource-linked-task-props"
-                onClick={e => {
-                  e.stopPropagation()
-                  setPopoverTask(prev => prev?.id === task.id ? null : task)
-                }}
-                title="Propiedades"
-              >⋯</button>
-            </div>
-          ))
-        )}
-
-        {/* Popover de propiedades */}
-        {popoverTask && (
-          <TaskPropsPopover
-            node={popoverTask}
-            anchorRef={popoverBtnRef}
-            onClose={() => setPopoverTask(null)}
-          />
-        )}
-      </div>
+      )}
     </div>
   )
 }

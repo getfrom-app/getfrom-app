@@ -49,7 +49,12 @@ export default function NodeRightPanel({ node }: Props) {
     const iso = time ? new Date(`${date}T${time}:00`).toISOString() : new Date(`${date}T23:59:00`).toISOString()
     store.updateNode(node.id, { dueEnd: iso })
   }
-  function setStatus(status: Node['status']) { store.updateNode(node.id, { status }) }
+  function setStatus(status: Node['status']) {
+    // Regla: future o done implican que la nota deja de tener fecha activa
+    const updates: Partial<Node> = { status }
+    if (status === 'future' || status === 'done') updates.due = null
+    store.updateNode(node.id, updates)
+  }
   function setPriority(priority: Node['priority']) { store.updateNode(node.id, { priority }) }
   function toggleFavorite() { store.updateNode(node.id, { isFavorite: !node.isFavorite }) }
   function toggleSeguimiento() {
@@ -307,45 +312,22 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Panel de recurso ────────────────────────────────────────────────── */}
       {isResource && <ResourcePanel node={node} />}
 
-      {/* ── Estado ──────────────────────────────────────────────────────────── */}
-      {(node.status !== null || node.isSeguimiento) && (
+      {/* ── Estado (siempre visible para cualquier nodo no-evento) ─────────── */}
+      {!node.isEvent && (
         <div className="prop-section">
           <div className="prop-section-label">Estado</div>
-          {node.isSeguimiento && node.status !== 'done' ? (
-            // Seguimiento activo
-            <div className="prop-pills">
-              <button className="prop-pill active" onClick={() => store.updateNode(node.id, { status: null })}>
-                ● Activo
+          <div className="prop-pills">
+            {statusOptions.map(opt => (
+              <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`} onClick={() => setStatus(opt.value)}>
+                {opt.label}
               </button>
-              <button className="prop-pill" onClick={() => store.updateNode(node.id, { status: 'done' })}>
-                ✓ Completado
-              </button>
-            </div>
-          ) : node.isSeguimiento ? (
-            // Seguimiento completado
-            <div className="prop-pills">
-              <button className="prop-pill" onClick={() => store.updateNode(node.id, { status: null })}>
-                ● Activo
-              </button>
-              <button className="prop-pill active" onClick={() => store.updateNode(node.id, { status: 'done' })}>
-                ✓ Completado
-              </button>
-            </div>
-          ) : (
-            // Tarea: Sin estado / Pendiente / Hecho
-            <div className="prop-pills">
-              {statusOptions.map(opt => (
-                <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`} onClick={() => setStatus(opt.value)}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ── Prioridad ───────────────────────────────────────────────────────── */}
-      {node.status !== null && !node.isSeguimiento && (
+      {/* ── Prioridad (solo si tiene status pendiente) ─────────────────────── */}
+      {node.status === 'pending' && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Prioridad</div>
           <div className="prop-pills">
@@ -358,8 +340,8 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
-      {/* ── Fecha ───────────────────────────────────────────────────────────── */}
-      {node.status !== null && !node.isSeguimiento && (
+      {/* ── Fecha (oculta si status es future/done — la fecha se borra) ────── */}
+      {!node.isEvent && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">

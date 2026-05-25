@@ -14,7 +14,17 @@ function isResourceNode(n: Node): boolean {
   try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
 }
 function getResourceStatus(n: Node): string {
-  try { return JSON.parse(n.extraData || '{}')._resourceStatus || 'pending' } catch { return 'pending' }
+  // Modelo unificado: node.status manda. Si no hay, leemos legacy _resourceStatus
+  // y mapeamos: pending→pending, consuming→pending, done→done, archived→done
+  if (n.status === 'done') return 'done'
+  if (n.status === 'future') return 'future'
+  if (n.status === 'pending') return 'pending'
+  try {
+    const legacy = JSON.parse(n.extraData || '{}')._resourceStatus
+    if (legacy === 'done' || legacy === 'archived') return 'done'
+    if (legacy === 'pending' || legacy === 'consuming' || !legacy) return 'pending'
+  } catch { /* ignore */ }
+  return 'pending'
 }
 
 // ID de arrastre compartido (módulo-level, igual que en OutlinerNode)
@@ -177,7 +187,7 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
 
 function ResourceRow({ node }: { node: Node }) {
   const status = getResourceStatus(node)
-  const isInProgress = status === 'in_progress'
+  const isInProgress = status === 'pending' && !!node.due  // tiene fecha = trabajando en ello
   const [popoverOpen, setPopoverOpen] = useState(false)
   const rowRef = useRef<HTMLDivElement>(null!)
   return (
@@ -246,12 +256,12 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
     n.status === 'pending' && n.due && new Date(n.due) >= endBoundary
   )
 
-  // Recursos pendientes y en progreso
+  // Recursos pendientes (no done, no future)
   const resources = allNodes
     .filter(n => isResourceNode(n) && !n.deletedAt)
     .filter(n => {
       const st = getResourceStatus(n)
-      return st === 'pending' || st === 'in_progress'
+      return st === 'pending'
     })
 
   const overdueGroups = buildGroups(overdue, allNodes)

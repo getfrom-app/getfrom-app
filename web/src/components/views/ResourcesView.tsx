@@ -2,7 +2,10 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import type { ResourceType, ResourceStatus } from '../panels/ResourcePanel'
+import type { ResourceType } from '../panels/ResourcePanel'
+// Legacy: el ResourceStatus antiguo (pending/consuming/done/archived) ya no existe.
+// Mapeamos a node.status. Mantenemos type local para los filtros.
+type ResourceStatus = 'pending' | 'consuming' | 'done' | 'archived'
 
 const TYPE_ICONS: Record<string, string> = {
   youtube: '▶️', url: '🔗', book: '📚', podcast: '🎙', document: '📄',

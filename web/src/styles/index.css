@@ -7756,6 +7756,14 @@ a:focus-visible {
 .resource-type-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .resource-type-chip { font-size: 11px; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; }
 .resource-type-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+.resource-type-chip--add { background: var(--bg-hover); color: var(--accent); font-weight: 700; padding: 3px 10px; }
+.resource-type-chip--add:hover { background: var(--accent-soft); }
+.resource-type-add-row { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+.resource-type-icon-input { width: 36px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); text-align: center; font-size: 14px; }
+.resource-type-label-input { flex: 1; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); font-size: 12px; outline: none; }
+.resource-type-label-input:focus { border-color: var(--accent); }
+.resource-type-add-confirm { padding: 4px 10px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 600; }
+.resource-summary-btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px dashed var(--border); background: var(--bg-tertiary); color: var(--text-tertiary); cursor: not-allowed; font-size: 12px; }
 .resource-url-row { display: flex; gap: 6px; }
 .resource-url-input { flex: 1; padding: 5px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
 .resource-url-input:focus { border-color: var(--accent); }
