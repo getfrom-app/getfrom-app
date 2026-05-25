@@ -887,7 +887,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (trimmed.endsWith(' -t') || trimmed.endsWith(' -t')) {
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
-        store.updateNode(node.id, { text: cleanText, status: 'pending' })
+        const todayISOt = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+        store.updateNode(node.id, { text: cleanText, status: 'pending', due: node.due ?? todayISOt })
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
@@ -1136,7 +1137,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function toggleTask() {
     if (node.status === null) {
-      store.updateNode(node.id, { status: 'pending' })
+      const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+      store.updateNode(node.id, { status: 'pending', due: node.due ?? todayISO })
     } else if (node.status === 'pending') {
       store.updateNode(node.id, { status: 'done' })
     } else {
@@ -1166,11 +1168,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     nodeTextRef.current = newText
 
+    const todayISOslash = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
     const updates: Record<string, unknown> = { text: newText }
     if (action === 'task') {
       updates.status = 'pending'
+      if (!node.due) updates.due = todayISOslash
     } else if (action === 'bucle') {
       updates.status = 'pending'
+      if (!node.due) updates.due = todayISOslash
       const existingTypes = node.types || []
       if (!existingTypes.includes('bucle')) {
         updates.types = [...existingTypes, 'bucle']

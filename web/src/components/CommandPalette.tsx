@@ -167,7 +167,9 @@ export default function CommandPalette({ onClose }: Props) {
     if (!text) return
     const diary = store.todayDiary()
     const types: string[] = parsed.isSeguimiento ? ['bucle'] : []
-    const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask || parsed.isSeguimiento, due: parsed.due, types })
+    const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    const taskDue = (parsed.isTask || parsed.isSeguimiento) ? (parsed.due ?? todayISO) : parsed.due
+    const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask || parsed.isSeguimiento, due: taskDue, types })
     if (parsed.isEvent) {
       const eventDue = parsed.due ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
       store.updateNode(node.id, { isEvent: true, due: eventDue })

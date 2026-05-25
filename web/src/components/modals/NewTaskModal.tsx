@@ -10,7 +10,10 @@ interface Props {
 
 export default function NewTaskModal({ onClose, parentId }: Props) {
   const [text, setText] = useState('')
-  const [due, setDue] = useState('')
+  const [due, setDue] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()

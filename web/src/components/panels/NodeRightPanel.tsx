@@ -264,7 +264,7 @@ export default function NodeRightPanel({ node }: Props) {
             if (node.status !== null && !node.isSeguimiento) {
               store.updateNode(node.id, { status: null })
             } else {
-              store.updateNode(node.id, { status: 'pending', isSeguimiento: false })
+              store.updateNode(node.id, { status: 'pending', isSeguimiento: false, due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
           title="Tarea"
