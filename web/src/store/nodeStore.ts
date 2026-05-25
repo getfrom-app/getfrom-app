@@ -104,13 +104,20 @@ class NodeStore {
     } catch { return null }
   }
 
-  /** Todos los tags únicos usados en types[] de todos los nodos activos */
+  /** Todos los tags únicos: de types[] + #hashtags en títulos de nodos activos */
   allUsedTags(): string[] {
     const builtins = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const tagSet = new Set<string>()
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
+      // Desde types[]
       for (const t of (n.types || [])) {
+        if (!builtins.has(t)) tagSet.add(t)
+      }
+      // También desde #hashtags en el título (retrocompatibilidad)
+      const titleTags = (n.text || '').match(/#([\wÀ-ɏ\/\-]+)/g) || []
+      for (const tag of titleTags) {
+        const t = tag.slice(1)
         if (!builtins.has(t)) tagSet.add(t)
       }
     }
