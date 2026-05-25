@@ -304,7 +304,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function setEvtDueField(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    store.updateNode(node.id, { due: makeDueISO(date, time) })
+    const updates: Record<string, unknown> = { due: makeDueISO(date, time) }
+    // Si se establece una hora de inicio y el fin no tiene hora todavía → auto-poner fin = inicio + 1h
+    if (time && !hasLocalTime(node.dueEnd)) {
+      const startDt = new Date(`${date}T${time}:00`)
+      startDt.setHours(startDt.getHours() + 1)
+      const endDate = [startDt.getFullYear(), String(startDt.getMonth() + 1).padStart(2, '0'), String(startDt.getDate()).padStart(2, '0')].join('-')
+      const endTime = `${String(startDt.getHours()).padStart(2, '0')}:${String(startDt.getMinutes()).padStart(2, '0')}`
+      updates.dueEnd = makeDueISO(endDate, endTime)
+    }
+    store.updateNode(node.id, updates)
     scheduleGCalSync()
   }
   function setEvtEndField(date: string, time: string) {
