@@ -612,9 +612,17 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     if (store.getNode(parentId)?.isCollapsed) store.updateNode(parentId, { isCollapsed: false })
   }
 
+  // ── Recursos pendientes / en progreso ──────────────────────────────────────
+  const pendingResources = s.allResources().filter(n => {
+    try {
+      const ed = JSON.parse(n.extraData || '{}')
+      return ed._resourceStatus === 'pending' || ed._resourceStatus === 'consuming' || !ed._resourceStatus
+    } catch { return false }
+  }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+
   function renderAgenda() {
     const gcalToday = googleEvents.filter(ev => !ev.allDay)
-    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || gcalToday.length > 0
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || gcalToday.length > 0 || pendingResources.length > 0
 
     if (!hasAnything) {
       return (
