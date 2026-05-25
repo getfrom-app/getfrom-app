@@ -1187,6 +1187,25 @@ export default function NodeView() {
                   <circle cx="16" cy="14" r="0.8" fill="#3b82f6"/>
                 </svg>
               </div>
+            ) : node.status !== null ? (
+              // Checkbox circular para tareas
+              <button
+                className={`node-task-title-btn ${node.status === 'done' ? 'done' : ''}`}
+                onClick={() => store.updateNode(node!.id, { status: node.status === 'done' ? 'pending' : 'done' })}
+                title={node.status === 'done' ? 'Completada — clic para reabrir' : 'Marcar como hecha'}
+                style={{ flexShrink: 0, marginRight: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28 }}
+              >
+                {node.status === 'done' ? (
+                  <svg width="26" height="26" viewBox="0 0 26 26">
+                    <circle cx="13" cy="13" r="11" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.15"/>
+                    <path d="M8 13l3.5 3.5 7-7" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="26" height="26" viewBox="0 0 26 26">
+                    <circle cx="13" cy="13" r="11" stroke="var(--text-tertiary)" strokeWidth="1.8" fill="none"/>
+                  </svg>
+                )}
+              </button>
             ) : !node.isDiaryEntry ? (
               // Emoji normal para notas no-diario
               <div className="node-icon-wrapper">
