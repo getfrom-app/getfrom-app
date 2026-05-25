@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import type { ResourceType } from '../panels/ResourcePanel'
-// Legacy: el ResourceStatus antiguo (pending/consuming/done/archived) ya no existe.
-// Mapeamos a node.status. Mantenemos type local para los filtros.
-type ResourceStatus = 'pending' | 'consuming' | 'done' | 'archived'
+// Estados unificados con el resto de From: null/pending/future/done
+// "Sin estado" se trata como pendiente para filtros
+type StatusKey = 'all' | 'pending' | 'future' | 'done'
 
 const TYPE_ICONS: Record<string, string> = {
   youtube: '▶️', url: '🔗', book: '📚', podcast: '🎙', document: '📄',
@@ -13,11 +13,26 @@ const TYPE_ICONS: Record<string, string> = {
 const TYPE_LABELS: Record<string, string> = {
   youtube: 'Vídeo', url: 'Enlace', book: 'Libro', podcast: 'Podcast', document: 'Documento',
 }
+// Colores pastel iguales al panel del calendario/agenda
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#f59e0b', consuming: '#3b82f6', done: '#22c55e', archived: '#94a3b8',
+  pending: '#fcd34d',   // amarillo pastel
+  future:  '#93c5fd',   // azul pastel
+  done:    '#86efac',   // verde pastel
 }
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente', consuming: 'En progreso', done: 'Hecho', archived: 'Archivado',
+  pending: 'Pendiente', future: 'Futuro', done: 'Hecho',
+}
+
+function effectiveStatus(node: Node): 'pending' | 'future' | 'done' {
+  if (node.status === 'done') return 'done'
+  if (node.status === 'future') return 'future'
+  if (node.status === 'pending') return 'pending'
+  // Sin estado o legacy → leer _resourceStatus
+  try {
+    const legacy = JSON.parse(node.extraData || '{}')._resourceStatus
+    if (legacy === 'done' || legacy === 'archived') return 'done'
+  } catch { /* ignore */ }
+  return 'pending'
 }
 
 function getResourceData(node: Node) {
@@ -25,12 +40,12 @@ function getResourceData(node: Node) {
     const ed = JSON.parse(node.extraData || '{}')
     return {
       type: (ed._resourceType || 'url') as ResourceType,
-      status: (ed._resourceStatus || 'pending') as ResourceStatus,
+      status: effectiveStatus(node),
       url: (ed._resourceUrl || '') as string,
       meta: ed._resourceMeta as { title?: string; description?: string; image?: string; domain?: string; channel?: string } | null,
     }
   } catch {
-    return { type: 'url' as ResourceType, status: 'pending' as ResourceStatus, url: '', meta: null }
+    return { type: 'url' as ResourceType, status: effectiveStatus(node), url: '', meta: null }
   }
 }
 
@@ -39,7 +54,7 @@ export default function ResourcesView() {
   const navigate = useNavigate()
 
   const [typeFilter, setTypeFilter] = useState<ResourceType | 'all'>('all')
-  const [statusFilter, setStatusFilter] = useState<ResourceStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusKey>('all')
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
   const [tagSearch, setTagSearch] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -90,11 +105,19 @@ export default function ResourcesView() {
 
   const hasActiveFilters = typeFilter !== 'all' || statusFilter !== 'all' || selectedTags.size > 0
 
-  function setStatus(node: Node, status: ResourceStatus) {
-    let ed: Record<string, unknown> = {}
-    try { ed = JSON.parse(node.extraData || '{}') } catch {}
-    ed._resourceStatus = status
-    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+  function setStatus(node: Node, status: 'pending' | 'future' | 'done') {
+    // Atadura: future/done limpian due
+    const updates: Partial<Node> = { status }
+    if (status === 'future' || status === 'done') updates.due = null
+    store.updateNode(node.id, updates)
+    // Limpiar legacy _resourceStatus si existe (no se vuelve a usar)
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._resourceStatus) {
+        delete ed._resourceStatus
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      }
+    } catch { /* ignore */ }
   }
 
   function createLinkedTask(node: Node) {
@@ -173,15 +196,14 @@ export default function ResourcesView() {
                     <div className="resource-card-footer">
                       <select
                         className="resource-card-status"
-                        style={{ borderColor: STATUS_COLORS[status], color: STATUS_COLORS[status] }}
+                        style={{ borderColor: STATUS_COLORS[status], color: '#333', background: STATUS_COLORS[status] }}
                         value={status}
                         onClick={e => e.stopPropagation()}
-                        onChange={e => { e.stopPropagation(); setStatus(node, e.target.value as ResourceStatus) }}
+                        onChange={e => { e.stopPropagation(); setStatus(node, e.target.value as 'pending' | 'future' | 'done') }}
                       >
                         <option value="pending">Pendiente</option>
-                        <option value="consuming">En progreso</option>
+                        <option value="future">Futuro</option>
                         <option value="done">Hecho</option>
-                        <option value="archived">Archivado</option>
                       </select>
                       <div className="resource-card-actions">
                         {linkedCount > 0 && (
@@ -236,18 +258,18 @@ export default function ResourcesView() {
         {/* Estado */}
         <div className="resources-sidebar-section">
           <div className="resources-sidebar-label">Estado</div>
-          {(['all', 'pending', 'consuming', 'done', 'archived'] as const).map(st => (
+          {(['all', 'pending', 'future', 'done'] as const).map(st => (
             <button
               key={st}
               className={`resources-sidebar-btn${statusFilter === st ? ' active' : ''}`}
               style={statusFilter === st && st !== 'all'
-                ? { background: STATUS_COLORS[st] + '20', color: STATUS_COLORS[st], borderColor: STATUS_COLORS[st] }
+                ? { background: STATUS_COLORS[st] + '40', color: '#333', borderColor: STATUS_COLORS[st] }
                 : {}}
               onClick={() => setStatusFilter(st)}
             >
               {st === 'all' ? '📋 Todos' : (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[st], display: 'inline-block', flexShrink: 0 }} />
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: STATUS_COLORS[st], display: 'inline-block', flexShrink: 0 }} />
                   {STATUS_LABELS[st]}
                 </span>
               )}
