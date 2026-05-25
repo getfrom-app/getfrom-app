@@ -338,102 +338,114 @@ export default function NodeTableView({ parentId }: Props) {
                   {grandchildren > 0 && <span className="node-table-children-badge">{grandchildren}</span>}
                 </td>
                 {hasStatus && (
-                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__status' })}>
-                    {isBuiltinEditing('__status') ? (
-                      <select
-                        autoFocus
-                        className="node-table-cell-editor"
-                        defaultValue={String(node.status ?? '')}
-                        onBlur={() => setEditingCell(null)}
-                        onChange={e => {
-                          const v = e.target.value
-                          store.updateNode(node.id, { status: v === '' ? null : (v as 'pending' | 'future' | 'done') })
-                          setEditingCell(null)
-                        }}
-                      >
-                        <option value="">Sin estado</option>
-                        <option value="pending">Pendiente</option>
-                        <option value="future">Futuro</option>
-                        <option value="done">Hecho</option>
-                      </select>
-                    ) : node.status === null ? <span className="node-table-empty-cell">—</span>
+                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__status' })} style={{ position: 'relative' }}>
+                    {node.status === null ? <span className="node-table-empty-cell">—</span>
                       : node.status === 'pending' ? <span className="node-table-status node-table-status--pending">○ Pendiente</span>
                       : node.status === 'done' ? <span className="node-table-status node-table-status--done">✓ Hecho</span>
                       : node.status === 'future' ? <span className="node-table-status">◆ Futuro</span>
                       : <span className="node-table-status">{node.status}</span>}
+                    {isBuiltinEditing('__status') && (
+                      <div className="node-table-cell-overlay">
+                        <select
+                          autoFocus
+                          className="node-table-cell-editor"
+                          defaultValue={String(node.status ?? '')}
+                          onBlur={() => setEditingCell(null)}
+                          onChange={e => {
+                            const v = e.target.value
+                            store.updateNode(node.id, { status: v === '' ? null : (v as 'pending' | 'future' | 'done') })
+                            setEditingCell(null)
+                          }}
+                        >
+                          <option value="">Sin estado</option>
+                          <option value="pending">Pendiente</option>
+                          <option value="future">Futuro</option>
+                          <option value="done">Hecho</option>
+                        </select>
+                      </div>
+                    )}
                   </td>
                 )}
                 {hasDue && (
-                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__due' })}>
-                    {isBuiltinEditing('__due') ? (
-                      <input
-                        autoFocus
-                        type="date"
-                        className="node-table-cell-editor"
-                        defaultValue={node.due ? node.due.slice(0, 10) : ''}
-                        onBlur={e => {
-                          const v = e.target.value
-                          store.updateNode(node.id, { due: v ? new Date(v + 'T00:00:00').toISOString() : null })
-                          setEditingCell(null)
-                        }}
-                        onKeyDown={e => { if (e.key === 'Escape') setEditingCell(null) }}
-                      />
-                    ) : node.due ? <span className="node-table-due">{new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__due' })} style={{ position: 'relative' }}>
+                    {node.due ? <span className="node-table-due">{new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                       : <span className="node-table-empty-cell">—</span>}
+                    {isBuiltinEditing('__due') && (
+                      <div className="node-table-cell-overlay">
+                        <input
+                          autoFocus
+                          type="date"
+                          className="node-table-cell-editor"
+                          defaultValue={node.due ? node.due.slice(0, 10) : ''}
+                          onBlur={e => {
+                            const v = e.target.value
+                            store.updateNode(node.id, { due: v ? new Date(v + 'T00:00:00').toISOString() : null })
+                            setEditingCell(null)
+                          }}
+                          onKeyDown={e => { if (e.key === 'Escape') setEditingCell(null) }}
+                        />
+                      </div>
+                    )}
                   </td>
                 )}
                 {hasPriority && (
-                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__priority' })}>
-                    {isBuiltinEditing('__priority') ? (
-                      <select
-                        autoFocus
-                        className="node-table-cell-editor"
-                        defaultValue={String(node.priority ?? '')}
-                        onBlur={() => setEditingCell(null)}
-                        onChange={e => {
-                          const v = e.target.value
-                          store.updateNode(node.id, { priority: v === '' ? null : (v as 'low' | 'medium' | 'high') })
-                          setEditingCell(null)
-                        }}
-                      >
-                        <option value="">Sin prioridad</option>
-                        <option value="low">Baja</option>
-                        <option value="medium">Media</option>
-                        <option value="high">Alta</option>
-                      </select>
-                    ) : node.priority === 'high' ? <span className="node-table-priority high">↑ Alta</span>
+                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__priority' })} style={{ position: 'relative' }}>
+                    {node.priority === 'high' ? <span className="node-table-priority high">↑ Alta</span>
                       : node.priority === 'medium' ? <span className="node-table-priority medium">→ Media</span>
                       : node.priority === 'low' ? <span className="node-table-priority low">↓ Baja</span>
                       : <span className="node-table-empty-cell">—</span>}
+                    {isBuiltinEditing('__priority') && (
+                      <div className="node-table-cell-overlay">
+                        <select
+                          autoFocus
+                          className="node-table-cell-editor"
+                          defaultValue={String(node.priority ?? '')}
+                          onBlur={() => setEditingCell(null)}
+                          onChange={e => {
+                            const v = e.target.value
+                            store.updateNode(node.id, { priority: v === '' ? null : (v as 'low' | 'medium' | 'high') })
+                            setEditingCell(null)
+                          }}
+                        >
+                          <option value="">Sin prioridad</option>
+                          <option value="low">Baja</option>
+                          <option value="medium">Media</option>
+                          <option value="high">Alta</option>
+                        </select>
+                      </div>
+                    )}
                   </td>
                 )}
                 {hasTags && (
-                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__tags' })}>
-                    {isBuiltinEditing('__tags') ? (
-                      <input
-                        autoFocus
-                        className="node-table-cell-editor"
-                        defaultValue={tags.join(' ')}
-                        placeholder="tag1 tag2 tag3"
-                        onBlur={e => {
-                          const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
-                          const currentTypes = node.types || []
-                          const builtinPreserved = currentTypes.filter(t => NODE_BUILTIN_TYPES.has(t))
-                          store.updateNode(node.id, { types: [...builtinPreserved, ...newTags] })
-                          setEditingCell(null)
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                          if (e.key === 'Escape') setEditingCell(null)
-                        }}
-                      />
-                    ) : tags.length > 0 ? (
+                  <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__tags' })} style={{ position: 'relative' }}>
+                    {tags.length > 0 ? (
                       <div className="node-table-tags">
                         {tags.map(t => (
                           <span key={t} className="node-table-tag" style={{ background: s.tagColor(t) + '20', color: s.tagColor(t) }}>#{t}</span>
                         ))}
                       </div>
                     ) : <span className="node-table-empty-cell">—</span>}
+                    {isBuiltinEditing('__tags') && (
+                      <div className="node-table-cell-overlay">
+                        <input
+                          autoFocus
+                          className="node-table-cell-editor"
+                          defaultValue={tags.join(' ')}
+                          placeholder="tag1 tag2 tag3"
+                          onBlur={e => {
+                            const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
+                            const currentTypes = node.types || []
+                            const builtinPreserved = currentTypes.filter(t => NODE_BUILTIN_TYPES.has(t))
+                            store.updateNode(node.id, { types: [...builtinPreserved, ...newTags] })
+                            setEditingCell(null)
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                            if (e.key === 'Escape') setEditingCell(null)
+                          }}
+                        />
+                      </div>
+                    )}
                   </td>
                 )}
                 {customCols.map(col => {
@@ -443,10 +455,15 @@ export default function NodeTableView({ parentId }: Props) {
                       key={col.id}
                       className="node-table-td node-table-td--custom"
                       onClick={e => { e.stopPropagation(); if (!isEditing) setEditingCell({ nodeId: node.id, colId: col.id }) }}
+                      style={{ position: 'relative' }}
                     >
-                      {isEditing
-                        ? <CellEditor node={node} def={col} onClose={() => setEditingCell(null)} />
-                        : <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />}
+                      {/* Render view siempre — editor flota encima si está activo (evita reflow de columna) */}
+                      <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />
+                      {isEditing && (
+                        <div className="node-table-cell-overlay">
+                          <CellEditor node={node} def={col} onClose={() => setEditingCell(null)} />
+                        </div>
+                      )}
                     </td>
                   )
                 })}

@@ -6302,6 +6302,7 @@ a:focus-visible {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: auto;
 }
 .node-table-th {
   padding: 8px 12px;
@@ -6384,7 +6385,17 @@ a:focus-visible {
   padding: 2px 6px; font-size: 13px; background: var(--bg-primary);
   color: var(--text-primary); outline: none; font-family: inherit;
 }
-.node-table-td--custom { min-width: 80px; }
+.node-table-td--custom { min-width: 120px; }
+.node-table-cell-overlay {
+  position: absolute;
+  inset: 2px;
+  display: flex; align-items: center;
+  background: var(--bg-primary);
+  z-index: 5;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.1);
+}
+.node-table-cell-overlay > * { width: 100%; }
 .node-table-select-chip {
   display: inline-block; padding: 2px 8px; border-radius: 100px;
   font-size: 11px; font-weight: 500; cursor: pointer;
