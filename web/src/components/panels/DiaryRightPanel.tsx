@@ -68,14 +68,30 @@ export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowD
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   useEffect(() => {
-    // Posicionar via portal relativo al botón ancla
-    if (anchorRef.current) {
+    // Posicionar via portal relativo al botón ancla — flip arriba si no cabe debajo
+    function reposition() {
+      if (!anchorRef.current) return
       const rect = anchorRef.current.getBoundingClientRect()
-      setPos({
-        top: rect.bottom + 6,
-        left: Math.max(8, Math.min(rect.right - 280, window.innerWidth - 292)),
-      })
+      const popH = popoverRef.current?.offsetHeight || 420
+      const popW = popoverRef.current?.offsetWidth || 290
+      const margin = 8
+      let top = rect.bottom + 6
+      if (top + popH > window.innerHeight - margin) {
+        // No cabe debajo → intentar arriba
+        const topAbove = rect.top - popH - 6
+        if (topAbove >= margin) {
+          top = topAbove
+        } else {
+          // Tampoco cabe arriba → clamp al máximo posible
+          top = Math.max(margin, window.innerHeight - popH - margin)
+        }
+      }
+      const left = Math.max(margin, Math.min(rect.right - popW, window.innerWidth - popW - margin))
+      setPos({ top, left })
     }
+    reposition()
+    // Re-reposicionar tras el primer paint para usar la altura real
+    requestAnimationFrame(reposition)
     function handler(e: MouseEvent) {
       if (
         popoverRef.current && !popoverRef.current.contains(e.target as globalThis.Node) &&
