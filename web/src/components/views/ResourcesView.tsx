@@ -67,10 +67,9 @@ export default function ResourcesView() {
 
   function createLinkedTask(node: Node) {
     const today = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    const diary = store.todayDiary()
     const { meta, type } = getResourceData(node)
     const label = type === 'youtube' ? 'Ver vídeo' : type === 'book' ? 'Leer' : type === 'podcast' ? 'Escuchar' : 'Revisar'
-    const task = store.createNode({ text: `${label}: ${meta?.title || node.text || 'recurso'}`, parentId: diary?.id || null, isTask: true, due: today })
+    const task = store.createNode({ text: `${label}: ${meta?.title || node.text || 'recurso'}`, parentId: node.id, isTask: true, due: today })
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(task.extraData || '{}') } catch {}
     ed._linkedNodeId = node.id

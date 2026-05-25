@@ -80,8 +80,7 @@ export default function ResourcePanel({ node }: Props) {
   function createLinkedTask() {
     if (!newTaskText.trim()) return
     const today = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    const diary = store.todayDiary()
-    const task = store.createNode({ text: newTaskText.trim(), parentId: diary?.id || null, isTask: true, due: today })
+    const task = store.createNode({ text: newTaskText.trim(), parentId: node.id, isTask: true, due: today })
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(task.extraData || '{}') } catch {}
     ed._linkedNodeId = node.id

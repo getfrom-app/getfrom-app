@@ -149,12 +149,14 @@ class NodeStore {
     })
   }
 
-  /** Tareas vinculadas a un nodo concreto (linkedNodeId) */
+  /** Tareas vinculadas a un nodo: hijos directos con status + legacy _linkedNodeId */
   linkedTasks(nodeId: string): Node[] {
-    return this.allActive().filter(n => {
-      if (n.deletedAt || n.status === null) return false
+    const byParent = this.children(nodeId).filter(n => !n.deletedAt && n.status !== null)
+    const byLink = this.allActive().filter(n => {
+      if (n.deletedAt || n.status === null || n.parentId === nodeId) return false
       try { return JSON.parse(n.extraData || '{}')._linkedNodeId === nodeId } catch { return false }
     })
+    return [...byParent, ...byLink]
   }
 
   // ── Tags ────────────────────────────────────────────────────────────────────
