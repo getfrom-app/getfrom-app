@@ -846,10 +846,16 @@ class NodeStore {
       })),
     }
 
+    // FIX bug de revert: snapshot de los IDs que SE ENVÍAN para distinguirlos
+    // de los que se modifiquen DURANTE el await (race condition que causaba
+    // que cambios locales se perdieran al recibir la respuesta del servidor).
+    const sentIds = new Set(dirtyNodes.map(n => n.id))
+
     try {
       const res = await syncNodes(payload)
       this.lastSyncAt = res.syncAt
-      this.dirtyIds.clear()
+      // Solo limpiar los IDs que se enviaron (no los modificados DURANTE el await)
+      for (const id of sentIds) this.dirtyIds.delete(id)
 
       // Apply server nodes (merge)
       for (const rawNode of res.nodes) {
@@ -858,13 +864,14 @@ class NodeStore {
           this.applyNode(n)
         } else {
           const local = this.nodes.get(n.id)!
-          // Server wins if not locally dirty
-          if (!this.dirtyIds.has(n.id)) {
-            this.applyNode(n)
-          } else if (n.updatedAt > local.updatedAt) {
-            this.applyNode(n)
-            this.dirtyIds.delete(n.id)
+          // Si el nodo se ha modificado localmente DESPUÉS de empezar este sync
+          // (está en dirtyIds), NO sobrescribir — el próximo sync lo enviará.
+          if (this.dirtyIds.has(n.id)) {
+            // skip: cambios locales más recientes pendientes de sync
+            continue
           }
+          // Server wins solo si no hay cambios locales pendientes
+          this.applyNode(n)
         }
       }
 
