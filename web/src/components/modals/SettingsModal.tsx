@@ -306,6 +306,26 @@ export function CuentaPane() {
 export function AparienciaPane() {
   const { theme, setTheme } = useTheme()
 
+  // Franja horaria visible (calendario + timeline diario)
+  const [dayStart, setDayStartState] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem('from_day_start_hour') || '')
+    return isNaN(v) ? 7 : v
+  })
+  const [dayEnd, setDayEndState] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem('from_day_end_hour') || '')
+    return isNaN(v) ? 23 : v
+  })
+  function applyDayStart(h: number) {
+    setDayStartState(h)
+    localStorage.setItem('from_day_start_hour', String(h))
+    window.dispatchEvent(new Event('from-day-hours-changed'))
+  }
+  function applyDayEnd(h: number) {
+    setDayEndState(h)
+    localStorage.setItem('from_day_end_hour', String(h))
+    window.dispatchEvent(new Event('from-day-hours-changed'))
+  }
+
   const fontSizeKey = 'from_font_size'
   const [fontSize, setFontSize] = useState(() => localStorage.getItem(fontSizeKey) || 'normal')
 
@@ -354,6 +374,22 @@ export function AparienciaPane() {
           <button className={lineHeight === 'normal' ? 'active' : ''} onClick={() => applyLineHeight('normal')}>Normal</button>
           <button className={lineHeight === 'relaxed' ? 'active' : ''} onClick={() => applyLineHeight('relaxed')}>Espacioso</button>
         </div>
+      </Row>
+
+      <SectionTitle>Calendario y Timeline</SectionTitle>
+      <Row label="Hora de inicio del día" hint="Las horas anteriores quedan ocultas en calendario semanal y timeline diario.">
+        <select value={dayStart} onChange={e => applyDayStart(parseInt(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+          {Array.from({ length: 24 }, (_, h) => (
+            <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
+          ))}
+        </select>
+      </Row>
+      <Row label="Hora de fin del día" hint="Las horas posteriores quedan ocultas. Por defecto: 7:00 a 23:00.">
+        <select value={dayEnd} onChange={e => applyDayEnd(parseInt(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+          {Array.from({ length: 24 }, (_, h) => h + 1).map(h => (
+            <option key={h} value={h} disabled={h <= dayStart}>{String(h).padStart(2, '0')}:00</option>
+          ))}
+        </select>
       </Row>
     </div>
   )

@@ -7,6 +7,7 @@ import CalendarSidePanel from '../panels/CalendarSidePanel'
 import { TaskPropsPopover } from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
+import { getDayStart, getDayEnd } from '../../utils/dayHours'
 
 // ── CalendarTaskPopoverHost ───────────────────────────────────────────────────
 // Mantiene un anchorRef estable para evitar que TaskPropsPopover reposicione
@@ -273,7 +274,6 @@ function hasTime(isoStr: string): boolean {
 
 // ── Week View ─────────────────────────────────────────────────────────────────
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i) // 0..23
 const CELL_HEIGHT = 60 // px per hour
 
 interface WeekViewProps {
@@ -295,20 +295,30 @@ interface WeekViewProps {
 function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit, dayCount = 7, showDayNames = true, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
   const days = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i))
   const colWidthExpr = `calc((100% - var(--gutter-width)) / ${dayCount})`
+  // Franja horaria visible (reactiva a cambios desde Ajustes)
+  const [dayStart, setDayStart] = useState(getDayStart())
+  const [dayEnd, setDayEnd] = useState(getDayEnd())
+  useEffect(() => {
+    function refresh() { setDayStart(getDayStart()); setDayEnd(getDayEnd()) }
+    window.addEventListener('from-day-hours-changed', refresh)
+    return () => window.removeEventListener('from-day-hours-changed', refresh)
+  }, [])
+  const HOURS = Array.from({ length: dayEnd - dayStart }, (_, i) => dayStart + i)
+  const TIMELINE_HEIGHT = (dayEnd - dayStart) * CELL_HEIGHT
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
   const [taskPopover, setTaskPopover] = useState<{ node: Node; el: HTMLElement } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to current hour on mount
+  // Auto-scroll to current hour on mount (relativo a dayStart)
   useEffect(() => {
     if (scrollRef.current) {
       const currentHour = new Date().getHours()
-      const scrollTarget = Math.max(0, (currentHour - 1) * CELL_HEIGHT)
-      scrollRef.current.scrollTop = scrollTarget
+      const offset = Math.max(0, (currentHour - dayStart - 1) * CELL_HEIGHT)
+      scrollRef.current.scrollTop = offset
     }
-  }, [])
+  }, [dayStart])
 
   // Eventos y tareas con fecha
   const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
@@ -452,16 +462,16 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
 
         {/* ── Timeline horario ── */}
         <div ref={scrollRef} className="calendar-timeline-scroll">
-          <div className="calendar-timeline-grid" style={{ height: CELL_HEIGHT * 24 }}>
+          <div className="calendar-timeline-grid" style={{ height: TIMELINE_HEIGHT }}>
             {/* Líneas de hora + etiquetas */}
             {HOURS.map(hour => (
               <div
                 key={hour}
                 className="calendar-timeline-hour-row"
-                style={{ top: hour * CELL_HEIGHT, height: CELL_HEIGHT }}
+                style={{ top: (hour - dayStart) * CELL_HEIGHT, height: CELL_HEIGHT }}
               >
                 <div className="calendar-timeline-gutter calendar-hour-label">
-                  {hour === 0 ? '' : `${String(hour).padStart(2, '0')}:00`}
+                  {`${String(hour).padStart(2, '0')}:00`}
                 </div>
                 <div className="calendar-timeline-hour-line" />
               </div>
@@ -474,7 +484,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                 <div
                   key={di}
                   className="calendar-timeline-day-col"
-                  style={{ left: `calc(var(--gutter-width) + ${di} * var(--day-col-width))`, width: 'var(--day-col-width)', height: CELL_HEIGHT * 24 }}
+                  style={{ left: `calc(var(--gutter-width) + ${di} * var(--day-col-width))`, width: 'var(--day-col-width)', height: TIMELINE_HEIGHT }}
                 >
                   {/* Celdas clicables por hora */}
                   {HOURS.map(hour => {
@@ -485,7 +495,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                       <div
                         key={hour}
                         className={`calendar-timeline-cell ${isHovered ? 'calendar-timeline-cell--hover' : ''} ${isCreating ? 'calendar-timeline-cell--creating' : ''}`}
-                        style={{ top: hour * CELL_HEIGHT, height: isCreating ? 'auto' : CELL_HEIGHT, minHeight: CELL_HEIGHT }}
+                        style={{ top: (hour - dayStart) * CELL_HEIGHT, height: isCreating ? 'auto' : CELL_HEIGHT, minHeight: CELL_HEIGHT }}
                         onClick={() => { if (!isCreating) handleCellClick(day, hour, cellKey) }}
                         onMouseEnter={() => setHoveredCell(cellKey)}
                         onMouseLeave={() => setHoveredCell(null)}
@@ -528,7 +538,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {/* Eventos con hora — From */}
                   {timedNodes.map(node => {
                     const d = new Date(node.due!)
-                    const topPx = (d.getHours() + d.getMinutes() / 60) * CELL_HEIGHT
+                    const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
                     let durationH = 1
                     if (node.dueEnd) {
                       const end = new Date(node.dueEnd)
@@ -566,7 +576,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {/* Eventos con hora — Google Calendar */}
                   {getGoogleTimed(day).map(ev => {
                     const d = new Date(ev.start)
-                    const topPx = (d.getHours() + d.getMinutes() / 60) * CELL_HEIGHT
+                    const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
                     let durationH = 1
                     if (ev.end) {
                       const end = new Date(ev.end)

@@ -950,7 +950,26 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   }
 
   // ── Timeline logic ─────────────────────────────────────────────────────────
-  const hours = Array.from({ length: 15 }, (_, i) => i + 8)
+  // Franja horaria de Ajustes > Apariencia (reactiva)
+  const [tlDayStart, setTlDayStart] = useState(() => {
+    const v = parseInt(localStorage.getItem('from_day_start_hour') || '')
+    return isNaN(v) ? 7 : v
+  })
+  const [tlDayEnd, setTlDayEnd] = useState(() => {
+    const v = parseInt(localStorage.getItem('from_day_end_hour') || '')
+    return isNaN(v) ? 23 : v
+  })
+  useEffect(() => {
+    function refresh() {
+      const s = parseInt(localStorage.getItem('from_day_start_hour') || '')
+      const e = parseInt(localStorage.getItem('from_day_end_hour') || '')
+      setTlDayStart(isNaN(s) ? 7 : s)
+      setTlDayEnd(isNaN(e) ? 23 : e)
+    }
+    window.addEventListener('from-day-hours-changed', refresh)
+    return () => window.removeEventListener('from-day-hours-changed', refresh)
+  }, [])
+  const hours = Array.from({ length: Math.max(0, tlDayEnd - tlDayStart) }, (_, i) => i + tlDayStart)
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()
 
