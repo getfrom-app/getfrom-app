@@ -98,26 +98,75 @@ export default function NodeKanbanView({ parentId }: Props) {
     setValueForCol(id, colKey)
   }
 
+  function handleAddNewGroupProperty() {
+    const name = prompt('Nombre de la nueva agrupación (ej. "Fase", "Cliente", "Área"):')
+    if (!name || !name.trim()) return
+    const id = store.addPropColumn(parentId, name.trim(), 'select')
+    setGroupBy(id)
+  }
+
+  function handleAddColumnOption() {
+    if (groupBy === '__status' || groupBy === '__priority') {
+      alert('Para añadir columnas, primero crea una nueva agrupación custom (ej. "Fase").')
+      return
+    }
+    const label = prompt('Nombre de la nueva columna:')
+    if (!label || !label.trim()) return
+    const schema = store.getPropSchema(parentId)
+    const colDef = schema.find(c => c.id === groupBy)
+    if (!colDef) return
+    const newOpt = { id: 'opt_' + Math.random().toString(36).slice(2, 8), label: label.trim() }
+    colDef.options = [...(colDef.options || []), newOpt]
+    store.setPropSchema(parentId, schema)
+  }
+
+  function handleRenameColumn(key: string, currentLabel: string) {
+    if (groupBy === '__status' || groupBy === '__priority') return
+    const newLabel = prompt('Nuevo nombre:', currentLabel)
+    if (!newLabel || !newLabel.trim()) return
+    const schema = store.getPropSchema(parentId)
+    const colDef = schema.find(c => c.id === groupBy)
+    if (!colDef) return
+    colDef.options = (colDef.options || []).map(o => o.id === key ? { ...o, label: newLabel.trim() } : o)
+    store.setPropSchema(parentId, schema)
+  }
+
+  function handleDeleteColumn(key: string) {
+    if (groupBy === '__status' || groupBy === '__priority') return
+    if (!confirm('¿Eliminar esta columna? Los nodos en ella quedarán sin valor.')) return
+    const schema = store.getPropSchema(parentId)
+    const colDef = schema.find(c => c.id === groupBy)
+    if (!colDef) return
+    colDef.options = (colDef.options || []).filter(o => o.id !== key)
+    store.setPropSchema(parentId, schema)
+    // Limpiar valores de nodos que tenían esta opción
+    for (const c of children) {
+      if (store.getPropValue(c.id, groupBy) === key) {
+        store.setPropValue(c.id, groupBy, null)
+      }
+    }
+  }
+
   return (
     <div className="node-kanban-wrapper">
       <div className="node-kanban-toolbar">
         <label className="node-kanban-toolbar-label">Agrupar por:</label>
-        <select className="node-kanban-toolbar-select" value={groupBy} onChange={e => setGroupBy(e.target.value)}>
+        <select className="node-kanban-toolbar-select" value={groupBy} onChange={e => {
+          if (e.target.value === '__new__') { handleAddNewGroupProperty(); return }
+          setGroupBy(e.target.value)
+        }}>
           <option value="__status">Estado</option>
           <option value="__priority">Prioridad</option>
           {selectCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          <option value="__new__">＋ Nueva agrupación…</option>
         </select>
-        {selectCols.length === 0 && (
-          <span className="node-kanban-toolbar-hint">
-            💡 Crea una columna de tipo "Select" en la vista tabla para poder agrupar por ella
-          </span>
-        )}
       </div>
 
       <div className="node-kanban">
         {columns.map(col => {
           const cards = getCards(col.key)
           const isDragOver = dragOverCol === col.key
+          const isCustom = groupBy !== '__status' && groupBy !== '__priority' && col.key !== '__null'
           return (
             <div
               key={col.key}
@@ -126,7 +175,17 @@ export default function NodeKanbanView({ parentId }: Props) {
               onDragLeave={() => setDragOverCol(null)}
               onDrop={e => { e.preventDefault(); handleDrop(col.key) }}
             >
-              <div className="node-kanban-col-header" style={col.color ? { borderTop: `3px solid ${col.color}` } : {}}>
+              <div
+                className="node-kanban-col-header"
+                style={col.color ? { borderTop: `3px solid ${col.color}` } : {}}
+                onContextMenu={isCustom ? e => {
+                  e.preventDefault()
+                  const action = prompt('Escribe: r para renombrar, d para eliminar', '')
+                  if (action === 'r') handleRenameColumn(col.key, col.label)
+                  if (action === 'd') handleDeleteColumn(col.key)
+                } : undefined}
+                title={isCustom ? 'Clic derecho para renombrar/eliminar' : undefined}
+              >
                 <span className="node-kanban-col-label">{col.label}</span>
                 <span className="node-kanban-col-count">{cards.length}</span>
               </div>
@@ -175,6 +234,12 @@ export default function NodeKanbanView({ parentId }: Props) {
             </div>
           )
         })}
+        {/* + Columna: solo si la agrupación actual es un select custom */}
+        {groupBy !== '__status' && groupBy !== '__priority' && (
+          <button className="node-kanban-add-col" onClick={handleAddColumnOption} title="Añadir columna">
+            ＋ Columna
+          </button>
+        )}
       </div>
     </div>
   )
