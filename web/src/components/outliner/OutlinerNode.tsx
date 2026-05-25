@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
+import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
@@ -1235,6 +1236,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ? 'task-sq--overdue'
         : 'task-sq--pending'
 
+  // ── Recurso ──────────────────────────────────────────────────────────────
+  const resourceData = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (!ed._resource) return null
+      return { status: (ed._resourceStatus || 'pending') as string }
+    } catch { return null }
+  })()
+  const isResourcePending = !!resourceData && resourceData.status === 'pending'
+
+  // Auto-detect URL en texto del nodo inline → marca como recurso + unfurl
+  useEffect(() => {
+    const text = (node.text || '').trim()
+    if (!isUrl(text)) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._resource) return
+    } catch {}
+    // Marcar como recurso
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+    ed._resource = true
+    ed._resourceUrl = text
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    // Unfurl
+    unfurlUrl(text).then(meta => {
+      let ed2: Record<string, unknown> = {}
+      try { ed2 = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch {}
+      ed2._resourceMeta = meta
+      ed2._resourceType = meta.type
+      store.updateNode(node.id, { text: meta.title || text, extraData: JSON.stringify(ed2) })
+    }).catch(() => {})
+  }, [node.text]) // eslint-disable-line
+
   // Quick-props helpers: fecha/hora/repetición/prioridad en el popup inline
   const qDueDate = isoToLocalDate(node.due)
   const qDueTime = isoToLocalTime(node.due)
@@ -1417,6 +1452,32 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
                     </svg>
                   )}
+                </button>
+              </>
+            ) : isResourcePending ? (
+              // Recurso pendiente: nav-dot + checkbox cian
+              <>
+                <button
+                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  tabIndex={-1}
+                  title="Abrir recurso"
+                />
+                <button
+                  className="bullet-btn task task-sq--resource"
+                  onClick={e => {
+                    e.stopPropagation()
+                    let ed: Record<string, unknown> = {}
+                    try { ed = JSON.parse(node.extraData || '{}') } catch {}
+                    ed._resourceStatus = resourceData?.status === 'done' ? 'pending' : 'done'
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                  }}
+                  tabIndex={-1}
+                  title="Marcar recurso como procesado"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14">
+                    <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
+                  </svg>
                 </button>
               </>
             ) : isNota ? (

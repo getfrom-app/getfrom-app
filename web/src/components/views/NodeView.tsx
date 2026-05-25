@@ -1222,7 +1222,33 @@ export default function NodeView() {
                   <circle cx="16" cy="14" r="0.8" fill="#3b82f6"/>
                 </svg>
               </div>
-            ) : node.status !== null ? (
+            ) : (() => {
+              // Recurso pendiente (sin tarea ni evento): checkbox cian
+              try {
+                const ed = JSON.parse(node.extraData || '{}')
+                if (ed._resource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent && !node.isSeguimiento) {
+                  return (
+                    <button
+                      className="bullet-btn task task-sq--resource"
+                      onClick={() => {
+                        let ed2: Record<string, unknown> = {}
+                        try { ed2 = JSON.parse(node.extraData || '{}') } catch {}
+                        ed2._resourceStatus = 'done'
+                        store.updateNode(node.id, { extraData: JSON.stringify(ed2) })
+                      }}
+                      title="Marcar recurso como procesado"
+                      style={{ flexShrink: 0, marginRight: 8, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 14 14">
+                        <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
+                      </svg>
+                    </button>
+                  )
+                }
+              } catch {}
+              return null
+            })() ||
+            (node.status !== null ? (
               // Checkbox cuadrado para tareas — mismos colores que el outliner
               (() => {
                 const isOverdue = !!node.due && node.status !== 'done' && (() => {
@@ -1253,7 +1279,7 @@ export default function NodeView() {
                   </button>
                 )
               })()
-            ) : (() => {
+            ) : null) || (() => {
               // ¿Nodo de definición de tag? → mostrar # en color del tag
               try {
                 const ed = JSON.parse(node.extraData || '{}')
