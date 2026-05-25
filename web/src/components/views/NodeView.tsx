@@ -1121,32 +1121,16 @@ export default function NodeView() {
             </span>
           </div>
 
-          {/* Node header badges: area, locked, event ──────────────── */}
-          {(nodeArea || isLocked || (node.isEvent && node.due)) && (
+          {/* Node header badges: area, locked (evento ya va inline junto al título) */}
+          {(nodeArea || isLocked) && (
             <div className="node-header-badges">
               {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
               {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
-              {node.isEvent && node.due && (() => {
-                const start = new Date(node.due)
-                const startStr = start.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
-                  (node.due.slice(11, 16) !== '00:00' ? ' · ' + node.due.slice(11, 16) : '')
-                const endStr = node.dueEnd
-                  ? ' → ' + new Date(node.dueEnd).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) +
-                    (node.dueEnd.slice(11, 16) !== '00:00' ? ' ' + node.dueEnd.slice(11, 16) : '')
-                  : ''
-                let loc = ''
-                try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
-                return (
-                  <span className="node-badge node-badge--event">
-                    📅 {startStr}{endStr}{loc ? ` · 📍 ${loc}` : ''}
-                  </span>
-                )
-              })()}
             </div>
           )}
 
           <div className="node-title-row">
-            {/* Icono del nodo — seguimiento muestra checkbox morado, normal muestra emoji */}
+            {/* Icono del nodo — seguimiento=checkbox, evento=calendario, normal=emoji */}
             {node.isSeguimiento ? (
               // Checkbox cuadrado morado para seguimiento
               <button
@@ -1169,6 +1153,17 @@ export default function NodeView() {
                   </svg>
                 )}
               </button>
+            ) : node.isEvent ? (
+              // Icono calendario para eventos
+              <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M8 2v4M16 2v4"/>
+                  <circle cx="8" cy="14" r="0.8" fill="#3b82f6"/>
+                  <circle cx="12" cy="14" r="0.8" fill="#3b82f6"/>
+                  <circle cx="16" cy="14" r="0.8" fill="#3b82f6"/>
+                </svg>
+              </div>
             ) : !node.isDiaryEntry ? (
               // Emoji normal para notas no-diario
               <div className="node-icon-wrapper">
@@ -1264,6 +1259,23 @@ export default function NodeView() {
             >
               {/* content managed via useEffect — no React children to avoid cursor reset */}
             </h1>
+
+            {/* Badge inline del evento — a la derecha del título */}
+            {node.isEvent && node.due && (() => {
+              const due = node.due
+              const dueEnd = node.dueEnd
+              const dateStr = new Date(due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+              const timeStr = due.slice(11, 16) !== '00:00' ? due.slice(11, 16) : ''
+              const endTimeStr = dueEnd && dueEnd.slice(11, 16) !== '00:00' ? '–' + dueEnd.slice(11, 16) : ''
+              let loc = ''
+              try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
+              return (
+                <span className="node-event-inline-badge">
+                  {dateStr}{timeStr ? ' · ' + timeStr : ''}{endTimeStr}{loc ? ' · 📍 ' + loc : ''}
+                </span>
+              )
+            })()}
+
             {showTitleSlash && (
               <SlashMenu
                 anchorEl={titleRef.current}

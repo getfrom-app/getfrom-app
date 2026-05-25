@@ -65,6 +65,42 @@ export default function NodeRightPanel({ node }: Props) {
     return () => document.removeEventListener('mousedown', handler)
   }, [showEventPopup])
 
+  // ── Auto-sync silencioso a GCal al cambiar cualquier propiedad del evento ──
+  useEffect(() => {
+    if (!node.isEvent || !node.due) return
+    const gcalId = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
+    const timer = setTimeout(async () => {
+      const end = node.dueEnd || new Date(new Date(node.due!).getTime() + 3600000).toISOString()
+      let loc = ''
+      try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
+      try {
+        if (gcalId) {
+          await updateCalendarEvent(gcalId, {
+            title: node.text || 'Evento',
+            start: node.due!,
+            end,
+            description: node.body || undefined,
+            location: loc || undefined,
+          })
+        } else {
+          // Primera vez — crear y guardar el ID
+          const result = await createCalendarEvent({
+            title: node.text || 'Evento',
+            start: node.due!,
+            end,
+            description: node.body || undefined,
+            location: loc || undefined,
+          })
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
+          ed.gcalEventId = result.id
+          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+        }
+      } catch { /* sin conexión GCal — silencioso */ }
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [node.isEvent, node.text, node.due, node.dueEnd, node.body, node.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function openEventPopup() {
     if (node.isEvent) {
       // Si ya es evento, lo quita directamente
@@ -376,62 +412,25 @@ export default function NodeRightPanel({ node }: Props) {
             />
           </div>
 
-          {/* Acciones: sincronizar / eliminar */}
-          <div className="prop-event-actions">
-            <button
-              className="prop-event-sync-btn"
-              onClick={async () => {
-                if (!node.due) return
-                const endFallback = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
-                const loc = evtLocation_stored || undefined
-                setEvtSyncing(true); setEvtMsg(null)
-                try {
-                  if (gcalEventId) {
-                    await updateCalendarEvent(gcalEventId, {
-                      title: node.text || 'Evento', start: node.due, end: endFallback,
-                      description: node.body || undefined, location: loc,
-                    })
-                  } else {
-                    const result = await createCalendarEvent({
-                      title: node.text || 'Evento', start: node.due, end: endFallback,
-                      description: node.body || undefined, location: loc,
-                    })
-                    let ed: Record<string, unknown> = {}
-                    try { ed = JSON.parse(node.extraData || '{}') } catch {}
-                    ed.gcalEventId = result.id
-                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                  }
-                  setEvtMsg('✓ Sincronizado')
-                } catch {
-                  setEvtMsg('No conectado a Google Calendar')
-                } finally {
-                  setEvtSyncing(false)
-                  setTimeout(() => setEvtMsg(null), 2500)
-                }
-              }}
-              disabled={evtSyncing || !node.due}
-            >
-              {evtSyncing ? '↻ Sincronizando...' : gcalEventId ? '↑ Actualizar en GCal' : '↑ Sincronizar con GCal'}
-            </button>
-            <button
-              className="prop-event-delete-btn"
-              title="Eliminar evento (y de Google Calendar si está sincronizado)"
-              onClick={async () => {
-                if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
-                if (gcalEventId) {
-                  try { await deleteCalendarEvent(gcalEventId) } catch { /* sin conexión — seguimos */ }
-                }
-                store.updateNode(node.id, { isEvent: false, due: null, dueEnd: null })
-                let ed: Record<string, unknown> = {}
-                try { ed = JSON.parse(node.extraData || '{}') } catch {}
-                delete ed.gcalEventId; delete ed.location
-                store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-              }}
-            >
-              🗑 Eliminar evento
-            </button>
-          </div>
-          {evtMsg && <div className="prop-event-msg">{evtMsg}</div>}
+          {/* Solo botón eliminar — el sync es automático */}
+          <button
+            className="prop-event-delete-btn"
+            title="Eliminar evento (y de Google Calendar si está sincronizado)"
+            onClick={async () => {
+              if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
+              if (gcalEventId) {
+                try { await deleteCalendarEvent(gcalEventId) } catch { /* sin conexión — seguimos */ }
+              }
+              store.updateNode(node.id, { isEvent: false, due: null, dueEnd: null })
+              let ed: Record<string, unknown> = {}
+              try { ed = JSON.parse(node.extraData || '{}') } catch {}
+              delete ed.gcalEventId; delete ed.location
+              store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+            }}
+          >
+            🗑 Eliminar evento
+          </button>
+          {gcalEventId && <div className="prop-event-synced-hint">↑ Cambios sincronizados automáticamente con Google Calendar</div>}
         </div>
       )}
 
