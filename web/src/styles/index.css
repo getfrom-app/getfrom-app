@@ -6389,6 +6389,41 @@ a:focus-visible {
   font-size: 11px; font-weight: 500; cursor: pointer;
 }
 
+/* Tabla — toolbar + grupos */
+.node-table-toolbar {
+  display: flex; gap: 8px; align-items: center;
+  padding: 6px 4px; margin-bottom: 4px;
+}
+.node-table-filter {
+  flex: 1; max-width: 280px; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg-secondary); font-size: 12px;
+  color: var(--text-primary); outline: none;
+}
+.node-table-filter:focus { border-color: var(--accent); }
+.node-table-toolbar-spacer { flex: 1; }
+.node-table-toolbar-label { font-size: 12px; color: var(--text-tertiary); }
+.node-table-toolbar-select {
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-secondary); font-size: 12px; color: var(--text-primary); outline: none;
+}
+.node-table-toolbar-clear {
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--accent);
+  background: var(--accent-soft, rgba(139,92,246,0.1)); color: var(--accent);
+  font-size: 11px; cursor: pointer;
+}
+.node-table-group-header { background: var(--bg-secondary); cursor: default; }
+.node-table-group-header td {
+  padding: 8px 12px; font-weight: 600; color: var(--text-secondary); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+.node-table-group-label { margin-right: 8px; }
+.node-table-group-count {
+  background: var(--bg-tertiary); padding: 1px 7px; border-radius: 10px;
+  font-size: 10px; color: var(--text-tertiary); font-weight: 600;
+}
+
 /* Add row */
 .node-table-row--add { color: var(--text-tertiary); }
 .node-table-row--add:hover { background: var(--bg-hover); color: var(--accent); }

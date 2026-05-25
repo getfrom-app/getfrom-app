@@ -387,7 +387,6 @@ export default function NodeTableView({ parentId }: Props) {
                 <td className="node-table-td" />
               </tr>
             )
-          })}
               })}
             </>
           ))}
