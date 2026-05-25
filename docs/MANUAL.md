@@ -1,6 +1,33 @@
 # From — Manual de usuario
 
-> Versión 3.12 / Web 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
+> Versión 3.20 / Web v7.29 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
+
+---
+
+## Novedades en Web v7.29 (25 mayo 2026)
+
+**Eventos con sincronización completa de Google Calendar**
+- Crear, editar y eliminar eventos sincroniza automáticamente con Google Calendar
+- Auto-sync silencioso: cualquier cambio (título, fecha, lugar, recurrencia) se propaga sin botones manuales
+- Eventos GCal visibles en el Agenda y editables desde From
+- Recurrencia compatible con RRULE estándar de GCal
+
+**Drag & drop en Agenda**
+- Arrastra tareas para indentarlas bajo otras tareas o nodos de seguimiento
+- Las tareas hijo aparecen indentadas bajo su padre en el panel
+
+**Tareas mejoradas**
+- Repetición flexible: "x días/semanas/meses/años" en vez de chips fijos
+- Hora opcional: las tareas por defecto solo tienen fecha; botón ✕h para quitar la hora
+- Tag picker en el título de la nota — escribir `#` autocompleta tags existentes
+- Checkboxes cuadrados con colores por estado
+
+**UX y layout**
+- Panel derecho ocupa toda la altura de la pantalla
+- "Mover nota" muestra "Hoy" como primera opción (sin opción "Raíz")
+- Badges (fecha/prioridad/evento) ahora aparecen junto al texto, no al extremo derecho
+- Eliminar nota borra todos sus hijos en cascada y navega al día actual
+- Atajos ⌘N/T/E/R/Q eliminados (chocaban con Chrome); se mantiene ⌘K
 
 ---
 

@@ -1,7 +1,53 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-20
+> Última actualización: 2026-05-25 (Web v7.29)
+
+---
+
+## Sesión 2026-05-25 — Eventos, drag & drop, hora opcional (v7.13 → v7.29)
+
+### Eventos con Google Calendar (CRUD completo)
+- **Servidor** (`server/src/routes/google.ts`): añadidos endpoints `PUT /google/calendar/events/:id` y `DELETE /google/calendar/events/:id`
+- **Cliente API** (`api/googleCalendar.ts`): `updateCalendarEvent`, `deleteCalendarEvent`, `fromRecToRRule` (convierte `weekly:2` → `RRULE:FREQ=WEEKLY;INTERVAL=2`)
+- **NodeRightPanel**: panel de evento con auto-sync silencioso al cambiar cualquier campo (debounce 1.2s)
+- **OutlinerNode**: badge interactivo con popup completo + auto-sync (debounce 900ms)
+- **DiaryRightPanel**: eventos GCal en Agenda con editor inline + Timeline con click-to-edit
+- **Storage**: `gcalEventId` y `location` en `extraData` del nodo
+
+### Repetición flexible
+- Modelo: misma string format que tareas (`daily:N`, `weekly:N`, etc.)
+- UI: fila `[–] [n input] [días] [sem.] [meses] [años]`
+- Aplicada en tareas (popup quick-props + panel) y eventos (popup + panel)
+- Conversión a RRULE para Google Calendar al sincronizar
+
+### Drag & drop en Agenda
+- Variable módulo `_agendaDragId` para state durante el drag
+- `AgendaTaskRow`: `draggable={true}` + handlers `onDragStart/Over/Drop`
+- Función `dropAsChild(draggedId, parentId)` mueve el nodo como último hijo
+- Filtros `hasTaskParent()` + `hasSeguimientoAncestor()` excluyen tareas hijo de listas planas
+- Render con `React.Fragment` para mostrar hijos indentados bajo cada tarea
+
+### Timezone fix (`utils/dates.ts`)
+- `isoToLocalDate(iso)` y `isoToLocalTime(iso)`: usan `getFullYear/getHours` del objeto Date → hora local del navegador
+- `hasLocalTime(iso)`: true si hora local ≠ 00:00
+- `makeDueISO(date, time)`: si time vacío, usa medianoche local (= "solo fecha")
+- Aplicado en todos los inputs date/time de NodeRightPanel, OutlinerNode, NodeView, DiaryRightPanel
+
+### Hora opcional
+- Por defecto las tareas y eventos se crean sin hora (solo fecha)
+- Time input muestra vacío cuando `hasLocalTime` es false
+- Botón `✕h` para quitar la hora manteniendo la fecha
+
+### Otras mejoras importantes
+- **Eliminar nota**: borra recursivamente todos los descendientes + navega a hoy con `replace:true` (evita React error #300)
+- **Mover nota**: opción "Hoy" como primera, eliminada opción "Raíz"
+- **Atajos**: eliminados ⌘N/T/E/R/Q (conflicto con Chrome); se mantiene ⌘K
+- **CSS opaco**: `var(--bg-card)` (no definido) → reemplazado por `var(--bg-secondary)` en todos los popups
+- **Layout**: panel derecho con `flex: 1` + `align-self: stretch` → ocupa toda la altura
+- **Tag picker en el título**: detección de `#query` en `handleTitleInput` con portal de picker
+
+---
 
 ---
 

@@ -81,6 +81,65 @@
         <p>Todo lo que ha cambiado en From. Actualizado con cada nueva versión de Mac, iPhone y Web.</p>
     </div>
 
+    <!-- VERSION Web v7.29 -->
+    <div class="version-entry">
+        <div class="version-sidebar">
+            <div class="version-number">Web v7.29</div>
+            <div class="version-date">25 mayo 2026</div>
+            <div class="version-platforms">
+                <span class="platform-chip platform-web">Web</span>
+            </div>
+        </div>
+        <div class="version-body">
+            <div class="change-group">
+                <h3>Eventos con Google Calendar</h3>
+                <ul>
+                    <li><strong>CRUD completo:</strong> crear, editar y borrar eventos desde From sincroniza con Google Calendar automáticamente</li>
+                    <li><strong>Auto-sync silencioso:</strong> cualquier cambio (título, fecha, lugar, recurrencia) se propaga a GCal en 1.2s sin botones</li>
+                    <li><strong>Icono calendario azul</strong> SVG para nodos evento + badge inline junto al título con fecha y lugar</li>
+                    <li><strong>Eventos GCal en Agenda:</strong> editables y eliminables desde el panel derecho</li>
+                    <li><strong>Recurrencia RRULE:</strong> formato "x días/sem/meses/años" se envía como RRULE estándar a GCal</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <h3>Drag &amp; drop en Agenda</h3>
+                <ul>
+                    <li><strong>Arrastra tareas</strong> sobre otras tareas o seguimientos para indentarlas como hijas</li>
+                    <li><strong>Drop sobre seguimiento</strong> con sombreado morado de feedback</li>
+                    <li><strong>Tareas hijo indentadas</strong>: la jerarquía padre→hijo se refleja visualmente</li>
+                    <li><strong>Tareas hijo de seguimiento</strong> ya no se confunden visualmente con el padre — colores propios según estado</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <h3>Tareas y popup quick-props</h3>
+                <ul>
+                    <li><strong>Repetición flexible</strong>: número + unidad ("3 semanas", "2 meses") en lugar de chips fijos</li>
+                    <li><strong>Hora opcional</strong>: tareas y eventos pueden tener solo fecha. Botón ✕h para quitar la hora manteniendo la fecha</li>
+                    <li><strong>Tag picker en el título</strong>: escribir <code>#</code> autocompleta con tags existentes</li>
+                    <li><strong>Checkboxes cuadrados</strong> con colores por estado (amarillo/naranja/verde/azul)</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <h3>Layout y UX</h3>
+                <ul>
+                    <li><strong>Panel derecho</strong> ocupa toda la altura — la línea divisoria llega abajo</li>
+                    <li><strong>Mover nota</strong>: opción "Hoy" como primera, sin opción "Raíz"</li>
+                    <li><strong>Badges junto al texto</strong> en outliner — fecha/prioridad ya no van al extremo derecho</li>
+                    <li><strong>Eliminar nota</strong> borra hijos en cascada y navega al diario de hoy</li>
+                    <li><strong>UI más limpia</strong>: eliminadas estadísticas redundantes del status bar y sidebar</li>
+                </ul>
+            </div>
+            <div class="change-group">
+                <h3>Bugs corregidos</h3>
+                <ul>
+                    <li><strong>Timezone:</strong> los inputs de hora ahora muestran la hora local, no UTC (antes 12:00 mostraba 10:00 en UTC+2)</li>
+                    <li><strong>Popup transparente:</strong> el fondo ahora es sólido</li>
+                    <li><strong>Atajos eliminados:</strong> ⌘N/T/E/R/Q chocaban con Chrome. Se mantiene ⌘K para la paleta</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <!-- VERSION iOS 1.2 -->
     <div class="version-entry">
         <div class="version-sidebar">

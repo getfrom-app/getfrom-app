@@ -4,6 +4,55 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web v7.13 → v7.29 — 25 mayo 2026
+
+**Plataforma: Web** — gran tanda de mejoras en eventos, drag & drop, agenda y UX.
+
+### Eventos con sincronización completa de Google Calendar
+- **CRUD completo**: crear, editar y eliminar eventos desde From sincroniza con Google Calendar (POST + PUT + DELETE)
+- **Auto-sync silencioso**: cualquier cambio (título, fecha, lugar, recurrencia) se propaga a GCal en 1.2s sin botones
+- **Icono calendario azul** SVG en lugar del emoji genérico para nodos evento
+- **Badge inline** junto al título con fecha, hora y lugar — clic abre popup de edición
+- **Eventos GCal en Agenda**: editables y eliminables desde el panel derecho
+- **Recurrencia con RRULE**: el formato From (`weekly:2`) se convierte a RRULE estándar GCal
+
+### Tareas — popup quick-props mejorado
+- **Repetición flexible** estilo `[–] [n] [días] [sem.] [meses] [años]` (antes: chips fijos "Diario/Semanal/Mensual")
+- **Hora opcional**: por defecto las tareas no llevan hora, solo fecha. Botón `✕h` para quitar la hora manteniendo la fecha
+- **Tag picker en el título** del nodo: escribir `#tag` autocompleta con los tags existentes
+- **Picker posición fija**: el desplegable aparece exactamente bajo el cursor (antes se desplazaba)
+
+### Agenda (panel derecho diario)
+- **Drag & drop completo**: arrastrar tareas/seguimientos para reordenar o indentar
+- **Drop sobre tarea** → la indenta como hija de esa tarea
+- **Drop sobre seguimiento** → la hace hija del seguimiento (con sombreado morado de feedback)
+- **Tareas hijo indentadas**: ahora la jerarquía padre→hijo se ve reflejada en el panel
+- **Eventos GCal** visibles en sección "Google Calendar" con botones de editar/eliminar
+- **Tareas hijo de seguimiento** con estilos de tarea normal (amarillo/naranja) en vez de morado
+
+### Layout y navegación
+- **Panel derecho ocupa toda la altura** (antes se cortaba a media página)
+- **Handler del sidebar siempre visible** (antes solo en hover)
+- **Flechas correctas**: `‹` colapsado / `›` desplegado
+- **Mover nota**: opción "Hoy" como primera, eliminada opción "Raíz" (las notas siempre van bajo un día)
+- **Badges junto al texto** en outliner (antes al extremo derecho)
+- **Eliminar nota** borra hijos en cascada y navega a hoy (antes daba error #300)
+
+### Outliner
+- **Checkboxes cuadrados** coloreados según estado (amarillo pending, naranja overdue, verde done, azul future)
+- **Sin contadores** en stats bar inferior — UI más limpia
+- **Sin opciones de tags** en panel derecho (se gestionan inline en el título)
+
+### Atajos
+- Eliminados `⌘N`, `⌘T`, `⌘E`, `⌘R`, `⌘Q` (chocan con Chrome). Se mantiene **⌘K** (paleta de comandos)
+
+### Bugs corregidos
+- **Timezone**: nuevo `utils/dates.ts` con `isoToLocalTime/Date` — la hora mostrada en inputs ahora es local, no UTC (antes 12:00 → mostraba 10:00)
+- **Popup transparente**: `var(--bg-card)` no estaba definido → fondo opaco con `var(--bg-secondary)`
+- **Indent tareas**: hijos de tareas se mostraban en lista plana en vez de indentados bajo el padre
+
+---
+
 ## iOS 1.2 — 24 mayo 2026
 
 **Plataformas: iOS** 1.2 (build 4)
