@@ -5,6 +5,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
+import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
@@ -437,6 +438,7 @@ export interface DiaryRightPanelProps {
 
 export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryRightPanelProps) {
   const s = useStore()
+  const us = useUserStore()
   const navigate = useNavigate()
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
@@ -446,6 +448,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
   // Fetch Google Calendar events when date changes (day view only)
   useEffect(() => {
     if (rangeType !== 'day') return
+    if (!us.googleConnected) { setGoogleEvents([]); return }
     let cancelled = false
     getCalendarEvents(diaryDate)
       .then(events => {
@@ -456,7 +459,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
         if (!cancelled) setGoogleEvents([])
       })
     return () => { cancelled = true }
-  }, [diaryDate, rangeType])
+  }, [diaryDate, rangeType, us.googleConnected])
 
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())

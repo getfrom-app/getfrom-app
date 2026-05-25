@@ -5,6 +5,7 @@ import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
+import { useUserStore } from '../../store/userStore'
 
 // ── EventPopup ────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,8 @@ function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateP
 
   function handleSubmit() {
     const t = text.trim() || 'Nuevo evento'
-    const node = store.createNode({ text: t, parentId: null })
+    const diary = store.todayDiary()
+    const node = store.createNode({ text: t, parentId: diary?.id || null })
     store.updateNode(node.id, { due: date.toISOString(), isEvent: true, status: 'pending' })
     onCreate(node.id)
   }
@@ -529,6 +531,7 @@ interface MonthViewProps {
   monthStart: Date
   today: Date
   allNodes: Node[]
+  googleEvents: CalendarEvent[]
   onNavigate: (months: number) => void
   onGoToToday: () => void
   onNodeClick: (id: string) => void
@@ -536,7 +539,7 @@ interface MonthViewProps {
   onDrop?: (e: React.DragEvent, date: Date) => void
 }
 
-function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop }: MonthViewProps) {
+function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop }: MonthViewProps) {
   const navigate = useNavigate()
   const nodesWithDue = allNodes.filter(n => n.due)
   const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate)
@@ -556,6 +559,10 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
 
   function getDiaryForDay(day: Date): Node | undefined {
     return diaryEntries.find(n => n.diaryDate && isSameDay(new Date(n.diaryDate), day))
+  }
+
+  function getGoogleForDay(day: Date): CalendarEvent[] {
+    return googleEvents.filter(ev => ev.start && isSameDay(new Date(ev.start), day))
   }
 
   const monthLabel = `${formatMonth(monthStart)} ${monthStart.getFullYear()}`
@@ -582,7 +589,8 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
           const inMonth = isSameMonth(day, monthStart)
           const isToday = isSameDay(day, today)
           const dayNodes = getNodesForDay(day)
-          const overflow = dayNodes.length > 3
+          const gcalDay = getGoogleForDay(day)
+          const overflow = dayNodes.length + gcalDay.length > 3
           const diaryEntry = inMonth ? getDiaryForDay(day) : undefined
           const childCount = diaryEntry ? store.children(diaryEntry.id).length : 0
 
@@ -618,7 +626,16 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
                 )}
               </div>
               <div className="calendar-month-cell-nodes">
-                {dayNodes.slice(0, 3).map(node => (
+                {gcalDay.slice(0, 3).map(ev => (
+                  <span
+                    key={ev.id}
+                    className="calendar-month-node calendar-month-node--gcal"
+                    title={`Google Calendar · ${ev.title}`}
+                  >
+                    🗓 {ev.title || 'Sin título'}
+                  </span>
+                ))}
+                {dayNodes.slice(0, Math.max(0, 3 - gcalDay.length)).map(node => (
                   <button
                     key={node.id}
                     className={`calendar-month-node ${node.status === 'done' ? 'calendar-month-node--done' : ''}`}
@@ -632,7 +649,7 @@ function MonthView({ monthStart, today, allNodes, onNavigate, onGoToToday, onNod
                   </button>
                 ))}
                 {overflow && (
-                  <span className="calendar-month-overflow">+{dayNodes.length - 3} más</span>
+                  <span className="calendar-month-overflow">+{dayNodes.length + gcalDay.length - 3} más</span>
                 )}
               </div>
             </div>
@@ -784,6 +801,7 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
 export default function CalendarView() {
   const navigate = useNavigate()
   const s = useStore()
+  const us = useUserStore()
 
   const [view, setView] = useState<ViewType>('week')
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
@@ -797,16 +815,29 @@ export default function CalendarView() {
 
   const allNodes = s.allActive().filter(n => !n.deletedAt)
 
-  // Fetch Google Calendar events para la semana visible
+  // Fetch Google Calendar events para el rango visible (semana/mes/año)
   useEffect(() => {
-    if (view !== 'week') return
+    if (!us.googleConnected) { setGoogleEvents([]); return }
     let cancelled = false
-    const end = addDays(weekStart, 6)
-    getCalendarEventsRange(weekStart, end)
+    let rStart: Date, rEnd: Date
+    if (view === 'week') {
+      rStart = weekStart
+      rEnd = addDays(weekStart, 6)
+    } else if (view === 'month') {
+      rStart = monthStart
+      const e = new Date(monthStart)
+      e.setMonth(e.getMonth() + 1)
+      e.setDate(0)
+      rEnd = e
+    } else {
+      rStart = new Date(year, 0, 1)
+      rEnd = new Date(year, 11, 31)
+    }
+    getCalendarEventsRange(rStart, rEnd)
       .then(evs => { if (!cancelled) setGoogleEvents(evs) })
       .catch(() => { if (!cancelled) setGoogleEvents([]) })
     return () => { cancelled = true }
-  }, [weekStart, view])
+  }, [weekStart, monthStart, year, view, us.googleConnected])
 
   function goToToday() {
     setWeekStart(startOfWeek(new Date()))
@@ -841,9 +872,10 @@ export default function CalendarView() {
   }
 
   function handleCreateEvent(date: Date) {
+    const diary = store.todayDiary()
     const node = store.createNode({
       text: 'Nuevo evento',
-      parentId: null,
+      parentId: diary?.id || null,
     })
     store.updateNode(node.id, {
       due: date.toISOString(),
@@ -908,6 +940,7 @@ export default function CalendarView() {
               monthStart={monthStart}
               today={today}
               allNodes={allNodes}
+              googleEvents={googleEvents}
               onNavigate={navigateMonth}
               onGoToToday={goToToday}
               onNodeClick={id => navigate(`/node/${id}`)}

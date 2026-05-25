@@ -503,11 +503,59 @@ class NodeStore {
         this.workspaces = [{ id: '00000000-0000-0000-0000-000000000001', name: 'Mi espacio', color: null, icon: null, description: null, siblingOrder: 0, isArchived: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Workspace]
       }
     } catch { /* ignore parse errors */ }
+    // Dedupe diary entries: keep the earliest per local date, soft-delete the rest
+    this.dedupeDiaryEntries()
+    // Reparent stray nodes whose parent is missing / deleted to today's diary
+    this.reparentOrphansToTodayDiary()
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
     }
     this.notify()
+  }
+
+  /** Marca como deletedAt los diary entries duplicados por fecha local (deja el más antiguo). */
+  private dedupeDiaryEntries(): void {
+    const byDay = new Map<string, Node[]>()
+    for (const n of this.nodes.values()) {
+      if (!n.isDiaryEntry || n.deletedAt || !n.diaryDate) continue
+      const d = new Date(n.diaryDate)
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+      const arr = byDay.get(key) || []
+      arr.push(n)
+      byDay.set(key, arr)
+    }
+    for (const [, arr] of byDay) {
+      if (arr.length <= 1) continue
+      // Keep the earliest (lowest createdAt); reparent children of duplicates to the keeper
+      arr.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
+      const keeper = arr[0]
+      for (let i = 1; i < arr.length; i++) {
+        const dup = arr[i]
+        // Reparent direct children to keeper
+        for (const n of this.nodes.values()) {
+          if (n.parentId === dup.id && !n.deletedAt) {
+            this.updateNode(n.id, { parentId: keeper.id })
+          }
+        }
+        this.updateNode(dup.id, { deletedAt: new Date().toISOString() })
+      }
+    }
+  }
+
+  /** Reparenta a la nota diaria de hoy los nodos cuyo padre está borrado o no existe. */
+  private reparentOrphansToTodayDiary(): void {
+    const diary = this.todayDiary()
+    if (!diary) return
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      if (n.isDiaryEntry) continue
+      if (!n.parentId) continue
+      const parent = this.nodes.get(n.parentId)
+      if (!parent || parent.deletedAt) {
+        this.updateNode(n.id, { parentId: diary.id })
+      }
+    }
   }
 
   async sync(force = false): Promise<void> {
@@ -605,6 +653,9 @@ class NodeStore {
       }
     }
 
+    // Dedupe + reparent after server sync
+    this.dedupeDiaryEntries()
+    this.reparentOrphansToTodayDiary()
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
