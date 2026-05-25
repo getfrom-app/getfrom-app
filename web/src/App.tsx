@@ -76,7 +76,7 @@ function GoogleCallbackPage() {
     const redirectUri = window.location.origin + '/app/google-callback'
     connectGoogle(code, redirectUri)
       .then(() => {
-        navigate('/app/', { replace: true })
+        navigate('/', { replace: true })
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Error al conectar con Google.')
