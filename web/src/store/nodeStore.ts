@@ -106,6 +106,100 @@ class NodeStore {
    * - Soft-delete de los duplicados
    * Devuelve el número de duplicados fusionados.
    */
+  /**
+   * Fusiona nodos temporales duplicados (Año/Mes/Semana) creados por el bug
+   * v7.89 y anteriores. Solo afecta:
+   * - Años (text="2026"): si hay varios → canónico = más descendientes
+   * - Meses bajo un año (text="Mayo"): mismo padre año → fusionar
+   * - Semanas bajo un mes (text="Semana 22"): mismo padre mes → fusionar
+   *
+   * Para cada duplicado: reparenta hijos al canónico + soft-delete del duplicado.
+   * Devuelve el conteo. SEGURO: no toca nodos que no encajen en el patrón.
+   */
+  mergeDuplicateTemporalNodes(): { years: number; months: number; weeks: number } {
+    const MONTHS = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
+    const isYear  = (t: string) => /^\d{4}$/.test(t)
+    const isMonth = (t: string) => MONTHS.has(t)
+    const isWeek  = (t: string) => /^Semana \d+$/i.test(t)
+
+    let yearsMerged = 0, monthsMerged = 0, weeksMerged = 0
+
+    // Helper: cuenta TODOS los descendientes activos de un nodo
+    const countDescendants = (id: string): number => {
+      let count = 0
+      const stack = [id]
+      while (stack.length) {
+        const cur = stack.pop()!
+        const kids = this.children(cur).filter(n => !n.deletedAt)
+        count += kids.length
+        for (const k of kids) stack.push(k.id)
+      }
+      return count
+    }
+
+    const mergeGroup = (dups: Node[]): boolean => {
+      if (dups.length < 2) return false
+      dups.sort((a, b) => countDescendants(b.id) - countDescendants(a.id) ||
+        new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+      const canonical = dups[0]
+      for (const dup of dups.slice(1)) {
+        for (const child of this.children(dup.id).filter(n => !n.deletedAt)) {
+          this.updateNode(child.id, { parentId: canonical.id })
+        }
+        this.deleteNode(dup.id)
+      }
+      return true
+    }
+
+    // 1. Years (top-level con texto YYYY)
+    const allActive = [...this.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
+    const yearsByText = new Map<string, Node[]>()
+    for (const n of allActive) {
+      if (!n.parentId && isYear(n.text || '')) {
+        const k = n.text!
+        if (!yearsByText.has(k)) yearsByText.set(k, [])
+        yearsByText.get(k)!.push(n)
+      }
+    }
+    for (const [, group] of yearsByText) {
+      if (mergeGroup(group)) yearsMerged += group.length - 1
+    }
+
+    // Re-snapshot tras year merges
+    const afterYears = [...this.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
+
+    // 2. Months: hijos directos de un Año, texto = mes
+    const monthsByYear = new Map<string, Node[]>()  // key = parentId|monthText
+    for (const n of afterYears) {
+      if (!n.parentId || !isMonth(n.text || '')) continue
+      const parent = this.getNode(n.parentId)
+      if (!parent || !isYear(parent.text || '')) continue
+      const k = `${parent.id}|${n.text}`
+      if (!monthsByYear.has(k)) monthsByYear.set(k, [])
+      monthsByYear.get(k)!.push(n)
+    }
+    for (const [, group] of monthsByYear) {
+      if (mergeGroup(group)) monthsMerged += group.length - 1
+    }
+
+    // 3. Weeks: hijos directos de un Mes, texto = "Semana N"
+    const afterMonths = [...this.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
+    const weeksByMonth = new Map<string, Node[]>()
+    for (const n of afterMonths) {
+      if (!n.parentId || !isWeek(n.text || '')) continue
+      const parent = this.getNode(n.parentId)
+      if (!parent || !isMonth(parent.text || '')) continue
+      const k = `${parent.id}|${n.text}`
+      if (!weeksByMonth.has(k)) weeksByMonth.set(k, [])
+      weeksByMonth.get(k)!.push(n)
+    }
+    for (const [, group] of weeksByMonth) {
+      if (mergeGroup(group)) weeksMerged += group.length - 1
+    }
+
+    return { years: yearsMerged, months: monthsMerged, weeks: weeksMerged }
+  }
+
   mergeDuplicateDiaries(): number {
     const byDay = new Map<string, Node[]>()
     for (const node of this.nodes.values()) {
@@ -822,6 +916,20 @@ class NodeStore {
     if (mergedCount > 0) {
       // eslint-disable-next-line no-console
       console.log(`[diary] fusionados ${mergedCount} diarios duplicados`)
+      await this.sync()
+    }
+
+    // Fusionar nodos temporales duplicados (Año/Mes/Semana) — limpieza del
+    // bug de v7.89 y anteriores donde navigateToTemporalNode podía
+    // reparentar notas existentes con el mismo texto.
+    const temporalMerged = this.mergeDuplicateTemporalNodes()
+    const totalTemporal = temporalMerged.years + temporalMerged.months + temporalMerged.weeks
+    if (totalTemporal > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[temporal] fusionados ${totalTemporal} duplicados:`,
+        `${temporalMerged.years} años,`,
+        `${temporalMerged.months} meses,`,
+        `${temporalMerged.weeks} semanas`)
       await this.sync()
     }
 
