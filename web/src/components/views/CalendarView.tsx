@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
-import DiaryRightPanel from '../panels/DiaryRightPanel'
+import DiaryRightPanel, { TaskPropsPopover } from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 
@@ -268,6 +268,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
+  const [taskPopover, setTaskPopover] = useState<{ node: Node; el: HTMLElement } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to current hour on mount
@@ -354,14 +355,26 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
               <div
                 key={i}
                 className="calendar-allday-cell"
-                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }}
-                onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
+                onDragOver={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  e.dataTransfer.dropEffect = 'move'
+                  e.currentTarget.classList.add('drag-over')
+                }}
+                onDragEnter={e => { e.preventDefault(); e.stopPropagation() }}
+                onDragLeave={e => {
+                  // Solo quitar si realmente salimos del cell (no por entrar a un hijo)
+                  if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node)) {
+                    e.currentTarget.classList.remove('drag-over')
+                  }
+                }}
                 onDrop={e => {
                   e.preventDefault()
+                  e.stopPropagation()
                   e.currentTarget.classList.remove('drag-over')
                   const newDate = new Date(day)
                   newDate.setHours(0, 0, 0, 0)
-                  const nodeId = e.dataTransfer.getData('cal-node-id')
+                  const nodeId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
                   if (nodeId) {
                     store.updateNode(nodeId, { due: newDate.toISOString(), status: 'pending' })
                     return
@@ -377,7 +390,17 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     key={node.id}
                     className="calendar-event-chip"
                     style={{ background: priorityBg(node) }}
-                    onClick={() => onNodeClick(node.id)}
+                    draggable
+                    onDragStart={e => {
+                      e.stopPropagation()
+                      e.dataTransfer.setData('cal-node-id', node.id)
+                      e.dataTransfer.setData('eventId', node.id)
+                      e.dataTransfer.effectAllowed = 'move'
+                    }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setTaskPopover({ node, el: e.currentTarget as HTMLElement })
+                    }}
                     title={node.text || 'Sin título'}
                   >
                     {node.text || 'Sin título'}
@@ -493,7 +516,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         onClick={e => {
                           e.stopPropagation()
                           setQuickCreate(null)
-                          setEventPopup({ node, anchor: e.currentTarget as HTMLElement })
+                          setTaskPopover({ node, el: e.currentTarget as HTMLElement })
                         }}
                         title={node.text || 'Sin título'}
                       >
@@ -533,13 +556,24 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
         </div>
       </div>
 
-      {/* Event popup */}
+      {/* Event popup (legacy) */}
       {eventPopup && (
         <EventPopup
           node={eventPopup.node}
           anchorEl={eventPopup.anchor}
           onClose={() => setEventPopup(null)}
           onOpen={id => { setEventPopup(null); onNodeClick(id) }}
+        />
+      )}
+
+      {/* Task properties popover (rename/delete/props) */}
+      {taskPopover && (
+        <TaskPropsPopover
+          node={taskPopover.node}
+          onClose={() => setTaskPopover(null)}
+          anchorRef={{ current: taskPopover.el }}
+          allowRename
+          allowDelete
         />
       )}
 

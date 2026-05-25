@@ -371,6 +371,7 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
         _agendaDragId = task.id
         e.dataTransfer.effectAllowed = 'move'
         e.dataTransfer.setData('text/plain', task.id)
+        e.dataTransfer.setData('cal-node-id', task.id)
       }}
       onDragEnd={() => { _agendaDragId = null; setIsDragOver(false) }}
       onDragOver={e => {
