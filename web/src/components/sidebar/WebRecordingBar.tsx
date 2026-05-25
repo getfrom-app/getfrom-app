@@ -75,7 +75,7 @@ export default function WebRecordingBar() {
         className="rec-bar-icon-btn rec-bar-icon-btn--record"
         onClick={() => r.startRecording()}
         disabled={!r.isSupported}
-        title="Grabar (⌘R)"
+        title="Grabar nota de voz"
         aria-label="Grabar"
       >
         {/* Record icon: filled red circle */}

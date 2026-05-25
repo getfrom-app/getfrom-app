@@ -115,46 +115,42 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={onNewNote}
-          title="Nueva nota (⌘N)"
+          title="Nueva nota"
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
-          <span className="top-bar-shortcut-hint">⌘N</span>
         </button>
 
         <button
           className="top-bar-action"
           onClick={onNewTask}
-          title="Nueva tarea (⌘T)"
+          title="Nueva tarea"
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span className="top-bar-shortcut-hint">⌘T</span>
         </button>
 
         <button
           className="top-bar-action"
           onClick={onNewEvent}
-          title="Nuevo evento (⌘E)"
+          title="Nuevo evento"
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
           </svg>
-          <span className="top-bar-shortcut-hint">⌘E</span>
         </button>
 
         {onVoiceCapture && (
           <button
             className="top-bar-action"
             onClick={onVoiceCapture}
-            title="Captura de voz (⌘R)"
+            title="Captura de voz"
           >
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
             </svg>
-            <span className="top-bar-shortcut-hint">⌘R</span>
           </button>
         )}
 

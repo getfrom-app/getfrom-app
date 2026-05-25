@@ -128,18 +128,11 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:unauthorized', handler)
   }, [navigate])
 
-  // Cmd+N / Ctrl+N → new note
-  // Cmd+K / Ctrl+K → command palette
-  // Cmd+T / Ctrl+T → new task
-  // Cmd+E / Ctrl+E → new event
-  // Cmd+R / Ctrl+R → voice capture
+  // Cmd+K / Ctrl+K → command palette (única combinación global que no choca con Chrome)
+  // Nota: Cmd+N, Cmd+T, Cmd+E, Cmd+R son comandos del navegador y se han eliminado
   // Escape → go home (if no modal/input focused)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowNewNote(true)
-      }
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowCommandPalette(v => !v)
@@ -148,18 +141,6 @@ export default function MainLayout() {
       if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault()
         setSidebarOpen(v => !v)
-      }
-      if (e.key === 't' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowNewTask(true)
-      }
-      if (e.key === 'e' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowNewEvent(true)
-      }
-      if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowVoiceCapture(true)
       }
       // Cmd+, → Ajustes (página completa)
       if (e.key === ',' && (e.metaKey || e.ctrlKey)) {

@@ -556,10 +556,6 @@ export function AtajosPane() {
 
   const KB_SHORTCUTS = [
     { key: '⌘K', desc: 'Búsqueda y comandos' },
-    { key: '⌘N', desc: 'Nueva nota' },
-    { key: '⌘T', desc: 'Nueva tarea' },
-    { key: '⌘E', desc: 'Nuevo evento' },
-    { key: '⌘R', desc: 'Captura de voz' },
     { key: '⌘Q', desc: 'Captura rápida' },
     { key: '⌘Z', desc: 'Deshacer' },
     { key: '⌘⇧Z', desc: 'Rehacer' },

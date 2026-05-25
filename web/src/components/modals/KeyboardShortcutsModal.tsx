@@ -26,11 +26,9 @@ const GROUPS: ShortcutGroup[] = [
   {
     title: 'Crear',
     shortcuts: [
-      { keys: '⌘N', desc: 'Nueva nota (con plantillas)' },
-      { keys: '⌘T', desc: 'Nueva tarea rápida' },
-      { keys: '⌘E', desc: 'Nuevo evento' },
-      { keys: '⌘R', desc: 'Captura de voz' },
+      { keys: '⌘K', desc: 'Buscar / capturar (paleta de comandos)' },
       { keys: '⌘Q', desc: 'Captura rápida flotante' },
+      { keys: 'Clic ＋', desc: 'Nueva nota / tarea / evento (barra superior)' },
     ],
   },
   {
