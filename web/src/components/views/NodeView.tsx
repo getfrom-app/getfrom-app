@@ -9,6 +9,7 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import NodeViewTabs from './NodeViewTabs'
+import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeRightPanel from '../panels/NodeRightPanel'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
 import TagNodesPanel from '../panels/TagNodesPanel'
@@ -624,7 +625,10 @@ export default function NodeView() {
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
   }
 
-  // Navigate to a temporal node (year/month/week), creating proper hierarchy
+  // Navigate to a temporal node (year/month/week), creating proper hierarchy.
+  // SAFE: solo busca en la jerarquía correcta (sin fallbacks por texto suelto)
+  // para no reparentar accidentalmente notas del usuario llamadas "2026",
+  // "Mayo" o "Semana 22".
   function navigateToTemporalNode(type: 'year' | 'month' | 'week', fromDate: Date): void {
     const allNodes = [...store.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
 
@@ -632,27 +636,21 @@ export default function NodeView() {
     const monthStr = fromDate.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())
     const weekStr = `Semana ${weekNumberFromDate(fromDate)}`
 
-    // Year node — always top-level (no parent)
+    // Year node — solo top-level. Si no existe, crearlo.
     let yearNode = allNodes.find(n => n.text === yearStr && !n.parentId)
-      ?? allNodes.find(n => n.text === yearStr)
     if (!yearNode) yearNode = store.createNode({ text: yearStr, parentId: null })
-    else if (yearNode.parentId) store.updateNode(yearNode.id, { parentId: null })
 
     if (type === 'year') { navigate(`/node/${yearNode.id}`); return }
 
-    // Month node — child of year
+    // Month node — hijo directo de yearNode. Sin fallback de texto suelto.
     let monthNode = allNodes.find(n => n.text === monthStr && n.parentId === yearNode!.id)
-      ?? allNodes.find(n => n.text === monthStr)
     if (!monthNode) monthNode = store.createNode({ text: monthStr, parentId: yearNode.id })
-    else if (monthNode.parentId !== yearNode.id) store.updateNode(monthNode.id, { parentId: yearNode.id })
 
     if (type === 'month') { navigate(`/node/${monthNode.id}`); return }
 
-    // Week node — child of month
+    // Week node — hijo directo de monthNode.
     let weekNode = allNodes.find(n => n.text === weekStr && n.parentId === monthNode!.id)
-      ?? allNodes.find(n => n.text === weekStr)
     if (!weekNode) weekNode = store.createNode({ text: weekStr, parentId: monthNode.id })
-    else if (weekNode.parentId !== monthNode.id) store.updateNode(weekNode.id, { parentId: monthNode.id })
 
     navigate(`/node/${weekNode.id}`)
   }
@@ -2028,6 +2026,15 @@ export default function NodeView() {
               parentId={node.id}
               activeViewId={activeViewId}
               onSelect={handleSelectView}
+            />
+          )}
+
+          {/* Días/Semanas/Meses cuando el nodo es temporal */}
+          {temporalNodeType && (
+            <TemporalChildrenBlock
+              node={node}
+              type={temporalNodeType}
+              onNavigate={(id) => navigate(`/node/${id}`)}
             />
           )}
 

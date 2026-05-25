@@ -6372,6 +6372,53 @@ a:focus-visible {
 .node-table-tag { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
 .node-table-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
 
+/* Temporal children block (Año/Mes/Semana muestran sus hijos navegables) */
+.temporal-children {
+  margin: 12px 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+}
+.temporal-children-label {
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.temporal-children-grid {
+  display: grid; gap: 6px;
+}
+.temporal-children-grid--months { grid-template-columns: repeat(4, 1fr); }
+.temporal-children-grid--weeks  { grid-template-columns: repeat(5, 1fr); }
+.temporal-children-grid--days   { grid-template-columns: repeat(7, 1fr); }
+.temporal-children-item {
+  padding: 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-primary); color: var(--text-secondary);
+  cursor: pointer; font-size: 13px; transition: all 0.1s;
+  text-align: center;
+}
+.temporal-children-item:hover { border-color: var(--accent); color: var(--accent); }
+.temporal-children-item.has-content { color: var(--accent); font-weight: 500; }
+
+.temporal-children-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg-primary);
+  cursor: pointer; transition: all 0.1s; position: relative;
+}
+.temporal-children-day:hover { border-color: var(--accent); }
+.temporal-children-day.has-content { background: var(--accent-soft, rgba(139,92,246,0.05)); border-color: var(--accent); }
+.temporal-children-day-dow { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
+.temporal-children-day-num { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+.temporal-children-day-month { font-size: 10px; color: var(--text-tertiary); }
+.temporal-children-day-badge {
+  position: absolute; top: 4px; right: 4px;
+  background: var(--accent); color: white;
+  font-size: 9px; font-weight: 600;
+  border-radius: 8px; padding: 1px 5px;
+  min-width: 14px; text-align: center;
+}
+
 /* Inline view blocks (slash /tabla, /kanban, /calendario en outliner) */
 .outliner-inline-view {
   margin-top: 8px; margin-bottom: 8px;
