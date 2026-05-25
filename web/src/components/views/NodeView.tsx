@@ -1121,11 +1121,27 @@ export default function NodeView() {
             </span>
           </div>
 
-          {/* Node header badges: area, locked — sin contador de bullets */}
-          {(nodeArea || isLocked) && (
+          {/* Node header badges: area, locked, event ──────────────── */}
+          {(nodeArea || isLocked || (node.isEvent && node.due)) && (
             <div className="node-header-badges">
               {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
               {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
+              {node.isEvent && node.due && (() => {
+                const start = new Date(node.due)
+                const startStr = start.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
+                  (node.due.slice(11, 16) !== '00:00' ? ' · ' + node.due.slice(11, 16) : '')
+                const endStr = node.dueEnd
+                  ? ' → ' + new Date(node.dueEnd).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) +
+                    (node.dueEnd.slice(11, 16) !== '00:00' ? ' ' + node.dueEnd.slice(11, 16) : '')
+                  : ''
+                let loc = ''
+                try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
+                return (
+                  <span className="node-badge node-badge--event">
+                    📅 {startStr}{endStr}{loc ? ` · 📍 ${loc}` : ''}
+                  </span>
+                )
+              })()}
             </div>
           )}
 
