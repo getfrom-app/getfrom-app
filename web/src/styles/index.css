@@ -6352,7 +6352,85 @@ a:focus-visible {
 .node-table-tag { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
 .node-table-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
 
+/* Sorting + interactive headers */
+.node-table-th { user-select: none; cursor: pointer; transition: background 0.08s; }
+.node-table-th:hover { background: var(--bg-hover); }
+.node-table-th--add { width: 36px; text-align: center; cursor: default; }
+.node-table-th--add:hover { background: var(--bg-secondary); }
+.node-table-add-col {
+  background: transparent; border: none; color: var(--text-tertiary);
+  cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px;
+}
+.node-table-add-col:hover { background: var(--bg-hover); color: var(--accent); }
+
+.node-table-th--custom { position: relative; }
+.node-table-col-menu {
+  position: absolute; top: 100%; left: 0; z-index: 10;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  display: flex; flex-direction: column; min-width: 140px; padding: 4px;
+}
+.node-table-col-menu button {
+  background: transparent; border: none; padding: 6px 10px; text-align: left;
+  cursor: pointer; font-size: 12px; color: var(--text-primary); border-radius: 4px;
+}
+.node-table-col-menu button:hover { background: var(--bg-hover); }
+.node-table-col-menu button.danger { color: #ef4444; }
+
+/* Editable cell */
+.node-table-cell-editor {
+  width: 100%; border: 1px solid var(--accent); border-radius: 4px;
+  padding: 2px 6px; font-size: 13px; background: var(--bg-primary);
+  color: var(--text-primary); outline: none; font-family: inherit;
+}
+.node-table-td--custom { min-width: 80px; }
+.node-table-select-chip {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 500; cursor: pointer;
+}
+
+/* Add row */
+.node-table-row--add { color: var(--text-tertiary); }
+.node-table-row--add:hover { background: var(--bg-hover); color: var(--accent); }
+.node-table-row--add .node-table-td { padding: 10px 12px; }
+
+/* Modal genérico */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: var(--bg-primary); border-radius: 10px;
+  padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 100%; max-width: 480px;
+}
+.modal--small { max-width: 340px; }
+.modal-title { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+.modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.modal-field label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+.modal-field input, .modal-field select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg-secondary); color: var(--text-primary); font-size: 13px; outline: none;
+}
+.modal-field input:focus, .modal-field select:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
 /* ── Kanban view ──────────────────────────────────────────────────────────── */
+.node-kanban-wrapper { display: flex; flex-direction: column; gap: 10px; }
+.node-kanban-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0;
+}
+.node-kanban-toolbar-label { font-size: 12px; color: var(--text-tertiary); }
+.node-kanban-toolbar-select {
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg-secondary); font-size: 12px; color: var(--text-primary); outline: none;
+}
+.node-kanban-toolbar-hint { font-size: 11px; color: var(--text-tertiary); }
+.node-kanban-col--drop { background: var(--accent-soft, rgba(139,92,246,0.1)); outline: 2px dashed var(--accent); outline-offset: -2px; }
+.node-kanban-card { cursor: grab; }
+.node-kanban-card:active { cursor: grabbing; }
+
 .node-kanban {
   display: flex;
   gap: 12px;
@@ -6506,6 +6584,20 @@ a:focus-visible {
 .node-calendar-event:hover { opacity: 0.75; }
 .node-calendar-event.done { opacity: 0.4; text-decoration: line-through; }
 .node-calendar-empty { padding: 32px; text-align: center; color: var(--text-tertiary); font-size: 13px; }
+.node-calendar-cell { cursor: pointer; position: relative; }
+.node-calendar-quick-add {
+  position: absolute; top: 4px; right: 4px;
+  background: transparent; border: none; color: var(--text-tertiary);
+  cursor: pointer; opacity: 0; transition: opacity 0.1s, color 0.1s;
+  font-size: 14px; padding: 0 4px; border-radius: 4px;
+}
+.node-calendar-cell:hover .node-calendar-quick-add { opacity: 1; }
+.node-calendar-quick-add:hover { color: var(--accent); background: var(--bg-hover); }
+.node-calendar-quick-input {
+  width: 100%; padding: 3px 6px; border: 1px solid var(--accent);
+  border-radius: 4px; font-size: 11px; background: var(--bg-primary);
+  color: var(--text-primary); outline: none; margin-top: 2px;
+}
 
 /* ── Node toolbar — ··· more menu ─────────────────────────────────────────── */
 .node-more-menu {

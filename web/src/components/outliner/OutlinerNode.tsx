@@ -410,16 +410,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
-    // Auto-sync: extraer #tags del texto y añadir a types[]
-    const hashTags = [...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
-    if (hashTags.length > 0) {
-      const existing = new Set(node.types || [])
-      const toAdd = hashTags.filter(t => !existing.has(t))
-      if (toAdd.length > 0) {
-        store.updateNode(node.id, { text, types: [...existing, ...toAdd] })
-      } else {
-        store.updateNode(node.id, { text })
-      }
+    // Auto-sync bidireccional: types[] refleja los #tags del texto.
+    // Preservamos types "builtin" (bucle, agente, etc.) que no son tags visuales.
+    const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const hashTags = new Set([...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
+    const currentTypes = node.types || []
+    const newTypes = [
+      ...currentTypes.filter(t => BUILTIN_TYPES.has(t) || hashTags.has(t)),
+      ...[...hashTags].filter(t => !currentTypes.includes(t)),
+    ]
+    // Solo actualizar types si realmente cambió (evita escritura inútil)
+    const typesChanged = newTypes.length !== currentTypes.length ||
+      newTypes.some((t, i) => t !== currentTypes[i])
+    if (typesChanged) {
+      store.updateNode(node.id, { text, types: newTypes })
     } else {
       store.updateNode(node.id, { text })
     }

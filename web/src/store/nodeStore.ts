@@ -510,6 +510,114 @@ class NodeStore {
    * - Tarea normal: due + status:pending
    * - Nota plana: solo due
    */
+  // ── Propiedades custom (estilo Notion) ───────────────────────────────────
+  // Schema en padre: extraData._props = [{id, name, type, options?}]
+  //                  extraData._views = [{id, name, kind, columns, sort, group}]
+  //                  extraData._activeView = "vN"
+  // Valores en hijo: extraData._props = { [propId]: value }
+  //
+  // Builtin column ids: __title, __status, __due, __priority, __tags, __children
+
+  getPropSchema(parentId: string): Array<{ id: string; name: string; type: string; options?: Array<{ id: string; label: string; color?: string }> }> {
+    const parent = this.getNode(parentId)
+    if (!parent) return []
+    try {
+      const ed = JSON.parse(parent.extraData || '{}')
+      return Array.isArray(ed._props) ? ed._props : []
+    } catch { return [] }
+  }
+
+  setPropSchema(parentId: string, schema: Array<{ id: string; name: string; type: string; options?: Array<{ id: string; label: string; color?: string }> }>): void {
+    const parent = this.getNode(parentId)
+    if (!parent) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(parent.extraData || '{}') } catch { /* ignore */ }
+    ed._props = schema
+    this.updateNode(parentId, { extraData: JSON.stringify(ed) })
+  }
+
+  addPropColumn(parentId: string, name: string, type: string, options?: Array<{ id: string; label: string; color?: string }>): string {
+    const schema = this.getPropSchema(parentId)
+    const id = 'col_' + Math.random().toString(36).slice(2, 10)
+    schema.push({ id, name, type, ...(options ? { options } : {}) })
+    this.setPropSchema(parentId, schema)
+    return id
+  }
+
+  renamePropColumn(parentId: string, colId: string, newName: string): void {
+    const schema = this.getPropSchema(parentId)
+    const col = schema.find(c => c.id === colId)
+    if (!col) return
+    col.name = newName
+    this.setPropSchema(parentId, schema)
+  }
+
+  deletePropColumn(parentId: string, colId: string): void {
+    const schema = this.getPropSchema(parentId).filter(c => c.id !== colId)
+    this.setPropSchema(parentId, schema)
+  }
+
+  getPropValue(nodeId: string, colId: string): unknown {
+    const node = this.getNode(nodeId)
+    if (!node) return undefined
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      return ed._props?.[colId]
+    } catch { return undefined }
+  }
+
+  setPropValue(nodeId: string, colId: string, value: unknown): void {
+    const node = this.getNode(nodeId)
+    if (!node) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+    const props = (ed._props && typeof ed._props === 'object' && !Array.isArray(ed._props))
+      ? { ...ed._props as Record<string, unknown> }
+      : {}
+    if (value === undefined || value === null || value === '') delete props[colId]
+    else props[colId] = value
+    ed._props = props
+    this.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  }
+
+  // ── Vistas múltiples ────────────────────────────────────────────────────
+
+  getViews(parentId: string): Array<{ id: string; name: string; kind: 'table' | 'kanban' | 'calendar' | 'list'; columns?: string[]; sort?: { by: string; dir: 'asc' | 'desc' } | null; group?: { by: string } | null; filter?: { col: string; op: string; val: unknown } | null }> {
+    const parent = this.getNode(parentId)
+    if (!parent) return []
+    try {
+      const ed = JSON.parse(parent.extraData || '{}')
+      return Array.isArray(ed._views) ? ed._views : []
+    } catch { return [] }
+  }
+
+  setViews(parentId: string, views: Array<{ id: string; name: string; kind: 'table' | 'kanban' | 'calendar' | 'list'; columns?: string[]; sort?: { by: string; dir: 'asc' | 'desc' } | null; group?: { by: string } | null; filter?: { col: string; op: string; val: unknown } | null }>): void {
+    const parent = this.getNode(parentId)
+    if (!parent) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(parent.extraData || '{}') } catch { /* ignore */ }
+    ed._views = views
+    this.updateNode(parentId, { extraData: JSON.stringify(ed) })
+  }
+
+  getActiveViewId(parentId: string): string | null {
+    const parent = this.getNode(parentId)
+    if (!parent) return null
+    try {
+      const ed = JSON.parse(parent.extraData || '{}')
+      return ed._activeView ?? null
+    } catch { return null }
+  }
+
+  setActiveViewId(parentId: string, viewId: string): void {
+    const parent = this.getNode(parentId)
+    if (!parent) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(parent.extraData || '{}') } catch { /* ignore */ }
+    ed._activeView = viewId
+    this.updateNode(parentId, { extraData: JSON.stringify(ed) })
+  }
+
   /**
    * Busca el ancestro recurso más cercano (incluyendo el propio nodo).
    * Devuelve {url, kind} si existe.
