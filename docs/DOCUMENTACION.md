@@ -1,7 +1,45 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-25 (Web v7.29)
+> Última actualización: 2026-05-25 (Web v7.32)
+
+---
+
+## Sesión 2026-05-25 sesión 5 — Google Calendar + Tags + UI (v7.31→v7.32)
+
+### Google Calendar OAuth fix
+- `404.html`: `var fullSub = sub + window.location.search` — incluye query params OAuth en el redirect
+- `App.tsx`: ruta callback `/app/google-callback` → `/google-callback` (BrowserRouter basename ya descuenta `/app`)
+- Tras conectar: `window.location.replace('/app/')` para hard reload y refetch de eventos
+
+### Google Calendar en CalendarView
+- Servidor: `GET /google/calendar/events/range?start=YYYY-MM-DD&end=YYYY-MM-DD`
+- Cliente: `getCalendarEventsRange(start, end)` en `api/googleCalendar.ts`
+- `WeekView`: prop `googleEvents`, filtra por día, renderiza en azul (`.calendar-event-block--gcal`)
+- Sidebar: indicador Google con punto verde/rojo, navega a Ajustes
+
+### Eventos — UX
+- `NewEventModal`: hora opcional, todo el día por defecto
+- Creación correcta: `isEvent:true` (no `isTask:true`)
+- Shortcuts (`-e`, slash `event`, command palette): añaden `due` = hoy si sin fecha
+- `NodeRightPanel` evento: `hasLocalTime()` controla visibilidad de hora y fin
+
+### NodeView — icono en título
+- Tarea: checkbox cuadrado (amarillo/naranja/verde/azul según estado) — reemplaza circulo
+- Tag de definición: `#` en color del tag
+- Lógica unificada en un IIFE en el render del título
+
+### Agenda diaria
+- `formatDue`: medianoche → "Hoy"
+- `AgendaTaskRow`: prop `parentNote` — nota contenedora junto al título
+- `getParentNote()`: omite si padre es nota diaria o raíz
+
+### Sistema de tags
+- Clic en tag → nodo de definición (`_tagDefinition` en extraData) o crea uno
+- `TagNodesPanel`: panel derecho para nodos de definición — filtros + orden + color picker
+- Menú contextual (clic derecho): renombrar, color, eliminar
+- Store: `getTagDefNode`, `deleteTag`, `renameTag`, `setTagColor`, `tagColor` con custom color
+- Regex: `#([\wÀ-ɏ/\-]+)` — soporta guión y barra en nombres de tag
 
 ---
 
