@@ -510,6 +510,30 @@ class NodeStore {
    * - Tarea normal: due + status:pending
    * - Nota plana: solo due
    */
+  /**
+   * Busca el ancestro recurso más cercano (incluyendo el propio nodo).
+   * Devuelve {url, kind} si existe.
+   */
+  findAncestorResource(nodeId: string): { url: string; kind: 'youtube' | 'article' | 'podcast' } | null {
+    let current: Node | undefined = this.getNode(nodeId)
+    while (current) {
+      try {
+        const ed = JSON.parse(current.extraData || '{}')
+        if (ed._resource && ed._resourceUrl) {
+          const url = ed._resourceUrl as string
+          const type = (ed._resourceType || 'url') as string
+          const kind: 'youtube' | 'article' | 'podcast' =
+            type === 'youtube' || /youtu\.?be/.test(url) ? 'youtube'
+            : type === 'podcast' ? 'podcast' : 'article'
+          return { url, kind }
+        }
+      } catch { /* ignore */ }
+      if (!current.parentId) break
+      current = this.getNode(current.parentId)
+    }
+    return null
+  }
+
   scheduleNodeAt(nodeId: string, iso: string): string | null {
     const node = this.getNode(nodeId)
     if (!node) return null

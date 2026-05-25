@@ -288,6 +288,7 @@ export default function NodeView() {
       const contextEnriquecido = buildAiContext(context)
       let aiText = ''
       try {
+        const resource = node ? store.findAncestorResource(node.id) : null
         await aiInlineStream(
           contextEnriquecido,
           undefined,
@@ -298,7 +299,8 @@ export default function NodeView() {
               const after = prev.slice(cursorPos)
               return before + aiText + after
             })
-          }
+          },
+          resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
         )
       } catch (err) {
         if (err instanceof Error && err.message !== 'AI_LIMIT') {
@@ -826,6 +828,7 @@ export default function NodeView() {
     const contextEnriquecido = buildAiContext(context)
     let aiText = ''
     try {
+      const resource = node ? store.findAncestorResource(node.id) : null
       await aiInlineStream(
         contextEnriquecido,
         undefined,
@@ -836,7 +839,8 @@ export default function NodeView() {
             const after = prev.slice(cursorPos)
             return before + aiText + after
           })
-        }
+        },
+        resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
       )
     } catch (err) {
       if (err instanceof Error && err.message !== 'AI_LIMIT') {

@@ -216,7 +216,8 @@ export async function unpublishNote(slug: string): Promise<{ ok: boolean }> {
 export async function aiInlineStream(
   prompt: string,
   context?: string,
-  onChunk?: (chunk: string) => void
+  onChunk?: (chunk: string) => void,
+  opts?: { resourceUrl?: string; resourceKind?: 'youtube' | 'article' | 'podcast' }
 ): Promise<string> {
   const token = getToken()
   const res = await fetch(`${BASE}/ai/inline`, {
@@ -225,7 +226,13 @@ export async function aiInlineStream(
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ prompt, context, maxTokens: 800 }),
+    body: JSON.stringify({
+      prompt,
+      context,
+      maxTokens: 800,
+      resourceUrl: opts?.resourceUrl,
+      resourceKind: opts?.resourceKind,
+    }),
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 

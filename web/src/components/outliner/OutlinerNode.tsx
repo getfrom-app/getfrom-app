@@ -744,6 +744,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       aiOriginalText.current = currentText
       setIsAiStreaming(true)
       let aiText = ''
+      const resource = store.findAncestorResource(node.id)
       aiInlineStream(
         currentText + '\n',
         undefined,
@@ -762,7 +763,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               sel?.addRange(range)
             }
           }
-        }
+        },
+        resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
       ).then(() => {
         const fullText = (currentText + aiText).replace(/ /g, ' ')
         // Fase 2: modo ghost — NO guardar en store todavía

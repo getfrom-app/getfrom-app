@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { store, useStore } from '../../store/nodeStore'
+import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
-import { summarizeResource } from '../../api/aiSummarize'
 
 export type ResourceType = string  // ahora libre — usuario puede definir nuevos
 export type ResourceTypeDef = { key: string; icon: string; label: string }
@@ -40,10 +38,9 @@ function getResourceData(node: Node) {
       type: (ed._resourceType || 'url') as ResourceType,
       url: (ed._resourceUrl || '') as string,
       meta: (ed._resourceMeta || null) as UnfurlMeta | null,
-      summaryGeneratedAt: (ed._summaryGeneratedAt || null) as string | null,
     }
   } catch {
-    return { type: 'url', url: '', meta: null, summaryGeneratedAt: null }
+    return { type: 'url', url: '', meta: null }
   }
 }
 
@@ -57,22 +54,13 @@ function setResourceField(node: Node, fields: Record<string, unknown>) {
 interface Props { node: Node }
 
 export default function ResourcePanel({ node }: Props) {
-  const s = useStore()
-  const navigate = useNavigate()
-  const { type, url, meta, summaryGeneratedAt } = getResourceData(node)
+  const { type, url, meta } = getResourceData(node)
   const [urlInput, setUrlInput] = useState(url)
   const [loadingMeta, setLoadingMeta] = useState(false)
   const [customTypes, setCustomTypes] = useState<ResourceTypeDef[]>(() => loadCustomTypes())
   const [addingType, setAddingType] = useState(false)
   const [newTypeLabel, setNewTypeLabel] = useState('')
   const [newTypeIcon, setNewTypeIcon] = useState('📌')
-  const [summarizing, setSummarizing] = useState<false | 'short' | 'long'>(false)
-  const [summaryError, setSummaryError] = useState<string | null>(null)
-
-  // Buscar nodo hijo "📝 Resumen" si existe
-  const summaryChild = s.children(node.id).find(c =>
-    !c.deletedAt && (c.text || '').startsWith('📝 Resumen')
-  )
 
   useEffect(() => {
     function refresh() { setCustomTypes(loadCustomTypes()) }
@@ -132,40 +120,6 @@ export default function ResourcePanel({ node }: Props) {
     saveCustomTypes(updated)
     setCustomTypes(updated)
     if (type === key) setResourceField(node, { _resourceType: 'url' })
-  }
-
-  const isSummarizable = type === 'youtube' || type === 'podcast' || type === 'url'
-
-  // Auto-resumir cuando se pega una URL de YouTube y aún no hay resumen
-  useEffect(() => {
-    if (!url || !isSummarizable || summaryChild || summarizing || summaryGeneratedAt) return
-    // Solo auto-trigger para YouTube (caso principal). Otros tipos: clic manual.
-    if (type !== 'youtube') return
-    runSummary('short')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, type])
-
-  async function runSummary(mode: 'short' | 'long') {
-    if (!url) return
-    setSummarizing(mode)
-    setSummaryError(null)
-    try {
-      const kind: 'youtube' | 'article' | 'podcast' =
-        type === 'youtube' ? 'youtube' : type === 'podcast' ? 'podcast' : 'article'
-      const res = await summarizeResource(url, kind, mode)
-      const title = mode === 'long' ? '📝 Resumen ampliado' : '📝 Resumen'
-      if (summaryChild) {
-        store.updateNode(summaryChild.id, { text: title, body: res.summary })
-      } else {
-        const child = store.createNode({ text: title, parentId: node.id })
-        store.updateNode(child.id, { body: res.summary })
-      }
-      setResourceField(node, { _summaryGeneratedAt: new Date().toISOString() })
-    } catch (err) {
-      setSummaryError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setSummarizing(false)
-    }
   }
 
   return (
@@ -268,49 +222,6 @@ export default function ResourcePanel({ node }: Props) {
         </div>
       )}
 
-      {/* Resumen automático IA */}
-      {isSummarizable && url && (
-        <div className="resource-panel-section">
-          <div className="resource-panel-label">Resumen IA</div>
-          {summarizing && (
-            <div className="resource-summary-status">
-              {summarizing === 'short' ? '🤖 Generando resumen…' : '🤖 Ampliando resumen…'}
-            </div>
-          )}
-          {summaryError && !summarizing && (
-            <div className="resource-summary-error" title={summaryError}>
-              ⚠ Error al generar resumen
-              <button className="resource-summary-retry" onClick={() => runSummary('short')}>Reintentar</button>
-            </div>
-          )}
-          {summaryChild && !summarizing && (
-            <div className="resource-summary-loaded">
-              <button
-                className="resource-summary-open"
-                onClick={() => navigate(`/node/${summaryChild.id}`)}
-                title="Abrir resumen"
-              >
-                📝 Ver resumen
-              </button>
-              <button
-                className="resource-summary-expand"
-                onClick={() => runSummary('long')}
-                title="Reemplazar por una versión más detallada"
-              >
-                ↗ Ampliar
-              </button>
-            </div>
-          )}
-          {!summaryChild && !summarizing && !summaryError && type !== 'youtube' && (
-            <button
-              className="resource-summary-btn"
-              onClick={() => runSummary('short')}
-            >
-              🤖 Generar resumen
-            </button>
-          )}
-        </div>
-      )}
     </div>
   )
 }
