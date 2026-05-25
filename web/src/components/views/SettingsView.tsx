@@ -23,7 +23,7 @@ type Tab =
   | 'apariencia' | 'estadisticas'
   | 'ia' | 'perfil-ia' | 'magic'
   | 'atajos' | 'plantillas'
-  | 'exportar' | 'importar'
+  | 'exportar' | 'importar' | 'backups'
   | 'claude'
 
 interface NavItem { id: Tab; label: string; icon: string }
@@ -68,6 +68,7 @@ const NAV: NavSection[] = [
   {
     title: 'Datos',
     items: [
+      { id: 'backups', label: 'Backups', icon: '🗂' },
       { id: 'exportar', label: 'Exportar', icon: '↗' },
       { id: 'importar', label: 'Importar', icon: '↙' },
     ],
@@ -85,6 +86,7 @@ const SUBTITLES: Partial<Record<Tab, string>> = {
   magic: 'Sugerencias automáticas y acciones inteligentes.',
   atajos: 'Atajos de teclado y expansión de texto.',
   plantillas: 'Plantillas personalizadas para crear notas rápido.',
+  backups: 'Snapshots automáticos cada 2h. Restaura tu vault a cualquier punto.',
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',
   claude: 'Conecta Claude Desktop con tu vault mediante MCP.',
@@ -398,6 +400,144 @@ function CuentaViewPane() {
   )
 }
 
+// ── BackupsPane ───────────────────────────────────────────────────────────────
+
+function BackupsPane() {
+  const [snapshots, setSnapshots] = useState<import('../../api/backups').BackupSnapshot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+
+  async function refresh() {
+    setLoading(true)
+    try {
+      const { listBackups } = await import('../../api/backups')
+      const list = await listBackups()
+      setSnapshots(list)
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  async function handleCreate() {
+    setCreating(true); setError(null); setInfo(null)
+    try {
+      const { createBackup } = await import('../../api/backups')
+      const r = await createBackup('web')
+      setInfo(`Snapshot creado (${r.nodeCount} nodos)`)
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setCreating(false)
+      setTimeout(() => setInfo(null), 3000)
+    }
+  }
+
+  async function handleRestore(id: string, createdAt: string) {
+    if (!confirm(`¿Restaurar el vault al snapshot del ${new Date(createdAt).toLocaleString('es-ES')}?\n\nSe creará un snapshot de seguridad del estado actual antes de restaurar, así puedes deshacerlo.`)) return
+    setBusyId(id); setError(null); setInfo(null)
+    try {
+      const { restoreBackup } = await import('../../api/backups')
+      const r = await restoreBackup(id)
+      setInfo(`Restaurado (${r.restoredCount} nodos). Recarga la página.`)
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('¿Borrar este snapshot?')) return
+    setBusyId(id); setError(null)
+    try {
+      const { deleteBackup } = await import('../../api/backups')
+      await deleteBackup(id)
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <>
+      <div className="st-section-title">Snapshots</div>
+      <p style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>
+        Cada 2h se guarda una copia completa de tu vault. Mantenemos los últimos 12 snapshots.
+        Mac y web comparten los mismos snapshots — puedes restaurar desde cualquier dispositivo.
+      </p>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 16 }}>
+        <button className="btn-primary btn-sm" onClick={handleCreate} disabled={creating}>
+          {creating ? 'Creando...' : '📸 Crear snapshot ahora'}
+        </button>
+      </div>
+      {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 8 }}>⚠️ {error}</div>}
+      {info && <div style={{ color: '#22c55e', fontSize: 13, marginBottom: 8 }}>✓ {info}</div>}
+      {loading ? (
+        <div style={{ opacity: 0.6, fontSize: 13 }}>Cargando…</div>
+      ) : snapshots.length === 0 ? (
+        <div style={{ opacity: 0.6, fontSize: 13 }}>Aún no hay snapshots. Crea uno con el botón de arriba o espera al cron automático.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {snapshots.map(s => (
+            <div key={s.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 12px', border: '1px solid var(--border-subtle, #2a2a2a)', borderRadius: 8,
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>
+                  {new Date(s.createdAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 12, fontWeight: 400 }}>
+                    {formatAge(s.createdAt)} · {s.source}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>{s.nodeCount} nodos</div>
+              </div>
+              <button
+                className="btn-secondary btn-sm"
+                disabled={busyId === s.id}
+                onClick={() => handleRestore(s.id, s.createdAt)}
+                title="Restaurar este snapshot"
+              >
+                ↺ Restaurar
+              </button>
+              <button
+                className="btn-secondary btn-sm"
+                disabled={busyId === s.id}
+                onClick={() => handleDelete(s.id)}
+                title="Borrar snapshot"
+                style={{ opacity: 0.6 }}
+              >
+                🗑
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+function formatAge(iso: string): string {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (m < 1) return 'Hace un momento'
+  if (m < 60) return `Hace ${m}min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `Hace ${h}h`
+  const d = Math.floor(h / 24)
+  return `Hace ${d}d`
+}
+
 // ── View ──────────────────────────────────────────────────────────────────────
 
 export default function SettingsView() {
@@ -427,6 +567,7 @@ export default function SettingsView() {
       case 'magic':       return <MagicPane />
       case 'atajos':      return <AtajosPane />
       case 'plantillas':  return <PlantillasPane />
+      case 'backups':     return <BackupsPane />
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />
       case 'claude':      return <ClaudeMcpPane />
