@@ -72,6 +72,9 @@ export function TaskPropsPopover({ node, onClose, anchorRef, allowRename, allowD
     function reposition() {
       if (!anchorRef.current) return
       const rect = anchorRef.current.getBoundingClientRect()
+      // Si el ancla está desmontada o sin tamaño (e.g. tras quitar fecha y desaparecer
+      // del calendario), conservar la posición actual en vez de saltar a 0,0
+      if (rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0) return
       const popH = popoverRef.current?.offsetHeight || 420
       const popW = popoverRef.current?.offsetWidth || 290
       const margin = 8

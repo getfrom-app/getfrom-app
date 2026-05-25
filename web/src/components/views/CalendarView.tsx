@@ -8,6 +8,25 @@ import { TaskPropsPopover } from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 
+// ── CalendarTaskPopoverHost ───────────────────────────────────────────────────
+// Mantiene un anchorRef estable para evitar que TaskPropsPopover reposicione
+// al re-renderizar el padre (lo cual saltaba a 0,0 cuando el ancla desaparecía)
+
+function CalendarTaskPopoverHost({ node, el, onClose }: { node: Node; el: HTMLElement; onClose: () => void }) {
+  const anchorRef = useRef<HTMLElement>(el)
+  // Si el ancla cambia (otra tarea distinta), actualizar
+  useEffect(() => { anchorRef.current = el }, [el])
+  return (
+    <TaskPropsPopover
+      node={node}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      allowRename
+      allowDelete
+    />
+  )
+}
+
 // ── EventPopup ────────────────────────────────────────────────────────────────
 
 interface EventPopupProps {
@@ -568,12 +587,10 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
 
       {/* Task properties popover (rename/delete/props) */}
       {taskPopover && (
-        <TaskPropsPopover
+        <CalendarTaskPopoverHost
           node={taskPopover.node}
+          el={taskPopover.el}
           onClose={() => setTaskPopover(null)}
-          anchorRef={{ current: taskPopover.el }}
-          allowRename
-          allowDelete
         />
       )}
 
