@@ -633,9 +633,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${isActive('/followup') ? 'active' : ''}`}
               onClick={() => navigate('/followup')}
-              title="Seguimiento"
+              title="Activas"
             >
-              <span className="nav-icon">↺</span>
+              <span className="nav-icon">●</span>
               {activeBuclesCount > 0 && (
                 <span className="nav-badge nav-badge--collapsed">{activeBuclesCount}</span>
               )}

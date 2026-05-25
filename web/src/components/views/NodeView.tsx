@@ -963,7 +963,7 @@ export default function NodeView() {
     const updates: Record<string, unknown> = { isSeguimiento: newVal }
     if (newVal && node!.status !== null) updates.status = null
     store.updateNode(node!.id, updates as Parameters<typeof store.updateNode>[1])
-    setQuickActionMsg(newVal ? '✓ En seguimiento' : '✓ Seguimiento quitado')
+    setQuickActionMsg(newVal ? '✓ Nota activa' : '✓ Nota desactivada')
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
@@ -1210,7 +1210,7 @@ export default function NodeView() {
                     status: node.status === 'done' ? null : 'done'
                   })
                 }}
-                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Seguimiento activo — clic para completar'}
+                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activa — clic para completar'}
               >
                 {node.status === 'done' ? (
                   <svg width="28" height="28" viewBox="0 0 28 28">
@@ -1523,18 +1523,13 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* ── Seguimiento ── */}
+              {/* ── Marcar como Activa ── */}
               <button
                 className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
                 onClick={toggleSeguimiento}
-                title={node.isSeguimiento ? 'Quitar seguimiento' : 'Seguimiento'}
-                style={{ color: node.isSeguimiento ? 'var(--accent)' : undefined }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
+                title={node.isSeguimiento ? 'Desactivar nota' : 'Marcar como activa'}
+                style={{ color: node.isSeguimiento ? '#8b5cf6' : undefined, fontSize: 14, fontWeight: 700 }}
+              >●</button>
 
               {/* ── ··· Más opciones ── */}
               <div style={{ position: 'relative' }}>

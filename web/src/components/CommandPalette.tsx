@@ -117,16 +117,16 @@ function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Se
 
 function parseQuery(raw: string): ParsedQuery {
   let isTask = false, isEvent = false, isSeguimiento = false, isFavorite = false
-  const re = /\s*-(t|e|s|f)\b/gi
+  const re = /\s*-(t|e|s|a|f)\b/gi
   let m: RegExpExecArray | null
   while ((m = re.exec(raw)) !== null) {
     const f = m[1].toLowerCase()
     if (f === 't') isTask = true
     else if (f === 'e') isEvent = true
-    else if (f === 's') isSeguimiento = true
+    else if (f === 's' || f === 'a') isSeguimiento = true   // -s y -a aceptados
     else if (f === 'f') isFavorite = true
   }
-  const stripped = raw.replace(/\s*-(t|e|s|f)\b/gi, '').trim()
+  const stripped = raw.replace(/\s*-(t|e|s|a|f)\b/gi, '').trim()
   const tokens = stripped.split(/\s+/)
   const { date, usedTokens } = parseNaturalDate(tokens)
   const cleanText = tokens.filter((_, i) => !usedTokens.has(i)).join(' ').trim()
@@ -175,7 +175,7 @@ export default function CommandPalette({ onClose }: Props) {
       store.updateNode(node.id, { isEvent: true, due: eventDue })
     }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
-    const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Seguimiento' : parsed.isTask ? 'Tarea' : 'Nota'
+    const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Activa' : parsed.isTask ? 'Tarea' : 'Nota'
     showToast(`✓ ${label} creada`)
     onClose()
   }, [parsed, query, showToast, onClose])
@@ -263,7 +263,7 @@ export default function CommandPalette({ onClose }: Props) {
     // "Crear nota" solo si no hay resultados
     if (results.length === 0) {
       const displayText = parsed.cleanText || q
-      const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Seguimiento' : parsed.isTask ? 'Tarea' : 'Nota'
+      const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Activa' : parsed.isTask ? 'Tarea' : 'Nota'
       results.push({
         id: 'create-item',
         label: `Crear ${label.toLowerCase()}: ${displayText}`,
@@ -352,7 +352,7 @@ export default function CommandPalette({ onClose }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder="Buscar... (# para tags, -t tarea, -e evento, -s seguimiento)"
+            placeholder="Buscar... (# para tags, -t tarea, -e evento, -a activa)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -364,7 +364,7 @@ export default function CommandPalette({ onClose }: Props) {
           <div className="cmdpalette-chips">
             {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
             {parsed.isEvent && <span className="cmdpalette-chip">📅 Evento</span>}
-            {parsed.isSeguimiento && <span className="cmdpalette-chip">👁 Seguimiento</span>}
+            {parsed.isSeguimiento && <span className="cmdpalette-chip">● Activa</span>}
             {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
             {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>}
           </div>

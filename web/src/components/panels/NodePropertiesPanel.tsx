@@ -158,9 +158,9 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
             if (newVal && node.status !== null) updates.status = null
             store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
           }}
-          title={node.isSeguimiento ? 'Quitar de seguimiento' : 'Añadir a seguimiento'}
+          title={node.isSeguimiento ? 'Desactivar nota' : 'Marcar como activa'}
         >
-          👁 Seguim.
+          ● Activa
         </button>
       </div>
 

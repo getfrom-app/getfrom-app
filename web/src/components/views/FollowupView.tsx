@@ -225,7 +225,7 @@ function SeguimientoRow({ node }: SeguimientoRowProps) {
           <button
             className="followup-close-btn"
             onClick={handleClose}
-            title="Quitar seguimiento"
+            title="Desactivar nota"
           >
             ✓ Cerrar
           </button>
@@ -301,13 +301,13 @@ export default function FollowupView() {
     <div className="view followup-view">
       <div className="view-header">
         <h1 className="view-title">
-          <span style={{ marginRight: 8 }}>👁</span>
-          Seguimiento
+          <span style={{ marginRight: 8, color: '#8b5cf6' }}>●</span>
+          Activas
           {allSeguimiento.length > 0 && (
             <span className="followup-total-count">{allSeguimiento.length}</span>
           )}
         </h1>
-        <p className="view-subtitle">Notas marcadas para revisión diaria, agrupadas por tema</p>
+        <p className="view-subtitle">Notas activas — marcadas para revisión diaria, agrupadas por tema</p>
       </div>
 
       <div className="view-body">
@@ -323,9 +323,9 @@ export default function FollowupView() {
 
         {allSeguimiento.length === 0 && (
           <div className="view-empty">
-            <p>Sin notas en seguimiento.</p>
+            <p>Sin notas activas.</p>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>
-              Abre cualquier nota y activa "Seguimiento" para que aparezca aquí.
+              Abre cualquier nota y márcala como "Activa" para que aparezca aquí.
             </p>
           </div>
         )}

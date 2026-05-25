@@ -1413,7 +1413,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                   onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                   tabIndex={-1}
-                  title="Abrir seguimiento"
+                  title="Abrir nota activa"
                 />
                 <button
                   className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
