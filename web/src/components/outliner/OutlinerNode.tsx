@@ -204,9 +204,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Event badge popup
   const [showEventProp, setShowEventProp] = useState(false)
   const [eventPropPos, setEventPropPos] = useState<{ top: number; left: number } | null>(null)
-  const prevIsEventRef = useRef(false)
-  // Auto-open popup cuando el nodo acaba de convertirse en evento (inline -e o /event)
+  const prevIsEventRef = useRef(node.isEvent)
+  const eventMountedRef = useRef(false)
+  // Auto-open popup SOLO cuando el nodo acaba de convertirse en evento (inline -e o /event),
+  // no al montar un nodo que ya era evento (recarga de página).
   useEffect(() => {
+    if (!eventMountedRef.current) {
+      eventMountedRef.current = true
+      prevIsEventRef.current = node.isEvent
+      return
+    }
     if (node.isEvent && !prevIsEventRef.current) {
       setTimeout(() => {
         if (eventBadgeBtnRef.current) {
