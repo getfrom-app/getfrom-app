@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
@@ -114,6 +115,9 @@ export default function NodeView() {
   const [titleEditing, setTitleEditing] = useState(false)
   const [showTitleSlash, setShowTitleSlash] = useState(false)
   const [titleSlashQuery, setTitleSlashQuery] = useState('')
+  // Tag picker en el título (#tag autocompletado)
+  const [titleTagPicker, setTitleTagPicker] = useState<{ query: string; items: string[]; activeIdx: number } | null>(null)
+  const [titleTagPickerPos, setTitleTagPickerPos] = useState<{ top: number; left: number } | null>(null)
 
   // Record recent visit
   useEffect(() => {
@@ -213,6 +217,14 @@ export default function NodeView() {
     window.addEventListener('keydown', handleGlobalKeyDown)
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
+
+  // Cerrar title tag picker al hacer click fuera
+  useEffect(() => {
+    if (!titleTagPicker) return
+    function handler() { setTitleTagPicker(null) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [titleTagPicker])
 
   // Icono del nodo (extraData.icon)
   const nodeIcon = useMemo(() => {
@@ -362,21 +374,57 @@ export default function NodeView() {
     const text = e.currentTarget.textContent || ''
     store.updateNode(node!.id, { text })
 
-    // Detect '/' for slash menu — at cursor position
     const sel = window.getSelection()
     if (sel && sel.rangeCount > 0) {
       const range = sel.getRangeAt(0)
       const pos = range.endOffset
       const before = text.slice(0, pos)
+
+      // Detect '/' for slash menu
       const slashMatch = before.match(/(^|[\s])\/([^\s]*)$/)
       if (slashMatch) {
         setShowTitleSlash(true)
         setTitleSlashQuery(slashMatch[2])
+        setTitleTagPicker(null)
       } else {
         setShowTitleSlash(false)
         setTitleSlashQuery('')
       }
+
+      // Detect '#' for tag picker
+      const hashMatch = before.match(/#([^\s#]*)$/)
+      if (hashMatch && !slashMatch) {
+        const query = hashMatch[1].toLowerCase()
+        const allTags = store.allUsedTags()
+        const COMMON = ['tarea', 'proyecto', 'nota', 'referencia', 'evento', 'bucle']
+        const combined = Array.from(new Set([...allTags, ...COMMON]))
+        const items = combined.filter(t => !query || t.toLowerCase().includes(query)).slice(0, 10)
+        if (items.length > 0) {
+          const cursorRect = range.getBoundingClientRect()
+          setTitleTagPicker({ query, items, activeIdx: 0 })
+          setTitleTagPickerPos({
+            top: cursorRect.bottom + 4,
+            left: Math.max(8, Math.min(cursorRect.left, window.innerWidth - 220)),
+          })
+        } else {
+          setTitleTagPicker(null)
+        }
+      } else if (!hashMatch) {
+        setTitleTagPicker(null)
+      }
     }
+  }
+
+  function applyTitleTag(tag: string) {
+    if (!titleTagPicker || !titleRef.current) return
+    const text = titleRef.current.textContent || ''
+    const hashIdx = text.lastIndexOf('#' + titleTagPicker.query)
+    if (hashIdx < 0) { setTitleTagPicker(null); return }
+    const newText = text.slice(0, hashIdx) + '#' + tag + text.slice(hashIdx + 1 + titleTagPicker.query.length)
+    const newTypes = (node!.types || []).includes(tag) ? node!.types : [...(node!.types || []), tag]
+    store.updateNode(node!.id, { text: newText.trim(), types: newTypes })
+    if (titleRef.current) titleRef.current.textContent = newText.trim()
+    setTitleTagPicker(null)
   }
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -1159,6 +1207,28 @@ export default function NodeView() {
                 handleTitleInput(e)
               })}
               onKeyDown={isLocked ? undefined : (e => {
+                // Tag picker navigation
+                if (titleTagPicker) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setTitleTagPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p)
+                    return
+                  }
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setTitleTagPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p)
+                    return
+                  }
+                  if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault()
+                    applyTitleTag(titleTagPicker.items[titleTagPicker.activeIdx])
+                    return
+                  }
+                  if (e.key === 'Escape') {
+                    setTitleTagPicker(null)
+                    return
+                  }
+                }
                 if (e.key === 'Enter') {
                   e.preventDefault()
                   const firstNodeText = document.querySelector('.outliner-container .node-text') as HTMLElement | null
@@ -1172,6 +1242,7 @@ export default function NodeView() {
                 if (e.key === 'Escape') {
                   setShowTitleSlash(false)
                   setTitleSlashQuery('')
+                  setTitleTagPicker(null)
                 }
               })}
             >
@@ -1199,6 +1270,28 @@ export default function NodeView() {
                 }}
                 onClose={() => { setShowTitleSlash(false); setTitleSlashQuery('') }}
               />
+            )}
+            {/* Tag picker del título — mismo estilo que el inline-picker del outliner */}
+            {titleTagPicker && titleTagPickerPos && createPortal(
+              <div
+                className="inline-picker"
+                style={{ position: 'fixed', top: titleTagPickerPos.top, left: titleTagPickerPos.left, zIndex: 1000 }}
+                onMouseDown={e => e.preventDefault()}
+              >
+                {titleTagPicker.items.map((tag, idx) => (
+                  <button
+                    key={tag}
+                    className={`inline-picker-item ${idx === titleTagPicker.activeIdx ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyTitleTag(tag) }}
+                  >
+                    <span className="inline-picker-icon">#</span>
+                    <span className="inline-picker-content">
+                      <span className="inline-picker-label">{tag}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>,
+              document.body
             )}
             <div className="node-title-actions">
               {/* View mode switcher — visible when ≥3 children */}

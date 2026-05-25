@@ -188,9 +188,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           )}
           <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
           <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)' }}>{node.segment}</span>
-          {node.count > 0 && (
-            <span className="sidebar-tag-count" style={{ background: color + '20', color }}>{node.count}</span>
-          )}
+          {/* count eliminado: era ruidoso visualmente */}
         </div>
         {hasChildren && !isCollapsed && node.children.map(c => renderTagTreeNode(c, depth + 1))}
       </div>
@@ -236,7 +234,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('tags')}>
               <span className="nav-section-chevron">{collapsedSections['tags'] ? '▸' : '▾'}</span>
               <span>Tags</span>
-              <span style={{ fontSize: 10, opacity: 0.5 }}>{allTagNames.length}</span>
             </div>
             {!collapsedSections['tags'] && tree.map(t => renderTagTreeNode(t, 0))}
           </div>
@@ -246,25 +243,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           </div>
         )}
 
-        {/* Stats widget */}
-        <div className="sidebar-stats-widget">
-          <div className="sidebar-stat">
-            <span className="sidebar-stat-value">{allTagNames.length}</span>
-            <span className="sidebar-stat-label">tags</span>
-          </div>
-          <div className="sidebar-stat">
-            <span className="sidebar-stat-value">{pendingCount}</span>
-            <span className="sidebar-stat-label">pendientes</span>
-          </div>
-          <div className="sidebar-stat">
-            <span className="sidebar-stat-value" style={{ color: '#3b82f6' }}>{todayTasksCount}</span>
-            <span className="sidebar-stat-label" style={{ color: '#3b82f6' }}>hoy</span>
-          </div>
-          <div className="sidebar-stat">
-            <span className="sidebar-stat-value" style={{ color: '#8b5cf6' }}>{activeBuclesCount}</span>
-            <span className="sidebar-stat-label" style={{ color: '#8b5cf6' }}>seguim.</span>
-          </div>
-        </div>
       </div>
     )
   }

@@ -1166,15 +1166,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     isDragOver ? 'drag-over' : '',
   ].filter(Boolean).join(' ')
 
-  // Picker position — relative to the node row
-  const pickerStyle: React.CSSProperties = { position: 'absolute', zIndex: 200 }
+  // Picker position — fixed al viewport (portal a document.body)
+  const pickerStyle: React.CSSProperties = { position: 'fixed', zIndex: 1000 }
   if (contentRef.current && picker) {
     const rect = getCursorRect(contentRef.current)
-    const containerRect = contentRef.current.closest('.outliner-node')?.getBoundingClientRect()
-    if (containerRect) {
-      pickerStyle.top = rect.bottom - containerRect.top + 4
-      pickerStyle.left = Math.max(0, rect.left - containerRect.left)
-    }
+    pickerStyle.top = rect.bottom + 4
+    pickerStyle.left = Math.max(8, Math.min(rect.left, window.innerWidth - 220))
   }
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
