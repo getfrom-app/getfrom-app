@@ -1227,6 +1227,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       updates.isEvent = true
       updates.status = null
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    } else if (action === 'loop') {
+      // Abrir bucle: nota activa, sin fecha, sin status
+      updates.isSeguimiento = true
+      updates.due = null
+      updates.status = null
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
       const existingTypes = node.types || []

@@ -287,23 +287,6 @@ export default function NodeRightPanel({ node }: Props) {
           ○ Tarea
         </button>
         <button
-          className={`prop-icon-btn ${node.isSeguimiento ? 'active seguimiento' : ''}`}
-          onClick={() => {
-            const newVal = !node.isSeguimiento
-            const updates: Partial<Node> = { isSeguimiento: newVal }
-            if (newVal) {
-              // Abrir bucle: nota sin fecha, sin status de tarea
-              updates.due = null
-              updates.status = null
-            }
-            store.updateNode(node.id, updates)
-          }}
-          title={node.isSeguimiento ? 'Cerrar bucle (vuelve a nota normal)' : 'Abrir bucle (nota activa en el diario)'}
-          style={node.isSeguimiento ? { background: '#c4b5fd33', color: '#7c3aed' } : undefined}
-        >
-          ● Bucle
-        </button>
-        <button
           ref={eventBtnRef}
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={openEventPopup}
