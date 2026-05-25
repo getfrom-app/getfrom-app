@@ -489,11 +489,17 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     let cancelled = false
     getCalendarEvents(diaryDate)
       .then(events => {
-        if (!cancelled) setGoogleEvents(events)
+        if (cancelled) return
+        const arr = Array.isArray(events) ? events : []
+        // eslint-disable-next-line no-console
+        console.log('[GCal panel] events fetched', { date: diaryDate.toISOString().slice(0,10), count: arr.length, sample: arr.slice(0,3) })
+        setGoogleEvents(arr)
       })
-      .catch(() => {
-        // NOT_CONNECTED or any error: show empty, no noise
-        if (!cancelled) setGoogleEvents([])
+      .catch(err => {
+        if (cancelled) return
+        // eslint-disable-next-line no-console
+        console.error('[GCal panel] fetch error', err)
+        setGoogleEvents([])
       })
     return () => { cancelled = true }
   }, [diaryDate, rangeType, us.googleConnected])

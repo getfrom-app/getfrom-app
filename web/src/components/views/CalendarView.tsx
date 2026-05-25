@@ -900,8 +900,19 @@ export default function CalendarView() {
       rEnd = new Date(year, 11, 31)
     }
     getCalendarEventsRange(rStart, rEnd)
-      .then(evs => { if (!cancelled) setGoogleEvents(evs) })
-      .catch(() => { if (!cancelled) setGoogleEvents([]) })
+      .then(evs => {
+        if (cancelled) return
+        const arr = Array.isArray(evs) ? evs : []
+        // eslint-disable-next-line no-console
+        console.log('[GCal] events fetched', { view, count: arr.length, rStart, rEnd, sample: arr.slice(0,3) })
+        setGoogleEvents(arr)
+      })
+      .catch(err => {
+        if (cancelled) return
+        // eslint-disable-next-line no-console
+        console.error('[GCal] fetch error', err)
+        setGoogleEvents([])
+      })
     return () => { cancelled = true }
   }, [dayDate, weekStart, monthStart, year, view, us.googleConnected])
 
