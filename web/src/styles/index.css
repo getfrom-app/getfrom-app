@@ -6283,6 +6283,16 @@ a:focus-visible {
   transition: opacity 0.15s, background 0.15s;
 }
 .node-seguimiento-title-btn:hover { background: var(--bg-hover); }
+/* Título seguimiento: border-radius cuadrado */
+.node-seguimiento-title-btn { border-radius: 6px; }
+
+/* ── Checkboxes cuadrados de tarea (outliner) ────────────────────────────── */
+/* Color del checkbox según estado — se aplica como clase en bullet-btn.task */
+.bullet-btn.task.task-sq--pending  { color: #fbbf24; } /* amarillo */
+.bullet-btn.task.task-sq--overdue  { color: #f97316; } /* naranja */
+.bullet-btn.task.task-sq--done     { color: #22c55e; } /* verde */
+.bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro */
+.bullet-btn.task:hover { opacity: 0.75; }
 
 /* ── Calendar side panel layout ──────────────────────────────────────────── */
 .calendar-view--with-panel {

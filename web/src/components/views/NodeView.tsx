@@ -1084,7 +1084,7 @@ export default function NodeView() {
           <div className="node-title-row">
             {/* Icono del nodo — seguimiento muestra checkbox morado, normal muestra emoji */}
             {node.isSeguimiento ? (
-              // Checkbox morado para seguimiento
+              // Checkbox cuadrado morado para seguimiento
               <button
                 className={`node-seguimiento-title-btn ${node.status === 'done' ? 'done' : ''}`}
                 onClick={() => {
@@ -1096,12 +1096,12 @@ export default function NodeView() {
               >
                 {node.status === 'done' ? (
                   <svg width="28" height="28" viewBox="0 0 28 28">
-                    <circle cx="14" cy="14" r="12" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.15"/>
+                    <rect x="2" y="2" width="24" height="24" rx="6" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.18"/>
                     <path d="M8 14l4 4 8-8" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 ) : (
                   <svg width="28" height="28" viewBox="0 0 28 28">
-                    <circle cx="14" cy="14" r="12" stroke="var(--accent)" strokeWidth="2" fill="var(--accent)" fillOpacity="0.12"/>
+                    <rect x="2" y="2" width="24" height="24" rx="6" stroke="var(--accent)" strokeWidth="2" fill="var(--accent)" fillOpacity="0.14"/>
                   </svg>
                 )}
               </button>

@@ -11,8 +11,6 @@ export default function NodeRightPanel({ node }: Props) {
   const s = useStore()
   const navigate = useNavigate()
   const [newType, setNewType] = useState('')
-  const [areaInput, setAreaInput] = useState('')
-  const nodeArea = store.getNodeArea(node.id)
 
   // ── Fecha helpers ────────────────────────────────────────────────────────
   const dueDate = node.due ? node.due.slice(0, 10) : ''
@@ -61,8 +59,6 @@ export default function NodeRightPanel({ node }: Props) {
   function removeType(type: string) {
     store.updateNode(node.id, { types: (node.types || []).filter(t => t !== type) })
   }
-
-  const usedTags = s.allUsedTags()
 
   // Tag definition nodes → "Ver área completa"
   const tags = node.types || []
@@ -122,9 +118,9 @@ export default function NodeRightPanel({ node }: Props) {
           📌 Fijado
         </button>
         <button
-          className={`prop-icon-btn ${node.status !== null ? 'active' : ''}`}
+          className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento ? 'active' : ''}`}
           onClick={() => {
-            if (node.status !== null) {
+            if (node.status !== null && !node.isSeguimiento) {
               store.updateNode(node.id, { status: null })
             } else {
               store.updateNode(node.id, { status: 'pending', isSeguimiento: false })
@@ -255,50 +251,6 @@ export default function NodeRightPanel({ node }: Props) {
               {!c && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>✕</span>}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* ── Área ─────────────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Área</div>
-        <div className="prop-tags">
-          {nodeArea && (
-            <span className="prop-tag-chip" style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--text-accent)' }}>
-              📁 {nodeArea}
-              <button className="prop-tag-remove" onClick={() => store.setNodeArea(node.id, null)}>×</button>
-            </span>
-          )}
-          {!nodeArea && (
-            <>
-              <input type="text" className="prop-type-input" value={areaInput}
-                onChange={e => { setAreaInput(e.target.value); if (s.allAreas().includes(e.target.value)) { store.setNodeArea(node.id, e.target.value); setAreaInput('') } }}
-                onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { store.setNodeArea(node.id, areaInput.trim()); setAreaInput('') } }}
-                placeholder="+ área" list="nrp-areas-datalist"
-              />
-              <datalist id="nrp-areas-datalist">{s.allAreas().map(a => <option key={a} value={a} />)}</datalist>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── Tags ─────────────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Tags</div>
-        <div className="prop-tags">
-          {(node.types || []).map(t => (
-            <span key={t} className="prop-tag-chip" style={{ background: s.tagColor(t) + '20', color: s.tagColor(t) }}>
-              #{t}
-              <button className="prop-tag-remove" onClick={() => removeType(t)}>×</button>
-            </span>
-          ))}
-          <input type="text" className="prop-type-input" value={newType}
-            onChange={e => setNewType(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addType(newType) } }}
-            placeholder="+ tag" list="nrp-tags-datalist"
-          />
-          <datalist id="nrp-tags-datalist">
-            {usedTags.filter(t => !node.types?.includes(t)).map(t => <option key={t} value={t} />)}
-          </datalist>
         </div>
       </div>
 

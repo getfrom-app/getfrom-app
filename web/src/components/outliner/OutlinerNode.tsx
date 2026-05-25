@@ -1104,6 +1104,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   const hasChildren = children.length > 0
 
+  // Overdue check — reutilizado en checkbox y due-chip
+  const isOverdue = !!node.due && node.status !== 'done' && (() => {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return new Date(node.due!) < todayStart
+  })()
+
+  // Clase de color del checkbox de tarea según estado/vencimiento
+  const taskCheckClass = node.status === 'done'
+    ? 'task-sq--done'
+    : node.status === 'future'
+      ? 'task-sq--future'
+      : isOverdue
+        ? 'task-sq--overdue'
+        : 'task-sq--pending'
+
   // Determine CSS class for block type
   const nodeRowClass = [
     'node-row',
@@ -1199,7 +1215,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {!isDivider && !isHeading && (
           <>
             {node.isSeguimiento ? (
-              // Seguimiento: checkbox morado (activo) o verde (completado)
+              // Seguimiento: checkbox cuadrado morado (activo) o verde (completado)
               <button
                 className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
                 onClick={e => {
@@ -1213,17 +1229,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               >
                 {node.status === 'done' ? (
                   <svg width="14" height="14" viewBox="0 0 14 14">
-                    <circle cx="7" cy="7" r="6" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.15"/>
-                    <path d="M4 7l2 2 4-4" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                    <rect x="1" y="1" width="12" height="12" rx="3" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.18"/>
+                    <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 ) : (
                   <svg width="14" height="14" viewBox="0 0 14 14">
-                    <circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.12"/>
+                    <rect x="1" y="1" width="12" height="12" rx="3" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.14"/>
                   </svg>
                 )}
               </button>
             ) : node.status !== null ? (
-              // Tarea: nav-dot (navega al nodo) + checkbox (toggle estado)
+              // Tarea: nav-dot (navega al nodo) + checkbox cuadrado coloreado
               <>
                 <button
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
@@ -1232,7 +1248,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   title="Abrir nota"
                 />
                 <button
-                  className="bullet-btn task"
+                  className={`bullet-btn task ${taskCheckClass}`}
                   onClick={toggleTask}
                   tabIndex={-1}
                   aria-label="Toggle tarea"
@@ -1240,12 +1256,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 >
                   {node.status === 'done' ? (
                     <svg width="14" height="14" viewBox="0 0 14 14">
-                      <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                      <path d="M4 7l2 2 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15"/>
+                      <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   ) : (
                     <svg width="14" height="14" viewBox="0 0 14 14">
-                      <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
                     </svg>
                   )}
                 </button>
@@ -1486,11 +1502,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {/* Fecha de vencimiento */}
         {node.due && !node.isEvent && (() => {
           const d = new Date(node.due)
-          const now = new Date()
-          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          const overdue = d < todayStart && node.status !== 'done'
           const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-          return <span className={`node-due-chip ${overdue ? 'overdue' : ''}`} title={d.toLocaleDateString('es-ES', { dateStyle: 'full' })}>📅 {label}</span>
+          return <span className={`node-due-chip ${isOverdue ? 'overdue' : ''}`} title={d.toLocaleDateString('es-ES', { dateStyle: 'full' })}>📅 {label}</span>
         })()}
 
         {/* Favorito badge */}
