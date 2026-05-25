@@ -273,20 +273,35 @@ export default function NodeRightPanel({ node }: Props) {
         <button
           className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent ? 'active' : ''}`}
           onClick={() => {
-            // Si ya es tarea pura → quitar status
             if (node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent) {
               store.updateNode(node.id, { status: null })
             } else if (isResource || node.isEvent || node.isSeguimiento) {
-              // Es recurso/evento/activa → NO convertir en tarea (el estado se gestiona aparte)
               return
             } else {
               store.updateNode(node.id, { status: 'pending', isSeguimiento: false, due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
-          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : 'Tarea'}
-          style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : node.isSeguimiento ? 'Es un bucle, no una tarea' : 'Tarea'}
+          style={isResource || node.isEvent || node.isSeguimiento ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
         >
           ○ Tarea
+        </button>
+        <button
+          className={`prop-icon-btn ${node.isSeguimiento ? 'active seguimiento' : ''}`}
+          onClick={() => {
+            const newVal = !node.isSeguimiento
+            const updates: Partial<Node> = { isSeguimiento: newVal }
+            if (newVal) {
+              // Abrir bucle: nota sin fecha, sin status de tarea
+              updates.due = null
+              updates.status = null
+            }
+            store.updateNode(node.id, updates)
+          }}
+          title={node.isSeguimiento ? 'Cerrar bucle (vuelve a nota normal)' : 'Abrir bucle (nota activa en el diario)'}
+          style={node.isSeguimiento ? { background: '#c4b5fd33', color: '#7c3aed' } : undefined}
+        >
+          ● Bucle
         </button>
         <button
           ref={eventBtnRef}
@@ -304,8 +319,8 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Panel de recurso ────────────────────────────────────────────────── */}
       {isResource && <ResourcePanel node={node} />}
 
-      {/* ── Estado (siempre visible para cualquier nodo no-evento) ─────────── */}
-      {!node.isEvent && (
+      {/* ── Estado (visible salvo evento o bucle — bucle es binario abierto/cerrado) ─ */}
+      {!node.isEvent && !node.isSeguimiento && (
         <div className="prop-section">
           <div className="prop-section-label">Estado</div>
           <div className="prop-pills">
@@ -332,8 +347,8 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
-      {/* ── Fecha (oculta si status es future/done — la fecha se borra) ────── */}
-      {!node.isEvent && node.status !== 'future' && node.status !== 'done' && (
+      {/* ── Fecha (oculta si status es future/done o si es bucle) ────────── */}
+      {!node.isEvent && !node.isSeguimiento && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">

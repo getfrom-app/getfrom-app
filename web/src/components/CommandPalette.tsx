@@ -175,7 +175,7 @@ export default function CommandPalette({ onClose }: Props) {
       store.updateNode(node.id, { isEvent: true, due: eventDue })
     }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
-    const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Activa' : parsed.isTask ? 'Tarea' : 'Nota'
+    const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? ' Bucle' : parsed.isTask ? 'Tarea' : 'Nota'
     showToast(`✓ ${label} creada`)
     onClose()
   }, [parsed, query, showToast, onClose])
@@ -263,7 +263,7 @@ export default function CommandPalette({ onClose }: Props) {
     // "Crear nota" solo si no hay resultados
     if (results.length === 0) {
       const displayText = parsed.cleanText || q
-      const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? 'Activa' : parsed.isTask ? 'Tarea' : 'Nota'
+      const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? ' Bucle' : parsed.isTask ? 'Tarea' : 'Nota'
       results.push({
         id: 'create-item',
         label: `Crear ${label.toLowerCase()}: ${displayText}`,
@@ -352,7 +352,7 @@ export default function CommandPalette({ onClose }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder="Buscar... (# para tags, -t tarea, -e evento, -a activa)"
+            placeholder="Buscar... (# para tags, -t tarea, -e evento, -a bucle)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -364,7 +364,7 @@ export default function CommandPalette({ onClose }: Props) {
           <div className="cmdpalette-chips">
             {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
             {parsed.isEvent && <span className="cmdpalette-chip">📅 Evento</span>}
-            {parsed.isSeguimiento && <span className="cmdpalette-chip">● Activa</span>}
+            {parsed.isSeguimiento && <span className="cmdpalette-chip">● Bucle</span>}
             {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
             {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>}
           </div>

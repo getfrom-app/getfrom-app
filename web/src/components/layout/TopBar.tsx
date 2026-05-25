@@ -19,7 +19,7 @@ const VIEW_LABELS: Record<string, string> = {
   '/agents': 'Agentes',
   '/account': 'Cuenta',
   '/chat': 'Chat IA',
-  '/followup': 'Activas',
+  '/followup': 'Bucles',
   '/files': 'Archivos',
   '/inbox': 'Inbox',
   '/trash': 'Papelera',

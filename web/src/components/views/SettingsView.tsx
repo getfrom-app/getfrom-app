@@ -314,7 +314,7 @@ function EstadísticasPane() {
       <div className="st-section-title" style={{ marginTop: 24 }}>Tareas</div>
       <div className="st-stats">
         {stat(overdueCount, 'Vencidas')}
-        {stat(followUps, 'Activas')}
+        {stat(followUps, 'Bucles')}
       </div>
     </div>
   )

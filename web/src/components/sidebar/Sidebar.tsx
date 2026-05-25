@@ -544,10 +544,10 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${isActive('/followup') ? 'active' : ''}`}
               onClick={() => navigate('/followup')}
-              title="Activas"
+              title="Bucles"
             >
               <span className="nav-icon">●</span>
-              <span>Activas</span>
+              <span>Bucles</span>
               {activeBuclesCount > 0 && (
                 <span className="nav-badge">{activeBuclesCount}</span>
               )}
@@ -633,7 +633,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${isActive('/followup') ? 'active' : ''}`}
               onClick={() => navigate('/followup')}
-              title="Activas"
+              title="Bucles"
             >
               <span className="nav-icon">●</span>
               {activeBuclesCount > 0 && (

@@ -158,9 +158,9 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
             if (newVal && node.status !== null) updates.status = null
             store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
           }}
-          title={node.isSeguimiento ? 'Desactivar nota' : 'Marcar como activa'}
+          title={node.isSeguimiento ? 'Cerrar bucle' : 'Abrir bucle'}
         >
-          ● Activa
+          ● Bucle
         </button>
       </div>
 

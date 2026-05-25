@@ -1251,7 +1251,7 @@ export default function NodeView() {
                     status: node.status === 'done' ? null : 'done'
                   })
                 }}
-                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activa — clic para completar'}
+                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Bucle abierto — clic para cerrar'}
               >
                 {node.status === 'done' ? (
                   <svg width="28" height="28" viewBox="0 0 28 28">
@@ -1570,7 +1570,7 @@ export default function NodeView() {
               <button
                 className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
                 onClick={toggleSeguimiento}
-                title={node.isSeguimiento ? 'Desactivar nota' : 'Marcar como activa'}
+                title={node.isSeguimiento ? 'Cerrar bucle' : 'Abrir bucle'}
                 style={{ color: node.isSeguimiento ? '#8b5cf6' : undefined, fontSize: 14, fontWeight: 700 }}
               >●</button>
 

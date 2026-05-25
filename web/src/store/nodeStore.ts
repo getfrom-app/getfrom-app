@@ -739,14 +739,16 @@ class NodeStore {
   scheduleNodeAt(nodeId: string, iso: string): string | null {
     const node = this.getNode(nodeId)
     if (!node) return null
+    // Bucle: no debe tener fecha. Ignorar agendado silenciosamente.
+    if (node.isSeguimiento) return null
     const updates: Partial<Node> = { due: iso }
     // Limpiar dueEnd al reprogramar — si no, una duración antigua haría que el
     // bloque se extienda al día siguiente y aparezca duplicado en el calendario
     if (node.dueEnd) updates.dueEnd = null
-    // Si no tiene status y no es seguimiento/recurso/evento → tratar como tarea (status pendiente)
+    // Si no tiene status y no es recurso/evento → tratar como tarea (status pendiente)
     let isResource = false
     try { isResource = !!JSON.parse(node.extraData || '{}')._resource } catch { /* ignore */ }
-    const hasOwnState = node.isSeguimiento || isResource || node.isEvent || node.status !== null
+    const hasOwnState = isResource || node.isEvent || node.status !== null
     if (!hasOwnState) {
       updates.status = 'pending'
     }
@@ -933,20 +935,25 @@ class NodeStore {
       await this.sync()
     }
 
-    // Migración: isSeguimiento legacy → status='pending'
-    // En el modelo unificado, "nota activa" = status:pending. Las viejas notas
-    // marcadas como seguimiento (sin status) se promueven a pendientes.
-    let migrated = 0
+    // Migración REVERTIDA v7.95: bucle ahora es concepto separado, no status.
+    // Limpiamos status:pending + due:null en nodos isSeguimiento (eran la
+    // migración de v7.65 que ahora deshacemos). Sus tareas hijas no se tocan.
+    let reverted = 0
     for (const node of this.nodes.values()) {
       if (node.deletedAt) continue
-      if (node.isSeguimiento && node.status === null) {
-        this.updateNode(node.id, { status: 'pending' })
-        migrated++
+      if (node.isSeguimiento && node.status === 'pending' && !node.due) {
+        this.updateNode(node.id, { status: null })
+        reverted++
+      }
+      // Bucles NO deben tener fecha: limpiar si por error la tienen
+      if (node.isSeguimiento && node.due) {
+        this.updateNode(node.id, { due: null })
+        reverted++
       }
     }
-    if (migrated > 0) {
+    if (reverted > 0) {
       // eslint-disable-next-line no-console
-      console.log(`[migration] ${migrated} notas seguimiento → status:pending`)
+      console.log(`[migration] ${reverted} bucles limpiados (status y/o due)`)
       await this.sync()
     }
 
