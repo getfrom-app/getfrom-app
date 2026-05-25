@@ -91,6 +91,43 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
   const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
 
+  // ── Menú contextual de tags ─────────────────────────────────────────────
+  const [tagMenu, setTagMenu] = useState<{ x: number; y: number; tagName: string } | null>(null)
+  const [tagRenaming, setTagRenaming] = useState<{ tagName: string; value: string } | null>(null)
+  const [tagColorPicker, setTagColorPicker] = useState<string | null>(null) // tagName
+
+  const TAG_COLOR_OPTIONS = [
+    '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
+    '#ef4444', '#ec4899', '#06b6d4', '#84cc16',
+    '#f97316', '#64748b',
+  ]
+
+  function openTagMenu(e: React.MouseEvent, tagName: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    setTagMenu({ x: e.clientX, y: e.clientY, tagName })
+    setTagRenaming(null)
+    setTagColorPicker(null)
+  }
+
+  function closeTagMenu() { setTagMenu(null); setTagRenaming(null); setTagColorPicker(null) }
+
+  function handleTagDelete(tagName: string) {
+    if (!confirm(`¿Eliminar el tag #${tagName} de todos los nodos?`)) return
+    store.deleteTag(tagName)
+    closeTagMenu()
+  }
+
+  function handleTagRename(oldName: string, newName: string) {
+    store.renameTag(oldName, newName.trim())
+    closeTagMenu()
+  }
+
+  function handleTagColor(tagName: string, color: string | null) {
+    store.setTagColor(tagName, color)
+    closeTagMenu()
+  }
+
   // Refresca paneles cuando CommandPalette crea uno nuevo
   useEffect(() => {
     function onPanelsUpdated() { setPanels(getPanels()) }
@@ -177,6 +214,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           className={`sidebar-tag-item ${isActiveTag ? 'active' : ''}`}
           style={{ paddingLeft: 8 + depth * 14 }}
           onClick={() => navigate(`/tag/${node.name}`)}
+          onContextMenu={e => openTagMenu(e, node.name)}
           title={`#${node.name} · ${node.count} nodos`}
         >
           {hasChildren ? (
@@ -630,6 +668,72 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           onClick={onToggle}
           title="Colapsar sidebar"
         />
+      )}
+
+      {/* Menú contextual de tags */}
+      {tagMenu && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onClick={closeTagMenu}
+            onContextMenu={e => { e.preventDefault(); closeTagMenu() }}
+          />
+          <div
+            className="tag-context-menu"
+            style={{ position: 'fixed', left: tagMenu.x, top: tagMenu.y, zIndex: 9999 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="tag-context-menu-header">#{tagMenu.tagName}</div>
+
+            {/* Renombrar */}
+            {tagRenaming?.tagName === tagMenu.tagName ? (
+              <div className="tag-context-menu-rename">
+                <input
+                  autoFocus
+                  className="tag-context-menu-input"
+                  value={tagRenaming.value}
+                  onChange={e => setTagRenaming({ tagName: tagMenu.tagName, value: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleTagRename(tagMenu.tagName, tagRenaming.value)
+                    if (e.key === 'Escape') setTagRenaming(null)
+                  }}
+                  placeholder="Nuevo nombre..."
+                />
+                <button className="tag-context-menu-confirm" onClick={() => handleTagRename(tagMenu.tagName, tagRenaming.value)}>✓</button>
+              </div>
+            ) : (
+              <button className="tag-context-menu-item" onClick={() => setTagRenaming({ tagName: tagMenu.tagName, value: tagMenu.tagName })}>
+                ✏️ Renombrar
+              </button>
+            )}
+
+            {/* Color */}
+            {tagColorPicker === tagMenu.tagName ? (
+              <div className="tag-context-menu-colors">
+                {TAG_COLOR_OPTIONS.map(c => (
+                  <button
+                    key={c}
+                    className="tag-color-swatch"
+                    style={{ background: c, outline: s.tagColor(tagMenu.tagName) === c ? '2px solid var(--text-primary)' : 'none' }}
+                    onClick={() => handleTagColor(tagMenu.tagName, c)}
+                    title={c}
+                  />
+                ))}
+                <button className="tag-color-swatch tag-color-swatch--reset" onClick={() => handleTagColor(tagMenu.tagName, null)} title="Restablecer">↺</button>
+              </div>
+            ) : (
+              <button className="tag-context-menu-item" onClick={() => setTagColorPicker(tagMenu.tagName)}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: s.tagColor(tagMenu.tagName), marginRight: 6 }} />
+                Color
+              </button>
+            )}
+
+            <div className="tag-context-menu-divider" />
+            <button className="tag-context-menu-item tag-context-menu-item--danger" onClick={() => handleTagDelete(tagMenu.tagName)}>
+              🗑 Eliminar tag
+            </button>
+          </div>
+        </>
       )}
     </aside>
   )

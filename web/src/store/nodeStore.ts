@@ -127,12 +127,91 @@ class NodeStore {
     return count
   }
 
-  /** Color determinista por nombre de tag */
+  /** Color del tag: primero mira si hay color personalizado en la definición, si no usa hash */
   tagColor(tagName: string): string {
     const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']
+    // Buscar color personalizado en nodo de definición
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._tagDefinition === tagName && ed._tagColor) return ed._tagColor
+      } catch {}
+    }
     let hash = 0
     for (let i = 0; i < tagName.length; i++) hash = tagName.charCodeAt(i) + ((hash << 5) - hash)
     return COLORS[Math.abs(hash) % COLORS.length]
+  }
+
+  /** Borrar un tag de todos los nodos y eliminar su definición */
+  deleteTag(tagName: string) {
+    this.snapshot()
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      const types = (n.types || [])
+      if (types.includes(tagName)) {
+        this.updateNode(n.id, { types: types.filter(t => t !== tagName) })
+      }
+      // Borrar nodo de definición
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._tagDefinition === tagName) this.updateNode(n.id, { deletedAt: new Date().toISOString() })
+      } catch {}
+    }
+  }
+
+  /** Renombrar un tag en todos los nodos y en su definición */
+  renameTag(oldName: string, newName: string) {
+    if (!newName.trim() || newName === oldName) return
+    this.snapshot()
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      const types = (n.types || [])
+      if (types.includes(oldName)) {
+        this.updateNode(n.id, { types: types.map(t => t === oldName ? newName : t) })
+      }
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._tagDefinition === oldName) {
+          ed._tagDefinition = newName
+          this.updateNode(n.id, { text: newName, extraData: JSON.stringify(ed) })
+        }
+      } catch {}
+    }
+  }
+
+  /** Establecer o quitar color personalizado para un tag */
+  setTagColor(tagName: string, color: string | null) {
+    // Buscar nodo de definición existente
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._tagDefinition === tagName) {
+          if (color) ed._tagColor = color; else delete ed._tagColor
+          this.updateNode(n.id, { extraData: JSON.stringify(ed) })
+          return
+        }
+      } catch {}
+    }
+    // No existe definición: crearla
+    const workspaceId = this.workspaces[0]?.id || '00000000-0000-0000-0000-000000000001'
+    const now = new Date().toISOString()
+    const id = crypto.randomUUID()
+    const ed: Record<string, string> = { _tagDefinition: tagName }
+    if (color) ed._tagColor = color
+    const node = {
+      id, parentId: null, text: tagName, body: null,
+      siblingOrder: Date.now(), types: [], collections: [],
+      status: null, isActive: false, isEvent: false, isSeguimiento: false,
+      isDiaryEntry: false, isChat: false, isCollapsed: false, isFavorite: false,
+      due: null, dueEnd: null, priority: null, recurrence: null, diaryDate: null,
+      extraData: JSON.stringify(ed), publicSlug: null, deletedAt: null,
+      createdAt: now, updatedAt: now, workspaceId, _isDirty: true,
+    }
+    this.nodes.set(id, node as any)
+    this.dirtyIds.add(id)
+    this.notify()
   }
 
   // ── Áreas ─────────────────────────────────────────────────────────────────

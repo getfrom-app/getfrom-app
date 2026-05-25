@@ -3363,6 +3363,22 @@ mark.inline-highlight {
 .sidebar-tag-chevron:hover { color: var(--text-secondary); }
 .sidebar-tag-item { display: flex; align-items: center; gap: 6px; padding: 5px 8px; cursor: pointer; border-radius: var(--radius); transition: background 0.1s; }
 .sidebar-tag-item:hover, .sidebar-tag-item.active { background: var(--bg-hover); }
+
+/* ── Tag context menu ────────────────────────────────────────────────────── */
+.tag-context-menu { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); padding: 4px; min-width: 170px; }
+.tag-context-menu-header { font-size: 11px; color: var(--text-tertiary); padding: 4px 10px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; font-weight: 500; }
+.tag-context-menu-item { display: flex; align-items: center; width: 100%; padding: 7px 10px; font-size: 13px; color: var(--text-primary); background: none; border: none; cursor: pointer; border-radius: 5px; text-align: left; }
+.tag-context-menu-item:hover { background: var(--bg-hover); }
+.tag-context-menu-item--danger { color: #ef4444; }
+.tag-context-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.tag-context-menu-rename { display: flex; gap: 4px; padding: 4px 6px; }
+.tag-context-menu-input { flex: 1; padding: 4px 8px; font-size: 13px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
+.tag-context-menu-input:focus { border-color: var(--accent); }
+.tag-context-menu-confirm { padding: 4px 8px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.tag-context-menu-colors { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 8px; }
+.tag-color-swatch { width: 20px; height: 20px; border-radius: 50%; border: none; cursor: pointer; transition: transform 0.1s; }
+.tag-color-swatch:hover { transform: scale(1.2); }
+.tag-color-swatch--reset { background: var(--bg-hover); font-size: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
 .sidebar-tag-count { font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary); padding: 2px 6px; border-radius: 100px; }
 .sidebar-panel-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; border-radius: var(--radius); transition: background 0.1s; }
 .sidebar-panel-item:hover { background: var(--bg-hover); }
