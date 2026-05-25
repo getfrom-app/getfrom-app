@@ -376,7 +376,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   newDate.setHours(0, 0, 0, 0)
                   const nodeId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
                   if (nodeId) {
-                    store.updateNode(nodeId, { due: newDate.toISOString(), status: 'pending' })
+                    store.scheduleNodeAt(nodeId, newDate.toISOString())
                     return
                   }
                   const eventId = e.dataTransfer.getData('eventId')
@@ -461,11 +461,11 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           e.preventDefault()
                           e.currentTarget.classList.remove('drag-over')
                           // From side panel
-                          const nodeId = e.dataTransfer.getData('cal-node-id')
+                          const nodeId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
                           if (nodeId) {
                             const newDate = new Date(day)
                             newDate.setHours(hour, 0, 0, 0)
-                            store.updateNode(nodeId, { due: newDate.toISOString(), status: 'pending' })
+                            store.scheduleNodeAt(nodeId, newDate.toISOString())
                             return
                           }
                           // Drag between time slots
@@ -977,11 +977,11 @@ export default function CalendarView() {
   // Handler para drop sobre celdas del calendario (asigna fecha)
   function handleCalendarDrop(e: React.DragEvent, date: Date) {
     e.preventDefault()
-    const nodeId = e.dataTransfer.getData('cal-node-id')
+    const nodeId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
     if (!nodeId) return
     const d = new Date(date)
     d.setHours(9, 0, 0, 0)
-    store.updateNode(nodeId, { due: d.toISOString(), status: 'pending' })
+    store.scheduleNodeAt(nodeId, d.toISOString())
   }
 
   return (

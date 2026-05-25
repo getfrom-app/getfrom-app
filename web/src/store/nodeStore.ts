@@ -501,6 +501,35 @@ class NodeStore {
     this.updateNode(id, { deletedAt: new Date().toISOString() })
   }
 
+  /**
+   * Programa un nodo en una fecha del calendario.
+   * - Seguimiento o Recurso: crea una tarea HIJA con esa fecha (timeblock para trabajar en ellos)
+   *   y devuelve el id de la nueva tarea
+   * - Tarea/evento/nota normal: muta `due` directamente y devuelve el mismo id
+   */
+  scheduleNodeAt(nodeId: string, iso: string): string | null {
+    const node = this.getNode(nodeId)
+    if (!node) return null
+    let isResource = false
+    try { isResource = !!JSON.parse(node.extraData || '{}')._resource } catch { /* ignore */ }
+    if (node.isSeguimiento || isResource) {
+      // Crear tarea hija para timeblock
+      const label = node.isSeguimiento ? 'Trabajar en seguimiento' : 'Trabajar en recurso'
+      const child = this.createNode({
+        text: label,
+        parentId: nodeId,
+      })
+      this.updateNode(child.id, {
+        due: iso,
+        status: 'pending',
+        isTask: true,
+      })
+      return child.id
+    }
+    this.updateNode(nodeId, { due: iso, status: node.status ?? 'pending' })
+    return nodeId
+  }
+
   /** Colapsar todos los nodos que tienen hijos */
   collapseAll(parentId: string | null): void {
     const toCollapse = this.allActive().filter(n => n.parentId === parentId || !parentId)
