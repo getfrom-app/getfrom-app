@@ -6,6 +6,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect } from 'react'
+import { addFilterShortcut, getShortcuts } from '../../store/shortcutsStore'
 
 interface Props {
   onFilter: (text: string) => void
@@ -167,6 +168,26 @@ export default function WFTopBar({
           </button>
         )}
       </div>
+
+      {/* ⭐ Guardar filtro como atajo — solo visible cuando hay texto en el filtro */}
+      {filterText && (() => {
+        const alreadySaved = getShortcuts().some(s => s.query === filterText)
+        return (
+          <button
+            className={`wf-topbar-btn wf-topbar-star${alreadySaved ? ' starred' : ''}`}
+            title={alreadySaved ? 'Ya guardado como atajo' : 'Guardar filtro como atajo (⭐)'}
+            onClick={() => {
+              if (alreadySaved) return
+              const name = prompt('Nombre para este atajo:', filterText)
+              if (!name) return
+              addFilterShortcut(name, filterText)
+              window.dispatchEvent(new Event('wf:shortcuts-changed'))
+            }}
+          >
+            {alreadySaved ? '★' : '☆'}
+          </button>
+        )
+      })()}
 
       {/* ⌘K */}
       <button

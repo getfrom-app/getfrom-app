@@ -9185,3 +9185,22 @@ a:focus-visible {
 }
 .wf-qa-item:hover .wf-qa-item-del { opacity: 1; }
 .wf-qa-item-del:hover { color: var(--text-primary); }
+
+/* ── WF Star button — atajo unificado ─────────────────────────────────────── */
+.node-star-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 3px;
+  opacity: 0.5;
+  transition: opacity 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+.node-star-btn:hover { opacity: 1; color: #f59e0b; }
+.node-star-btn.starred { opacity: 1; color: #f59e0b; }
+
+.wf-topbar-star { font-size: 14px; }
+.wf-topbar-star.starred { color: #f59e0b; }

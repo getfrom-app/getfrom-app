@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
@@ -866,10 +867,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
-    // Cmd+Shift+F → toggle favorite
+    // Cmd+Shift+F → toggle shortcut (WF: unified star)
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
-      store.updateNode(node.id, { isFavorite: !node.isFavorite })
+      if (isNodeShortcut(node.id)) {
+        removeNodeShortcut(node.id)
+        store.updateNode(node.id, { isFavorite: false })
+      } else {
+        addNodeShortcut(node.id, node.text || 'Sin título')
+        store.updateNode(node.id, { isFavorite: true })
+      }
+      window.dispatchEvent(new Event('wf:shortcuts-changed'))
       return
     }
 
@@ -2246,14 +2254,30 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Fijado badge — chincheta */}
-            {node.isFavorite && (
-              <span
-                className="node-fav-badge"
-                title="Fijado (click para quitar)"
-                onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
-              >📌</span>
-            )}
+            {/* Atajo WF — estrella visible en hover o si ya es atajo */}
+            {(() => {
+              const isShortcut = isNodeShortcut(node.id)
+              if (!isShortcut && !hovered) return null
+              return (
+                <button
+                  className={`node-star-btn${isShortcut ? ' starred' : ''}`}
+                  title={isShortcut ? 'Quitar de atajos (⌘⇧F)' : 'Añadir a atajos (⌘⇧F)'}
+                  onClick={e => {
+                    e.stopPropagation()
+                    if (isShortcut) {
+                      removeNodeShortcut(node.id)
+                      store.updateNode(node.id, { isFavorite: false })
+                    } else {
+                      addNodeShortcut(node.id, node.text || 'Sin título')
+                      store.updateNode(node.id, { isFavorite: true })
+                    }
+                    window.dispatchEvent(new Event('wf:shortcuts-changed'))
+                  }}
+                >
+                  {isShortcut ? '★' : '☆'}
+                </button>
+              )
+            })()}
           </div>
         )}
 
