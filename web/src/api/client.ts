@@ -290,6 +290,12 @@ export interface ChatPayload {
   recentNodes?: ChatRecentNode[]
   currentView?: string
   actionResults?: ChatActionResult[]
+  /** Contenido completo de la nota actualmente abierta (título + body + hijas). */
+  currentNoteContent?: string
+  /** Contexto del diario de hoy: tareas, eventos, notas del día. Solo si el usuario está en la nota diaria. */
+  dailyContext?: string
+  /** Resumen de tareas pendientes: vencidas, hoy, próximas, sin fecha. */
+  pendingTasks?: string
 }
 
 /** Stream /ai/chat. Devuelve la respuesta completa concatenada al terminar. */

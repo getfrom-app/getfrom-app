@@ -351,24 +351,125 @@ class AIChatStore {
     })()
 
     // Enriquecer tagDefs con prompts hijos (_tagPrompt="1") de cada tag.
-    // La IA los leerá y elegirá el más apropiado según la intención del usuario.
-    const enrichedTagDefs: Record<string, string> = { ...tagDefs }
-    for (const [name, body] of Object.entries(tagDefs)) {
+    function enrichTag(name: string, body: string): string {
       const defNode = store.getTagDefNode(name)
-      if (!defNode) continue
+      if (!defNode) return body
       const prompts = store.children(defNode.id).filter(child => {
-        try {
-          const ed = JSON.parse(child.extraData || '{}')
-          return ed._tagPrompt === '1'
-        } catch { return false }
+        try { return JSON.parse(child.extraData || '{}')._tagPrompt === '1' } catch { return false }
       })
-      if (prompts.length > 0) {
-        const section = '\n\n## Prompts disponibles para este tag:\n' +
-          prompts.map(p => {
-            const content = (p.body || '').trim()
-            return `### ${p.text}\n${content || '(sin instrucciones)'}`
-          }).join('\n\n')
-        enrichedTagDefs[name] = body + section
+      if (prompts.length === 0) return body
+      const section = '\n\n## Prompts disponibles para este tag:\n' +
+        prompts.map(p => `### ${p.text}\n${(p.body || '').trim() || '(sin instrucciones)'}`).join('\n\n')
+      return body + section
+    }
+
+    const enrichedTagDefs: Record<string, string> = {}
+    for (const [name, body] of Object.entries(tagDefs)) {
+      enrichedTagDefs[name] = enrichTag(name, body)
+    }
+    // Tags con prompts que no están en el top-8 — incluirlos siempre.
+    for (const node of store.nodes.values()) {
+      if (node.deletedAt) continue
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        if (ed._tagPrompt !== '1') continue
+        const parent = node.parentId ? store.nodes.get(node.parentId) : null
+        if (!parent) continue
+        const ped = JSON.parse(parent.extraData || '{}')
+        const tagName = ped._tagDefinition as string | undefined
+        if (!tagName || enrichedTagDefs[tagName]) continue
+        const body = (parent.body || '').trim()
+        enrichedTagDefs[tagName] = enrichTag(tagName, body || '(sin descripción)')
+      } catch { /* ignore */ }
+    }
+
+    // ── Nota actual: título + body + hijos ─────────────────────────────────
+    let currentNoteContent: string | undefined
+    if (currentNodeId) {
+      const node = store.nodes.get(currentNodeId)
+      if (node) {
+        const parts: string[] = []
+        parts.push(`Título: ${node.text || 'Sin título'}`)
+        if ((node.types || []).length > 0) parts.push(`Tags: #${node.types!.join(' #')}`)
+        if (node.body?.trim()) {
+          const snippet = node.body.length > 3000 ? node.body.slice(0, 3000) + '…' : node.body
+          parts.push(`Contenido del body:\n${snippet}`)
+        }
+        const children = store.children(currentNodeId).slice(0, 30)
+        if (children.length > 0) {
+          const lines = children.map(c => {
+            let l = `  - ${c.text || '(sin título)'}`
+            if (c.status) l += ` [${c.status}]`
+            if (c.due) l += ` — ${new Date(c.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`
+            if (c.body?.trim()) l += ' (con notas)'
+            return l
+          })
+          parts.push(`Elementos hijo:\n${lines.join('\n')}`)
+        }
+        currentNoteContent = parts.join('\n')
+      }
+    }
+
+    // ── Contexto diario: si está en la nota diaria, expandir descendientes ──
+    let dailyContext: string | undefined
+    if (currentNodeId) {
+      const node = store.nodes.get(currentNodeId)
+      if (node?.isDiaryEntry) {
+        const allNodes = store.allActive()
+        function isDescendant(parentId: string | null | undefined, ancestorId: string, depth = 0): boolean {
+          if (depth > 5 || !parentId) return false
+          if (parentId === ancestorId) return true
+          const p = store.nodes.get(parentId)
+          return p ? isDescendant(p.parentId, ancestorId, depth + 1) : false
+        }
+        const descendants = allNodes.filter(n => n.id !== currentNodeId && isDescendant(n.parentId, currentNodeId!))
+        const tasks = descendants.filter(n => n.status)
+          .sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'))
+        const events = descendants.filter(n => n.isEvent)
+        const lines: string[] = []
+        if (tasks.length > 0) {
+          lines.push(`Tareas del día:`)
+          tasks.slice(0, 25).forEach(t => {
+            let l = `  [${t.status}] ${t.text}`
+            if (t.due) l += ` — ${new Date(t.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`
+            lines.push(l)
+          })
+        }
+        if (events.length > 0) {
+          lines.push(`Eventos:`)
+          events.slice(0, 10).forEach(e => {
+            let l = `  📅 ${e.text}`
+            if (e.due) l += ` — ${new Date(e.due).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}`
+            lines.push(l)
+          })
+        }
+        if (lines.length > 0) dailyContext = lines.join('\n')
+      }
+    }
+
+    // ── Tareas pendientes globales ──────────────────────────────────────────
+    let pendingTasks: string | undefined
+    {
+      const now = new Date()
+      const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999)
+      const weekEnd  = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7)
+      const all = store.allActive().filter(n => n.status === 'pending')
+      const overdue  = all.filter(n => n.due && new Date(n.due) < now)
+                          .sort((a, b) => a.due!.localeCompare(b.due!))
+      const today    = all.filter(n => n.due && new Date(n.due) >= now && new Date(n.due) <= todayEnd)
+                          .sort((a, b) => a.due!.localeCompare(b.due!))
+      const upcoming = all.filter(n => n.due && new Date(n.due) > todayEnd && new Date(n.due) <= weekEnd)
+                          .sort((a, b) => a.due!.localeCompare(b.due!))
+      const noDate   = all.filter(n => !n.due)
+      const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+      const lines: string[] = []
+      if (overdue.length)  { lines.push(`VENCIDAS (${overdue.length}):`);  overdue.slice(0,10).forEach(t => lines.push(`  - ${t.text} — ${fmt(t.due!)}`)) }
+      if (today.length)    { lines.push(`HOY (${today.length}):`);          today.slice(0,15).forEach(t => lines.push(`  - ${t.text}`)) }
+      if (upcoming.length) { lines.push(`PRÓXIMAS 7 DÍAS (${upcoming.length}):`); upcoming.slice(0,10).forEach(t => lines.push(`  - ${t.text} — ${fmt(t.due!)}`)) }
+      if (noDate.length)   { lines.push(`SIN FECHA (${noDate.length}):`);   noDate.slice(0,10).forEach(t => lines.push(`  - ${t.text}`)) }
+      if (lines.length > 0) {
+        const joined = lines.join('\n')
+        pendingTasks = joined.length > 3000 ? joined.slice(0, 3000) + '…' : joined
       }
     }
 
@@ -379,6 +480,9 @@ class AIChatStore {
       recentNodes: recent.length > 0 ? recent : undefined,
       currentView,
       actionResults: actionResults.length > 0 ? actionResults : undefined,
+      currentNoteContent,
+      dailyContext,
+      pendingTasks,
     }
   }
 
