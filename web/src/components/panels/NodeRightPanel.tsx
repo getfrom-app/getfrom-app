@@ -19,10 +19,12 @@ export default function NodeRightPanel({ node }: Props) {
   // ── Recurso ──────────────────────────────────────────────────────────────
   const isResource = nodeMeta(node).resource
   function toggleResource() {
+    const newValue = !isResource
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch {}
-    if (ed._resource) { delete ed._resource } else { ed._resource = true }
-    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    if (newValue) { ed._resource = true } else { delete ed._resource }
+    // Actualizar también la columna promovida isResource (viene del servidor como false explícito)
+    store.updateNode(node.id, { extraData: JSON.stringify(ed), isResource: newValue } as Parameters<typeof store.updateNode>[1] & { isResource?: boolean })
   }
 
   // ── Fecha helpers ────────────────────────────────────────────────────────
@@ -58,31 +60,18 @@ export default function NodeRightPanel({ node }: Props) {
   function setPriority(priority: Node['priority']) { store.updateNode(node.id, { priority }) }
   function toggleFavorite() { store.updateNode(node.id, { isFavorite: !node.isFavorite }) }
   // toggleSeguimiento eliminado en v8.25: el concepto bucle ya no existe.
-  // ── Event popup ──────────────────────────────────────────────────────────
+  // ── Modal de creación de evento (centrado, grande) ───────────────────────
   const [showEventPopup, setShowEventPopup] = useState(false)
-  const [evtPopupPos, setEvtPopupPos] = useState<{ top: number; left: number } | null>(null)
   const eventBtnRef = useRef<HTMLButtonElement>(null)
   const eventPopupRef = useRef<HTMLDivElement>(null)
   const [evtDate, setEvtDate] = useState('')
-  const [evtTime, setEvtTime] = useState('09:00')
+  const [evtTime, setEvtTime] = useState('')          // vacío = sin hora
   const [evtEndDate, setEvtEndDate] = useState('')
-  const [evtEndTime, setEvtEndTime] = useState('10:00')
+  const [evtEndTime, setEvtEndTime] = useState('')
   const [evtLocation, setEvtLocation] = useState('')
+  const [evtRec, setEvtRec] = useState<string | null>(null)   // repetición del modal
   const [evtSyncing, setEvtSyncing] = useState(false)
   const [evtMsg, setEvtMsg] = useState<string | null>(null)
-
-  // Cierra popup al hacer click fuera
-  useEffect(() => {
-    if (!showEventPopup) return
-    function handler(e: MouseEvent) {
-      if (
-        eventPopupRef.current && !eventPopupRef.current.contains(e.target as globalThis.Node) &&
-        (!eventBtnRef.current || !eventBtnRef.current.contains(e.target as globalThis.Node))
-      ) setShowEventPopup(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showEventPopup])
 
   // ── Auto-sync silencioso a GCal al cambiar cualquier propiedad del evento ──
   useEffect(() => {
@@ -125,17 +114,15 @@ export default function NodeRightPanel({ node }: Props) {
 
   function openEventPopup() {
     if (node.isEvent) {
-      // Si ya es evento, lo quita directamente
       store.updateNode(node.id, { isEvent: false })
       return
     }
-    const rect = eventBtnRef.current?.getBoundingClientRect()
-    if (rect) setEvtPopupPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 280) })
     // Pre-rellenar con datos existentes del nodo
     setEvtDate(isoToLocalDate(node.due) || '')
-    setEvtTime(isoToLocalTime(node.due) || '09:00')
+    setEvtTime(isoToLocalTime(node.due) || '')
     setEvtEndDate(isoToLocalDate(node.dueEnd) || '')
-    setEvtEndTime(isoToLocalTime(node.dueEnd) || '10:00')
+    setEvtEndTime(isoToLocalTime(node.dueEnd) || '')
+    setEvtRec(node.recurrence || null)
     try { setEvtLocation(JSON.parse(node.extraData || '{}').location || '') } catch { setEvtLocation('') }
     setEvtMsg(null)
     setShowEventPopup(true)
@@ -143,31 +130,31 @@ export default function NodeRightPanel({ node }: Props) {
 
   async function saveEvent() {
     if (!evtDate) return
-    const startIso = new Date(`${evtDate}T${evtTime || '09:00'}:00`).toISOString()
+    const startIso = evtTime
+      ? new Date(`${evtDate}T${evtTime}:00`).toISOString()
+      : new Date(`${evtDate}T00:00:00`).toISOString()
     const endIso = evtEndDate
-      ? new Date(`${evtEndDate}T${evtEndTime || '10:00'}:00`).toISOString()
-      : new Date(new Date(startIso).getTime() + 3600000).toISOString()
-    // Actualizar nodo
+      ? new Date(`${evtEndDate}T${evtEndTime || '23:59'}:00`).toISOString()
+      : evtTime
+        ? new Date(new Date(startIso).getTime() + 3600000).toISOString()
+        : null
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch {}
-    if (evtLocation.trim()) ed.location = evtLocation.trim()
-    else delete ed.location
+    if (evtLocation.trim()) ed.location = evtLocation.trim(); else delete ed.location
     store.updateNode(node.id, {
-      isEvent: true,
-      status: 'pending',
-      due: startIso,
-      dueEnd: evtEndDate ? endIso : null,
+      isEvent: true, status: 'pending',
+      due: startIso, dueEnd: endIso,
+      recurrence: evtRec,
       extraData: JSON.stringify(ed),
     })
-    // Sincronizar con Google Calendar
-    setEvtSyncing(true)
-    setEvtMsg(null)
+    setEvtSyncing(true); setEvtMsg(null)
     try {
+      const rrule = fromRecToRRule(evtRec)
       const result = await createCalendarEvent({
-        title: node.text || 'Evento',
-        start: startIso,
-        end: endIso,
+        title: node.text || 'Evento', start: startIso,
+        end: endIso || new Date(new Date(startIso).getTime() + 3600000).toISOString(),
         description: node.body || undefined,
+        recurrence: rrule,
       })
       let ed2: Record<string, unknown> = {}
       try { ed2 = JSON.parse(node.extraData || '{}') } catch {}
@@ -176,11 +163,9 @@ export default function NodeRightPanel({ node }: Props) {
       store.updateNode(node.id, { extraData: JSON.stringify(ed2) })
       setEvtMsg('✓ Sincronizado con Google Calendar')
     } catch {
-      setEvtMsg('Evento guardado (sin sincronización GCal)')
-    } finally {
-      setEvtSyncing(false)
-    }
-    setTimeout(() => setShowEventPopup(false), 1200)
+      setEvtMsg('Guardado (sin Google Calendar)')
+    } finally { setEvtSyncing(false) }
+    setTimeout(() => setShowEventPopup(false), evtMsg ? 1200 : 0)
   }
 
   const evtLocation_stored = (nodeMeta(node).location ?? '')
@@ -592,77 +577,101 @@ export default function NodeRightPanel({ node }: Props) {
 
     </div>
 
-    {/* ── Popup creación de evento (portal) ─────────────────────────── */}
-    {showEventPopup && evtPopupPos && createPortal(
+    {/* ── Modal creación de evento — centrado, grande ──────────────── */}
+    {showEventPopup && createPortal(
       <div
-        ref={eventPopupRef}
-        className="evt-popup"
-        style={{ position: 'fixed', top: evtPopupPos.top, left: evtPopupPos.left, zIndex: 400 }}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
+        className="evt-modal-backdrop"
+        onMouseDown={e => { if (e.target === e.currentTarget) setShowEventPopup(false) }}
       >
-        <div className="evt-popup-title">📅 Nuevo evento</div>
-
-        {/* Fecha inicio */}
-        <div className="evt-popup-row">
-          <span className="evt-popup-label">Inicio</span>
-          <div className="evt-popup-inputs">
-            <input type="date" className="nqp-date-input" value={evtDate}
-              onChange={e => setEvtDate(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && evtDate) saveEvent() }}
-              autoFocus
-            />
-            <input type="time" className="nqp-time-input" value={evtTime}
-              onChange={e => setEvtTime(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && evtDate) saveEvent() }}
-              disabled={!evtDate}
-            />
+        <div ref={eventPopupRef} className="evt-modal" onMouseDown={e => e.stopPropagation()}>
+          <div className="evt-modal-header">
+            <span className="evt-modal-title">📅 Nuevo evento</span>
+            <button className="evt-modal-close" onClick={() => setShowEventPopup(false)}>✕</button>
           </div>
-        </div>
 
-        {/* Fecha fin */}
-        <div className="evt-popup-row">
-          <span className="evt-popup-label">Fin</span>
-          <div className="evt-popup-inputs">
-            <input type="date" className="nqp-date-input" value={evtEndDate}
-              onChange={e => setEvtEndDate(e.target.value)}
-              disabled={!evtDate}
-            />
-            <input type="time" className="nqp-time-input" value={evtEndTime}
-              onChange={e => setEvtEndTime(e.target.value)}
-              disabled={!evtEndDate}
-            />
+          {/* Fecha (obligatoria) */}
+          <div className="evt-modal-field">
+            <label className="evt-modal-label">Fecha *</label>
+            <div className="evt-modal-quick-dates">
+              {[
+                { label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 },
+                { label: 'Próx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
+              ].map(({ label, days }) => {
+                const d = new Date(); d.setDate(d.getDate() + days)
+                const iso = d.toISOString().slice(0, 10)
+                return (
+                  <button key={label} className={`evt-modal-qbtn ${evtDate === iso ? 'active' : ''}`}
+                    onClick={() => setEvtDate(iso)}>{label}</button>
+                )
+              })}
+            </div>
+            <input type="date" className="evt-modal-input" value={evtDate}
+              onChange={e => setEvtDate(e.target.value)} autoFocus />
           </div>
+
+          {/* Hora inicio (opcional) */}
+          <div className="evt-modal-field">
+            <label className="evt-modal-label">Hora inicio <span className="evt-modal-opt">(opcional)</span></label>
+            <div className="evt-modal-row">
+              <input type="time" className="evt-modal-input evt-modal-input--time" value={evtTime}
+                onChange={e => setEvtTime(e.target.value)} disabled={!evtDate} placeholder="HH:MM" />
+              {evtTime && (
+                <button className="evt-modal-clear" onClick={() => setEvtTime('')} title="Quitar hora">✕</button>
+              )}
+            </div>
+          </div>
+
+          {/* Hora fin — solo si hay hora de inicio */}
+          {evtTime && (
+            <div className="evt-modal-field">
+              <label className="evt-modal-label">Hora fin <span className="evt-modal-opt">(opcional)</span></label>
+              <input type="time" className="evt-modal-input evt-modal-input--time" value={evtEndTime}
+                onChange={e => setEvtEndTime(e.target.value)} disabled={!evtTime} placeholder="HH:MM" />
+            </div>
+          )}
+
+          {/* Repetición */}
+          <div className="evt-modal-field">
+            <label className="evt-modal-label">Repetición <span className="evt-modal-opt">(opcional)</span></label>
+            <div className="prop-rec-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              <button className={`prop-pill${!evtRec ? ' active' : ''}`}
+                onClick={() => setEvtRec(null)}>–</button>
+              <input type="number" className="prop-rec-n" min={1} max={999}
+                value={evtRec ? parseRec(evtRec).n : 1}
+                onChange={e => {
+                  const n = Math.max(1, parseInt(e.target.value) || 1)
+                  const unit = evtRec ? parseRec(evtRec).unit : 'daily'
+                  const safe = Math.max(1, Math.round(n) || 1)
+                  setEvtRec(safe === 1 ? unit : `${unit}:${safe}`)
+                }}
+                disabled={!evtRec}
+              />
+              {recUnits.map(([unit, label]) => (
+                <button key={unit}
+                  className={`prop-pill${evtRec && parseRec(evtRec).unit === unit ? ' active' : ''}`}
+                  onClick={() => { const n = evtRec ? parseRec(evtRec).n : 1; setEvtRec(n === 1 ? unit : `${unit}:${n}`) }}
+                >{label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Lugar (opcional) */}
+          <div className="evt-modal-field">
+            <label className="evt-modal-label">Lugar <span className="evt-modal-opt">(opcional)</span></label>
+            <input type="text" className="evt-modal-input" value={evtLocation}
+              onChange={e => setEvtLocation(e.target.value)} placeholder="Añadir lugar..." />
+          </div>
+
+          {evtMsg && <div className={`evt-popup-msg${evtMsg.startsWith('✓') ? ' ok' : ''}`}>{evtMsg}</div>}
+
+          <div className="evt-modal-actions">
+            <button className="evt-popup-cancel" onClick={() => setShowEventPopup(false)}>Cancelar</button>
+            <button className="evt-popup-save" onClick={saveEvent} disabled={!evtDate || evtSyncing}>
+              {evtSyncing ? '↻ Guardando...' : '📅 Crear evento'}
+            </button>
+          </div>
+          {!evtDate && <div className="evt-popup-hint">La fecha es obligatoria para crear el evento</div>}
         </div>
-
-        {/* Lugar */}
-        <div className="evt-popup-row">
-          <span className="evt-popup-label">Lugar</span>
-          <input type="text" className="evt-popup-location" value={evtLocation}
-            onChange={e => setEvtLocation(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && evtDate) saveEvent() }}
-            placeholder="Localización (opcional)"
-          />
-        </div>
-
-        {/* Mensaje estado */}
-        {evtMsg && <div className={`evt-popup-msg${evtMsg.startsWith('✓') ? ' ok' : ''}`}>{evtMsg}</div>}
-
-        {/* Acciones */}
-        <div className="evt-popup-actions">
-          <button className="evt-popup-cancel" onClick={() => setShowEventPopup(false)}>Cancelar</button>
-          <button
-            className="evt-popup-save"
-            onClick={saveEvent}
-            disabled={!evtDate || evtSyncing}
-          >
-            {evtSyncing ? '↻ Guardando...' : '📅 Guardar evento'}
-          </button>
-        </div>
-
-        {!evtDate && (
-          <div className="evt-popup-hint">Se requiere una fecha para crear el evento</div>
-        )}
       </div>,
       document.body
     )}

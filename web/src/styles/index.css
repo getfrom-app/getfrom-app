@@ -375,6 +375,7 @@ a { color: inherit; text-decoration: none; }
 .context-menu-shortcut { margin-left: auto; font-size: 11px; color: var(--text-tertiary); opacity: 0.7; }
 
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
 /* ── Format toolbar ───────────────────────────────────────────────────────── */
 .format-toolbar {
@@ -5285,6 +5286,48 @@ mark.inline-highlight {
 .prop-event-msg { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; text-align: center; }
 
 /* ── Popup creación de evento ────────────────────────────────────────────── */
+/* ── Modal evento — centrado grande ── */
+.evt-modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+.evt-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  padding: 22px 24px 20px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  display: flex; flex-direction: column; gap: 16px;
+  animation: scaleIn 0.18s ease;
+}
+.evt-modal-header { display: flex; align-items: center; justify-content: space-between; }
+.evt-modal-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.evt-modal-close { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.evt-modal-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+.evt-modal-field { display: flex; flex-direction: column; gap: 6px; }
+.evt-modal-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.evt-modal-opt { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0.6; }
+.evt-modal-input {
+  width: 100%; padding: 8px 10px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 13px;
+  box-sizing: border-box;
+}
+.evt-modal-input:focus { outline: none; border-color: var(--accent); }
+.evt-modal-input--time { width: auto; min-width: 110px; }
+.evt-modal-row { display: flex; align-items: center; gap: 8px; }
+.evt-modal-clear { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 12px; padding: 4px 6px; border-radius: 4px; }
+.evt-modal-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
+.evt-modal-quick-dates { display: flex; gap: 5px; flex-wrap: wrap; }
+.evt-modal-qbtn { font-size: 11px; padding: 4px 9px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer; }
+.evt-modal-qbtn:hover { border-color: var(--accent); color: var(--accent); }
+.evt-modal-qbtn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.evt-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 .evt-popup {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
