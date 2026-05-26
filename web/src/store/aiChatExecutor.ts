@@ -23,7 +23,7 @@ export async function executeChatAction(
     case 'add_row':        return addRow(action)
     case 'change_view':    return changeView(action)
     case 'create_resource':return createResource(action)
-    case 'run_prompt':     return notImplemented(name)
+    case 'run_prompt':     return runPrompt(action)
     default:
       return result(name || 'unknown', false, `Acción desconocida: ${name}`)
   }
@@ -288,6 +288,33 @@ function createResource(a: Record<string, unknown>): ExecutedAction {
     resourceStatus: 'pending',
   })
   return result('create_resource', true, `Recurso «${text}» creado.`, [created.id])
+}
+
+// ── F3 run_prompt ──────────────────────────────────────────────────────
+
+interface SavedPrompt { id: string; name: string; body: string }
+
+function runPrompt(a: Record<string, unknown>): ExecutedAction {
+  const identifier = String((a.prompt_id as string) || (a.id as string) || (a.title as string) || '').trim()
+  if (!identifier) return result('run_prompt', false, 'Falta prompt_id o title.')
+  let prompts: SavedPrompt[] = []
+  try { prompts = JSON.parse(localStorage.getItem('from_prompts_v1') || '[]') } catch { /* ignore */ }
+  const lower = identifier.toLowerCase()
+  const match = prompts.find(p =>
+    p.id.toLowerCase() === lower
+    || p.name.toLowerCase() === lower
+    || p.name.toLowerCase().includes(lower)
+  )
+  if (!match) {
+    const available = prompts.map(p => `«${p.name}»`).join(', ')
+    return result('run_prompt', false,
+      `Prompt no encontrado. Disponibles: ${available || 'ninguno'}`)
+  }
+  const input = String(a.input ?? '')
+  let content = match.body
+  if (content.includes('{{input}}')) content = content.replace(/\{\{input\}\}/g, input)
+  else if (input) content = content + '\n\n' + input
+  return result('run_prompt', true, `Prompt «${match.name}» cargado:\n\n${content}`)
 }
 
 function notImplemented(name: string): ExecutedAction {

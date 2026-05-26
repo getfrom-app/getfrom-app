@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
@@ -57,7 +57,14 @@ import { ToastProvider } from '../Toast'
 
 export default function MainLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const s = useStore()
+  // Nodo actualmente abierto en la URL (`/node/:id` o `/app/node/:id`).
+  // Se inyecta a From AI como contexto.
+  const currentNodeIdFromRoute = (() => {
+    const m = location.pathname.match(/\/node\/([^/]+)/)
+    return m ? m[1] : undefined
+  })()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
 
@@ -376,7 +383,8 @@ export default function MainLayout() {
       )}
       <AIChatFloatingButton onClick={() => setShowAIChat(true)} isOpen={showAIChat} />
       {showAIChat && (
-        <AIChatModal onClose={() => setShowAIChat(false)} />
+        <AIChatModal onClose={() => setShowAIChat(false)}
+                     currentNodeId={currentNodeIdFromRoute} />
       )}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
