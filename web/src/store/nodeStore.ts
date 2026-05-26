@@ -785,14 +785,9 @@ export class NodeStore {
 
     const updated = { ...node, ...finalChanges, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)
-    // Invalidar cache de hijos si cambia parentId / deletedAt / siblingOrder
-    if (
-      finalChanges.parentId !== undefined ||
-      finalChanges.deletedAt !== undefined ||
-      finalChanges.siblingOrder !== undefined
-    ) {
-      this.invalidateChildrenCache()
-    }
+    // Invalidar siempre el cache: guarda referencias de Node y al hacer spread
+    // creamos un objeto nuevo — el cache quedaría apuntando al objeto viejo.
+    this.invalidateChildrenCache()
     this.dirtyIds.add(id)
     this.notify()
     this.scheduleSyncDebounced()
