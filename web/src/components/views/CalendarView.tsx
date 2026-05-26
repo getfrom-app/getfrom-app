@@ -358,8 +358,9 @@ function computeOverlapLayout(events: LaidEvent[]): Map<string, Layout> {
       const baseWidth = 100 / totalCols
       const widthPct = totalCols === 1 ? 100 : baseWidth + (baseWidth * 0.08)
       const leftPct = col * baseWidth
-      // zIndex: más corto = más alto. Base 10, +1 por cada minuto menos.
-      const zIndex = 10 + Math.max(0, Math.round((24 * 60 * 60 * 1000 - ev.durationMs) / 60000))
+      // zIndex: más corto = más alto. Base 10, +1 por cada minuto menos del día,
+      // tope 1440 para que cualquier modal/overlay (z-index 10000+) quede por encima.
+      const zIndex = Math.min(1440, 10 + Math.max(0, Math.round((24 * 60 * 60 * 1000 - ev.durationMs) / 60000)))
       result.set(ev.id, { leftPct, widthPct: Math.min(widthPct, 100 - leftPct), zIndex })
     }
   }
