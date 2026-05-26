@@ -59,7 +59,7 @@ function getNodeIcon(n: Node): string {
   if (n.status === 'done') return '✅'
   if (n.status === 'pending') return '○'
   if ((n.types || []).includes('bucle')) return '↺'
-  if (n.isFavorite) return '★'
+  if (n.isFavorite) return '📌'
   return '📄'
 }
 
@@ -306,14 +306,102 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     store.updateNode(id, { isFavorite: false })
   }, [])
 
+  const [favSort, setFavSort] = useState<'manual' | 'alpha' | 'date'>(() => {
+    return (localStorage.getItem('from_fav_sort') as 'manual' | 'alpha' | 'date') || 'manual'
+  })
+  const [favGroup, setFavGroup] = useState<'none' | 'tag' | 'type'>(() => {
+    return (localStorage.getItem('from_fav_group') as 'none' | 'tag' | 'type') || 'none'
+  })
+  const [showFavControls, setShowFavControls] = useState(false)
+
+  function setFavSortP(v: 'manual' | 'alpha' | 'date') {
+    setFavSort(v); localStorage.setItem('from_fav_sort', v)
+  }
+  function setFavGroupP(v: 'none' | 'tag' | 'type') {
+    setFavGroup(v); localStorage.setItem('from_fav_group', v)
+  }
+
+  function getSortedFavorites(list: Node[]) {
+    const sorted = [...list]
+    if (favSort === 'alpha') sorted.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+    else if (favSort === 'date') sorted.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+    return sorted
+  }
+
+  function getGroupedFavorites(list: Node[]): { label: string; items: Node[] }[] {
+    if (favGroup === 'none') return [{ label: '', items: getSortedFavorites(list) }]
+    if (favGroup === 'tag') {
+      const groups: Record<string, Node[]> = {}
+      for (const n of getSortedFavorites(list)) {
+        const userTags = (n.types || []).filter(t => !['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'].includes(t))
+        const key = userTags[0] || '(sin tag)'
+        if (!groups[key]) groups[key] = []
+        groups[key].push(n)
+      }
+      return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([label, items]) => ({ label, items }))
+    }
+    if (favGroup === 'type') {
+      const groups: Record<string, Node[]> = {}
+      for (const n of getSortedFavorites(list)) {
+        const key = n.status !== null ? 'Tareas' : n.isEvent ? 'Eventos' : n.isDiaryEntry ? 'Diario' : 'Notas'
+        if (!groups[key]) groups[key] = []
+        groups[key].push(n)
+      }
+      const order = ['Tareas', 'Eventos', 'Notas', 'Diario']
+      return order.filter(k => groups[k]).map(label => ({ label, items: groups[label] }))
+    }
+    return [{ label: '', items: list }]
+  }
+
   function renderFavoritesTab() {
+    const groups = getGroupedFavorites(allFavorites)
     return (
       <div className="sidebar-tab-content">
+        {/* Controles sort / group */}
+        <div className="fav-controls-bar">
+          <button
+            className={`fav-ctrl-btn ${favSort !== 'manual' ? 'active' : ''}`}
+            title="Ordenar"
+            onClick={() => setShowFavControls(v => !v)}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="2" y1="4" x2="14" y2="4"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="6" y1="12" x2="10" y2="12"/>
+            </svg>
+          </button>
+          <button
+            className={`fav-ctrl-btn ${favGroup !== 'none' ? 'active' : ''}`}
+            title="Agrupar"
+            onClick={() => setShowFavControls(v => !v)}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+              <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+            </svg>
+          </button>
+        </div>
+        {showFavControls && (
+          <div className="fav-controls-panel">
+            <div className="fav-ctrl-section">
+              <span className="fav-ctrl-label">Ordenar</span>
+              {([['manual', 'Manual'], ['alpha', 'A–Z'], ['date', 'Recientes']] as [typeof favSort, string][]).map(([v, l]) => (
+                <button key={v} className={`fav-ctrl-opt ${favSort === v ? 'active' : ''}`} onClick={() => setFavSortP(v)}>{l}</button>
+              ))}
+            </div>
+            <div className="fav-ctrl-section">
+              <span className="fav-ctrl-label">Agrupar</span>
+              {([['none', 'Ninguno'], ['tag', 'Tag'], ['type', 'Tipo']] as [typeof favGroup, string][]).map(([v, l]) => (
+                <button key={v} className={`fav-ctrl-opt ${favGroup === v ? 'active' : ''}`} onClick={() => setFavGroupP(v)}>{l}</button>
+              ))}
+            </div>
+          </div>
+        )}
         {allFavorites.length > 0 ? (
           <>
-            <div className="nav-section-label">Fijados</div>
+            {groups.map(({ label, items }) => (
+              <div key={label || '__all__'}>
+                {label && <div className="nav-section-label" style={{ paddingTop: 4, paddingBottom: 2, fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>{label}</div>}
             <div className="tree-section">
-              {allFavorites.map(node => (
+              {items.map(node => (
                 <div
                   key={node.id}
                   className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
@@ -351,10 +439,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
                 </div>
               ))}
             </div>
+              </div>
+            ))}
           </>
         ) : (
           <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Fija una nota con ☆ para verla aquí
+            Fija una nota con 📌 para verla aquí
           </div>
         )}
       </div>
@@ -512,7 +602,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               onClick={() => setActiveTab('favorites')}
               title="Fijados"
             >
-              ⭐
+              📌
             </button>
             <button
               className={`sidebar-tab-btn ${activeTab === 'panels' ? 'active' : ''}`}

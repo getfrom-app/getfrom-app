@@ -2023,9 +2023,8 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Multi-view tabs (Notion-style) — solo si usuario ha creado vistas custom.
-              Lista por defecto NO tiene cabecera (es la vista raw). */}
-          {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
+          {/* Multi-view tabs (Notion-style) — siempre visibles en notas (no en diario) */}
+          {!node.isDiaryEntry && (
             <NodeViewTabs
               parentId={node.id}
               activeViewId={activeViewId}

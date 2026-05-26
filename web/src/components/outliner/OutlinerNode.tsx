@@ -182,7 +182,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const nodeTextRef = useRef(node.text)
   nodeTextRef.current = node.text
   const children = store.children(node.id)
-  const isCollapsed = node.isCollapsed && children.length > 0
+  // Colapsado por defecto: si isCollapsed no es explícitamente false, los nodos con hijos empiezan colapsados
+  const isCollapsed = (node.isCollapsed !== false) && children.length > 0
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
@@ -241,7 +242,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isBullet = blockType === 'bullet'
   const isNota = (node.types || []).includes('nota')
   const nodeIcon = meta.icon ?? null
-  const nodeColor = meta.color ?? null
+  // Color: deriva del primer tag que tenga color asignado (sin contar tags built-in)
+  const nodeColor = (() => {
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTags = (node.types || []).filter(t => !builtinTags.has(t))
+    for (const tag of userTags) {
+      const c = store.tagColor(tag)
+      if (c) return c
+    }
+    return null
+  })()
 
   // Filter: if filterText is active and this node doesn't match, hide it
   // But keep parent visible if any descendant matches
@@ -1541,8 +1551,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           }
         }}
         style={nodeColor
-          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + (isBullet ? 12 : 4) }
-          : { paddingLeft: depth * 22 + (isBullet ? 8 : 0) }
+          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + (isBullet ? 20 : 4) }
+          : { paddingLeft: depth * 22 + (isBullet ? 16 : 0) }
         }
       >
 
@@ -1589,9 +1599,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             >
               <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
             </svg>
-            {isCollapsed && children.length > 0 && (
-              <span className="node-children-count">{children.length}</span>
-            )}
+            {/* Número de hijos eliminado: redundante con el chevron */}
           </button>
         )}
 
@@ -1685,15 +1693,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <span style={{ fontSize: 12 }}>📄</span>
               </button>
             ) : isBullet ? (
-              // Bullet explícito: punto •
+              // Lista: nav-dot igual que texto normal (visible/invisible según hijos)
               <button
-                className="bullet-btn"
-                onClick={undefined}
+                className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
+                onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                 tabIndex={-1}
-                aria-label="Bullet"
-              >
-                <span className="bullet-dot" />
-              </button>
+                title="Abrir nota"
+              />
             ) : (
               // Texto normal: dot navegador (visible en hover, o siempre si tiene hijos)
               <button
@@ -1722,6 +1728,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           >
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
+            {/* Lista: dash visual "–" decorativo */}
+            {isBullet && <span className="lista-dash" aria-hidden="true">–</span>}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
             {isAiPrompting ? (
               // Input de prompt IA — igual que Mac: ✦ + escribir prompt + Enter
@@ -1863,19 +1871,57 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const lines = clipText.split('\n').map(l => l.trimEnd()).filter(l => l.length > 0)
               if (lines.length <= 1) return // Paste normal de una línea
               e.preventDefault()
-              // La primera línea va al nodo actual
+
+              // Helper: detectar formato markdown de una línea y extraer texto + metadatos
+              function parseMarkdownLine(raw: string): { text: string; blockType: string | null; isTask: boolean; status: string | null } {
+                let s = raw
+                let blockType: string | null = null
+                let isTask = false
+                let status: string | null = null
+                // Headings
+                if (/^### /.test(s)) { blockType = 'h3'; s = s.slice(4) }
+                else if (/^## /.test(s)) { blockType = 'h2'; s = s.slice(3) }
+                else if (/^# /.test(s)) { blockType = 'h1'; s = s.slice(2) }
+                // Tasks [ ] [x]
+                else if (/^[-*] \[x\] /i.test(s)) { isTask = true; status = 'done'; s = s.replace(/^[-*] \[x\] /i, '') }
+                else if (/^[-*] \[ \] /i.test(s)) { isTask = true; status = 'pending'; s = s.replace(/^[-*] \[ \] /i, '') }
+                else if (/^\- \[x\] /i.test(s)) { isTask = true; status = 'done'; s = s.slice(6) }
+                else if (/^\- \[ \] /i.test(s)) { isTask = true; status = 'pending'; s = s.slice(6) }
+                // Lista / bullet
+                else if (/^[-*] /.test(s)) { blockType = 'bullet'; s = s.slice(2) }
+                return { text: s.trim(), blockType, isTask, status }
+              }
+
+              // Primera línea va al nodo actual
               const curText = contentRef.current?.textContent || ''
-              const firstLine = (curText + lines[0]).trim()
+              const { text: firstText, blockType: firstBlock, isTask: firstIsTask, status: firstStatus } = parseMarkdownLine(lines[0])
+              const firstLine = (curText + firstText).trim()
               nodeTextRef.current = firstLine
-              store.updateNode(node.id, { text: firstLine })
+              const firstUpdates: Record<string, unknown> = { text: firstLine }
+              if (firstBlock) {
+                let ed: Record<string, unknown> = {}
+                try { ed = JSON.parse(node.extraData || '{}') } catch {}
+                ed._block = firstBlock
+                firstUpdates.extraData = JSON.stringify(ed)
+              }
+              if (firstIsTask) { firstUpdates.status = firstStatus ?? 'pending' }
+              store.updateNode(node.id, firstUpdates)
               if (contentRef.current) contentRef.current.textContent = firstLine
+
               // Las líneas siguientes crean nodos hermanos
               let prevOrder = node.siblingOrder
               let lastId = node.id
               for (let i = 1; i < lines.length; i++) {
+                const { text: lineText, blockType, isTask, status: lineStatus } = parseMarkdownLine(lines[i])
+                if (!lineText) continue
                 prevOrder += 0.5
-                const newNode = store.createNode({ text: lines[i].trim(), parentId: node.parentId, siblingOrder: prevOrder })
-                lastId = newNode.id
+                const newNodeData: Record<string, unknown> = { text: lineText, parentId: node.parentId, siblingOrder: prevOrder }
+                if (blockType) {
+                  newNodeData.extraData = JSON.stringify({ _block: blockType })
+                }
+                if (isTask) { newNodeData.status = lineStatus ?? 'pending' }
+                const created = store.createNode(newNodeData as Parameters<typeof store.createNode>[0])
+                lastId = created.id
               }
               onSelect(lastId)
             }}
@@ -2155,13 +2201,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Favorito badge */}
+            {/* Fijado badge — chincheta */}
             {node.isFavorite && (
               <span
                 className="node-fav-badge"
                 title="Fijado (click para quitar)"
                 onClick={e => { e.stopPropagation(); store.updateNode(node.id, { isFavorite: false }) }}
-              >★</span>
+              >📌</span>
             )}
           </div>
         )}

@@ -381,8 +381,8 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Panel de recurso ────────────────────────────────────────────────── */}
       {isResource && <ResourcePanel node={node} />}
 
-      {/* ── Estado (visible salvo evento o bucle — bucle es binario abierto/cerrado) ─ */}
-      {!node.isEvent && (
+      {/* ── Estado (solo si es tarea, evento o recurso) ─ */}
+      {(node.status !== null || isResource || node.isEvent) && !node.isEvent && (
         <div className="prop-section">
           <div className="prop-section-label">Estado</div>
           <div className="prop-pills">
@@ -409,8 +409,8 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
-      {/* ── Fecha (oculta si status es future/done o si es bucle) ────────── */}
-      {!node.isEvent && node.status !== 'future' && node.status !== 'done' && (
+      {/* ── Fecha (solo si es tarea o recurso, oculta si status es future/done) ── */}
+      {(node.status !== null || isResource) && !node.isEvent && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">
@@ -608,17 +608,7 @@ export default function NodeRightPanel({ node }: Props) {
         )
       })()}
 
-      {/* ── Color ───────────────────────────────────────────────────────────── */}
-      <div className="prop-section">
-        <div className="prop-section-label">Color</div>
-        <div className="prop-color-chips">
-          {colors.map(c => (
-            <button key={c || 'none'} className={`prop-color-chip ${(nodeColor || null) === c ? 'active' : ''}`} style={{ background: c || 'transparent', border: c ? 'none' : '1px solid var(--border)' }} onClick={() => setColor(c)} title={c || 'Sin color'}>
-              {!c && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>✕</span>}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Color eliminado: se deriva del tag asociado */}
 
     </div>
 

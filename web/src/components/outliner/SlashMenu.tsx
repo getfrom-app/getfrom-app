@@ -19,7 +19,7 @@ export interface SlashMenuOption {
 const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   // ── Texto ──────────────────────────────────────────────────────────────
   { group: 'Texto', label: 'Texto',      icon: 'T',   prefix: '',      description: 'Párrafo normal',         action: 'text' },
-  { group: 'Texto', label: 'Bullet',    icon: '•',   prefix: '',      description: 'Lista con viñeta',       action: 'bullet' },
+  { group: 'Texto', label: 'Lista',     icon: '–',   prefix: '',      description: 'Lista con guión',        action: 'bullet' },
   { group: 'Texto', label: 'Título 1',   icon: 'H1',  prefix: '# ',    description: 'Encabezado grande',      action: 'heading-1' },
   { group: 'Texto', label: 'Título 2',   icon: 'H2',  prefix: '## ',   description: 'Encabezado mediano',     action: 'heading-2' },
   { group: 'Texto', label: 'Título 3',   icon: 'H3',  prefix: '### ',  description: 'Encabezado pequeño',     action: 'heading-3' },

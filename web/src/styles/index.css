@@ -1173,11 +1173,11 @@ mark.inline-highlight {
 .bullet-btn.task  { color: var(--text-secondary); }
 
 .bullet-dot {
-  width: 4px;
-  height: 4px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--text-secondary);
-  opacity: 0.6;
+  opacity: 0.85;
   display: block;
   flex-shrink: 0;
 }
@@ -1192,9 +1192,9 @@ mark.inline-highlight {
   background: none;
 }
 .node-row--bullet .bullet-dot {
-  width: 5px;
-  height: 5px;
-  opacity: 0.5;
+  width: 7px;
+  height: 7px;
+  opacity: 0.75;
 }
 
 .bullet-placeholder {
@@ -1221,15 +1221,15 @@ mark.inline-highlight {
 }
 .bullet-nav-dot::after {
   content: '';
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--text-tertiary);
+  background: var(--text-secondary);
   display: block;
 }
 /* Con hijos: siempre un poco visible */
 .bullet-nav-dot--has-children {
-  opacity: 0.35;
+  opacity: 0.5;
 }
 /* En hover del node-row: visible */
 .node-row:hover .bullet-nav-dot {
@@ -1317,8 +1317,19 @@ mark.inline-highlight {
 .node-type-badge.bucle { color: var(--accent); }
 .node-type-badge.event { font-size: 12px; }
 .node-type-badge.recurrence { font-size: 11px; opacity: 0.6; }
-.node-fav-badge { font-size: 11px; color: #f59e0b; opacity: 0.85; flex-shrink: 0; user-select: none; cursor: pointer; transition: transform 0.2s; }
-.node-fav-badge:hover { transform: scale(1.3); }
+.node-fav-badge { font-size: 11px; opacity: 0.8; flex-shrink: 0; user-select: none; cursor: pointer; transition: transform 0.2s; }
+.node-fav-badge:hover { transform: scale(1.3); opacity: 1; }
+
+/* ── Lista: dash decorativo "–" antes del texto ── */
+.lista-dash {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+  user-select: none;
+  margin-right: 4px;
+  opacity: 0.7;
+}
 .node-due-chip { font-size: 11px; color: var(--text-tertiary); flex-shrink: 0; user-select: none; white-space: nowrap; }
 .node-due-chip.overdue { color: #ef4444; }
 
@@ -3409,6 +3420,18 @@ mark.inline-highlight {
 
 /* ── Sidebar 4 tabs ─────────────────────────────────────────────────────── */
 
+/* ── Controles Fijados (sort / group) ── */
+.fav-controls-bar { display: flex; align-items: center; gap: 4px; padding: 6px 12px 2px; }
+.fav-ctrl-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: var(--text-tertiary); border-radius: var(--radius); transition: color 0.15s, background 0.15s; }
+.fav-ctrl-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.fav-ctrl-btn.active { color: var(--accent); }
+.fav-controls-panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 8px 6px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.fav-ctrl-section { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.fav-ctrl-label { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; width: 52px; flex-shrink: 0; }
+.fav-ctrl-opt { font-size: 11px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 3px; background: none; cursor: pointer; color: var(--text-secondary); transition: all 0.1s; }
+.fav-ctrl-opt:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+.fav-ctrl-opt.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
 .sidebar-tabs { display: flex; flex-direction: row; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .sidebar-tab-btn { flex: 1; padding: 8px 4px; font-size: 14px; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; }
 .sidebar-tab-btn:hover { color: var(--text-primary); }
@@ -4576,7 +4599,7 @@ mark.inline-highlight {
 .node-row--h3 .bullet-btn { display: none; }
 
 /* ── Lista de elementos (- ): sin nav-dot ────────────────────────────────── */
-.node-row--bullet .bullet-nav-dot { display: none; }
+/* Lista usa bullet-nav-dot directamente — no ocultar */
 
 .node-row--h1 { padding-top: 16px !important; padding-bottom: 4px; }
 .node-row--h2 { padding-top: 12px !important; padding-bottom: 2px; }
