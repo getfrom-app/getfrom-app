@@ -152,11 +152,12 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
     <>
       <div
         ref={rowRef}
-        className={`cal-panel-task ${indented ? 'cal-panel-task--indented' : ''} ${showAsDone ? 'cal-panel-task--done' : ''} ${fadeClass}`}
+        className={`diary-agenda-task ${indented ? 'diary-agenda-task--indented' : ''} ${showAsDone ? 'diary-agenda-task--done' : ''} ${fadeClass}`}
         draggable={!leaving}
         onDragStart={e => {
           calDragNodeId = node.id
           e.dataTransfer.setData('cal-node-id', node.id)
+          e.dataTransfer.setData('text/plain', node.id)
           e.dataTransfer.effectAllowed = 'move'
         }}
         onDragEnd={() => { calDragNodeId = null }}
@@ -168,9 +169,9 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
         ) : (
           <TaskCheckbox node={node} onMarkDone={markDone} />
         )}
-        <span className="cal-panel-task-text">{node.text || 'Sin título'}</span>
+        <span className={`diary-agenda-text${showAsDone ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
         {node.due && (
-          <span className="cal-panel-task-date">
+          <span className="diary-agenda-due">
             {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
           </span>
         )}
@@ -268,42 +269,58 @@ function ResourceRow({ node }: { node: Node }) {
   )
 }
 
+// Helper: ancestro live container (mismo concepto que en DiaryRightPanel)
+function hasLiveContainerAncestor(nodeId: string): boolean {
+  let cur = store.getNode(nodeId)
+  while (cur?.parentId) {
+    const parent = store.getNode(cur.parentId)
+    if (!parent) break
+    if (store.isLiveContainer(parent)) return true
+    cur = parent
+  }
+  return false
+}
+
 export default function CalendarSidePanel({ periodStart, periodEnd, view }: Props) {
   const s = useStore()
   const [isDragOver, setIsDragOver] = useState(false)
 
   const allNodes = s.allActive().filter(n => !n.deletedAt)
-  // Programable: pending O seguimiento O recurso (cualquier cosa que se pueda planificar)
-  const schedulable = allNodes.filter(n =>
-    !n.isDiaryEntry &&
-    (n.status === 'pending' || n.status === 'future' || n.isSeguimiento || isResourceNode(n))
-  )
-
   const endBoundary = periodEnd || new Date(periodStart.getTime() + 86400000)
 
-  // Overdue: pending con due ANTES del periodo visible
-  const overdue = schedulable.filter(n =>
+  // ── Containers vivos con ≥1 tarea pendiente SIN AGENDAR ────────────────
+  // Solo el ancestro más alto (no anidamos).
+  const containers = s.liveContainers({ requireUnscheduled: true })
+    .filter(n => !hasLiveContainerAncestor(n.id))
+
+  // Tareas pendientes sin agendar de un container (excluyendo descendientes
+  // de otro container vivo intermedio, para no duplicar).
+  function getContainerUnscheduled(containerId: string): Node[] {
+    return s.containerPendingTasks(containerId, { requireUnscheduled: true })
+      .sort((a, b) => a.siblingOrder - b.siblingOrder)
+  }
+
+  // Tareas SUELTAS (no descendientes de un container vivo) por categoría
+  const looseSchedulable = allNodes.filter(n =>
+    !n.isDiaryEntry &&
+    (n.status === 'pending' || n.status === 'future') &&
+    !hasLiveContainerAncestor(n.id)
+  )
+
+  const overdue = looseSchedulable.filter(n =>
     n.status === 'pending' && n.due && new Date(n.due) < periodStart
   )
-
-  // Sin fecha: pending/seguimiento sin due (NO recursos — esos van abajo)
-  const unscheduled = schedulable.filter(n =>
-    !n.due && !isResourceNode(n) && (n.status === 'pending' || n.isSeguimiento)
+  const unscheduled = looseSchedulable.filter(n =>
+    !n.due && n.status === 'pending'
   )
-
-  // Futuras: tareas con due DESPUÉS del periodo visible
-  const future = schedulable.filter(n =>
+  const future = looseSchedulable.filter(n =>
     n.status === 'pending' && n.due && new Date(n.due) >= endBoundary
   )
 
-  // Recursos pendientes SIN agendar (los agendados ya aparecen en el calendario)
+  // Recursos sin agendar
   const resources = allNodes
-    .filter(n => isResourceNode(n) && !n.deletedAt)
-    .filter(n => !n.due)  // si tiene fecha, ya está en el calendario
-    .filter(n => {
-      const st = getResourceStatus(n)
-      return st === 'pending'
-    })
+    .filter(n => isResourceNode(n) && !n.deletedAt && !n.due && !hasLiveContainerAncestor(n.id))
+    .filter(n => getResourceStatus(n) === 'pending')
 
   const overdueGroups = buildGroups(overdue, allNodes)
   const unscheduledGroups = buildGroups(unscheduled, allNodes)
@@ -319,9 +336,13 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
     : view === 'month' ? 'meses siguientes'
     : 'años siguientes'
 
+  const navigate = (id: string) => { window.location.href = `/app/node/${id}` }
+
+  const hasAnything = containers.length > 0 || overdue.length > 0 || unscheduled.length > 0 || future.length > 0 || resources.length > 0
+
   return (
     <div
-      className={`cal-side-panel ${isDragOver ? 'cal-side-panel--drag-over' : ''}`}
+      className={`cal-side-panel diary-panel-content ${isDragOver ? 'cal-side-panel--drag-over' : ''}`}
       onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
       onDragLeave={() => setIsDragOver(false)}
       onDrop={e => {
@@ -335,7 +356,30 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
         <div className="cal-panel-drop-hint">Suelta para desagendar</div>
       )}
 
-      {/* Overdue */}
+      {/* Containers vivos — mismo estilo que el panel del diario */}
+      {containers.map(node => {
+        const childTasks = getContainerUnscheduled(node.id)
+        if (childTasks.length === 0) return null
+        return (
+          <div key={node.id}>
+            <div
+              className="diary-agenda-seguimiento"
+              style={{ userSelect: 'none', cursor: 'pointer' }}
+              onClick={() => navigate(node.id)}
+              title={node.text || 'Sin título'}
+            >
+              <span className="diary-agenda-container-icon">📁</span>
+              <span className="diary-agenda-text">{node.text || 'Sin título'}</span>
+              <span className="diary-agenda-container-count">{childTasks.length}</span>
+            </div>
+            {childTasks.map(task => (
+              <TaskRow key={task.id} node={task} checkColor="#f59e0b" indented />
+            ))}
+          </div>
+        )
+      })}
+
+      {/* Vencidas — tareas sueltas */}
       {overdue.length > 0 && (
         <div className="cal-panel-section">
           <div className="cal-panel-label cal-panel-label--overdue">
@@ -346,7 +390,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
         </div>
       )}
 
-      {/* Sin fecha */}
+      {/* Sin fecha — tareas sueltas */}
       {unscheduled.length > 0 && (
         <div className="cal-panel-section">
           <div className="cal-panel-label">
@@ -357,7 +401,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
         </div>
       )}
 
-      {/* Futuras */}
+      {/* Futuras — tareas sueltas */}
       {future.length > 0 && (
         <div className="cal-panel-section">
           <div className="cal-panel-label">
@@ -379,7 +423,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
         </div>
       )}
 
-      {overdue.length === 0 && unscheduled.length === 0 && future.length === 0 && resources.length === 0 && (
+      {!hasAnything && (
         <div className="cal-panel-empty">
           <span style={{ fontSize: 20, opacity: 0.3 }}>✓</span>
           <span>Todo agendado</span>
