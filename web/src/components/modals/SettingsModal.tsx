@@ -400,20 +400,69 @@ const AI_LANG_LS = 'from_ai_language'
 
 export function IAPane() {
   const us = useUserStore()
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem(ANTHROPIC_KEY_LS) || '')
+
+  // Paridad con Mac (build 62): la fuente de verdad de la API key es
+  // `users.aiApiKeys.anthropic` en el servidor (cifrada AES-256-GCM).
+  // localStorage queda como cache local — se hidrata desde server al cargar
+  // y se sincroniza al guardar/borrar.
+  const serverKey = us.user?.aiApiKeys?.anthropic ?? ''
+  const [apiKey, setApiKey] = useState<string>(
+    () => localStorage.getItem(ANTHROPIC_KEY_LS) || serverKey
+  )
   const [showKey, setShowKey] = useState(false)
   const [keySaved, setKeySaved] = useState(false)
+  const [keyError, setKeyError] = useState<string | null>(null)
   const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'es')
 
-  function saveApiKey() {
-    if (apiKey.trim()) localStorage.setItem(ANTHROPIC_KEY_LS, apiKey.trim())
+  // Hidratar al cambiar el user (al loguearse o tras fetchMe).
+  useEffect(() => {
+    if (serverKey && !apiKey) {
+      setApiKey(serverKey)
+      localStorage.setItem(ANTHROPIC_KEY_LS, serverKey)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverKey])
+
+  // ¿Tiene plan de pago? El servidor solo acepta aiApiKeys con licenseStatus
+  // o subscriptionStatus = "active". El UI gating evita errores 403.
+  const hasPaidPlan =
+    us.user?.licenseStatus === 'active' ||
+    us.user?.subscriptionStatus === 'active'
+
+  async function saveApiKey() {
+    const trimmed = apiKey.trim()
+    setKeyError(null)
+    if (!hasPaidPlan && trimmed.length > 0) {
+      setKeyError('Requiere plan lifetime o suscripción activa.')
+      return
+    }
+    // Optimistic local cache.
+    if (trimmed) localStorage.setItem(ANTHROPIC_KEY_LS, trimmed)
     else localStorage.removeItem(ANTHROPIC_KEY_LS)
-    setKeySaved(true)
-    setTimeout(() => setKeySaved(false), 2000)
+    try {
+      // Sync con servidor — paridad Mac. Merge con keys existentes.
+      const existing = { ...(us.user?.aiApiKeys ?? {}) }
+      if (trimmed) existing.anthropic = trimmed
+      else delete existing.anthropic
+      await updateMe({ aiApiKeys: Object.keys(existing).length ? existing : null })
+      await us.fetchMe()
+      setKeySaved(true)
+      setTimeout(() => setKeySaved(false), 2000)
+    } catch (err) {
+      setKeyError(err instanceof Error ? err.message : 'Error guardando la clave')
+    }
   }
-  function clearApiKey() {
+  async function clearApiKey() {
     setApiKey('')
     localStorage.removeItem(ANTHROPIC_KEY_LS)
+    try {
+      const existing = { ...(us.user?.aiApiKeys ?? {}) }
+      delete existing.anthropic
+      await updateMe({ aiApiKeys: Object.keys(existing).length ? existing : null })
+      await us.fetchMe()
+    } catch {
+      // Ignorar — el cache local ya está limpio.
+    }
   }
   function setLanguage(v: string) {
     setLang(v)
@@ -433,28 +482,36 @@ export function IAPane() {
       <SectionTitle>API Key propia</SectionTitle>
       <Row
         label="Clave de Anthropic"
-        hint="Si añades tu propia API key de Anthropic, From la usará directamente y no consumirá los tokens incluidos en tu plan. Se guarda solo en este navegador."
+        hint={
+          hasPaidPlan
+            ? 'Tu clave se guarda cifrada en nuestro servidor y se sincroniza entre tus dispositivos (Mac, web, iOS).'
+            : 'Requiere plan lifetime o suscripción activa. Con un plan, From usará tu propia clave en lugar de los tokens incluidos.'
+        }
       />
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
         <input
           type={showKey ? 'text' : 'password'}
           value={apiKey}
           onChange={e => setApiKey(e.target.value)}
-          placeholder="sk-ant-..."
+          placeholder={hasPaidPlan ? 'sk-ant-…' : 'Disponible con plan activo'}
           className="st-input"
-          style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+          style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, opacity: hasPaidPlan ? 1 : 0.5 }}
+          disabled={!hasPaidPlan}
         />
-        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? 'Ocultar' : 'Mostrar'}>
+        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? 'Ocultar' : 'Mostrar'} disabled={!hasPaidPlan}>
           {showKey ? '🙈' : '👁'}
         </button>
       </div>
       <div className="st-actions">
-        <button className="btn-primary" onClick={saveApiKey}>{keySaved ? '✓ Guardado' : 'Guardar'}</button>
+        <button className="btn-primary" onClick={saveApiKey} disabled={!hasPaidPlan}>{keySaved ? '✓ Guardado' : 'Guardar'}</button>
         {apiKey && <button className="btn-secondary btn-danger-outline" onClick={clearApiKey}>Borrar</button>}
         <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
           Obtener key ↗
         </a>
       </div>
+      {keyError && (
+        <div style={{ color: '#c33', fontSize: 12, marginTop: 6 }}>{keyError}</div>
+      )}
 
       <SectionTitle>Tokens incluidos</SectionTitle>
       {us.user?.tokensBalance !== undefined ? (

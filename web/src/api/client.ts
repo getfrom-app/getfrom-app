@@ -107,6 +107,10 @@ export interface UserProfile {
   subscriptionRenewsAt: string | null
   licenseStatus: 'active' | null
   tokensBalance: number
+  /** AI API keys propias del usuario (solo lifetime / suscripción activa).
+   * El servidor las almacena cifradas y las devuelve descifradas. Si no hay
+   * keys o el usuario no tiene plan, llega un objeto vacío. */
+  aiApiKeys?: { anthropic?: string; openai?: string; google?: string }
 }
 
 export async function getMe(): Promise<{ user: UserProfile }> {
@@ -131,6 +135,9 @@ export async function updateMe(data: {
   currentPassword?: string
   newPassword?: string
   newEmail?: string
+  /** Pasar `null` o `{}` borra todas las keys del usuario en server.
+   * Cifrado AES-256-GCM, gating server-side por plan (paridad Mac). */
+  aiApiKeys?: { anthropic?: string; openai?: string; google?: string } | null
 }): Promise<{ user: UserProfile }> {
   return apiRequest('/auth/me', {
     method: 'PUT',
