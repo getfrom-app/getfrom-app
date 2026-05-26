@@ -3453,6 +3453,59 @@ mark.inline-highlight {
 .diary-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .diary-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
 .diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; flex: 1; }
+
+/* ── Timeline como columna toggleable (entre main y right panel) ──────────── */
+.diary-timeline-aside {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.diary-timeline-aside-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+.diary-timeline-aside-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.diary-timeline-aside-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 18px; line-height: 1;
+  padding: 0 6px; border-radius: 4px;
+}
+.diary-timeline-aside-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.diary-timeline-aside .timeline-panel { flex: 1; overflow-y: auto; padding: 8px; }
+
+/* Botón timeline en el header */
+.diary-timeline-toggle {
+  margin-left: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.diary-timeline-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+.diary-timeline-toggle--active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+/* Drop visual feedback en una hora del timeline */
+.timeline-hour-clickable.drag-over {
+  background: var(--accent-soft) !important;
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
 .diary-panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .diary-panel-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; font-family: inherit; }
 .diary-panel-tab:hover { color: var(--text-primary); }

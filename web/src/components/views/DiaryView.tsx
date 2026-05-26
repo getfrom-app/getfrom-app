@@ -159,6 +159,8 @@ export default function DiaryView() {
   })
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('pending')
   const [pendingSearch, setPendingSearch] = useState('')
+  // Timeline como columna aparte (toggle desde botón en el header)
+  const [timelineOpen, setTimelineOpen] = useState(false)
 
   // Sync URL param with dateOffset
   useEffect(() => {
@@ -558,6 +560,21 @@ export default function DiaryView() {
                   className="timeline-hour-clickable"
                   onClick={() => handleTimelineHourClick(h)}
                   title={`Crear evento a las ${String(h).padStart(2, '0')}:00`}
+                  onDragOver={e => {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    e.currentTarget.classList.add('drag-over')
+                  }}
+                  onDragLeave={e => e.currentTarget.classList.remove('drag-over')}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('drag-over')
+                    const id = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+                    if (!id) return
+                    const target = new Date(targetDate)
+                    target.setHours(h, 0, 0, 0)
+                    store.scheduleNodeAt(id, target.toISOString())
+                  }}
                 >
                   {allItems.map(t => (
                     <span
@@ -912,6 +929,15 @@ export default function DiaryView() {
                   }}
                   title="Ir a una fecha"
                 />
+
+                {/* Botón Timeline — abre la columna timeline a la vez que la columna derecha */}
+                <button
+                  className={`diary-timeline-toggle${timelineOpen ? ' diary-timeline-toggle--active' : ''}`}
+                  onClick={() => setTimelineOpen(v => !v)}
+                  title={timelineOpen ? 'Cerrar timeline' : 'Abrir timeline del día'}
+                >
+                  🕐 Timeline
+                </button>
               </div>
             </div>
           </div>
@@ -946,6 +972,24 @@ export default function DiaryView() {
           </div>
         </div>
 
+        {/* Middle: Timeline opcional — solo en el día de hoy/diario, toggleable
+            con el botón. Se ve a la vez que la columna derecha, así puedes
+            arrastrar tareas pendientes a una hora del día. */}
+        {timelineOpen && (
+          <aside className="diary-timeline-aside">
+            <div className="diary-timeline-aside-header">
+              <span className="diary-timeline-aside-title">🕐 Timeline</span>
+              <button
+                className="diary-timeline-aside-close"
+                onClick={() => setTimelineOpen(false)}
+                title="Cerrar timeline"
+                aria-label="Cerrar timeline"
+              >×</button>
+            </div>
+            {renderTimeline()}
+          </aside>
+        )}
+
         {/* Right: panel */}
         <div className="diary-right-panel">
           <div className="diary-panel-tabs">
@@ -954,12 +998,6 @@ export default function DiaryView() {
               onClick={() => setPanelTab('pending')}
             >
               Pendiente
-            </button>
-            <button
-              className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
-              onClick={() => setPanelTab('timeline')}
-            >
-              Timeline
             </button>
             <button
               className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
@@ -975,8 +1013,8 @@ export default function DiaryView() {
             </button>
           </div>
           {panelTab === 'pending' ? renderPending()
-            : panelTab === 'timeline' ? renderTimeline()
             : panelTab === 'agenda' ? renderAgenda()
+            : panelTab === 'timeline' ? renderTimeline()  // fallback retrocompat por si quedaba state antiguo
             : renderStats()}
         </div>
       </div>
