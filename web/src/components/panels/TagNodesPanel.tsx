@@ -46,6 +46,32 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
   const navigate = useNavigate()
   const [sort, setSort] = useState<SortKey>('updated')
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'done' | 'notes'>('all')
+  const [editingPromptId, setEditingPromptId] = useState<string | null>(null)
+
+  // Nodo definición del tag y sus prompts hijos
+  const tagDefNode = useMemo(() => store.getTagDefNode(tagName), [s, tagName])
+  const tagPrompts = useMemo(() => {
+    if (!tagDefNode) return []
+    return store.children(tagDefNode.id).filter(child => {
+      try { return JSON.parse(child.extraData || '{}')._tagPrompt === '1' } catch { return false }
+    })
+  }, [s, tagDefNode])
+
+  function addPrompt() {
+    if (!tagDefNode) return
+    const created = store.createNode({
+      text: 'Nuevo prompt',
+      parentId: tagDefNode.id,
+      extraData: { _tagPrompt: '1' },
+    })
+    setEditingPromptId(created.id)
+    navigate(`/node/${created.id}`)
+  }
+
+  function deletePrompt(id: string) {
+    const node = store.nodes.get(id)
+    if (node) store.deleteNode(id)
+  }
 
   const currentColor = s.tagColor(tagName)
 
@@ -114,6 +140,69 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
             title="Restablecer color automático"
           >↺</button>
         </div>
+      </div>
+
+      <div className="tag-nodes-divider" />
+
+      {/* Prompts de IA */}
+      <div style={{ padding: '10px 12px 6px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          marginBottom: 6,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+            PROMPTS DE IA
+          </span>
+          <button
+            onClick={addPrompt}
+            title="Añadir prompt de IA para este tag"
+            style={{
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 5, padding: '1px 6px', fontSize: 11,
+              color: 'var(--text-secondary)', cursor: 'pointer',
+              lineHeight: 1.4,
+            }}
+          >＋</button>
+        </div>
+        {tagPrompts.length === 0 ? (
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', opacity: 0.6, paddingBottom: 4 }}>
+            Sin prompts — pulsa ＋ para añadir
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {tagPrompts.map(p => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'var(--bg-secondary)', borderRadius: 6,
+                padding: '4px 8px',
+              }}>
+                <span style={{ fontSize: 12 }}>✨</span>
+                <button
+                  onClick={() => navigate(`/node/${p.id}`)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0,
+                    fontSize: 12, color: 'var(--text-primary)',
+                    cursor: 'pointer', flex: 1, textAlign: 'left',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}
+                  title={p.body ? `${p.text}\n\n${p.body.slice(0, 200)}` : p.text}
+                >
+                  {p.text || 'Sin título'}
+                </button>
+                <button
+                  onClick={() => deletePrompt(p.id)}
+                  style={{
+                    background: 'none', border: 'none', padding: '0 2px',
+                    fontSize: 12, color: 'var(--text-secondary)',
+                    cursor: 'pointer', opacity: 0.5,
+                    flexShrink: 0,
+                  }}
+                  title="Eliminar prompt"
+                >✕</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="tag-nodes-divider" />
