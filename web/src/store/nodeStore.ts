@@ -352,6 +352,39 @@ export class NodeStore {
     return { years: yearsMerged, months: monthsMerged, weeks: weeksMerged }
   }
 
+  /**
+   * Limpia nodos que están incorrectamente bajo nodos de estructura temporal
+   * (año "2026", mes "Mayo", semana "Semana 22"). La jerarquía correcta es:
+   *   2026 → sólo meses   Mayo → sólo semanas   Semana N → sólo diary entries
+   * Cualquier nota/tarea real que tenga como parent un nodo temporal se mueve
+   * a root (parentId = null). Las diary entries son la excepción: sus parents
+   * son semanas → correcto, no se tocan.
+   */
+  fixTemporalHierarchyOrphans(): number {
+    const MONTHS_SET = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
+    const isTemporal = (n: Node) => {
+      const t = (n.text || '').trim()
+      return /^\d{4}$/.test(t) || MONTHS_SET.has(t) || /^Semana \d+$/i.test(t)
+    }
+
+    let moved = 0
+    for (const [id, node] of this.nodes.entries()) {
+      if (node.deletedAt || !node.parentId) continue
+      if (node.isDiaryEntry) continue  // diary entries bajo semana/mes → correcto
+
+      const parent = this.getNode(node.parentId)
+      if (!parent || parent.deletedAt || !isTemporal(parent)) continue
+
+      // Nota/tarea hija directa de nodo temporal → mover a root
+      this.nodes.set(id, { ...node, parentId: null, _isDirty: true, updatedAt: new Date().toISOString() })
+      this.dirtyIds.add(id)
+      moved++
+    }
+    if (moved > 0) this.invalidateChildrenCache()
+    return moved
+  }
+
   mergeDuplicateDiaries(): number {
     const byDay = new Map<string, Node[]>()
     for (const node of this.nodes.values()) {
@@ -1221,6 +1254,17 @@ export class NodeStore {
         `${temporalMerged.years} años,`,
         `${temporalMerged.months} meses,`,
         `${temporalMerged.weeks} semanas`)
+      await this.sync()
+    }
+
+    // Limpiar nodos incorrectamente bajo estructura temporal (2026/Mayo/Semana N).
+    // Cualquier nota/tarea que tenga un nodo temporal como parent directo
+    // se mueve a root — la jerarquía correcta es Año→Mes→Semana→DiaryEntry→nota.
+    const temporalOrphans = this.fixTemporalHierarchyOrphans()
+    if (temporalOrphans > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[temporal-orphans] ${temporalOrphans} nodos movidos a root desde estructura temporal`)
+      this.notify()
       await this.sync()
     }
 
