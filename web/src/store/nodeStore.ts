@@ -61,13 +61,23 @@ class NodeStore {
     return this.nodes.get(id)
   }
 
-  children(parentId: string | null): Node[] {
-    const result: Node[] = []
+  // ── Cache de hijos por parentId — se invalida en cada mutación ────────
+  private _childrenCache: Map<string | null, Node[]> | null = null
+  private invalidateChildrenCache() { this._childrenCache = null }
+  private buildChildrenCache(): Map<string | null, Node[]> {
+    const idx = new Map<string | null, Node[]>()
     for (const node of this.nodes.values()) {
       if (node.deletedAt) continue
-      if (node.parentId === parentId) result.push(node)
+      const arr = idx.get(node.parentId)
+      if (arr) arr.push(node); else idx.set(node.parentId, [node])
     }
-    return result.sort((a, b) => a.siblingOrder - b.siblingOrder)
+    for (const arr of idx.values()) arr.sort((a, b) => a.siblingOrder - b.siblingOrder)
+    return idx
+  }
+
+  children(parentId: string | null): Node[] {
+    if (!this._childrenCache) this._childrenCache = this.buildChildrenCache()
+    return this._childrenCache.get(parentId) ?? []
   }
 
   allActive(): Node[] {
@@ -586,12 +596,8 @@ class NodeStore {
     if (!n.id) return
     n.types = typeof n.types === 'string' ? JSON.parse(n.types) : (n.types || [])
     n.collections = typeof n.collections === 'string' ? JSON.parse(n.collections) : (n.collections || [])
-    // Auto-migración: notas con 'bucle' en types → isSeguimiento (bucle eliminado de la UI)
-    if (n.types.includes('bucle')) {
-      n.isSeguimiento = true
-      n.types = n.types.filter((t: string) => t !== 'bucle')
-    }
     this.nodes.set(n.id, n)
+    this.invalidateChildrenCache()
   }
 
   createNode(params: {
@@ -639,6 +645,7 @@ class NodeStore {
       _isDirty: true,
     }
     this.nodes.set(id, node)
+    this.invalidateChildrenCache()
     this.dirtyIds.add(id)
     this.notify()
     this.scheduleSyncDebounced()
@@ -662,6 +669,14 @@ class NodeStore {
 
     const updated = { ...node, ...finalChanges, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)
+    // Invalidar cache de hijos si cambia parentId / deletedAt / siblingOrder
+    if (
+      finalChanges.parentId !== undefined ||
+      finalChanges.deletedAt !== undefined ||
+      finalChanges.siblingOrder !== undefined
+    ) {
+      this.invalidateChildrenCache()
+    }
     this.dirtyIds.add(id)
     this.notify()
     this.scheduleSyncDebounced()
@@ -1056,6 +1071,7 @@ class NodeStore {
       migrated++
     }
     if (migrated > 0) {
+      this.invalidateChildrenCache()
       // eslint-disable-next-line no-console
       console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales`)
       this.notify()
