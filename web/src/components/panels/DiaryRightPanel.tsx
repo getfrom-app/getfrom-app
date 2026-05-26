@@ -174,6 +174,21 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         >
           → Mover a…
         </button>
+        <button
+          className="tpp-open-note-btn"
+          onClick={e => {
+            e.stopPropagation()
+            const diary = store.todayDiary()
+            if (!diary) return
+            const sibs = store.children(diary.id)
+            const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+            store.updateNode(node.id, { parentId: diary.id, siblingOrder: lastOrder + 1 })
+            onClose()
+          }}
+          title="Mover esta tarea a la nota diaria de hoy"
+        >
+          📓 A hoy
+        </button>
       </div>
 
       {movePickerOpen && <MovePicker nodeId={node.id} onPicked={() => { setMovePickerOpen(false); onClose() }} onCancel={() => setMovePickerOpen(false)} />}
