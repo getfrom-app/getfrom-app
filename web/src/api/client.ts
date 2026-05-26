@@ -277,6 +277,60 @@ export async function aiInlineStream(
   return result
 }
 
+// ── From AI Chat ─────────────────────────────────────────────────────────
+
+export interface ChatMessage { role: 'user' | 'assistant'; content: string }
+export interface ChatActionResult { action: string; ok: boolean; summary?: string; ids?: string[] }
+export interface ChatRecentNode { id: string; title: string; tags?: string[] }
+
+export interface ChatPayload {
+  messages: ChatMessage[]
+  userProfile?: string
+  tagDefinitions?: Record<string, string>
+  recentNodes?: ChatRecentNode[]
+  currentView?: string
+  actionResults?: ChatActionResult[]
+}
+
+/** Stream /ai/chat. Devuelve la respuesta completa concatenada al terminar. */
+export async function aiChatStream(
+  payload: ChatPayload,
+  onChunk?: (chunk: string) => void
+): Promise<string> {
+  const token = getToken()
+  const res = await fetch(`${BASE}/ai/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const reader = res.body?.getReader()
+  if (!reader) throw new Error('No stream')
+  let full = ''
+  const decoder = new TextDecoder()
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    const text = decoder.decode(value)
+    for (const line of text.split('\n')) {
+      if (!line.startsWith('data: ')) continue
+      try {
+        const data = JSON.parse(line.slice(6))
+        if (data.chunk) {
+          full += data.chunk
+          onChunk?.(data.chunk)
+        } else if (data.error) {
+          throw new Error(data.error)
+        }
+      } catch { /* ignore */ }
+    }
+  }
+  return full
+}
+
 // ── Files (R2) ───────────────────────────────────────────────────────────
 
 export async function getPresignedUpload(filename: string, contentType: string): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {

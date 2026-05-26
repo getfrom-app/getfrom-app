@@ -40,6 +40,8 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
+import AIChatFloatingButton from '../aichat/AIChatFloatingButton'
+import AIChatModal from '../aichat/AIChatModal'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
@@ -92,6 +94,7 @@ export default function MainLayout() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
+  const [showAIChat, setShowAIChat] = useState(false)
   const prevIsSyncing = useRef(false)
 
   useTaskNotifications()
@@ -137,6 +140,11 @@ export default function MainLayout() {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowCommandPalette(v => !v)
+      }
+      // Cmd+J → From AI chat
+      if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setShowAIChat(v => !v)
       }
       // Cmd+Shift+S → toggle sidebar
       if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
@@ -365,6 +373,10 @@ export default function MainLayout() {
       )}
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
+      )}
+      <AIChatFloatingButton onClick={() => setShowAIChat(true)} isOpen={showAIChat} />
+      {showAIChat && (
+        <AIChatModal onClose={() => setShowAIChat(false)} />
       )}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}

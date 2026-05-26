@@ -28,6 +28,16 @@ export interface Node {
   isResource?: boolean | null
   /** Icono inline del nodo (emoji). Antes extraData.icon. */
   icon?: string | null
+  // ── Columnas promovidas en v8.29 ───────────────────────────────────────
+  /** URL del recurso. Antes extraData._resourceUrl. */
+  resourceUrl?: string | null
+  /** Tipo de recurso (url|youtube|podcast|article|book). Antes _resourceType. */
+  resourceType?: string | null
+  /** Estado del recurso (pending|consuming|done). Antes _resourceStatus. */
+  resourceStatus?: string | null
+  // ── Columna promovida en v8.30 ─────────────────────────────────────────
+  /** Schema/valores de propiedades (tablas). JSON string. Antes _props. */
+  props?: string | null
   isDiaryEntry: boolean
   isChat: boolean
   isCollapsed: boolean
