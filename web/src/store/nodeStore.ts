@@ -496,6 +496,9 @@ export class NodeStore {
   allResources(): Node[] {
     return this.allActive().filter(n => {
       if (n.deletedAt) return false
+      // Comprobar columna promovida primero (post-migración v8.27)
+      if (n.isResource) return true
+      // Fallback a extraData._resource (pre-migración o datos legacy)
       try { return !!JSON.parse(n.extraData || '{}')._resource } catch { return false }
     })
   }

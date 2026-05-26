@@ -24,13 +24,20 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 function effectiveStatus(node: Node): 'pending' | 'future' | 'done' {
+  // 1. Columna promovida resourceStatus (v8.29+)
+  if (node.resourceStatus === 'done') return 'done'
+  if (node.resourceStatus === 'consuming') return 'pending' // consuming → pendiente en UI
+  if (node.resourceStatus === 'future') return 'future'
+  if (node.resourceStatus === 'pending') return 'pending'
+  // 2. Status de tarea
   if (node.status === 'done') return 'done'
   if (node.status === 'future') return 'future'
   if (node.status === 'pending') return 'pending'
-  // Sin estado o legacy → leer _resourceStatus
+  // 3. Legacy extraData._resourceStatus
   try {
     const legacy = JSON.parse(node.extraData || '{}')._resourceStatus
     if (legacy === 'done' || legacy === 'archived') return 'done'
+    if (legacy === 'consuming') return 'pending'
   } catch { /* ignore */ }
   return 'pending'
 }
