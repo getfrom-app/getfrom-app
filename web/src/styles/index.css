@@ -8914,3 +8914,218 @@ a:focus-visible {
 
 /* Tags inline más compactos y en negrita en la agenda diaria */
 .diary-agenda-text .tag-inline { font-size: 0.75em !important; font-weight: 700 !important; padding: 0 4px !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPERIMENT/WORKFLOWY — estilos de la rama experiment/workflowy
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Layout principal WF ──────────────────────────────────────────────────── */
+.wf-layout .top-bar { display: none; }  /* ocultar TopBar original */
+
+/* ── WFTopBar ─────────────────────────────────────────────────────────────── */
+.wf-topbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+  user-select: none;
+}
+
+.wf-topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.wf-topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.wf-topbar-btn:hover, .wf-topbar-btn.active {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.wf-topbar-home {
+  color: var(--text-tertiary);
+}
+.wf-topbar-home:hover {
+  color: var(--accent);
+}
+
+.wf-topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  max-width: 400px;
+}
+.wf-topbar-crumb-sep {
+  color: var(--text-tertiary);
+  padding: 0 2px;
+  font-size: 11px;
+}
+.wf-topbar-crumb-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.wf-topbar-crumb-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.wf-topbar-spacer { flex: 1; }
+
+.wf-topbar-shortcut-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+/* Filter input */
+.wf-topbar-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 3px 8px;
+  transition: border-color 0.15s, background 0.15s;
+  min-width: 160px;
+  max-width: 260px;
+}
+.wf-topbar-filter.focused {
+  border-color: var(--accent);
+  background: var(--bg-primary);
+}
+.wf-topbar-filter-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.wf-topbar-filter-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  width: 100%;
+}
+.wf-topbar-filter-input::placeholder {
+  color: var(--text-tertiary);
+}
+.wf-topbar-filter-clear {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.wf-topbar-filter-clear:hover { color: var(--text-primary); }
+
+/* Dropdown menú */
+.wf-topbar-menu-wrap { position: relative; }
+.wf-topbar-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 200;
+  animation: wf-dropdown-in 0.1s ease;
+}
+@keyframes wf-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.wf-topbar-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.wf-topbar-dropdown-item:hover { background: var(--bg-hover); }
+.wf-topbar-dropdown-item.wf-topbar-dropdown-danger { color: var(--text-tertiary); }
+.wf-topbar-dropdown-item.wf-topbar-dropdown-danger:hover { background: #fee2e2; color: #dc2626; }
+[data-theme="dark"] .wf-topbar-dropdown-item.wf-topbar-dropdown-danger:hover { background: #450a0a; color: #fca5a5; }
+.wf-topbar-dropdown-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ── WFHomeView ───────────────────────────────────────────────────────────── */
+.wf-home-view {
+  padding: 40px 0 40px 0;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
+}
+
+/* ── Ocultar panel derecho en WF ─────────────────────────────────────────── */
+.wf-layout .node-right-panel,
+.wf-layout .diary-right-panel,
+.wf-layout .tag-nodes-panel {
+  display: none !important;
+}
+.wf-layout .node-view-body,
+.wf-layout .node-view {
+  grid-template-columns: 1fr !important;
+}
+
+/* ── Sidebar simplificado en WF — ocultar tab de Tags ────────────────────── */
+.wf-layout .sidebar-tab-btn[data-tab="tags"] { display: none; }
+
+/* ── Contenido centrado sin panel derecho ────────────────────────────────── */
+.wf-layout .main-content {
+  /* sin cambios, el panel derecho ya está oculto por CSS */
+}
+
+/* ── NodeView en WF: más espacio, sin panel derecho ─────────────────────── */
+.wf-layout .node-view-wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+}

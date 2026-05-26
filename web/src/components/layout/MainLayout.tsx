@@ -6,22 +6,16 @@ import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
 import NodeView from '../views/NodeView'
 
-// Redirige / → /node/{diario de hoy}.
-// Es REACTIVO: se suscribe al store via useStore() y navega en cuanto
-// el diario esté disponible, evitando que NodeView se renderice con node=undefined.
+import WFHomeView from '../views/WFHomeView'
+
+// Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
   const navigate = useNavigate()
-  const s = useStore()          // re-renderiza cuando el store cambia
-  const diary = s.todayDiary()  // se recalcula en cada re-render
-
+  const s = useStore()
+  const diary = s.todayDiary()
   useEffect(() => {
-    if (diary) {
-      navigate(`/node/${diary.id}`, { replace: true })
-    }
-    // Si diary es null, el store aún no ha cargado.
-    // Cuando cargue, useStore() provocará un re-render y diary dejará de ser null.
+    if (diary) navigate(`/node/${diary.id}`, { replace: true })
   }, [diary?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
   return <div className="view-loading">Cargando diario...</div>
 }
 const TasksView = lazy(() => import('../views/TasksView'))
@@ -49,7 +43,7 @@ import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import QuickCapturePanel from '../modals/QuickCapturePanel'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
-import TopBar from './TopBar'
+import WFTopBar from './WFTopBar'
 import StatusBar from './StatusBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -102,6 +96,7 @@ export default function MainLayout() {
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
+  const [filterText, setFilterText] = useState('')
   const prevIsSyncing = useRef(false)
 
   useTaskNotifications()
@@ -277,14 +272,16 @@ export default function MainLayout() {
 
   return (
     <ToastProvider>
-    <div className={`main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* TopBar — full width, above sidebar + content */}
-      <TopBar
-        onNewNote={() => setShowNewNote(true)}
+    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* WFTopBar — minimal, estilo Workflowy */}
+      <WFTopBar
+        onFilter={setFilterText}
+        filterText={filterText}
         onCommandPalette={() => setShowCommandPalette(v => !v)}
-        onNewTask={() => setShowNewTask(true)}
-        onNewEvent={() => setShowNewEvent(true)}
-        onVoiceCapture={() => setShowVoiceCapture(true)}
+        onLogout={handleLogout}
+        onOpenSettings={() => navigate('/settings')}
+        onToggleSidebar={() => setSidebarOpen(v => !v)}
+        sidebarOpen={sidebarOpen}
       />
       <div className="main-body" style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
       <Sidebar
@@ -336,7 +333,7 @@ export default function MainLayout() {
         </div>
         <Suspense fallback={<div className="view-loading">Cargando...</div>}>
         <Routes>
-          <Route index element={<DiaryRedirect />} />
+          <Route index element={<WFHomeView filterText={filterText} />} />
           <Route path="tasks" element={<TasksView />} />
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />

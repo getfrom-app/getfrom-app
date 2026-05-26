@@ -88,7 +88,10 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
   const s = useStore()
   const us = useUserStore()
 
-  const [activeTab, setActiveTab] = useState<SidebarTab>('tags')
+  // En modo WF, el tab de tags no existe — empezar en 'panels'
+  const isWFMode = document.body.closest('.wf-layout') !== null ||
+    document.querySelector('.wf-layout') !== null
+  const [activeTab, setActiveTab] = useState<SidebarTab>(isWFMode ? 'panels' : 'tags')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
 
   // ── Menú contextual de tags ─────────────────────────────────────────────
@@ -626,6 +629,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           {/* Tab bar */}
           <div className="sidebar-tabs">
             <button
+              data-tab="tags"
               className={`sidebar-tab-btn ${activeTab === 'tags' ? 'active' : ''}`}
               onClick={() => setActiveTab('tags')}
               title="Tags y notas"
