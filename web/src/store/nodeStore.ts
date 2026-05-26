@@ -308,18 +308,20 @@ class NodeStore {
     if (node.status !== null) return false  // es tarea
     if (node.isEvent) return false
     try { if (JSON.parse(node.extraData || '{}')._resource) return false } catch { /* ignore */ }
-    // Recorrer descendientes buscando una tarea pendiente
     const want = options?.requireUnscheduled
     const stack: string[] = [node.id]
+    const visited = new Set<string>()
     while (stack.length > 0) {
       const id = stack.pop()!
+      if (visited.has(id)) continue
+      visited.add(id)
       const kids = this.children(id)
       for (const k of kids) {
         if (k.deletedAt) continue
         if (k.status === 'pending') {
           if (!want || !k.due) return true
         }
-        stack.push(k.id)
+        if (!visited.has(k.id)) stack.push(k.id)
       }
     }
     return false
@@ -338,13 +340,16 @@ class NodeStore {
     const want = options?.requireUnscheduled
     const result: Node[] = []
     const stack: string[] = [nodeId]
+    const visited = new Set<string>()
     while (stack.length > 0) {
       const id = stack.pop()!
+      if (visited.has(id)) continue
+      visited.add(id)
       const kids = this.children(id)
       for (const k of kids) {
         if (k.deletedAt) continue
         if (k.status === 'pending' && (!want || !k.due)) result.push(k)
-        stack.push(k.id)
+        if (!visited.has(k.id)) stack.push(k.id)
       }
     }
     return result
