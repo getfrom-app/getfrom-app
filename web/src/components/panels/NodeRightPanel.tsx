@@ -573,40 +573,7 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
-      {/* ── Repetición ──────────────────────────────────────────────────────── */}
-      {node.status !== null && (
-        <div className="prop-section">
-          <div className="prop-section-label">Repetición</div>
-          <div className="prop-rec-row">
-            {/* Sin repetición */}
-            <button
-              className={`prop-pill${!node.recurrence ? ' active' : ''}`}
-              onClick={() => store.updateNode(node.id, { recurrence: null })}
-            >–</button>
-            {/* Número */}
-            <input
-              type="number"
-              className="prop-rec-n"
-              min={1} max={999}
-              value={node.recurrence ? parseRec(node.recurrence).n : 1}
-              onChange={e => {
-                const n = Math.max(1, parseInt(e.target.value) || 1)
-                const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
-                applyRec(n, unit)
-              }}
-              disabled={!node.recurrence}
-            />
-            {/* Unidades */}
-            {recUnits.map(([unit, label]) => (
-              <button
-                key={unit}
-                className={`prop-pill${node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
-                onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
-              >{label}</button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Repetición eliminada — no aporta valor suficiente */}
 
       {/* ── Propiedades custom del padre (estilo Notion) ───────────────────── */}
       {node.parentId && (() => {

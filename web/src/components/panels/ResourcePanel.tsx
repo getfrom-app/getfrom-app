@@ -34,13 +34,14 @@ function saveCustomTypes(types: ResourceTypeDef[]) {
 function getResourceData(node: Node) {
   try {
     const ed = JSON.parse(node.extraData || '{}')
+    // Columna promovida (v8.29) tiene prioridad sobre extraData legacy
     return {
-      type: (ed._resourceType || 'url') as ResourceType,
-      url: (ed._resourceUrl || '') as string,
+      type: (node.resourceType || ed._resourceType || 'url') as ResourceType,
+      url: (node.resourceUrl || ed._resourceUrl || '') as string,
       meta: (ed._resourceMeta || null) as UnfurlMeta | null,
     }
   } catch {
-    return { type: 'url', url: '', meta: null }
+    return { type: (node.resourceType || 'url') as ResourceType, url: node.resourceUrl || '', meta: null }
   }
 }
 
