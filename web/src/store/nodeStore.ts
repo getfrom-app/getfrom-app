@@ -597,7 +597,8 @@ class NodeStore {
     n.types = typeof n.types === 'string' ? JSON.parse(n.types) : (n.types || [])
     n.collections = typeof n.collections === 'string' ? JSON.parse(n.collections) : (n.collections || [])
     this.nodes.set(n.id, n)
-    this.invalidateChildrenCache()
+    // NO invalidamos cache aquí: sync llama applyNode N veces; lo invalidamos
+    // una sola vez al final del sync para no rebuildear N veces.
   }
 
   createNode(params: {
@@ -902,6 +903,7 @@ class NodeStore {
       if (raw) {
         const nodes: Node[] = JSON.parse(raw)
         for (const n of nodes) this.applyNode(n)
+        this.invalidateChildrenCache()
       }
       if (rawWs) {
         this.workspaces = JSON.parse(rawWs)
@@ -978,6 +980,8 @@ class NodeStore {
           this.applyNode(n)
         }
       }
+      // Invalidar cache de hijos una sola vez tras aplicar todos los nodos
+      this.invalidateChildrenCache()
 
       if (res.workspaces?.length > 0) {
         this.workspaces = res.workspaces as Workspace[]

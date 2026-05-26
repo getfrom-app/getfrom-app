@@ -1720,30 +1720,53 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
-  // Excluir: el propio nodo, sus ancestros (evitar ciclos), diary entries,
-  //          tareas (no son contenedores), eventos, recursos, papelera.
-  function isAncestor(maybeAncestor: string, of: string): boolean {
-    let cur = s.getNode(of)
-    while (cur?.parentId) {
-      if (cur.parentId === maybeAncestor) return true
-      cur = s.getNode(cur.parentId)
+  // Precomputar candidatos una sola vez por render. Con visited Set en
+  // isAncestor para evitar ciclos en datos corruptos.
+  const candidates = useMemo(() => {
+    const allNodes = s.allActive()
+    // Precomputar set de descendientes de nodeId (lo que NO debe aparecer
+    // como destino — evitar mover dentro de uno mismo). Una sola pasada
+    // BFS desde nodeId.
+    const descendants = new Set<string>()
+    const visited = new Set<string>()
+    const stack: string[] = [nodeId]
+    while (stack.length) {
+      const id = stack.pop()!
+      if (visited.has(id)) continue
+      visited.add(id)
+      descendants.add(id)
+      for (const k of s.children(id)) {
+        if (!visited.has(k.id)) stack.push(k.id)
+      }
     }
-    return false
-  }
-  const candidates = s.allActive().filter(n => {
-    if (n.deletedAt) return false
-    if (n.id === nodeId) return false
-    if (n.isDiaryEntry) return false
-    if (n.status !== null) return false  // no tareas como destino
-    if (n.isEvent) return false
-    try { if (JSON.parse(n.extraData || '{}')._resource) return false } catch { /* */ }
-    if (isAncestor(nodeId, n.id)) return false
-    return true
-  })
+    // Filtrar
+    const out: Node[] = []
+    for (const n of allNodes) {
+      if (n.deletedAt) continue
+      if (descendants.has(n.id)) continue
+      if (n.isDiaryEntry) continue
+      if (n.status !== null) continue
+      if (n.isEvent) continue
+      try { if (JSON.parse(n.extraData || '{}')._resource) continue } catch { /* */ }
+      out.push(n)
+    }
+    return out
+  }, [s.nodes.size, nodeId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const q = query.trim().toLowerCase()
-  const filtered = q
-    ? candidates.filter(n => (n.text || '').toLowerCase().includes(q)).slice(0, 12)
-    : candidates.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 12)
+  const filtered = useMemo(() => {
+    if (q) {
+      const r: Node[] = []
+      for (const n of candidates) {
+        if ((n.text || '').toLowerCase().includes(q)) {
+          r.push(n)
+          if (r.length >= 12) break
+        }
+      }
+      return r
+    }
+    return [...candidates].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 12)
+  }, [candidates, q])
 
   function pick(targetId: string) {
     const sibs = store.children(targetId)
