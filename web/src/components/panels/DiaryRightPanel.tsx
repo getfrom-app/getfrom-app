@@ -67,6 +67,16 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   const popoverRef = useRef<HTMLDivElement>(null)
   const popNavigate = useNavigate()
 
+  // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
+  // inmediatamente y navegar a su nota (es un contenedor, no una tarea).
+  const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
+  useEffect(() => {
+    if (isBucle) {
+      popNavigate(`/node/${node.id}`)
+      onClose()
+    }
+  }, [isBucle, node.id, onClose, popNavigate])
+
   // Modal centrado: ESC cierra (sin propagar a router), click fuera cierra.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -108,6 +118,8 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
     { v: 'medium', l: 'Media', c: '#f59e0b' },
     { v: 'high',   l: 'Alta',  c: '#ef4444' },
   ]
+
+  if (isBucle) return null
 
   return createPortal(
     <div
@@ -811,12 +823,12 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
           const childTasks = getChildTasks(node.id)
           return (
             <div key={node.id}>
-              {/* Header seguimiento — también draggable y acepta drops */}
+              {/* Header bucle — NO draggable (los bucles no son agendables, son contenedores).
+                  Solo acepta drops para meter tareas dentro. */}
               <div
                 className={`diary-agenda-seguimiento${dragOverSegId === node.id ? ' diary-agenda-seguimiento--drop' : ''}`}
-                draggable
+                draggable={false}
                 style={{ userSelect: 'none' }}
-                onDragStart={e => { _agendaDragId = node.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', node.id) }}
                 onDragEnd={() => { _agendaDragId = null; setDragOverSegId(null) }}
                 onDragOver={e => {
                   if (_agendaDragId && _agendaDragId !== node.id) {

@@ -423,8 +423,11 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
     }
   }, [dayStart])
 
-  // Eventos y tareas con fecha
-  const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
+  // Eventos y tareas con fecha — los BUCLES NO van al calendario (son contenedores).
+  const nodesWithDue = allNodes.filter(n =>
+    n.due && !n.deletedAt &&
+    !n.isSeguimiento && !(n.types || []).includes('bucle')
+  )
 
   // Nodos para un día determinado
   function getNodesForDay(day: Date): Node[] {
@@ -814,7 +817,9 @@ interface MonthViewProps {
 
 function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop }: MonthViewProps) {
   const navigate = useNavigate()
-  const nodesWithDue = allNodes.filter(n => n.due)
+  const nodesWithDue = allNodes.filter(n =>
+    n.due && !n.isSeguimiento && !(n.types || []).includes('bucle')
+  )
   const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate)
 
   // Build grid: from Mon of the first week to Sun of the last week
@@ -974,8 +979,10 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
     activityMap.set(key, childCount)
   }
 
-  // Also count nodes with due date
-  const nodesWithDue = allNodes.filter(n => n.due && !n.deletedAt)
+  // Also count nodes with due date — bucles no cuentan
+  const nodesWithDue = allNodes.filter(n =>
+    n.due && !n.deletedAt && !n.isSeguimiento && !(n.types || []).includes('bucle')
+  )
   for (const n of nodesWithDue) {
     if (!n.due) continue
     const d = new Date(n.due)
