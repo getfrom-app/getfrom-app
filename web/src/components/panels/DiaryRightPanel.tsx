@@ -623,6 +623,17 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     n => n.status === 'pending' && !n.deletedAt && n.due
   )
 
+  // Tareas sin fecha: pendientes con due=null que son hijas directas de
+  // la diary entry de hoy (el usuario las creó en el diario sin fecha explícita).
+  // Solo para el día de HOY — en semana/mes no aplica.
+  const todayDiaryId = isThisDayToday ? s.todayDiary()?.id : undefined
+  const undatedDiaryTasks = todayDiaryId
+    ? s.allActive().filter(n =>
+        n.status === 'pending' && !n.due && n.parentId === todayDiaryId &&
+        !seguimientoIds.has(n.id)
+      )
+    : []
+
   // Set de IDs de containers (para excluir sus descendientes de overdue/today
   // si los renderizamos bajo el container).
   const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
@@ -734,7 +745,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
   function renderAgenda() {
     // Eventos de Google Calendar ya se muestran en el Timeline — no duplicar en Agenda.
-    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || pendingResources.length > 0
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || undatedDiaryTasks.length > 0 || pendingResources.length > 0
 
     if (!hasAnything) {
       return (
@@ -858,6 +869,20 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
             </React.Fragment>
           )
         })}
+
+        {/* Tareas sin fecha explícita de la diary de hoy */}
+        {undatedDiaryTasks.length > 0 && undatedDiaryTasks.map(task => (
+          <AgendaTaskRow
+            key={task.id}
+            task={task}
+            checkboxClass="diary-agenda-checkbox diary-agenda-checkbox--today"
+            isEvent={false}
+            onToggle={() => toggleTask(task.id, task.status)}
+            onClick={() => navigate(`/node/${task.id}`)}
+            onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+            onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
+          />
+        ))}
 
         {/* Recursos pendientes / en progreso */}
         {pendingResources.length > 0 && (
