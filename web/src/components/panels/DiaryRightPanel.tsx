@@ -475,6 +475,10 @@ let _agendaDragId: string | null = null
 
 // ── Task row with hover props button ──────────────────────────────────────────
 
+// Setter del modal a nivel panel — inyectado vía contexto-prop por DiaryRightPanel.
+// Cada AgendaTaskRow lo invoca en lugar de montar su propio TaskPropsPopover.
+let _agendaOpenTaskModal: ((task: Node) => void) | null = null
+
 interface AgendaTaskRowProps {
   task: Node
   checkboxClass: string
@@ -489,7 +493,6 @@ interface AgendaTaskRowProps {
 
 function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onToggle, onClick, onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
   const [hovered, setHovered] = useState(false)
-  const [popoverOpen, setPopoverOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const btnRef = useRef<HTMLButtonElement>(null!)
@@ -569,8 +572,8 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
       )}
       {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
 
-      {/* Hover props button */}
-      {(hovered || popoverOpen) && (
+      {/* Hover props button — abre el modal a nivel del panel (no por fila) */}
+      {hovered && (
         <div style={{ position: 'relative', marginLeft: 'auto', flexShrink: 0 }}>
           <button
             ref={btnRef}
@@ -584,18 +587,14 @@ function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onT
               lineHeight: 1,
               borderRadius: 4,
             }}
-            onClick={e => { e.stopPropagation(); setPopoverOpen(v => !v) }}
+            onClick={e => {
+              e.stopPropagation()
+              if (_agendaOpenTaskModal) _agendaOpenTaskModal(task)
+            }}
             title="Propiedades de la tarea"
           >
             ···
           </button>
-          {popoverOpen && (
-            <TaskPropsPopover
-              node={task}
-              onClose={() => setPopoverOpen(false)}
-              anchorRef={btnRef}
-            />
-          )}
         </div>
       )}
     </div>
@@ -1348,6 +1347,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   // Para notas de semana/mes: solo Agenda
   const agendaLabel = rangeType === 'week' ? 'Semana' : rangeType === 'month' ? 'Mes' : 'Agenda'
 
+  // Hook el setter del modal al pulsar `···` en una AgendaTaskRow
+  _agendaOpenTaskModal = (task: Node) => setTaskModalNode(task)
+
   return (
     <div className="diary-right-panel">
       <div className="diary-panel-tabs">
@@ -1361,6 +1363,15 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {renderAgenda()}
       </div>
+      {taskModalNode && (
+        <TaskPropsPopover
+          node={taskModalNode}
+          onClose={() => setTaskModalNode(null)}
+          allowRename
+          allowDelete
+          onDeleted={() => setTaskModalNode(null)}
+        />
+      )}
     </div>
   )
 }
