@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -7,7 +7,8 @@ import {
 } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
-import { store } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
+import type { Node } from '../../types'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 
@@ -24,7 +25,10 @@ function saveTemplates(ts: CustomTemplate[]) {
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
-type Tab = 'cuenta' | 'apariencia' | 'ia' | 'atajos' | 'plantillas' | 'google' | 'exportar' | 'importar'
+type Tab = 'cuenta' | 'apariencia' | 'ia' | 'perfil-ia' | 'magic' | 'estadisticas'
+  | 'atajos' | 'plantillas' | 'google' | 'mcp'
+  | 'tags' | 'estados' | 'voz' | 'agentes' | 'timeline' | 'prompts'
+  | 'backups' | 'exportar' | 'importar'
 
 interface Section { id: Tab; label: string; icon: string }
 const SECTIONS: { title?: string; items: Section[] }[] = [
@@ -38,12 +42,15 @@ const SECTIONS: { title?: string; items: Section[] }[] = [
     title: 'Apariencia',
     items: [
       { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
+      { id: 'estadisticas', label: 'Estadísticas', icon: '📊' },
     ],
   },
   {
     title: 'IA',
     items: [
       { id: 'ia', label: 'Inteligencia Artificial', icon: '✦' },
+      { id: 'perfil-ia', label: 'Perfil IA', icon: '🧠' },
+      { id: 'magic', label: 'Magic', icon: '🪄' },
     ],
   },
   {
@@ -51,11 +58,29 @@ const SECTIONS: { title?: string; items: Section[] }[] = [
     items: [
       { id: 'atajos', label: 'Atajos de texto', icon: '⌨' },
       { id: 'plantillas', label: 'Plantillas', icon: '📋' },
+      { id: 'voz', label: 'Voz', icon: '🎤' },
+    ],
+  },
+  {
+    title: 'Integraciones',
+    items: [
+      { id: 'mcp', label: 'Claude (MCP)', icon: '🔌' },
+    ],
+  },
+  {
+    title: 'Avanzado',
+    items: [
+      { id: 'tags', label: 'Tags', icon: '🏷' },
+      { id: 'estados', label: 'Estados', icon: '✓' },
+      { id: 'agentes', label: 'Agentes', icon: '🤖' },
+      { id: 'timeline', label: 'Vista (Timeline)', icon: '⏱' },
+      { id: 'prompts', label: 'Prompts', icon: '⚡' },
     ],
   },
   {
     title: 'Datos',
     items: [
+      { id: 'backups', label: 'Backups', icon: '💾' },
       { id: 'exportar', label: 'Exportar', icon: '↗' },
       { id: 'importar', label: 'Importar', icon: '↙' },
     ],
@@ -1019,6 +1044,267 @@ interface Props {
   initialTab?: Tab
 }
 
+// ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
+
+function PerfilIAPane() {
+  const PROFILE_LS = 'from_ai_profile'
+  const [profile, setProfile] = useState<string>(() => localStorage.getItem(PROFILE_LS) || '')
+  const [saved, setSaved] = useState(false)
+  function save() {
+    localStorage.setItem(PROFILE_LS, profile.trim())
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }
+  return (
+    <div className="st-pane">
+      <SectionTitle>Perfil para la IA</SectionTitle>
+      <Row label="Contexto sobre ti" hint="Información que la IA usa como contexto en todas tus interacciones. Ej: profesión, intereses, estilo de comunicación preferido." />
+      <textarea
+        value={profile}
+        onChange={e => setProfile(e.target.value)}
+        rows={10}
+        className="st-input"
+        placeholder="Soy fotógrafo freelance especializado en bodas. Me gusta el tono directo y profesional. Vivo en Madrid…"
+        style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+      />
+      <div className="st-actions" style={{ marginTop: 10 }}>
+        <button className="btn-primary" onClick={save}>{saved ? '✓ Guardado' : 'Guardar'}</button>
+      </div>
+    </div>
+  )
+}
+
+function MagicPane() {
+  const [autoTitles, setAutoTitles] = useState(() => localStorage.getItem('from_magic_autoTitles') === '1')
+  const [autoTags, setAutoTags]     = useState(() => localStorage.getItem('from_magic_autoTags') === '1')
+  const [autoUnfurl, setAutoUnfurl] = useState(() => localStorage.getItem('from_magic_autoUnfurl') !== '0')
+  function toggle(key: string, val: boolean, set: (v: boolean) => void) {
+    set(val); localStorage.setItem(key, val ? '1' : '0')
+  }
+  return (
+    <div className="st-pane">
+      <SectionTitle>Magic — automatizaciones IA</SectionTitle>
+      <Row label="Títulos automáticos" hint="Sugiere un título cuando una nota llega a un párrafo de contenido.">
+        <input type="checkbox" checked={autoTitles} onChange={e => toggle('from_magic_autoTitles', e.target.checked, setAutoTitles)} />
+      </Row>
+      <Row label="Tags automáticos" hint="Detecta temas y sugiere hashtags en la nota cuando hay texto suficiente.">
+        <input type="checkbox" checked={autoTags} onChange={e => toggle('from_magic_autoTags', e.target.checked, setAutoTags)} />
+      </Row>
+      <Row label="Unfurl de enlaces" hint="Cuando pegas un link, From extrae título, descripción e imagen automáticamente.">
+        <input type="checkbox" checked={autoUnfurl} onChange={e => toggle('from_magic_autoUnfurl', e.target.checked, setAutoUnfurl)} />
+      </Row>
+    </div>
+  )
+}
+
+function EstadisticasPane() {
+  const s = useStore()
+  const all = s.allActive()
+  const total = all.length
+  const tasks = all.filter((n: Node) => n.status !== null)
+  const done = tasks.filter((n: Node) => n.status === 'done').length
+  const pending = tasks.filter((n: Node) => n.status === 'pending').length
+  const resources = all.filter((n: Node) => n.isResource).length
+  const events = all.filter((n: Node) => n.isEvent).length
+  return (
+    <div className="st-pane">
+      <SectionTitle>Estadísticas</SectionTitle>
+      <Row label="Notas y tareas"><span className="st-value">{total} nodos activos</span></Row>
+      <Row label="Tareas pendientes"><span className="st-value">{pending}</span></Row>
+      <Row label="Tareas completadas"><span className="st-value">{done}</span></Row>
+      <Row label="Eventos"><span className="st-value">{events}</span></Row>
+      <Row label="Recursos"><span className="st-value">{resources}</span></Row>
+      <Row label="Tasa de completado" hint="Porcentaje de tareas hechas sobre el total con estado.">
+        <span className="st-value">{tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0}%</span>
+      </Row>
+    </div>
+  )
+}
+
+function TagsPane() {
+  const s = useStore()
+  const tags = (s.allUsedTags?.() ?? []) as string[]
+  return (
+    <div className="st-pane">
+      <SectionTitle>Tags en uso</SectionTitle>
+      <Row label={`${tags.length} tags`} hint="Tags detectados en tus nodos. Se crean automáticamente al escribir #tag en el texto." />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+        {tags.map((t: string) => (
+          <span key={t} style={{ padding: '4px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12 }}>#{t}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EstadosPane() {
+  return (
+    <div className="st-pane">
+      <SectionTitle>Estados de tarea</SectionTitle>
+      <Row label="pending" hint="Tarea pendiente (por defecto)." />
+      <Row label="done" hint="Tarea completada." />
+      <Row label="cancelled" hint="Tarea cancelada." />
+      <Row label="future" hint="Tarea programada para más adelante." />
+      <Row label="Personalización" hint="Editar estados custom estará disponible próximamente. Mac ya lo permite." />
+    </div>
+  )
+}
+
+function VozPane() {
+  const [recording, setRecording] = useState(false)
+  const [transcript, setTranscript] = useState('')
+  const recognitionRef = useRef<any>(null)
+
+  const supported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)
+
+  function start() {
+    if (!supported) return
+    const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+    const rec = new SR()
+    rec.continuous = true
+    rec.interimResults = true
+    rec.lang = localStorage.getItem('from_ai_language') === 'en' ? 'en-US' : 'es-ES'
+    rec.onresult = (event: any) => {
+      let text = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        text += event.results[i][0].transcript
+      }
+      setTranscript(text)
+    }
+    rec.onend = () => setRecording(false)
+    rec.start()
+    recognitionRef.current = rec
+    setRecording(true)
+  }
+
+  function stop() {
+    recognitionRef.current?.stop()
+    setRecording(false)
+  }
+
+  return (
+    <div className="st-pane">
+      <SectionTitle>Voz — dictado de notas</SectionTitle>
+      {!supported ? (
+        <Row label="No disponible" hint="Tu navegador no soporta Web Speech API. Prueba Chrome o Safari." />
+      ) : (
+        <>
+          <Row label="Idioma" hint="Se usa el idioma activo en Apariencia (es o en)." />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {!recording
+              ? <button className="btn-primary" onClick={start}>🎤 Iniciar dictado</button>
+              : <button className="btn-secondary btn-danger-outline" onClick={stop}>⏹ Detener</button>
+            }
+          </div>
+          <textarea
+            value={transcript}
+            onChange={e => setTranscript(e.target.value)}
+            rows={6}
+            className="st-input"
+            placeholder="El dictado aparecerá aquí…"
+            style={{ width: '100%', marginTop: 10 }}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
+function AgentesPane() {
+  const s = useStore()
+  const agents = s.allActive().filter((n: Node) => (n.types || []).includes('agente'))
+  return (
+    <div className="st-pane">
+      <SectionTitle>Agentes IA</SectionTitle>
+      <Row label={`${agents.length} agentes definidos`} hint="Los agentes se crean con /agente en el editor. Aquí los gestionas y ejecutas." />
+      <div style={{ marginTop: 12 }}>
+        {agents.map(a => (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+            <span>{a.text || 'Agente sin nombre'}</span>
+            <button className="btn-secondary" style={{ fontSize: 11 }}>Ejecutar</button>
+          </div>
+        ))}
+        {agents.length === 0 && <Row label="Sin agentes" hint="Crea uno desde el editor escribiendo /agente." />}
+      </div>
+    </div>
+  )
+}
+
+function TimelinePane() {
+  const [startHour, setStartHour] = useState<number>(() => Number(localStorage.getItem('from_timelineStart') || '7'))
+  const [endHour, setEndHour]     = useState<number>(() => Number(localStorage.getItem('from_timelineEnd')   || '22'))
+  function update(s: number, e: number) {
+    setStartHour(s); setEndHour(e)
+    localStorage.setItem('from_timelineStart', String(s))
+    localStorage.setItem('from_timelineEnd', String(e))
+  }
+  return (
+    <div className="st-pane">
+      <SectionTitle>Vista — Timeline del día</SectionTitle>
+      <Row label="Hora inicio" hint="Primera hora visible en el timeline diario.">
+        <select value={startHour} onChange={e => update(Number(e.target.value), endHour)}>
+          {Array.from({ length: 13 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+        </select>
+      </Row>
+      <Row label="Hora fin" hint="Última hora visible en el timeline diario.">
+        <select value={endHour} onChange={e => update(startHour, Number(e.target.value))}>
+          {Array.from({ length: 24 }, (_, i) => i + 1).map(h => <option key={h} value={h} disabled={h <= startHour}>{String(h).padStart(2, '0')}:00</option>)}
+        </select>
+      </Row>
+    </div>
+  )
+}
+
+function PromptsPane() {
+  const PROMPTS_LS = 'from_prompts_v1'
+  const [prompts, setPrompts] = useState<{ id: string; name: string; body: string }[]>(() => {
+    try { return JSON.parse(localStorage.getItem(PROMPTS_LS) || '[]') } catch { return [] }
+  })
+  const [newName, setNewName] = useState('')
+  const [newBody, setNewBody] = useState('')
+  function save(list: typeof prompts) {
+    setPrompts(list)
+    localStorage.setItem(PROMPTS_LS, JSON.stringify(list))
+  }
+  function add() {
+    if (!newName.trim() || !newBody.trim()) return
+    save([...prompts, { id: 'p' + Date.now(), name: newName.trim(), body: newBody.trim() }])
+    setNewName(''); setNewBody('')
+  }
+  return (
+    <div className="st-pane">
+      <SectionTitle>Prompts guardados</SectionTitle>
+      <Row label={`${prompts.length} prompts`} hint="Plantillas reutilizables que se inyectan al lanzar la IA inline o un agente." />
+      <div style={{ marginTop: 10 }}>
+        <input className="st-input" placeholder="Nombre del prompt" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: '100%', marginBottom: 6 }} />
+        <textarea className="st-input" placeholder="Contenido del prompt…" value={newBody} onChange={e => setNewBody(e.target.value)} rows={4} style={{ width: '100%' }} />
+        <button className="btn-primary" onClick={add} style={{ marginTop: 8 }}>Añadir prompt</button>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        {prompts.map(p => (
+          <div key={p.id} style={{ borderBottom: '1px solid var(--border)', padding: '8px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <strong>{p.name}</strong>
+              <button className="btn-secondary btn-danger-outline" style={{ fontSize: 11 }} onClick={() => save(prompts.filter(x => x.id !== p.id))}>Borrar</button>
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>{p.body.slice(0, 120)}{p.body.length > 120 ? '…' : ''}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function BackupsPane() {
+  return (
+    <div className="st-pane">
+      <SectionTitle>Backups cloud</SectionTitle>
+      <Row label="Snapshots automáticos" hint="El servidor crea un snapshot de todos tus nodos cada 2 horas si ha habido cambios. Retención: últimos 12." />
+      <Row label="Restaurar" hint="Próximamente: lista de snapshots con botón restaurar (Mac ya lo tiene)." />
+    </div>
+  )
+}
+
 export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
@@ -1035,9 +1321,20 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       case 'cuenta': return <CuentaPane />
       case 'apariencia': return <AparienciaPane />
       case 'ia': return <IAPane />
+      case 'perfil-ia': return <PerfilIAPane />
+      case 'magic': return <MagicPane />
+      case 'estadisticas': return <EstadisticasPane />
       case 'atajos': return <AtajosPane />
       case 'plantillas': return <PlantillasPane />
       case 'google': return <GooglePane />
+      case 'mcp': return <ClaudeMcpPane />
+      case 'tags': return <TagsPane />
+      case 'estados': return <EstadosPane />
+      case 'voz': return <VozPane />
+      case 'agentes': return <AgentesPane />
+      case 'timeline': return <TimelinePane />
+      case 'prompts': return <PromptsPane />
+      case 'backups': return <BackupsPane />
       case 'exportar': return <ExportarPane />
       case 'importar': return <ImportarPane />
     }
