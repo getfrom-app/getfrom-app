@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { store, useStore, nodeMeta } from '../../store/nodeStore'
+import { store, useStore, nodeMeta, type NodeStore } from '../../store/nodeStore'
 import PendingTaskRow from '../shared/PendingTaskRow'
+import CenteredModal from '../shared/CenteredModal'
 import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
@@ -38,7 +39,7 @@ function formatDue(due: string): string {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-function calculateStreak(s: ReturnType<typeof useStore>): number {
+function calculateStreak(s: NodeStore): number {
   const diaries = s.allActive()
     .filter(n => n.isDiaryEntry && !n.deletedAt && n.diaryDate)
     .sort((a, b) => (b.diaryDate ?? '').localeCompare(a.diaryDate ?? ''))
@@ -82,19 +83,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
     }
   }, [isBucle, node.id, onClose, popNavigate])
 
-  // Modal centrado: ESC cierra (sin propagar a router), click fuera cierra.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
-      }
-    }
-    // capture: true → atrapamos ESC antes que cualquier otro handler global
-    document.addEventListener('keydown', onKey, { capture: true })
-    return () => document.removeEventListener('keydown', onKey, { capture: true })
-  }, [onClose])
+  // ESC + click-out gestionados ahora por <CenteredModal>. Sin handler local.
 
   const dueDate = isoToLocalDate(node.due)
   const dueTime = isoToLocalTime(node.due)
@@ -126,17 +115,11 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
 
   if (isBucle) return null
 
-  return createPortal(
-    <div
-      className="task-props-modal-backdrop"
-      onMouseDown={onClose}
-      onClick={onClose}
-    >
+  return (
+    <CenteredModal onClose={onClose} className="task-props-popup task-props-popup--modal">
     <div
       ref={popoverRef}
-      className="task-props-popup task-props-popup--modal"
-      onMouseDown={e => e.stopPropagation()}
-      onClick={e => e.stopPropagation()}
+      style={{ display: 'contents' }}
     >
       {/* Header: acciones de la tarea (abrir, ampliar, mover) */}
       <div className="tpp-header-actions">
@@ -374,8 +357,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       )}
 
     </div>
-    </div>,
-    document.body
+    </CenteredModal>
   )
 }
 
@@ -400,15 +382,7 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }:
   const [msg, setMsg] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
-  // ESC cierra (capture para no propagar a router) — sólo en modo modal
-  useEffect(() => {
-    if (!modal) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
-    }
-    document.addEventListener('keydown', onKey, { capture: true })
-    return () => document.removeEventListener('keydown', onKey, { capture: true })
-  }, [modal, onClose])
+  // En modo modal, ESC + click-out vienen ya de <CenteredModal>.
 
   // Click fuera cierra — sólo en modo NO-modal (inline)
   useEffect(() => {
@@ -490,12 +464,7 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }:
   )
 
   if (modal) {
-    return createPortal(
-      <div className="task-props-modal-backdrop" onMouseDown={onClose} onClick={onClose}>
-        {body}
-      </div>,
-      document.body
-    )
+    return <CenteredModal onClose={onClose}>{body}</CenteredModal>
   }
   return body
 }
@@ -1372,30 +1341,19 @@ const TL_GCAL_COLORS: Record<string, string> = {
   '5': '#fbd75b', '6': '#ffb878', '7': '#46d6db', '8': '#e1e1e1',
   '9': '#5484ed', '10': '#51b749', '11': '#dc2127',
 }
-// Mezcla hex con blanco para conseguir tonos pastel (amount = % de blanco, 0..1)
-function lightenHex(hex: string, amount = 0.55): string {
-  const m = hex.match(/^#?([0-9a-f]{6})$/i)
-  if (!m) return hex
-  const n = parseInt(m[1], 16)
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
-  const lr = Math.round(r + (255 - r) * amount)
-  const lg = Math.round(g + (255 - g) * amount)
-  const lb = Math.round(b + (255 - b) * amount)
-  return '#' + ((lr << 16) | (lg << 8) | lb).toString(16).padStart(6, '0')
-}
+// v8.27: lightenHex eliminado — el desaturado lo hace ahora CSS via
+// `color-mix(in srgb, var(--tl-color) X%, white Y%)`. Ver index.css.
 function tlGcalColor(ev: CalendarEvent): string {
-  // Paleta oficial ya está bastante pastel — la suavizamos un toque más.
-  if (ev.colorId && TL_GCAL_COLORS[ev.colorId]) return lightenHex(TL_GCAL_COLORS[ev.colorId], 0.25)
-  // backgroundColor del calendario puede ser bastante saturado → aplastar hacia pastel.
-  if (ev.backgroundColor) return lightenHex(ev.backgroundColor, 0.55)
+  // Devuelve el color crudo; el CSS lo mezcla con blanco para look pastel.
+  if (ev.colorId && TL_GCAL_COLORS[ev.colorId]) return TL_GCAL_COLORS[ev.colorId]
+  if (ev.backgroundColor) return ev.backgroundColor
   return '#cfd9ec'
 }
 function tlNodeColor(node: Node): string {
   const meta = nodeMeta(node)
-  if (meta.color) return lightenHex(meta.color, 0.25)
+  if (meta.color) return meta.color
   if (node.isEvent && !node.status) return '#fbe3b8'
   if (node.status === 'done') return '#c8ccd4'
-  if (node.isSeguimiento) return '#d7ccf2'
   if (meta.resource) return '#bce3e8'
   if (node.priority === 'high') return '#f7c9c9'
   if (node.priority === 'medium') return '#f9d8b8'
@@ -1640,7 +1598,7 @@ function TimelineRenderer({
                 key={ev.id}
                 type="button"
                 className="timeline-allday-chip"
-                style={{ background: tlGcalColor(ev) }}
+                style={{ ['--tl-color' as never]: tlGcalColor(ev) }}
                 onClick={() => onEditGCal(ev)}
                 title={`${ev.title} · Click para editar`}
               >
@@ -1732,7 +1690,7 @@ function TimelineRenderer({
                     ? `calc(${lay.widthPct}% - 4px - ${TL_RIGHT_GUTTER}px)`
                     : `calc(${lay.widthPct}% - 4px)`,
                   zIndex: lay.zIndex,
-                  background: color,
+                  ['--tl-color' as never]: color,
                 }}
                 draggable
                 onDragStart={e => {
@@ -1780,7 +1738,7 @@ function TimelineRenderer({
                     ? `calc(${lay.widthPct}% - 4px - ${TL_RIGHT_GUTTER}px)`
                     : `calc(${lay.widthPct}% - 4px)`,
                   zIndex: lay.zIndex,
-                  background: tlGcalColor(ev),
+                  ['--tl-color' as never]: tlGcalColor(ev),
                 }}
                 draggable
                 onDragStart={e => {

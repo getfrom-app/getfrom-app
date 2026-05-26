@@ -116,17 +116,17 @@ function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Se
 }
 
 function parseQuery(raw: string): ParsedQuery {
-  let isTask = false, isEvent = false, isSeguimiento = false, isFavorite = false
-  const re = /\s*-(t|e|s|a|f)\b/gi
+  let isTask = false, isEvent = false, isFavorite = false
+  // v8.27: eliminados los flags -s y -a (bucle obsoleto).
+  const re = /\s*-(t|e|f)\b/gi
   let m: RegExpExecArray | null
   while ((m = re.exec(raw)) !== null) {
     const f = m[1].toLowerCase()
     if (f === 't') isTask = true
     else if (f === 'e') isEvent = true
-    else if (f === 's' || f === 'a') isSeguimiento = true   // -s y -a aceptados
     else if (f === 'f') isFavorite = true
   }
-  const stripped = raw.replace(/\s*-(t|e|s|a|f)\b/gi, '').trim()
+  const stripped = raw.replace(/\s*-(t|e|f)\b/gi, '').trim()
   const tokens = stripped.split(/\s+/)
   const { date, usedTokens } = parseNaturalDate(tokens)
   const cleanText = tokens.filter((_, i) => !usedTokens.has(i)).join(' ').trim()
@@ -141,7 +141,7 @@ function parseQuery(raw: string): ParsedQuery {
       dateLabel = `${days[date.getDay()]} ${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}`
     }
   }
-  return { cleanText, isTask, isEvent, isSeguimiento, isFavorite, due: date ? date.toISOString() : null, dateLabel }
+  return { cleanText, isTask, isEvent, isSeguimiento: false, isFavorite, due: date ? date.toISOString() : null, dateLabel }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -160,22 +160,21 @@ export default function CommandPalette({ onClose }: Props) {
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const parsed = parseQuery(query)
-  const hasFlags = parsed.isTask || parsed.isEvent || parsed.isSeguimiento || parsed.isFavorite
+  const hasFlags = parsed.isTask || parsed.isEvent  || parsed.isFavorite
 
   const doCreate = useCallback(() => {
     const text = parsed.cleanText || query.trim()
     if (!text) return
     const diary = store.todayDiary()
-    const types: string[] = parsed.isSeguimiento ? ['bucle'] : []
     const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    const taskDue = (parsed.isTask || parsed.isSeguimiento) ? (parsed.due ?? todayISO) : parsed.due
-    const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask || parsed.isSeguimiento, due: taskDue, types })
+    const taskDue = parsed.isTask ? (parsed.due ?? todayISO) : parsed.due
+    const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask, due: taskDue })
     if (parsed.isEvent) {
       const eventDue = parsed.due ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
       store.updateNode(node.id, { isEvent: true, due: eventDue })
     }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
-    const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? ' Bucle' : parsed.isTask ? 'Tarea' : 'Nota'
+    const label = parsed.isEvent ? 'Evento' : parsed.isTask ? 'Tarea' : 'Nota'
     showToast(`✓ ${label} creada`)
     onClose()
   }, [parsed, query, showToast, onClose])
@@ -263,7 +262,7 @@ export default function CommandPalette({ onClose }: Props) {
     // "Crear nota" solo si no hay resultados
     if (results.length === 0) {
       const displayText = parsed.cleanText || q
-      const label = parsed.isEvent ? 'Evento' : parsed.isSeguimiento ? ' Bucle' : parsed.isTask ? 'Tarea' : 'Nota'
+      const label = parsed.isEvent ? 'Evento' : parsed.isTask ? 'Tarea' : 'Nota'
       results.push({
         id: 'create-item',
         label: `Crear ${label.toLowerCase()}: ${displayText}`,
@@ -364,8 +363,7 @@ export default function CommandPalette({ onClose }: Props) {
           <div className="cmdpalette-chips">
             {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
             {parsed.isEvent && <span className="cmdpalette-chip">📅 Evento</span>}
-            {parsed.isSeguimiento && <span className="cmdpalette-chip">● Bucle</span>}
-            {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
+                        {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
             {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>}
           </div>
         )}

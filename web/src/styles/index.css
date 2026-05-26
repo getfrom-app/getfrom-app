@@ -3612,6 +3612,25 @@ mark.inline-highlight {
   box-shadow: 0 0 0 2px rgba(124, 92, 240, 0.18);
 }
 
+/* v8.27: el desaturado se hace en CSS via color-mix.
+ * Los componentes setean inline `--tl-color: hex`. El CSS aquí lo mezcla con
+ * blanco al 30% para look pastel sin coste JS por render. Compatible con
+ * Chrome 111+, Safari 16.2+, Firefox 113+. Si no se soporta, fallback al
+ * color sin mezclar.
+ */
+.timeline-block,
+.timeline-allday-chip,
+.calendar-event-block {
+  background: var(--tl-color, #cfd9ec);
+}
+@supports (background: color-mix(in srgb, red 50%, white 50%)) {
+  .timeline-block,
+  .timeline-allday-chip,
+  .calendar-event-block {
+    background: color-mix(in srgb, var(--tl-color, #cfd9ec) 70%, white 30%);
+  }
+}
+
 .timeline-block {
   position: absolute;
   border-radius: 6px;

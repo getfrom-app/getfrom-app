@@ -23,6 +23,11 @@ export interface Node {
   gcalEventId?: string | null
   /** Ubicación de un evento. Antes extraData.location. */
   location?: string | null
+  // ── Columnas promovidas en v8.27 ───────────────────────────────────────
+  /** True si el nodo es un recurso (link/web/youtube). Antes extraData._resource. */
+  isResource?: boolean | null
+  /** Icono inline del nodo (emoji). Antes extraData.icon. */
+  icon?: string | null
   isDiaryEntry: boolean
   isChat: boolean
   isCollapsed: boolean

@@ -605,7 +605,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   <button
                     key={node.id}
                     className="calendar-event-chip"
-                    style={{ background: priorityBg(node) }}
+                    style={{ ['--tl-color' as never]: priorityBg(node) }}
                     draggable
                     onDragStart={e => {
                       e.stopPropagation()
@@ -629,7 +629,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     key={ev.id}
                     type="button"
                     className="calendar-event-chip calendar-event-chip--gcal"
-                    style={{ background: gcalEventColor(ev), cursor: 'pointer' }}
+                    style={{ ['--tl-color' as never]: gcalEventColor(ev), cursor: 'pointer' }}
                     title={`${ev.title} · Click para editar en Google`}
                     onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                   >
@@ -783,7 +783,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           left: `calc(${lay.leftPct}% + 2px)`,
                           width: `calc(${lay.widthPct}% - 4px)`,
                           zIndex: lay.zIndex,
-                          background: priorityBg(node),
+                          ['--tl-color' as never]: priorityBg(node),
                           cursor: 'grab',
                         }}
                         onClick={e => {
@@ -837,7 +837,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           left: `calc(${lay.leftPct}% + 2px)`,
                           width: `calc(${lay.widthPct}% - 4px)`,
                           zIndex: lay.zIndex,
-                          background: gcalEventColor(ev),
+                          ['--tl-color' as never]: gcalEventColor(ev),
                           cursor: 'pointer',
                         }}
                         title={`${ev.title} · Click para editar en Google`}

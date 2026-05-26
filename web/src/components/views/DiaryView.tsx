@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { store, useStore } from '../../store/nodeStore'
+import { store, useStore, type NodeStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DiaryRightPanel from '../panels/DiaryRightPanel'
@@ -117,7 +117,7 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
   )
 }
 
-function calculateStreak(s: ReturnType<typeof useStore>): number {
+function calculateStreak(s: NodeStore): number {
   const diaries = s.allActive()
     .filter(n => n.isDiaryEntry && !n.deletedAt && n.diaryDate)
     .sort((a, b) => (b.diaryDate ?? '').localeCompare(a.diaryDate ?? ''))

@@ -52,11 +52,13 @@ export function nodeMeta(node: Node | null | undefined): NodeMeta {
     const colBlock = (node as unknown as { block?: string | null }).block || undefined
     const colGcal = (node as unknown as { gcalEventId?: string | null }).gcalEventId || undefined
     const colLocation = (node as unknown as { location?: string | null }).location || undefined
+    const colResource = (node as unknown as { isResource?: boolean | null }).isResource ?? undefined
+    const colIcon = (node as unknown as { icon?: string | null }).icon || undefined
     m = {
       color: colColor || (typeof raw.color === 'string' ? raw.color : undefined),
       block: ['bullet','h1','h2','h3'].includes((colBlock || raw._block) as string)
         ? ((colBlock || raw._block) as NodeMeta['block']) : undefined,
-      resource: !!raw._resource,
+      resource: colResource !== undefined ? !!colResource : !!raw._resource,
       resourceStatus: raw._resourceStatus as string | undefined,
       resourceMeta: raw._resourceMeta,
       resourceUrl: raw._resourceUrl as string | undefined,
@@ -76,7 +78,7 @@ export function nodeMeta(node: Node | null | undefined): NodeMeta {
       linkedNodeId: raw._linkedNodeId as string | undefined,
       refs: Array.isArray(raw.refs) ? raw.refs as string[] : undefined,
       savedSearchQuery: raw.savedSearchQuery as string | undefined,
-      icon: raw.icon as string | undefined,
+      icon: colIcon || (raw.icon as string | undefined),
     }
     // Mantener el resto del JSON crudo accessible (forward-compat)
     for (const k of Object.keys(raw)) if (!(k in (m as object))) (m as Record<string, unknown>)[k] = raw[k]
@@ -120,7 +122,7 @@ export function patchExtraData(node: Node, changes: Partial<{
   return JSON.stringify(raw)
 }
 
-class NodeStore {
+export class NodeStore {
   nodes: Map<string, Node> = new Map()
   workspaces: Workspace[] = []
   lastSyncAt: string | null = null
@@ -1264,6 +1266,37 @@ class NodeStore {
       await this.sync()
     }
 
+    // v8.27: promover _resource (boolean) y icon a columnas.
+    let promoted27 = 0
+    const promoted27NowIso = new Date().toISOString()
+    for (const [id, node] of this.nodes.entries()) {
+      if (node.deletedAt) continue
+      let raw: Record<string, unknown> = {}
+      try { raw = JSON.parse(node.extraData || '{}') } catch { continue }
+      const nAny = node as unknown as { isResource?: boolean | null; icon?: string | null }
+      const updates: Partial<Node> & { isResource?: boolean; icon?: string | null } = {}
+      let changed = false
+      if (nAny.isResource == null && raw._resource === true) { updates.isResource = true; delete raw._resource; changed = true }
+      if (!nAny.icon && typeof raw.icon === 'string') { updates.icon = raw.icon; delete raw.icon; changed = true }
+      if (!changed) continue
+      this.nodes.set(id, {
+        ...node,
+        ...updates,
+        extraData: Object.keys(raw).length > 0 ? JSON.stringify(raw) : null,
+        updatedAt: promoted27NowIso,
+        _isDirty: true,
+      } as Node)
+      this.dirtyIds.add(id)
+      promoted27++
+    }
+    if (promoted27 > 0) {
+      this.invalidateChildrenCache()
+      // eslint-disable-next-line no-console
+      console.log(`[migration v8.27] ${promoted27} nodos: isResource/icon promovidos a columnas`)
+      this.notify()
+      await this.sync()
+    }
+
     // If no diary for today, create one
     if (!this.todayDiary()) {
       await this.createTodayDiary()
@@ -1308,13 +1341,39 @@ class NodeStore {
 export const store = new NodeStore()
 
 // React hook
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-export function useStore() {
+/**
+ * Sin selector: el componente se re-renderiza en CADA mutación del store.
+ * Es el comportamiento histórico y sigue siendo válido para vistas que
+ * dependen de cualquier cambio.
+ */
+export function useStore(): NodeStore
+/**
+ * Con selector: el componente sólo se re-renderiza si el valor devuelto
+ * por el selector cambia (comparación estricta `Object.is`). Útil cuando
+ * sólo necesitas un slice concreto (p.ej. `useStore(s => s.getNode(id))`).
+ */
+export function useStore<T>(selector: (s: NodeStore) => T, isEqual?: (a: T, b: T) => boolean): T
+export function useStore<T>(
+  selector?: (s: NodeStore) => T,
+  isEqual: (a: T, b: T) => boolean = Object.is,
+): NodeStore | T {
   const [, forceUpdate] = useState(0)
+  const sliceRef = useRef<T | undefined>(selector ? selector(store) : undefined)
   useEffect(() => {
-    const unsub = store.subscribe(() => forceUpdate(n => n + 1))
+    const unsub = store.subscribe(() => {
+      if (!selector) {
+        forceUpdate(n => n + 1)
+        return
+      }
+      const next = selector(store)
+      if (!isEqual(next, sliceRef.current as T)) {
+        sliceRef.current = next
+        forceUpdate(n => n + 1)
+      }
+    })
     return unsub
-  }, [])
-  return store
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return selector ? (sliceRef.current as T) : store
 }
