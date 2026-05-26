@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export type SlashAction = 'text' | 'task' | 'expand' | 'event' | 'note' | 'nota' | 'bullet' | 'heading-1' | 'heading-2' | 'heading-3' | 'view-table' | 'view-kanban' | 'view-calendar'
+export type SlashAction =
+  | 'text' | 'task' | 'expand' | 'event' | 'note' | 'nota' | 'bullet'
+  | 'heading-1' | 'heading-2' | 'heading-3'
+  | 'view-table' | 'view-kanban' | 'view-calendar' | 'view-list'
+  | 'agent' | 'prompt' | 'resource'
 
 export interface SlashMenuOption {
   label: string
@@ -26,8 +30,13 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
   { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
+  { group: 'Objetos', label: 'Recurso',  icon: '🔗',   prefix: '',      description: 'Enlace / video / artículo', action: 'resource' },
   { group: 'Objetos', label: 'Ampliar',  icon: '↑',   prefix: '',      description: 'Convierte la tarea en una nota que la contiene', action: 'expand' },
+  // ── IA (paridad Mac) ────────────────────────────────────────────────────
+  { group: 'IA',      label: 'Agente',   icon: '🤖',  prefix: '',      description: 'Agente que ejecuta tareas con IA', action: 'agent' },
+  { group: 'IA',      label: 'Prompt',   icon: '✨',  prefix: '',      description: 'Plantilla de prompt reutilizable', action: 'prompt' },
   // ── Vistas (inline blocks) ──────────────────────────────────────────────
+  { group: 'Vistas',  label: 'Lista',      icon: '☰', prefix: '', description: 'Vista lista inline con hijos',  action: 'view-list' },
   { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
   { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },

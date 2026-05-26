@@ -983,6 +983,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
+      // Paridad Mac v8.30: -a (agente), -p (prompt). Reusan NBSP variant.
+      const nbspA = trimmed.endsWith('\u00a0-a')
+      const nbspP = trimmed.endsWith('\u00a0-p')
+      if (trimmed.endsWith(' -a') || nbspA) {
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        nodeTextRef.current = cleanText
+        const existingTypes = node.types || []
+        const types = existingTypes.includes('agente') ? existingTypes : [...existingTypes, 'agente']
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+        ed.elementMode = 'agente'
+        store.updateNode(node.id, { text: cleanText, types, extraData: JSON.stringify(ed) })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        return
+      }
+      if (trimmed.endsWith(' -p') || nbspP) {
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        nodeTextRef.current = cleanText
+        const existingTypes = node.types || []
+        const types = existingTypes.includes('prompt') ? existingTypes : [...existingTypes, 'prompt']
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+        ed.elementMode = 'prompt'
+        store.updateNode(node.id, { text: cleanText, types, extraData: JSON.stringify(ed) })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        return
+      }
       // Create sibling justo debajo — siempre crea, aunque haya nodos después.
       // siblingOrder = midpoint entre el actual y el siguiente (o +1 si no hay).
       const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
@@ -1321,7 +1348,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, updates)
       navigate(`/node/${node.id}`)
       return
-    } else if (action === 'view-table' || action === 'view-kanban' || action === 'view-calendar') {
+    } else if (action === 'resource') {
+      // Marcar como recurso. La ResourcesView lo recogerá. Paridad Mac.
+      updates.isResource = true
+      updates.status = null
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed._resourceType = 'url'
+      ed._resourceStatus = 'pending'
+      updates.extraData = JSON.stringify(ed)
+    } else if (action === 'agent') {
+      // Agente IA: marca el tipo. La AgentsView lo recoge.
+      const existingTypes = node.types || []
+      if (!existingTypes.includes('agente')) {
+        updates.types = [...existingTypes, 'agente']
+      }
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed.elementMode = 'agente'
+      updates.extraData = JSON.stringify(ed)
+    } else if (action === 'prompt') {
+      // Plantilla de prompt reusable.
+      const existingTypes = node.types || []
+      if (!existingTypes.includes('prompt')) {
+        updates.types = [...existingTypes, 'prompt']
+      }
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed.elementMode = 'prompt'
+      updates.extraData = JSON.stringify(ed)
+    } else if (action === 'view-table' || action === 'view-kanban' || action === 'view-calendar' || action === 'view-list') {
       // Marcar este nodo como bloque vista inline. Guardamos viewBlock+_inline
       // en extraData. Los componentes inline renderizan el nodo como tabla/
       // kanban/calendario en lugar de su texto plano.
@@ -1329,11 +1385,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
       ed.viewBlock = action === 'view-table' ? 'tabla'
         : action === 'view-kanban' ? 'kanban'
+        : action === 'view-list'    ? 'lista'
         : 'calendario'
       ed._inline = '1'
       // Si el nodo no tiene texto aún (limpiando ya el /tabla/etc), ponerle un título descriptivo
       const defaultLabel = action === 'view-table' ? 'Tabla'
-        : action === 'view-kanban' ? 'Kanban' : 'Calendario'
+        : action === 'view-kanban' ? 'Kanban'
+        : action === 'view-list'    ? 'Lista' : 'Calendario'
       // newText ya viene con el slash query stripped (cálculo de arriba)
       const finalText = newText.trim() || defaultLabel
       store.updateNode(node.id, {
