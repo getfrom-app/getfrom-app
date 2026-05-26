@@ -1,8 +1,38 @@
 # From — Manual de usuario
 
-> Versión 3.20 / Web v8.00 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
+> Versión 3.20 / Web v8.22 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
 
 ---
+
+## Novedades en Web v8.22 (26 mayo 2026)
+
+### Adiós a los "bucles" — ahora cualquier nota con tareas dentro es un contenedor vivo
+- Si una nota tiene tareas pendientes dentro, aparece automáticamente en el panel derecho del diario y del calendario con sus tareas debajo.
+- Cuando completas la última tarea, desaparece sola.
+- Ya no hay que marcar nada como "bucle". El concepto se ha eliminado.
+- Tus bucles antiguos se han convertido a notas normales sin perder sus tareas.
+
+### Nuevas acciones en el modal de propiedades de una tarea
+- **↑ Ampliar**: convierte la tarea en una nota contenedora con esa misma tarea como primer paso. Útil cuando descubres que algo es más grande de lo que parecía.
+- **→ Mover a…**: buscador fuzzy para reparentar la tarea dentro de cualquier nota.
+- **📓 A hoy**: la mueve al diario de hoy en un solo clic.
+
+### Timeline del diario (botón 🕐 en la barra de la nota)
+- Bloques continuos con la altura proporcional a su duración.
+- **Snap a 15 minutos** al arrastrar, con línea visual y etiqueta HH:MM.
+- **Cambiar duración** arrastrando el borde inferior del bloque (también funciona con eventos de Google Calendar).
+- **Crear inline**: clic en un hueco → escribes el nombre → Enter. Sin abrir la nota. Default 1 hora de duración.
+- **Click en bloque** abre el modal de propiedades.
+- **Colores pastel** suaves para que conviva todo el día sin saturar.
+
+### Eventos de Google Calendar editables
+- Click en un evento de Google → modal centrado con título, hora inicio/fin, eliminar. Todo sincroniza con Google.
+- Arrastrar entre horas reprograma. Resize cambia duración. Todo sync.
+- Cada evento usa el color real del calendario al que pertenece (o el color personalizado del evento si lo tienes asignado en Google).
+
+### Sidebar más limpio
+- Quitada la página "Bucles" (ya no es necesaria).
+- Quitado el botón "Google" (la conexión está en Ajustes).
 
 ## Novedades en Web v8.00 (26 mayo 2026)
 

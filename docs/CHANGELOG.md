@@ -4,6 +4,44 @@ Historial de versiones de From para Mac, iPhone y Web.
 
 ---
 
+## Web v8.22 — 26 mayo 2026
+
+**Plataforma: Web** — refactor del modelo + timeline avanzado.
+
+### Modelo
+- Eliminado el concepto de "bucle" como tipo de nota. Cualquier nota con tareas pendientes dentro se considera contenedor vivo automáticamente y aparece en el panel derecho del diario y del calendario.
+- Migración silenciosa de bucles existentes → notas normales (sus tareas hijas intactas).
+
+### Nuevas acciones en el modal de tarea
+- ↑ Ampliar: convierte la tarea en nota contenedora con esa tarea como primer paso.
+- → Mover a…: picker fuzzy para reparentar a cualquier nota.
+- 📓 A hoy: mover al diario de hoy en un clic.
+
+### Timeline (botón reloj en la nota diaria)
+- Bloques continuos altura proporcional a duración.
+- Snap a 15 minutos con feedback visual.
+- Drag entre horas reprograma. Drag del borde inferior cambia duración. Para eventos Google sincroniza.
+- Click en hueco → input inline (Enter crea, Esc cancela). Default 1h.
+- Click en bloque → modal de propiedades centrado con todas las opciones.
+- Colores pastel suavizados.
+- Gutter derecho de 22px para crear en misma franja sin pisar bloques existentes.
+
+### Calendar / Google Calendar
+- Eventos Google con color real del calendario (o colorId del evento).
+- Click en evento → modal centrado para renombrar, cambiar fecha/hora, eliminar — sync con Google.
+- Click en "Todo el día" crea tarea sin hora.
+
+### Limpieza
+- Página /followup (Bucles) eliminada. URLs viejos redirigen al diario.
+- Botón "Bucles" del sidebar quitado.
+- Botón "Google" del sidebar quitado (gestión en Ajustes).
+
+### Performance
+- Cache de children() invalidable. Calculo de containers vivos de O(n²·d) a O(n).
+- TaskPropsPopover hoisted a nivel panel (antes 1 modal por fila → saturaba con N filas).
+
+---
+
 ## Web v8.00 — 26 mayo 2026
 
 **Plataforma: Web** — bloque grande de pulido del editor + calendario + integración Google Calendar.
