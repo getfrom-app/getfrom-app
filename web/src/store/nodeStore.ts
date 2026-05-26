@@ -506,7 +506,8 @@ export class NodeStore {
   isLiveContainer(node: Node, options?: { requireUnscheduled?: boolean }): boolean {
     if (!node || node.deletedAt) return false
     if (node.isDiaryEntry) return false
-    if (node.status !== null) return false  // es tarea
+    // Las tareas (status !== null) SÍ pueden ser contenedores si tienen hijas pendientes.
+    // Solo excluir eventos y recursos — no son contextos de trabajo.
     if (node.isEvent) return false
     try { if (JSON.parse(node.extraData || '{}')._resource) return false } catch { /* ignore */ }
     // Excluir nodos de estructura temporal (año/mes/semana) — no son contextos reales
