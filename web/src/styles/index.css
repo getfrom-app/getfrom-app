@@ -7113,6 +7113,45 @@ a:focus-visible {
 /* Multi-select highlight */
 .node-row.multi-selected { background: var(--accent-soft); border-radius: 6px; }
 
+/* ── GCal event editor en modo modal ──────────────────────────────────────── */
+.gcal-editor-popup--modal {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: min(420px, 92vw);
+  max-width: 92vw;
+  padding: 22px;
+  font-size: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: from-modal-pop 0.15s ease-out;
+}
+.gcal-editor-popup--modal .gcal-editor-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.gcal-editor-popup--modal .gcal-editor-name {
+  font-size: 17px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  width: 100%;
+  font-weight: 500;
+}
+.gcal-editor-popup--modal .gcal-editor-row { gap: 8px; }
+.gcal-editor-popup--modal .gcal-editor-label { width: 50px; font-size: 12px; }
+.gcal-editor-popup--modal .gcal-editor-actions { margin-top: 8px; gap: 8px; }
+.gcal-editor-popup--modal .gcal-editor-save,
+.gcal-editor-popup--modal .gcal-editor-cancel { padding: 8px 14px; font-size: 13px; border-radius: 6px; cursor: pointer; }
+.gcal-editor-popup--modal .gcal-editor-save { background: var(--accent); color: white; border: none; font-weight: 600; }
+.gcal-editor-popup--modal .gcal-editor-save:hover { opacity: 0.9; }
+.gcal-editor-popup--modal .gcal-editor-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.gcal-editor-popup--modal .gcal-editor-delete { margin-right: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; }
+
 /* ── Color swatches dentro de TaskPropsPopover ────────────────────────────── */
 .tpp-color-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .tpp-color-swatch {

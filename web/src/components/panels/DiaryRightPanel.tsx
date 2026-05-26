@@ -319,30 +319,44 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
 
 // ── GCal event editor popup ────────────────────────────────────────────────────
 
-interface GCalEventEditorProps {
+export interface GCalEventEditorProps {
   event: CalendarEvent
   onClose: () => void
   onUpdated: (updated: CalendarEvent) => void
   onDeleted: (id: string) => void
+  /** Si true, se renderiza como modal centrado con backdrop. */
+  modal?: boolean
 }
 
-function GCalEventEditor({ event, onClose, onUpdated, onDeleted }: GCalEventEditorProps) {
+export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }: GCalEventEditorProps) {
   const [title, setTitle] = useState(event.title)
   const [startDate, setStartDate] = useState(event.start ? event.start.slice(0, 10) : '')
-  const [startTime, setStartTime] = useState(event.start ? event.start.slice(11, 16) : '')
+  const [startTime, setStartTime] = useState(event.start && !event.allDay ? event.start.slice(11, 16) : '')
   const [endDate, setEndDate] = useState(event.end ? event.end.slice(0, 10) : '')
-  const [endTime, setEndTime] = useState(event.end ? event.end.slice(11, 16) : '')
+  const [endTime, setEndTime] = useState(event.end && !event.allDay ? event.end.slice(11, 16) : '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
+  // ESC cierra (capture para no propagar a router) — sólo en modo modal
   useEffect(() => {
+    if (!modal) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
+    }
+    document.addEventListener('keydown', onKey, { capture: true })
+    return () => document.removeEventListener('keydown', onKey, { capture: true })
+  }, [modal, onClose])
+
+  // Click fuera cierra — sólo en modo NO-modal (inline)
+  useEffect(() => {
+    if (modal) return
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as globalThis.Node)) onClose()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [onClose])
+  }, [modal, onClose])
 
   async function save() {
     if (!startDate) return
@@ -356,42 +370,55 @@ function GCalEventEditor({ event, onClose, onUpdated, onDeleted }: GCalEventEdit
         title, start: new Date(start).toISOString(), end: new Date(end).toISOString()
       })
       onUpdated(updated)
-      setMsg('✓ Guardado')
+      setMsg('✓ Guardado en Google')
       setTimeout(onClose, 800)
-    } catch { setMsg('Error al guardar') }
+    } catch { setMsg('Error al guardar en Google') }
     finally { setSaving(false) }
   }
 
   async function remove() {
     if (!window.confirm(`¿Eliminar "${event.title}" de Google Calendar?`)) return
-    setSaving(true)
+    setSaving(true); setMsg(null)
     try {
       await deleteCalendarEvent(event.id)
       onDeleted(event.id)
-    } catch { setMsg('Error al eliminar') }
+    } catch { setMsg('Error al eliminar en Google') }
     finally { setSaving(false) }
   }
 
-  return (
-    <div ref={ref} className="gcal-editor-popup" onClick={e => e.stopPropagation()}>
-      <div className="gcal-editor-title">📅 Editar evento GCal</div>
+  const body = (
+    <div ref={ref}
+      className={`gcal-editor-popup${modal ? ' gcal-editor-popup--modal' : ''}`}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="gcal-editor-title">📅 Editar evento Google Calendar</div>
       <input className="gcal-editor-name" value={title} onChange={e => setTitle(e.target.value)}
         placeholder="Título del evento"
+        autoFocus
         onKeyDown={e => { if (e.key === 'Enter') save() }}
       />
       <div className="gcal-editor-row">
         <span className="gcal-editor-label">Inicio</span>
         <input type="date" className="nqp-date-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} />
+        <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} placeholder="HH:MM" />
+        {startTime && (
+          <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+            onClick={() => setStartTime('')} title="Quitar hora">✕h</button>
+        )}
       </div>
       <div className="gcal-editor-row">
         <span className="gcal-editor-label">Fin</span>
         <input type="date" className="nqp-date-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} />
+        <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} placeholder="HH:MM" />
+        {endTime && (
+          <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
+            onClick={() => setEndTime('')} title="Quitar hora">✕h</button>
+        )}
       </div>
       {msg && <div className={`gcal-editor-msg${msg.startsWith('✓') ? ' ok' : ''}`}>{msg}</div>}
       <div className="gcal-editor-actions">
-        <button className="gcal-editor-delete" onClick={remove} disabled={saving}>🗑</button>
+        <button className="gcal-editor-delete" onClick={remove} disabled={saving} title="Eliminar de Google Calendar">🗑 Eliminar</button>
         <button className="gcal-editor-cancel" onClick={onClose}>Cancelar</button>
         <button className="gcal-editor-save" onClick={save} disabled={saving || !title || !startDate}>
           {saving ? '↻' : 'Guardar'}
@@ -399,6 +426,16 @@ function GCalEventEditor({ event, onClose, onUpdated, onDeleted }: GCalEventEdit
       </div>
     </div>
   )
+
+  if (modal) {
+    return createPortal(
+      <div className="task-props-modal-backdrop" onMouseDown={onClose} onClick={onClose}>
+        {body}
+      </div>,
+      document.body
+    )
+  }
+  return body
 }
 
 // ── Drag state para el panel agenda ───────────────────────────────────────────

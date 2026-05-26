@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
-import { TaskPropsPopover } from '../panels/DiaryRightPanel'
+import { TaskPropsPopover, GCalEventEditor } from '../panels/DiaryRightPanel'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { getDayStart, getDayEnd } from '../../utils/dayHours'
@@ -391,9 +391,11 @@ interface WeekViewProps {
   onNodeClick: (id: string) => void
   onCreateEvent: (date: Date) => void
   onDrop?: (e: React.DragEvent, date: Date) => void
+  onGCalUpdated?: (updated: CalendarEvent) => void
+  onGCalDeleted?: (id: string) => void
 }
 
-function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit, dayCount = 7, showDayNames = true, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop }: WeekViewProps) {
+function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit, dayCount = 7, showDayNames = true, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop, onGCalUpdated, onGCalDeleted }: WeekViewProps) {
   const days = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i))
   const colWidthExpr = `calc((100% - var(--gutter-width)) / ${dayCount})`
   // Franja horaria visible (reactiva a cambios desde Ajustes)
@@ -412,6 +414,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   const [quickCreate, setQuickCreate] = useState<{ date: Date; cellKey: string } | null>(null)
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
   const [taskPopover, setTaskPopover] = useState<{ node: Node; el: HTMLElement } | null>(null)
+  const [gcalEditing, setGcalEditing] = useState<CalendarEvent | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to current hour on mount (relativo a dayStart)
@@ -568,14 +571,16 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   )
                 })}
                 {gcalAllDay.map(ev => (
-                  <div
+                  <button
                     key={ev.id}
+                    type="button"
                     className="calendar-event-chip calendar-event-chip--gcal"
-                    style={{ background: gcalEventColor(ev) }}
-                    title={ev.title}
+                    style={{ background: gcalEventColor(ev), cursor: 'pointer' }}
+                    title={`${ev.title} · Click para editar en Google`}
+                    onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                   >
                     {ev.title}
-                  </div>
+                  </button>
                 ))}
                 {allDayQuickCreate && allDayQuickCreate.col === i && (
                   <QuickEventCreate
@@ -747,8 +752,9 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                     const lay = layoutMap.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
                     return (
-                      <div
+                      <button
                         key={ev.id}
+                        type="button"
                         className="calendar-event-block calendar-event-block--gcal"
                         style={{
                           top: topPx,
@@ -757,12 +763,14 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           width: `calc(${lay.widthPct}% - 4px)`,
                           zIndex: lay.zIndex,
                           background: gcalEventColor(ev),
+                          cursor: 'pointer',
                         }}
-                        title={ev.title}
+                        title={`${ev.title} · Click para editar en Google`}
+                        onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                       >
                         <span className="calendar-event-time">{timeLabel}</span>
                         <span className="calendar-event-text">{ev.title}</span>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -791,6 +799,17 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
         />
       )}
 
+      {/* Google Calendar event editor (modal centrado) */}
+      {gcalEditing && (
+        <GCalEventEditor
+          event={gcalEditing}
+          modal
+          onClose={() => setGcalEditing(null)}
+          onUpdated={updated => { onGCalUpdated?.(updated); setGcalEditing(null) }}
+          onDeleted={id => { onGCalDeleted?.(id); setGcalEditing(null) }}
+        />
+      )}
+
       {/* Leyenda */}
       <div className="calendar-legend">
         <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#f59e0b' }}></span>Evento</span>
@@ -813,10 +832,13 @@ interface MonthViewProps {
   onNodeClick: (id: string) => void
   onDayClick: (day: Date) => void
   onDrop?: (e: React.DragEvent, date: Date) => void
+  onGCalUpdated?: (updated: CalendarEvent) => void
+  onGCalDeleted?: (id: string) => void
 }
 
-function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop }: MonthViewProps) {
+function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop, onGCalUpdated, onGCalDeleted }: MonthViewProps) {
   const navigate = useNavigate()
+  const [gcalEditing, setGcalEditing] = useState<CalendarEvent | null>(null)
   const nodesWithDue = allNodes.filter(n =>
     n.due && !n.isSeguimiento && !(n.types || []).includes('bucle')
   )
@@ -907,14 +929,16 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
                 {gcalDay.slice(0, 3).map(ev => {
                   const c = gcalEventColor(ev)
                   return (
-                  <span
+                  <button
                     key={ev.id}
+                    type="button"
                     className="calendar-month-node calendar-month-node--gcal"
-                    style={{ background: c + '30', color: c, borderLeft: `2px solid ${c}` }}
-                    title={`Google Calendar · ${ev.title}`}
+                    style={{ background: c + '30', color: c, borderLeft: `2px solid ${c}`, cursor: 'pointer' }}
+                    title={`Google Calendar · ${ev.title} · Click para editar`}
+                    onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                   >
                     🗓 {ev.title || 'Sin título'}
-                  </span>
+                  </button>
                   )
                 })}
                 {dayNodes.slice(0, Math.max(0, 3 - gcalDay.length)).map(node => (
@@ -938,6 +962,16 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
           )
         })}
       </div>
+
+      {gcalEditing && (
+        <GCalEventEditor
+          event={gcalEditing}
+          modal
+          onClose={() => setGcalEditing(null)}
+          onUpdated={updated => { onGCalUpdated?.(updated); setGcalEditing(null) }}
+          onDeleted={id => { onGCalDeleted?.(id); setGcalEditing(null) }}
+        />
+      )}
     </div>
   )
 }
@@ -1247,6 +1281,8 @@ export default function CalendarView() {
               onNodeClick={id => navigate(`/node/${id}`)}
               onCreateEvent={handleCreateEvent}
               onDrop={handleCalendarDrop}
+              onGCalUpdated={updated => setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x))}
+              onGCalDeleted={id => setGoogleEvents(prev => prev.filter(x => x.id !== id))}
             />
           )}
 
@@ -1264,6 +1300,8 @@ export default function CalendarView() {
               onNodeClick={id => navigate(`/node/${id}`)}
               onCreateEvent={handleCreateEvent}
               onDrop={handleCalendarDrop}
+              onGCalUpdated={updated => setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x))}
+              onGCalDeleted={id => setGoogleEvents(prev => prev.filter(x => x.id !== id))}
             />
           )}
 
