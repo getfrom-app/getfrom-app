@@ -3464,24 +3464,22 @@ mark.inline-highlight {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  height: 100%;
 }
-.diary-timeline-aside-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
-  flex-shrink: 0;
+.diary-timeline-aside > * { flex: 1; min-height: 0; }
+.diary-timeline-aside .diary-right-panel,
+.diary-timeline-aside .diary-right-panel--timeline-only {
+  width: 100% !important;
+  border-left: none !important;
+  height: 100%;
 }
-.diary-timeline-aside-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.diary-timeline-aside-close {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-tertiary); font-size: 18px; line-height: 1;
-  padding: 0 6px; border-radius: 4px;
+.diary-timeline-aside .timeline-panel,
+.diary-timeline-aside .timeline-panel-full {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 8px;
 }
-.diary-timeline-aside-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-.diary-timeline-aside .timeline-panel { flex: 1; overflow-y: auto; padding: 8px; }
 
 /* Botón timeline en el header */
 .diary-timeline-toggle {
@@ -3500,12 +3498,44 @@ mark.inline-highlight {
 .diary-timeline-toggle--active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
 /* Drop visual feedback en una hora del timeline */
-.timeline-hour-clickable.drag-over {
+.timeline-hour-clickable.drag-over,
+.timeline-hour-clickable.has-snap {
   background: var(--accent-soft) !important;
-  outline: 2px dashed var(--accent);
-  outline-offset: -2px;
   border-radius: 4px;
 }
+
+/* Línea de snap a 15 minutos durante el drag */
+.timeline-snap-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 50;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(124, 92, 240, 0.15);
+}
+.timeline-snap-label {
+  position: absolute;
+  right: 4px;
+  top: -10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Chips draggable: cursor grab */
+.timeline-event-chip,
+.timeline-task-chip { cursor: grab; }
+.timeline-event-chip:active,
+.timeline-task-chip:active { cursor: grabbing; }
+
+/* timeline-hour-clickable necesita position:relative para snap-line */
+.timeline-hour-clickable { position: relative; }
 .diary-panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .diary-panel-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); outline: none; transition: color 0.15s; font-family: inherit; }
 .diary-panel-tab:hover { color: var(--text-primary); }

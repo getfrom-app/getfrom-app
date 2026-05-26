@@ -802,8 +802,8 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
   function renderAgenda() {
-    const gcalToday = googleEvents.filter(ev => !ev.allDay)
-    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || gcalToday.length > 0 || pendingResources.length > 0
+    // Eventos de Google Calendar ya se muestran en el Timeline — no duplicar en Agenda.
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || pendingResources.length > 0
 
     if (!hasAnything) {
       return (
@@ -817,47 +817,6 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
     return (
       <div className="diary-panel-content">
-        {/* Eventos de Google Calendar — editables desde aquí */}
-        {gcalToday.length > 0 && (
-          <div className="diary-agenda-gcal-section">
-            <div className="diary-agenda-section-label">Google Calendar</div>
-            {gcalToday.sort((a, b) => a.start.localeCompare(b.start)).map(ev => {
-              const startStr = ev.start ? new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
-              const endStr = ev.end ? new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
-              return (
-                <div key={ev.id} className="diary-agenda-gcal-row" style={{ position: 'relative' }}>
-                  <span className="diary-agenda-gcal-dot" />
-                  <span className="diary-agenda-gcal-title">{ev.title}</span>
-                  <span className="diary-agenda-gcal-time">{startStr}{endStr ? `–${endStr}` : ''}</span>
-                  <div className="diary-agenda-gcal-btns">
-                    <button className="diary-agenda-gcal-btn" title="Editar"
-                      onClick={e => { e.stopPropagation(); setEditingGCalEvent(ev) }}>✎</button>
-                    <button className="diary-agenda-gcal-btn diary-agenda-gcal-btn--del" title="Eliminar"
-                      onClick={async e => {
-                        e.stopPropagation()
-                        if (!window.confirm(`¿Eliminar "${ev.title}" de Google Calendar?`)) return
-                        try {
-                          await deleteCalendarEvent(ev.id)
-                          setGoogleEvents(prev => prev.filter(x => x.id !== ev.id))
-                        } catch { alert('Error al eliminar') }
-                      }}>🗑</button>
-                  </div>
-                  {editingGCalEvent?.id === ev.id && (
-                    <div style={{ position: 'absolute', right: 0, top: '100%', zIndex: 200 }}>
-                      <GCalEventEditor
-                        event={ev}
-                        onClose={() => setEditingGCalEvent(null)}
-                        onUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
-                        onDeleted={id => { setGoogleEvents(prev => prev.filter(x => x.id !== id)); setEditingGCalEvent(null) }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-
         {/* Nodos en seguimiento + sus tareas hijo */}
         {seguimientoNodes.map(node => {
           const childTasks = getChildTasks(node.id)
@@ -1118,79 +1077,27 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   }
 
   function renderTimeline() {
-    return (
-      <div className="timeline-panel-full">
-        {hours.map(h => {
-          const tasks = tasksByHour[h] || []
-          const events = eventsByHour[h] || []
-          const allItems = [...events, ...tasks]
-          const showNowLine = isToday && h === currentHour
-
-          const gcalItems = googleEventsByHour[h] || []
-
-          return (
-            <div key={h} className="timeline-hour-slot">
-              {showNowLine && (
-                <div
-                  className="timeline-now-line"
-                  style={{ top: `${(currentMinutes / 60) * 100}%` }}
-                  title={`Ahora: ${String(currentHour).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`}
-                >
-                  <span className="timeline-now-dot" />
-                  <span className="timeline-now-rule" />
-                </div>
-              )}
-              <div className="timeline-row">
-                <span className="timeline-hour-label">{String(h).padStart(2, '0')}:00</span>
-                <div
-                  className="timeline-hour-clickable"
-                  onClick={() => handleTimelineHourClick(h)}
-                  title={`Crear evento a las ${String(h).padStart(2, '0')}:00`}
-                >
-                  {allItems.map(t => (
-                    <span
-                      key={t.id}
-                      className={t.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
-                      onClick={e => { e.stopPropagation(); navigate(`/node/${t.id}`) }}
-                      title={t.text || 'Sin título'}
-                    >
-                      {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
-                    </span>
-                  ))}
-                  {gcalItems.map(ev => {
-                    const startTime = new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                    const endTime = new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                    return (
-                      <span
-                        key={ev.id}
-                        className="timeline-event-chip timeline-event-chip--gcal"
-                        title={`${ev.title} · ${startTime} – ${endTime} · Click para editar`}
-                        onClick={e => { e.stopPropagation(); setEditingGCalEvent(ev) }}
-                      >
-                        📅 {ev.title} <span style={{ opacity: 0.7, fontSize: 10 }}>{startTime}–{endTime}</span>
-                        {editingGCalEvent?.id === ev.id && (
-                          <span
-                            style={{ position: 'absolute', left: 0, top: '100%', zIndex: 300 }}
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <GCalEventEditor
-                              event={ev}
-                              onClose={() => setEditingGCalEvent(null)}
-                              onUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
-                              onDeleted={id => { setGoogleEvents(prev => prev.filter(x => x.id !== id)); setEditingGCalEvent(null) }}
-                            />
-                          </span>
-                        )}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
+    return <TimelineRenderer
+      diaryDate={diaryDate}
+      hours={hours}
+      tasksByHour={tasksByHour}
+      eventsByHour={eventsByHour}
+      googleEventsByHour={googleEventsByHour}
+      currentHour={currentHour}
+      currentMinutes={currentMinutes}
+      isToday={isToday}
+      onCreateTaskAt={(h, m) => {
+        const d = new Date(diaryDate); d.setHours(h, m, 0, 0)
+        const newNode = store.createNode({ text: '', parentId: null, siblingOrder: Date.now(), isTask: true })
+        store.updateNode(newNode.id, { due: d.toISOString() })
+        navigate(`/node/${newNode.id}`)
+      }}
+      onEditGCal={ev => setEditingGCalEvent(ev)}
+      editingGCalEvent={editingGCalEvent}
+      onGCalUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
+      onGCalDeleted={id => { setGoogleEvents(prev => prev.filter(x => x.id !== id)); setEditingGCalEvent(null) }}
+      onCloseGCal={() => setEditingGCalEvent(null)}
+    />
   }
 
   // renderStats() movida a Ajustes (pendiente)
@@ -1424,6 +1331,204 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {renderAgenda()}
       </div>
+    </div>
+  )
+}
+
+// ── TimelineRenderer — snap a 15min + drag de items existentes ───────────────
+
+interface TimelineRendererProps {
+  diaryDate: Date
+  hours: number[]
+  tasksByHour: Record<number, Node[]>
+  eventsByHour: Record<number, Node[]>
+  googleEventsByHour: Record<number, CalendarEvent[]>
+  currentHour: number
+  currentMinutes: number
+  isToday: boolean
+  onCreateTaskAt: (hour: number, minutes: number) => void
+  onEditGCal: (ev: CalendarEvent) => void
+  editingGCalEvent: CalendarEvent | null
+  onGCalUpdated: (updated: CalendarEvent) => void
+  onGCalDeleted: (id: string) => void
+  onCloseGCal: () => void
+}
+
+// Estado compartido para drag dentro del timeline
+let _tlDrag: { id: string; source: 'from' | 'gcal' } | null = null
+
+function TimelineRenderer({
+  diaryDate, hours,
+  tasksByHour, eventsByHour, googleEventsByHour,
+  currentHour, currentMinutes, isToday,
+  onCreateTaskAt,
+  onEditGCal, editingGCalEvent, onGCalUpdated, onGCalDeleted, onCloseGCal,
+}: TimelineRendererProps) {
+  const popNavigate = useNavigate()
+  const [snapPreview, setSnapPreview] = useState<{ hour: number; minutes: number } | null>(null)
+
+  function computeSnap(e: React.DragEvent<HTMLDivElement>, hour: number): { hour: number; minutes: number } {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const ratio = Math.max(0, Math.min(1, y / rect.height))
+    // 4 quarters por hora → 0, 15, 30, 45
+    const quarter = Math.min(3, Math.floor(ratio * 4))
+    return { hour, minutes: quarter * 15 }
+  }
+
+  function handleHourDragOver(e: React.DragEvent<HTMLDivElement>, hour: number) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    const snap = computeSnap(e, hour)
+    setSnapPreview(snap)
+  }
+
+  function handleHourDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    // Solo limpiar si salimos del hour-row completo
+    if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node)) {
+      setSnapPreview(prev => prev?.hour === parseInt(e.currentTarget.dataset.hour || '-1') ? null : prev)
+    }
+  }
+
+  async function handleHourDrop(e: React.DragEvent<HTMLDivElement>, hour: number) {
+    e.preventDefault()
+    const snap = computeSnap(e, hour)
+    setSnapPreview(null)
+
+    const targetDate = new Date(diaryDate)
+    targetDate.setHours(snap.hour, snap.minutes, 0, 0)
+
+    // Drag interno del timeline (chip → otra hora)
+    if (_tlDrag) {
+      const internal = _tlDrag
+      _tlDrag = null
+      if (internal.source === 'from') {
+        store.scheduleNodeAt(internal.id, targetDate.toISOString())
+      } else {
+        // Google Calendar — actualizar inicio (conserva duración)
+        const gcalId = internal.id
+        const ev = Object.values(googleEventsByHour).flat().find(x => x.id === gcalId)
+        if (ev) {
+          const oldStart = new Date(ev.start)
+          const oldEnd = new Date(ev.end)
+          const duration = oldEnd.getTime() - oldStart.getTime()
+          const newEnd = new Date(targetDate.getTime() + duration)
+          try {
+            const updated = await updateCalendarEvent(gcalId, {
+              title: ev.title,
+              start: targetDate.toISOString(),
+              end: newEnd.toISOString(),
+            })
+            onGCalUpdated(updated)
+          } catch { /* fallo de red — el chip volverá a aparecer en su hora original al refetch */ }
+        }
+      }
+      return
+    }
+
+    // Drag externo (desde agenda / outliner): nodo de From
+    const id = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+    if (id) store.scheduleNodeAt(id, targetDate.toISOString())
+  }
+
+  return (
+    <div className="timeline-panel-full">
+      {hours.map(h => {
+        const tasks = tasksByHour[h] || []
+        const events = eventsByHour[h] || []
+        const allItems = [...events, ...tasks]
+        const showNowLine = isToday && h === currentHour
+        const gcalItems = googleEventsByHour[h] || []
+        const isSnapHere = snapPreview?.hour === h
+
+        return (
+          <div key={h} className="timeline-hour-slot">
+            {showNowLine && (
+              <div
+                className="timeline-now-line"
+                style={{ top: `${(currentMinutes / 60) * 100}%` }}
+                title={`Ahora: ${String(currentHour).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`}
+              >
+                <span className="timeline-now-dot" />
+                <span className="timeline-now-rule" />
+              </div>
+            )}
+            <div className="timeline-row">
+              <span className="timeline-hour-label">{String(h).padStart(2, '0')}:00</span>
+              <div
+                className={`timeline-hour-clickable${isSnapHere ? ' has-snap' : ''}`}
+                data-hour={h}
+                onClick={() => onCreateTaskAt(h, 0)}
+                onDragOver={e => handleHourDragOver(e, h)}
+                onDragLeave={handleHourDragLeave}
+                onDrop={e => handleHourDrop(e, h)}
+                title={`Crear tarea a las ${String(h).padStart(2, '0')}:00`}
+              >
+                {/* Línea guía de snap a 15min */}
+                {isSnapHere && snapPreview && (
+                  <div
+                    className="timeline-snap-line"
+                    style={{ top: `${(snapPreview.minutes / 60) * 100}%` }}
+                  >
+                    <span className="timeline-snap-label">
+                      {String(snapPreview.hour).padStart(2, '0')}:{String(snapPreview.minutes).padStart(2, '0')}
+                    </span>
+                  </div>
+                )}
+
+                {allItems.map(t => (
+                  <span
+                    key={t.id}
+                    className={t.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
+                    draggable
+                    onDragStart={e => {
+                      _tlDrag = { id: t.id, source: 'from' }
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/plain', t.id)
+                    }}
+                    onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
+                    onClick={e => { e.stopPropagation(); popNavigate(`/node/${t.id}`) }}
+                    title={t.text || 'Sin título'}
+                  >
+                    {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
+                  </span>
+                ))}
+                {gcalItems.map(ev => {
+                  const startTime = new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                  const endTime = new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                  return (
+                    <span
+                      key={ev.id}
+                      className="timeline-event-chip timeline-event-chip--gcal"
+                      draggable
+                      onDragStart={e => {
+                        _tlDrag = { id: ev.id, source: 'gcal' }
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', ev.id)
+                      }}
+                      onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
+                      title={`${ev.title} · ${startTime} – ${endTime} · Click para editar · Arrastra para mover`}
+                      onClick={e => { e.stopPropagation(); onEditGCal(ev) }}
+                    >
+                      📅 {ev.title} <span style={{ opacity: 0.7, fontSize: 10 }}>{startTime}–{endTime}</span>
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+
+      {editingGCalEvent && (
+        <GCalEventEditor
+          event={editingGCalEvent}
+          modal
+          onClose={onCloseGCal}
+          onUpdated={onGCalUpdated}
+          onDeleted={onGCalDeleted}
+        />
+      )}
     </div>
   )
 }

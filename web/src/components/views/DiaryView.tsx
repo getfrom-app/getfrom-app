@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
+import DiaryRightPanel from '../panels/DiaryRightPanel'
 
 type DiaryPanelTab = 'pending' | 'timeline' | 'agenda' | 'stats'
 
@@ -977,16 +978,7 @@ export default function DiaryView() {
             arrastrar tareas pendientes a una hora del día. */}
         {timelineOpen && (
           <aside className="diary-timeline-aside">
-            <div className="diary-timeline-aside-header">
-              <span className="diary-timeline-aside-title">🕐 Timeline</span>
-              <button
-                className="diary-timeline-aside-close"
-                onClick={() => setTimelineOpen(false)}
-                title="Cerrar timeline"
-                aria-label="Cerrar timeline"
-              >×</button>
-            </div>
-            {renderTimeline()}
+            <DiaryRightPanel diaryDate={targetDate} timelineMode />
           </aside>
         )}
 

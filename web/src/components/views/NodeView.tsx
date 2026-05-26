@@ -2083,25 +2083,14 @@ export default function NodeView() {
         />
       )}
 
-      {/* Timeline opcional para diary entries — columna toggleable que convive
-          con la columna derecha (Agenda). Permite drag-to-schedule. */}
+      {/* Timeline opcional para diary entries — columna toggleable. Sin
+          header (el icono reloj de la barra ya indica que está abierto). */}
       {node.isDiaryEntry && timelineOpen && (
         <aside className="diary-timeline-aside">
-          <div className="diary-timeline-aside-header">
-            <span className="diary-timeline-aside-title">🕐 Timeline</span>
-            <button
-              className="diary-timeline-aside-close"
-              onClick={() => setTimelineOpen(false)}
-              title="Cerrar timeline"
-              aria-label="Cerrar timeline"
-            >×</button>
-          </div>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-            <DiaryRightPanel
-              diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()}
-              timelineMode
-            />
-          </div>
+          <DiaryRightPanel
+            diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()}
+            timelineMode
+          />
         </aside>
       )}
 
