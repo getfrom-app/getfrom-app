@@ -531,6 +531,113 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     )
   }
 
+  // ── Vista unificada WF: paneles + fijados en un solo bloque ────────────────
+  function renderUnifiedQuickAccess() {
+    const allPanels = [DEFAULT_PANEL, ...panels]
+    const groups = getGroupedFavorites(allFavorites)
+
+    return (
+      <div className="sidebar-tab-content wf-quick-access">
+
+        {/* ── Paneles ── */}
+        <div className="wf-qa-section">
+          <div className="wf-qa-section-header">
+            <span className="wf-qa-section-label">Paneles</span>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Crea paneles desde ⌘K o el filtro">⌘K</span>
+          </div>
+          {allPanels.map(panel => {
+            const isDefault = panel.id === '__today_tasks__'
+            const isActive = location.search === `?q=${encodeURIComponent(panel.query)}` && location.pathname === '/search'
+            return (
+              <div
+                key={panel.id}
+                className={`wf-qa-item${isActive ? ' active' : ''}`}
+                onClick={() => navigate(`/search?q=${encodeURIComponent(panel.query)}`)}
+                title={panel.query}
+              >
+                <span className="wf-qa-item-icon">{isDefault ? '📅' : '🔍'}</span>
+                <span className="wf-qa-item-name">{panel.name}</span>
+                {!isDefault && (
+                  <button
+                    className="wf-qa-item-del"
+                    onClick={e => { e.stopPropagation(); handleDeletePanel(panel.id) }}
+                    title="Eliminar panel"
+                  >×</button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ── Fijados ── */}
+        <div className="wf-qa-section" style={{ marginTop: 8 }}>
+          <div className="wf-qa-section-header">
+            <span className="wf-qa-section-label">Fijados</span>
+            {/* Controles sort/group */}
+            <div style={{ display: 'flex', gap: 2 }}>
+              <button
+                className={`fav-ctrl-btn ${favSort !== 'manual' ? 'active' : ''}`}
+                title="Ordenar"
+                onClick={() => setShowFavControls(v => !v)}
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <line x1="2" y1="4" x2="14" y2="4"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="6" y1="12" x2="10" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          {showFavControls && (
+            <div className="fav-controls-panel" style={{ margin: '0 0 6px' }}>
+              <div className="fav-ctrl-section">
+                <span className="fav-ctrl-label">Ordenar</span>
+                {([['manual', 'Manual'], ['alpha', 'A–Z'], ['date', 'Recientes']] as [typeof favSort, string][]).map(([v, l]) => (
+                  <button key={v} className={`fav-ctrl-opt ${favSort === v ? 'active' : ''}`} onClick={() => setFavSortP(v)}>{l}</button>
+                ))}
+              </div>
+              <div className="fav-ctrl-section">
+                <span className="fav-ctrl-label">Agrupar</span>
+                {([['none', 'Ninguno'], ['tag', 'Tag'], ['type', 'Tipo']] as [typeof favGroup, string][]).map(([v, l]) => (
+                  <button key={v} className={`fav-ctrl-opt ${favGroup === v ? 'active' : ''}`} onClick={() => setFavGroupP(v)}>{l}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {allFavorites.length > 0 ? (
+            groups.map(({ label, items }) => (
+              <div key={label || '__all__'}>
+                {label && (
+                  <div style={{ padding: '4px 12px 2px', fontSize: 10, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+                )}
+                {items.map(node => (
+                  <div
+                    key={node.id}
+                    className={`wf-qa-item${location.pathname === `/node/${node.id}` ? ' active' : ''}`}
+                    onClick={() => navigate(`/node/${node.id}`)}
+                    onContextMenu={e => {
+                      e.preventDefault()
+                      if (window.confirm(`¿Quitar "${node.text || 'Sin título'}" de fijados?`)) {
+                        handleRemoveFavorite(node.id, e)
+                      }
+                    }}
+                    title="Click derecho → quitar de fijados"
+                  >
+                    <span className="wf-qa-item-icon">{getNodeIcon(node)}</span>
+                    <span className="wf-qa-item-name">{node.text || 'Sin título'}</span>
+                  </div>
+                ))}
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Fija una nota con 📌 para verla aquí
+            </div>
+          )}
+        </div>
+
+      </div>
+    )
+  }
+
   function renderSettingsTab() {
     const email = us.user?.email
     const SettingRow = ({ icon, label, onClick, badge }: { icon: string; label: string; onClick?: () => void; badge?: string }) => (
@@ -626,37 +733,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
 
       {open ? (
         <>
-          {/* Tab bar */}
-          <div className="sidebar-tabs">
-            <button
-              data-tab="tags"
-              className={`sidebar-tab-btn ${activeTab === 'tags' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tags')}
-              title="Tags y notas"
-            >
-              🏷
-            </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-              onClick={() => setActiveTab('favorites')}
-              title="Fijados"
-            >
-              📌
-            </button>
-            <button
-              className={`sidebar-tab-btn ${activeTab === 'panels' ? 'active' : ''}`}
-              onClick={() => setActiveTab('panels')}
-              title="Paneles"
-            >
-              📋
-            </button>
-          </div>
-
-          {/* Tab content */}
+          {/* Bloque unificado WF: paneles + fijados, sin tabs */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {activeTab === 'tags' && renderTagsTab()}
-            {activeTab === 'favorites' && renderFavoritesTab()}
-            {activeTab === 'panels' && renderPanelsTab()}
+            {renderUnifiedQuickAccess()}
           </div>
 
           {/* Recording bar */}

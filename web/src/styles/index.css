@@ -9129,3 +9129,59 @@ a:focus-visible {
   margin: 0 auto;
   padding: 0 24px;
 }
+
+/* ── WF Quick Access — bloque unificado paneles + fijados ──────────────────── */
+.wf-quick-access { padding: 8px 0; }
+
+.wf-qa-section { padding: 0; }
+
+.wf-qa-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 3px;
+}
+.wf-qa-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wf-qa-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 0 4px;
+  transition: background 0.1s;
+  user-select: none;
+}
+.wf-qa-item:hover { background: var(--bg-hover); }
+.wf-qa-item.active { background: var(--bg-hover); }
+
+.wf-qa-item-icon { font-size: 13px; flex-shrink: 0; }
+.wf-qa-item-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wf-qa-item-del {
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.wf-qa-item:hover .wf-qa-item-del { opacity: 1; }
+.wf-qa-item-del:hover { color: var(--text-primary); }
