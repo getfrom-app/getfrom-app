@@ -244,20 +244,15 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
 // ── Priority color helper ─────────────────────────────────────────────────────
 
 function priorityBg(node: Node): string {
-  // Events: amber/orange
-  if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f59e0b)'
-  // Tasks done: muted
-  if (node.status === 'done') return '#6b7280'
-  // Seguimiento (activa): morado distintivo
-  if (node.isSeguimiento) return '#8b5cf6'
-  // Recurso: cian
-  try { if (JSON.parse(node.extraData || '{}')._resource) return '#06b6d4' } catch { /* ignore */ }
-  // Priority colors
-  if (node.priority === 'high') return '#ef4444'
-  if (node.priority === 'medium') return '#f97316'
-  if (node.priority === 'low') return '#22c55e'
-  // Default tarea: azul
-  return '#3b82f6'
+  // Paleta pastel — colores suaves, no saturados.
+  if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f5c97a)' // ámbar pastel
+  if (node.status === 'done')        return '#a3a8b3' // gris pastel
+  if (node.isSeguimiento)            return '#b8a7e8' // morado pastel
+  try { if (JSON.parse(node.extraData || '{}')._resource) return '#8ed4dd' } catch { /* ignore */ }
+  if (node.priority === 'high')      return '#f0a3a3' // rojo pastel
+  if (node.priority === 'medium')    return '#f5c197' // naranja pastel
+  if (node.priority === 'low')       return '#9bd6a3' // verde pastel
+  return '#a8c5ec' // azul pastel — default tarea
 }
 
 function nodeIcon(node: Node): string {
@@ -265,6 +260,85 @@ function nodeIcon(node: Node): string {
   if (node.isSeguimiento) return '👁'
   try { if (JSON.parse(node.extraData || '{}')._resource) return '◆' } catch { /* ignore */ }
   return ''
+}
+
+// ── Overlap layout: algoritmo tipo Google Calendar ────────────────────────────
+// Para un set de eventos del MISMO día, calcula left%/width%/zIndex de modo
+// que los superpuestos compartan el ancho de la columna en sub-columnas, y
+// los más cortos queden por encima (z-index alto) para no quedar tapados.
+interface LaidEvent {
+  id: string
+  startMs: number
+  endMs: number
+  durationMs: number
+}
+interface Layout {
+  leftPct: number
+  widthPct: number
+  zIndex: number
+}
+
+function computeOverlapLayout(events: LaidEvent[]): Map<string, Layout> {
+  const result = new Map<string, Layout>()
+  if (events.length === 0) return result
+
+  // 1) Orden estable: por start asc, luego por duration DESC
+  // (los largos cogen columna izquierda antes; los cortos llegan a columnas
+  //  más a la derecha y/o quedan por encima visualmente).
+  const sorted = [...events].sort((a, b) => {
+    if (a.startMs !== b.startMs) return a.startMs - b.startMs
+    return b.durationMs - a.durationMs
+  })
+
+  // 2) Calcular clusters de solapamiento. Un cluster es un grupo conexo de
+  //    eventos donde cada uno solapa con al menos otro del cluster.
+  type Cluster = { events: LaidEvent[]; maxEnd: number }
+  const clusters: Cluster[] = []
+  for (const ev of sorted) {
+    const last = clusters[clusters.length - 1]
+    if (last && ev.startMs < last.maxEnd) {
+      last.events.push(ev)
+      last.maxEnd = Math.max(last.maxEnd, ev.endMs)
+    } else {
+      clusters.push({ events: [ev], maxEnd: ev.endMs })
+    }
+  }
+
+  // 3) Dentro de cada cluster, asignar columnas: para cada evento, primera
+  //    columna cuyo último evento no solape con el actual.
+  for (const cluster of clusters) {
+    const cols: LaidEvent[][] = []
+    const assign = new Map<string, number>()
+    for (const ev of cluster.events) {
+      let placed = false
+      for (let c = 0; c < cols.length; c++) {
+        const last = cols[c][cols[c].length - 1]
+        if (last.endMs <= ev.startMs) {
+          cols[c].push(ev)
+          assign.set(ev.id, c)
+          placed = true
+          break
+        }
+      }
+      if (!placed) {
+        cols.push([ev])
+        assign.set(ev.id, cols.length - 1)
+      }
+    }
+    const totalCols = cols.length
+    for (const ev of cluster.events) {
+      const col = assign.get(ev.id) ?? 0
+      // Solape visual del 8% para que se note el evento de detrás (estilo GCal).
+      const baseWidth = 100 / totalCols
+      const widthPct = totalCols === 1 ? 100 : baseWidth + (baseWidth * 0.08)
+      const leftPct = col * baseWidth
+      // zIndex: más corto = más alto. Base 10, +1 por cada minuto menos.
+      const zIndex = 10 + Math.max(0, Math.round((24 * 60 * 60 * 1000 - ev.durationMs) / 60000))
+      result.set(ev.id, { leftPct, widthPct: Math.min(widthPct, 100 - leftPct), zIndex })
+    }
+  }
+
+  return result
 }
 
 // Returns true if the ISO date string has a time component (non-midnight)
@@ -504,6 +578,26 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
             {/* Columnas por día (celdas clicables + eventos) */}
             {days.map((day, di) => {
               const timedNodes = getTimedNodes(day)
+              const gcalTimed = getGoogleTimed(day)
+
+              // Construir lista unificada para el layout de solape
+              const laid: LaidEvent[] = []
+              for (const n of timedNodes) {
+                if (!n.due) continue
+                const startMs = new Date(n.due).getTime()
+                const endMs = n.dueEnd
+                  ? new Date(n.dueEnd).getTime()
+                  : startMs + 3600000 // 1h por defecto
+                laid.push({ id: 'from:' + n.id, startMs, endMs, durationMs: Math.max(1, endMs - startMs) })
+              }
+              for (const ev of gcalTimed) {
+                if (!ev.start) continue
+                const startMs = new Date(ev.start).getTime()
+                const endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+                laid.push({ id: 'gcal:' + ev.id, startMs, endMs, durationMs: Math.max(1, endMs - startMs) })
+              }
+              const layoutMap = computeOverlapLayout(laid)
+
               return (
                 <div
                   key={di}
@@ -570,6 +664,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     }
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    const lay = layoutMap.get('from:' + node.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
                     return (
                       <button
                         key={node.id}
@@ -580,7 +675,15 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           e.dataTransfer.setData('eventId', node.id)
                           e.dataTransfer.effectAllowed = 'move'
                         }}
-                        style={{ top: topPx, height: heightPx, background: priorityBg(node), cursor: 'grab' }}
+                        style={{
+                          top: topPx,
+                          height: heightPx,
+                          left: `calc(${lay.leftPct}% + 2px)`,
+                          width: `calc(${lay.widthPct}% - 4px)`,
+                          zIndex: lay.zIndex,
+                          background: priorityBg(node),
+                          cursor: 'grab',
+                        }}
                         onClick={e => {
                           e.stopPropagation()
                           setQuickCreate(null)
@@ -598,7 +701,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   })}
 
                   {/* Eventos con hora — Google Calendar */}
-                  {getGoogleTimed(day).map(ev => {
+                  {gcalTimed.map(ev => {
                     const d = new Date(ev.start)
                     const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
                     let durationH = 1
@@ -608,11 +711,18 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     }
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    const lay = layoutMap.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
                     return (
                       <div
                         key={ev.id}
                         className="calendar-event-block calendar-event-block--gcal"
-                        style={{ top: topPx, height: heightPx }}
+                        style={{
+                          top: topPx,
+                          height: heightPx,
+                          left: `calc(${lay.leftPct}% + 2px)`,
+                          width: `calc(${lay.widthPct}% - 4px)`,
+                          zIndex: lay.zIndex,
+                        }}
                         title={ev.title}
                       >
                         <span className="calendar-event-time">{timeLabel}</span>
