@@ -49,6 +49,18 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
       <span className="status-bar-version" title="Versión">
         {WEB_VERSION}
       </span>
+      <span style={{
+        background: '#7c3aed',
+        color: '#fff',
+        fontSize: '10px',
+        fontWeight: 700,
+        padding: '1px 6px',
+        borderRadius: '4px',
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+      }}>
+        WF
+      </span>
     </div>
   )
 }
