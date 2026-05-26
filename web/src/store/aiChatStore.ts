@@ -15,6 +15,19 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   actions: ExecutedAction[]
+  /** Chips de acción sugeridos por la IA al final del mensaje */
+  chips?: string[]
+}
+
+/** Parsea y elimina {{chips:[...]}} del texto. Devuelve texto limpio + chips. */
+export function parseChips(text: string): { cleanText: string; chips: string[] } {
+  const match = text.match(/\{\{chips:([\s\S]*?)\}\}\s*$/)
+  if (!match) return { cleanText: text, chips: [] }
+  try {
+    const chips = JSON.parse(match[1]) as string[]
+    const cleanText = text.slice(0, text.lastIndexOf('{{chips:')).trim()
+    return { cleanText, chips: Array.isArray(chips) ? chips.slice(0, 4) : [] }
+  } catch { return { cleanText: text, chips: [] } }
 }
 
 export interface ExecutedAction {
@@ -151,7 +164,16 @@ class AIChatStore {
             }
           }
         )
-        store.updateNode(assistantMsgId, { text: assistantText })
+        // Parsear y aplicar chips de seguimiento al mensaje assistant
+        const { cleanText, chips } = parseChips(assistantText)
+        if (chips.length > 0) {
+          const idx2 = this.messages.findIndex(m => m.id === assistantMsgId)
+          if (idx2 >= 0) {
+            this.messages[idx2] = { ...this.messages[idx2], content: cleanText, chips }
+            this.notify()
+          }
+        }
+        store.updateNode(assistantMsgId, { text: cleanText || assistantText })
       } catch (e) {
         this.lastError = e instanceof Error ? e.message : String(e)
         this.isStreaming = false

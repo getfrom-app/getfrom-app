@@ -188,12 +188,11 @@ function addColumn(a: Record<string, unknown>): ExecutedAction {
 
   const name = (a.name as string) || 'Columna'
   const type = (a.type as string) || 'text'
-  const schema = parsePropsArray(node.props ?? null)
-  const colId = 'col_' + Math.random().toString(36).slice(2, 12)
-  const newCol: Record<string, unknown> = { id: colId, name, type }
-  if (Array.isArray(a.options)) newCol.options = a.options
-  schema.push(newCol)
-  store.updateNode(tableId, { props: JSON.stringify(schema) })
+  // CORRECTO: usa store.addPropColumn que escribe en extraData._props
+  // (el executor viejo escribía en node.props → campo incorrecto, UI no lo veía)
+  const colId = store.addPropColumn(tableId, name, type,
+    Array.isArray(a.options) ? (a.options as Array<{ id: string; label: string }>) : undefined
+  )
   return result('add_column', true,
     `Columna «${name}» (${type}) añadida a «${node.text}». col_id=${colId}`,
     [tableId])
@@ -213,20 +212,15 @@ function fillColumn(a: Record<string, unknown>): ExecutedAction {
 
   if (byId) {
     for (const [rowId, value] of Object.entries(byId)) {
-      const child = store.nodes.get(rowId)
-      if (!child) continue
-      const props = parsePropsObject(child.props ?? null)
-      props[columnId] = value
-      store.updateNode(rowId, { props: JSON.stringify(props) })
+      if (!store.nodes.get(rowId)) continue
+      // CORRECTO: usa store.setPropValue que escribe en extraData._props del hijo
+      store.setPropValue(rowId, columnId, value)
       updated.push(rowId)
     }
   } else if (Array.isArray(arr)) {
     for (let i = 0; i < arr.length && i < children.length; i++) {
-      const child = children[i]
-      const props = parsePropsObject(child.props ?? null)
-      props[columnId] = arr[i]
-      store.updateNode(child.id, { props: JSON.stringify(props) })
-      updated.push(child.id)
+      store.setPropValue(children[i].id, columnId, arr[i])
+      updated.push(children[i].id)
     }
   } else {
     return result('fill_column', false, 'Falta values o values_by_row_id.')
@@ -247,8 +241,9 @@ function addRow(a: Record<string, unknown>): ExecutedAction {
     text,
     parentId: tableId,
   })
-  if (Object.keys(values).length > 0) {
-    store.updateNode(created.id, { props: JSON.stringify(values) })
+  // CORRECTO: usa setPropValue para cada valor en extraData._props
+  for (const [colId, value] of Object.entries(values)) {
+    store.setPropValue(created.id, colId, value)
   }
   return result('add_row', true, `Fila «${text}» añadida.`, [created.id])
 }

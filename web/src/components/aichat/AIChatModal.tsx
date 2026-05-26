@@ -8,6 +8,45 @@ import { useNavigate } from 'react-router-dom'
 import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 
+/** Chips de seguimiento que aparecen debajo del último mensaje del assistant */
+function QuickReplyChips({ chips, onSelect, disabled }: {
+  chips: string[]
+  onSelect: (text: string) => void
+  disabled: boolean
+}) {
+  if (!chips.length) return null
+  return (
+    <div style={{
+      display: 'flex', flexWrap: 'wrap', gap: 6,
+      padding: '4px 16px 8px',
+    }}>
+      {chips.map((chip, i) => (
+        <button
+          key={i}
+          disabled={disabled}
+          onClick={() => onSelect(chip)}
+          style={{
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--accent)',
+            borderRadius: 20,
+            padding: '4px 12px',
+            fontSize: 12,
+            color: 'var(--accent)',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            transition: 'all 0.12s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => { if (!disabled) (e.target as HTMLElement).style.background = 'var(--accent)'; (e.target as HTMLElement).style.color = 'white' }}
+          onMouseLeave={e => { (e.target as HTMLElement).style.background = 'var(--bg-primary)'; (e.target as HTMLElement).style.color = 'var(--accent)' }}
+        >
+          {chip}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 interface Props {
   onClose: () => void
   currentNodeId?: string
@@ -65,16 +104,27 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
     rec.lang = (localStorage.getItem('from_ai_language') === 'en') ? 'en-US' : 'es-ES'
     rec.continuous = true
     rec.interimResults = true
-    let interim = ''
-    let final = ''
+
+    // Capturamos el texto ANTES de grabar (para no duplicarlo)
+    const capturedStart = input.trim()
+    // Ref mutable para el transcript final acumulado (evita closures stale)
+    let finalTranscript = ''
+
     rec.onresult = (event: { resultIndex: number; results: { length: number; [key: number]: { 0: { transcript: string }; isFinal: boolean } } }) => {
-      interim = ''
+      let interimTranscript = ''
+      // Loop desde resultIndex: solo procesamos los NUEVOS resultados
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript
-        if (event.results[i].isFinal) final += t
-        else interim += t
+        if (event.results[i].isFinal) {
+          finalTranscript += t + ' '  // acumula solo finals
+        } else {
+          interimTranscript += t      // interim se reconstruye cada evento
+        }
       }
-      setInput(prev => (prev ? prev + ' ' : '') + (final + interim).trim())
+      // Combina: texto previo + finals acumulados + interim actual
+      const combined = [capturedStart, (finalTranscript + interimTranscript).trim()]
+        .filter(Boolean).join(' ')
+      setInput(combined.trim())
     }
     rec.onend = () => setIsRecording(false)
     rec.start()
@@ -165,6 +215,21 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
               disabled={chat.isStreaming}
             />
           )}
+          {/* Quick reply chips — del último mensaje assistant */}
+          {(() => {
+            const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant')
+            const chips = lastAssistant?.chips ?? []
+            return chips.length > 0 && !chat.isStreaming && !chat.pendingActions ? (
+              <QuickReplyChips
+                chips={chips}
+                disabled={chat.isStreaming}
+                onSelect={(chip) => {
+                  setInput('')
+                  chat.send(chip, currentNodeId)
+                }}
+              />
+            ) : null
+          })()}
           {chat.actionStatus && (
             <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>
               <span style={{ marginRight: 6 }}>⚙</span>{chat.actionStatus}
