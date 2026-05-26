@@ -6,6 +6,7 @@ import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
+import TemplateCodePicker from './TemplateCodePicker'
 import NodeTableView from '../views/NodeTableView'
 import NodeKanbanView from '../views/NodeKanbanView'
 import NodeCalendarView from '../views/NodeCalendarView'
@@ -188,6 +189,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [hovered, setHovered] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
+  const [showCodePicker, setShowCodePicker] = useState(false)
+  const [codeQuery, setCodeQuery] = useState('')
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDragOverChild, setIsDragOverChild] = useState(false)
@@ -447,9 +450,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setShowSlash(true)
       setSlashQuery(slashDetect[2])
       setPicker(null)
+      setShowCodePicker(false)
+      setCodeQuery('')
     } else {
       setShowSlash(false)
       setSlashQuery('')
+    }
+
+    // Template code picker: '{{' trigger
+    const codeDetect = beforeSlashCheck.match(/\{\{([^}\s]*)$/)
+    if (codeDetect && !slashDetect) {
+      setShowCodePicker(true)
+      setCodeQuery(codeDetect[1] || '')
+    } else {
+      setShowCodePicker(false)
+      setCodeQuery('')
     }
 
     // Auto-conversión markdown al escribir (estilo Notion: el prefijo desaparece tras el espacio):
@@ -1267,6 +1282,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function openNode() {
     navigate(`/node/${node.id}`)
+  }
+
+  function handleCodeSelect(code: string) {
+    const el = contentRef.current
+    if (!el) { setShowCodePicker(false); setCodeQuery(''); return }
+    const text = nodeTextRef.current
+    const caretPos = getCaretPosition(el)
+    const beforeCaret = text.slice(0, caretPos)
+    const braceIdx = beforeCaret.lastIndexOf('{{')
+    if (braceIdx === -1) { setShowCodePicker(false); setCodeQuery(''); return }
+    const inserted = `{{${code}}}`
+    const newText = text.slice(0, braceIdx) + inserted + text.slice(caretPos)
+    nodeTextRef.current = newText
+    store.updateNode(node.id, { text: newText })
+    el.textContent = newText
+    // Reposicionar cursor tras el código insertado
+    try {
+      const range = document.createRange()
+      const sel = window.getSelection()
+      const textNode = el.firstChild
+      if (textNode) {
+        const newPos = Math.min(braceIdx + inserted.length, (textNode as Text).length)
+        range.setStart(textNode, newPos)
+        range.collapse(true)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+    } catch { /* ignore */ }
+    setShowCodePicker(false)
+    setCodeQuery('')
   }
 
   function handleSlashSelect({ prefix, action }: SlashSelectPayload) {
@@ -2239,6 +2284,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           query={slashQuery}
           onSelect={handleSlashSelect}
           onClose={() => { setShowSlash(false); setSlashQuery('') }}
+        />
+      )}
+
+      {/* Template code picker — trigger: {{ */}
+      {showCodePicker && (
+        <TemplateCodePicker
+          anchorEl={contentRef.current}
+          query={codeQuery}
+          onSelect={handleCodeSelect}
+          onClose={() => { setShowCodePicker(false); setCodeQuery('') }}
         />
       )}
 

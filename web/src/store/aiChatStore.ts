@@ -8,6 +8,7 @@ import { store, type NodeStore } from './nodeStore'
 import type { Node } from '../types'
 import { aiChatStream, type ChatActionResult } from '../api/client'
 import { executeChatAction } from './aiChatExecutor'
+import { resolveTemplateCodes } from '../utils/templateCodes'
 
 export interface ChatMessage {
   id: string
@@ -351,16 +352,25 @@ class AIChatStore {
     })()
 
     // Enriquecer tagDefs con prompts hijos (_tagPrompt="1") de cada tag.
+    // Contexto para resolver códigos de plantilla
+    const currentNoteTitle = currentNodeId ? (store.nodes.get(currentNodeId)?.text ?? '') : ''
+
     function enrichTag(name: string, body: string): string {
+      const ctx = { tagName: name, noteTitle: currentNoteTitle }
       const defNode = store.getTagDefNode(name)
-      if (!defNode) return body
+      if (!defNode) return resolveTemplateCodes(body, ctx)
       const prompts = store.children(defNode.id).filter(child => {
         try { return JSON.parse(child.extraData || '{}')._tagPrompt === '1' } catch { return false }
       })
-      if (prompts.length === 0) return body
+      // Resolver códigos en el body del tag y en cada prompt
+      const resolvedBody = resolveTemplateCodes(body, ctx)
+      if (prompts.length === 0) return resolvedBody
       const section = '\n\n## Prompts disponibles para este tag:\n' +
-        prompts.map(p => `### ${p.text}\n${(p.body || '').trim() || '(sin instrucciones)'}`).join('\n\n')
-      return body + section
+        prompts.map(p => {
+          const resolvedContent = resolveTemplateCodes((p.body || '').trim(), ctx)
+          return `### ${p.text}\n${resolvedContent || '(sin instrucciones)'}`
+        }).join('\n\n')
+      return resolvedBody + section
     }
 
     const enrichedTagDefs: Record<string, string> = {}
