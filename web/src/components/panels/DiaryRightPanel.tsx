@@ -1009,7 +1009,10 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()
 
-  const allDayTasks = s.allActive().filter(n => n.status !== null && !n.deletedAt && n.due)
+  const allDayTasks = s.allActive().filter(n =>
+    n.status !== null && !n.deletedAt && n.due
+    && !n.isSeguimiento && !(n.types || []).includes('bucle')
+  )
 
   const tasksByHour: Record<number, Node[]> = {}
   for (const h of hours) {
@@ -1028,7 +1031,10 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   })
 
   // ── Events for timeline ────────────────────────────────────────────────
-  const allEvents = s.allActive().filter(n => n.isEvent && n.due && !n.deletedAt)
+  const allEvents = s.allActive().filter(n =>
+    n.isEvent && n.due && !n.deletedAt
+    && !n.isSeguimiento && !(n.types || []).includes('bucle')
+  )
   const eventsByHour: Record<number, Node[]> = {}
   for (const h of hours) {
     eventsByHour[h] = []

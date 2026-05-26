@@ -989,7 +989,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const cleanText = trimmed.slice(0, -3).trimEnd()
         const newTypes = node.types?.includes('bucle') ? node.types : [...(node.types || []), 'bucle']
         nodeTextRef.current = cleanText
-        store.updateNode(node.id, { text: cleanText, status: 'pending', types: newTypes })
+        // Bucle = nota abierta sin fecha sin status. NO es una tarea.
+        store.updateNode(node.id, {
+          text: cleanText,
+          types: newTypes,
+          isSeguimiento: true,
+          status: null,
+          due: null,
+          dueEnd: null,
+          recurrence: null,
+          isEvent: false,
+        })
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
@@ -1312,22 +1322,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (action === 'task') {
       updates.status = 'pending'
       if (!node.due) updates.due = todayISOslash
-    } else if (action === 'bucle') {
-      updates.status = 'pending'
-      if (!node.due) updates.due = todayISOslash
+    } else if (action === 'bucle' || action === 'loop') {
+      // Bucle = nota abierta SIN fecha SIN status. Contenedor binario.
       const existingTypes = node.types || []
       if (!existingTypes.includes('bucle')) {
         updates.types = [...existingTypes, 'bucle']
       }
+      updates.isSeguimiento = true
+      updates.status = null
+      updates.due = null
+      updates.dueEnd = null
+      updates.recurrence = null
+      updates.isEvent = false
     } else if (action === 'event') {
       updates.isEvent = true
       updates.status = null
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    } else if (action === 'loop') {
-      // Abrir bucle: nota activa, sin fecha, sin status
-      updates.isSeguimiento = true
-      updates.due = null
-      updates.status = null
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
       const existingTypes = node.types || []

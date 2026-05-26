@@ -999,15 +999,7 @@ export default function NodeView() {
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
-  function toggleSeguimiento() {
-    const newVal = !node!.isSeguimiento
-    // Al activar seguimiento, quitar el status de tarea para evitar duplicidades
-    const updates: Record<string, unknown> = { isSeguimiento: newVal }
-    if (newVal && node!.status !== null) updates.status = null
-    store.updateNode(node!.id, updates as Parameters<typeof store.updateNode>[1])
-    setQuickActionMsg(newVal ? '✓ Nota activa' : '✓ Nota desactivada')
-    setTimeout(() => setQuickActionMsg(null), 2000)
-  }
+  // toggleSeguimiento eliminado: ahora vive sólo en NodeRightPanel como botón "Bucle".
 
   function handleExportPdf() {
     window.print()
@@ -1582,13 +1574,9 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* ── Marcar como Activa ── */}
-              <button
-                className={`node-action-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
-                onClick={toggleSeguimiento}
-                title={node.isSeguimiento ? 'Cerrar bucle' : 'Abrir bucle'}
-                style={{ color: node.isSeguimiento ? '#8b5cf6' : undefined, fontSize: 14, fontWeight: 700 }}
-              >●</button>
+              {/* (Antes había un ● para abrir/cerrar bucle aquí. Movido al
+                  panel derecho como botón "Bucle" para evitar confusión con
+                  tareas y para que no se pueda agendar). */}
 
               {/* ── ··· Más opciones ── */}
               <div style={{ position: 'relative' }}>

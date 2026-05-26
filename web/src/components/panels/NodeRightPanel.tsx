@@ -59,9 +59,28 @@ export default function NodeRightPanel({ node }: Props) {
   function toggleFavorite() { store.updateNode(node.id, { isFavorite: !node.isFavorite }) }
   function toggleSeguimiento() {
     const newVal = !node.isSeguimiento
-    const updates: Record<string, unknown> = { isSeguimiento: newVal }
-    if (newVal && node.status !== null) updates.status = null
-    store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
+    if (newVal) {
+      // Activar bucle: limpia todo lo que pueda hacer que se trate como tarea/evento.
+      // Un bucle es una nota abierta sin fecha sin status, contenedor binario.
+      const existingTypes = node.types || []
+      const newTypes = existingTypes.includes('bucle') ? existingTypes : [...existingTypes, 'bucle']
+      store.updateNode(node.id, {
+        isSeguimiento: true,
+        types: newTypes,
+        status: null,
+        due: null,
+        dueEnd: null,
+        recurrence: null,
+        isEvent: false,
+      })
+    } else {
+      // Desactivar bucle: vuelve a nota normal. Quitar también el tag 'bucle'.
+      const newTypes = (node.types || []).filter(t => t !== 'bucle')
+      store.updateNode(node.id, {
+        isSeguimiento: false,
+        types: newTypes,
+      })
+    }
   }
   // ── Event popup ──────────────────────────────────────────────────────────
   const [showEventPopup, setShowEventPopup] = useState(false)
@@ -296,6 +315,14 @@ export default function NodeRightPanel({ node }: Props) {
         </button>
         <button className={`prop-icon-btn ${isResource ? 'active resource' : ''}`} onClick={toggleResource} title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}>
           🔗 Recurso
+        </button>
+        <button
+          className={`prop-icon-btn ${node.isSeguimiento ? 'active bucle' : ''}`}
+          onClick={toggleSeguimiento}
+          title={node.isSeguimiento ? 'Cerrar bucle (vuelve a nota normal)' : 'Marcar como bucle (nota abierta sin fecha)'}
+          style={node.isSeguimiento ? { color: '#8b5cf6' } : undefined}
+        >
+          ● Bucle
         </button>
       </div>
 

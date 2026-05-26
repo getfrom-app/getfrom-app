@@ -739,8 +739,8 @@ class NodeStore {
   scheduleNodeAt(nodeId: string, iso: string): string | null {
     const node = this.getNode(nodeId)
     if (!node) return null
-    // Bucle: no debe tener fecha. Ignorar agendado silenciosamente.
-    if (node.isSeguimiento) return null
+    // Bucle: NO se puede agendar. Es un contenedor binario abierto/cerrado.
+    if (node.isSeguimiento || (node.types || []).includes('bucle')) return null
     const updates: Partial<Node> = { due: iso }
     // Limpiar dueEnd al reprogramar — si no, una duración antigua haría que el
     // bloque se extienda al día siguiente y aparezca duplicado en el calendario
