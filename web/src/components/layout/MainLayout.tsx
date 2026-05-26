@@ -32,7 +32,7 @@ const AgentsView = lazy(() => import('../views/AgentsView'))
 const ChatView = lazy(() => import('../views/ChatView'))
 const KanbanView = lazy(() => import('../views/KanbanView'))
 const TagView = lazy(() => import('../views/TagView'))
-const FollowupView = lazy(() => import('../views/FollowupView'))
+// FollowupView eliminado en v8.20 (bucle ya no es concepto). El route apunta a DiaryRedirect.
 const FilesView = lazy(() => import('../views/FilesView'))
 const InboxView = lazy(() => import('../views/InboxView'))
 const TrashView = lazy(() => import('../views/TrashView'))
@@ -192,8 +192,8 @@ export default function MainLayout() {
       if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         const viewMap: Record<string, string> = {
           '1': '/', '2': '/tasks', '3': '/calendar',
-          '4': '/search', '5': '/kanban', '6': '/followup',
-          '7': '/agents', '8': '/chat',
+          '4': '/search', '5': '/kanban',
+          '6': '/agents', '7': '/chat',
         }
         if (viewMap[e.key]) {
           const active = document.activeElement
@@ -323,7 +323,8 @@ export default function MainLayout() {
         <Routes>
           <Route index element={<DiaryRedirect />} />
           <Route path="tasks" element={<TasksView />} />
-          <Route path="followup" element={<FollowupView />} />
+          {/* /followup obsoleto desde v8.20: redirige al diario */}
+          <Route path="followup" element={<DiaryRedirect />} />
           <Route path="search" element={<SearchView />} />
           <Route path="calendar" element={<CalendarView />} />
           <Route path="resources" element={<ResourcesView />} />

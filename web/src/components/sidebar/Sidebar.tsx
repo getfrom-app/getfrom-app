@@ -542,17 +542,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span>Tareas{pendingCount > 0 ? ` (${pendingCount})` : ''}</span>
             </button>
             <button
-              className={`nav-item ${isActive('/followup') ? 'active' : ''}`}
-              onClick={() => navigate('/followup')}
-              title="Bucles"
-            >
-              <span className="nav-icon">●</span>
-              <span>Bucles</span>
-              {activeBuclesCount > 0 && (
-                <span className="nav-badge">{activeBuclesCount}</span>
-              )}
-            </button>
-            <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
               onClick={() => navigate('/calendar')}
               title="Calendario"
@@ -629,16 +618,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               title="Tareas"
             >
               <span className="nav-icon">✓</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/followup') ? 'active' : ''}`}
-              onClick={() => navigate('/followup')}
-              title="Bucles"
-            >
-              <span className="nav-icon">●</span>
-              {activeBuclesCount > 0 && (
-                <span className="nav-badge nav-badge--collapsed">{activeBuclesCount}</span>
-              )}
             </button>
             <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
