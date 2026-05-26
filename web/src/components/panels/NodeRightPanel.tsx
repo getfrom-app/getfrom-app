@@ -236,15 +236,16 @@ export default function NodeRightPanel({ node }: Props) {
     const safe = Math.max(1, Math.round(n) || 1)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
-  const nodeColor = (nodeMeta(node).color ?? null)
-  const colors = [null, '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
-  function setColor(color: string | null) {
+  // ── Estado unificado (tareas, eventos, recursos) ────────────────────────
+  // Para recursos: usa _resourceStatus; para tareas/eventos: usa node.status
+  const resourceStatus = nodeMeta(node).resourceStatus ?? 'pending'
+  function setResourceStatus(val: string) {
     try {
       const ed = JSON.parse(node.extraData || '{}')
-      if (color) ed.color = color; else delete ed.color
+      ed._resourceStatus = val
       store.updateNode(node.id, { extraData: JSON.stringify(ed) })
     } catch {
-      if (color) store.updateNode(node.id, { extraData: JSON.stringify({ color }) })
+      store.updateNode(node.id, { extraData: JSON.stringify({ _resourceStatus: val }) })
     }
   }
 
@@ -274,11 +275,15 @@ export default function NodeRightPanel({ node }: Props) {
 
   const showTasksBlock = node.status === null && !node.isEvent && !nodeMeta(node).resource
 
+  // ── Determinar el tipo de nodo ─────────────────────────────────────────
+  const isTask     = node.status !== null && !node.isEvent && !isResource
+  const showProps  = node.status !== null || node.isEvent || isResource // tarea/evento/recurso
+
   return (
     <>
     <div className="node-right-panel">
 
-      {/* Tareas asociadas — bloque universal para notas */}
+      {/* ── Tareas asociadas — solo para notas planas ─────────────────────── */}
       {showTasksBlock && (
         <div className="node-right-tasks-block">
           <div className="node-right-tasks-header">
@@ -313,12 +318,8 @@ export default function NodeRightPanel({ node }: Props) {
           {taskInputVisible && (
             <div className="node-right-task-input-row">
               <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>○</span>
-              <input
-                ref={taskInputRef}
-                className="node-right-task-input"
-                placeholder="Nueva tarea…"
-                value={newTaskText}
-                onChange={e => setNewTaskText(e.target.value)}
+              <input ref={taskInputRef} className="node-right-task-input" placeholder="Nueva tarea…"
+                value={newTaskText} onChange={e => setNewTaskText(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') createAssociatedTask()
                   if (e.key === 'Escape') { setTaskInputVisible(false); setNewTaskText('') }
@@ -336,7 +337,7 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       )}
 
-      {/* Ver área completa — solo cuando hay tag definitions */}
+      {/* Ver área completa */}
       {tagNodes.map(td => (
         <div key={td.id} className="prop-section">
           <button className="prop-area-link" onClick={() => navigate(`/node/${td.id}`)}>
@@ -347,70 +348,66 @@ export default function NodeRightPanel({ node }: Props) {
         </div>
       ))}
 
-      {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
+      {/* ── Botones Tarea / Evento / Recurso — siempre visibles ─────────── */}
       <div className="prop-row">
         <button
-          className={`prop-icon-btn ${node.status !== null && !isResource && !node.isEvent ? 'active' : ''}`}
+          className={`prop-icon-btn ${isTask ? 'active' : ''}`}
           onClick={() => {
-            if (node.status !== null && !isResource && !node.isEvent) {
-              store.updateNode(node.id, { status: null })
-            } else if (isResource || node.isEvent) {
-              return
-            } else {
+            if (isTask) { store.updateNode(node.id, { status: null }) }
+            else if (!isResource && !node.isEvent) {
               store.updateNode(node.id, { status: 'pending', due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
-          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : 'Tarea'}
+          title={isResource ? 'Es un recurso' : node.isEvent ? 'Es un evento' : isTask ? 'Quitar tarea' : 'Convertir en tarea'}
           style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
-        >
-          ○ Tarea
-        </button>
+        >○ Tarea</button>
         <button
           ref={eventBtnRef}
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={openEventPopup}
           title={node.isEvent ? 'Quitar evento' : 'Convertir en evento'}
-        >
-          📅 Evento
-        </button>
-        <button className={`prop-icon-btn ${isResource ? 'active resource' : ''}`} onClick={toggleResource} title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}>
-          🔗 Recurso
-        </button>
+        >📅 Evento</button>
+        <button
+          className={`prop-icon-btn ${isResource ? 'active resource' : ''}`}
+          onClick={toggleResource}
+          title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}
+        >🔗 Recurso</button>
       </div>
 
-      {/* ── Panel de recurso ────────────────────────────────────────────────── */}
+      {/* ── ResourcePanel: thumbnail + URL + tipo (solo recursos) ─────────── */}
       {isResource && <ResourcePanel node={node} />}
 
-      {/* ── Estado (solo si es tarea, evento o recurso) ─ */}
-      {(node.status !== null || isResource || node.isEvent) && !node.isEvent && (
+      {/* ════════════════════════════════════════════════════════════════════
+          BLOQUE PROPIEDADES: Estado → Fecha → Repetición → Prioridad
+          Visible solo para tareas, eventos y recursos
+          ════════════════════════════════════════════════════════════════════ */}
+
+      {/* ── 1. ESTADO ────────────────────────────────────────────────────── */}
+      {showProps && (
         <div className="prop-section">
           <div className="prop-section-label">Estado</div>
-          <div className="prop-pills">
-            {statusOptions.map(opt => (
-              <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`} onClick={() => setStatus(opt.value)}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {isResource ? (
+            // Recursos: estado propio (resourceStatus)
+            <div className="prop-pills">
+              {([['pending','● Pendiente'],['future','◆ Futuro'],['done','✓ Hecho']] as [string,string][]).map(([val, label]) => (
+                <button key={val} className={`prop-pill ${resourceStatus === val ? 'active' : ''}`}
+                  onClick={() => setResourceStatus(val)}>{label}</button>
+              ))}
+            </div>
+          ) : (
+            // Tareas y eventos: node.status
+            <div className="prop-pills">
+              {statusOptions.map(opt => (
+                <button key={String(opt.value)} className={`prop-pill ${node.status === opt.value ? 'active' : ''}`}
+                  onClick={() => setStatus(opt.value)}>{opt.label}</button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Prioridad (solo si tiene status pendiente) ─────────────────────── */}
-      {node.status === 'pending' && (
-        <div className="prop-section">
-          <div className="prop-section-label">Prioridad</div>
-          <div className="prop-pills">
-            {priorityOptions.map(opt => (
-              <button key={String(opt.value)} className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`} onClick={() => setPriority(opt.value)} style={opt.style}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Fecha (solo si es tarea o recurso, oculta si status es future/done) ── */}
-      {(node.status !== null || isResource) && !node.isEvent && node.status !== 'future' && node.status !== 'done' && (
+      {/* ── 2. FECHA (tareas y recursos; eventos tienen su sección propia) ── */}
+      {showProps && !node.isEvent && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">
@@ -423,9 +420,8 @@ export default function NodeRightPanel({ node }: Props) {
               const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
               const iso = d.toISOString().slice(0, 10)
               return (
-                <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`} onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>
-                  {label}
-                </button>
+                <button key={label} className={`prop-quick-date-btn ${dueDate === iso ? 'active' : ''}`}
+                  onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>{label}</button>
               )
             })}
             {dueDate && <button className="prop-quick-date-btn" onClick={() => setDue('', '')}>✕</button>}
@@ -433,25 +429,30 @@ export default function NodeRightPanel({ node }: Props) {
           <div className="prop-datetime" style={{ marginTop: 6 }}>
             <input type="date" className="prop-date-input" value={dueDate}
               onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
-            <input type="time" className="prop-time-input"
-              value={hasLocalTime(node.due) ? dueTime : ''}
+            <input type="time" className="prop-time-input" value={hasLocalTime(node.due) ? dueTime : ''}
               onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
             {hasLocalTime(node.due) && dueDate && (
               <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
             )}
           </div>
+          {/* Fecha fin (standalone para tareas/recursos) */}
+          {node.dueEnd && (
+            <div className="prop-datetime" style={{ marginTop: 6 }}>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginRight: 4 }}>Fin</span>
+              <input type="date" className="prop-date-input" value={dueEndDate} onChange={e => setDueEnd(e.target.value, dueEndTime)} />
+              <input type="time" className="prop-time-input" value={dueEndTime} onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Propiedades de evento ────────────────────────────────────────── */}
+      {/* ── 2b. FECHA EVENTO (inicio/fin/hora/lugar/GCal) ────────────────── */}
       {node.isEvent && (
         <div className="prop-section prop-section--event">
           <div className="prop-section-label">
-            📅 Evento
+            Fecha
             {gcalEventId && <span className="prop-gcal-badge" title="Sincronizado con Google Calendar">GCal ✓</span>}
           </div>
-
-          {/* Fecha inicio */}
           <div className="prop-event-row">
             <span className="prop-event-field-label">Inicio</span>
             <div className="prop-datetime">
@@ -471,144 +472,123 @@ export default function NodeRightPanel({ node }: Props) {
               )}
             </div>
           </div>
-
-          {/* Fecha fin — solo si hay hora de inicio */}
           {hasLocalTime(node.due) && (
-          <div className="prop-event-row">
-            <span className="prop-event-field-label">Fin</span>
-            <div className="prop-datetime">
-              <input type="date" className="prop-date-input" value={dueEndDate}
-                onChange={e => setDueEnd(e.target.value, dueEndTime)} />
-              <input type="time" className="prop-time-input" value={dueEndTime}
-                onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
+            <div className="prop-event-row">
+              <span className="prop-event-field-label">Fin</span>
+              <div className="prop-datetime">
+                <input type="date" className="prop-date-input" value={dueEndDate}
+                  onChange={e => setDueEnd(e.target.value, dueEndTime)} />
+                <input type="time" className="prop-time-input" value={dueEndTime}
+                  onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
+              </div>
             </div>
-          </div>
           )}
-
-          {/* Localización */}
           <div className="prop-event-row">
             <span className="prop-event-field-label">Lugar</span>
-            <input
-              type="text"
-              className="prop-event-location"
-              value={evtLocation_stored}
+            <input type="text" className="prop-event-location" value={evtLocation_stored}
               placeholder="Añadir lugar..."
               onChange={e => {
                 let ed: Record<string, unknown> = {}
                 try { ed = JSON.parse(node.extraData || '{}') } catch {}
-                if (e.target.value.trim()) ed.location = e.target.value
-                else delete ed.location
+                if (e.target.value.trim()) ed.location = e.target.value; else delete ed.location
                 store.updateNode(node.id, { extraData: JSON.stringify(ed) })
               }}
               onBlur={async () => {
                 if (!gcalEventId || !node.due) return
                 try {
                   await updateCalendarEvent(gcalEventId, {
-                    title: node.text || 'Evento',
-                    start: node.due,
+                    title: node.text || 'Evento', start: node.due,
                     end: node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString(),
                     location: evtLocation_stored || undefined,
                   })
                   setEvtMsg('✓ Actualizado en Google Calendar')
                   setTimeout(() => setEvtMsg(null), 2500)
-                } catch { /* sin conexión — silencioso */ }
+                } catch { /* silencioso */ }
               }}
             />
           </div>
-
-          {/* Recurrencia del evento */}
-          <div className="prop-event-row">
-            <span className="prop-event-field-label">Repite</span>
-            <div className="prop-rec-row" style={{ flex: 1 }}>
-              <button className={`prop-pill${!node.recurrence ? ' active' : ''}`}
-                onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
-              <input type="number" className="prop-rec-n" min={1} max={999}
-                value={node.recurrence ? parseRec(node.recurrence).n : 1}
-                onChange={e => {
-                  const n = Math.max(1, parseInt(e.target.value) || 1)
-                  const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
-                  applyRec(n, unit)
-                }}
-                disabled={!node.recurrence}
-              />
-              {recUnits.map(([unit, label]) => (
-                <button key={unit}
-                  className={`prop-pill${node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
-                  onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
-                >{label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Solo botón eliminar — el sync es automático */}
-          <button
-            className="prop-event-delete-btn"
+          {gcalEventId && <div className="prop-event-synced-hint">↑ Cambios sincronizados automáticamente con Google Calendar</div>}
+          <button className="prop-event-delete-btn"
             title="Eliminar evento (y de Google Calendar si está sincronizado)"
             onClick={async () => {
               if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
-              if (gcalEventId) {
-                try { await deleteCalendarEvent(gcalEventId) } catch { /* sin conexión — seguimos */ }
-              }
+              if (gcalEventId) { try { await deleteCalendarEvent(gcalEventId) } catch { /* silencioso */ } }
               store.updateNode(node.id, { isEvent: false, due: null, dueEnd: null })
               let ed: Record<string, unknown> = {}
               try { ed = JSON.parse(node.extraData || '{}') } catch {}
               delete ed.gcalEventId; delete ed.location
               store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-            }}
-          >
-            🗑 Eliminar evento
-          </button>
-          {gcalEventId && <div className="prop-event-synced-hint">↑ Cambios sincronizados automáticamente con Google Calendar</div>}
+            }}>🗑 Eliminar evento</button>
         </div>
       )}
 
-      {/* ── Fecha fin standalone (solo si no es evento) ───────────────── */}
-      {!node.isEvent && node.dueEnd && (
+      {/* ── 3. REPETICIÓN (tareas, eventos, recursos) ─────────────────────── */}
+      {showProps && (
         <div className="prop-section">
-          <div className="prop-section-label">Fecha fin</div>
-          <div className="prop-datetime">
-            <input type="date" className="prop-date-input" value={dueEndDate} onChange={e => setDueEnd(e.target.value, dueEndTime)} />
-            <input type="time" className="prop-time-input" value={dueEndTime} onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
+          <div className="prop-section-label">Repetición</div>
+          <div className="prop-rec-row">
+            <button className={`prop-pill${!node.recurrence ? ' active' : ''}`}
+              onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
+            <input type="number" className="prop-rec-n" min={1} max={999}
+              value={node.recurrence ? parseRec(node.recurrence).n : 1}
+              onChange={e => {
+                const n = Math.max(1, parseInt(e.target.value) || 1)
+                const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
+                applyRec(n, unit)
+              }}
+              disabled={!node.recurrence}
+            />
+            {recUnits.map(([unit, label]) => (
+              <button key={unit}
+                className={`prop-pill${node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+                onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
+              >{label}</button>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Repetición eliminada — no aporta valor suficiente */}
+      {/* ── 4. PRIORIDAD (solo tareas pendientes) ────────────────────────── */}
+      {isTask && node.status === 'pending' && (
+        <div className="prop-section">
+          <div className="prop-section-label">Prioridad</div>
+          <div className="prop-pills">
+            {priorityOptions.map(opt => (
+              <button key={String(opt.value)} className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`}
+                onClick={() => setPriority(opt.value)} style={opt.style}>{opt.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* ── Propiedades custom del padre (estilo Notion) ───────────────────── */}
-      {node.parentId && (() => {
-        const schema = store.getPropSchema(node.parentId)
+      {/* ── Propiedades custom (siempre visibles) ───────────────────────── */}
+      {!node.isDiaryEntry && (() => {
+        const propParentId = node.parentId || node.id
+        const schema = store.getPropSchema(propParentId)
         return (
           <div className="prop-section">
             <div className="prop-section-label prop-section-label--row">
               Propiedades
-              <button
-                className="prop-add-btn"
+              <button className="prop-add-btn" title="Añadir propiedad"
                 onClick={() => {
                   const name = prompt('Nombre de la propiedad:')
                   if (!name || !name.trim()) return
                   const typeStr = prompt('Tipo (text / number / select / date / checkbox / url / tag):', 'text')
-                  const validTypes = ['text', 'number', 'select', 'multi_select', 'date', 'checkbox', 'url', 'tag']
+                  const validTypes = ['text','number','select','multi_select','date','checkbox','url','tag']
                   const type = validTypes.includes(typeStr || '') ? (typeStr as string) : 'text'
-                  store.addPropColumn(node.parentId!, name.trim(), type)
-                }}
-                title="Añadir propiedad"
-              >＋</button>
+                  store.addPropColumn(propParentId, name.trim(), type)
+                }}>＋</button>
             </div>
             {schema.length === 0 ? (
               <div className="prop-empty-hint">Sin propiedades. Crea la primera con ＋ — aparecerá también en la tabla del padre.</div>
             ) : (
               <div className="prop-custom-list">
-                {schema.map(col => (
-                  <PropertyRow key={col.id} node={node} col={col} />
-                ))}
+                {schema.map(col => <PropertyRow key={col.id} node={node} col={col} />)}
               </div>
             )}
           </div>
         )
       })()}
-
-      {/* Color eliminado: se deriva del tag asociado */}
 
     </div>
 
