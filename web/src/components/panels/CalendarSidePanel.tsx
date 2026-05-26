@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { TaskPropsPopover } from './DiaryRightPanel'
+import PendingTaskRow from '../shared/PendingTaskRow'
 
 interface Props {
   periodStart: Date    // inicio del periodo visible
@@ -121,71 +122,32 @@ function TaskCheckbox({ node, onMarkDone }: TaskCheckboxProps & { onMarkDone?: (
   )
 }
 
-// ── TaskRow ───────────────────────────────────────────────────────────────────
-
-interface TaskRowProps {
-  node: Node
-  checkColor: string
-  indented?: boolean
-}
-
-function TaskRow({ node, checkColor, indented }: TaskRowProps) {
-  const isDone = node.status === 'done'
-  const [popoverOpen, setPopoverOpen] = useState(false)
-  const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
-  const rowRef = useRef<HTMLDivElement>(null!)
-
-  function markDone() {
-    if (leaving) return
-    setLeaving('pulse')
-    setTimeout(() => setLeaving('fade'), 700)
-    setTimeout(() => {
-      store.updateNode(node.id, { status: 'done' })
-    }, 1200)
-  }
-
-  // Si el nodo está marcando done localmente, render con checkbox verde y fade
-  const showAsDone = isDone || leaving !== null
-  const fadeClass = leaving === 'fade' ? 'cal-panel-task--leaving' : ''
-
+// TaskRow: ahora delega en <PendingTaskRow> compartido. Wrapper local
+// mantiene el modal y la variante visual según fecha vs ahora.
+function TaskRow({ node, indented, onOpenProps }: { node: Node; checkColor?: string; indented?: boolean; onOpenProps: (n: Node) => void }) {
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayEnd = new Date(todayStart.getTime() + 86400000 - 1)
+  const variant: 'today' | 'overdue' | 'done' | 'future' | 'event' = (() => {
+    if (node.status === 'done') return 'done'
+    if (node.isEvent) return 'event'
+    if (node.status === 'future') return 'future'
+    if (node.due) {
+      const d = new Date(node.due)
+      if (d < todayStart) return 'overdue'
+      if (d <= todayEnd)  return 'today'
+      return 'future'
+    }
+    return 'today'
+  })()
   return (
-    <>
-      <div
-        ref={rowRef}
-        className={`diary-agenda-task ${indented ? 'diary-agenda-task--indented' : ''} ${showAsDone ? 'diary-agenda-task--done' : ''} ${fadeClass}`}
-        draggable={!leaving}
-        onDragStart={e => {
-          calDragNodeId = node.id
-          e.dataTransfer.setData('cal-node-id', node.id)
-          e.dataTransfer.setData('text/plain', node.id)
-          e.dataTransfer.effectAllowed = 'move'
-        }}
-        onDragEnd={() => { calDragNodeId = null }}
-        onClick={() => { if (!leaving) setPopoverOpen(v => !v) }}
-        title={node.text || 'Sin título'}
-      >
-        {leaving ? (
-          <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
-        ) : (
-          <TaskCheckbox node={node} onMarkDone={markDone} />
-        )}
-        <span className={`diary-agenda-text${showAsDone ? ' done' : ''}`}>{node.text || 'Sin título'}</span>
-        {node.due && (
-          <span className="diary-agenda-due">
-            {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-          </span>
-        )}
-      </div>
-      {popoverOpen && (
-        <TaskPropsPopover
-          node={node}
-          onClose={() => setPopoverOpen(false)}
-          anchorRef={rowRef}
-          allowRename
-          allowDelete
-        />
-      )}
-    </>
+    <PendingTaskRow
+      task={node}
+      variant={variant}
+      indented={indented}
+      onClick={() => onOpenProps(node)}
+      onOpenProps={() => onOpenProps(node)}
+    />
   )
 }
 
@@ -193,10 +155,11 @@ function TaskRow({ node, checkColor, indented }: TaskRowProps) {
 
 interface GroupedSectionProps {
   groups: TaskGroup[]
-  checkColor: string
+  checkColor?: string
+  onOpenProps: (n: Node) => void
 }
 
-function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
+function GroupedSection({ groups, onOpenProps }: GroupedSectionProps) {
   return (
     <>
       {groups.map((group, gi) => (
@@ -211,7 +174,7 @@ function GroupedSection({ groups, checkColor }: GroupedSectionProps) {
             </div>
           )}
           {group.tasks.map(n => (
-            <TaskRow key={n.id} node={n} checkColor={checkColor} indented={!!group.parentId} />
+            <TaskRow key={n.id} node={n} indented={!!group.parentId} onOpenProps={onOpenProps} />
           ))}
         </div>
       ))}
@@ -284,6 +247,7 @@ function hasLiveContainerAncestor(nodeId: string): boolean {
 export default function CalendarSidePanel({ periodStart, periodEnd, view }: Props) {
   const s = useStore()
   const [isDragOver, setIsDragOver] = useState(false)
+  const [modalNode, setModalNode] = useState<Node | null>(null)
 
   const allNodes = s.allActive().filter(n => !n.deletedAt)
   const endBoundary = periodEnd || new Date(periodStart.getTime() + 86400000)
@@ -373,7 +337,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
               <span className="diary-agenda-container-count">{childTasks.length}</span>
             </div>
             {childTasks.map(task => (
-              <TaskRow key={task.id} node={task} checkColor="#f59e0b" indented />
+              <TaskRow key={task.id} node={task} indented onOpenProps={setModalNode} />
             ))}
           </div>
         )
@@ -386,7 +350,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
             ⚠ Vencidas — {label}
             <span className="cal-panel-count">{overdue.length}</span>
           </div>
-          <GroupedSection groups={overdueGroups} checkColor="#ef4444" />
+          <GroupedSection groups={overdueGroups} onOpenProps={setModalNode} />
         </div>
       )}
 
@@ -397,7 +361,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
             Sin fecha
             <span className="cal-panel-count">{unscheduled.length}</span>
           </div>
-          <GroupedSection groups={unscheduledGroups} checkColor="#f59e0b" />
+          <GroupedSection groups={unscheduledGroups} onOpenProps={setModalNode} />
         </div>
       )}
 
@@ -408,7 +372,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
             Futuras — {futureLabel}
             <span className="cal-panel-count">{future.length}</span>
           </div>
-          <GroupedSection groups={futureGroups} checkColor="#8b5cf6" />
+          <GroupedSection groups={futureGroups} onOpenProps={setModalNode} />
         </div>
       )}
 
@@ -428,6 +392,16 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
           <span style={{ fontSize: 20, opacity: 0.3 }}>✓</span>
           <span>Todo agendado</span>
         </div>
+      )}
+
+      {modalNode && (
+        <TaskPropsPopover
+          node={modalNode}
+          onClose={() => setModalNode(null)}
+          allowRename
+          allowDelete
+          onDeleted={() => setModalNode(null)}
+        />
       )}
     </div>
   )

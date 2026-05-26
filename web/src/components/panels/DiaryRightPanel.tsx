@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { store, useStore } from '../../store/nodeStore'
+import { store, useStore, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
@@ -1448,16 +1448,12 @@ function tlGcalColor(ev: CalendarEvent): string {
   return '#cfd9ec'
 }
 function tlNodeColor(node: Node): string {
-  try {
-    const c = JSON.parse(node.extraData || '{}').color
-    // El color de acento ya viene del picker (paleta pastel). Lo suavizamos
-    // un toque más en el timeline para que conviva con los GCal pastel.
-    if (typeof c === 'string' && c.trim()) return lightenHex(c, 0.25)
-  } catch { /* ignore */ }
+  const meta = nodeMeta(node)
+  if (meta.color) return lightenHex(meta.color, 0.25)
   if (node.isEvent && !node.status) return '#fbe3b8'
   if (node.status === 'done') return '#c8ccd4'
   if (node.isSeguimiento) return '#d7ccf2'
-  try { if (JSON.parse(node.extraData || '{}')._resource) return '#bce3e8' } catch { /* ignore */ }
+  if (meta.resource) return '#bce3e8'
   if (node.priority === 'high') return '#f7c9c9'
   if (node.priority === 'medium') return '#f9d8b8'
   if (node.priority === 'low') return '#c2e6c8'

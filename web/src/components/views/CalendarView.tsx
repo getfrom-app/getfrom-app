@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { useStore, store } from '../../store/nodeStore'
+import { useStore, store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
 import { TaskPropsPopover, GCalEventEditor } from '../panels/DiaryRightPanel'
@@ -244,16 +244,12 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
 // ── Priority color helper ─────────────────────────────────────────────────────
 
 function priorityBg(node: Node): string {
-  // Color de acento definido en la nota (extraData.color) tiene prioridad
-  try {
-    const c = JSON.parse(node.extraData || '{}').color
-    if (typeof c === 'string' && c.trim()) return c
-  } catch { /* ignore */ }
-  // Paleta pastel — colores suaves, no saturados.
+  const meta = nodeMeta(node)
+  if (meta.color) return meta.color
   if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f5c97a)'
   if (node.status === 'done')        return '#a3a8b3'
   if (node.isSeguimiento)            return '#b8a7e8'
-  try { if (JSON.parse(node.extraData || '{}')._resource) return '#8ed4dd' } catch { /* ignore */ }
+  if (meta.resource)                 return '#8ed4dd'
   if (node.priority === 'high')      return '#f0a3a3'
   if (node.priority === 'medium')    return '#f5c197'
   if (node.priority === 'low')       return '#9bd6a3'
@@ -284,7 +280,7 @@ function gcalEventColor(ev: CalendarEvent): string {
 function nodeIcon(node: Node): string {
   if (node.isEvent && !node.status) return '📅'
   if (node.isSeguimiento) return '👁'
-  try { if (JSON.parse(node.extraData || '{}')._resource) return '◆' } catch { /* ignore */ }
+  if (nodeMeta(node).resource) return '◆'
   return ''
 }
 

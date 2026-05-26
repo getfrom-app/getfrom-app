@@ -9,7 +9,20 @@ export interface Node {
   status: 'pending' | 'done' | 'future' | null
   isActive: boolean
   isEvent: boolean
+  /** @deprecated v8.12: el concepto "bucle" se eliminó. La migración v8.12
+   *  lo deja en false para todos los nodos. Permanece en el schema por
+   *  retrocompat con Mac/iOS hasta que se coordine eliminación global.
+   *  No usar en código nuevo. */
   isSeguimiento: boolean
+  // ── Columnas promovidas de extraData en v8.24 ──────────────────────────
+  /** Color de acento del nodo (hex). Antes vivía en extraData.color. */
+  color?: string | null
+  /** Tipo de bloque inline: bullet|h1|h2|h3. Antes extraData._block. */
+  block?: string | null
+  /** ID del evento en Google Calendar (si está sincronizado). Antes extraData.gcalEventId. */
+  gcalEventId?: string | null
+  /** Ubicación de un evento. Antes extraData.location. */
+  location?: string | null
   isDiaryEntry: boolean
   isChat: boolean
   isCollapsed: boolean

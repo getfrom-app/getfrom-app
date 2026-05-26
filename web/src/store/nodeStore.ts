@@ -46,18 +46,24 @@ export function nodeMeta(node: Node | null | undefined): NodeMeta {
   if (m) return m
   try {
     const raw = JSON.parse(node.extraData || '{}') as Record<string, unknown>
-    // Mapear claves "_" prefijadas (legacy) a nombres limpios
+    // v8.24: las columnas reales del Node (color, block, gcalEventId, location)
+    // tienen prioridad sobre extraData. Fallback a extraData para retrocompat.
+    const colColor = (node as unknown as { color?: string | null }).color || undefined
+    const colBlock = (node as unknown as { block?: string | null }).block || undefined
+    const colGcal = (node as unknown as { gcalEventId?: string | null }).gcalEventId || undefined
+    const colLocation = (node as unknown as { location?: string | null }).location || undefined
     m = {
-      color: typeof raw.color === 'string' ? raw.color : undefined,
-      block: ['bullet','h1','h2','h3'].includes(raw._block as string) ? (raw._block as NodeMeta['block']) : undefined,
+      color: colColor || (typeof raw.color === 'string' ? raw.color : undefined),
+      block: ['bullet','h1','h2','h3'].includes((colBlock || raw._block) as string)
+        ? ((colBlock || raw._block) as NodeMeta['block']) : undefined,
       resource: !!raw._resource,
       resourceStatus: raw._resourceStatus as string | undefined,
       resourceMeta: raw._resourceMeta,
       resourceUrl: raw._resourceUrl as string | undefined,
       resourceType: raw._resourceType as string | undefined,
       resourceKind: raw._resourceKind as string | undefined,
-      gcalEventId: raw.gcalEventId as string | undefined,
-      location: raw.location as string | undefined,
+      gcalEventId: colGcal || (raw.gcalEventId as string | undefined),
+      location: colLocation || (raw.location as string | undefined),
       props: Array.isArray(raw._props) ? raw._props : undefined,
       views: Array.isArray(raw._views) ? raw._views : undefined,
       inline: raw._inline as string | undefined,
@@ -1220,6 +1226,40 @@ class NodeStore {
       this.invalidateChildrenCache()
       // eslint-disable-next-line no-console
       console.log(`[migration v8.23] ${blockMigrated} bloques migrados a extraBlock`)
+      this.notify()
+      await this.sync()
+    }
+
+    // v8.24: mover color/_block/gcalEventId/location de extraData a columnas
+    // reales del Node. Backfill silencioso.
+    let promoted = 0
+    const promotedNowIso = new Date().toISOString()
+    for (const [id, node] of this.nodes.entries()) {
+      if (node.deletedAt) continue
+      let raw: Record<string, unknown> = {}
+      try { raw = JSON.parse(node.extraData || '{}') } catch { continue }
+      const nAny = node as unknown as { color?: string | null; block?: string | null; gcalEventId?: string | null; location?: string | null }
+      const updates: Partial<Node> & { color?: string | null; block?: string | null; gcalEventId?: string | null; location?: string | null } = {}
+      let changed = false
+      if (!nAny.color && typeof raw.color === 'string') { updates.color = raw.color; delete raw.color; changed = true }
+      if (!nAny.block && typeof raw._block === 'string' && ['bullet','h1','h2','h3'].includes(raw._block)) { updates.block = raw._block; delete raw._block; changed = true }
+      if (!nAny.gcalEventId && typeof raw.gcalEventId === 'string') { updates.gcalEventId = raw.gcalEventId; delete raw.gcalEventId; changed = true }
+      if (!nAny.location && typeof raw.location === 'string') { updates.location = raw.location; delete raw.location; changed = true }
+      if (!changed) continue
+      this.nodes.set(id, {
+        ...node,
+        ...updates,
+        extraData: Object.keys(raw).length > 0 ? JSON.stringify(raw) : null,
+        updatedAt: promotedNowIso,
+        _isDirty: true,
+      } as Node)
+      this.dirtyIds.add(id)
+      promoted++
+    }
+    if (promoted > 0) {
+      this.invalidateChildrenCache()
+      // eslint-disable-next-line no-console
+      console.log(`[migration v8.24] ${promoted} nodos: color/block/gcalEventId/location promovidos a columnas`)
       this.notify()
       await this.sync()
     }

@@ -28,10 +28,13 @@ interface Props {
   onClick: () => void
   /** Abre el modal de propiedades */
   onOpenProps: () => void
+  /** Si se proporciona, la fila acepta drops de otra tarea para reparentarla como hija. */
+  onDropAsChild?: (draggedId: string) => void
 }
 
-export default function PendingTaskRow({ task, variant, indented, parentNote, onClick, onOpenProps }: Props) {
+export default function PendingTaskRow({ task, variant, indented, parentNote, onClick, onOpenProps, onDropAsChild }: Props) {
   const [hovered, setHovered] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
   const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const btnRef = useRef<HTMLButtonElement>(null!)
 
@@ -59,6 +62,7 @@ export default function PendingTaskRow({ task, variant, indented, parentNote, on
     'diary-agenda-task',
     indented ? 'diary-agenda-task--indented' : '',
     (isDone || leaving) ? 'diary-agenda-task--done' : '',
+    isDragOver ? 'diary-agenda-task--drop' : '',
     leaving === 'fade' ? 'cal-panel-task--leaving' : '',
   ].filter(Boolean).join(' ')
 
@@ -73,9 +77,24 @@ export default function PendingTaskRow({ task, variant, indented, parentNote, on
         e.dataTransfer.setData('text/plain', task.id)
         e.dataTransfer.setData('cal-node-id', task.id)
       }}
-      onDragEnd={() => { _pendingTaskDragId = null }}
+      onDragEnd={() => { _pendingTaskDragId = null; setIsDragOver(false) }}
+      onDragOver={onDropAsChild ? e => {
+        if (_pendingTaskDragId && _pendingTaskDragId !== task.id) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          setIsDragOver(true)
+        }
+      } : undefined}
+      onDragLeave={onDropAsChild ? () => setIsDragOver(false) : undefined}
+      onDrop={onDropAsChild ? e => {
+        e.preventDefault()
+        setIsDragOver(false)
+        const id = _pendingTaskDragId
+        _pendingTaskDragId = null
+        if (id && id !== task.id) onDropAsChild(id)
+      } : undefined}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setIsDragOver(false) }}
       onClick={onClick}
     >
       {isEvent ? (

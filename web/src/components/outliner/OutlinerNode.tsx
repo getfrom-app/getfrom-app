@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { store } from '../../store/nodeStore'
+import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
@@ -232,27 +232,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const eventBadgePopupRef = useRef<HTMLDivElement>(null)
   const gcalSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Bloque preferido vía extraData._block (bullet/h1/h2/h3) — Notion-style sin prefijo visible.
-  const extraBlock = (() => {
-    try { return JSON.parse(node.extraData || '{}')._block as string | undefined } catch { return undefined }
-  })()
-  const blockType = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
-    ? (extraBlock as 'bullet' | 'h1' | 'h2' | 'h3')
-    : detectBlockType(node.text)
+  // Meta typed (color, block, icon, _resource…). Cache por referencia de Node.
+  const meta = nodeMeta(node)
+  const extraBlock = meta.block
+  const blockType = extraBlock ?? detectBlockType(node.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
   const isNota = (node.types || []).includes('nota')
-
-  // Icono del nodo (extraData.icon)
-  const nodeIcon = useMemo(() => {
-    try { return JSON.parse(node.extraData || '{}').icon || null } catch { return null }
-  }, [node.extraData])
-
-  // Color del nodo (extraData.color)
-  const nodeColor = useMemo(() => {
-    try { return JSON.parse(node.extraData || '{}').color || null } catch { return null }
-  }, [node.extraData])
+  const nodeIcon = meta.icon ?? null
+  const nodeColor = meta.color ?? null
 
   // Filter: if filterText is active and this node doesn't match, hide it
   // But keep parent visible if any descendant matches
@@ -1542,39 +1531,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {/* Bullet / task checkbox / nota icon — hidden for headings and dividers */}
         {!isDivider && !isHeading && (
           <>
-            {node.isSeguimiento ? (
-              // Seguimiento: nav-dot (navega) + checkbox cuadrado morado/verde
-              <>
-                <button
-                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
-                  tabIndex={-1}
-                  title="Abrir nota activa"
-                />
-                <button
-                  className={`bullet-seguimiento-dot ${node.status === 'done' ? 'done' : ''}`}
-                  onClick={e => {
-                    e.stopPropagation()
-                    store.updateNode(node.id, {
-                      status: node.status === 'done' ? null : 'done'
-                    })
-                  }}
-                  tabIndex={-1}
-                  title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Activo — clic para completar'}
-                >
-                  {node.status === 'done' ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14">
-                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="#22c55e" strokeWidth="1.5" fill="#22c55e" fillOpacity="0.18"/>
-                      <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 14 14">
-                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="var(--accent)" strokeWidth="1.5" fill="var(--accent)" fillOpacity="0.14"/>
-                    </svg>
-                  )}
-                </button>
-              </>
-            ) : node.isEvent ? (
+            {node.isEvent ? (
               // Evento: nav-dot + icono calendario azul
               <>
                 <button
