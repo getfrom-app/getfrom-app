@@ -7,6 +7,113 @@ const GUEST_WORKSPACES_KEY = 'from_guest_workspaces'
 
 type Listener = () => void
 
+// ── NodeMeta: typed wrapper sobre extraData ────────────────────────────────
+// Antes hacíamos JSON.parse(node.extraData || '{}') en cada render por nodo.
+// Ahora cacheamos por referencia (WeakMap). Como updateNode SIEMPRE crea un
+// nuevo objeto Node (...spread), el cache se invalida automáticamente cuando
+// el nodo cambia.
+export interface NodeMeta {
+  color?: string
+  block?: 'bullet' | 'h1' | 'h2' | 'h3'
+  resource?: boolean
+  resourceStatus?: string
+  resourceMeta?: unknown
+  resourceUrl?: string
+  resourceType?: string
+  resourceKind?: string
+  gcalEventId?: string
+  location?: string
+  props?: unknown[]
+  views?: unknown[]
+  inline?: string
+  viewBlock?: string
+  reminderColId?: string
+  tagDefinition?: string
+  area?: string
+  temporalType?: string
+  areaCtx?: string
+  linkedNodeId?: string
+  refs?: string[]
+  savedSearchQuery?: string
+  icon?: string
+  [key: string]: unknown
+}
+const _metaCache = new WeakMap<Node, NodeMeta>()
+const EMPTY_META: NodeMeta = {}
+export function nodeMeta(node: Node | null | undefined): NodeMeta {
+  if (!node) return EMPTY_META
+  let m = _metaCache.get(node)
+  if (m) return m
+  try {
+    const raw = JSON.parse(node.extraData || '{}') as Record<string, unknown>
+    // Mapear claves "_" prefijadas (legacy) a nombres limpios
+    m = {
+      color: typeof raw.color === 'string' ? raw.color : undefined,
+      block: ['bullet','h1','h2','h3'].includes(raw._block as string) ? (raw._block as NodeMeta['block']) : undefined,
+      resource: !!raw._resource,
+      resourceStatus: raw._resourceStatus as string | undefined,
+      resourceMeta: raw._resourceMeta,
+      resourceUrl: raw._resourceUrl as string | undefined,
+      resourceType: raw._resourceType as string | undefined,
+      resourceKind: raw._resourceKind as string | undefined,
+      gcalEventId: raw.gcalEventId as string | undefined,
+      location: raw.location as string | undefined,
+      props: Array.isArray(raw._props) ? raw._props : undefined,
+      views: Array.isArray(raw._views) ? raw._views : undefined,
+      inline: raw._inline as string | undefined,
+      viewBlock: raw.viewBlock as string | undefined,
+      reminderColId: raw._reminderColId as string | undefined,
+      tagDefinition: raw._tagDefinition as string | undefined,
+      area: raw.area as string | undefined,
+      temporalType: raw.temporalType as string | undefined,
+      areaCtx: raw._areaCtx as string | undefined,
+      linkedNodeId: raw._linkedNodeId as string | undefined,
+      refs: Array.isArray(raw.refs) ? raw.refs as string[] : undefined,
+      savedSearchQuery: raw.savedSearchQuery as string | undefined,
+      icon: raw.icon as string | undefined,
+    }
+    // Mantener el resto del JSON crudo accessible (forward-compat)
+    for (const k of Object.keys(raw)) if (!(k in (m as object))) (m as Record<string, unknown>)[k] = raw[k]
+    _metaCache.set(node, m)
+  } catch {
+    m = EMPTY_META
+  }
+  return m
+}
+/** Helpers cortos para los campos más comunes. */
+export function nodeColor(n: Node | null | undefined): string | undefined { return nodeMeta(n).color }
+export function nodeBlock(n: Node | null | undefined): NodeMeta['block'] { return nodeMeta(n).block }
+export function nodeIsResource(n: Node | null | undefined): boolean { return !!nodeMeta(n).resource }
+export function nodeGcalEventId(n: Node | null | undefined): string | undefined { return nodeMeta(n).gcalEventId }
+export function nodeLocation(n: Node | null | undefined): string | undefined { return nodeMeta(n).location }
+
+/** Devuelve el JSON crudo de extraData con `changes` aplicados, escrito con
+ *  las claves legacy (`_block`, `_resource`...) para retrocompat con server. */
+export function patchExtraData(node: Node, changes: Partial<{
+  color?: string | null
+  block?: 'bullet' | 'h1' | 'h2' | 'h3' | null
+  gcalEventId?: string | null
+  location?: string | null
+  icon?: string | null
+}>): string {
+  let raw: Record<string, unknown> = {}
+  try { raw = JSON.parse(node.extraData || '{}') } catch { /* */ }
+  const KEY_MAP: Record<string, string> = {
+    color: 'color',
+    block: '_block',
+    gcalEventId: 'gcalEventId',
+    location: 'location',
+    icon: 'icon',
+  }
+  for (const [k, v] of Object.entries(changes)) {
+    const ssKey = KEY_MAP[k]
+    if (!ssKey) continue
+    if (v === null || v === undefined || v === '') delete raw[ssKey]
+    else raw[ssKey] = v
+  }
+  return JSON.stringify(raw)
+}
+
 class NodeStore {
   nodes: Map<string, Node> = new Map()
   workspaces: Workspace[] = []
@@ -1078,6 +1185,41 @@ class NodeStore {
       this.invalidateChildrenCache()
       // eslint-disable-next-line no-console
       console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales`)
+      this.notify()
+      await this.sync()
+    }
+
+    // v8.23: migrar nodos con bloque por prefijo de texto ("- foo", "# foo")
+    // a extraData._block (modelo nuevo, Notion-style sin prefijo visible).
+    let blockMigrated = 0
+    const blockNowIso = new Date().toISOString()
+    for (const [id, node] of this.nodes.entries()) {
+      if (node.deletedAt) continue
+      const meta = nodeMeta(node)
+      if (meta.block) continue // ya migrado
+      const text = node.text || ''
+      let kind: 'bullet' | 'h1' | 'h2' | 'h3' | null = null
+      let stripLen = 0
+      if (text.startsWith('### ')) { kind = 'h3'; stripLen = 4 }
+      else if (text.startsWith('## ')) { kind = 'h2'; stripLen = 3 }
+      else if (text.startsWith('# ')) { kind = 'h1'; stripLen = 2 }
+      else if (text.startsWith('- ')) { kind = 'bullet'; stripLen = 2 }
+      if (!kind) continue
+      const newExtra = patchExtraData(node, { block: kind })
+      this.nodes.set(id, {
+        ...node,
+        text: text.slice(stripLen),
+        extraData: newExtra,
+        updatedAt: blockNowIso,
+        _isDirty: true,
+      })
+      this.dirtyIds.add(id)
+      blockMigrated++
+    }
+    if (blockMigrated > 0) {
+      this.invalidateChildrenCache()
+      // eslint-disable-next-line no-console
+      console.log(`[migration v8.23] ${blockMigrated} bloques migrados a extraBlock`)
       this.notify()
       await this.sync()
     }

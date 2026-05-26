@@ -157,12 +157,15 @@ export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 
 
 export function detectBlockType(text: string): BlockType {
   if (text === '---') return 'divider'
-  if (text.startsWith('### ')) return 'h3'
-  if (text.startsWith('## ')) return 'h2'
-  if (text.startsWith('# ')) return 'h1'
   if (text.startsWith('> ')) return 'quote'
   if (/^\d+\.\s/.test(text)) return 'numbered'
   if (text.startsWith('` ')) return 'code'
+  // Headings y bullets se manejan ahora via extraData._block (nodeMeta).
+  // detectBlockType sigue exponiendo el prefijo SOLO para retrocompat de
+  // nodos no migrados todavía (la migración v8.23 los limpia).
+  if (text.startsWith('### ')) return 'h3'
+  if (text.startsWith('## ')) return 'h2'
+  if (text.startsWith('# ')) return 'h1'
   if (text.startsWith('- ') || text === '-') return 'bullet'
   return 'text'
 }
