@@ -616,7 +616,14 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   // (mostramos el ancestro más alto, no anidamos).
   const isThisDayToday = diaryDate.toDateString() === now.toDateString()
   const seguimientoNodes = isThisDayToday
-    ? s.liveContainers().filter(n => !hasLiveContainerAncestor(n.id))
+    ? s.liveContainers()
+        .filter(n => !hasLiveContainerAncestor(n.id))
+        .filter(n => {
+          // Solo mostrar containers con ≥1 tarea overdue, hoy o sin fecha.
+          // Containers con solo tareas futuras no son relevantes para el día de hoy.
+          const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1); tomorrow.setHours(0,0,0,0)
+          return s.containerPendingTasks(n.id).some(t => !t.due || new Date(t.due) < tomorrow)
+        })
     : []
 
   const allPending = s.allActive().filter(
