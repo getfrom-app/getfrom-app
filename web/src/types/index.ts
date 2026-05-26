@@ -38,6 +38,13 @@ export interface Node {
   // ── Columna promovida en v8.30 ─────────────────────────────────────────
   /** Schema/valores de propiedades (tablas). JSON string. Antes _props. */
   props?: string | null
+  // ── Columnas promovidas en v8.31 ───────────────────────────────────────
+  /** Tarea inline (vive en el panel derecho, no en el body del outliner). */
+  isAtomic?: boolean | null
+  /** Nodo inline (se muestra embebido, no como bullet independiente). */
+  isInline?: boolean | null
+  /** Tarea rápida (aparece en bloque ⚡ del diario). */
+  isQuick?: boolean | null
   isDiaryEntry: boolean
   isChat: boolean
   isCollapsed: boolean

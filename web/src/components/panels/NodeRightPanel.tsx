@@ -248,9 +248,93 @@ export default function NodeRightPanel({ node }: Props) {
     }
   }
 
+  // ── Tareas asociadas (solo en notas, no tareas/eventos/recursos) ─────────
+  const [newTaskText, setNewTaskText] = useState('')
+  const [taskInputVisible, setTaskInputVisible] = useState(false)
+  const taskInputRef = useRef<HTMLInputElement>(null)
+
+  const associatedTasks = s.children(node.id)
+    .filter(c => !c.deletedAt && c.status !== null && c.isAtomic)
+    .sort((a, b) => {
+      if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+      if (a.due) return -1; if (b.due) return 1
+      return a.siblingOrder - b.siblingOrder
+    })
+
+  function createAssociatedTask() {
+    const text = newTaskText.trim()
+    if (!text) { setTaskInputVisible(false); return }
+    const today = new Date(); today.setHours(0,0,0,0)
+    const maxOrder = s.children(node.id).reduce((m, c) => Math.max(m, c.siblingOrder), 0)
+    store.createNode({ text, parentId: node.id, isTask: true, due: today.toISOString(),
+      isAtomic: true, siblingOrder: maxOrder + 1000 })
+    setNewTaskText('')
+    setTaskInputVisible(false)
+  }
+
+  const showTasksBlock = node.status === null && !node.isEvent && !nodeMeta(node).resource
+
   return (
     <>
     <div className="node-right-panel">
+
+      {/* Tareas asociadas — bloque universal para notas */}
+      {showTasksBlock && (
+        <div className="node-right-tasks-block">
+          <div className="node-right-tasks-header">
+            <span className="node-right-tasks-label">Tareas</span>
+            <button className="node-right-tasks-add" onClick={() => {
+              setTaskInputVisible(true)
+              setTimeout(() => taskInputRef.current?.focus(), 50)
+            }} title="Nueva tarea">＋</button>
+          </div>
+          {associatedTasks.map(task => {
+            const isOverdue = task.due ? new Date(task.due) < new Date(new Date().setHours(0,0,0,0)) : false
+            return (
+              <div key={task.id} className="node-right-task-row"
+                onClick={() => navigate(`/node/${task.id}`)}>
+                <button className="node-right-task-check"
+                  onClick={e => { e.stopPropagation()
+                    store.updateNode(task.id, { status: task.status === 'done' ? null : 'done' })
+                  }}>
+                  {task.status === 'done' ? '✓' : '○'}
+                </button>
+                <span className={`node-right-task-text${task.status === 'done' ? ' done' : ''}${isOverdue ? ' overdue' : ''}`}>
+                  {task.text || 'Sin título'}
+                </span>
+                {task.due && (
+                  <span className={`node-right-task-due${isOverdue ? ' overdue' : ''}`}>
+                    {new Date(task.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+          {taskInputVisible && (
+            <div className="node-right-task-input-row">
+              <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>○</span>
+              <input
+                ref={taskInputRef}
+                className="node-right-task-input"
+                placeholder="Nueva tarea…"
+                value={newTaskText}
+                onChange={e => setNewTaskText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') createAssociatedTask()
+                  if (e.key === 'Escape') { setTaskInputVisible(false); setNewTaskText('') }
+                }}
+                onBlur={() => { if (!newTaskText) setTaskInputVisible(false) }}
+              />
+            </div>
+          )}
+          {!taskInputVisible && associatedTasks.length === 0 && (
+            <button className="node-right-tasks-empty" onClick={() => {
+              setTaskInputVisible(true)
+              setTimeout(() => taskInputRef.current?.focus(), 50)
+            }}>＋ Añadir tarea</button>
+          )}
+        </div>
+      )}
 
       {/* Ver área completa — solo cuando hay tag definitions */}
       {tagNodes.map(td => (

@@ -2271,7 +2271,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           const ed = JSON.parse(node.extraData || '{}')
           if (ed._inline === '1') return null
         } catch { /* fallthrough */ }
-        return children.map(child => (
+        // Excluir tareas atómicas del body — viven en el panel derecho (Tareas asociadas)
+        const bodyChildren = children.filter(c => !(c.isAtomic && c.status !== null))
+        return bodyChildren.map(child => (
           <OutlinerNode
             key={child.id}
             node={child}

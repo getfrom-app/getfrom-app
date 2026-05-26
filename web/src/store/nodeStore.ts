@@ -820,6 +820,7 @@ export class NodeStore {
     diaryDate?: string | null
     types?: string[]
     extraData?: Record<string, string>
+    isAtomic?: boolean
   }): Node {
     this.snapshot()
     const workspaceId = this.workspaces[0]?.id || '00000000-0000-0000-0000-000000000001'
@@ -847,6 +848,7 @@ export class NodeStore {
       recurrence: null,
       diaryDate: params.diaryDate || null,
       extraData: params.extraData ? JSON.stringify(params.extraData) : null,
+      isAtomic: params.isAtomic || false,
       publicSlug: null,
       deletedAt: null,
       createdAt: now,
