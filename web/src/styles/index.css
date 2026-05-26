@@ -3598,6 +3598,43 @@ mark.inline-highlight {
 
 [data-theme="dark"] .timeline-block { color: rgba(20,22,28,0.95); border-color: rgba(0,0,0,0.18); }
 
+/* Resize handle (barra inferior) */
+.timeline-block-resize {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+  border-radius: 0 0 4px 4px;
+  background: transparent;
+  transition: background 0.1s;
+}
+.timeline-block:hover .timeline-block-resize { background: rgba(0,0,0,0.12); }
+.timeline-block-resize:hover { background: rgba(0,0,0,0.22) !important; }
+
+/* Input flotante de crear-tarea-inline */
+.timeline-inline-create {
+  position: absolute;
+  left: 4px; right: 4px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+  z-index: 200;
+  pointer-events: auto;
+}
+.timeline-inline-create-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 2px solid var(--accent);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-sizing: border-box;
+}
+
 /* Línea de snap a 15 minutos durante el drag */
 .timeline-snap-line {
   position: absolute;

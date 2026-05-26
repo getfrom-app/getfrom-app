@@ -1120,11 +1120,18 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
       currentHour={currentHour}
       currentMinutes={currentMinutes}
       isToday={isToday}
-      onCreateTaskAt={(h, m) => {
+      onCreateTaskAt={(h, m, text) => {
         const d = new Date(diaryDate); d.setHours(h, m, 0, 0)
-        const newNode = store.createNode({ text: '', parentId: null, siblingOrder: Date.now(), isTask: true })
-        store.updateNode(newNode.id, { due: d.toISOString() })
-        navigate(`/node/${newNode.id}`)
+        // Duración por defecto: 1 hora
+        const dEnd = new Date(d.getTime() + 3600000)
+        const diary = store.todayDiary()
+        const newNode = store.createNode({
+          text: text || 'Nueva tarea',
+          parentId: diary?.id || null,
+          siblingOrder: Date.now(),
+          isTask: true,
+        })
+        store.updateNode(newNode.id, { due: d.toISOString(), dueEnd: dEnd.toISOString() })
       }}
       onEditFrom={node => setTaskModalNode(node)}
       onEditGCal={ev => setEditingGCalEvent(ev)}
@@ -1402,7 +1409,7 @@ interface TimelineRendererProps {
   currentHour: number
   currentMinutes: number
   isToday: boolean
-  onCreateTaskAt: (hour: number, minutes: number) => void
+  onCreateTaskAt: (hour: number, minutes: number, text?: string) => void
   onEditFrom: (node: Node) => void
   onEditGCal: (ev: CalendarEvent) => void
   editingGCalEvent: CalendarEvent | null
@@ -1422,24 +1429,39 @@ const TL_GCAL_COLORS: Record<string, string> = {
   '5': '#fbd75b', '6': '#ffb878', '7': '#46d6db', '8': '#e1e1e1',
   '9': '#5484ed', '10': '#51b749', '11': '#dc2127',
 }
+// Mezcla hex con blanco para conseguir tonos pastel (amount = % de blanco, 0..1)
+function lightenHex(hex: string, amount = 0.55): string {
+  const m = hex.match(/^#?([0-9a-f]{6})$/i)
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
+  const lr = Math.round(r + (255 - r) * amount)
+  const lg = Math.round(g + (255 - g) * amount)
+  const lb = Math.round(b + (255 - b) * amount)
+  return '#' + ((lr << 16) | (lg << 8) | lb).toString(16).padStart(6, '0')
+}
 function tlGcalColor(ev: CalendarEvent): string {
-  if (ev.colorId && TL_GCAL_COLORS[ev.colorId]) return TL_GCAL_COLORS[ev.colorId]
-  if (ev.backgroundColor) return ev.backgroundColor
-  return '#b5c9ea'
+  // Paleta oficial ya está bastante pastel — la suavizamos un toque más.
+  if (ev.colorId && TL_GCAL_COLORS[ev.colorId]) return lightenHex(TL_GCAL_COLORS[ev.colorId], 0.25)
+  // backgroundColor del calendario puede ser bastante saturado → aplastar hacia pastel.
+  if (ev.backgroundColor) return lightenHex(ev.backgroundColor, 0.55)
+  return '#cfd9ec'
 }
 function tlNodeColor(node: Node): string {
   try {
     const c = JSON.parse(node.extraData || '{}').color
-    if (typeof c === 'string' && c.trim()) return c
+    // El color de acento ya viene del picker (paleta pastel). Lo suavizamos
+    // un toque más en el timeline para que conviva con los GCal pastel.
+    if (typeof c === 'string' && c.trim()) return lightenHex(c, 0.25)
   } catch { /* ignore */ }
-  if (node.isEvent && !node.status) return '#f5c97a'
-  if (node.status === 'done') return '#a3a8b3'
-  if (node.isSeguimiento) return '#b8a7e8'
-  try { if (JSON.parse(node.extraData || '{}')._resource) return '#8ed4dd' } catch { /* ignore */ }
-  if (node.priority === 'high') return '#f0a3a3'
-  if (node.priority === 'medium') return '#f5c197'
-  if (node.priority === 'low') return '#9bd6a3'
-  return '#a8c5ec'
+  if (node.isEvent && !node.status) return '#fbe3b8'
+  if (node.status === 'done') return '#c8ccd4'
+  if (node.isSeguimiento) return '#d7ccf2'
+  try { if (JSON.parse(node.extraData || '{}')._resource) return '#bce3e8' } catch { /* ignore */ }
+  if (node.priority === 'high') return '#f7c9c9'
+  if (node.priority === 'medium') return '#f9d8b8'
+  if (node.priority === 'low') return '#c2e6c8'
+  return '#cfdcf1'
 }
 
 // Overlap layout copiado/adaptado de CalendarView
@@ -1479,6 +1501,10 @@ function tlComputeLayout(events: TLLaid[]): Map<string, { leftPct: number; width
   return result
 }
 
+// Reserva en píxeles a la derecha del timeline (clickable para crear en
+// la misma franja que un bloque existente).
+const TL_RIGHT_GUTTER = 22
+
 function TimelineRenderer({
   diaryDate, dayStart, dayEnd,
   fromItems, gcalItems,
@@ -1487,7 +1513,16 @@ function TimelineRenderer({
   onEditGCal, editingGCalEvent, onGCalUpdated, onGCalDeleted, onCloseGCal,
 }: TimelineRendererProps) {
   const [snapPreview, setSnapPreview] = useState<{ y: number; label: string } | null>(null)
+  // Crear inline: cuando el usuario clica en un hueco, mostramos un input en
+  // esa posición para teclear el nombre y Enter.
+  const [inlineCreate, setInlineCreate] = useState<{ hour: number; minutes: number; pxY: number } | null>(null)
+  const [inlineText, setInlineText] = useState('')
+  const inlineInputRef = useRef<HTMLInputElement>(null)
+  // Resize en curso: { id, source, startEndMs, pointerStartY, baseEndMs }
+  const [resizing, setResizing] = useState<{ id: string; source: 'from' | 'gcal'; baseEndMs: number; pointerStartY: number; baseTopPx: number; baseStartMs: number } | null>(null)
+  const [resizeNewEndMs, setResizeNewEndMs] = useState<number | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (inlineCreate) inlineInputRef.current?.focus() }, [inlineCreate])
 
   const numHours = Math.max(0, dayEnd - dayStart)
   const totalHeight = numHours * HOUR_HEIGHT
@@ -1499,7 +1534,7 @@ function TimelineRenderer({
     const startMs = new Date(n.due).getTime()
     const endMs = n.dueEnd
       ? new Date(n.dueEnd).getTime()
-      : startMs + (n.isEvent ? 3600000 : 1800000) // evento 1h, tarea 30min por defecto
+      : startMs + 3600000 // default 1h (tanto tareas como eventos)
     laidItems.push({ id: 'from:' + n.id, startMs, endMs, durationMs: Math.max(900000, endMs - startMs) }) // mín 15min
   }
   for (const ev of gcalItems) {
@@ -1581,8 +1616,74 @@ function TimelineRenderer({
 
   function handleGridClick(e: React.MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('.timeline-block')) return
+    if ((e.target as HTMLElement).closest('.timeline-inline-create')) return
     const snap = computeSnapFromY(e.clientY)
-    if (snap) onCreateTaskAt(snap.hour, snap.minutes)
+    if (snap) {
+      setInlineCreate({ hour: snap.hour, minutes: snap.minutes, pxY: snap.pxY })
+      setInlineText('')
+    }
+  }
+
+  function commitInlineCreate() {
+    if (!inlineCreate) return
+    const text = inlineText.trim()
+    if (text) onCreateTaskAt(inlineCreate.hour, inlineCreate.minutes, text)
+    setInlineCreate(null)
+    setInlineText('')
+  }
+  function cancelInlineCreate() { setInlineCreate(null); setInlineText('') }
+
+  // ── Resize de bloques (estirar/encoger desde el borde inferior) ─────────
+  useEffect(() => {
+    if (!resizing) return
+    function onMove(e: MouseEvent) {
+      if (!resizing || !gridRef.current) return
+      const dy = e.clientY - resizing.pointerStartY
+      const dMin = Math.round((dy / HOUR_HEIGHT) * 60 / 15) * 15  // snap 15min
+      const newEndMs = resizing.baseEndMs + dMin * 60000
+      // Mínimo 15min después del start
+      const minEnd = resizing.baseStartMs + 15 * 60000
+      setResizeNewEndMs(Math.max(minEnd, newEndMs))
+    }
+    async function onUp() {
+      if (!resizing) return
+      const finalEnd = resizeNewEndMs ?? resizing.baseEndMs
+      const finalEndIso = new Date(finalEnd).toISOString()
+      if (resizing.source === 'from') {
+        store.updateNode(resizing.id, { dueEnd: finalEndIso })
+      } else {
+        const ev = gcalItems.find(x => x.id === resizing.id)
+        if (ev) {
+          try {
+            const updated = await updateCalendarEvent(resizing.id, {
+              title: ev.title, start: ev.start, end: finalEndIso,
+            })
+            onGCalUpdated(updated)
+          } catch { /* swallow */ }
+        }
+      }
+      setResizing(null)
+      setResizeNewEndMs(null)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp, { once: true })
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+  }, [resizing, resizeNewEndMs]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function startResize(e: React.MouseEvent, id: string, source: 'from' | 'gcal', startMs: number, endMs: number, topPx: number) {
+    e.stopPropagation()
+    e.preventDefault()
+    setResizing({
+      id, source,
+      baseStartMs: startMs,
+      baseEndMs: endMs,
+      pointerStartY: e.clientY,
+      baseTopPx: topPx,
+    })
+    setResizeNewEndMs(endMs)
   }
 
   const nowTopPx = isToday
@@ -1649,12 +1750,16 @@ function TimelineRenderer({
           {fromItems.map(n => {
             if (!n.due) return null
             const startMs = new Date(n.due).getTime()
-            const endMs = n.dueEnd ? new Date(n.dueEnd).getTime() : startMs + (n.isEvent ? 3600000 : 1800000)
+            let endMs = n.dueEnd ? new Date(n.dueEnd).getTime() : startMs + 3600000 // default 1h
+            if (resizing && resizing.source === 'from' && resizing.id === n.id && resizeNewEndMs) {
+              endMs = resizeNewEndMs
+            }
             const pos = posFromMs(startMs)
             if (!pos.visible) return null
             const durationMin = Math.max(15, (endMs - startMs) / 60000)
             const heightPx = (durationMin / 60) * HOUR_HEIGHT
             const lay = layout.get('from:' + n.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
+            const reachesRight = lay.leftPct + lay.widthPct >= 99.5
             const color = tlNodeColor(n)
             const timeLabel = new Date(startMs).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
             return (
@@ -1665,7 +1770,9 @@ function TimelineRenderer({
                   top: pos.topPx,
                   height: Math.max(QUARTER_HEIGHT, heightPx),
                   left: `calc(${lay.leftPct}% + 2px)`,
-                  width: `calc(${lay.widthPct}% - 4px)`,
+                  width: reachesRight
+                    ? `calc(${lay.widthPct}% - 4px - ${TL_RIGHT_GUTTER}px)`
+                    : `calc(${lay.widthPct}% - 4px)`,
                   zIndex: lay.zIndex,
                   background: color,
                 }}
@@ -1681,6 +1788,11 @@ function TimelineRenderer({
               >
                 <span className="timeline-block-time">{timeLabel}</span>
                 <span className="timeline-block-text">{n.text || 'Sin título'}</span>
+                <span
+                  className="timeline-block-resize"
+                  onMouseDown={e => startResize(e, n.id, 'from', startMs, endMs, pos.topPx)}
+                  title="Arrastra para cambiar duración"
+                />
               </div>
             )
           })}
@@ -1688,12 +1800,16 @@ function TimelineRenderer({
           {/* Bloques Google Calendar */}
           {gcalItems.map(ev => {
             const startMs = new Date(ev.start).getTime()
-            const endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+            let endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+            if (resizing && resizing.source === 'gcal' && resizing.id === ev.id && resizeNewEndMs) {
+              endMs = resizeNewEndMs
+            }
             const pos = posFromMs(startMs)
             if (!pos.visible) return null
             const durationMin = Math.max(15, (endMs - startMs) / 60000)
             const heightPx = (durationMin / 60) * HOUR_HEIGHT
             const lay = layout.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
+            const reachesRight = lay.leftPct + lay.widthPct >= 99.5
             return (
               <div
                 key={ev.id}
@@ -1702,7 +1818,9 @@ function TimelineRenderer({
                   top: pos.topPx,
                   height: Math.max(QUARTER_HEIGHT, heightPx),
                   left: `calc(${lay.leftPct}% + 2px)`,
-                  width: `calc(${lay.widthPct}% - 4px)`,
+                  width: reachesRight
+                    ? `calc(${lay.widthPct}% - 4px - ${TL_RIGHT_GUTTER}px)`
+                    : `calc(${lay.widthPct}% - 4px)`,
                   zIndex: lay.zIndex,
                   background: tlGcalColor(ev),
                 }}
@@ -1717,9 +1835,36 @@ function TimelineRenderer({
                 title={ev.title}
               >
                 <span className="timeline-block-text">{ev.title}</span>
+                <span
+                  className="timeline-block-resize"
+                  onMouseDown={e => startResize(e, ev.id, 'gcal', startMs, endMs, pos.topPx)}
+                  title="Arrastra para cambiar duración"
+                />
               </div>
             )
           })}
+
+          {/* Input inline para crear una tarea en el slot clickeado */}
+          {inlineCreate && (
+            <div
+              className="timeline-inline-create"
+              style={{ top: inlineCreate.pxY, height: HOUR_HEIGHT }}
+              onClick={e => e.stopPropagation()}
+            >
+              <input
+                ref={inlineInputRef}
+                className="timeline-inline-create-input"
+                placeholder={`Nueva tarea a las ${String(inlineCreate.hour).padStart(2,'0')}:${String(inlineCreate.minutes).padStart(2,'0')}…`}
+                value={inlineText}
+                onChange={e => setInlineText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitInlineCreate() }
+                  else if (e.key === 'Escape') { e.preventDefault(); cancelInlineCreate() }
+                }}
+                onBlur={() => { if (!inlineText.trim()) cancelInlineCreate() }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
