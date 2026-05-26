@@ -1047,18 +1047,37 @@ interface Props {
 // ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
 
 function PerfilIAPane() {
-  const PROFILE_LS = 'from_ai_profile'
-  const [profile, setProfile] = useState<string>(() => localStorage.getItem(PROFILE_LS) || '')
+  // Paridad con Mac: el perfil vive en un nodo sincronizado (no localStorage).
+  // Se identifica por extraData._perfilIA = "1" y el contenido está en
+  // node.body. Cualquier cambio se propaga via sync a Mac y al servidor.
+  useStore() // re-render on store changes
+  const node = store.perfilIANode()
+  const [profile, setProfile] = useState<string>(node?.body ?? '')
   const [saved, setSaved] = useState(false)
-  function save() {
-    localStorage.setItem(PROFILE_LS, profile.trim())
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+  const [savingError, setSavingError] = useState<string | null>(null)
+
+  // Si el nodo aparece por primera vez (creado en otro dispositivo), hidratar.
+  useEffect(() => {
+    if (node && !profile) setProfile(node.body ?? '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id])
+
+  async function save() {
+    setSavingError(null)
+    try {
+      const n = node ?? (await store.getOrCreatePerfilIA())
+      store.updateNode(n.id, { body: profile.trim() })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    } catch (e) {
+      setSavingError(e instanceof Error ? e.message : 'Error guardando perfil')
+    }
   }
+
   return (
     <div className="st-pane">
       <SectionTitle>Perfil para la IA</SectionTitle>
-      <Row label="Contexto sobre ti" hint="Información que la IA usa como contexto en todas tus interacciones. Ej: profesión, intereses, estilo de comunicación preferido." />
+      <Row label="Contexto sobre ti" hint="Información que la IA usa como contexto en todas tus interacciones. Se sincroniza con tus otros dispositivos (Mac/iOS). Ej: profesión, intereses, estilo de comunicación preferido." />
       <textarea
         value={profile}
         onChange={e => setProfile(e.target.value)}
@@ -1069,7 +1088,9 @@ function PerfilIAPane() {
       />
       <div className="st-actions" style={{ marginTop: 10 }}>
         <button className="btn-primary" onClick={save}>{saved ? '✓ Guardado' : 'Guardar'}</button>
+        {node && <span style={{ marginLeft: 12, fontSize: 11, opacity: 0.55 }}>Sincronizado con Mac y iOS.</span>}
       </div>
+      {savingError && <div style={{ color: '#c33', fontSize: 12, marginTop: 6 }}>{savingError}</div>}
     </div>
   )
 }

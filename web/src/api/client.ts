@@ -224,7 +224,7 @@ export async function aiInlineStream(
   prompt: string,
   context?: string,
   onChunk?: (chunk: string) => void,
-  opts?: { resourceUrl?: string; resourceKind?: 'youtube' | 'article' | 'podcast' }
+  opts?: { resourceUrl?: string; resourceKind?: 'youtube' | 'article' | 'podcast'; userProfile?: string }
 ): Promise<string> {
   const token = getToken()
   const res = await fetch(`${BASE}/ai/inline`, {
@@ -239,6 +239,7 @@ export async function aiInlineStream(
       maxTokens: 800,
       resourceUrl: opts?.resourceUrl,
       resourceKind: opts?.resourceKind,
+      userProfile: opts?.userProfile,
     }),
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)

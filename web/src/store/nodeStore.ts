@@ -199,6 +199,33 @@ export class NodeStore {
     return [...this.nodes.values()].filter(n => !n.deletedAt)
   }
 
+  /// Nodo perfil de la IA (paridad Mac NodeService.perfilIANode).
+  /// Identificado por extraData._perfilIA == "1". El cuerpo (node.body) es
+  /// el texto que el usuario escribe como contexto personal para la IA.
+  perfilIANode(): Node | null {
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._perfilIA === '1') return n
+      } catch { /* ignore */ }
+    }
+    return null
+  }
+
+  /// Crea (si no existe) o devuelve el nodo perfil IA.
+  async getOrCreatePerfilIA(): Promise<Node> {
+    const existing = this.perfilIANode()
+    if (existing) return existing
+    // Crearlo como nodo raíz oculto del usuario.
+    const created = this.createNode({
+      text: 'Perfil para la IA',
+      parentId: null,
+      extraData: { _perfilIA: '1' },
+    })
+    return created
+  }
+
   todayDiary(): Node | null {
     const today = new Date()
     today.setHours(0, 0, 0, 0)

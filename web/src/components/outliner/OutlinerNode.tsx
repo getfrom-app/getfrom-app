@@ -804,7 +804,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             }
           }
         },
-        resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
+        {
+          ...(resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : {}),
+          userProfile: store.perfilIANode()?.body ?? undefined,
+        }
       ).then(() => {
         const fullText = (currentText + aiText).replace(/ /g, ' ')
         // Fase 2: modo ghost — NO guardar en store todavía
@@ -1747,7 +1750,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         aiText += chunk
                         nodeTextRef.current = aiText
                         if (contentRef.current) contentRef.current.textContent = aiText
-                      }).catch(console.error).finally(() => {
+                      }, { userProfile: store.perfilIANode()?.body ?? undefined })
+                      .catch(console.error).finally(() => {
                         setIsAiStreaming(false)
                         store.updateNode(node.id, { text: aiText })
                       })
