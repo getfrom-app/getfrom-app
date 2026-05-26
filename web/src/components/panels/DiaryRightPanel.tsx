@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore, nodeMeta } from '../../store/nodeStore'
+import PendingTaskRow from '../shared/PendingTaskRow'
 import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
@@ -506,115 +507,33 @@ interface AgendaTaskRowProps {
   onDropAsChild?: (draggedId: string) => void // soltar como hijo (solo seguimiento)
 }
 
-function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onToggle, onClick, onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
-  const [hovered, setHovered] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
-  const btnRef = useRef<HTMLButtonElement>(null!)
-
-  function handleToggle() {
-    // Si ya está done o es evento → toggle inmediato
-    if (task.status === 'done' || isEvent) { onToggle(); return }
-    // Marcar done con animación de despedida
-    if (leaving) return
-    setLeaving('pulse')
-    setTimeout(() => setLeaving('fade'), 700)
-    setTimeout(() => { onToggle() }, 1200)
-  }
-
-  const rowClass = [
-    'diary-agenda-task',
-    indented ? 'diary-agenda-task--indented' : '',
-    (task.status === 'done' || leaving) ? 'diary-agenda-task--done' : '',
-    isDragOver ? 'diary-agenda-task--drop' : '',
-    leaving === 'fade' ? 'cal-panel-task--leaving' : '',
-  ].filter(Boolean).join(' ')
-
+function AgendaTaskRow({ task, checkboxClass, indented, isEvent, parentNote, onToggle, onClick, onDropBefore: _onDropBefore, onDropAsChild }: AgendaTaskRowProps) {
+  void _onDropBefore  // no usado actualmente; PendingTaskRow podría aceptarlo si hace falta
+  void onToggle       // PendingTaskRow gestiona el toggle internamente vía store.updateNode
+  // Inferir variant a partir del checkboxClass de la categoría
+  const variant: 'today' | 'overdue' | 'done' | 'future' | 'event' = (() => {
+    if (isEvent) return 'event'
+    if (checkboxClass.includes('--done')) return 'done'
+    if (checkboxClass.includes('--overdue')) return 'overdue'
+    if (checkboxClass.includes('--future')) return 'future'
+    return 'today'
+  })()
   return (
-    <div
-      className={rowClass}
-      style={{ position: 'relative', userSelect: 'none' }}
-      draggable
-      onDragStart={e => {
-        _agendaDragId = task.id
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/plain', task.id)
-        e.dataTransfer.setData('cal-node-id', task.id)
-      }}
-      onDragEnd={() => { _agendaDragId = null; setIsDragOver(false) }}
-      onDragOver={e => {
-        if (_agendaDragId && _agendaDragId !== task.id) {
-          e.preventDefault()
-          e.dataTransfer.dropEffect = 'move'
-          setIsDragOver(true)
-        }
-      }}
-      onDragLeave={() => setIsDragOver(false)}
-      onDrop={e => {
-        e.preventDefault()
-        setIsDragOver(false)
-        const id = _agendaDragId
-        _agendaDragId = null
-        if (!id || id === task.id) return
-        // Siempre hacer hijo: drop sobre cualquier nodo lo indenta bajo él
-        if (onDropAsChild) {
-          onDropAsChild(id)
-        }
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setIsDragOver(false) }}
+    <PendingTaskRow
+      task={task}
+      variant={variant}
+      indented={indented}
+      parentNote={parentNote}
       onClick={onClick}
-    >
-      {isEvent ? (
-        <span className="diary-agenda-event-icon">📅</span>
-      ) : leaving ? (
-        <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
-      ) : (
-        <button
-          className={checkboxClass}
-          onClick={e => { e.stopPropagation(); handleToggle() }}
-        >
-          {task.status === 'done' ? '✓' : ''}
-        </button>
-      )}
-
-      <span className={`diary-agenda-text${task.status === 'done' ? ' done' : ''}`}>
-        {task.text ? renderInline(task.text) : 'Sin título'}
-      </span>
-
-      {parentNote && (
-        <span className="diary-agenda-parent-note" title={parentNote}>{parentNote}</span>
-      )}
-      {task.due && <span className="diary-agenda-due">{formatDue(task.due)}</span>}
-
-      {/* Hover props button — abre el modal a nivel del panel (no por fila) */}
-      {hovered && (
-        <div style={{ position: 'relative', marginLeft: 'auto', flexShrink: 0 }}>
-          <button
-            ref={btnRef}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-tertiary)',
-              fontSize: 14,
-              padding: '0 4px',
-              lineHeight: 1,
-              borderRadius: 4,
-            }}
-            onClick={e => {
-              e.stopPropagation()
-              if (_agendaOpenTaskModal) _agendaOpenTaskModal(task)
-            }}
-            title="Propiedades de la tarea"
-          >
-            ···
-          </button>
-        </div>
-      )}
-    </div>
+      onOpenProps={() => { if (_agendaOpenTaskModal) _agendaOpenTaskModal(task) }}
+      onDropAsChild={onDropAsChild}
+    />
   )
 }
+
+// (Antiguo AgendaTaskRow renderizado a mano — eliminado en v8.25. Sustituido
+// por wrapper sobre PendingTaskRow. Sigue debajo el resto del archivo.)
+// (Antiguo AgendaTaskRow eliminado — el wrapper sobre PendingTaskRow está arriba.)
 
 // ── Sort helper (Mac-style: overdue → today/range → no due) ──────────────────
 
@@ -730,7 +649,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     if (!node.parentId) return false
     const parent = s.getNode(node.parentId)
     if (!parent || parent.deletedAt) return false
-    return parent.status !== null && !parent.isDiaryEntry && !parent.isSeguimiento
+    return parent.status !== null && !parent.isDiaryEntry
   }
 
   const overdueRaw = allPending.filter(n => {
@@ -1030,7 +949,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
   const allDayTasks = s.allActive().filter(n =>
     n.status !== null && !n.deletedAt && n.due
-    && !n.isSeguimiento && !(n.types || []).includes('bucle')
+   
   )
 
   const tasksByHour: Record<number, Node[]> = {}
@@ -1052,7 +971,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   // ── Events for timeline ────────────────────────────────────────────────
   const allEvents = s.allActive().filter(n =>
     n.isEvent && n.due && !n.deletedAt
-    && !n.isSeguimiento && !(n.types || []).includes('bucle')
+   
   )
   const eventsByHour: Record<number, Node[]> = {}
   for (const h of hours) {

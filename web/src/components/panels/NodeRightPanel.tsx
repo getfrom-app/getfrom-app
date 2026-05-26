@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { store, useStore } from '../../store/nodeStore'
+import { store, useStore, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
@@ -17,7 +17,7 @@ export default function NodeRightPanel({ node }: Props) {
   const [newType, setNewType] = useState('')
 
   // ── Recurso ──────────────────────────────────────────────────────────────
-  const isResource = (() => { try { return !!JSON.parse(node.extraData || '{}')._resource } catch { return false } })()
+  const isResource = nodeMeta(node).resource
   function toggleResource() {
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch {}
@@ -57,31 +57,7 @@ export default function NodeRightPanel({ node }: Props) {
   }
   function setPriority(priority: Node['priority']) { store.updateNode(node.id, { priority }) }
   function toggleFavorite() { store.updateNode(node.id, { isFavorite: !node.isFavorite }) }
-  function toggleSeguimiento() {
-    const newVal = !node.isSeguimiento
-    if (newVal) {
-      // Activar bucle: limpia todo lo que pueda hacer que se trate como tarea/evento.
-      // Un bucle es una nota abierta sin fecha sin status, contenedor binario.
-      const existingTypes = node.types || []
-      const newTypes = existingTypes.includes('bucle') ? existingTypes : [...existingTypes, 'bucle']
-      store.updateNode(node.id, {
-        isSeguimiento: true,
-        types: newTypes,
-        status: null,
-        due: null,
-        dueEnd: null,
-        recurrence: null,
-        isEvent: false,
-      })
-    } else {
-      // Desactivar bucle: vuelve a nota normal. Quitar también el tag 'bucle'.
-      const newTypes = (node.types || []).filter(t => t !== 'bucle')
-      store.updateNode(node.id, {
-        isSeguimiento: false,
-        types: newTypes,
-      })
-    }
-  }
+  // toggleSeguimiento eliminado en v8.25: el concepto bucle ya no existe.
   // ── Event popup ──────────────────────────────────────────────────────────
   const [showEventPopup, setShowEventPopup] = useState(false)
   const [evtPopupPos, setEvtPopupPos] = useState<{ top: number; left: number } | null>(null)
@@ -111,7 +87,7 @@ export default function NodeRightPanel({ node }: Props) {
   // ── Auto-sync silencioso a GCal al cambiar cualquier propiedad del evento ──
   useEffect(() => {
     if (!node.isEvent || !node.due) return
-    const gcalId = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
+    const gcalId = (nodeMeta(node).gcalEventId ?? null)
     const timer = setTimeout(async () => {
       const end = node.dueEnd || new Date(new Date(node.due!).getTime() + 3600000).toISOString()
       let loc = ''
@@ -207,8 +183,8 @@ export default function NodeRightPanel({ node }: Props) {
     setTimeout(() => setShowEventPopup(false), 1200)
   }
 
-  const evtLocation_stored = (() => { try { return JSON.parse(node.extraData || '{}').location || '' } catch { return '' } })()
-  const gcalEventId = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
+  const evtLocation_stored = (nodeMeta(node).location ?? '')
+  const gcalEventId = (nodeMeta(node).gcalEventId ?? null)
 
   function toggleEvent() { store.updateNode(node.id, { isEvent: !node.isEvent }) }
   const isLocked = (() => {
@@ -260,7 +236,7 @@ export default function NodeRightPanel({ node }: Props) {
     const safe = Math.max(1, Math.round(n) || 1)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
-  const nodeColor = (() => { try { return JSON.parse(node.extraData || '{}').color || null } catch { return null } })()
+  const nodeColor = (nodeMeta(node).color ?? null)
   const colors = [null, '#ef4444', '#f97316', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899']
   function setColor(color: string | null) {
     try {
@@ -290,18 +266,18 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── Acciones rápidas ─────────────────────────────────────────────── */}
       <div className="prop-row">
         <button
-          className={`prop-icon-btn ${node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent ? 'active' : ''}`}
+          className={`prop-icon-btn ${node.status !== null && !isResource && !node.isEvent ? 'active' : ''}`}
           onClick={() => {
-            if (node.status !== null && !node.isSeguimiento && !isResource && !node.isEvent) {
+            if (node.status !== null && !isResource && !node.isEvent) {
               store.updateNode(node.id, { status: null })
-            } else if (isResource || node.isEvent || node.isSeguimiento) {
+            } else if (isResource || node.isEvent) {
               return
             } else {
-              store.updateNode(node.id, { status: 'pending', isSeguimiento: false, due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
+              store.updateNode(node.id, { status: 'pending', due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
-          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : node.isSeguimiento ? 'Es un bucle, no una tarea' : 'Tarea'}
-          style={isResource || node.isEvent || node.isSeguimiento ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+          title={isResource ? 'Es un recurso, no una tarea' : node.isEvent ? 'Es un evento, no una tarea' : 'Tarea'}
+          style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
         >
           ○ Tarea
         </button>
@@ -322,7 +298,7 @@ export default function NodeRightPanel({ node }: Props) {
       {isResource && <ResourcePanel node={node} />}
 
       {/* ── Estado (visible salvo evento o bucle — bucle es binario abierto/cerrado) ─ */}
-      {!node.isEvent && !node.isSeguimiento && (
+      {!node.isEvent && (
         <div className="prop-section">
           <div className="prop-section-label">Estado</div>
           <div className="prop-pills">
@@ -336,7 +312,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Prioridad (solo si tiene status pendiente) ─────────────────────── */}
-      {node.status === 'pending' && !node.isSeguimiento && (
+      {node.status === 'pending' && (
         <div className="prop-section">
           <div className="prop-section-label">Prioridad</div>
           <div className="prop-pills">
@@ -350,7 +326,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Fecha (oculta si status es future/done o si es bucle) ────────── */}
-      {!node.isEvent && !node.isSeguimiento && node.status !== 'future' && node.status !== 'done' && (
+      {!node.isEvent && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
           <div className="prop-section-label">Fecha</div>
           <div className="prop-quick-dates">
@@ -514,7 +490,7 @@ export default function NodeRightPanel({ node }: Props) {
       )}
 
       {/* ── Repetición ──────────────────────────────────────────────────────── */}
-      {node.status !== null && !node.isSeguimiento && (
+      {node.status !== null && (
         <div className="prop-section">
           <div className="prop-section-label">Repetición</div>
           <div className="prop-rec-row">

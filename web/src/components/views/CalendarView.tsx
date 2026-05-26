@@ -426,7 +426,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   // Eventos y tareas con fecha — los BUCLES NO van al calendario (son contenedores).
   const nodesWithDue = allNodes.filter(n =>
     n.due && !n.deletedAt &&
-    !n.isSeguimiento && !(n.types || []).includes('bucle')
+    !n.isSeguimiento
   )
 
   // Nodos para un día determinado
@@ -837,7 +837,7 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
   const navigate = useNavigate()
   const [gcalEditing, setGcalEditing] = useState<CalendarEvent | null>(null)
   const nodesWithDue = allNodes.filter(n =>
-    n.due && !n.isSeguimiento && !(n.types || []).includes('bucle')
+    n.due
   )
   const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate)
 
@@ -1012,7 +1012,7 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
 
   // Also count nodes with due date — bucles no cuentan
   const nodesWithDue = allNodes.filter(n =>
-    n.due && !n.deletedAt && !n.isSeguimiento && !(n.types || []).includes('bucle')
+    n.due && !n.deletedAt
   )
   for (const n of nodesWithDue) {
     if (!n.due) continue

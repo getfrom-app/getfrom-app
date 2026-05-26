@@ -322,8 +322,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const evtDueTime = isoToLocalTime(node.due)
   const evtEndDate = isoToLocalDate(node.dueEnd)
   const evtEndTime = isoToLocalTime(node.dueEnd)
-  const evtLocationStored = (() => { try { return JSON.parse(node.extraData || '{}').location || '' } catch { return '' } })()
-  const gcalEventId_evt = (() => { try { return JSON.parse(node.extraData || '{}').gcalEventId || null } catch { return null } })()
+  const evtLocationStored = (nodeMeta(node).location ?? '')
+  const gcalEventId_evt = (nodeMeta(node).gcalEventId ?? null)
 
   function setEvtDueField(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }

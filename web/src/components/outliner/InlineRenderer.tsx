@@ -156,17 +156,13 @@ interface Props {
 export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 'code' | 'bullet' | 'text'
 
 export function detectBlockType(text: string): BlockType {
+  // v8.25: headings y bullets ya NO se detectan por prefijo de texto. Viven
+  // 100% en extraData._block (campo Node.block tras v8.24). Si alguna nota
+  // queda con prefijo "# " o "- ", la migración v8.23 la limpia al cargar.
   if (text === '---') return 'divider'
   if (text.startsWith('> ')) return 'quote'
   if (/^\d+\.\s/.test(text)) return 'numbered'
   if (text.startsWith('` ')) return 'code'
-  // Headings y bullets se manejan ahora via extraData._block (nodeMeta).
-  // detectBlockType sigue exponiendo el prefijo SOLO para retrocompat de
-  // nodos no migrados todavía (la migración v8.23 los limpia).
-  if (text.startsWith('### ')) return 'h3'
-  if (text.startsWith('## ')) return 'h2'
-  if (text.startsWith('# ')) return 'h1'
-  if (text.startsWith('- ') || text === '-') return 'bullet'
   return 'text'
 }
 
@@ -222,25 +218,15 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
   let wrapClass = ''
 
   if (type === 'divider') return '<hr class="block-divider" />'
-  if (type === 'h1') {
-    content = forcedBlock ? text : text.replace(/^#\s*/, '')
-    wrapClass = 'block-h1'
-  }
-  else if (type === 'h2') {
-    content = forcedBlock ? text : text.replace(/^##\s*/, '')
-    wrapClass = 'block-h2'
-  }
-  else if (type === 'h3') {
-    content = forcedBlock ? text : text.replace(/^###\s*/, '')
-    wrapClass = 'block-h3'
-  }
+  // v8.25: headings y bullet vienen siempre por forcedBlock (extraData._block).
+  // El text NO lleva prefijo "# "/"- ". Sin stripping necesario.
+  if (type === 'h1') { wrapClass = 'block-h1' }
+  else if (type === 'h2') { wrapClass = 'block-h2' }
+  else if (type === 'h3') { wrapClass = 'block-h3' }
   else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
   else if (type === 'numbered') { content = text.replace(/^\d+\.\s/, ''); wrapClass = 'block-numbered' }
   else if (type === 'code') { content = text.slice(2); wrapClass = 'block-code' }
-  else if (type === 'bullet') {
-    content = forcedBlock ? text : text.slice(2)
-    wrapClass = ''
-  }
+  else if (type === 'bullet') { wrapClass = '' }
 
   // Procesar inline markdown
   let html = esc(content)
