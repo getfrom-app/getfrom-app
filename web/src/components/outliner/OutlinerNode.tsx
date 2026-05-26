@@ -807,6 +807,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {
           ...(resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : {}),
           userProfile: store.perfilIANode()?.body ?? undefined,
+          tagDefinitions: store.tagDefinitionsForNode(node.id),
         }
       ).then(() => {
         const fullText = (currentText + aiText).replace(/ /g, ' ')
@@ -1750,7 +1751,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         aiText += chunk
                         nodeTextRef.current = aiText
                         if (contentRef.current) contentRef.current.textContent = aiText
-                      }, { userProfile: store.perfilIANode()?.body ?? undefined })
+                      }, {
+                        userProfile: store.perfilIANode()?.body ?? undefined,
+                        tagDefinitions: store.tagDefinitionsForNode(node.id),
+                      })
                       .catch(console.error).finally(() => {
                         setIsAiStreaming(false)
                         store.updateNode(node.id, { text: aiText })

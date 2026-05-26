@@ -441,6 +441,22 @@ export class NodeStore {
     return null
   }
 
+  /**
+   * Devuelve { tagName: body } para los tags del nodo dado que tienen una
+   * definición con cuerpo no vacío. Útil para inyectar contexto en la IA.
+   */
+  tagDefinitionsForNode(nodeId: string): Record<string, string> {
+    const node = this.nodes.get(nodeId)
+    if (!node) return {}
+    const out: Record<string, string> = {}
+    for (const tagName of node.types || []) {
+      const def = this.getTagDefNode(tagName)
+      const body = def?.body?.trim()
+      if (body && body.length > 0) out[tagName] = body
+    }
+    return out
+  }
+
   // ── Recursos ────────────────────────────────────────────────────────────────
 
   /** Todos los nodos marcados como recurso */

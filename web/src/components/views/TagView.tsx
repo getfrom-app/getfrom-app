@@ -121,6 +121,11 @@ export default function TagView() {
         </div>
 
         <div className="tag-view-count">{results.length} {results.length === 1 ? 'resultado' : 'resultados'}</div>
+
+        {/* Definición del tag — contador IA + advertencia (paridad Mac v8.34).
+            La IA lee el body del nodo de definición cuando hay una nota con
+            este tag activo. Aviso visual cuando excede el límite. */}
+        <TagDefinitionCharCounter tagName={tagName} />
       </div>
 
       <div className="view-body">
@@ -182,6 +187,49 @@ export default function TagView() {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+
+// Contador de caracteres del body del nodo de definición del tag.
+// La IA lee el body para conocer el contexto temático del tag (paridad Mac v8.34).
+// Mantener el límite sincronizado con server/src/routes/ai.ts (TAG_DEF_CHAR_LIMIT).
+const TAG_DEF_CHAR_LIMIT = 5_000
+
+function TagDefinitionCharCounter({ tagName }: { tagName: string }) {
+  const s = useStore()
+  const def = s.getTagDefNode(tagName)
+  const body = def?.body ?? ""
+  const count = body.length
+  const over = count > TAG_DEF_CHAR_LIMIT
+  const nearLimit = !over && count > TAG_DEF_CHAR_LIMIT * 0.85
+
+  // Sin definición todavía: aviso suave para crear una.
+  if (!def) {
+    return (
+      <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
+        Este tag aún no tiene una nota de definición. La IA no tendrá contexto adicional.
+      </div>
+    )
+  }
+
+  const color = over ? "#c92a2a" : nearLimit ? "#d97706" : "var(--text-secondary)"
+  const weight = over ? 600 : 400
+  return (
+    <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+      <span style={{ color, fontWeight: weight }}>
+        {over ? "⚠ " : nearLimit ? "⚠ " : "🤖 "}
+        Definición del tag: {count.toLocaleString()} / {TAG_DEF_CHAR_LIMIT.toLocaleString()} caracteres leídos por la IA
+      </span>
+      {over && (
+        <span style={{ color: "#c92a2a", fontWeight: 600 }}>
+          La IA solo leerá los primeros {TAG_DEF_CHAR_LIMIT.toLocaleString()}. Resume la definición.
+        </span>
+      )}
+      {nearLimit && (
+        <span style={{ color: "#d97706" }}>Cerca del límite — considera resumir.</span>
+      )}
     </div>
   )
 }

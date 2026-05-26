@@ -224,7 +224,13 @@ export async function aiInlineStream(
   prompt: string,
   context?: string,
   onChunk?: (chunk: string) => void,
-  opts?: { resourceUrl?: string; resourceKind?: 'youtube' | 'article' | 'podcast'; userProfile?: string }
+  opts?: {
+    resourceUrl?: string
+    resourceKind?: 'youtube' | 'article' | 'podcast'
+    userProfile?: string
+    /** Definiciones de los tags de la nota actual { tagName: descriptionBody } */
+    tagDefinitions?: Record<string, string>
+  }
 ): Promise<string> {
   const token = getToken()
   const res = await fetch(`${BASE}/ai/inline`, {
@@ -240,6 +246,7 @@ export async function aiInlineStream(
       resourceUrl: opts?.resourceUrl,
       resourceKind: opts?.resourceKind,
       userProfile: opts?.userProfile,
+      tagDefinitions: opts?.tagDefinitions,
     }),
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
