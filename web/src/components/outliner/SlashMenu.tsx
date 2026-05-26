@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export type SlashAction = 'text' | 'task' | 'bucle' | 'event' | 'note' | 'nota' | 'bullet' | 'heading-1' | 'heading-2' | 'heading-3' | 'view-table' | 'view-kanban' | 'view-calendar' | 'loop'
+export type SlashAction = 'text' | 'task' | 'expand' | 'event' | 'note' | 'nota' | 'bullet' | 'heading-1' | 'heading-2' | 'heading-3' | 'view-table' | 'view-kanban' | 'view-calendar'
 
 export interface SlashMenuOption {
   label: string
@@ -26,7 +26,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
   { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
-  { group: 'Objetos', label: 'Bucle',    icon: '●',   prefix: '',      description: 'Abrir bucle (nota activa sin fecha)', action: 'loop' },
+  { group: 'Objetos', label: 'Ampliar',  icon: '↑',   prefix: '',      description: 'Convierte la tarea en una nota que la contiene', action: 'expand' },
   // ── Vistas (inline blocks) ──────────────────────────────────────────────
   { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },

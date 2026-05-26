@@ -10,12 +10,15 @@ import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
-function hasSeguimientoAncestor(nodeId: string): string | null {
+/** True si algún ancestro del nodo es un "container vivo" (nota con tareas
+ *  pendientes dentro). Se usa para evitar duplicar tareas en el panel —
+ *  si están bajo un container, se renderizan ya dentro del container. */
+function hasLiveContainerAncestor(nodeId: string): string | null {
   let current = store.getNode(nodeId)
   while (current?.parentId) {
     const parent = store.getNode(current.parentId)
     if (!parent) break
-    if (parent.isSeguimiento || (parent.types || []).includes('bucle')) return parent.id
+    if (store.isLiveContainer(parent)) return parent.id
     current = parent
   }
   return null
@@ -66,6 +69,7 @@ export interface TaskPropsPopoverProps {
 export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
   const popNavigate = useNavigate()
+  const [movePickerOpen, setMovePickerOpen] = useState(false)
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
   // inmediatamente y navegar a su nota (es un contenedor, no una tarea).
@@ -133,18 +137,46 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      {/* Header: abrir nota */}
-      <button
-        className="tpp-open-note-btn"
-        onClick={e => {
-          e.stopPropagation()
-          popNavigate(`/node/${node.id}`)
-          onClose()
-        }}
-        title="Abrir nota completa"
-      >
-        ↗ Abrir nota
-      </button>
+      {/* Header: acciones de la tarea (abrir, ampliar, mover) */}
+      <div className="tpp-header-actions">
+        <button
+          className="tpp-open-note-btn"
+          onClick={e => {
+            e.stopPropagation()
+            popNavigate(`/node/${node.id}`)
+            onClose()
+          }}
+          title="Abrir nota completa"
+        >
+          ↗ Abrir
+        </button>
+        {node.status !== null && (
+          <button
+            className="tpp-open-note-btn"
+            onClick={e => {
+              e.stopPropagation()
+              const result = store.expandToContainer(node.id)
+              onClose()
+              if (result) popNavigate(`/node/${result.containerId}`)
+            }}
+            title="Convertir en nota contenedora con esta tarea como primer paso"
+          >
+            ↑ Ampliar
+          </button>
+        )}
+        <button
+          className="tpp-open-note-btn"
+          onClick={e => {
+            e.stopPropagation()
+            setMovePickerOpen(v => !v)
+          }}
+          title="Mover esta tarea dentro de otra nota"
+        >
+          → Mover a…
+        </button>
+      </div>
+
+      {movePickerOpen && <MovePicker nodeId={node.id} onPicked={() => { setMovePickerOpen(false); onClose() }} onCancel={() => setMovePickerOpen(false)} />}
 
       {/* Título / rename */}
       {allowRename ? (
@@ -662,34 +694,21 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
   // ── Agenda logic ───────────────────────────────────────────────────────
 
-  // Nodos de seguimiento — filtrar por día (sin due → hoy + overdue, con due → ese día)
+  // Containers vivos: notas con ≥1 tarea pendiente descendente. Solo en el
+  // panel del día de HOY (en semana/mes los reagrupamos por fecha).
+  // Excluimos containers que ya están dentro de otro container vivo
+  // (mostramos el ancestro más alto, no anidamos).
   const isThisDayToday = diaryDate.toDateString() === now.toDateString()
-  const seguimientoNodes = s.allActive()
-    .filter(n => !n.deletedAt && (n.isSeguimiento || (n.types || []).includes('bucle')))
-    .filter(n => {
-      // Sin fecha: solo en el panel de HOY
-      if (!n.due) return isThisDayToday
-      const due = new Date(n.due)
-      // Cae en este día: mostrar
-      if (due >= dateStart && due < dateEnd) return true
-      // Overdue (due < hoy) y estamos en HOY: traer de vuelta a hoy
-      if (isThisDayToday && due < todayStart) return true
-      return false
-    })
-    .sort((a, b) => {
-      const ao = (a as any).seguimientoOrder ?? null
-      const bo = (b as any).seguimientoOrder ?? null
-      if (ao !== null && bo !== null) return ao - bo
-      if (ao !== null) return -1
-      if (bo !== null) return 1
-      return b.updatedAt.localeCompare(a.updatedAt)
-    })
+  const seguimientoNodes = isThisDayToday
+    ? s.liveContainers().filter(n => !hasLiveContainerAncestor(n.id))
+    : []
 
   const allPending = s.allActive().filter(
     n => n.status === 'pending' && !n.deletedAt && n.due
   )
 
-  // Set de IDs de nodos que SON seguimiento (para excluirlos de overdue/today)
+  // Set de IDs de containers (para excluir sus descendientes de overdue/today
+  // si los renderizamos bajo el container).
   const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
 
   /** True si el padre directo del nodo es una tarea (status !== null, no diario, no seguimiento) */
@@ -703,7 +722,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const overdueRaw = allPending.filter(n => {
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false        // el nodo MISMO es seguimiento
-    if (hasSeguimientoAncestor(n.id)) return false    // es hijo de seguimiento
+    if (hasLiveContainerAncestor(n.id)) return false    // es hijo de seguimiento
     if (hasTaskParent(n)) return false                // es hijo de tarea → se muestra bajo ella
     return new Date(n.due) < todayStart
   })
@@ -712,7 +731,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const todayTasksRaw = allPending.filter(n => {
     if (!n.due) return false
     if (seguimientoIds.has(n.id)) return false
-    if (hasSeguimientoAncestor(n.id)) return false
+    if (hasLiveContainerAncestor(n.id)) return false
     if (hasTaskParent(n)) return false                // es hijo de tarea → se muestra bajo ella
     const d = new Date(n.due)
     if (rangeType === 'week' || rangeType === 'month') {
@@ -735,20 +754,15 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     return 0
   })
 
-  // Hijos de un nodo de seguimiento: tareas (pending + done) y eventos — igual que Mac
+  // Tareas pendientes descendientes (recursivo) de un container vivo.
+  // Por simplicidad ordenamos por due asc (sin fecha al final).
   function getChildTasks(nodeId: string): Node[] {
-    return store.children(nodeId)
-      .filter(n => !n.deletedAt && (n.status !== null || n.isEvent))
-      .sort((a, b) => {
-        // Pendientes primero, luego completadas
-        if (a.status !== 'done' && b.status === 'done') return -1
-        if (a.status === 'done' && b.status !== 'done') return 1
-        // Por fecha si tienen
-        if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
-        if (a.due && !b.due) return -1
-        if (!a.due && b.due) return 1
-        return a.siblingOrder - b.siblingOrder
-      })
+    return s.containerPendingTasks(nodeId).sort((a, b) => {
+      if (a.due && b.due) return new Date(a.due).getTime() - new Date(b.due).getTime()
+      if (a.due && !b.due) return -1
+      if (!a.due && b.due) return 1
+      return a.siblingOrder - b.siblingOrder
+    })
   }
 
   // Clase de checkbox para tareas hijo de seguimiento — COMO TAREA, no como seguimiento
@@ -818,13 +832,14 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
     return (
       <div className="diary-panel-content">
-        {/* Nodos en seguimiento + sus tareas hijo */}
+        {/* Containers vivos — notas con tareas pendientes dentro.
+            La nota es el header (clickable para abrirla). Acepta drops
+            para mover tareas dentro. */}
         {seguimientoNodes.map(node => {
           const childTasks = getChildTasks(node.id)
+          if (childTasks.length === 0) return null
           return (
             <div key={node.id}>
-              {/* Header bucle — NO draggable (los bucles no son agendables, son contenedores).
-                  Solo acepta drops para meter tareas dentro. */}
               <div
                 className={`diary-agenda-seguimiento${dragOverSegId === node.id ? ' diary-agenda-seguimiento--drop' : ''}`}
                 draggable={false}
@@ -845,18 +860,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
                 }}
                 onClick={() => navigate(`/node/${node.id}`)}
               >
-                <span
-                  className={`diary-agenda-checkbox diary-agenda-checkbox--seguimiento${node.status === 'done' ? ' diary-agenda-checkbox--done' : ''}`}
-                  onClick={e => {
-                    e.stopPropagation()
-                    store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
-                  }}
-                ></span>
-                <span className={`diary-agenda-text${node.status === 'done' ? ' done' : ''}`}>{node.text ? renderInline(node.text) : 'Sin título'}</span>
-                {getParentNote(node) && (
-                  <span className="diary-agenda-parent-note" title={getParentNote(node)}>{getParentNote(node)}</span>
-                )}
-                {node.due && <span className="diary-agenda-due">{formatDue(node.due)}</span>}
+                <span className="diary-agenda-container-icon">📁</span>
+                <span className="diary-agenda-text">{node.text ? renderInline(node.text) : 'Sin título'}</span>
+                <span className="diary-agenda-container-count">{childTasks.length}</span>
               </div>
               {childTasks.map(task => (
                 <AgendaTaskRow
@@ -871,7 +877,6 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
                   onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
                 />
               ))}
-
             </div>
           )
         })}
@@ -1704,3 +1709,79 @@ function TimelineRenderer({
     </div>
   )
 }
+
+// ── MovePicker — buscador fuzzy para reparentar una tarea ────────────────────
+
+function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: () => void; onCancel: () => void }) {
+  const s = useStore()
+  const [query, setQuery] = useState('')
+  const [activeIdx, setActiveIdx] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  // Excluir: el propio nodo, sus ancestros (evitar ciclos), diary entries,
+  //          tareas (no son contenedores), eventos, recursos, papelera.
+  function isAncestor(maybeAncestor: string, of: string): boolean {
+    let cur = s.getNode(of)
+    while (cur?.parentId) {
+      if (cur.parentId === maybeAncestor) return true
+      cur = s.getNode(cur.parentId)
+    }
+    return false
+  }
+  const candidates = s.allActive().filter(n => {
+    if (n.deletedAt) return false
+    if (n.id === nodeId) return false
+    if (n.isDiaryEntry) return false
+    if (n.status !== null) return false  // no tareas como destino
+    if (n.isEvent) return false
+    try { if (JSON.parse(n.extraData || '{}')._resource) return false } catch { /* */ }
+    if (isAncestor(nodeId, n.id)) return false
+    return true
+  })
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? candidates.filter(n => (n.text || '').toLowerCase().includes(q)).slice(0, 12)
+    : candidates.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 12)
+
+  function pick(targetId: string) {
+    const sibs = store.children(targetId)
+    const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+    store.updateNode(nodeId, { parentId: targetId, siblingOrder: lastOrder + 1 })
+    onPicked()
+  }
+
+  return (
+    <div className="tpp-move-picker">
+      <input
+        ref={inputRef}
+        className="tpp-move-input"
+        placeholder="Buscar nota destino..."
+        value={query}
+        onChange={e => { setQuery(e.target.value); setActiveIdx(0) }}
+        onKeyDown={e => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)) }
+          else if (e.key === 'Enter') { e.preventDefault(); const t = filtered[activeIdx]; if (t) pick(t.id) }
+          else if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+        }}
+      />
+      <div className="tpp-move-results">
+        {filtered.length === 0 && <div className="tpp-move-empty">Sin resultados</div>}
+        {filtered.map((n, i) => (
+          <button
+            key={n.id}
+            className={`tpp-move-item${i === activeIdx ? ' active' : ''}`}
+            onClick={() => pick(n.id)}
+            onMouseEnter={() => setActiveIdx(i)}
+          >
+            <span className="tpp-move-item-icon">📄</span>
+            <span className="tpp-move-item-text">{n.text || 'Sin título'}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+

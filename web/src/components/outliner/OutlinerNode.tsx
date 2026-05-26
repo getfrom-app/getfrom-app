@@ -985,24 +985,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
       }
-      if (trimmed.endsWith(' -b') || trimmed.endsWith(' -b')) {
-        const cleanText = trimmed.slice(0, -3).trimEnd()
-        const newTypes = node.types?.includes('bucle') ? node.types : [...(node.types || []), 'bucle']
-        nodeTextRef.current = cleanText
-        // Bucle = nota abierta sin fecha sin status. NO es una tarea.
-        store.updateNode(node.id, {
-          text: cleanText,
-          types: newTypes,
-          isSeguimiento: true,
-          status: null,
-          due: null,
-          dueEnd: null,
-          recurrence: null,
-          isEvent: false,
-        })
-        if (contentRef.current) contentRef.current.textContent = cleanText
-        return
-      }
+      // (Eliminado sufijo -b: bucle ya no existe como concepto.)
       if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
@@ -1322,18 +1305,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (action === 'task') {
       updates.status = 'pending'
       if (!node.due) updates.due = todayISOslash
-    } else if (action === 'bucle' || action === 'loop') {
-      // Bucle = nota abierta SIN fecha SIN status. Contenedor binario.
-      const existingTypes = node.types || []
-      if (!existingTypes.includes('bucle')) {
-        updates.types = [...existingTypes, 'bucle']
+    } else if (action === 'expand') {
+      // "Ampliar": la tarea actual se convierte en nota contenedora con su
+      // copia como primera sub-tarea. Si no es tarea, no-op.
+      if (node.status !== null) {
+        const result = store.expandToContainer(node.id)
+        if (result) navigate(`/node/${result.containerId}`)
       }
-      updates.isSeguimiento = true
-      updates.status = null
-      updates.due = null
-      updates.dueEnd = null
-      updates.recurrence = null
-      updates.isEvent = false
+      return
     } else if (action === 'event') {
       updates.isEvent = true
       updates.status = null

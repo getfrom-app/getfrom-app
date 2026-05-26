@@ -316,14 +316,6 @@ export default function NodeRightPanel({ node }: Props) {
         <button className={`prop-icon-btn ${isResource ? 'active resource' : ''}`} onClick={toggleResource} title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}>
           🔗 Recurso
         </button>
-        <button
-          className={`prop-icon-btn ${node.isSeguimiento ? 'active bucle' : ''}`}
-          onClick={toggleSeguimiento}
-          title={node.isSeguimiento ? 'Cerrar bucle (vuelve a nota normal)' : 'Marcar como bucle (nota abierta sin fecha)'}
-          style={node.isSeguimiento ? { color: '#8b5cf6' } : undefined}
-        >
-          ● Bucle
-        </button>
       </div>
 
       {/* ── Panel de recurso ────────────────────────────────────────────────── */}

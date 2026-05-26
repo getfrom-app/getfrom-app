@@ -299,6 +299,90 @@ class NodeStore {
     })
   }
 
+  /** ¿Es una nota "container" (proyecto de facto)? Una nota normal que tiene
+   *  ≥1 descendiente con status === 'pending'. No es ella misma tarea/evento/
+   *  recurso/diaria. Reemplaza al concepto antiguo de "bucle". */
+  isLiveContainer(node: Node, options?: { requireUnscheduled?: boolean }): boolean {
+    if (!node || node.deletedAt) return false
+    if (node.isDiaryEntry) return false
+    if (node.status !== null) return false  // es tarea
+    if (node.isEvent) return false
+    try { if (JSON.parse(node.extraData || '{}')._resource) return false } catch { /* ignore */ }
+    // Recorrer descendientes buscando una tarea pendiente
+    const want = options?.requireUnscheduled
+    const stack: string[] = [node.id]
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      const kids = this.children(id)
+      for (const k of kids) {
+        if (k.deletedAt) continue
+        if (k.status === 'pending') {
+          if (!want || !k.due) return true
+        }
+        stack.push(k.id)
+      }
+    }
+    return false
+  }
+
+  /** Devuelve todas las notas "container" vivas. */
+  liveContainers(options?: { requireUnscheduled?: boolean }): Node[] {
+    return this.allActive()
+      .filter(n => this.isLiveContainer(n, options))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  /** Tareas pendientes descendientes de un container. Si requireUnscheduled,
+   *  solo las que no tienen due asignado. */
+  containerPendingTasks(nodeId: string, options?: { requireUnscheduled?: boolean }): Node[] {
+    const want = options?.requireUnscheduled
+    const result: Node[] = []
+    const stack: string[] = [nodeId]
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      const kids = this.children(id)
+      for (const k of kids) {
+        if (k.deletedAt) continue
+        if (k.status === 'pending' && (!want || !k.due)) result.push(k)
+        stack.push(k.id)
+      }
+    }
+    return result
+  }
+
+  /** "Ampliar" una tarea → se convierte en contenedor con su propia copia como
+   *  primera sub-tarea. Devuelve { containerId, firstChildId }. */
+  expandToContainer(taskId: string): { containerId: string; firstChildId: string } | null {
+    const task = this.getNode(taskId)
+    if (!task || task.status === null) return null
+    // 1. Crear la copia como primera sub-tarea, conservando todas las props
+    const child = this.createNode({
+      text: task.text,
+      parentId: task.id,
+      siblingOrder: 1,
+      isTask: true,
+    })
+    this.updateNode(child.id, {
+      status: task.status,
+      due: task.due,
+      dueEnd: task.dueEnd,
+      priority: task.priority,
+      recurrence: task.recurrence,
+      types: task.types,
+    })
+    // 2. El nodo padre pasa a ser nota (container): sin status, sin fecha,
+    //    sin prioridad, sin recurrencia. Su texto se conserva como título.
+    this.updateNode(task.id, {
+      status: null,
+      due: null,
+      dueEnd: null,
+      priority: null,
+      recurrence: null,
+      isEvent: false,
+    })
+    return { containerId: task.id, firstChildId: child.id }
+  }
+
   /** Tareas vinculadas a un nodo: hijos directos con status + legacy _linkedNodeId */
   linkedTasks(nodeId: string): Node[] {
     const byParent = this.children(nodeId).filter(n => !n.deletedAt && n.status !== null)
@@ -942,35 +1026,31 @@ class NodeStore {
       await this.sync()
     }
 
-    // Migración REVERTIDA v7.95: bucle ahora es concepto separado, no status.
-    // Limpiamos status:pending + due:null en nodos isSeguimiento (eran la
-    // migración de v7.65 que ahora deshacemos). Sus tareas hijas no se tocan.
-    // v8.03: cubrimos también nodos cuyo "bucle" venga sólo por types[], no
-    // sólo por la flag isSeguimiento.
-    let reverted = 0
+    // v8.12: ELIMINACIÓN del concepto "bucle". Cualquier nodo bucle (flag
+    // isSeguimiento o tag 'bucle') pasa a nota normal. Sus tareas hijas
+    // intactas — siguen apareciendo en el panel como container vivo si
+    // tienen pendientes.
+    let migrated = 0
     for (const node of this.nodes.values()) {
       if (node.deletedAt) continue
       const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
       if (!isBucle) continue
-      // Bucles no son tareas: limpiar status si era pending sin due
-      if (node.status === 'pending' && !node.due) {
-        this.updateNode(node.id, { status: null })
-        reverted++
-      }
-      // Bucles NO deben tener fecha: limpiar si por error la tienen
-      if (node.due) {
-        this.updateNode(node.id, { due: null, dueEnd: null, recurrence: null })
-        reverted++
-      }
-      // Bucles no son eventos
-      if (node.isEvent) {
-        this.updateNode(node.id, { isEvent: false })
-        reverted++
-      }
+      const newTypes = (node.types || []).filter(t => t !== 'bucle')
+      this.updateNode(node.id, {
+        isSeguimiento: false,
+        types: newTypes,
+        // Asegurar que no es ni tarea ni evento agendable
+        status: node.status === 'pending' && !node.due ? null : node.status,
+        due: null,
+        dueEnd: null,
+        recurrence: null,
+        isEvent: false,
+      })
+      migrated++
     }
-    if (reverted > 0) {
+    if (migrated > 0) {
       // eslint-disable-next-line no-console
-      console.log(`[migration] ${reverted} bucles limpiados (status / due / isEvent)`)
+      console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales (sus tareas hijas intactas)`)
       await this.sync()
     }
 
