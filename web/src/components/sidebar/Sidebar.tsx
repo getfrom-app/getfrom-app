@@ -257,6 +257,41 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
 
     return (
       <div className="sidebar-tab-content">
+        {/* Perfil IA — primera opción, siempre visible */}
+        {(() => {
+          const profile = s.perfilIANode()
+          const hasContent = !!(profile?.body?.trim())
+          const dot = hasContent ? '#22c55e' : '#f97316'
+          const hint = hasContent ? undefined : 'Cuéntale a la IA quién eres: proyectos, preferencias, forma de trabajar.'
+          return (
+            <div style={{ marginBottom: 6 }}>
+              <button
+                className="tree-item"
+                onClick={async () => {
+                  const p = await store.getOrCreatePerfilIA()
+                  navigate(`/node/${p.id}`)
+                }}
+                style={{ paddingLeft: 10, gap: 7 }}
+                title="Perfil de IA — contexto personal para el asistente"
+              >
+                <span style={{
+                  display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+                  background: dot, flexShrink: 0,
+                }} />
+                <span className="tree-item-name" style={{ fontWeight: 500 }}>Perfil de IA</span>
+                {!hasContent && (
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>configurar →</span>
+                )}
+              </button>
+              {hint && (
+                <div style={{ padding: '2px 14px 4px 26px', fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
+                  {hint}
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Proyectos activos - antes de tags */}
         {(() => {
           const projects = s.allActive()

@@ -3,6 +3,26 @@ import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
 
 const GUEST_NODES_KEY = 'from_guest_nodes'
+
+// Plantilla que se pre-rellena al crear el perfil IA por primera vez.
+// El usuario la edita y borra las instrucciones que no necesite.
+const PERFIL_IA_TEMPLATE = `Rellena este perfil para que la IA te conozca. Habla en primera persona. Borra estas instrucciones cuando termines.
+
+## Quién soy
+Nombre:
+Ubicación:
+Profesión / actividad principal:
+
+## Mis proyectos y negocios
+(Lista aquí tus proyectos, con una frase de contexto para cada uno)
+
+## Mis preferencias de comunicación
+- Háblame siempre de tú, directo y sin rodeos
+- Sin introducciones ni frases de relleno
+(Añade las tuyas)
+
+## Contexto adicional
+(Cualquier otra información que la IA deba tener en cuenta)`
 const GUEST_WORKSPACES_KEY = 'from_guest_workspaces'
 
 type Listener = () => void
@@ -217,12 +237,13 @@ export class NodeStore {
   async getOrCreatePerfilIA(): Promise<Node> {
     const existing = this.perfilIANode()
     if (existing) return existing
-    // Crearlo como nodo raíz oculto del usuario.
     const created = this.createNode({
       text: 'Perfil para la IA',
       parentId: null,
       extraData: { _perfilIA: '1' },
     })
+    // Plantilla de ayuda para el usuario
+    this.updateNode(created.id, { body: PERFIL_IA_TEMPLATE })
     return created
   }
 
