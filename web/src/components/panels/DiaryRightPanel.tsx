@@ -603,6 +603,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
   const [editingGCalEvent, setEditingGCalEvent] = useState<CalendarEvent | null>(null)
+  const [taskModalNode, setTaskModalNode] = useState<Node | null>(null)
   const [dragOverSegId, setDragOverSegId] = useState<string | null>(null)
 
   // Fetch Google Calendar events when date changes (day view only)
@@ -1076,13 +1077,21 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     navigate(`/node/${newNode.id}`)
   }
 
+  // Items planos del día (tareas + eventos de From)
+  const fromTimedItems = [...allDayTasks, ...allEvents].filter(n => {
+    if (!n.due) return false
+    const d = new Date(n.due)
+    return d >= dateStart && d < dateEnd
+  })
+  const gcalTimedItems = googleEvents.filter(ev => !ev.allDay && ev.start)
+
   function renderTimeline() {
     return <TimelineRenderer
       diaryDate={diaryDate}
-      hours={hours}
-      tasksByHour={tasksByHour}
-      eventsByHour={eventsByHour}
-      googleEventsByHour={googleEventsByHour}
+      dayStart={tlDayStart}
+      dayEnd={tlDayEnd}
+      fromItems={fromTimedItems}
+      gcalItems={gcalTimedItems}
       currentHour={currentHour}
       currentMinutes={currentMinutes}
       isToday={isToday}
@@ -1092,6 +1101,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
         store.updateNode(newNode.id, { due: d.toISOString() })
         navigate(`/node/${newNode.id}`)
       }}
+      onEditFrom={node => setTaskModalNode(node)}
       onEditGCal={ev => setEditingGCalEvent(ev)}
       editingGCalEvent={editingGCalEvent}
       onGCalUpdated={updated => { setGoogleEvents(prev => prev.map(x => x.id === updated.id ? updated : x)); setEditingGCalEvent(null) }}
@@ -1311,6 +1321,15 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     return (
       <div className="diary-right-panel diary-right-panel--timeline-only">
         {renderTimeline()}
+        {taskModalNode && (
+          <TaskPropsPopover
+            node={taskModalNode}
+            onClose={() => setTaskModalNode(null)}
+            allowRename
+            allowDelete
+            onDeleted={() => setTaskModalNode(null)}
+          />
+        )}
       </div>
     )
   }
@@ -1335,18 +1354,19 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   )
 }
 
-// ── TimelineRenderer — snap a 15min + drag de items existentes ───────────────
+// ── TimelineRenderer — bloques continuos con altura/ancho proporcionales ─────
 
 interface TimelineRendererProps {
   diaryDate: Date
-  hours: number[]
-  tasksByHour: Record<number, Node[]>
-  eventsByHour: Record<number, Node[]>
-  googleEventsByHour: Record<number, CalendarEvent[]>
+  dayStart: number
+  dayEnd: number
+  fromItems: Node[]
+  gcalItems: CalendarEvent[]
   currentHour: number
   currentMinutes: number
   isToday: boolean
   onCreateTaskAt: (hour: number, minutes: number) => void
+  onEditFrom: (node: Node) => void
   onEditGCal: (ev: CalendarEvent) => void
   editingGCalEvent: CalendarEvent | null
   onGCalUpdated: (updated: CalendarEvent) => void
@@ -1354,171 +1374,317 @@ interface TimelineRendererProps {
   onCloseGCal: () => void
 }
 
-// Estado compartido para drag dentro del timeline
 let _tlDrag: { id: string; source: 'from' | 'gcal' } | null = null
 
-function TimelineRenderer({
-  diaryDate, hours,
-  tasksByHour, eventsByHour, googleEventsByHour,
-  currentHour, currentMinutes, isToday,
-  onCreateTaskAt,
-  onEditGCal, editingGCalEvent, onGCalUpdated, onGCalDeleted, onCloseGCal,
-}: TimelineRendererProps) {
-  const popNavigate = useNavigate()
-  const [snapPreview, setSnapPreview] = useState<{ hour: number; minutes: number } | null>(null)
+const HOUR_HEIGHT = 56 // px por hora en el timeline (más alto = bloques más grandes)
+const QUARTER_HEIGHT = HOUR_HEIGHT / 4
 
-  function computeSnap(e: React.DragEvent<HTMLDivElement>, hour: number): { hour: number; minutes: number } {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const y = e.clientY - rect.top
-    const ratio = Math.max(0, Math.min(1, y / rect.height))
-    // 4 quarters por hora → 0, 15, 30, 45
-    const quarter = Math.min(3, Math.floor(ratio * 4))
-    return { hour, minutes: quarter * 15 }
+// Paleta oficial Google Calendar colorIds 1-11 (duplicada de CalendarView)
+const TL_GCAL_COLORS: Record<string, string> = {
+  '1': '#a4bdfc', '2': '#7ae7bf', '3': '#dbadff', '4': '#ff887c',
+  '5': '#fbd75b', '6': '#ffb878', '7': '#46d6db', '8': '#e1e1e1',
+  '9': '#5484ed', '10': '#51b749', '11': '#dc2127',
+}
+function tlGcalColor(ev: CalendarEvent): string {
+  if (ev.colorId && TL_GCAL_COLORS[ev.colorId]) return TL_GCAL_COLORS[ev.colorId]
+  if (ev.backgroundColor) return ev.backgroundColor
+  return '#b5c9ea'
+}
+function tlNodeColor(node: Node): string {
+  try {
+    const c = JSON.parse(node.extraData || '{}').color
+    if (typeof c === 'string' && c.trim()) return c
+  } catch { /* ignore */ }
+  if (node.isEvent && !node.status) return '#f5c97a'
+  if (node.status === 'done') return '#a3a8b3'
+  if (node.isSeguimiento) return '#b8a7e8'
+  try { if (JSON.parse(node.extraData || '{}')._resource) return '#8ed4dd' } catch { /* ignore */ }
+  if (node.priority === 'high') return '#f0a3a3'
+  if (node.priority === 'medium') return '#f5c197'
+  if (node.priority === 'low') return '#9bd6a3'
+  return '#a8c5ec'
+}
+
+// Overlap layout copiado/adaptado de CalendarView
+interface TLLaid { id: string; startMs: number; endMs: number; durationMs: number }
+function tlComputeLayout(events: TLLaid[]): Map<string, { leftPct: number; widthPct: number; zIndex: number }> {
+  const result = new Map<string, { leftPct: number; widthPct: number; zIndex: number }>()
+  if (events.length === 0) return result
+  const sorted = [...events].sort((a, b) => a.startMs - b.startMs || b.durationMs - a.durationMs)
+  type Cluster = { events: TLLaid[]; maxEnd: number }
+  const clusters: Cluster[] = []
+  for (const ev of sorted) {
+    const last = clusters[clusters.length - 1]
+    if (last && ev.startMs < last.maxEnd) { last.events.push(ev); last.maxEnd = Math.max(last.maxEnd, ev.endMs) }
+    else clusters.push({ events: [ev], maxEnd: ev.endMs })
   }
-
-  function handleHourDragOver(e: React.DragEvent<HTMLDivElement>, hour: number) {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    const snap = computeSnap(e, hour)
-    setSnapPreview(snap)
-  }
-
-  function handleHourDragLeave(e: React.DragEvent<HTMLDivElement>) {
-    // Solo limpiar si salimos del hour-row completo
-    if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node)) {
-      setSnapPreview(prev => prev?.hour === parseInt(e.currentTarget.dataset.hour || '-1') ? null : prev)
+  for (const cluster of clusters) {
+    const cols: TLLaid[][] = []
+    const assign = new Map<string, number>()
+    for (const ev of cluster.events) {
+      let placed = false
+      for (let c = 0; c < cols.length; c++) {
+        const last = cols[c][cols[c].length - 1]
+        if (last.endMs <= ev.startMs) { cols[c].push(ev); assign.set(ev.id, c); placed = true; break }
+      }
+      if (!placed) { cols.push([ev]); assign.set(ev.id, cols.length - 1) }
+    }
+    const totalCols = cols.length
+    for (const ev of cluster.events) {
+      const col = assign.get(ev.id) ?? 0
+      const baseWidth = 100 / totalCols
+      const widthPct = totalCols === 1 ? 100 : baseWidth + (baseWidth * 0.08)
+      const leftPct = col * baseWidth
+      const zIndex = Math.min(1440, 10 + Math.max(0, Math.round((86400000 - ev.durationMs) / 60000)))
+      result.set(ev.id, { leftPct, widthPct: Math.min(widthPct, 100 - leftPct), zIndex })
     }
   }
+  return result
+}
 
-  async function handleHourDrop(e: React.DragEvent<HTMLDivElement>, hour: number) {
+function TimelineRenderer({
+  diaryDate, dayStart, dayEnd,
+  fromItems, gcalItems,
+  currentHour, currentMinutes, isToday,
+  onCreateTaskAt, onEditFrom,
+  onEditGCal, editingGCalEvent, onGCalUpdated, onGCalDeleted, onCloseGCal,
+}: TimelineRendererProps) {
+  const [snapPreview, setSnapPreview] = useState<{ y: number; label: string } | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  const numHours = Math.max(0, dayEnd - dayStart)
+  const totalHeight = numHours * HOUR_HEIGHT
+
+  // Construir lista unificada de items para layout
+  const laidItems: TLLaid[] = []
+  for (const n of fromItems) {
+    if (!n.due) continue
+    const startMs = new Date(n.due).getTime()
+    const endMs = n.dueEnd
+      ? new Date(n.dueEnd).getTime()
+      : startMs + (n.isEvent ? 3600000 : 1800000) // evento 1h, tarea 30min por defecto
+    laidItems.push({ id: 'from:' + n.id, startMs, endMs, durationMs: Math.max(900000, endMs - startMs) }) // mín 15min
+  }
+  for (const ev of gcalItems) {
+    if (!ev.start) continue
+    const startMs = new Date(ev.start).getTime()
+    const endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+    laidItems.push({ id: 'gcal:' + ev.id, startMs, endMs, durationMs: Math.max(900000, endMs - startMs) })
+  }
+  const layout = tlComputeLayout(laidItems)
+
+  function posFromMs(ms: number): { topPx: number; visible: boolean } {
+    const d = new Date(ms)
+    if (d.getDate() !== diaryDate.getDate() || d.getMonth() !== diaryDate.getMonth() || d.getFullYear() !== diaryDate.getFullYear()) {
+      return { topPx: 0, visible: false }
+    }
+    const minutesFromDayStart = (d.getHours() - dayStart) * 60 + d.getMinutes()
+    if (minutesFromDayStart < 0 || minutesFromDayStart >= numHours * 60) return { topPx: minutesFromDayStart * HOUR_HEIGHT / 60, visible: false }
+    return { topPx: minutesFromDayStart * HOUR_HEIGHT / 60, visible: true }
+  }
+
+  function computeSnapFromY(clientY: number): { hour: number; minutes: number; pxY: number; label: string } | null {
+    const grid = gridRef.current
+    if (!grid) return null
+    const rect = grid.getBoundingClientRect()
+    const y = clientY - rect.top
+    if (y < 0 || y > totalHeight) return null
+    // Snap a múltiplos de 15min
+    const quarter = Math.round(y / QUARTER_HEIGHT)
+    const snappedY = quarter * QUARTER_HEIGHT
+    const totalMinutes = quarter * 15
+    const hour = dayStart + Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return { hour, minutes, pxY: snappedY, label: `${String(hour).padStart(2,'0')}:${String(minutes).padStart(2,'0')}` }
+  }
+
+  function handleGridDragOver(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
-    const snap = computeSnap(e, hour)
+    e.dataTransfer.dropEffect = 'move'
+    const snap = computeSnapFromY(e.clientY)
+    if (snap) setSnapPreview({ y: snap.pxY, label: snap.label })
+  }
+
+  function handleGridDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node)) setSnapPreview(null)
+  }
+
+  async function handleGridDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const snap = computeSnapFromY(e.clientY)
     setSnapPreview(null)
+    if (!snap) return
 
     const targetDate = new Date(diaryDate)
     targetDate.setHours(snap.hour, snap.minutes, 0, 0)
 
-    // Drag interno del timeline (chip → otra hora)
     if (_tlDrag) {
       const internal = _tlDrag
       _tlDrag = null
       if (internal.source === 'from') {
         store.scheduleNodeAt(internal.id, targetDate.toISOString())
       } else {
-        // Google Calendar — actualizar inicio (conserva duración)
-        const gcalId = internal.id
-        const ev = Object.values(googleEventsByHour).flat().find(x => x.id === gcalId)
+        const ev = gcalItems.find(x => x.id === internal.id)
         if (ev) {
-          const oldStart = new Date(ev.start)
-          const oldEnd = new Date(ev.end)
-          const duration = oldEnd.getTime() - oldStart.getTime()
+          const duration = new Date(ev.end).getTime() - new Date(ev.start).getTime()
           const newEnd = new Date(targetDate.getTime() + duration)
           try {
-            const updated = await updateCalendarEvent(gcalId, {
-              title: ev.title,
-              start: targetDate.toISOString(),
-              end: newEnd.toISOString(),
+            const updated = await updateCalendarEvent(internal.id, {
+              title: ev.title, start: targetDate.toISOString(), end: newEnd.toISOString(),
             })
             onGCalUpdated(updated)
-          } catch { /* fallo de red — el chip volverá a aparecer en su hora original al refetch */ }
+          } catch { /* swallow */ }
         }
       }
       return
     }
-
-    // Drag externo (desde agenda / outliner): nodo de From
-    const id = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
-    if (id) store.scheduleNodeAt(id, targetDate.toISOString())
+    const extId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+    if (extId) store.scheduleNodeAt(extId, targetDate.toISOString())
   }
+
+  function handleGridClick(e: React.MouseEvent<HTMLDivElement>) {
+    if ((e.target as HTMLElement).closest('.timeline-block')) return
+    const snap = computeSnapFromY(e.clientY)
+    if (snap) onCreateTaskAt(snap.hour, snap.minutes)
+  }
+
+  const nowTopPx = isToday
+    ? ((currentHour - dayStart) * 60 + currentMinutes) * HOUR_HEIGHT / 60
+    : -1
 
   return (
     <div className="timeline-panel-full">
-      {hours.map(h => {
-        const tasks = tasksByHour[h] || []
-        const events = eventsByHour[h] || []
-        const allItems = [...events, ...tasks]
-        const showNowLine = isToday && h === currentHour
-        const gcalItems = googleEventsByHour[h] || []
-        const isSnapHere = snapPreview?.hour === h
-
-        return (
-          <div key={h} className="timeline-hour-slot">
-            {showNowLine && (
-              <div
-                className="timeline-now-line"
-                style={{ top: `${(currentMinutes / 60) * 100}%` }}
-                title={`Ahora: ${String(currentHour).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`}
-              >
-                <span className="timeline-now-dot" />
-                <span className="timeline-now-rule" />
-              </div>
-            )}
-            <div className="timeline-row">
-              <span className="timeline-hour-label">{String(h).padStart(2, '0')}:00</span>
-              <div
-                className={`timeline-hour-clickable${isSnapHere ? ' has-snap' : ''}`}
-                data-hour={h}
-                onClick={() => onCreateTaskAt(h, 0)}
-                onDragOver={e => handleHourDragOver(e, h)}
-                onDragLeave={handleHourDragLeave}
-                onDrop={e => handleHourDrop(e, h)}
-                title={`Crear tarea a las ${String(h).padStart(2, '0')}:00`}
-              >
-                {/* Línea guía de snap a 15min */}
-                {isSnapHere && snapPreview && (
-                  <div
-                    className="timeline-snap-line"
-                    style={{ top: `${(snapPreview.minutes / 60) * 100}%` }}
-                  >
-                    <span className="timeline-snap-label">
-                      {String(snapPreview.hour).padStart(2, '0')}:{String(snapPreview.minutes).padStart(2, '0')}
-                    </span>
-                  </div>
-                )}
-
-                {allItems.map(t => (
-                  <span
-                    key={t.id}
-                    className={t.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
-                    draggable
-                    onDragStart={e => {
-                      _tlDrag = { id: t.id, source: 'from' }
-                      e.dataTransfer.effectAllowed = 'move'
-                      e.dataTransfer.setData('text/plain', t.id)
-                    }}
-                    onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
-                    onClick={e => { e.stopPropagation(); popNavigate(`/node/${t.id}`) }}
-                    title={t.text || 'Sin título'}
-                  >
-                    {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
-                  </span>
-                ))}
-                {gcalItems.map(ev => {
-                  const startTime = new Date(ev.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                  const endTime = new Date(ev.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                  return (
-                    <span
-                      key={ev.id}
-                      className="timeline-event-chip timeline-event-chip--gcal"
-                      draggable
-                      onDragStart={e => {
-                        _tlDrag = { id: ev.id, source: 'gcal' }
-                        e.dataTransfer.effectAllowed = 'move'
-                        e.dataTransfer.setData('text/plain', ev.id)
-                      }}
-                      onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
-                      title={`${ev.title} · ${startTime} – ${endTime} · Click para editar · Arrastra para mover`}
-                      onClick={e => { e.stopPropagation(); onEditGCal(ev) }}
-                    >
-                      📅 {ev.title} <span style={{ opacity: 0.7, fontSize: 10 }}>{startTime}–{endTime}</span>
-                    </span>
-                  )
-                })}
-              </div>
+      <div className="timeline-grid-wrapper">
+        {/* Etiquetas de hora */}
+        <div className="timeline-hours-col">
+          {Array.from({ length: numHours }, (_, i) => dayStart + i).map(h => (
+            <div key={h} className="timeline-hour-tick" style={{ height: HOUR_HEIGHT }}>
+              <span>{String(h).padStart(2, '0')}:00</span>
             </div>
-          </div>
-        )
-      })}
+          ))}
+        </div>
+
+        {/* Grid de horas + bloques */}
+        <div
+          ref={gridRef}
+          className="timeline-grid"
+          style={{ height: totalHeight }}
+          onDragOver={handleGridDragOver}
+          onDragLeave={handleGridDragLeave}
+          onDrop={handleGridDrop}
+          onClick={handleGridClick}
+        >
+          {/* Líneas horarias de fondo */}
+          {Array.from({ length: numHours + 1 }, (_, i) => (
+            <div
+              key={i}
+              className="timeline-grid-line"
+              style={{ top: i * HOUR_HEIGHT }}
+            />
+          ))}
+          {/* Líneas de cuarto de hora */}
+          {Array.from({ length: numHours * 4 }, (_, i) => (
+            i % 4 === 0 ? null : (
+              <div
+                key={'q'+i}
+                className="timeline-grid-line timeline-grid-line--quarter"
+                style={{ top: i * QUARTER_HEIGHT }}
+              />
+            )
+          ))}
+
+          {/* Línea de ahora */}
+          {nowTopPx >= 0 && nowTopPx <= totalHeight && (
+            <div className="timeline-now-line-abs" style={{ top: nowTopPx }}>
+              <span className="timeline-now-dot" />
+              <span className="timeline-now-rule" />
+            </div>
+          )}
+
+          {/* Snap preview */}
+          {snapPreview && (
+            <div className="timeline-snap-line-abs" style={{ top: snapPreview.y }}>
+              <span className="timeline-snap-label">{snapPreview.label}</span>
+            </div>
+          )}
+
+          {/* Bloques From */}
+          {fromItems.map(n => {
+            if (!n.due) return null
+            const startMs = new Date(n.due).getTime()
+            const endMs = n.dueEnd ? new Date(n.dueEnd).getTime() : startMs + (n.isEvent ? 3600000 : 1800000)
+            const pos = posFromMs(startMs)
+            if (!pos.visible) return null
+            const durationMin = Math.max(15, (endMs - startMs) / 60000)
+            const heightPx = (durationMin / 60) * HOUR_HEIGHT
+            const lay = layout.get('from:' + n.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
+            const color = tlNodeColor(n)
+            const timeLabel = new Date(startMs).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+            return (
+              <div
+                key={n.id}
+                className={`timeline-block${n.status === 'done' ? ' done' : ''}${n.isEvent ? ' is-event' : ' is-task'}`}
+                style={{
+                  top: pos.topPx,
+                  height: Math.max(QUARTER_HEIGHT, heightPx),
+                  left: `calc(${lay.leftPct}% + 2px)`,
+                  width: `calc(${lay.widthPct}% - 4px)`,
+                  zIndex: lay.zIndex,
+                  background: color,
+                }}
+                draggable
+                onDragStart={e => {
+                  _tlDrag = { id: n.id, source: 'from' }
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', n.id)
+                }}
+                onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
+                onClick={e => { e.stopPropagation(); onEditFrom(n) }}
+                title={`${n.text || 'Sin título'} · ${timeLabel}`}
+              >
+                <span className="timeline-block-time">{timeLabel}</span>
+                <span className="timeline-block-text">{n.text || 'Sin título'}</span>
+              </div>
+            )
+          })}
+
+          {/* Bloques Google Calendar */}
+          {gcalItems.map(ev => {
+            const startMs = new Date(ev.start).getTime()
+            const endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+            const pos = posFromMs(startMs)
+            if (!pos.visible) return null
+            const durationMin = Math.max(15, (endMs - startMs) / 60000)
+            const heightPx = (durationMin / 60) * HOUR_HEIGHT
+            const lay = layout.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
+            return (
+              <div
+                key={ev.id}
+                className="timeline-block is-gcal"
+                style={{
+                  top: pos.topPx,
+                  height: Math.max(QUARTER_HEIGHT, heightPx),
+                  left: `calc(${lay.leftPct}% + 2px)`,
+                  width: `calc(${lay.widthPct}% - 4px)`,
+                  zIndex: lay.zIndex,
+                  background: tlGcalColor(ev),
+                }}
+                draggable
+                onDragStart={e => {
+                  _tlDrag = { id: ev.id, source: 'gcal' }
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', ev.id)
+                }}
+                onDragEnd={() => { _tlDrag = null; setSnapPreview(null) }}
+                onClick={e => { e.stopPropagation(); onEditGCal(ev) }}
+                title={ev.title}
+              >
+                <span className="timeline-block-text">{ev.title}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       {editingGCalEvent && (
         <GCalEventEditor
