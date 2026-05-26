@@ -591,9 +591,12 @@ function sortTasksMacStyle(tasks: Node[], todayStart: Date): Node[] {
 export interface DiaryRightPanelProps {
   diaryDate: Date
   rangeType?: 'day' | 'week' | 'month'
+  /** Si true, renderiza SOLO el timeline (sin tabs ni agenda). Para usar
+   *  como columna intermedia toggleable desde un botón externo. */
+  timelineMode?: boolean
 }
 
-export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryRightPanelProps) {
+export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timelineMode }: DiaryRightPanelProps) {
   const s = useStore()
   const us = useUserStore()
   const navigate = useNavigate()
@@ -1396,9 +1399,17 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
     )
   }
 
-  // Para notas de semana/mes: solo Agenda (sin Timeline)
+  // Modo timeline puro (columna toggleable desde botón externo)
+  if (timelineMode) {
+    return (
+      <div className="diary-right-panel diary-right-panel--timeline-only">
+        {renderTimeline()}
+      </div>
+    )
+  }
+
+  // Para notas de semana/mes: solo Agenda
   const agendaLabel = rangeType === 'week' ? 'Semana' : rangeType === 'month' ? 'Mes' : 'Agenda'
-  const showTimeline = rangeType === 'day'
 
   return (
     <div className="diary-right-panel">
@@ -1409,17 +1420,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day' }: DiaryR
         >
           {agendaLabel}
         </button>
-        {showTimeline && (
-          <button
-            className={`diary-panel-tab${panelTab === 'timeline' ? ' active' : ''}`}
-            onClick={() => setPanelTab('timeline')}
-          >
-            Timeline
-          </button>
-        )}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-        {(!showTimeline || panelTab === 'agenda') ? renderAgenda() : renderTimeline()}
+        {renderAgenda()}
       </div>
     </div>
   )

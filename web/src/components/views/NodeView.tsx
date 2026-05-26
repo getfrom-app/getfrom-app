@@ -52,6 +52,7 @@ export default function NodeView() {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [timelineOpen, setTimelineOpen] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -1531,6 +1532,21 @@ export default function NodeView() {
                   </>
                 )
               })()}
+              {/* ── Timeline toggle (sólo en notas diarias) ── */}
+              {node.isDiaryEntry && (
+                <button
+                  className={`node-action-icon-btn ${timelineOpen ? 'active' : ''}`}
+                  onClick={() => setTimelineOpen(v => !v)}
+                  title={timelineOpen ? 'Cerrar timeline del día' : 'Abrir timeline del día'}
+                  style={{ color: timelineOpen ? 'var(--accent)' : undefined }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </button>
+              )}
+
               {/* ── Pin (Favorito) — igual que Mac ── */}
               <button
                 className={`node-action-icon-btn ${node.isFavorite ? 'active' : ''}`}
@@ -2065,6 +2081,28 @@ export default function NodeView() {
           node={node}
           onClose={() => setShowChat(false)}
         />
+      )}
+
+      {/* Timeline opcional para diary entries — columna toggleable que convive
+          con la columna derecha (Agenda). Permite drag-to-schedule. */}
+      {node.isDiaryEntry && timelineOpen && (
+        <aside className="diary-timeline-aside">
+          <div className="diary-timeline-aside-header">
+            <span className="diary-timeline-aside-title">🕐 Timeline</span>
+            <button
+              className="diary-timeline-aside-close"
+              onClick={() => setTimelineOpen(false)}
+              title="Cerrar timeline"
+              aria-label="Cerrar timeline"
+            >×</button>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            <DiaryRightPanel
+              diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()}
+              timelineMode
+            />
+          </div>
+        </aside>
       )}
 
       <div className={`right-panel-area${rightCollapsed ? ' right-panel-area--collapsed' : ''}`}>
