@@ -1046,6 +1046,10 @@ interface Props {
 
 // ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
 
+// Límite efectivo que la IA lee íntegramente. Más allá → server trunca.
+// Mantener sincronizado con server/src/routes/ai.ts (PERFIL_CHAR_LIMIT).
+const PERFIL_IA_CHAR_LIMIT = 20_000
+
 function PerfilIAPane() {
   // Paridad con Mac: el perfil vive en un nodo sincronizado (no localStorage).
   // Se identifica por extraData._perfilIA = "1" y el contenido está en
@@ -1074,6 +1078,12 @@ function PerfilIAPane() {
     }
   }
 
+  const charCount = profile.length
+  const over = charCount > PERFIL_IA_CHAR_LIMIT
+  const nearLimit = !over && charCount > PERFIL_IA_CHAR_LIMIT * 0.85
+  const counterColor = over ? '#c92a2a' : nearLimit ? '#d97706' : 'var(--text-secondary)'
+  const counterWeight = over ? 600 : 400
+
   return (
     <div className="st-pane">
       <SectionTitle>Perfil para la IA</SectionTitle>
@@ -1081,11 +1091,34 @@ function PerfilIAPane() {
       <textarea
         value={profile}
         onChange={e => setProfile(e.target.value)}
-        rows={10}
+        rows={12}
         className="st-input"
         placeholder="Soy fotógrafo freelance especializado en bodas. Me gusta el tono directo y profesional. Vivo en Madrid…"
-        style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+        style={{
+          width: '100%',
+          fontFamily: 'inherit',
+          resize: 'vertical',
+          borderColor: over ? '#c92a2a' : undefined,
+          outlineColor: over ? '#c92a2a' : undefined,
+        }}
       />
+      {/* Contador + advertencia visual */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+        <span style={{ fontSize: 11, color: counterColor, fontWeight: counterWeight }}>
+          {over ? '⚠ ' : nearLimit ? '⚠ ' : ''}
+          {charCount.toLocaleString()} / {PERFIL_IA_CHAR_LIMIT.toLocaleString()} caracteres
+        </span>
+        {over && (
+          <span style={{ fontSize: 11, color: '#c92a2a', fontWeight: 600 }}>
+            La IA solo leerá los primeros {PERFIL_IA_CHAR_LIMIT.toLocaleString()}. Resume el perfil.
+          </span>
+        )}
+        {nearLimit && (
+          <span style={{ fontSize: 11, color: '#d97706' }}>
+            Cerca del límite — considera resumir.
+          </span>
+        )}
+      </div>
       <div className="st-actions" style={{ marginTop: 10 }}>
         <button className="btn-primary" onClick={save}>{saved ? '✓ Guardado' : 'Guardar'}</button>
         {node && <span style={{ marginLeft: 12, fontSize: 11, opacity: 0.55 }}>Sincronizado con Mac y iOS.</span>}
