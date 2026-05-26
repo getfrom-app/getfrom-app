@@ -4,7 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
 import WebRecordingBar from './WebRecordingBar'
-import { getGoogleStatus } from '../../api/googleCalendar'
+// (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
 
 // ── Tag hierarchy helpers ───────────────────────────────────────────────────
 
@@ -166,13 +166,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
       (n.types || []).includes('bucle') && n.status !== 'done' && !n.deletedAt
     ).length
   }, [s])
-
-  const [googleConnected, setGoogleConnected] = useState<boolean | null>(null)
-  useEffect(() => {
-    getGoogleStatus()
-      .then(s => setGoogleConnected(s.connected))
-      .catch(() => setGoogleConnected(false))
-  }, [])
 
   // Favorites tab: all nodes with isFavorite === true
   const allFavorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt)
@@ -573,21 +566,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span className="nav-icon">⚙</span>
               <span>Ajustes</span>
             </button>
-            <button
-              className="nav-item"
-              onClick={() => navigate('/settings?section=google')}
-              title={googleConnected ? 'Google conectado' : 'Google desconectado — click para conectar'}
-              style={{ position: 'relative' }}
-            >
-              <span className="nav-icon" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>G</span>
-              <span>Google</span>
-              <span style={{
-                position: 'absolute', top: 6, right: 6,
-                width: 7, height: 7, borderRadius: '50%',
-                background: googleConnected === null ? 'var(--text-tertiary)' : googleConnected ? '#22c55e' : '#ef4444',
-                border: '1.5px solid var(--bg-primary)',
-              }} />
-            </button>
             {!isGuest ? (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
                 <span className="nav-icon">↩</span>
@@ -641,20 +619,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               title="Ajustes"
             >
               <span className="nav-icon">⚙</span>
-            </button>
-            <button
-              className="nav-item"
-              onClick={() => navigate('/settings?section=google')}
-              title={googleConnected ? 'Google conectado' : 'Google desconectado'}
-              style={{ position: 'relative' }}
-            >
-              <span className="nav-icon" style={{ fontSize: 13, fontWeight: 600 }}>G</span>
-              <span style={{
-                position: 'absolute', top: 6, right: 6,
-                width: 7, height: 7, borderRadius: '50%',
-                background: googleConnected ? '#22c55e' : '#ef4444',
-                border: '1.5px solid var(--bg-primary)',
-              }} />
             </button>
             <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
               <span className="nav-icon">↩</span>
