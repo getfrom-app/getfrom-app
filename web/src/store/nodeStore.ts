@@ -945,22 +945,32 @@ class NodeStore {
     // Migración REVERTIDA v7.95: bucle ahora es concepto separado, no status.
     // Limpiamos status:pending + due:null en nodos isSeguimiento (eran la
     // migración de v7.65 que ahora deshacemos). Sus tareas hijas no se tocan.
+    // v8.03: cubrimos también nodos cuyo "bucle" venga sólo por types[], no
+    // sólo por la flag isSeguimiento.
     let reverted = 0
     for (const node of this.nodes.values()) {
       if (node.deletedAt) continue
-      if (node.isSeguimiento && node.status === 'pending' && !node.due) {
+      const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
+      if (!isBucle) continue
+      // Bucles no son tareas: limpiar status si era pending sin due
+      if (node.status === 'pending' && !node.due) {
         this.updateNode(node.id, { status: null })
         reverted++
       }
       // Bucles NO deben tener fecha: limpiar si por error la tienen
-      if (node.isSeguimiento && node.due) {
-        this.updateNode(node.id, { due: null })
+      if (node.due) {
+        this.updateNode(node.id, { due: null, dueEnd: null, recurrence: null })
+        reverted++
+      }
+      // Bucles no son eventos
+      if (node.isEvent) {
+        this.updateNode(node.id, { isEvent: false })
         reverted++
       }
     }
     if (reverted > 0) {
       // eslint-disable-next-line no-console
-      console.log(`[migration] ${reverted} bucles limpiados (status y/o due)`)
+      console.log(`[migration] ${reverted} bucles limpiados (status / due / isEvent)`)
       await this.sync()
     }
 
