@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
@@ -1792,7 +1792,7 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
       />
       <div className="tpp-move-results">
         {filtered.length === 0 && <div className="tpp-move-empty">Sin resultados</div>}
-        {filtered.map((n, i) => (
+        {filtered.map((n: Node, i: number) => (
           <button
             key={n.id}
             className={`tpp-move-item${i === activeIdx ? ' active' : ''}`}
