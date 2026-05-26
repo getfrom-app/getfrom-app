@@ -1494,10 +1494,8 @@ export default function NodeView() {
               document.body
             )}
             <div className="node-title-actions">
-              {/* View mode switcher legacy — solo si NO hay multi-vista configurada */}
+              {/* View mode switcher legacy — siempre visible si NO hay multi-vista configurada */}
               {!node.isDiaryEntry && (() => {
-                const childCount = store.children(node.id).filter(n => !n.deletedAt).length
-                if (childCount < 3) return null
                 const hasMultiViews = store.getViews(node.id).length > 0
                 if (hasMultiViews) return null  // los tabs abajo se encargan
                 const modes = [
@@ -2023,8 +2021,8 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Multi-view tabs (Notion-style) — siempre visibles en notas (no en diario) */}
-          {!node.isDiaryEntry && (
+          {/* Multi-view tabs (Notion-style) — solo si el usuario ha creado vistas custom */}
+          {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
             <NodeViewTabs
               parentId={node.id}
               activeViewId={activeViewId}
