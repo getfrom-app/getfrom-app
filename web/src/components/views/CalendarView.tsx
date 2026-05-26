@@ -244,15 +244,41 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
 // ── Priority color helper ─────────────────────────────────────────────────────
 
 function priorityBg(node: Node): string {
+  // Color de acento definido en la nota (extraData.color) tiene prioridad
+  try {
+    const c = JSON.parse(node.extraData || '{}').color
+    if (typeof c === 'string' && c.trim()) return c
+  } catch { /* ignore */ }
   // Paleta pastel — colores suaves, no saturados.
-  if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f5c97a)' // ámbar pastel
-  if (node.status === 'done')        return '#a3a8b3' // gris pastel
-  if (node.isSeguimiento)            return '#b8a7e8' // morado pastel
+  if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f5c97a)'
+  if (node.status === 'done')        return '#a3a8b3'
+  if (node.isSeguimiento)            return '#b8a7e8'
   try { if (JSON.parse(node.extraData || '{}')._resource) return '#8ed4dd' } catch { /* ignore */ }
-  if (node.priority === 'high')      return '#f0a3a3' // rojo pastel
-  if (node.priority === 'medium')    return '#f5c197' // naranja pastel
-  if (node.priority === 'low')       return '#9bd6a3' // verde pastel
-  return '#a8c5ec' // azul pastel — default tarea
+  if (node.priority === 'high')      return '#f0a3a3'
+  if (node.priority === 'medium')    return '#f5c197'
+  if (node.priority === 'low')       return '#9bd6a3'
+  return '#a8c5ec'
+}
+
+// Paleta oficial de event colors de Google Calendar (colorId → hex)
+const GCAL_EVENT_COLORS: Record<string, string> = {
+  '1':  '#a4bdfc', // Lavender
+  '2':  '#7ae7bf', // Sage
+  '3':  '#dbadff', // Grape
+  '4':  '#ff887c', // Flamingo
+  '5':  '#fbd75b', // Banana
+  '6':  '#ffb878', // Tangerine
+  '7':  '#46d6db', // Peacock
+  '8':  '#e1e1e1', // Graphite
+  '9':  '#5484ed', // Blueberry
+  '10': '#51b749', // Basil
+  '11': '#dc2127', // Tomato
+}
+
+function gcalEventColor(ev: CalendarEvent): string {
+  if (ev.colorId && GCAL_EVENT_COLORS[ev.colorId]) return GCAL_EVENT_COLORS[ev.colorId]
+  if (ev.backgroundColor) return ev.backgroundColor
+  return '#b5c9ea' // fallback azul pastel
 }
 
 function nodeIcon(node: Node): string {
@@ -539,7 +565,12 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   )
                 })}
                 {gcalAllDay.map(ev => (
-                  <div key={ev.id} className="calendar-event-chip calendar-event-chip--gcal" title={ev.title}>
+                  <div
+                    key={ev.id}
+                    className="calendar-event-chip calendar-event-chip--gcal"
+                    style={{ background: gcalEventColor(ev) }}
+                    title={ev.title}
+                  >
                     {ev.title}
                   </div>
                 ))}
@@ -722,6 +753,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           left: `calc(${lay.leftPct}% + 2px)`,
                           width: `calc(${lay.widthPct}% - 4px)`,
                           zIndex: lay.zIndex,
+                          background: gcalEventColor(ev),
                         }}
                         title={ev.title}
                       >
@@ -867,15 +899,19 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
                 )}
               </div>
               <div className="calendar-month-cell-nodes">
-                {gcalDay.slice(0, 3).map(ev => (
+                {gcalDay.slice(0, 3).map(ev => {
+                  const c = gcalEventColor(ev)
+                  return (
                   <span
                     key={ev.id}
                     className="calendar-month-node calendar-month-node--gcal"
+                    style={{ background: c + '30', color: c, borderLeft: `2px solid ${c}` }}
                     title={`Google Calendar · ${ev.title}`}
                   >
                     🗓 {ev.title || 'Sin título'}
                   </span>
-                ))}
+                  )
+                })}
                 {dayNodes.slice(0, Math.max(0, 3 - gcalDay.length)).map(node => (
                   <button
                     key={node.id}

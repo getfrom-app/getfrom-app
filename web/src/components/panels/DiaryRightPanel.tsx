@@ -238,6 +238,52 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         ))}
       </div>
 
+      {/* Color de acento de la nota — se usa de fondo en calendario y border en outliner */}
+      <div className="tpp-section-label">Color</div>
+      <div className="nqp-chips-row tpp-color-row">
+        {(() => {
+          const currentColor: string | null = (() => {
+            try { return JSON.parse(node.extraData || '{}').color || null } catch { return null }
+          })()
+          const COLORS: { v: string | null; label: string }[] = [
+            { v: null,      label: 'Sin color' },
+            { v: '#a8c5ec', label: 'Azul' },
+            { v: '#b8a7e8', label: 'Morado' },
+            { v: '#f0a3a3', label: 'Rojo' },
+            { v: '#f5c197', label: 'Naranja' },
+            { v: '#f5c97a', label: 'Ámbar' },
+            { v: '#fbd75b', label: 'Amarillo' },
+            { v: '#9bd6a3', label: 'Verde' },
+            { v: '#8ed4dd', label: 'Cian' },
+            { v: '#dbadff', label: 'Lavanda' },
+            { v: '#f5b3d3', label: 'Rosa' },
+            { v: '#a3a8b3', label: 'Gris' },
+          ]
+          function setColor(c: string | null) {
+            let ed: Record<string, unknown> = {}
+            try { ed = JSON.parse(node.extraData || '{}') } catch {}
+            if (c) ed.color = c; else delete ed.color
+            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+          }
+          return COLORS.map(({ v, label }) => {
+            const active = currentColor === v || (!currentColor && v === null)
+            return (
+              <button
+                key={String(v)}
+                className={`tpp-color-swatch${active ? ' active' : ''}`}
+                onClick={() => setColor(v)}
+                title={label}
+                style={v
+                  ? { background: v, borderColor: active ? '#000' : v + '80' }
+                  : { background: 'transparent' }}
+              >
+                {v === null ? '—' : null}
+              </button>
+            )
+          })
+        })()}
+      </div>
+
       {allowDelete && (
         <>
           <div className="tpp-divider" />

@@ -7113,6 +7113,22 @@ a:focus-visible {
 /* Multi-select highlight */
 .node-row.multi-selected { background: var(--accent-soft); border-radius: 6px; }
 
+/* ── Color swatches dentro de TaskPropsPopover ────────────────────────────── */
+.tpp-color-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpp-color-swatch {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.08s, border-color 0.08s;
+}
+.tpp-color-swatch:hover { transform: scale(1.12); }
+.tpp-color-swatch.active { border-color: var(--text-primary); transform: scale(1.1); }
+
 /* ── Task props como MODAL centrado (calendar popup, etc.) ───────────────── */
 .task-props-modal-backdrop {
   position: fixed;

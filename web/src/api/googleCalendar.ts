@@ -6,6 +6,11 @@ export interface CalendarEvent {
   start: string
   end: string
   allDay: boolean
+  /** Color del calendario al que pertenece el evento (hex). */
+  backgroundColor?: string | null
+  foregroundColor?: string | null
+  /** Override de color del evento (Google event color palette 1-11). */
+  colorId?: string | null
 }
 
 // Web OAuth client (Aplicación web en Google Cloud Console)
