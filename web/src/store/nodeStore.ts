@@ -752,8 +752,19 @@ export class NodeStore {
   private applyNode(raw: unknown): void {
     const n = raw as Node
     if (!n.id) return
-    n.types = typeof n.types === 'string' ? JSON.parse(n.types) : (n.types || [])
-    n.collections = typeof n.collections === 'string' ? JSON.parse(n.collections) : (n.collections || [])
+    // Defensive: si types/collections vienen como string JSON pero están
+    // malformados, no debe romper el sync entero (problema observado tras
+    // backfill de columnas v8.30+). Fallback a array vacío.
+    try {
+      n.types = typeof n.types === 'string' ? JSON.parse(n.types) : (n.types || [])
+    } catch {
+      n.types = []
+    }
+    try {
+      n.collections = typeof n.collections === 'string' ? JSON.parse(n.collections) : (n.collections || [])
+    } catch {
+      n.collections = []
+    }
     this.nodes.set(n.id, n)
     // NO invalidamos cache aquí: sync llama applyNode N veces; lo invalidamos
     // una sola vez al final del sync para no rebuildear N veces.
@@ -1117,20 +1128,24 @@ export class NodeStore {
       for (const id of sentIds) this.dirtyIds.delete(id)
 
       // Apply server nodes (merge)
+      // Defensive: un nodo con datos corruptos no debe romper el sync entero.
       for (const rawNode of res.nodes) {
-        const n = rawNode as Node
-        if (!this.nodes.has(n.id)) {
-          this.applyNode(n)
-        } else {
-          const local = this.nodes.get(n.id)!
-          // Si el nodo se ha modificado localmente DESPUÉS de empezar este sync
-          // (está en dirtyIds), NO sobrescribir — el próximo sync lo enviará.
-          if (this.dirtyIds.has(n.id)) {
-            // skip: cambios locales más recientes pendientes de sync
-            continue
+        try {
+          const n = rawNode as Node
+          if (!this.nodes.has(n.id)) {
+            this.applyNode(n)
+          } else {
+            // Si el nodo se ha modificado localmente DESPUÉS de empezar este sync
+            // (está en dirtyIds), NO sobrescribir — el próximo sync lo enviará.
+            if (this.dirtyIds.has(n.id)) {
+              continue
+            }
+            // Server wins solo si no hay cambios locales pendientes
+            this.applyNode(n)
           }
-          // Server wins solo si no hay cambios locales pendientes
-          this.applyNode(n)
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[sync] node skipped due to parse error:', err, rawNode)
         }
       }
       // Invalidar cache de hijos una sola vez tras aplicar todos los nodos
