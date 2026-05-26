@@ -319,13 +319,30 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
                   className={`tree-item ${location.pathname === `/node/${node.id}` ? 'active' : ''}`}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', cursor: 'pointer' }}
                   onClick={() => navigate(`/node/${node.id}`)}
+                  onDragOver={e => {
+                    const types = Array.from(e.dataTransfer.types)
+                    if (!types.includes('cal-node-id') && !types.includes('text/plain')) return
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    e.currentTarget.classList.add('tree-item--drop')
+                  }}
+                  onDragLeave={e => e.currentTarget.classList.remove('tree-item--drop')}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('tree-item--drop')
+                    const draggedId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+                    if (!draggedId || draggedId === node.id) return
+                    const sibs = store.children(node.id)
+                    const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+                    store.updateNode(draggedId, { parentId: node.id, siblingOrder: lastOrder + 1 })
+                  }}
                   onContextMenu={e => {
                     e.preventDefault()
                     if (window.confirm(`¿Quitar "${node.text || 'Sin título'}" de favoritos?`)) {
                       handleRemoveFavorite(node.id, e)
                     }
                   }}
-                  title="Click derecho → Quitar de favoritos"
+                  title="Click derecho → Quitar de favoritos · Arrastra una tarea aquí para moverla dentro"
                 >
                   <span style={{ fontSize: 12, flexShrink: 0 }}>{getNodeIcon(node)}</span>
                   <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

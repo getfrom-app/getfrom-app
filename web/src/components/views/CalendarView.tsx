@@ -5,7 +5,7 @@ import { useStore, store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
 import { TaskPropsPopover, GCalEventEditor } from '../panels/DiaryRightPanel'
-import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
+import { getCalendarEventsRange, updateCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { getDayStart, getDayEnd } from '../../utils/dayHours'
 
@@ -412,7 +412,53 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   const [eventPopup, setEventPopup] = useState<{ node: Node; anchor: HTMLElement } | null>(null)
   const [taskPopover, setTaskPopover] = useState<{ node: Node; el: HTMLElement } | null>(null)
   const [gcalEditing, setGcalEditing] = useState<CalendarEvent | null>(null)
+  const [resizing, setResizing] = useState<{ id: string; source: 'from'|'gcal'; startMs: number; baseEndMs: number; pointerStartY: number } | null>(null)
+  const [resizeNewEndMs, setResizeNewEndMs] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Resize global handler
+  useEffect(() => {
+    if (!resizing) return
+    function onMove(e: MouseEvent) {
+      if (!resizing) return
+      const dy = e.clientY - resizing.pointerStartY
+      const dMin = Math.round((dy / CELL_HEIGHT) * 60 / 15) * 15
+      const newEnd = resizing.baseEndMs + dMin * 60000
+      const minEnd = resizing.startMs + 15 * 60000
+      setResizeNewEndMs(Math.max(minEnd, newEnd))
+    }
+    async function onUp() {
+      if (!resizing) return
+      const finalEnd = resizeNewEndMs ?? resizing.baseEndMs
+      const iso = new Date(finalEnd).toISOString()
+      if (resizing.source === 'from') {
+        store.updateNode(resizing.id, { dueEnd: iso })
+      } else {
+        const ev = googleEvents.find(x => x.id === resizing.id)
+        if (ev) {
+          try {
+            const updated = await updateCalendarEvent(resizing.id, { title: ev.title, start: ev.start, end: iso })
+            onGCalUpdated?.(updated)
+          } catch { /* */ }
+        }
+      }
+      setResizing(null)
+      setResizeNewEndMs(null)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp, { once: true })
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+  }, [resizing, resizeNewEndMs]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function startResize(e: React.MouseEvent, id: string, source: 'from'|'gcal', startMs: number, endMs: number) {
+    e.stopPropagation()
+    e.preventDefault()
+    setResizing({ id, source, startMs, baseEndMs: endMs, pointerStartY: e.clientY })
+    setResizeNewEndMs(endMs)
+  }
 
   // Auto-scroll to current hour on mount (relativo a dayStart)
   useEffect(() => {
@@ -429,9 +475,17 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
     !n.isSeguimiento
   )
 
-  // Nodos para un día determinado
+  // Nodos para un día determinado — incluye eventos que SOLAPAN este día
+  // (cross-day): si un evento empieza el día anterior y termina en este, aparece.
   function getNodesForDay(day: Date): Node[] {
-    return nodesWithDue.filter(n => n.due && isSameDay(new Date(n.due), day))
+    const dayStart0 = new Date(day.getFullYear(), day.getMonth(), day.getDate())
+    const dayEnd0 = new Date(dayStart0.getTime() + 86400000)
+    return nodesWithDue.filter(n => {
+      if (!n.due) return false
+      const s = new Date(n.due)
+      const e = n.dueEnd ? new Date(n.dueEnd) : new Date(s.getTime() + 3600000)
+      return s < dayEnd0 && e > dayStart0
+    })
   }
 
   // Nodos "todo el día" (fecha sin hora, o hora = 00:00:00)
@@ -439,17 +493,20 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
     return getNodesForDay(day).filter(n => !n.due || !hasTime(n.due))
   }
 
-  // Nodos con hora específica
+  // Nodos con hora específica — incluye los que cruzan medianoche.
   function getTimedNodes(day: Date): Node[] {
     return getNodesForDay(day).filter(n => n.due && hasTime(n.due))
   }
 
-  // Google Calendar events para un día
+  // Google Calendar events para un día — overlap, no solo start.
   function getGoogleForDay(day: Date) {
+    const dayStart0 = new Date(day.getFullYear(), day.getMonth(), day.getDate())
+    const dayEnd0 = new Date(dayStart0.getTime() + 86400000)
     return googleEvents.filter(ev => {
       if (!ev.start) return false
-      const d = new Date(ev.start)
-      return isSameDay(d, day)
+      const s = new Date(ev.start)
+      const e = ev.end ? new Date(ev.end) : new Date(s.getTime() + 3600000)
+      return s < dayEnd0 && e > dayStart0
     })
   }
   function getGoogleAllDay(day: Date) { return getGoogleForDay(day).filter(ev => ev.allDay) }
@@ -692,12 +749,13 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {/* Eventos con hora — From */}
                   {timedNodes.map(node => {
                     const d = new Date(node.due!)
+                    const startMs = d.getTime()
                     const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
-                    let durationH = 1
-                    if (node.dueEnd) {
-                      const end = new Date(node.dueEnd)
-                      durationH = Math.max(0.5, (end.getTime() - d.getTime()) / 3600000)
+                    let endMs = node.dueEnd ? new Date(node.dueEnd).getTime() : startMs + 3600000
+                    if (resizing && resizing.source === 'from' && resizing.id === node.id && resizeNewEndMs) {
+                      endMs = resizeNewEndMs
                     }
+                    const durationH = Math.max(0.25, (endMs - startMs) / 3600000)
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                     const lay = layoutMap.get('from:' + node.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
@@ -732,6 +790,11 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           {nodeIcon(node) && <span style={{ marginRight: 4 }}>{nodeIcon(node)}</span>}
                           {node.text || 'Sin título'}
                         </span>
+                        <span
+                          className="calendar-event-resize"
+                          onMouseDown={e => startResize(e, node.id, 'from', startMs, endMs)}
+                          title="Arrastra para cambiar duración"
+                        />
                       </button>
                     )
                   })}
@@ -739,12 +802,13 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {/* Eventos con hora — Google Calendar */}
                   {gcalTimed.map(ev => {
                     const d = new Date(ev.start)
+                    const startMs = d.getTime()
                     const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
-                    let durationH = 1
-                    if (ev.end) {
-                      const end = new Date(ev.end)
-                      durationH = Math.max(0.25, (end.getTime() - d.getTime()) / 3600000)
+                    let endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
+                    if (resizing && resizing.source === 'gcal' && resizing.id === ev.id && resizeNewEndMs) {
+                      endMs = resizeNewEndMs
                     }
+                    const durationH = Math.max(0.25, (endMs - startMs) / 3600000)
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                     const lay = layoutMap.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
@@ -767,6 +831,11 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                       >
                         <span className="calendar-event-time">{timeLabel}</span>
                         <span className="calendar-event-text">{ev.title}</span>
+                        <span
+                          className="calendar-event-resize"
+                          onMouseDown={e => startResize(e, ev.id, 'gcal', startMs, endMs)}
+                          title="Arrastra para cambiar duración"
+                        />
                       </button>
                     )
                   })}

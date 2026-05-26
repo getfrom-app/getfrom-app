@@ -3227,6 +3227,17 @@ mark.inline-highlight {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   z-index: 99 !important;
 }
+.calendar-event-resize {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+  border-radius: 0 0 4px 4px;
+  background: transparent;
+  transition: background 0.1s;
+}
+.calendar-event-block:hover .calendar-event-resize { background: rgba(0,0,0,0.12); }
+.calendar-event-resize:hover { background: rgba(0,0,0,0.22) !important; }
 .calendar-event-block--gcal { background: #b5c9ea; cursor: default; }   /* azul GCal pastel */
 .calendar-event-chip--gcal { background: #b5c9ea; cursor: default; color: rgba(40,40,50,0.85); }
 .calendar-event-time { font-size: 10px; opacity: 0.75; white-space: nowrap; font-weight: 500; }
@@ -3503,6 +3514,37 @@ mark.inline-highlight {
   background: var(--accent-soft) !important;
   border-radius: 4px;
 }
+
+/* All-day events (Google Calendar) fila fija arriba del timeline */
+.timeline-allday-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+.timeline-allday-label {
+  width: 48px; flex-shrink: 0;
+  font-size: 10px; color: var(--text-tertiary);
+  text-align: right; padding: 4px 6px 0;
+  line-height: 1.2;
+}
+.timeline-allday-items { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 4px; }
+.timeline-allday-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: rgba(40, 40, 50, 0.92);
+  font-weight: 500;
+  border: 1px solid rgba(0,0,0,0.06);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.timeline-allday-chip:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
 
 /* ── Timeline absoluto: grid + bloques continuos ──────────────────────────── */
 .timeline-grid-wrapper {
@@ -7296,6 +7338,12 @@ a:focus-visible {
 .node-text-group { cursor: text; }
 .node-text-group button,
 .node-text-group input { cursor: pointer; }
+
+/* Drop target en sidebar (favoritos) */
+.tree-item--drop {
+  background: var(--accent-soft) !important;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
 
 /* ── Drag handle — agarrador visible en hover, estilo Notion ─────────────── */
 .node-drag-handle {

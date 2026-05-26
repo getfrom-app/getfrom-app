@@ -1028,6 +1028,14 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     return d >= dateStart && d < dateEnd
   })
   const gcalTimedItems = googleEvents.filter(ev => !ev.allDay && ev.start)
+  // All-day events del día (van en fila fija arriba del timeline)
+  const gcalAllDayItems = googleEvents.filter(ev => {
+    if (!ev.allDay || !ev.start) return false
+    // Para all-day, ev.start es "YYYY-MM-DD"
+    const dStr = ev.start.length >= 10 ? ev.start.slice(0, 10) : ''
+    const diaryDateStr = `${diaryDate.getFullYear()}-${String(diaryDate.getMonth()+1).padStart(2,'0')}-${String(diaryDate.getDate()).padStart(2,'0')}`
+    return dStr === diaryDateStr
+  })
 
   function renderTimeline() {
     return <TimelineRenderer
@@ -1036,6 +1044,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
       dayEnd={tlDayEnd}
       fromItems={fromTimedItems}
       gcalItems={gcalTimedItems}
+      gcalAllDayItems={gcalAllDayItems}
       currentHour={currentHour}
       currentMinutes={currentMinutes}
       isToday={isToday}
@@ -1325,6 +1334,7 @@ interface TimelineRendererProps {
   dayEnd: number
   fromItems: Node[]
   gcalItems: CalendarEvent[]
+  gcalAllDayItems?: CalendarEvent[]
   currentHour: number
   currentMinutes: number
   isToday: boolean
@@ -1422,7 +1432,7 @@ const TL_RIGHT_GUTTER = 22
 
 function TimelineRenderer({
   diaryDate, dayStart, dayEnd,
-  fromItems, gcalItems,
+  fromItems, gcalItems, gcalAllDayItems,
   currentHour, currentMinutes, isToday,
   onCreateTaskAt, onEditFrom,
   onEditGCal, editingGCalEvent, onGCalUpdated, onGCalDeleted, onCloseGCal,
@@ -1607,6 +1617,25 @@ function TimelineRenderer({
 
   return (
     <div className="timeline-panel-full">
+      {gcalAllDayItems && gcalAllDayItems.length > 0 && (
+        <div className="timeline-allday-row">
+          <div className="timeline-allday-label">Todo el día</div>
+          <div className="timeline-allday-items">
+            {gcalAllDayItems.map(ev => (
+              <button
+                key={ev.id}
+                type="button"
+                className="timeline-allday-chip"
+                style={{ background: tlGcalColor(ev) }}
+                onClick={() => onEditGCal(ev)}
+                title={`${ev.title} · Click para editar`}
+              >
+                📅 {ev.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="timeline-grid-wrapper">
         {/* Etiquetas de hora */}
         <div className="timeline-hours-col">

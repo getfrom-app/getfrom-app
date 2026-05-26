@@ -1093,7 +1093,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
-    if (!_draggedNodeId || _draggedNodeId === node.id) return
+    // Aceptar drag tanto del outliner interno como del agenda/timeline.
+    const hasExternalId = !!e.dataTransfer.types.find(t => t === 'cal-node-id' || t === 'text/plain')
+    if (!_draggedNodeId && !hasExternalId) return
+    if (_draggedNodeId === node.id) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     setIsDragOver(true)
@@ -1115,7 +1118,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     setIsDragOver(false)
-    const draggedId = _draggedNodeId
+    // Acepta drops del outliner interno (_draggedNodeId) Y del agenda/timeline
+    // (cal-node-id en dataTransfer). v8.26: reparenta tareas arrastradas.
+    const draggedId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
     _draggedNodeId = null
     if (!draggedId || draggedId === node.id) return
 
@@ -1147,7 +1152,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   function handleDropAsChild(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     setIsDragOverChild(false)
-    const draggedId = _draggedNodeId
+    const draggedId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
     _draggedNodeId = null
     if (!draggedId || draggedId === node.id) return
     const draggedNode = store.getNode(draggedId)
