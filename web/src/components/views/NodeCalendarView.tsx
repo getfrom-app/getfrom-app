@@ -5,6 +5,18 @@ import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
+// Detecta nodos de estructura temporal que no deben aparecer en vistas de contenido
+const MONTHS_TEMPORAL = new Set(['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'])
+function isTemporalNode(text: string): boolean {
+  const t = (text || '').trim()
+  if (/^\d{4}$/.test(t)) return true
+  // "Mayo" o "Mayo 2026"
+  const words = t.toLowerCase().split(/\s+/)
+  if (MONTHS_TEMPORAL.has(words[0]) && (words.length === 1 || /^\d{4}$/.test(words[1] || ''))) return true
+  if (/^semana \d+$/i.test(t)) return true
+  return false
+}
+
 interface CalendarEntry {
   node: Node
   date: Date
@@ -18,7 +30,7 @@ export default function NodeCalendarView({ parentId }: Props) {
   const [viewDate, setViewDate] = useState(new Date())
   const [quickCreate, setQuickCreate] = useState<{ day: number; text: string } | null>(null)
 
-  const allChildren = store.children(parentId).filter(n => !n.deletedAt)
+  const allChildren = store.children(parentId).filter(n => !n.deletedAt && !isTemporalNode(n.text || ''))
   const customCols = store.getPropSchema(parentId)
   const dateCols = customCols.filter(c => c.type === 'date')
 

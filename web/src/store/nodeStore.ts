@@ -271,7 +271,12 @@ export class NodeStore {
   mergeDuplicateTemporalNodes(): { years: number; months: number; weeks: number } {
     const MONTHS = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
     const isYear  = (t: string) => /^\d{4}$/.test(t)
-    const isMonth = (t: string) => MONTHS.has(t)
+    // Acepta "Mayo" y también "Mayo 2026" (formato antiguo) → normaliza a "Mayo"
+    const isMonth = (t: string) => {
+      const w = t.trim().split(/\s+/)
+      return MONTHS.has(w[0]) && (w.length === 1 || /^\d{4}$/.test(w[1] || ''))
+    }
+    const normalizeMonth = (t: string) => t.trim().split(/\s+/)[0]  // "Mayo 2026" → "Mayo"
     const isWeek  = (t: string) => /^Semana \d+$/i.test(t)
 
     let yearsMerged = 0, monthsMerged = 0, weeksMerged = 0
@@ -320,18 +325,28 @@ export class NodeStore {
     // Re-snapshot tras year merges
     const afterYears = [...this.nodes.values()].filter(n => !n.deletedAt && !n.isDiaryEntry)
 
-    // 2. Months: hijos directos de un Año, texto = mes
-    const monthsByYear = new Map<string, Node[]>()  // key = parentId|monthText
+    // 2. Months: hijos directos de un Año, texto = mes (o "Mes Año" formato antiguo)
+    // Agrupa por parentId + nombre-corto-del-mes para unificar "Mayo" y "Mayo 2026"
+    const monthsByYear = new Map<string, Node[]>()  // key = parentId|mesCorto
     for (const n of afterYears) {
       if (!n.parentId || !isMonth(n.text || '')) continue
       const parent = this.getNode(n.parentId)
       if (!parent || !isYear(parent.text || '')) continue
-      const k = `${parent.id}|${n.text}`
+      const shortName = normalizeMonth(n.text!)          // "Mayo 2026" → "Mayo"
+      const k = `${parent.id}|${shortName}`
       if (!monthsByYear.has(k)) monthsByYear.set(k, [])
       monthsByYear.get(k)!.push(n)
     }
     for (const [, group] of monthsByYear) {
-      if (mergeGroup(group)) monthsMerged += group.length - 1
+      if (mergeGroup(group)) {
+        // Asegurarse de que el canonical tiene el texto corto (sin año)
+        const canonical = group[0]
+        const shortText = normalizeMonth(canonical.text!)
+        if (canonical.text !== shortText) {
+          this.updateNode(canonical.id, { text: shortText })
+        }
+        monthsMerged += group.length - 1
+      }
     }
 
     // 3. Weeks: hijos directos de un Mes, texto = "Semana N"
