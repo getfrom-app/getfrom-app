@@ -1031,31 +1031,34 @@ class NodeStore {
       await this.sync()
     }
 
-    // v8.12: ELIMINACIÓN del concepto "bucle". Cualquier nodo bucle (flag
-    // isSeguimiento o tag 'bucle') pasa a nota normal. Sus tareas hijas
-    // intactas — siguen apareciendo en el panel como container vivo si
-    // tienen pendientes.
+    // v8.12: ELIMINACIÓN del concepto "bucle". Batch sin notify por nodo
+    // (con muchos bucles, un notify por iteración congelaba la app).
     let migrated = 0
-    for (const node of this.nodes.values()) {
+    const nowIso = new Date().toISOString()
+    for (const [id, node] of this.nodes.entries()) {
       if (node.deletedAt) continue
       const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
       if (!isBucle) continue
       const newTypes = (node.types || []).filter(t => t !== 'bucle')
-      this.updateNode(node.id, {
+      this.nodes.set(id, {
+        ...node,
         isSeguimiento: false,
         types: newTypes,
-        // Asegurar que no es ni tarea ni evento agendable
         status: node.status === 'pending' && !node.due ? null : node.status,
         due: null,
         dueEnd: null,
         recurrence: null,
         isEvent: false,
+        updatedAt: nowIso,
+        _isDirty: true,
       })
+      this.dirtyIds.add(id)
       migrated++
     }
     if (migrated > 0) {
       // eslint-disable-next-line no-console
-      console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales (sus tareas hijas intactas)`)
+      console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales`)
+      this.notify()
       await this.sync()
     }
 
