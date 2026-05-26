@@ -7,7 +7,7 @@ import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
-import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -217,6 +217,20 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
 
       {/* Fechas rápidas */}
       <div className="tpp-section-label">Fecha</div>
+      <input
+        type="text"
+        className="tpp-natural-date-input"
+        placeholder='Lenguaje natural: "mañana", "lunes", "+3", "14:30", "27/05"…'
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            const iso = parseNaturalDate((e.target as HTMLInputElement).value)
+            if (iso) {
+              store.updateNode(node.id, { due: iso });
+              (e.target as HTMLInputElement).value = ''
+            }
+          }
+        }}
+      />
       <div className="nqp-quick-row">
         {[
           { label: 'Hoy', days: 0 },

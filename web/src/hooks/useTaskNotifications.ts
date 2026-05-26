@@ -70,16 +70,19 @@ export function useTaskNotifications() {
         if (overdue.length > 0) persistNotified()
       }
 
-      // Tareas que vencen pronto (15 min)
+      // Tareas con hora exacta — 5 minutos antes (precisión alta).
+      // Tareas sin hora (medianoche) — 15 min antes (recordatorio general).
       for (const task of tasks) {
         if (notified.has(task.id)) continue
         const due = new Date(task.due!)
         const diff = due.getTime() - now.getTime()
+        const hasExactTime = due.getHours() !== 0 || due.getMinutes() !== 0
 
-        if (diff > 0 && diff <= 15 * 60 * 1000) {
+        const window = hasExactTime ? 5 * 60 * 1000 : 15 * 60 * 1000
+        if (diff > 0 && diff <= window) {
           notified.add(task.id)
-          new Notification('📋 Tarea pronto vence', {
-            body: `"${task.text}" vence en ${Math.round(diff / 60000)} minutos`,
+          new Notification(hasExactTime ? '⏰ Tarea en 5 min' : '📋 Tarea pronto vence', {
+            body: `"${task.text}" — ${hasExactTime ? `${Math.round(diff / 60000)} min` : 'esta tarde'}`,
             icon: '/icon.svg',
           })
           persistNotified()

@@ -77,9 +77,8 @@ const GROUPS: ShortcutGroup[] = [
       { keys: 'Ctrl+3', desc: 'Ir a Calendario' },
       { keys: 'Ctrl+4', desc: 'Ir a Búsqueda' },
       { keys: 'Ctrl+5', desc: 'Ir a Kanban' },
-      { keys: 'Ctrl+6', desc: 'Ir a Bucles' },
-      { keys: 'Ctrl+7', desc: 'Ir a Agentes' },
-      { keys: 'Ctrl+8', desc: 'Ir a Chat IA' },
+      { keys: 'Ctrl+6', desc: 'Ir a Agentes' },
+      { keys: 'Ctrl+7', desc: 'Ir a Chat IA' },
     ],
   },
 ]

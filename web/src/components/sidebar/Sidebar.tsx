@@ -583,6 +583,16 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               <span className="nav-icon">⚙</span>
               <span>Ajustes</span>
             </button>
+            <button
+              className="nav-item"
+              onClick={() => {
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))
+              }}
+              title="Atajos de teclado (?)"
+            >
+              <span className="nav-icon">⌨</span>
+              <span>Atajos</span>
+            </button>
             {!isGuest ? (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
                 <span className="nav-icon">↩</span>

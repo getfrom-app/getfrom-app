@@ -271,15 +271,25 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
     !hasLiveContainerAncestor(n.id)
   )
 
-  const overdue = looseSchedulable.filter(n =>
-    n.status === 'pending' && n.due && new Date(n.due) < periodStart
-  )
+  // Acotamos overdue y future a una ventana razonable según vista (evita
+  // mostrar "vencidas hace 5 años" o "futuras dentro de 2 años").
+  const lookbackDays = view === 'day' ? 14 : view === 'week' ? 60 : view === 'month' ? 365 : 999999
+  const lookaheadDays = view === 'day' ? 7 : view === 'week' ? 30 : view === 'month' ? 90 : 999999
+  const minVisible = new Date(periodStart.getTime() - lookbackDays * 86400000)
+  const maxVisible = new Date(endBoundary.getTime() + lookaheadDays * 86400000)
+  const overdue = looseSchedulable.filter(n => {
+    if (n.status !== 'pending' || !n.due) return false
+    const d = new Date(n.due)
+    return d < periodStart && d >= minVisible
+  })
   const unscheduled = looseSchedulable.filter(n =>
     !n.due && n.status === 'pending'
   )
-  const future = looseSchedulable.filter(n =>
-    n.status === 'pending' && n.due && new Date(n.due) >= endBoundary
-  )
+  const future = looseSchedulable.filter(n => {
+    if (n.status !== 'pending' || !n.due) return false
+    const d = new Date(n.due)
+    return d >= endBoundary && d <= maxVisible
+  })
 
   // Recursos sin agendar
   const resources = allNodes

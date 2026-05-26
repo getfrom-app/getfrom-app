@@ -750,14 +750,22 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {timedNodes.map(node => {
                     const d = new Date(node.due!)
                     const startMs = d.getTime()
-                    const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
                     let endMs = node.dueEnd ? new Date(node.dueEnd).getTime() : startMs + 3600000
                     if (resizing && resizing.source === 'from' && resizing.id === node.id && resizeNewEndMs) {
                       endMs = resizeNewEndMs
                     }
-                    const durationH = Math.max(0.25, (endMs - startMs) / 3600000)
+                    // Clip al día visible (eventos cross-day se renderizan
+                    // parciales en cada día que solapan).
+                    const dayStartMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime()
+                    const dayEndMs = dayStartMs + 86400000
+                    const visStart = Math.max(startMs, dayStartMs)
+                    const visEnd = Math.min(endMs, dayEndMs)
+                    const startInDay = new Date(visStart)
+                    const topPx = (startInDay.getHours() - dayStart + startInDay.getMinutes() / 60) * CELL_HEIGHT
+                    const durationH = Math.max(0.25, (visEnd - visStart) / 3600000)
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    const crossDay = startMs < dayStartMs || endMs > dayEndMs
                     const lay = layoutMap.get('from:' + node.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
                     return (
                       <button
@@ -785,7 +793,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         }}
                         title={node.text || 'Sin título'}
                       >
-                        <span className="calendar-event-time">{timeLabel}</span>
+                        <span className="calendar-event-time">{timeLabel}{crossDay ? ' ↦' : ''}</span>
                         <span className="calendar-event-text">
                           {nodeIcon(node) && <span style={{ marginRight: 4 }}>{nodeIcon(node)}</span>}
                           {node.text || 'Sin título'}
@@ -803,14 +811,20 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   {gcalTimed.map(ev => {
                     const d = new Date(ev.start)
                     const startMs = d.getTime()
-                    const topPx = (d.getHours() - dayStart + d.getMinutes() / 60) * CELL_HEIGHT
                     let endMs = ev.end ? new Date(ev.end).getTime() : startMs + 3600000
                     if (resizing && resizing.source === 'gcal' && resizing.id === ev.id && resizeNewEndMs) {
                       endMs = resizeNewEndMs
                     }
-                    const durationH = Math.max(0.25, (endMs - startMs) / 3600000)
+                    const dayStartMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime()
+                    const dayEndMs = dayStartMs + 86400000
+                    const visStart = Math.max(startMs, dayStartMs)
+                    const visEnd = Math.min(endMs, dayEndMs)
+                    const startInDay = new Date(visStart)
+                    const topPx = (startInDay.getHours() - dayStart + startInDay.getMinutes() / 60) * CELL_HEIGHT
+                    const durationH = Math.max(0.25, (visEnd - visStart) / 3600000)
                     const heightPx = durationH * CELL_HEIGHT
                     const timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                    const crossDay = startMs < dayStartMs || endMs > dayEndMs
                     const lay = layoutMap.get('gcal:' + ev.id) || { leftPct: 0, widthPct: 100, zIndex: 10 }
                     return (
                       <button
@@ -829,7 +843,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         title={`${ev.title} · Click para editar en Google`}
                         onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                       >
-                        <span className="calendar-event-time">{timeLabel}</span>
+                        <span className="calendar-event-time">{timeLabel}{crossDay ? ' ↦' : ''}</span>
                         <span className="calendar-event-text">{ev.title}</span>
                         <span
                           className="calendar-event-resize"

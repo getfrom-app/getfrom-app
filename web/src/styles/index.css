@@ -7460,6 +7460,23 @@ a:focus-visible {
 .tpp-move-item-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tpp-move-empty { padding: 8px; font-size: 12px; color: var(--text-tertiary); text-align: center; }
 
+.tpp-natural-date-input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+.tpp-natural-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
 /* ── Color swatches dentro de TaskPropsPopover ────────────────────────────── */
 .tpp-color-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .tpp-color-swatch {
