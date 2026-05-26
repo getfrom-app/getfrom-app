@@ -35,9 +35,11 @@ function createNote(a: Record<string, unknown>): ExecutedAction {
   const tags = (a.tags as string[]) || []
   const parentId = (a.parent_id as string | undefined) || null
 
+  // Si no hay parent_id explícito, crear bajo la nota diaria de hoy
+  // (paridad con createTask y Mac — mejor UX que soltar en raíz).
   const created = store.createNode({
     text,
-    parentId,
+    parentId: parentId ?? store.todayDiary()?.id ?? null,
     types: tags,
     extraData: {},
   })

@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAIChat, type ChatMessage } from '../../store/aiChatStore'
+import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 
 interface Props {
@@ -149,12 +149,21 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 0' }}>
-          {chat.messages.length === 0 ? (
+          {chat.messages.length === 0 && !chat.pendingActions ? (
             <EmptyState />
           ) : (
             chat.messages.map(msg => (
               <MessageBubble key={msg.id} msg={msg} onOpenNode={(id) => { navigate(`/node/${id}`); onClose() }} />
             ))
+          )}
+          {/* Card de confirmación: aparece cuando la IA propone escrituras */}
+          {chat.pendingActions && chat.pendingActions.length > 0 && (
+            <PendingConfirmationCard
+              actions={chat.pendingActions}
+              onConfirm={() => chat.confirmActions()}
+              onCancel={() => chat.cancelActions()}
+              disabled={chat.isStreaming}
+            />
           )}
           {chat.actionStatus && (
             <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>
@@ -221,6 +230,118 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             }}
           >↑</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// MARK: - PendingConfirmationCard
+
+function PendingConfirmationCard({
+  actions, onConfirm, onCancel, disabled
+}: {
+  actions: PendingAction[]
+  onConfirm: () => void
+  onCancel: () => void
+  disabled: boolean
+}) {
+  const iconFor = (type: string) => {
+    switch (type) {
+      case 'create_note':     return '📝'
+      case 'create_task':     return '✅'
+      case 'create_event':    return '📅'
+      case 'create_resource': return '🔗'
+      case 'update_node':     return '✏️'
+      default: return '⚡'
+    }
+  }
+  const labelFor = (type: string) => {
+    switch (type) {
+      case 'create_note':     return 'Nota'
+      case 'create_task':     return 'Tarea'
+      case 'create_event':    return 'Evento'
+      case 'create_resource': return 'Recurso'
+      case 'update_node':     return 'Modificar'
+      default: return type
+    }
+  }
+
+  return (
+    <div style={{
+      margin: '8px 16px',
+      border: '1px solid rgba(249,115,22,0.25)',
+      borderRadius: 10,
+      background: 'rgba(249,115,22,0.05)',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '8px 12px 6px',
+        fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
+      }}>
+        <span style={{ color: '#f97316' }}>✋</span>
+        <span>Confirma antes de crear</span>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>
+          {actions.length} {actions.length === 1 ? 'elemento' : 'elementos'}
+        </span>
+      </div>
+
+      <div style={{ height: 1, background: 'var(--border)', opacity: 0.4 }} />
+
+      {/* Filas de acción */}
+      {actions.map(action => (
+        <div key={action.id} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '6px 12px', fontSize: 12,
+        }}>
+          <span style={{ fontSize: 13 }}>{iconFor(action.actionType)}</span>
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 500, minWidth: 50 }}>
+            {labelFor(action.actionType)}
+          </span>
+          <span style={{ color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {action.editedTitle}
+          </span>
+          {action.editedTags.length > 0 && (
+            <span style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+              {action.editedTags.slice(0, 3).map(tag => (
+                <span key={tag} style={{ fontSize: 10, color: 'var(--accent)', opacity: 0.85 }}>
+                  #{tag}
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
+      ))}
+
+      <div style={{ height: 1, background: 'var(--border)', opacity: 0.4 }} />
+
+      {/* Botones */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+        <button
+          onClick={onCancel}
+          disabled={disabled}
+          style={{
+            background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            borderRadius: 6, padding: '4px 10px', fontSize: 12,
+            color: 'var(--text-secondary)', cursor: disabled ? 'not-allowed' : 'pointer',
+          }}
+        >Cancelar</button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={onConfirm}
+          disabled={disabled}
+          style={{
+            background: disabled ? 'var(--bg-secondary)' : 'var(--accent)',
+            border: 'none', borderRadius: 6,
+            padding: '5px 14px', fontSize: 12, fontWeight: 600,
+            color: 'white', cursor: disabled ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          <span>✓</span><span>Crear todo</span>
+        </button>
       </div>
     </div>
   )

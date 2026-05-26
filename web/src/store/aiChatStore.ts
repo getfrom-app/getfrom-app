@@ -23,7 +23,38 @@ export interface ExecutedAction {
   createdIds: string[]
 }
 
+/** Acción de escritura propuesta por la IA, pendiente de confirmación del usuario. */
+export interface PendingAction {
+  id: string
+  actionType: string
+  editedTitle: string
+  editedTags: string[]
+  rawAction: Record<string, unknown>
+}
+
+function makePendingAction(action: Record<string, unknown>): PendingAction {
+  return {
+    id: crypto.randomUUID(),
+    actionType: (action.action as string) || '',
+    editedTitle: (action.text as string) || (action.title as string) || 'Sin título',
+    editedTags: (action.tags as string[]) || [],
+    rawAction: action,
+  }
+}
+
+function pendingToAction(pa: PendingAction): Record<string, unknown> {
+  return { ...pa.rawAction, text: pa.editedTitle, tags: pa.editedTags.length ? pa.editedTags : pa.rawAction.tags }
+}
+
+const READ_ACTIONS = new Set(['read_node', 'find_nodes'])
+
 type Listener = () => void
+
+interface PendingContext {
+  currentNodeId: string | undefined
+  sessionId: string
+  readResults: ExecutedAction[]
+}
 
 class AIChatStore {
   sessionId: string | null = null
@@ -31,7 +62,10 @@ class AIChatStore {
   isStreaming = false
   actionStatus: string | null = null
   lastError: string | null = null
+  /** Acciones de escritura pendientes de confirmación. null = nada pendiente. */
+  pendingActions: PendingAction[] | null = null
 
+  private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
 
   subscribe(fn: Listener): () => void {
@@ -46,6 +80,8 @@ class AIChatStore {
     this.actionStatus = null
     this.lastError = null
     this.isStreaming = false
+    this.pendingActions = null
+    this._pendingContext = null
     this.notify()
   }
 
@@ -76,23 +112,25 @@ class AIChatStore {
     const trimmed = text.trim()
     if (!trimmed) return
     this.lastError = null
+    this.pendingActions = null
+    this._pendingContext = null
 
     if (!this.sessionId) {
       this.sessionId = this.createSessionNode(trimmed)
     }
     const sid = this.sessionId
 
-    // Persistir mensaje user
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
     this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [] })
     this.notify()
 
     this.isStreaming = true
-    let pendingResults: ChatActionResult[] = []
-    const maxTurns = 4
-    for (let turn = 0; turn < maxTurns; turn++) {
+
+    // Loop de lectura: auto-ejecuta read_node/find_nodes; pausa al llegar escrituras.
+    let accumulatedReadResults: ExecutedAction[] = []
+    const maxReadTurns = 3
+    for (let turn = 0; turn < maxReadTurns; turn++) {
       this.notify()
-      // Crear mensaje assistant inicial vacío
       const assistantMsgId = this.appendMessageNode(sid, 'assistant', '')
       this.messages.push({ id: assistantMsgId, role: 'assistant', content: '', actions: [] })
       this.notify()
@@ -100,7 +138,9 @@ class AIChatStore {
       let assistantText = ''
       try {
         await aiChatStream(
-          this.buildPayload(currentNodeId, pendingResults),
+          this.buildPayload(currentNodeId, accumulatedReadResults.map(e => ({
+            action: e.action, ok: e.ok, summary: e.summary, ids: e.createdIds,
+          }))),
           (chunk) => {
             assistantText += chunk
             const idx = this.messages.findIndex(m => m.id === assistantMsgId)
@@ -110,7 +150,6 @@ class AIChatStore {
             }
           }
         )
-        // Persistir texto final
         store.updateNode(assistantMsgId, { text: assistantText })
       } catch (e) {
         this.lastError = e instanceof Error ? e.message : String(e)
@@ -119,40 +158,113 @@ class AIChatStore {
         return
       }
 
-      // Extraer + ejecutar acciones
-      const actions = extractActions(assistantText)
-      if (actions.length === 0) break
+      const allActions = extractActions(assistantText)
+      if (allActions.length === 0) break
 
-      this.actionStatus = `Ejecutando ${actions.length} ${actions.length === 1 ? 'acción' : 'acciones'}…`
-      this.notify()
+      const readActions  = allActions.filter(a => READ_ACTIONS.has(a.action as string))
+      const writeActions = allActions.filter(a => !READ_ACTIONS.has(a.action as string))
 
-      const executed: ExecutedAction[] = []
-      for (const a of actions) {
-        const r = await executeChatAction(a, sid)
-        executed.push(r)
+      // Ejecutar lecturas inmediatamente.
+      if (readActions.length > 0) {
+        this.actionStatus = 'Buscando información…'
+        this.notify()
+        const readResults: ExecutedAction[] = []
+        for (const a of readActions) {
+          readResults.push(await executeChatAction(a, sid))
+        }
+        const idx = this.messages.findIndex(m => m.id === assistantMsgId)
+        if (idx >= 0) {
+          this.messages[idx] = { ...this.messages[idx], actions: readResults }
+          this.persistActionsOnNode(assistantMsgId, readResults)
+        }
+        accumulatedReadResults = readResults
+        this.actionStatus = null
+        this.notify()
       }
 
-      // Persistir acciones en el assistant message
-      const idx = this.messages.findIndex(m => m.id === assistantMsgId)
-      if (idx >= 0) {
-        this.messages[idx] = { ...this.messages[idx], actions: executed }
-        this.persistActionsOnNode(assistantMsgId, executed)
+      // Escrituras → pause para confirmación.
+      if (writeActions.length > 0) {
+        this.isStreaming = false
+        this.pendingActions = writeActions.map(makePendingAction)
+        this._pendingContext = { currentNodeId, sessionId: sid, readResults: accumulatedReadResults }
+        this.notify()
+        return
       }
 
-      pendingResults = executed.map(e => ({
-        action: e.action, ok: e.ok, summary: e.summary, ids: e.createdIds,
-      }))
-
-      this.actionStatus = null
-      const anyOK = executed.some(e => e.ok)
+      // Solo lecturas — continuar si hubo éxito.
+      const anyOK = accumulatedReadResults.some(r => r.ok)
       if (!anyOK) break
     }
 
     this.isStreaming = false
     this.notify()
-
-    // Auto-título tras 3 turnos del usuario.
     await this.maybeAutoRenameSession()
+  }
+
+  /** El usuario confirmó las acciones pendientes. Se ejecutan y la IA resume. */
+  async confirmActions() {
+    const pending = this.pendingActions
+    const ctx = this._pendingContext
+    if (!pending || !pending.length || !ctx) return
+
+    this.pendingActions = null
+    this._pendingContext = null
+    this.isStreaming = true
+    this.notify()
+
+    const plural = pending.length === 1 ? 'elemento' : 'elementos'
+    this.actionStatus = `Creando ${pending.length} ${plural}…`
+    this.notify()
+
+    const allResults: ExecutedAction[] = [...ctx.readResults]
+    for (const pa of pending) {
+      allResults.push(await executeChatAction(pendingToAction(pa), ctx.sessionId))
+    }
+
+    // Adjuntar chips al último mensaje assistant.
+    const lastIdx = this.messages.length - 1
+    if (lastIdx >= 0 && this.messages[lastIdx].role === 'assistant') {
+      this.messages[lastIdx] = { ...this.messages[lastIdx], actions: allResults }
+      this.persistActionsOnNode(this.messages[lastIdx].id, allResults)
+    }
+    this.actionStatus = null
+    this.notify()
+
+    // Turno de resumen.
+    const summaryMsgId = this.appendMessageNode(ctx.sessionId, 'assistant', '')
+    this.messages.push({ id: summaryMsgId, role: 'assistant', content: '', actions: [] })
+    this.notify()
+
+    let summaryText = ''
+    try {
+      await aiChatStream(
+        this.buildPayload(ctx.currentNodeId, allResults.map(e => ({
+          action: e.action, ok: e.ok, summary: e.summary, ids: e.createdIds,
+        }))),
+        (chunk) => {
+          summaryText += chunk
+          const idx = this.messages.findIndex(m => m.id === summaryMsgId)
+          if (idx >= 0) {
+            this.messages[idx] = { ...this.messages[idx], content: summaryText }
+            this.notify()
+          }
+        }
+      )
+      store.updateNode(summaryMsgId, { text: summaryText })
+    } catch (e) {
+      this.lastError = e instanceof Error ? e.message : String(e)
+    }
+
+    this.isStreaming = false
+    this.notify()
+    await this.maybeAutoRenameSession()
+  }
+
+  /** El usuario canceló las acciones pendientes. */
+  cancelActions() {
+    this.pendingActions = null
+    this._pendingContext = null
+    this.notify()
   }
 
   private async maybeAutoRenameSession() {
@@ -238,10 +350,32 @@ class AIChatStore {
       ]
     })()
 
+    // Enriquecer tagDefs con prompts hijos (_tagPrompt="1") de cada tag.
+    // La IA los leerá y elegirá el más apropiado según la intención del usuario.
+    const enrichedTagDefs: Record<string, string> = { ...tagDefs }
+    for (const [name, body] of Object.entries(tagDefs)) {
+      const defNode = store.getTagDefNode(name)
+      if (!defNode) continue
+      const prompts = store.children(defNode.id).filter(child => {
+        try {
+          const ed = JSON.parse(child.extraData || '{}')
+          return ed._tagPrompt === '1'
+        } catch { return false }
+      })
+      if (prompts.length > 0) {
+        const section = '\n\n## Prompts disponibles para este tag:\n' +
+          prompts.map(p => {
+            const content = (p.body || '').trim()
+            return `### ${p.text}\n${content || '(sin instrucciones)'}`
+          }).join('\n\n')
+        enrichedTagDefs[name] = body + section
+      }
+    }
+
     return {
       messages: compactedMessages,
       userProfile: profile || undefined,
-      tagDefinitions: Object.keys(tagDefs).length > 0 ? tagDefs : undefined,
+      tagDefinitions: Object.keys(enrichedTagDefs).length > 0 ? enrichedTagDefs : undefined,
       recentNodes: recent.length > 0 ? recent : undefined,
       currentView,
       actionResults: actionResults.length > 0 ? actionResults : undefined,
