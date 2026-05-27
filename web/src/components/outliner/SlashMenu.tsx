@@ -8,7 +8,7 @@ export type SlashAction =
   | 'heading-1' | 'heading-2' | 'heading-3'
   | 'view-table' | 'view-kanban' | 'view-calendar' | 'view-list'
   | 'agent' | 'prompt' | 'resource'
-  | 'move-today' | 'move-tomorrow' | 'move-next-week' | 'move-to'
+  | 'move-today' | 'move-tomorrow' | 'move-next-week' | 'move-to' | 'move-to-prompt'
   | 'expand-all' | 'collapse-all'
   | 'count-children'
   | 'ai-summarize' | 'ai-find-tasks' | 'ai-draft-outline' | 'ai-fix-grammar' | 'ai-make-shorter'
@@ -50,7 +50,8 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
   { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
   // ── Mover ─────────────────────────────────────────────────────────────────
-  { group: 'Mover', label: 'Mover a hoy', icon: '📅', prefix: '', description: 'Mover esta nota al diario de hoy', action: 'move-today' },
+  { group: 'Mover', label: 'Mover a fecha…', icon: '📅', prefix: 'mover a ', description: 'viernes · 29 mayo · todos los martes · en 3 días…', action: 'move-to-prompt' },
+  { group: 'Mover', label: 'Mover a hoy', icon: '☀️', prefix: '', description: 'Mover esta nota al diario de hoy', action: 'move-today' },
   { group: 'Mover', label: 'Mover a mañana', icon: '📆', prefix: '', description: 'Mover al diario de mañana', action: 'move-tomorrow' },
   { group: 'Mover', label: 'Mover a próxima semana', icon: '📋', prefix: '', description: 'Mover al inicio de la próxima semana', action: 'move-next-week' },
   // ── Árbol ─────────────────────────────────────────────────────────────────
@@ -89,20 +90,19 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
   // ── Detectar "mover a [fecha]" dinámicamente ──────────────────────────────
-  const MOVE_PREFIXES = ['mover a ', 'mover al ', 'move to ', 'enviar a ', 'enviar al ']
-  const movePrefix = MOVE_PREFIXES.find(p => query.toLowerCase().startsWith(p))
-  const moveDateQuery = movePrefix ? query.slice(movePrefix.length).trim() : null
+  // Activar con o sin espacio final: "mover a", "mover a viernes", "enviar a ..."
+  const MOVE_PREFIXES = ['mover a', 'mover al', 'move to', 'enviar a', 'enviar al']
+  const ql = query.toLowerCase().trim()
+  const movePrefix = MOVE_PREFIXES.find(p => ql.startsWith(p))
+  const moveDateQuery = movePrefix ? query.slice(query.toLowerCase().indexOf(movePrefix) + movePrefix.length).trim() : null
   const parsedMove = moveDateQuery ? parseNaturalDate(moveDateQuery) : null
-
-  // Si hay un prefix de mover pero sin fecha aún → sugerir ejemplos
   const isMoveMode = !!movePrefix
 
   // Filter by query — en modo mover, no mostrar opciones normales
   const filtered = isMoveMode ? [] : OPTIONS.filter(opt =>
     !query ||
     opt.label.toLowerCase().includes(query.toLowerCase()) ||
-    opt.description.toLowerCase().includes(query.toLowerCase()) ||
-    'mover'.startsWith(query.toLowerCase().slice(0, 5))
+    opt.description.toLowerCase().includes(query.toLowerCase())
   )
 
   const [activeIdx, setActiveIdx] = useState(0)

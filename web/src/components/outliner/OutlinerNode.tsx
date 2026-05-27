@@ -1630,6 +1630,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function handleSlashSelect(payload: SlashSelectPayload) {
     const { prefix, action } = payload
+
+    // ── move-to-prompt: reabrir slash con "mover a " pre-rellenado ──────────
+    if (action === 'move-to-prompt') {
+      setSlashQuery('mover a ')
+      setShowSlash(true)
+      return
+    }
+
     setShowSlash(false)
     setSlashQuery('')
 
