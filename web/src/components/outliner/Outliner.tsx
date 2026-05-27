@@ -218,6 +218,25 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     return () => window.removeEventListener('wf:new-child-today', handleNewChild)
   }, [parentId, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Foco en nodo específico tras mover una tarea (espejo queda en origen)
+  useEffect(() => {
+    function handleFocusNode(e: Event) {
+      const { nodeId } = (e as CustomEvent).detail as { nodeId: string }
+      // Solo actuar si el nodo es hijo de este Outliner (directo o a través del árbol)
+      const target = store.getNode(nodeId)
+      if (!target) return
+      // Buscar si el nodo está en nuestra jerarquía
+      const isOurs = (id: string): boolean => {
+        if (id === parentId) return true
+        const p = store.getNode(id)
+        return p?.parentId ? isOurs(p.parentId) : false
+      }
+      if (isOurs(target.parentId || '')) setSelectedId(nodeId)
+    }
+    window.addEventListener('wf:focus-node', handleFocusNode)
+    return () => window.removeEventListener('wf:focus-node', handleFocusNode)
+  }, [parentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Flat visible order (respecting collapse) for arrow navigation
   function flatVisible(nodeList: Node[], depth = 0): Node[] {
     const result: Node[] = []

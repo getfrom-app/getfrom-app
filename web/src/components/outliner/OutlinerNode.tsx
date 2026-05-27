@@ -1847,12 +1847,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         store.updateNode(taskMirror.id, {
           extraData: JSON.stringify({ _mirrorOf: node.id, _mirrorDestLabel: opts.label })
         })
+        // Foco en el espejo para seguir escribiendo sin levantar las manos
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: taskMirror.id } }))
+        }, 30)
       }
 
       store.updateNode(node.id, updates)
-
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
+
+      // Si no hubo espejo (tarea sin contexto significativo), crear nodo hermano vacío y enfocar
+      if (!originParent) {
+        const siblingsAfter = store.children(node.parentId || '').filter(s => s.siblingOrder > node.siblingOrder && !s.deletedAt)
+        // Solo crear si no hay ya un nodo vacío siguiente
+        const nextIsEmpty = siblingsAfter.length > 0 && !(store.getNode(siblingsAfter[0].id)?.text)
+        if (!nextIsEmpty) {
+          const newSibling = store.createNode({
+            text: '',
+            parentId: node.parentId,
+            siblingOrder: node.siblingOrder + 0.5,
+          })
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: newSibling.id } }))
+          }, 30)
+        } else {
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: siblingsAfter[0].id } }))
+          }, 30)
+        }
+      }
     }, 310)
   }
 
