@@ -1395,8 +1395,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     else if (type === 'h1')       wrapped = `# ${selectedText}`
     else if (type === 'h2')       wrapped = `## ${selectedText}`
     else if (type === 'h3')       wrapped = `### ${selectedText}`
-    else if (type === 'color') {
+    else if (type === 'text-color') {
       wrapped = extra ? `<span style="color:${extra}">${selectedText}</span>` : selectedText
+    }
+    else if (type === 'highlight') {
+      wrapped = extra ? `<span style="background-color:${extra};border-radius:2px;padding:0 2px">${selectedText}</span>` : selectedText
     }
 
     // Reemplazar la selección con texto formateado
