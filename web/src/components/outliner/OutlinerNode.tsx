@@ -2380,12 +2380,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>
         <div
           className="node-row node-row--moved-ref"
+          style={{ paddingLeft: depth * 22 }}
           onClick={() => navigate(`/node/${movedRef.targetId}`)}
           title={`→ ${movedRef.label} — clic para ir`}
         >
-          {/* Colapsar placeholder — mismo espacio que nodo normal */}
-          <button className="collapse-btn" style={{ visibility: 'hidden' }} tabIndex={-1} />
-          {/* Misma estructura que nodo normal: nav-dot + bullet/checkbox */}
+          {/* Drag handle placeholder — mismo espacio que nodo normal */}
+          <span className="node-drag-handle" style={{ visibility: 'hidden', pointerEvents: 'none' }}>⋮⋮</span>
+          {/* Colapsar placeholder */}
+          <button className="collapse-btn invisible" tabIndex={-1} />
+          {/* nav-dot + checkbox */}
           <button className="bullet-nav-dot" tabIndex={-1} style={{ cursor: 'default' }} />
           {movedRef.wasTask ? (
             <button className="bullet-btn task task-sq--future" tabIndex={-1} style={{ opacity: 0.5, cursor: 'default' }}>
