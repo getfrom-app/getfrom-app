@@ -444,6 +444,11 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
 }
+/* Ocultar el ::after (dot circular) que añade el WF layout */
+.bullet-nav-dot--mirror::after {
+  display: none !important;
+  content: none !important;
+}
 .bullet-nav-dot--mirror:hover { opacity: 1 !important; color: var(--accent) !important; }
 
 /* Badge de destino en espejo de tarea movida (→ Vie 30 may) */
