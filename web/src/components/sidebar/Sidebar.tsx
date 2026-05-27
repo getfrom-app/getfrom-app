@@ -601,13 +601,11 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
               >
                 <span className="wf-qa-item-icon">{icon}</span>
                 <span className="wf-qa-item-name">{sc.name}</span>
-                {!isDefault && (
-                  <button
-                    className="wf-qa-item-del"
-                    onClick={e => handleRemoveShortcut(sc.id, e)}
-                    title="Quitar atajo"
-                  >×</button>
-                )}
+                <button
+                  className="wf-qa-item-del"
+                  onClick={e => handleRemoveShortcut(sc.id, e)}
+                  title="Quitar atajo"
+                >×</button>
               </div>
             )
           })
