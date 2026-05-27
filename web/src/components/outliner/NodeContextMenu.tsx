@@ -18,7 +18,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
-import { addPredictionWord } from '../../store/predictionStore'
+import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
 
@@ -471,46 +471,51 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         )}
       </div>
 
-      {/* Añadir a predicción — visible si hay texto seleccionado */}
-      {selectedText.length >= 2 && selectedText.length <= 30 && (
-        <>
-          <div className="context-menu-separator" />
-          <div className="context-menu-section">
-            <button
-              className={`context-menu-item${showPrediction ? ' active' : ''}`}
-              onClick={() => setShowPrediction(v => !v)}
-            >
-              <span className="context-menu-icon">✦</span>
-              Enseñar a From: <em style={{ color: 'var(--text-accent)', marginLeft: 4 }}>"{selectedText}"</em>
-              <span className="context-menu-shortcut">{showPrediction ? '▾' : '›'}</span>
-            </button>
-            {showPrediction && (
-              <div className="context-menu-submenu-inline">
-                <button className="context-menu-item" onClick={() => {
-                  const added = addPredictionWord('task', selectedText)
-                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? `✦ "${selectedText}" → detectar como tarea` : `Ya estaba en la lista`,
-                    type: added ? 'success' : 'info'
-                  }}))
-                  onClose()
-                }}>
-                  <span className="context-menu-icon">☐</span> Es un verbo de tarea
-                </button>
-                <button className="context-menu-item" onClick={() => {
-                  const added = addPredictionWord('event', selectedText)
-                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? `✦ "${selectedText}" → detectar como evento` : `Ya estaba en la lista`,
-                    type: added ? 'success' : 'info'
-                  }}))
-                  onClose()
-                }}>
-                  <span className="context-menu-icon">📅</span> Es una palabra de evento
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+      {/* Enseñar a From — visible si hay texto seleccionado */}
+      {selectedText.length >= 2 && selectedText.length <= 30 && (() => {
+        const guess = guessWordType(selectedText)
+        const isTask = guess.type === 'task'
+        const primaryLabel = isTask ? 'verbo de tarea' : 'palabra de evento'
+        const primaryIcon = isTask ? '☐' : '📅'
+        const primaryType: 'task' | 'event' = isTask ? 'task' : 'event'
+        const altType: 'task' | 'event' = isTask ? 'event' : 'task'
+        const altLabel = isTask ? 'evento' : 'tarea'
+        const altIcon = isTask ? '📅' : '☐'
+
+        const doAdd = (type: 'task' | 'event') => {
+          const added = addPredictionWord(type, selectedText)
+          const typeLabel = type === 'task' ? 'tarea' : 'evento'
+          window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+            message: added ? `✦ "${selectedText}" → ${typeLabel}` : `"${selectedText}" ya está en la lista`,
+            type: added ? 'success' : 'info'
+          }}))
+          onClose()
+        }
+
+        return (
+          <>
+            <div className="context-menu-separator" />
+            <div className="context-menu-section">
+              {/* Propuesta principal (alta confianza) — acción directa */}
+              <button className="context-menu-item context-menu-item--prediction" onClick={() => doAdd(primaryType)}>
+                <span className="context-menu-icon">✦</span>
+                <span>
+                  <span style={{ color: 'var(--text-primary)' }}>"{selectedText}"</span>
+                  <span style={{ color: 'var(--text-secondary)', marginLeft: 6 }}>→ {primaryIcon} {primaryLabel}</span>
+                </span>
+              </button>
+              {/* Opción alternativa — más pequeña */}
+              <button
+                className="context-menu-item context-menu-item--prediction-alt"
+                onClick={() => doAdd(altType)}
+              >
+                <span className="context-menu-icon" style={{ opacity: 0.5 }}>{altIcon}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>No, es {altLabel}</span>
+              </button>
+            </div>
+          </>
+        )
+      })()}
 
       {/* Eliminar — siempre disponible, va a la papelera */}
       <div className="context-menu-separator" />

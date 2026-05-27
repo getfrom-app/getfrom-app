@@ -608,6 +608,10 @@ a { color: inherit; text-decoration: none; }
 .context-menu-item:hover { background: var(--bg-hover); }
 .context-menu-item--danger { color: #ef4444; }
 .context-menu-item--danger:hover { background: rgba(239,68,68,0.08); }
+.context-menu-item--prediction { font-size: 13px; }
+.context-menu-item--prediction:hover { background: var(--accent-soft); }
+.context-menu-item--prediction-alt { padding-top: 2px; padding-bottom: 2px; min-height: 0; }
+.context-menu-item--prediction-alt:hover { background: var(--bg-hover); }
 
 .context-menu-icon { width: 16px; text-align: center; opacity: 0.7; font-size: 14px; }
 .context-menu-shortcut { margin-left: auto; font-size: 11px; color: var(--text-tertiary); opacity: 0.7; }

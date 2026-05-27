@@ -49,6 +49,24 @@ export function buildTaskVerbRegex(): RegExp {
 }
 
 /** Construye el regex de palabras de evento combinando built-in + custom */
+/**
+ * Adivina el tipo de predicción más probable para una palabra.
+ * - Infinitivos españoles (-ar/-er/-ir) → tarea
+ * - Resto → evento
+ */
+export function guessWordType(word: string): { type: keyof PredictionWords; confidence: 'high' | 'medium' } {
+  const w = word.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  // Infinitivo español: termina en -ar, -er, -ir
+  if (/[aeiou]r$/.test(w)) return { type: 'task', confidence: 'high' }
+  // Gerundio: -ando, -iendo
+  if (/(ando|iendo)$/.test(w)) return { type: 'task', confidence: 'medium' }
+  // Palabras típicas de evento
+  const eventWords = /^(reunion|meeting|cita|llamada|clase|curso|taller|conferencia|webinar|formacion|entrevista|visita|presentacion|almuerzo|comida|cena|cafe|evento|seminario|charla|workshop)/
+  if (eventWords.test(w)) return { type: 'event', confidence: 'high' }
+  // Default: evento (probablemente un sustantivo)
+  return { type: 'event', confidence: 'medium' }
+}
+
 export function buildEventWordRegex(): RegExp {
   const custom = getPredictionWords().event
   const customPart = custom.length > 0 ? '|' + custom.join('|') : ''
