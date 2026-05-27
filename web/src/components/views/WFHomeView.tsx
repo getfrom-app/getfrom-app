@@ -1,15 +1,17 @@
 /**
  * WFHomeView — Vista raíz estilo Workflowy
- * Muestra los nodos raíz (parentId = null) como outliner puro.
- * Al primer arranque en WF mode, colapsa todos los nodos raíz.
  *
- * Loading gate: no renderiza el Outliner hasta que store.isLoaded === true,
- * evitando el flash del nodo diario que se crea en root durante initialLoad().
+ * Sin filtro: árbol normal con nodos raíz.
+ * Con filtro smart (tarea, pendiente, hoy…): lista PLANA de resultados,
+ * igual que Workflowy. No se expande el árbol completo, lo que evita
+ * renderizar miles de nodos y bloquear el hilo principal.
  */
 import { useMemo, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
+import type { Node } from '../../types'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 
@@ -17,13 +19,44 @@ interface Props {
   filterText?: string
 }
 
+/** Resultado individual en la lista plana de filtro */
+function FilterResultRow({ node }: { node: Node }) {
+  const navigate = useNavigate()
+  const parent = node.parentId ? store.getNode(node.parentId) : null
+  const isTask = node.status !== null
+  const isDone = node.status === 'done'
+
+  return (
+    <div
+      className="wf-filter-row"
+      onClick={() => navigate(`/node/${node.id}`)}
+    >
+      <span className="wf-filter-row-bullet">
+        {isTask ? (isDone ? '✓' : '○') : '•'}
+      </span>
+      <div className="wf-filter-row-content">
+        <span className="wf-filter-row-text" style={{ textDecoration: isDone ? 'line-through' : undefined, opacity: isDone ? 0.5 : 1 }}>
+          {node.text || 'Sin título'}
+        </span>
+        {parent && (
+          <span className="wf-filter-row-parent">
+            {parent.text}
+          </span>
+        )}
+        {node.due && (
+          <span className="wf-filter-row-due">
+            {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function WFHomeView({ filterText }: Props) {
   const s = useStore()
 
   // ── Loading gate ───────────────────────────────────────────────────────
-  // No renderizamos el Outliner hasta que initialLoad() haya terminado.
-  // Nota: excludeDiaryEntries en el Outliner garantiza que los diarios
-  // nunca aparezcan en root aunque haya un render temprano.
   const [storeReady, setStoreReady] = useState(() => store.isLoaded)
 
   useEffect(() => {
@@ -34,7 +67,7 @@ export default function WFHomeView({ filterText }: Props) {
     return () => unsub()
   }, [storeReady])
 
-  // ── Colapsar root nodes al primer arranque en WF mode ──────────────────
+  // ── Colapsar root nodes al primer arranque ─────────────────────────────
   useEffect(() => {
     if (!storeReady) return
     if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
@@ -50,9 +83,8 @@ export default function WFHomeView({ filterText }: Props) {
   }, [storeReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro inteligente ─────────────────────────────────────────────────
-  // s.nodes es la misma referencia Map en cada render (mutada in-place), así
-  // que usamos s.nodes.size como dep numérica para detectar cambios reales.
-  // El propio applyWFFilter es O(n) — seguro para colecciones de tamaño normal.
+  // Usamos s.nodes.size (número) en lugar de s.nodes (misma referencia Map)
+  // para que el memo detecte cambios reales cuando el store se actualiza.
   const filterResult = useMemo(() => {
     if (!filterText?.trim()) return null
     if (!isSmartQuery(filterText)) return null
@@ -61,33 +93,41 @@ export default function WFHomeView({ filterText }: Props) {
 
   const isFiltering = !!filterText?.trim()
 
-  // No renderizar hasta que el store esté listo
   if (!storeReady) return <div className="wf-home-view" />
 
+  // ── Vista con filtro smart → lista PLANA ──────────────────────────────
+  // En lugar de expandir el árbol completo (que puede bloquear el hilo
+  // con miles de nodos), renderizamos solo los resultados como lista plana.
+  if (filterResult?.hasFilter) {
+    const matchNodes = Array.from(filterResult.matchIds)
+      .map(id => store.getNode(id))
+      .filter((n): n is Node => !!n && !n.deletedAt)
+
+    return (
+      <div className="wf-home-view">
+        <div className="wf-filter-results-hint">
+          {matchNodes.length === 0
+            ? <>Sin resultados para <strong>"{filterText}"</strong></>
+            : <>{matchNodes.length} resultado{matchNodes.length !== 1 ? 's' : ''} · <button className="wf-filter-clear-btn" onClick={() => window.dispatchEvent(new CustomEvent('wf:clear-filter'))}>Limpiar</button></>
+          }
+        </div>
+        <div className="wf-filter-flat-list">
+          {matchNodes.map(node => (
+            <FilterResultRow key={node.id} node={node} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Vista normal → árbol ──────────────────────────────────────────────
   return (
     <div className="wf-home-view">
-      {filterResult?.hasFilter && filterResult.matchIds.size === 0 && (
-        <div className="wf-filter-empty">
-          Sin resultados para <strong>"{filterText}"</strong>
-        </div>
-      )}
-      {filterResult?.hasFilter && filterResult.matchIds.size > 0 && (
-        <div className="wf-filter-results-hint">
-          {filterResult.matchIds.size} resultado{filterResult.matchIds.size !== 1 ? 's' : ''}
-          {' '}· <button
-            className="wf-filter-clear-btn"
-            onClick={() => window.dispatchEvent(new CustomEvent('wf:clear-filter'))}
-          >Limpiar</button>
-        </div>
-      )}
-
       <Outliner
         parentId={null}
         autoFocusEmpty={false}
         placeholder="Escribe algo… o pulsa Enter para crear un nodo"
-        filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
-        filterMatchIds={filterResult?.matchIds}
-        filterAncestorIds={filterResult?.ancestorIds}
+        filterText={isFiltering ? filterText : undefined}
         excludeDiaryEntries
       />
     </div>

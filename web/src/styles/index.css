@@ -9433,6 +9433,25 @@ a:focus-visible {
   text-align: center;
 }
 
+/* ── Lista plana de resultados de filtro ──────────────────────────── */
+.wf-filter-flat-list { display: flex; flex-direction: column; gap: 0; }
+.wf-filter-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.wf-filter-row:hover { background: var(--bg-hover, rgba(0,0,0,0.04)); }
+.wf-filter-row-bullet { font-size: 13px; color: var(--text-tertiary); flex-shrink: 0; width: 16px; text-align: center; }
+.wf-filter-row-content { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.wf-filter-row-text { font-size: 15px; color: var(--text-primary); }
+.wf-filter-row-parent { font-size: 11px; color: var(--text-tertiary); }
+.wf-filter-row-parent::before { content: '↖ '; }
+.wf-filter-row-due { font-size: 11px; color: var(--accent); font-weight: 500; }
+
 /* Move-to-today toast feedback */
 .from-toast {
   position: fixed;
