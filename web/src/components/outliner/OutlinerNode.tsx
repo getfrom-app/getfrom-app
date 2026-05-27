@@ -1520,8 +1520,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (!diaryNode) {
         // Crear jerarquía
         const roots = store.children(null)
-        let calNode = roots.find(n => !n.deletedAt && (n.text?.toLowerCase() === 'calendario' || n.text?.toLowerCase() === 'calendar'))
-        if (!calNode) calNode = store.createNode({ text: 'Calendario', parentId: null })
+        let calNode = roots.find(n => !n.deletedAt && (
+          n.text?.toLowerCase() === 'planificador' ||
+          n.text?.toLowerCase().includes('planificador') ||
+          n.text?.toLowerCase() === 'calendario' ||
+          n.text?.toLowerCase() === 'calendar'
+        ))
+        if (!calNode) calNode = store.createNode({ text: '📋 Planificador', parentId: null })
         let yearNode = store.children(calNode.id).find(c => !c.deletedAt && c.text === String(year))
         if (!yearNode) yearNode = store.createNode({ text: String(year), parentId: calNode.id })
         const monthText = MONTHS_ES_LOCAL[monthIdx]
