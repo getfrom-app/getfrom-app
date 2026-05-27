@@ -140,6 +140,11 @@ export default function MainLayout() {
         await relocateRootDiariesToAgenda()
         cleanupSpuriousTags()
         syncTagDefinitions()
+        // Forzar sync inmediato para que todos los cambios de inicialización
+        // (Plantillas, Contexto, Perfil) se persistan en el servidor.
+        // Sin esto, si el usuario recarga antes del debounce (1.5s),
+        // los nodos de sistema se recrean en cada recarga.
+        await store.sync(true)
         store.setLoaded()
       })
       .catch((err: unknown) => {
