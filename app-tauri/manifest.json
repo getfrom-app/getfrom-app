@@ -1,0 +1,17 @@
+{
+  "name": "From",
+  "short_name": "From",
+  "description": "Tu segundo cerebro. Notas, tareas, diario y IA.",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#f8f8f8",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
