@@ -442,6 +442,31 @@ class AIChatStore {
       }
     }
 
+    // ── @menciones en nota actual: cargar contenido de nodos mencionados ────
+    const atMentionedContext = (() => {
+      if (!currentNodeId) return ""
+      const node = store.nodes.get(currentNodeId)
+      if (!node) return ""
+      const fullText = `${node.text || ''} ${node.body || ''}`
+      const atMatches = fullText.match(/@([\wÀ-ɏ][\w\sÀ-ɏ-]*)/g) || []
+      const contexts: string[] = []
+      for (const match of atMatches) {
+        const name = match.slice(1).trim()
+        const found = store.allActive().find(n =>
+          n.text?.toLowerCase() === name.toLowerCase() && !n.deletedAt
+        )
+        if (found && found.body) {
+          contexts.push(`@${found.text}:\n${found.body.slice(0, 2000)}`)
+        }
+      }
+      return contexts.join('\n\n')
+    })()
+    if (atMentionedContext && currentNoteContent) {
+      currentNoteContent = currentNoteContent + '\n\nContexto de nodos mencionados:\n' + atMentionedContext
+    } else if (atMentionedContext) {
+      currentNoteContent = 'Contexto de nodos mencionados:\n' + atMentionedContext
+    }
+
     // ── Contexto diario: si está en la nota diaria, expandir descendientes ──
     let dailyContext: string | undefined
     if (currentNodeId) {

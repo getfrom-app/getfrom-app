@@ -268,7 +268,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Meta typed (color, block, icon, _resource…). Cache por referencia de Node.
   const meta = nodeMeta(node)
   const extraBlock = meta.block
-  const blockType = extraBlock ?? detectBlockType(node.text)
+
+  // Mirror: si este nodo tiene _mirrorOf, usar el nodo original como fuente de texto
+  const mirrorOfId = (() => {
+    try { return JSON.parse(node.extraData || '{}')._mirrorOf as string | undefined } catch { return undefined }
+  })()
+  const mirrorSourceNode = mirrorOfId ? store.getNode(mirrorOfId) ?? null : null
+  const displayNode = mirrorSourceNode ?? node
+
+  const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
@@ -309,11 +317,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const forced = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
       ? extraBlock as 'bullet' | 'h1' | 'h2' | 'h3'
       : undefined
-    const newHtml = renderInlineToHtml(node.text, activeFilter ? filterText : undefined, forced)
+    const newHtml = renderInlineToHtml(displayNode.text, activeFilter ? filterText : undefined, forced)
     if (contentRef.current.innerHTML !== newHtml) {
       contentRef.current.innerHTML = newHtml
     }
-  }, [node.text, isEditing, filterText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [displayNode.text, isEditing, filterText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus when selected + scroll into view
   // Sin guarda !isEditing: el efecto sólo corre cuando isSelected CAMBIA (dep array),
@@ -432,10 +440,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   })() : null
 
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
-    if (type === '#') {
-      // Tags del árbol 🏷 Tags primero (slugs jerarquicos), luego allUsedTags
+    if (type === '@') {
+      // @ — contextos del árbol 🧠 Contexto primero (slugs jerárquicos), luego allUsedTags
       const treeTagSlugs: string[] = []
-      const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === '🏷 Tags')
+      const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
       if (tagsRoot) {
         function collectSlugs(parentId: string, prefix: string) {
           for (const child of store.children(parentId)) {
@@ -455,7 +463,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         .slice(0, 10)
         .map(t => ({ id: t, label: t }))
     }
-    // @ — search nodes, include status/types/body preview
+    // # — search nodes (node references), include status/types/body preview
     return store.allActive()
       .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 8)
@@ -472,24 +480,28 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
-    // Auto-sync bidireccional: types[] refleja los #tags del texto.
+    // Auto-sync bidireccional: types[] refleja los @contextos y #tags del texto.
     // Preservamos types "builtin" (bucle, agente, etc.) que no son tags visuales.
     const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const hashTags = new Set([...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
+    const atTags = new Set([...(text.match(/@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
+    const allContextTags = new Set([...hashTags, ...atTags])
     const currentTypes = node.types || []
     const newTypes = [
-      ...currentTypes.filter(t => BUILTIN_TYPES.has(t) || hashTags.has(t)),
-      ...[...hashTags].filter(t => !currentTypes.includes(t)),
+      ...currentTypes.filter(t => BUILTIN_TYPES.has(t) || allContextTags.has(t)),
+      ...[...allContextTags].filter(t => !currentTypes.includes(t)),
     ]
     // Solo actualizar types si realmente cambió (evita escritura inútil)
     const typesChanged = newTypes.length !== currentTypes.length ||
       newTypes.some((t, i) => t !== currentTypes[i])
+    // Si es un nodo espejo, redirigir las ediciones al nodo original
+    const targetNodeId = mirrorOfId ?? node.id
     if (typesChanged) {
-      store.updateNode(node.id, { text, types: newTypes })
+      store.updateNode(targetNodeId, { text, types: newTypes })
       // NOTA: ensureTagInTree se llama en onBlur, no aquí, para no crear
-      // un nodo por cada tecla mientras el usuario escribe.
+      // un nodo en 🧠 Contexto por cada tecla mientras el usuario escribe.
     } else {
-      store.updateNode(node.id, { text })
+      store.updateNode(targetNodeId, { text })
     }
 
     // Slash menu: '/' en cualquier posición del cursor
@@ -567,11 +579,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
-    // Detect @ and # triggers
+    // Detect @ trigger (contextos/tags) and # trigger (node references)
     const pos = getCaretPosition(contentRef.current!)
     const before = text.slice(0, pos)
 
-    const atMatch = before.match(/@(\w*)$/)
+    const atMatch = before.match(/@([\wÀ-ɏ]*)$/)
     const hashMatch = before.match(/#(\w*)$/)
 
     if (atMatch) {
@@ -625,14 +637,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const newBefore = before.slice(0, before.length - queryLen - 1) // remove @/# + query
     const after = text.slice(pos)
 
-    if (picker.type === '#') {
-      // Tag siempre al final del texto, no inline donde se escribió
-      const tagText = `#${item.id}`
+    if (picker.type === '@') {
+      // @ context/tag: siempre al final del texto, no inline donde se escribió
+      const tagText = `@${item.id}`
       const cleanText = (newBefore + after).trim()
       const newText = cleanText + (cleanText ? ' ' : '') + tagText
       const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
-      // Auto-crear nodo en 🏷 Tags si no existe (crea la jerarquía completa)
+      // Auto-crear nodo en 🧠 Contexto si no existe (crea la jerarquía completa)
       ensureTagInTree(item.id)
       if (contentRef.current) {
         contentRef.current.textContent = newText
@@ -648,8 +660,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }
       }
     } else {
-      // @ reference: insert @NodeName in text
-      const refText = `@${item.label}`
+      // # reference: insert #NodeName in text as node reference
+      const refText = `#${item.label}`
       const newText = newBefore + refText + after
       // Save ref in extraData
       let extraData: Record<string, unknown> = {}
@@ -791,14 +803,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         e.preventDefault()
         if (picker.items.length > 0) {
           applyPickerSelection(picker.items[picker.activeIdx])
-        } else if (picker.type === '#' && picker.query) {
-          // No hay items en el picker pero hay query — confirmar el tag tal cual
+        } else if (picker.type === '@' && picker.query) {
+          // No hay items en el picker pero hay query — confirmar el contexto tal cual
           setPicker(null)
           try { ensureTagInTree(picker.query) } catch { /* silencioso */ }
         }
         return
       }
-      if (e.key === 'Tab' && picker.type === '#') {
+      if (e.key === 'Tab' && picker.type === '@') {
         e.preventDefault()
         if (picker.items.length > 0) {
           applyPickerSelection(picker.items[picker.activeIdx])
@@ -2004,6 +2016,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
             }}
           >
+            {/* Espejo: indicador visual si este nodo es un espejo de otro */}
+            {mirrorSourceNode && <span className="node-mirror-icon" title={`Espejo de: ${mirrorSourceNode.text}`} style={{ opacity: 0.6, marginRight: 4, fontSize: '0.85em' }}>⬡</span>}
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Lista: dash visual "–" decorativo */}
@@ -2566,10 +2580,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 applyPickerSelection(item)
               }}
             >
-              <span className="inline-picker-icon">{picker.type === '#' ? '#' : '@'}</span>
+              <span className="inline-picker-icon">{picker.type === '@' ? '@' : '#'}</span>
               <span className="inline-picker-content">
                 <span className="inline-picker-label">{item.label}</span>
-                {picker.type === '@' && (
+                {picker.type === '#' && (
                   <span className="inline-picker-meta">
                     {item.status === 'pending' && <span className="inline-picker-badge status-pending">○</span>}
                     {item.status === 'done' && <span className="inline-picker-badge status-done">✓</span>}

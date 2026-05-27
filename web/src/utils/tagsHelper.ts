@@ -15,7 +15,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 
-export const TAGS_ROOT_NAME = '🏷 Tags'
+export const TAGS_ROOT_NAME = '🧠 Contexto'
 
 // ── Slug helpers ──────────────────────────────────────────────────────────────
 
@@ -210,6 +210,30 @@ export function cleanupSpuriousTags(): void {
     }
   }
   clean(root.id)
+}
+
+/**
+ * migrateTagsToContexto — renombra el nodo raíz '🏷 Tags' a '🧠 Contexto'
+ * si aún existe el nombre antiguo. Solo se ejecuta una vez.
+ */
+export function migrateTagsToContexto(): void {
+  const OLD_NAME = '🏷 Tags'
+  const oldRoot = store.children(null).find(n => !n.deletedAt && n.text === OLD_NAME)
+  if (oldRoot) {
+    store.updateNode(oldRoot.id, { text: TAGS_ROOT_NAME })
+  }
+}
+
+/**
+ * ensurePerfilInsideContexto — mueve el nodo Perfil IA dentro de 🧠 Contexto
+ * si aún está en la raíz. El Perfil IA tiene extraData._perfilIA="1".
+ */
+export function ensurePerfilInsideContexto(): void {
+  const perfil = store.perfilIANode?.() ?? null
+  if (!perfil || perfil.parentId !== null) return  // ya tiene padre o no existe
+  const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null })
+  store.updateNode(perfil.id, { parentId: contextoRoot.id })
 }
 
 /**

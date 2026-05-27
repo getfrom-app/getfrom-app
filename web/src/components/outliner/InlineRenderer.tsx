@@ -11,9 +11,12 @@ function tagStyle(hex: string): string {
   return `background:${hex}20;color:${hex};border:1px solid ${hex}40;border-radius:4px;padding:0 5px;font-size:0.85em;font-weight:500`
 }
 
-// Render text with colored hashtags (usa color del store)
+// Color para chips de contexto @mention
+const CONTEXT_COLOR = '#7c3aed'
+
+// Render text with colored hashtags and @context chips
 function renderWithTags(text: string, key: number): React.ReactNode {
-  const parts = text.split(/(#[\wÀ-ɏ/\-]+)/g)
+  const parts = text.split(/(#[\wÀ-ɏ/\-]+|@[\wÀ-ɏ][\w\sÀ-ɏ\-]*)/g)
   if (parts.length === 1) return text
   return (
     <>
@@ -26,6 +29,17 @@ function renderWithTags(text: string, key: number): React.ReactNode {
               key={`tag-${key}-${i}`}
               className="tag-inline"
               style={{ background: hex + '20', color: hex, border: `1px solid ${hex}40`, borderRadius: 4, padding: '0 5px', fontSize: '0.85em', fontWeight: 500 }}
+            >
+              {part}
+            </span>
+          )
+        }
+        if (part.startsWith('@') && part.length > 1) {
+          return (
+            <span
+              key={`ctx-${key}-${i}`}
+              className="context-inline"
+              style={{ background: CONTEXT_COLOR + '20', color: CONTEXT_COLOR, border: `1px solid ${CONTEXT_COLOR}40`, borderRadius: 4, padding: '0 5px', fontSize: '0.85em', fontWeight: 500 }}
             >
               {part}
             </span>
@@ -253,9 +267,10 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
       const hex = store.tagColor(tag)
       return `<span class="tag-inline" style="${tagStyle(hex)}">${match}</span>`
     })
-    // @menciones con estilo
-    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F ]*)/g, (match) => {
-      return `<span class="mention-inline">${match}</span>`
+    // @contextos con estilo de chip morado
+    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (match) => {
+      const hex = '#7c3aed'
+      return `<span class="context-inline" style="background:${hex}20;color:${hex};border:1px solid ${hex}40;border-radius:4px;padding:0 5px;font-size:0.85em;font-weight:500">${match}</span>`
     })
 
   // Aplicar highlight de búsqueda si existe

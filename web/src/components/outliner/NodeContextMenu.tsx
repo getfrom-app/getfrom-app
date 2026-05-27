@@ -137,6 +137,18 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     onSelect(dup.id)
   }
 
+  function createMirror() {
+    const mirror = store.createNode({
+      text: node.text,
+      parentId: null,
+      extraData: { _mirrorOf: node.id },
+    })
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: { message: `Espejo creado: "${(node.text || 'Nodo').slice(0, 30)}"`, type: 'success' }
+    }))
+    onSelect(mirror.id)
+  }
+
   function toggleTask() {
     if (!isTask) {
       const today = new Date(); today.setHours(23,59,59,0)
@@ -234,11 +246,14 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       style={{ position: 'fixed', top: adjustedY, left: adjustedX, zIndex: 2000, minWidth: 220 }}
       onContextMenu={e => e.preventDefault()}
     >
-      {/* Duplicar + Mover */}
+      {/* Duplicar + Mover + Espejo */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(duplicate)}>
           <span className="context-menu-icon">⧉</span> Duplicar
           <span className="context-menu-shortcut">⌘D</span>
+        </button>
+        <button className="context-menu-item" onClick={run(createMirror)}>
+          <span className="context-menu-icon">⬡</span> Crear espejo
         </button>
         <button className="context-menu-item" onClick={e => {
           e.preventDefault(); e.stopPropagation()

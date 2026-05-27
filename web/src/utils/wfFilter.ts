@@ -82,7 +82,7 @@ export function applyWFFilter(
         tokenMatch = node.status === 'done'
       } else if (token === 'overdue' || token === 'vencido') {
         tokenMatch = node.status === 'pending' && isOverdue(node.due)
-      } else if (token.startsWith('#')) {
+      } else if (token.startsWith('@') || token.startsWith('#')) {
         const tagName = token.slice(1)
         tokenMatch = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
                      normalizeText(node.text || '').includes(token)
@@ -116,7 +116,7 @@ const SMART_OPERATORS = ['hoy', 'mañana', 'semana', 'tarea', 'pendiente', 'hech
 
 export function isSmartQuery(text: string): boolean {
   const lower = text.toLowerCase()
-  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#')
+  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@')
 }
 
 /** Suggestion chips to show below filter input */

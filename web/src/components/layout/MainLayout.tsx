@@ -49,7 +49,7 @@ import StatusBar from './StatusBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
-import { syncTagDefinitions, cleanupSpuriousTags } from '../../utils/tagsHelper'
+import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto } from '../../utils/tagsHelper'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -131,6 +131,9 @@ export default function MainLayout() {
     store.isGuest = false
     store.initialLoad()
       .then(async () => {
+        // Migrar 🏷 Tags → 🧠 Contexto si existe el nodo antiguo
+        migrateTagsToContexto()
+        ensurePerfilInsideContexto()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
         cleanupSpuriousTags()
