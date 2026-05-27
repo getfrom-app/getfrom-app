@@ -9,19 +9,25 @@ applyTheme(getStoredTheme())
 applyDensity(getStoredDensity())
 applyAccent(getStoredAccent())
 
-// GitHub Pages SPA redirect: restore path from ?p= param
-;(function () {
-  const search = window.location.search
-  if (search.startsWith('?p=')) {
-    const path = decodeURIComponent(search.slice(3))
-    window.history.replaceState(null, '', '/app/' + path)
-  }
-})()
+// Detectar entorno: Tauri (app desktop) vs web
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+const basename = isTauri ? '/' : '/app'
+
+// GitHub Pages SPA redirect: restore path from ?p= param (solo en web)
+if (!isTauri) {
+  ;(function () {
+    const search = window.location.search
+    if (search.startsWith('?p=')) {
+      const path = decodeURIComponent(search.slice(3))
+      window.history.replaceState(null, '', '/app/' + path)
+    }
+  })()
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter
-      basename="/app"
+      basename={basename}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <App />
