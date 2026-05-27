@@ -1003,9 +1003,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
-    // ── Aceptar autocompletado de contexto (Tab) ─────────────────────────────
+    // ── Aceptar autocompletado de contexto (Tab o Enter) ─────────────────────
     if (ctxCompletion && !picker && !showSlash) {
-      if (e.key === 'Tab') {
+      if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey)) {
         e.preventDefault()
         acceptCtxCompletion()
         return
