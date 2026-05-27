@@ -1942,6 +1942,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     } else if (action === 'ai-make-shorter') {
       window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Reescribe este contenido de forma más concisa y directa, sin perder información clave.' } }))
       return
+    } else if (action === 'add-shortcut') {
+      if (isShortcutState) {
+        removeNodeShortcut(node.id)
+        store.updateNode(node.id, { isFavorite: false })
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Atajo eliminado', type: 'info' } }))
+      } else {
+        addNodeShortcut(node.id, node.text || 'Sin título')
+        store.updateNode(node.id, { isFavorite: true })
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo añadido: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
+      }
+      window.dispatchEvent(new Event('wf:shortcuts-changed'))
+      return
     } else if (action === 'delete') {
       store.updateNode(node.id, { deletedAt: new Date().toISOString() })
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' } }))
@@ -2762,30 +2774,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </span>
             )}
 
-            {/* Atajo WF — estrella visible en hover o si ya es atajo */}
-            {(() => {
-              const isShortcut = isShortcutState
-              if (!isShortcut && !hovered) return null
-              return (
-                <button
-                  className={`node-star-btn${isShortcut ? ' starred' : ''}`}
-                  title={isShortcut ? 'Quitar de atajos (⌘⇧F)' : 'Añadir a atajos (⌘⇧F)'}
-                  onClick={e => {
-                    e.stopPropagation()
-                    if (isShortcut) {
-                      removeNodeShortcut(node.id)
-                      store.updateNode(node.id, { isFavorite: false })
-                    } else {
-                      addNodeShortcut(node.id, node.text || 'Sin título')
-                      store.updateNode(node.id, { isFavorite: true })
-                    }
-                    window.dispatchEvent(new Event('wf:shortcuts-changed'))
-                  }}
-                >
-                  {isShortcut ? '★' : '☆'}
-                </button>
-              )
-            })()}
+            {/* Estrella eliminada — usar /atajo, menú ··· o clic derecho */}
           </div>
         )}
 
