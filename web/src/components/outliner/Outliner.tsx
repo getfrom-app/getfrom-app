@@ -206,15 +206,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     return new Set(flat.slice(lo, hi + 1))
   }
 
-  // ── Drag-to-select: mouse events ──────────────────────────────────────────
-  // dragAnchorPos: posición Y del mousedown (para detectar dirección y cantidad movida)
-  const dragAnchorPos = useRef<number>(0)
-  // dragFromText: indica si el drag empezó desde un contenteditable
-  const dragFromText = useRef(false)
+  // ── Drag-to-select ────────────────────────────────────────────────────────
+  const dragAnchorPos = useRef<number>(0)   // Y del mousedown
+  const lastMouseY   = useRef<number>(0)    // Y más reciente del cursor
+  const dragFromText = useRef(false)        // ¿el drag empezó en un contenteditable?
 
-  // Devuelve el rect de la FILA visible del nodo (no del contenedor completo con hijos).
-  // data-node-id está en div.outliner-node que incluye hijos expandidos → rect enorme.
-  // Usamos div.node-row (la fila real) para cálculos precisos de 50% y detección de salida.
+  // Devuelve el rect de la FILA del nodo (div.node-row), no del contenedor
+  // completo (div.outliner-node) que incluye hijos expandidos.
   function getNodeRowRect(id: string): DOMRect | null {
     const nodeEl = containerRef.current?.querySelector(`[data-node-id="${id}"]`)
     if (!nodeEl) return null
@@ -222,94 +220,81 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     return (rowEl ?? nodeEl as HTMLElement).getBoundingClientRect()
   }
 
-  // Calcula qué nodos incluir usando la heurística del 50%:
-  //   - El nodo ancla siempre está incluido
-  //   - Un nodo intermedio/final se incluye cuando el cursor ha cruzado su punto medio vertical
+  // Heurística del 50%: incluye el nodo ancla siempre, y nodos adicionales
+  // cuando el cursor ha cruzado su punto medio vertical.
   function computeSelectedWithMidpoint(anchorId: string, cursorY: number): Set<string> {
     const flat = flatVisibleIds()
     const ai = flat.indexOf(anchorId)
     if (ai === -1) return new Set([anchorId])
-
     const goingDown = cursorY > dragAnchorPos.current
     const result = new Set<string>([anchorId])
-
     if (goingDown) {
       for (let i = ai + 1; i < flat.length; i++) {
-        const id = flat[i]
-        const rect = getNodeRowRect(id)
+        const rect = getNodeRowRect(flat[i])
         if (!rect) continue
-        const midY = rect.top + rect.height / 2
-        if (cursorY >= midY) {
-          result.add(id)
-        } else {
-          break
-        }
+        if (cursorY >= rect.top + rect.height / 2) result.add(flat[i]); else break
       }
     } else {
       for (let i = ai - 1; i >= 0; i--) {
-        const id = flat[i]
-        const rect = getNodeRowRect(id)
+        const rect = getNodeRowRect(flat[i])
         if (!rect) continue
-        const midY = rect.top + rect.height / 2
-        if (cursorY <= midY) {
-          result.add(id)
-        } else {
-          break
-        }
+        if (cursorY <= rect.top + rect.height / 2) result.add(flat[i]); else break
       }
     }
     return result
   }
 
+  // React onMouseDown — previene text-selection cuando el drag no empieza en texto
   function handleContainerMouseDown(e: React.MouseEvent) {
-    // Excluir: botones y controles de UI
     if (isControlEl(e.target)) return
-
     const id = getNodeIdFromEl(e.target as Element)
-    dragAnchorPos.current = e.clientY
-    dragFromText.current = isDirectTextEl(e.target)
-
-    if (id) {
-      dragAnchorId.current = id
-      if (!dragFromText.current) {
-        // Desde zona no-texto del row: prevenir text-selection del browser
-        e.preventDefault()
-      }
-      // Desde texto: NO preventDefault → el browser hace text-selection normal dentro del nodo
-    } else if (nodes.length > 0) {
-      // Espacio vacío
-      dragAnchorId.current = '__empty__'
-      dragFromText.current = false
-    }
+    if (id && !isDirectTextEl(e.target)) e.preventDefault()
   }
 
   useEffect(() => {
-    // Registrar mousedown como listener nativo (no solo React onMouseDown)
-    // para garantizar que siempre capturamos el ancla, aunque haya stopPropagation
-    // en algún elemento hijo o el evento no llegue al handler de React.
+    // ── mousedown nativo (capture) ────────────────────────────────────────
+    // Registramos en capture para que funcione aunque algún hijo llame stopPropagation.
     function onDown(e: MouseEvent) {
       const target = e.target as Element
-      if (isControlEl(target)) return
-      // Solo actuar si el mousedown está dentro de nuestro container
-      if (!containerRef.current?.contains(target)) return
+      if (isControlEl(target) || !containerRef.current?.contains(target)) return
       const id = getNodeIdFromEl(target)
       dragAnchorPos.current = e.clientY
+      lastMouseY.current = e.clientY
       dragFromText.current = isDirectTextEl(target)
-      if (id) {
-        dragAnchorId.current = id
-      } else {
-        dragAnchorId.current = nodes.length > 0 ? '__empty__' : null
-        dragFromText.current = false
-      }
+      dragAnchorId.current = id ?? (nodes.length > 0 ? '__empty__' : null)
+      if (id && !dragFromText.current) e.preventDefault()
     }
 
-    function onMove(e: MouseEvent) {
-      if (!dragAnchorId.current) return
-      const el = document.elementFromPoint(e.clientX, e.clientY)
-      const hoveredId = getNodeIdFromEl(el)
+    // ── selectionchange ───────────────────────────────────────────────────
+    // El browser avisa cuando la selección de texto cambia. Si la selección
+    // cruza a otro nodo ([data-node-id] diferente) → switch a node-select.
+    // Este evento es más fiable que bounding rects o dragstart.
+    function onSelChange() {
+      if (!dragAnchorId.current || dragAnchorId.current === '__empty__') return
+      if (!dragFromText.current || isDragSelectingRef.current) return
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return
+      const anchorEl = sel.anchorNode?.parentElement?.closest('[data-node-id]')
+      const focusEl  = sel.focusNode?.parentElement?.closest('[data-node-id]')
+      // Si ancla y foco están en el mismo nodo → selección de texto normal, no hacer nada
+      if (!anchorEl || !focusEl || anchorEl === focusEl) return
+      // ¡Selección cruza nodos! → cancelar texto y activar node-select
+      sel.removeAllRanges()
+      startDragSelect()
+      setSelectedId(null)
+      dragFromText.current = false
+      setSelectedIds(computeSelectedWithMidpoint(dragAnchorId.current!, lastMouseY.current))
+    }
 
-      // ── Caso: ancla en espacio vacío ─────────────────────────────────────
+    // ── mousemove ─────────────────────────────────────────────────────────
+    function onMove(e: MouseEvent) {
+      lastMouseY.current = e.clientY
+      if (!dragAnchorId.current) return
+
+      // Drag desde espacio vacío
       if (dragAnchorId.current === '__empty__') {
+        const el = document.elementFromPoint(e.clientX, e.clientY)
+        const hoveredId = getNodeIdFromEl(el)
         if (!hoveredId) return
         const flat = flatVisibleIds()
         const isUpward = e.clientY < dragAnchorPos.current
@@ -323,79 +308,38 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         return
       }
 
-      const anchorId = dragAnchorId.current!
-
-      // ── Drag desde texto: detectar cruce de nodo ──────────────────────────
-      // Usamos bounding rect del nodo ancla (más fiable que elementFromPoint
-      // cuando el cursor está en padding entre nodos o en otro contenteditable).
-      // isDragSelectingRef.current evita el stale closure de isDragSelecting.
-      if (dragFromText.current && !isDragSelectingRef.current) {
-        // Usamos .node-row (no .outliner-node que incluye hijos expandidos → rect enorme)
-        const anchorEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`)
-        const rowEl = anchorEl?.querySelector('.node-row') as HTMLElement | null
-        const anchorRect = (rowEl ?? anchorEl as HTMLElement | null)?.getBoundingClientRect()
-        const isOutside = anchorRect
-          ? (e.clientY < anchorRect.top || e.clientY > anchorRect.bottom)
-          : (hoveredId !== null && hoveredId !== anchorId)
-
-        if (isOutside) {
-          window.getSelection()?.removeAllRanges()
+      // Drag desde zona no-texto (bullet, drag handle, padding)
+      if (!dragFromText.current) {
+        const movedEnough = Math.abs(e.clientY - dragAnchorPos.current) > 4
+        if (!isDragSelectingRef.current && !movedEnough) return
+        if (!isDragSelectingRef.current) {
           startDragSelect()
           setSelectedId(null)
-          dragFromText.current = false
-          setSelectedIds(computeSelectedWithMidpoint(anchorId, e.clientY))
+          setSelectedIds(new Set([dragAnchorId.current!]))
         }
-        return
+        setSelectedIds(computeSelectedWithMidpoint(dragAnchorId.current!, e.clientY))
       }
-
-      // ── Drag desde zona no-texto ──────────────────────────────────────────
-      const movedEnough = Math.abs(e.clientY - dragAnchorPos.current) > 4
-      if (!isDragSelectingRef.current && !movedEnough) return
-
-      if (!isDragSelectingRef.current) {
-        startDragSelect()
-        setSelectedId(null)
-        setSelectedIds(new Set([anchorId]))
-      }
-
-      // Heurística del 50%: incluir nodo cuando el cursor cruza su punto medio
-      setSelectedIds(computeSelectedWithMidpoint(anchorId, e.clientY))
+      // Drag desde texto: lo maneja onSelChange (selectionchange del browser)
     }
 
+    // ── mouseup ───────────────────────────────────────────────────────────
     function onUp() {
       dragAnchorId.current = null
       dragFromText.current = false
       stopDragSelect()
     }
 
-    function onDragStart(e: Event) {
-      // Cancelar el drag nativo del browser si:
-      // (a) Empezó en texto (dragFromText) — el browser intenta arrastrar el texto
-      // (b) Ya estamos en modo node-select (isDragSelectingRef) — el dragstart llega
-      //     TARDE, después de que onMove ya haya cambiado dragFromText a false
-      if (dragFromText.current || isDragSelectingRef.current) {
-        e.preventDefault()
-        return
-      }
-      // Drag real de nodo (reordenar) → limpiar selección
-      dragAnchorId.current = null
-      dragFromText.current = false
-      stopDragSelect()
-    }
-
-    document.addEventListener('mousedown', onDown, { capture: true })
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    document.addEventListener('dragstart', onDragStart)
+    document.addEventListener('mousedown',      onDown,     { capture: true })
+    document.addEventListener('selectionchange', onSelChange)
+    document.addEventListener('mousemove',       onMove)
+    document.addEventListener('mouseup',         onUp)
     return () => {
-      document.removeEventListener('mousedown', onDown, { capture: true })
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      document.removeEventListener('dragstart', onDragStart)
+      document.removeEventListener('mousedown',      onDown,     { capture: true })
+      document.removeEventListener('selectionchange', onSelChange)
+      document.removeEventListener('mousemove',       onMove)
+      document.removeEventListener('mouseup',         onUp)
     }
   }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Nota: quitamos isDragSelecting de las deps — ahora usamos isDragSelectingRef
-  // para evitar stale closure, no necesitamos re-registrar en cada cambio.
 
   // ── Teclado sobre multi-selección ─────────────────────────────────────────
   useEffect(() => {
