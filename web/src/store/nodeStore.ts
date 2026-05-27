@@ -392,12 +392,13 @@ export class NodeStore {
     let moved = 0
     for (const [id, node] of this.nodes.entries()) {
       if (node.deletedAt || !node.parentId) continue
-      if (node.isDiaryEntry) continue  // diary entries bajo semana/mes → correcto
+      if (node.isDiaryEntry) continue     // diary entries bajo semana/mes → correcto
+      if (isTemporal(node)) continue      // nodos temporales (año/mes/semana) pueden estar bajo otro temporal
 
       const parent = this.getNode(node.parentId)
       if (!parent || parent.deletedAt || !isTemporal(parent)) continue
 
-      // Nota/tarea hija directa de nodo temporal → mover a root
+      // Nota/tarea real hija directa de nodo temporal → mover a root
       this.nodes.set(id, { ...node, parentId: null, _isDirty: true, updatedAt: new Date().toISOString() })
       this.dirtyIds.add(id)
       moved++
