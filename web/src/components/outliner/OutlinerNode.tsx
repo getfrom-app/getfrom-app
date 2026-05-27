@@ -20,8 +20,8 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
-import { nextRecurrence } from '../../utils/naturalDate'
-import type { RecurrenceConfig } from '../../utils/naturalDate'
+import { nextRecurrence, extractDateFromEnd } from '../../utils/naturalDate'
+import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -259,6 +259,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isCollapsed = ((node.isCollapsed !== false) && children.length > 0)
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   const [showSlash, setShowSlash] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [showCodePicker, setShowCodePicker] = useState(false)
@@ -703,7 +704,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, { text: expanded })
       if (contentRef.current) {
         contentRef.current.textContent = expanded
-        // Cursor al final
         const range = document.createRange()
         const sel = window.getSelection()
         range.selectNodeContents(contentRef.current)
@@ -711,6 +711,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         sel?.removeAllRanges()
         sel?.addRange(range)
       }
+    }
+
+    // ── Detección de fecha al final del texto (solo en tareas/nodos normales) ──
+    if (node.status !== null || text.length > 3) {
+      const extraction = extractDateFromEnd(text)
+      setDatePrediction(extraction)
+    } else {
+      setDatePrediction(null)
     }
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -832,6 +840,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const handleBlur = useCallback(() => {
     setIsEditing(false)
     setShowSlash(false)
+    setDatePrediction(null)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
 
@@ -910,6 +919,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (showSlash) {
       if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key)) {
         e.preventDefault()
+        return
+      }
+    }
+
+    // ── Aceptar predicción de fecha (Tab o Enter sin modificadores) ──────────
+    if (datePrediction && !picker && !showSlash) {
+      if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey)) {
+        e.preventDefault()
+        acceptDatePrediction()
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setDatePrediction(null)
         return
       }
     }
@@ -1554,6 +1577,54 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function toggleCollapse() {
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
+  }
+
+  function acceptDatePrediction() {
+    if (!datePrediction) return
+    const { cleanText, parsed, timeStr, isEvent, recurrence } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
+    setDatePrediction(null)
+
+    // Actualizar texto del nodo (sin la parte de fecha)
+    nodeTextRef.current = cleanText
+    store.updateNode(node.id, { text: cleanText, status: node.status ?? 'pending' })
+    if (contentRef.current) contentRef.current.textContent = cleanText
+
+    // Calcular día destino
+    const targetDate = parsed.date
+    targetDate.setHours(0, 0, 0, 0)
+    const dayNode = ensureDayPath(targetDate)
+
+    // Si es el mismo día, no animar
+    const isSameDay = node.parentId === dayNode.id
+    if (isSameDay) return
+
+    // ── Animación: la tarea vuela a la derecha ────────────────────────────
+    const rowEl = contentRef.current?.closest('.outliner-node') as HTMLElement | null
+    if (rowEl) {
+      rowEl.style.transition = 'transform 300ms cubic-bezier(0.4,0,1,1), opacity 250ms'
+      rowEl.style.transform = 'translateX(100vw)'
+      rowEl.style.opacity = '0'
+    }
+
+    setTimeout(() => {
+      const sibs = store.children(dayNode.id)
+      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+      // Preparar extraData con recurrencia si hay
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+      if (parsed.recurrence) ed._recurrence = parsed.recurrence
+      const updates: Record<string, unknown> = {
+        parentId: dayNode.id,
+        siblingOrder: lastOrder + 1,
+        extraData: JSON.stringify(ed),
+      }
+      if (isEvent) updates.isEvent = true
+      if (timeStr) updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), parseInt(timeStr.split(':')[0]), parseInt(timeStr.split(':')[1])).toISOString()
+      store.updateNode(node.id, updates)
+      if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
+      const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido → ${label}`, type: 'success' } }))
+    }, 310)
   }
 
   function toggleTask() {
@@ -2707,6 +2778,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       {/* Smart date assigned badge */}
       {dateAssignedMsg && (
         <div className="node-date-assigned-badge">{dateAssignedMsg}</div>
+      )}
+
+      {/* Ghost text predictivo de fecha — aparece al detectar fecha al final del texto */}
+      {datePrediction && isEditing && (
+        <div className="node-date-ghost">
+          <span className="node-date-ghost-label">{datePrediction.parsed.label}{datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}</span>
+          <span className="node-date-ghost-hint">↵ mover</span>
+        </div>
       )}
 
       {/* Format toolbar — aparece al seleccionar texto */}

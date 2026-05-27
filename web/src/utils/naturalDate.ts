@@ -241,6 +241,69 @@ export function nextRecurrence(from: Date, rec: RecurrenceConfig): Date {
   const d = new Date(base); d.setDate(d.getDate() + 7); return d
 }
 
+// ── Detección de fecha al final del texto de una tarea ───────────────────────
+
+const TIME_PATTERN = /\s+a\s+las?\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i
+const EVENT_KEYWORDS = ['reunión', 'reunion', 'llamada', 'cita', 'meeting', 'evento', 'entrevista', 'clase', 'visita', 'presentación', 'presentacion']
+
+export interface DateExtraction {
+  /** Texto limpio de la tarea (sin la parte de fecha) */
+  cleanText: string
+  /** Parte de fecha detectada (para mostrar en predictivo) */
+  dateText: string
+  /** Fecha parseada */
+  parsed: ParsedDate
+  /** Hora extraída si la hay ("13:00", "09:30") */
+  timeStr?: string
+  /** Si se detecta como evento (tiene hora o keyword de reunión) */
+  isEvent?: boolean
+}
+
+/**
+ * Intenta extraer una fecha/hora del FINAL del texto.
+ * Ej: "reunión con Adrián mañana a la 1" → { cleanText: "reunión con Adrián", dateText: "mañana a la 1", timeStr: "13:00" }
+ */
+export function extractDateFromEnd(text: string): DateExtraction | null {
+  const trimmed = text.trim()
+  if (!trimmed) return null
+
+  // Buscar hora al final primero
+  let timeStr: string | undefined
+  let textWithoutTime = trimmed
+  const timeMatch = trimmed.match(TIME_PATTERN)
+  if (timeMatch) {
+    let h = parseInt(timeMatch[1])
+    const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0
+    const ampm = timeMatch[3]?.toLowerCase()
+    if (ampm === 'pm' && h < 12) h += 12
+    if (ampm === 'am' && h === 12) h = 0
+    // Heurística: si no hay am/pm y h <= 8, asumir pm (reunión a la 1 = 13:00)
+    if (!ampm && h >= 1 && h <= 8) h += 12
+    timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    textWithoutTime = trimmed.slice(0, trimmed.length - timeMatch[0].length).trim()
+  }
+
+  // Intentar parsear 1-6 palabras del final del texto (sin la hora)
+  const words = textWithoutTime.split(/\s+/)
+  if (words.length < 2) return null // necesita al menos "[tarea] [fecha]"
+
+  for (let n = Math.min(5, words.length - 1); n >= 1; n--) {
+    const datePart = words.slice(words.length - n).join(' ')
+    const parsed = parseNaturalDate(datePart)
+    if (parsed) {
+      const cleanText = words.slice(0, words.length - n).join(' ')
+      if (!cleanText.trim()) return null // no dejar tarea vacía
+      const fullDateText = datePart + (timeMatch ? timeMatch[0] : '')
+      // Detectar si es evento
+      const lowerClean = norm(cleanText)
+      const isEvent = !!timeStr || EVENT_KEYWORDS.some(kw => lowerClean.includes(norm(kw)))
+      return { cleanText, dateText: fullDateText, parsed, timeStr, isEvent }
+    }
+  }
+
+  return null
+}
+
 /** Sugerencia de autocompletado para el input */
 export function getSuggestion(partial: string): string | null {
   if (!partial.trim()) return null
