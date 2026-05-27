@@ -284,6 +284,25 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   }
 
   useEffect(() => {
+    // Registrar mousedown como listener nativo (no solo React onMouseDown)
+    // para garantizar que siempre capturamos el ancla, aunque haya stopPropagation
+    // en algún elemento hijo o el evento no llegue al handler de React.
+    function onDown(e: MouseEvent) {
+      const target = e.target as Element
+      if (isControlEl(target)) return
+      // Solo actuar si el mousedown está dentro de nuestro container
+      if (!containerRef.current?.contains(target)) return
+      const id = getNodeIdFromEl(target)
+      dragAnchorPos.current = e.clientY
+      dragFromText.current = isDirectTextEl(target)
+      if (id) {
+        dragAnchorId.current = id
+      } else {
+        dragAnchorId.current = nodes.length > 0 ? '__empty__' : null
+        dragFromText.current = false
+      }
+    }
+
     function onMove(e: MouseEvent) {
       if (!dragAnchorId.current) return
       const el = document.elementFromPoint(e.clientX, e.clientY)
@@ -350,10 +369,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
 
     function onDragStart(e: Event) {
-      // Si el drag empezó en un contenteditable (dragFromText), el browser está
-      // intentando arrastrar el texto seleccionado. Cancelamos ese comportamiento
-      // y dejamos que nuestro onMove detecte el cruce de nodo.
-      if (dragFromText.current) {
+      // Cancelar el drag nativo del browser si:
+      // (a) Empezó en texto (dragFromText) — el browser intenta arrastrar el texto
+      // (b) Ya estamos en modo node-select (isDragSelectingRef) — el dragstart llega
+      //     TARDE, después de que onMove ya haya cambiado dragFromText a false
+      if (dragFromText.current || isDragSelectingRef.current) {
         e.preventDefault()
         return
       }
@@ -363,10 +383,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       stopDragSelect()
     }
 
+    document.addEventListener('mousedown', onDown, { capture: true })
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
     document.addEventListener('dragstart', onDragStart)
     return () => {
+      document.removeEventListener('mousedown', onDown, { capture: true })
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
       document.removeEventListener('dragstart', onDragStart)
