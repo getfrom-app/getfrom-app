@@ -257,17 +257,44 @@ export default function MainLayout() {
         }
       }
       if (e.key === 'Escape') {
-        const active = document.activeElement
+        // Prioridad 1: cerrar modales/paleta abiertos (los propios componentes lo gestionan via useEffect)
+        if (showCommandPalette || showNewTask || showNewEvent || showVoiceCapture || showShortcuts || showQuickCapture) return
+
+        // Prioridad 2: cerrar menús flotantes (slash, pickers, etc.) — sus propios handlers lo harán
+        const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .wf-topbar-dropdown')
+        if (hasFloatingMenu) return
+
+        // Prioridad 3: deseleccionar texto seleccionado
+        const sel = window.getSelection()
+        if (sel && !sel.isCollapsed) {
+          sel.removeAllRanges()
+          return
+        }
+
+        // Prioridad 4: si hay input/editor activo, quitarle el foco (blur)
+        const active = document.activeElement as HTMLElement | null
         const isInputFocused =
           active?.tagName === 'INPUT' ||
           active?.tagName === 'TEXTAREA' ||
-          (active as HTMLElement)?.isContentEditable
-        // Comprobar también si hay algún menú flotante visible en el DOM (slash menu, pickers)
-        const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .mention-picker')
-        if (!isInputFocused && !showCommandPalette && !showNewTask && !showNewEvent && !showVoiceCapture && !hasFloatingMenu) {
-          // setTimeout 0 para dejar que los handlers de Escape actuales completen primero
-          setTimeout(() => navigate('/'), 0)
+          active?.isContentEditable
+        if (isInputFocused) {
+          active?.blur()
+          return
         }
+
+        // Prioridad 5: subir en la jerarquía (Escape sube al padre)
+        // Si estamos en /node/:id → navegar al padre, o a root si no hay padre
+        const match = window.location.pathname.match(/\/node\/([^/]+)/)
+        if (match) {
+          const nodeId = match[1]
+          const node = store.getNode(nodeId)
+          if (node?.parentId) {
+            navigate(`/node/${node.parentId}`)
+          } else {
+            navigate('/')
+          }
+        }
+        // Si ya estamos en root '/' no hacemos nada
       }
     }
     window.addEventListener('keydown', handleKeyDown)

@@ -341,6 +341,30 @@ export default function WFTopBar({
         </button>
       )}
 
+      {/* Nota diaria de hoy */}
+      <button
+        className="wf-topbar-btn"
+        title="Ir a la nota de hoy"
+        onClick={() => {
+          const dayNode = ensureDayPath(new Date())
+          navigate(`/node/${dayNode.id}`)
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {/* Toggle tema claro/oscuro */}
+      <button
+        className="wf-topbar-btn"
+        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        style={{ fontSize: 13 }}
+      >
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
+
       {/* ⌘K */}
       <button className="wf-topbar-btn" onClick={onCommandPalette} title="Búsqueda rápida (⌘K)">
         <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
@@ -349,7 +373,7 @@ export default function WFTopBar({
         <span className="wf-topbar-shortcut-hint">⌘K</span>
       </button>
 
-      {/* ··· Menú general */}
+      {/* ··· Menú general — solo Papelera, Ajustes, Cerrar sesión */}
       <div className="wf-topbar-menu-wrap" ref={menuRef}>
         <button
           className={`wf-topbar-btn ${menuOpen ? 'active' : ''}`}
@@ -362,15 +386,8 @@ export default function WFTopBar({
         </button>
         {menuOpen && (
           <div className="wf-topbar-dropdown">
-            <button className="wf-topbar-dropdown-item" onClick={() => { navigate('/calendar'); setMenuOpen(false) }}>
-              <span>📅</span> Calendario
-            </button>
             <button className="wf-topbar-dropdown-item" onClick={() => { navigate('/trash'); setMenuOpen(false) }}>
               <span>🗑</span> Papelera
-            </button>
-            <div className="wf-topbar-dropdown-sep" />
-            <button className="wf-topbar-dropdown-item" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setMenuOpen(false) }}>
-              <span>{theme === 'dark' ? '☀️' : '🌙'}</span> {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
             </button>
             <button className="wf-topbar-dropdown-item" onClick={() => { onOpenSettings(); setMenuOpen(false) }}>
               <span>⚙️</span> Ajustes
