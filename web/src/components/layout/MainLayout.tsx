@@ -50,6 +50,7 @@ import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
+import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -166,6 +167,11 @@ export default function MainLayout() {
     }
     window.addEventListener('from:paywall', handler)
     return () => window.removeEventListener('from:paywall', handler)
+  }, [])
+
+  // Invalidar caché de predicción cuando el store cambia (el nodo ⚙️ Ajustes puede haber sincronizado)
+  useEffect(() => {
+    return store.subscribe(() => invalidatePredictionCache())
   }, [])
 
   // Sesión expirada durante el uso → redirigir al login

@@ -98,7 +98,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const rawNodes = (() => {
     const all = s.children(parentId)
     // En WFHomeView (root), los diarios viven bajo 📅 Agenda — nunca en root
-    let list = excludeDiaryEntries ? all.filter(n => !n.isDiaryEntry) : all
+    // Excluir siempre nodos sistema (_system: true) del árbol visible
+    let list = all.filter(n => { try { return !JSON.parse(n.extraData || '{}')._system } catch { return true } })
+    list = excludeDiaryEntries ? list.filter(n => !n.isDiaryEntry) : list
     // Con filtro activo: solo mostrar nodos que son match o ancestros de match.
     // Esto evita renderizar miles de nodos hermanos irrelevantes.
     if (filterMatchIds && filterMatchIds.size > 0) {
