@@ -147,6 +147,7 @@ export class NodeStore {
   workspaces: Workspace[] = []
   lastSyncAt: string | null = null
   isSyncing = false
+  isLoaded = false
   isGuest: boolean = !getToken()
   private listeners: Set<Listener> = new Set()
   private dirtyIds: Set<string> = new Set()
@@ -1424,6 +1425,10 @@ export class NodeStore {
     if (!this.todayDiary()) {
       await this.createTodayDiary()
     }
+
+    // Marcar store como completamente cargado
+    this.isLoaded = true
+    this.notify()
   }
 
   private creatingDiaryPromise: Promise<void> | null = null
