@@ -10,6 +10,7 @@ import { useTheme } from '../../hooks/useTheme'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
+import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -680,6 +681,19 @@ export function ClaudeMcpPane() {
 }
 
 export function AtajosPane() {
+  // ── Hotkeys configurables ────────────────────────────────────────────────
+  // Renderizado por el componente separado HotkeysPane
+  return (
+    <div className="st-pane">
+      <HotkeysPane />
+      <div style={{ marginTop: 32 }}>
+        <AtajosPaneTextExpansion />
+      </div>
+    </div>
+  )
+}
+
+function AtajosPaneTextExpansion() {
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => getShortcuts())
   const [newTrigger, setNewTrigger] = useState('')
   const [newExpansion, setNewExpansion] = useState('')
@@ -698,19 +712,8 @@ export function AtajosPane() {
     setShortcuts(updated); saveShortcuts(updated)
   }
 
-  const KB_SHORTCUTS = [
-    { key: '⌘K', desc: 'Búsqueda y comandos' },
-    { key: '⌘Z', desc: 'Deshacer' },
-    { key: '⌘⇧Z', desc: 'Rehacer' },
-    { key: '⌘⇧S', desc: 'Mostrar/ocultar sidebar' },
-    { key: '⌘⇧C', desc: 'Colapsar / expandir todo' },
-    { key: '⌘[', desc: 'Ir atrás' },
-    { key: '⌘]', desc: 'Ir adelante' },
-    { key: '?', desc: 'Ver todos los atajos' },
-  ]
-
   return (
-    <div className="st-pane">
+    <>
       <SectionTitle>Expansión de texto</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 12 }}>
         Define atajos que se expanden automáticamente mientras escribes. Ej: <code>;firma</code> → <em>Un saludo, Alberto</em>
@@ -746,16 +749,7 @@ export function AtajosPane() {
         <div className="st-actions"><button className="btn-secondary" onClick={() => setShowAdd(true)}>+ Añadir atajo</button></div>
       )}
 
-      <SectionTitle>Atajos de teclado</SectionTitle>
-      <div className="st-kb-grid">
-        {KB_SHORTCUTS.map(s => (
-          <div key={s.key} className="st-kb-row">
-            <kbd className="st-kbd">{s.key}</kbd>
-            <span>{s.desc}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </>
   )
 }
 
