@@ -252,19 +252,28 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   }
 
   useEffect(() => {
+    // Conjunto de IDs que pertenecen a ESTE nivel del Outliner
+    const ownNodeIds = new Set(nodes.map(n => n.id))
+
     // ── mousedown nativo (capture) ────────────────────────────────────────
+    // Cada instancia de Outliner (una por nivel) escucha todos los mousedowns,
+    // pero SOLO actúa si el nodo clickado pertenece a su propio nivel.
+    // Esto evita que el Outliner raíz interfiera con drag de nodos hijos.
     function onDown(e: MouseEvent) {
       const target = e.target as Element
       if (isControlEl(target) || !containerRef.current?.contains(target)) return
-      // El drag handle gestiona el reordenamiento via HTML5 drag — no interceptar
       if ((target as HTMLElement).closest('.node-drag-handle')) return
 
       const id = getNodeIdFromEl(target)
+
+      // Si el nodo clickado no pertenece a este nivel → ignorar
+      // (lo gestionará el Outliner del nivel correspondiente)
+      if (id && !ownNodeIds.has(id)) return
+
       dragAnchorPos.current = e.clientY
       lastMouseY.current = e.clientY
       dragFromText.current = isDirectTextEl(target)
       dragAnchorId.current = id ?? (nodes.length > 0 ? '__empty__' : null)
-      // Zona no-texto: prevenir selección de texto del browser
       if (id && !dragFromText.current) e.preventDefault()
     }
 
