@@ -787,9 +787,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         setPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p)
         return
       }
-      if (e.key === 'Enter' && picker.items.length > 0) {
+      if (e.key === 'Enter') {
         e.preventDefault()
-        applyPickerSelection(picker.items[picker.activeIdx])
+        if (picker.items.length > 0) {
+          applyPickerSelection(picker.items[picker.activeIdx])
+        } else if (picker.type === '#' && picker.query) {
+          // No hay items en el picker pero hay query — confirmar el tag tal cual
+          setPicker(null)
+          try { ensureTagInTree(picker.query) } catch { /* silencioso */ }
+        }
+        return
+      }
+      if (e.key === 'Tab' && picker.type === '#') {
+        e.preventDefault()
+        if (picker.items.length > 0) {
+          applyPickerSelection(picker.items[picker.activeIdx])
+        } else if (picker.query) {
+          setPicker(null)
+          try { ensureTagInTree(picker.query) } catch { /* silencioso */ }
+        }
         return
       }
       if (e.key === 'Escape') {
@@ -797,6 +813,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         setPicker(null)
         return
       }
+    }
+
+    // ── Enter/Tab para confirmar #tag sin picker (cursor al final de #word) ──
+    // Detectar si el cursor está al final de un hashtag en curso
+    const pos = contentRef.current ? getCaretPosition(contentRef.current) : 0
+    const beforeCursor = text.slice(0, pos)
+    const tagMatch = beforeCursor.match(/#([\wÀ-ɏ\/\-]+)$/)
+
+    if (tagMatch && (e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && !e.metaKey && !e.ctrlKey && !picker) {
+      e.preventDefault()
+      const tagSlug = tagMatch[1]
+      // Confirmar el tag: crear en árbol si no existe
+      try { ensureTagInTree(tagSlug) } catch { /* silencioso */ }
+      // Añadir un espacio después del tag para salir de él (cursor avanza)
+      if (contentRef.current) {
+        const after = text.slice(pos)
+        const newText = beforeCursor + ' ' + after
+        contentRef.current.textContent = newText
+        // Posicionar cursor después del espacio
+        const sel = window.getSelection()
+        const range = document.createRange()
+        const textNode = contentRef.current.firstChild
+        if (textNode) {
+          const newPos = beforeCursor.length + 1
+          range.setStart(textNode, Math.min(newPos, textNode.textContent?.length ?? 0))
+          range.collapse(true)
+          sel?.removeAllRanges()
+          sel?.addRange(range)
+        }
+        // Guardar el texto actualizado
+        store.updateNode(node.id, { text: newText.trim() })
+      }
+      // Tab: no hacer nada más. Enter: esperar segundo Enter para crear línea
+      return
     }
 
     // Espacio al inicio del bullet vacío → mostrar input de prompt IA (como Mac)
