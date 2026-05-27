@@ -353,6 +353,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   })()
   const mirrorSourceNode = mirrorOfId ? store.getNode(mirrorOfId) ?? null : null
   const displayNode = mirrorSourceNode ?? node
+  // Label de destino para espejos de tarea movida (ej. "Vie 30 may")
+  const mirrorDestLabel = (() => {
+    try { return JSON.parse(node.extraData || '{}')._mirrorDestLabel as string | undefined } catch { return undefined }
+  })()
 
   // ctx-ref legacy (ya no se crea, pero puede haber nodos viejos) — ignorar
   const ctxRef = null
@@ -1834,14 +1838,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         updates.parentId = parentMirrorId
         updates.siblingOrder = mirrorLastOrder + 1
 
-        // 2. Espejo de la tarea (⬡) en el origen — queda donde estaba
+        // 2. Espejo de la tarea (⬡) en el origen — guarda el label de destino
         const taskMirror = store.createNode({
           text: node.text,
           parentId: node.parentId,
           siblingOrder: node.siblingOrder,
         })
         store.updateNode(taskMirror.id, {
-          extraData: JSON.stringify({ _mirrorOf: node.id })
+          extraData: JSON.stringify({ _mirrorOf: node.id, _mirrorDestLabel: opts.label })
         })
       }
 
@@ -2589,6 +2593,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           >
             {/* Espejo: indicador visual si este nodo es un espejo de otro */}
             {mirrorSourceNode && <span className="node-mirror-icon" title={`Espejo de: ${mirrorSourceNode.text}`} style={{ opacity: 0.6, marginRight: 4, fontSize: '0.85em' }}>⬡</span>}
+            {/* Badge de destino para espejos de tarea movida */}
+            {mirrorDestLabel && (
+              <span className="node-mirror-dest-badge">→ {mirrorDestLabel}</span>
+            )}
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Lista: dash visual "–" decorativo */}
