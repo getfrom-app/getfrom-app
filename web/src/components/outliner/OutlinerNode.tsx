@@ -744,18 +744,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const newText = newBefore + wikiText + (after || '')
       store.updateNode(node.id, { text: newText })
       if (contentRef.current) {
-        contentRef.current.textContent = newText
-        // Cursor after the wiki-link
-        const range = document.createRange()
+        // Renderizar inline inmediatamente
+        contentRef.current.innerHTML = renderInlineToHtml(newText)
+        // Cursor después del [[wiki-link]]
         const sel = window.getSelection()
-        const textNode = contentRef.current.firstChild
-        const insertPos = newBefore.length + wikiText.length
-        if (textNode && textNode.textContent && insertPos <= textNode.textContent.length) {
-          range.setStart(textNode, insertPos)
-          range.collapse(true)
-          sel?.removeAllRanges()
-          sel?.addRange(range)
+        const range = document.createRange()
+        // Encontrar el nodo de texto después del mention-inline
+        const allNodes = Array.from(contentRef.current.childNodes)
+        const mentionIdx = allNodes.findIndex(n => (n as HTMLElement).classList?.contains('mention-inline'))
+        if (mentionIdx >= 0 && allNodes[mentionIdx + 1]) {
+          range.setStart(allNodes[mentionIdx + 1], 0)
+        } else {
+          range.selectNodeContents(contentRef.current)
+          range.collapse(false)
         }
+        sel?.removeAllRanges()
+        sel?.addRange(range)
       }
       setPicker(null)
       return
@@ -768,20 +772,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const newText = cleanText + (cleanText ? ' ' : '') + tagText
       const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
-      // Auto-crear nodo en 🧠 Contexto si no existe (crea la jerarquía completa)
       ensureTagInTree(item.id)
       if (contentRef.current) {
-        contentRef.current.textContent = newText
-        // Cursor al final
+        // Renderizar inline inmediatamente (no esperar al blur)
+        contentRef.current.innerHTML = renderInlineToHtml(newText)
+        // Cursor al final del contenido renderizado
         const range = document.createRange()
         const sel = window.getSelection()
-        const textNode = contentRef.current.firstChild
-        if (textNode && textNode.textContent) {
-          range.setStart(textNode, textNode.textContent.length)
-          range.collapse(true)
-          sel?.removeAllRanges()
-          sel?.addRange(range)
-        }
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
       }
     } else {
       // # reference: insert #NodeName in text as node reference
