@@ -9659,3 +9659,21 @@ a:focus-visible {
 .wf-home-view > .outliner-container > .outliner-node {
   margin-bottom: 2px;
 }
+
+/* ── Context menu: submenu inline expandible ─────────────────────────────── */
+.context-menu-submenu-inline {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 3px 0;
+  margin: 2px 0 0;
+}
+.context-menu-item--sub {
+  padding-left: 28px !important;
+  font-size: 12px !important;
+  opacity: 0.9;
+}
+.context-menu-item--sub:hover { opacity: 1; }
+.context-menu-item.active {
+  background: var(--bg-hover);
+  color: var(--accent);
+}

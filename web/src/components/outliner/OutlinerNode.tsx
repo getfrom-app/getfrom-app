@@ -211,6 +211,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     window.addEventListener('wf:shortcuts-changed', update)
     return () => window.removeEventListener('wf:shortcuts-changed', update)
   }, [node.id])
+
+  // Abrir panel de propiedades desde el context menu externo
+  useEffect(() => {
+    function handleOpenTaskProps(e: Event) {
+      const detail = (e as CustomEvent).detail as { nodeId: string }
+      if (detail?.nodeId !== node.id) return
+      // Abrir el quick props panel centrado en el nodo
+      const el = document.querySelector(`[data-node-id="${node.id}"]`)
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        setQuickPropsPos({ top: rect.bottom + 4, left: rect.left })
+        setShowQuickProps(true)
+      }
+    }
+    window.addEventListener('from:open-task-props', handleOpenTaskProps)
+    return () => window.removeEventListener('from:open-task-props', handleOpenTaskProps)
+  }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const aiPromptRef = useRef<HTMLInputElement>(null)
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
   // Quick-props inline popup (fecha/hora/repetición/prioridad)

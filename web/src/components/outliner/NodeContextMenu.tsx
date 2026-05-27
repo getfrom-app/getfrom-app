@@ -1,15 +1,40 @@
-import { useEffect, useRef, useState } from 'react'
+/**
+ * NodeContextMenu — Menú contextual rediseñado para experiment/workflowy
+ *
+ * Estructura:
+ *  - Duplicar
+ *  - Mover a...
+ *  - Convertir en → (inline expandible)
+ *  - Añadir a atajos / Quitar de atajos
+ *  - Propiedades de tarea (solo si es tarea)
+ *  - Copiar texto
+ *  - Copiar enlace interno / Copiar enlace público / Despublicar
+ *  - Aplicar plantilla → (hijos del nodo "Plantillas")
+ *  - Eliminar (no para diarios/temporales)
+ */
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { store } from '../../store/nodeStore'
+import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
+import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { publishNote, unpublishNote } from '../../api/client'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
 function isTemporalNode(node: Node): boolean {
   const t = node.text || ''
   return /^\d{4}$/.test(t) ||
     MONTHS_ES.some(m => m.toLowerCase() === t.toLowerCase()) ||
     /^Semana \d+$/i.test(t)
+}
+
+function setNodeBlock(node: Node, block: string | null) {
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch {}
+  if (block) ed._block = block
+  else delete ed._block
+  store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
 interface Props {
@@ -23,10 +48,36 @@ interface Props {
 
 export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSelect }: Props) {
   const [showMove, setShowMove] = useState(false)
+  const [showConvert, setShowConvert] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Cerrar al click fuera
+  const isTask = node.status !== null && node.status !== undefined
+  const isEvent = !!node.isEvent
+  const isFav = isNodeShortcut(node.id) || node.isFavorite
+  const meta = nodeMeta(node)
+  const currentBlock = meta.block ?? null
+  const isDiary = node.isDiaryEntry
+  const isTemporal = isTemporalNode(node)
+  const publicSlug = node.publicSlug
+
+  // Plantillas: hijos del nodo "Plantillas"
+  const templateParent = store.allActive().find(n =>
+    !n.deletedAt && n.text?.toLowerCase() === 'plantillas' && !n.parentId
+  )
+  const templates = templateParent
+    ? store.children(templateParent.id).filter(n => !n.deletedAt)
+    : []
+
+  // Ajustar posición
+  const menuW = 220, menuH = 420
+  const adjustedX = Math.min(x, window.innerWidth - menuW - 8)
+  const adjustedY = Math.min(y, window.innerHeight - menuH - 8)
+
+  // Cerrar al click fuera (solo si no hay submodal)
   useEffect(() => {
+    if (showMove) return
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as globalThis.Node)) {
         onClose()
@@ -34,25 +85,13 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [onClose])
+  }, [onClose, showMove])
 
-  // Ajustar posición para no salir de la pantalla
-  const menuW = 200, menuH = 300
-  const adjustedX = Math.min(x, window.innerWidth - menuW - 8)
-  const adjustedY = Math.min(y, window.innerHeight - menuH - 8)
-
-  const [showPriorityMenu, setShowPriorityMenu] = useState(false)
-
-  const isBucle = node.types?.includes('bucle')
-  const isTask = node.status !== null
-  const isFav = node.isFavorite
-  const isEvent = node.isEvent
-
-  function action(fn: () => void) {
+  // ── Acciones ──────────────────────────────────────────────────────────────
+  function run(fn: () => void) {
     return (e: React.MouseEvent) => {
-      e.preventDefault()
-      fn()
-      onClose()
+      e.preventDefault(); e.stopPropagation()
+      fn(); onClose()
     }
   }
 
@@ -64,181 +103,264 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       isTask: node.status !== null,
       types: node.types,
     })
-    // Copiar propiedades adicionales post-creación
-    store.updateNode(dup.id, {
-      priority: node.priority,
-      status: node.status,
-    })
+    store.updateNode(dup.id, { priority: node.priority, status: node.status })
     onSelect(dup.id)
   }
 
   function toggleTask() {
     if (!isTask) {
-      store.updateNode(node.id, { status: 'pending' })
+      const today = new Date(); today.setHours(23,59,59,0)
+      store.updateNode(node.id, { status: 'pending', due: today.toISOString() })
     } else {
-      store.updateNode(node.id, { status: null })
+      store.updateNode(node.id, { status: null, due: null })
     }
-  }
-
-  function toggleBucle() {
-    if (isBucle) {
-      const newTypes = (node.types || []).filter(t => t !== 'bucle')
-      store.updateNode(node.id, { types: newTypes })
-    } else {
-      const newTypes = [...(node.types || []), 'bucle']
-      store.updateNode(node.id, { status: 'pending', types: newTypes })
-    }
-  }
-
-  function toggleFavorite() {
-    store.updateNode(node.id, { isFavorite: !isFav })
   }
 
   function toggleEvent() {
     store.updateNode(node.id, { isEvent: !isEvent })
   }
 
-  function addDueToday() {
-    if (!node.due) {
-      const today = new Date()
-      today.setHours(23, 59, 59, 0)
-      store.updateNode(node.id, { due: today.toISOString() })
+  function toggleShortcut() {
+    if (isFav) {
+      removeNodeShortcut(node.id)
+      store.updateNode(node.id, { isFavorite: false })
+    } else {
+      addNodeShortcut(node.id, node.text || 'Sin título')
+      store.updateNode(node.id, { isFavorite: true })
     }
+    window.dispatchEvent(new Event('wf:shortcuts-changed'))
   }
 
-  function setPriority(p: 'high' | 'medium' | 'low' | null) {
-    store.updateNode(node.id, { priority: p })
+  function openTaskProps() {
+    // Dispatch event — OutlinerNode escucha y abre el panel de propiedades
+    window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: node.id } }))
   }
 
   function copyText() {
     navigator.clipboard.writeText(node.text || '')
   }
 
-  function copyLink() {
+  function copyInternalLink() {
     const url = `${window.location.origin}/app/node/${node.id}`
     navigator.clipboard.writeText(url)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace interno copiado', type: 'success' } }))
   }
 
-  function deleteNode() {
-    store.deleteNode(node.id)
+  async function handlePublicLink() {
+    setPublishing(true)
+    try {
+      if (publicSlug) {
+        // Ya publicado → copiar URL
+        const url = `https://getfrom.app/p/${publicSlug}`
+        await navigator.clipboard.writeText(url)
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace público copiado', type: 'success' } }))
+      } else {
+        // Publicar y copiar — title = node.text, content = node.body o vacío
+        const result = await publishNote(node.text || 'Sin título', node.body || '')
+        if (result?.slug) {
+          // Guardar el slug en el nodo
+          store.updateNode(node.id, { publicSlug: result.slug } as any)
+          const url = `https://getfrom.app/p/${result.slug}`
+          await navigator.clipboard.writeText(url)
+          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Publicado y enlace copiado', type: 'success' } }))
+        }
+      }
+    } catch {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Error al publicar', type: 'error' } }))
+    }
+    setPublishing(false)
   }
 
-  function toggleDone() {
-    if (node.status === 'done') {
-      store.updateNode(node.id, { status: 'pending' })
-    } else {
-      store.updateNode(node.id, { status: 'done' })
+  async function handleUnpublish() {
+    if (!publicSlug) return
+    try {
+      await unpublishNote(publicSlug)
+      store.updateNode(node.id, { publicSlug: null } as any)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Nota despublicada', type: 'info' } }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Error al despublicar', type: 'error' } }))
     }
   }
 
-  const portal = createPortal(
+  function applyTemplate(template: Node) {
+    store.updateNode(node.id, { body: template.body || '' })
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: { message: `Plantilla "${template.text}" aplicada`, type: 'success' }
+    }))
+  }
+
+  function deleteNode() {
+    store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' }
+    }))
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const menu = !showMove ? createPortal(
     <div
       ref={menuRef}
       className="context-menu"
-      style={{ position: 'fixed', top: adjustedY, left: adjustedX, zIndex: 2000 }}
+      style={{ position: 'fixed', top: adjustedY, left: adjustedX, zIndex: 2000, minWidth: 220 }}
       onContextMenu={e => e.preventDefault()}
     >
+      {/* Duplicar + Mover */}
       <div className="context-menu-section">
-        <button className="context-menu-item" onClick={action(() => onNavigate(node.id))}>
-          <span className="context-menu-icon">↗</span> Abrir nota
+        <button className="context-menu-item" onClick={run(duplicate)}>
+          <span className="context-menu-icon">⧉</span> Duplicar
+          <span className="context-menu-shortcut">⌘D</span>
         </button>
-        <button className="context-menu-item" onClick={action(duplicate)}>
-          <span className="context-menu-icon">⧉</span> Duplicar <span className="context-menu-shortcut">⌘D</span>
-        </button>
-        <button className="context-menu-item" onClick={(e) => { e.preventDefault(); setShowMove(true) }}>
+        <button className="context-menu-item" onClick={e => {
+          e.preventDefault(); e.stopPropagation()
+          setShowMove(true)
+        }}>
           <span className="context-menu-icon">→</span> Mover a...
         </button>
       </div>
+
       <div className="context-menu-separator" />
+
+      {/* Convertir en → inline expandible */}
       <div className="context-menu-section">
-        <button className="context-menu-item" onClick={action(toggleTask)}>
-          <span className="context-menu-icon">{isTask ? '◯' : '☑'}</span>
-          {isTask ? 'Quitar tarea' : 'Convertir en tarea'}
+        <button
+          className={`context-menu-item${showConvert ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowConvert(v => !v) }}
+        >
+          <span className="context-menu-icon">⇄</span> Convertir en
+          <span className="context-menu-shortcut">{showConvert ? '▾' : '›'}</span>
         </button>
-        {isTask && (
-          <button className="context-menu-item" onClick={action(toggleDone)}>
-            <span className="context-menu-icon">{node.status === 'done' ? '↺' : '✓'}</span>
-            {node.status === 'done' ? 'Marcar pendiente' : 'Marcar como hecha'}
-          </button>
+        {showConvert && (
+          <div className="context-menu-submenu-inline">
+            <button className="context-menu-item context-menu-item--sub" onClick={run(toggleTask)}>
+              <span className="context-menu-icon">{isTask ? '○' : '☑'}</span>
+              {isTask ? 'Quitar tarea' : 'Tarea'}
+            </button>
+            <button className="context-menu-item context-menu-item--sub" onClick={run(toggleEvent)}>
+              <span className="context-menu-icon">📅</span>
+              {isEvent ? 'Quitar evento' : 'Evento'}
+            </button>
+            <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
+            {(['h1','h2','h3'] as const).map(level => (
+              <button key={level} className="context-menu-item context-menu-item--sub"
+                onClick={run(() => setNodeBlock(node, currentBlock === level ? null : level))}
+              >
+                <span className="context-menu-icon" style={{ fontWeight: 700, fontSize: 11 }}>
+                  {level.toUpperCase()}
+                </span>
+                {level === 'h1' ? 'Título 1' : level === 'h2' ? 'Título 2' : 'Título 3'}
+                {currentBlock === level && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
+              </button>
+            ))}
+            <button className="context-menu-item context-menu-item--sub"
+              onClick={run(() => setNodeBlock(node, currentBlock === 'bullet' ? null : 'bullet'))}>
+              <span className="context-menu-icon">•</span> Lista
+              {currentBlock === 'bullet' && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
+            </button>
+            <button className="context-menu-item context-menu-item--sub"
+              onClick={run(() => setNodeBlock(node, null))}>
+              <span className="context-menu-icon">¶</span> Párrafo normal
+              {!currentBlock && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
+            </button>
+            <button className="context-menu-item context-menu-item--sub"
+              onClick={run(() => {
+                const t = (node.text || '').trimEnd()
+                if (t === '---') return
+                store.updateNode(node.id, { text: '---' })
+              })}>
+              <span className="context-menu-icon">—</span> Separador
+            </button>
+          </div>
         )}
-        <button className="context-menu-item" onClick={action(toggleBucle)}>
-          <span className="context-menu-icon">↺</span>
-          {isBucle ? 'Quitar bucle' : 'Convertir en bucle'}
-        </button>
       </div>
+
       <div className="context-menu-separator" />
+
+      {/* Atajos */}
       <div className="context-menu-section">
-        <button className="context-menu-item" onClick={action(toggleFavorite)}>
+        <button className="context-menu-item" onClick={run(toggleShortcut)}>
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
-          {isFav ? 'Quitar de fijados' : 'Fijar'}
+          {isFav ? 'Quitar de atajos' : 'Añadir a atajos'}
         </button>
       </div>
-      <div className="context-menu-separator" />
-      <div className="context-menu-section">
-        <button className="context-menu-item" onClick={action(toggleEvent)}>
-          <span className="context-menu-icon">📅</span>
-          {isEvent ? 'Quitar evento' : 'Convertir en evento'}
-        </button>
-        <button className="context-menu-item" onClick={action(addDueToday)} style={{ opacity: node.due ? 0.4 : 1 }}>
-          <span className="context-menu-icon">⌛</span> Añadir fecha de hoy
-        </button>
-        <div className="context-menu-item context-menu-item--submenu" onMouseEnter={() => setShowPriorityMenu(true)} onMouseLeave={() => setShowPriorityMenu(false)}>
-          <span className="context-menu-icon">⬆</span> Añadir prioridad
-          <span className="context-menu-arrow">›</span>
-          {showPriorityMenu && (
-            <div className="context-menu context-menu--sub">
-              <button className="context-menu-item" onClick={action(() => setPriority('high'))}>
-                <span className="context-menu-icon">🔴</span> Alta {node.priority === 'high' && '✓'}
-              </button>
-              <button className="context-menu-item" onClick={action(() => setPriority('medium'))}>
-                <span className="context-menu-icon">🟡</span> Media {node.priority === 'medium' && '✓'}
-              </button>
-              <button className="context-menu-item" onClick={action(() => setPriority('low'))}>
-                <span className="context-menu-icon">🟢</span> Baja {node.priority === 'low' && '✓'}
-              </button>
-              <div className="context-menu-separator" />
-              <button className="context-menu-item" onClick={action(() => setPriority(null))}>
-                <span className="context-menu-icon">✕</span> Ninguna {node.priority === null && '✓'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="context-menu-separator" />
-      <div className="context-menu-section">
-        <button className="context-menu-item" onClick={action(copyText)}>
-          <span className="context-menu-icon">⎘</span> Copiar texto
-        </button>
-        <button className="context-menu-item" onClick={action(copyLink)}>
-          <span className="context-menu-icon">🔗</span> Copiar enlace
-        </button>
-      </div>
-      <div className="context-menu-separator" />
-      <div className="context-menu-section">
-        <div className="context-menu-section-label">Plantilla rápida</div>
-        {[
-          { label: '📋 Reunión', body: '## Objetivo\n\n## Asistentes\n\n## Notas\n\n## Próximos pasos' },
-          { label: '🚀 Proyecto', body: '## Objetivo\n\n## Alcance\n\n## Tareas clave\n\n## Notas' },
-          { label: '💡 Idea', body: '## Descripción\n\n## Ventajas\n\n## Siguiente paso' },
-        ].map(template => (
-          <button
-            key={template.label}
-            className="context-menu-item"
-            onClick={() => {
-              store.updateNode(node.id, { body: template.body })
-              onClose()
-            }}
-          >
-            {template.label}
-          </button>
-        ))}
-      </div>
-      {/* Notas temporales (año/mes/semana) y diarios no se pueden eliminar */}
-      {!node.isDiaryEntry && !isTemporalNode(node) && (
+
+      {/* Propiedades de tarea (solo si es tarea) */}
+      {isTask && (
         <>
           <div className="context-menu-separator" />
           <div className="context-menu-section">
-            <button className="context-menu-item context-menu-item--danger" onClick={action(deleteNode)}>
+            <button className="context-menu-item" onClick={run(openTaskProps)}>
+              <span className="context-menu-icon">⚙</span> Propiedades de tarea
+            </button>
+            {node.status !== 'done' ? (
+              <button className="context-menu-item" onClick={run(() =>
+                store.updateNode(node.id, { status: 'done' })
+              )}>
+                <span className="context-menu-icon">✓</span> Marcar como hecha
+              </button>
+            ) : (
+              <button className="context-menu-item" onClick={run(() =>
+                store.updateNode(node.id, { status: 'pending' })
+              )}>
+                <span className="context-menu-icon">↺</span> Marcar pendiente
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      <div className="context-menu-separator" />
+
+      {/* Copiar */}
+      <div className="context-menu-section">
+        <button className="context-menu-item" onClick={run(copyText)}>
+          <span className="context-menu-icon">⎘</span> Copiar texto
+        </button>
+        <button className="context-menu-item" onClick={run(copyInternalLink)}>
+          <span className="context-menu-icon">🔗</span> Copiar enlace interno
+        </button>
+        <button className="context-menu-item" onClick={run(handlePublicLink)} disabled={publishing}>
+          <span className="context-menu-icon">👁</span>
+          {publishing ? 'Publicando…' : publicSlug ? 'Copiar enlace público' : 'Publicar y copiar enlace'}
+        </button>
+        {publicSlug && (
+          <button className="context-menu-item" onClick={run(handleUnpublish)}>
+            <span className="context-menu-icon">🔒</span> Despublicar
+          </button>
+        )}
+      </div>
+
+      {/* Plantillas */}
+      <div className="context-menu-separator" />
+      <div className="context-menu-section">
+        <button
+          className={`context-menu-item${showTemplates ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowTemplates(v => !v) }}
+        >
+          <span className="context-menu-icon">📋</span> Aplicar plantilla
+          <span className="context-menu-shortcut">{showTemplates ? '▾' : '›'}</span>
+        </button>
+        {showTemplates && (
+          <div className="context-menu-submenu-inline">
+            {templates.length === 0 ? (
+              <div style={{ padding: '6px 28px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                Crea un nodo raíz llamado<br />
+                <strong>"Plantillas"</strong> con hijos dentro
+              </div>
+            ) : templates.map(t => (
+              <button key={t.id} className="context-menu-item context-menu-item--sub" onClick={run(() => applyTemplate(t))}>
+                <span className="context-menu-icon">📄</span> {t.text || 'Sin título'}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Eliminar — no para diarios ni temporales */}
+      {!isDiary && !isTemporal && (
+        <>
+          <div className="context-menu-separator" />
+          <div className="context-menu-section">
+            <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
               <span className="context-menu-icon">🗑</span> Eliminar
             </button>
           </div>
@@ -246,11 +368,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       )}
     </div>,
     document.body
-  )
+  ) : null
 
   return (
     <>
-      {portal}
+      {menu}
       {showMove && (
         <MoveNodeModal
           node={node}
