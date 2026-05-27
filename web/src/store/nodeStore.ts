@@ -774,7 +774,9 @@ export class NodeStore {
   getNodePath(nodeId: string): string {
     const parts: string[] = []
     let cur = this.nodes.get(nodeId)
-    while (cur?.parentId) {
+    const visited = new Set<string>([nodeId])
+    while (cur?.parentId && !visited.has(cur.parentId)) {
+      visited.add(cur.parentId)
       const parent = this.nodes.get(cur.parentId)
       if (!parent) break
       parts.unshift(parent.text || 'Sin título')

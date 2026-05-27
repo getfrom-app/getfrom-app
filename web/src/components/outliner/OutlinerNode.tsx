@@ -1344,8 +1344,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function isDescendant(potentialAncestorId: string, checkId: string): boolean {
     let cur = store.getNode(checkId)
-    while (cur?.parentId) {
+    const visited = new Set<string>([checkId])
+    while (cur?.parentId && !visited.has(cur.parentId)) {
       if (cur.parentId === potentialAncestorId) return true
+      visited.add(cur.parentId)
       cur = store.getNode(cur.parentId)
     }
     return false

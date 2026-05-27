@@ -98,11 +98,14 @@ export function applyWFFilter(
     if (matches) matchIds.add(node.id)
   }
 
-  // Build ancestor set
+  // Build ancestor set — con detección de ciclos para evitar bucle infinito
+  // si existe alguna referencia circular de padres en el árbol.
   const ancestorIds = new Set<string>()
   for (const id of matchIds) {
     let node = nodes.get(id)
-    while (node?.parentId) {
+    const visited = new Set<string>([id])
+    while (node?.parentId && !visited.has(node.parentId)) {
+      visited.add(node.parentId)
       ancestorIds.add(node.parentId)
       node = nodes.get(node.parentId)
     }
