@@ -110,6 +110,14 @@ export function applyWFFilter(
   return { matchIds, ancestorIds, hasFilter: true }
 }
 
+/** Operadores que activan el motor de filtros inteligente */
+const SMART_OPERATORS = ['hoy', 'mañana', 'semana', 'tarea', 'pendiente', 'hecho', 'vencido', 'overdue', 'evento', 'tipo:']
+
+export function isSmartQuery(text: string): boolean {
+  const lower = text.toLowerCase()
+  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#')
+}
+
 /** Suggestion chips to show below filter input */
 export const FILTER_SUGGESTIONS = [
   { label: 'Hoy', query: 'hoy' },

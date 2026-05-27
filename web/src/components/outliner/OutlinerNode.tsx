@@ -116,6 +116,7 @@ interface Props {
   onSelectNext: (id: string, dir: 'up' | 'down') => void
   onShiftSelect?: (id: string) => void
   filterText?: string
+  filterMatchIds?: Set<string>   // WF smart filter — IDs que coinciden
   isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
 }
 
@@ -177,7 +178,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, isFirstEmpty }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, isFirstEmpty }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -268,11 +269,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Filter: if filterText is active and this node doesn't match, hide it
   // But keep parent visible if any descendant matches
   const activeFilter = filterText && filterText.trim()
-  const matchesFilter = !activeFilter || node.text.toLowerCase().includes(filterText!.toLowerCase())
-  const anyDescendantMatches = activeFilter && !matchesFilter
+  // WF smart filter: use filterMatchIds if provided, otherwise fall back to text search
+  const matchesFilter = filterMatchIds
+    ? filterMatchIds.has(node.id)
+    : (!activeFilter || node.text.toLowerCase().includes(filterText!.toLowerCase()))
+  const anyDescendantMatches = (activeFilter || filterMatchIds) && !matchesFilter
     ? getAllDescendants(node.id).some(id => {
         const n = store.getNode(id)
-        return n && !n.deletedAt && n.text.toLowerCase().includes(filterText!.toLowerCase())
+        if (!n || n.deletedAt) return false
+        if (filterMatchIds) return filterMatchIds.has(id)
+        return n.text.toLowerCase().includes(filterText!.toLowerCase())
       })
     : false
 
@@ -1490,11 +1496,44 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'No se encontró el diario de hoy' } }))
       }
       return
-    } else if (action === 'move-tomorrow') {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Mover a mañana — próximamente' } }))
-      return
-    } else if (action === 'move-next-week') {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Mover a próxima semana — próximamente' } }))
+    } else if (action === 'move-tomorrow' || action === 'move-next-week') {
+      const targetDate = new Date()
+      if (action === 'move-tomorrow') {
+        targetDate.setDate(targetDate.getDate() + 1)
+      } else {
+        // Próximo lunes
+        const day = targetDate.getDay()
+        const daysUntilMonday = day === 0 ? 1 : 8 - day
+        targetDate.setDate(targetDate.getDate() + daysUntilMonday)
+      }
+      targetDate.setHours(0, 0, 0, 0)
+      const MONTHS_ES_LOCAL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+      const year = targetDate.getFullYear()
+      const monthIdx = targetDate.getMonth()
+      // Buscar nodo diario para la fecha objetivo
+      let diaryNode = Array.from(store.nodes.values()).find(n => {
+        if (!n.isDiaryEntry || n.deletedAt) return false
+        if (!n.diaryDate) return false
+        const d = new Date(n.diaryDate)
+        return d.getFullYear() === year && d.getMonth() === monthIdx && d.getDate() === targetDate.getDate()
+      })
+      if (!diaryNode) {
+        // Crear jerarquía
+        const roots = store.children(null)
+        let calNode = roots.find(n => !n.deletedAt && (n.text?.toLowerCase() === 'calendario' || n.text?.toLowerCase() === 'calendar'))
+        if (!calNode) calNode = store.createNode({ text: 'Calendario', parentId: null })
+        let yearNode = store.children(calNode.id).find(c => !c.deletedAt && c.text === String(year))
+        if (!yearNode) yearNode = store.createNode({ text: String(year), parentId: calNode.id })
+        const monthText = MONTHS_ES_LOCAL[monthIdx]
+        let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
+        if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
+        const dayText = targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase())
+        diaryNode = store.createNode({ text: dayText, parentId: monthNode.id, isDiaryEntry: true, diaryDate: targetDate.toISOString() })
+      }
+      const sibs = store.children(diaryNode.id)
+      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+      store.updateNode(node.id, { parentId: diaryNode.id, siblingOrder: lastOrder + 1 })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido al ${targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}` } }))
       return
     } else if (action === 'expand-all') {
       const getAllDescEx = (id: string): string[] => {
@@ -2518,6 +2557,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onSelectNext={onSelectNext}
             onShiftSelect={onShiftSelect}
             filterText={filterText}
+            filterMatchIds={filterMatchIds}
           />
         ))
       })()}

@@ -97,6 +97,13 @@ export default function MainLayout() {
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
   const [filterText, setFilterText] = useState('')
+
+  // Limpiar filtro desde WFHomeView
+  useEffect(() => {
+    function handleClearFilter() { setFilterText('') }
+    window.addEventListener('wf:clear-filter', handleClearFilter)
+    return () => window.removeEventListener('wf:clear-filter', handleClearFilter)
+  }, [])
   const prevIsSyncing = useRef(false)
 
   useTaskNotifications()

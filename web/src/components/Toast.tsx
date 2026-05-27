@@ -58,6 +58,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts(prev => [...prev, { id, message, type }])
   }, [])
 
+  // Escuchar evento global from:toast para usar desde cualquier componente
+  useEffect(() => {
+    function handleToast(e: Event) {
+      const detail = (e as CustomEvent).detail as { message: string; type?: ToastType }
+      if (detail?.message) showToast(detail.message, detail.type ?? 'info')
+    }
+    window.addEventListener('from:toast', handleToast)
+    return () => window.removeEventListener('from:toast', handleToast)
+  }, [showToast])
+
   const remove = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])

@@ -36,6 +36,7 @@ interface Props {
   placeholder?: string
   className?: string
   filterText?: string
+  filterMatchIds?: Set<string>   // WF smart filter: IDs que coinciden (oculta los demás)
   compact?: boolean
 }
 
@@ -51,7 +52,7 @@ const SORT_LABELS: Record<SortMode, string> = {
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, compact }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, compact }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -436,6 +437,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             onSelectNext={handleSelectNext}
             onShiftSelect={handleShiftSelect}
             filterText={effectiveFilter}
+            filterMatchIds={filterMatchIds}
             isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
           />
         ))}
