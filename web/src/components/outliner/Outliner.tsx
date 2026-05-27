@@ -199,9 +199,15 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   useEffect(() => {
     function handleNewChild(e: Event) {
       const detail = (e as CustomEvent).detail as { parentId: string }
-      if (detail?.parentId !== parentId) return  // solo el Outliner del diario de hoy
-      // Crear nodo vacío al final y focalizarlo
+      if (detail?.parentId !== parentId) return
       const last = nodes[nodes.length - 1]
+      // Si ya hay un nodo vacío al final (p.ej. creado por autoFocusEmpty),
+      // solo focalizarlo — no crear uno nuevo (evita el doble nodo de Shift+Enter)
+      if (last && !(last.text || '').trim()) {
+        setSelectedId(last.id)
+        return
+      }
+      // Crear nodo vacío al final
       const newOrder = last ? last.siblingOrder + 1 : Date.now()
       const n = store.createNode({ text: '', parentId, siblingOrder: newOrder })
       setSelectedId(n.id)
