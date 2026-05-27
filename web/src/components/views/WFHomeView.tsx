@@ -50,11 +50,14 @@ export default function WFHomeView({ filterText }: Props) {
   }, [storeReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro inteligente ─────────────────────────────────────────────────
+  // s.nodes es la misma referencia Map en cada render (mutada in-place), así
+  // que usamos s.nodes.size como dep numérica para detectar cambios reales.
+  // El propio applyWFFilter es O(n) — seguro para colecciones de tamaño normal.
   const filterResult = useMemo(() => {
     if (!filterText?.trim()) return null
     if (!isSmartQuery(filterText)) return null
     return applyWFFilter(s.nodes, filterText)
-  }, [filterText, s.nodes])
+  }, [filterText, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFiltering = !!filterText?.trim()
 

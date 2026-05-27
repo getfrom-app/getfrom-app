@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
 import { normalizeText } from '../utils/normalize'
+import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 
 interface Props {
   onClose: () => void
@@ -190,8 +191,110 @@ export default function CommandPalette({ onClose }: Props) {
   const buildItems = useCallback((): PaletteItem[] => {
     const q = query.trim()
 
-    // Sin query → lista vacía (sólo el input)
-    if (!q) return []
+    // ── Sin query: mostrar comandos rápidos fijos ──────────────────────────
+    if (!q) {
+      const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      const tomorrowLabel = (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) })()
+      return [
+        {
+          id: 'quick-today',
+          label: 'Hoy',
+          sublabel: todayLabel,
+          type: 'wf-action',
+          taskStatus: null,
+          score: 200,
+          action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() },
+        },
+        {
+          id: 'quick-tomorrow',
+          label: 'Mañana',
+          sublabel: tomorrowLabel,
+          type: 'wf-action',
+          taskStatus: null,
+          score: 190,
+          action: () => {
+            const d = new Date(); d.setDate(d.getDate()+1)
+            // importar ensureDayPath dinámicamente
+            import('../utils/agendaHelper').then(({ ensureDayPath }) => {
+              const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose()
+            })
+          },
+        },
+        // Contextos de 🧠 Contexto
+        ...(() => {
+          const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+          if (!contextoRoot) return []
+          return store.children(contextoRoot.id).filter(n => !n.deletedAt).map(n => ({
+            id: `ctx-${n.id}`,
+            label: n.text || '',
+            sublabel: 'Filtrar por este contexto',
+            type: 'wf-action' as const,
+            taskStatus: null as null,
+            score: 150,
+            action: () => {
+              window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: `@${(n.text||'').toLowerCase().replace(/\s+/g, '-')}` } }))
+              onClose()
+            },
+          }))
+        })(),
+      ]
+    }
+
+    const qNorm = normalizeText(q)
+
+    // ── Comandos rápidos temporales (hoy, mañana...) ─────────────────────
+    if (['hoy', 'today', 'ho'].some(t => t.startsWith(qNorm) || qNorm.startsWith(t.slice(0,2)))) {
+      const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      return [{
+        id: 'quick-today',
+        label: 'Hoy — nota del día',
+        sublabel: todayLabel,
+        type: 'wf-action',
+        taskStatus: null,
+        score: 300,
+        action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() },
+      }]
+    }
+    if (['mañana', 'manana', 'tomorrow', 'ma'].some(t => qNorm.length >= 2 && (t.startsWith(qNorm) || qNorm.startsWith(t.slice(0,3))))) {
+      const d = new Date(); d.setDate(d.getDate()+1)
+      const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      return [{
+        id: 'quick-tomorrow',
+        label: 'Mañana — nota del día',
+        sublabel: label,
+        type: 'wf-action',
+        taskStatus: null,
+        score: 300,
+        action: () => {
+          import('../utils/agendaHelper').then(({ ensureDayPath }) => {
+            const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose()
+          })
+        },
+      }]
+    }
+
+    // ── Contextos (🧠 Contexto): búsqueda por nombre del contexto ─────────
+    const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+    if (contextoRoot) {
+      const ctxNodes = store.children(contextoRoot.id).filter(n =>
+        !n.deletedAt && n.text && normalizeText(n.text).includes(qNorm)
+      )
+      if (ctxNodes.length > 0) {
+        return ctxNodes.map(n => ({
+          id: `ctx-${n.id}`,
+          label: n.text || '',
+          sublabel: 'Filtrar nodos con este contexto',
+          type: 'wf-action' as const,
+          taskStatus: null as null,
+          score: 200,
+          action: () => {
+            const slug = (n.text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-')
+            window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: `@${slug}` } }))
+            onClose()
+          },
+        }))
+      }
+    }
 
     // ── Modo tag: query empieza con # ──────────────────────────────────────
     if (q.startsWith('#')) {

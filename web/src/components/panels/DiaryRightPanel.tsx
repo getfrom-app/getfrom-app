@@ -632,6 +632,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
 
   // Tareas sin fecha: pendientes con due=null que son hijas directas de
   // la diary entry de hoy (el usuario las creó en el diario sin fecha explícita).
+  // Set de IDs de containers — declarado ANTES de usarse en undatedDiaryTasks
+  const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
+
   // Solo para el día de HOY — en semana/mes no aplica.
   const todayDiaryId = isThisDayToday ? s.todayDiary()?.id : undefined
   const undatedDiaryTasks = todayDiaryId
@@ -640,10 +643,6 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
         !seguimientoIds.has(n.id)
       )
     : []
-
-  // Set de IDs de containers (para excluir sus descendientes de overdue/today
-  // si los renderizamos bajo el container).
-  const seguimientoIds = new Set(seguimientoNodes.map(n => n.id))
 
   /** True si el padre directo del nodo es una tarea (status !== null, no diario, no seguimiento) */
   function hasTaskParent(node: Node): boolean {
