@@ -1,17 +1,16 @@
 /**
  * WFHomeView — Vista raíz estilo Workflowy
- *
- * Sin filtro: árbol normal colapsado.
- * Con filtro smart: árbol filtrado — solo muestra ancestros (atenuados,
- * para dar contexto) y nodos que coinciden (destacados). Los hermanos
- * que no coinciden se ocultan. Igual que Workflowy.
+ * Sin filtro: árbol normal. Con filtro: vista árbol / lista plana / calendario.
  */
 import { useMemo, useEffect, useState } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
+import { FilterViewSwitcher, FlatView, CalendarView } from './FilterResultsView'
+import type { FilterView } from './FilterResultsView'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
+const FILTER_VIEW_KEY = 'from_wf_filter_view'
 
 interface Props {
   filterText?: string
@@ -20,7 +19,7 @@ interface Props {
 export default function WFHomeView({ filterText }: Props) {
   const s = useStore()
 
-  // ── Loading gate ───────────────────────────────────────────────────────
+  // ── Loading gate ──────────────────────────────────────────────────────────
   const [storeReady, setStoreReady] = useState(() => store.isLoaded)
   useEffect(() => {
     if (storeReady) return
@@ -28,7 +27,16 @@ export default function WFHomeView({ filterText }: Props) {
     return () => unsub()
   }, [storeReady])
 
-  // ── Colapsar root nodes al primer arranque ─────────────────────────────
+  // ── Vista activa del filtro ───────────────────────────────────────────────
+  const [filterView, setFilterView] = useState<FilterView>(
+    () => (localStorage.getItem(FILTER_VIEW_KEY) as FilterView) || 'lista'
+  )
+  function changeFilterView(v: FilterView) {
+    setFilterView(v)
+    localStorage.setItem(FILTER_VIEW_KEY, v)
+  }
+
+  // ── Colapsar root nodes al primer arranque ─────────────────────────────────
   useEffect(() => {
     if (!storeReady) return
     if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
@@ -41,7 +49,7 @@ export default function WFHomeView({ filterText }: Props) {
     localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
   }, [storeReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Filtro inteligente ─────────────────────────────────────────────────
+  // ── Filtro inteligente ─────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
     if (!filterText?.trim()) return null
     if (!isSmartQuery(filterText)) return null
@@ -49,35 +57,48 @@ export default function WFHomeView({ filterText }: Props) {
   }, [filterText, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFiltering = !!filterText?.trim()
+  const matchCount = filterResult?.matchIds.size ?? 0
 
   if (!storeReady) return <div className="wf-home-view" />
 
   return (
     <div className="wf-home-view">
-      {filterResult?.hasFilter && filterResult.matchIds.size === 0 && (
+      {/* Barra de resultados con selector de vista */}
+      {filterResult?.hasFilter && matchCount === 0 && (
         <div className="wf-filter-empty">
           Sin resultados para <strong>"{filterText}"</strong>
         </div>
       )}
-      {filterResult?.hasFilter && filterResult.matchIds.size > 0 && (
-        <div className="wf-filter-results-hint">
-          {filterResult.matchIds.size} resultado{filterResult.matchIds.size !== 1 ? 's' : ''}
-          {' '}· <button
-            className="wf-filter-clear-btn"
-            onClick={() => window.dispatchEvent(new CustomEvent('wf:clear-filter'))}
-          >Limpiar</button>
-        </div>
+      {filterResult?.hasFilter && matchCount > 0 && (
+        <FilterViewSwitcher
+          view={filterView}
+          onChange={changeFilterView}
+          count={matchCount}
+          filterText={filterText!}
+          onClear={() => window.dispatchEvent(new CustomEvent('wf:clear-filter'))}
+        />
       )}
 
-      <Outliner
-        parentId={null}
-        autoFocusEmpty={false}
-        placeholder="Escribe algo… o pulsa Enter para crear un nodo"
-        filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
-        filterMatchIds={filterResult?.matchIds}
-        filterAncestorIds={filterResult?.ancestorIds}
-        excludeDiaryEntries
-      />
+      {/* Vista seleccionada */}
+      {filterResult?.hasFilter && matchCount > 0 && filterView === 'plano' && (
+        <FlatView matchIds={filterResult.matchIds} />
+      )}
+      {filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
+        <CalendarView matchIds={filterResult.matchIds} />
+      )}
+
+      {/* Árbol — siempre visible en vista lista, o cuando no hay filtro */}
+      <div style={{ display: (filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
+        <Outliner
+          parentId={null}
+          autoFocusEmpty={false}
+          placeholder="Escribe algo… o pulsa Enter para crear un nodo"
+          filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
+          filterMatchIds={filterResult?.matchIds}
+          filterAncestorIds={filterResult?.ancestorIds}
+          excludeDiaryEntries
+        />
+      </div>
     </div>
   )
 }

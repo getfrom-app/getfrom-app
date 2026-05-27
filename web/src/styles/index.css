@@ -9765,6 +9765,114 @@ a:focus-visible {
   text-align: center;
 }
 
+/* ── Barra de resultados + selector de vista ─────────────────────── */
+.filter-results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 10px;
+  gap: 8px;
+}
+.filter-results-count { font-size: 12px; color: var(--text-tertiary); }
+.filter-view-switcher { display: flex; gap: 2px; }
+.filter-view-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  transition: background 0.1s, color 0.1s;
+}
+.filter-view-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.filter-view-btn.active { background: var(--accent-soft); color: var(--accent); }
+
+/* ── Vista plana ─────────────────────────────────────────────────── */
+.filter-flat-view { display: flex; flex-direction: column; gap: 2px; }
+.filter-flat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.filter-flat-item:hover { background: var(--bg-hover); }
+.filter-flat-checkbox {
+  font-size: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  width: 14px;
+  text-align: center;
+}
+.filter-flat-checkbox.pending { color: #fbbf24; }
+.filter-flat-checkbox.done { color: #22c55e; }
+.filter-flat-content { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.filter-flat-text { font-size: 13px; color: var(--text-primary); }
+.filter-flat-crumb { font-size: 11px; color: var(--text-tertiary); }
+
+/* ── Vista calendario de filtro ──────────────────────────────────── */
+.filter-cal-view { }
+.filter-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.filter-cal-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.filter-cal-nav {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--text-secondary); font-size: 16px; padding: 2px 6px;
+  border-radius: 4px;
+}
+.filter-cal-nav:hover { background: var(--bg-hover); }
+.filter-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.filter-cal-dow {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.filter-cal-cell {
+  min-height: 64px;
+  border-radius: 6px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+.filter-cal-cell--empty { background: transparent; border-color: transparent; }
+.filter-cal-cell--today { border-color: var(--accent); background: var(--accent-soft); }
+.filter-cal-cell--has-tasks { background: var(--bg-tertiary); }
+.filter-cal-day-num { font-size: 11px; color: var(--text-tertiary); display: block; margin-bottom: 2px; font-weight: 500; }
+.filter-cal-cell--today .filter-cal-day-num { color: var(--accent); font-weight: 700; }
+.filter-cal-tasks { display: flex; flex-direction: column; gap: 1px; }
+.filter-cal-task {
+  font-size: 10px;
+  color: var(--text-secondary);
+  background: var(--accent-soft);
+  border-radius: 3px;
+  padding: 1px 4px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+.filter-cal-task:hover { background: var(--bg-hover); }
+.filter-cal-task.done { opacity: 0.5; text-decoration: line-through; }
+.filter-cal-more { font-size: 10px; color: var(--text-tertiary); padding: 1px 4px; }
+
 /* ── Lista plana de resultados de filtro ──────────────────────────── */
 /* Nodo ancestro en modo filtro — da contexto pero no es el resultado */
 .wf-layout .node-row.wf-filter-ancestor { opacity: 0.45; }
