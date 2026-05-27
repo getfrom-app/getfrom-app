@@ -22,6 +22,7 @@ import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../
 import { ensureTagInTree } from '../../utils/tagsHelper'
 import { nextRecurrence, extractDateFromEnd } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
+import { buildTaskVerbRegex } from '../../store/predictionStore'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -757,10 +758,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
 
     // ── Detección de intención de tarea por verbo de acción ────────────────
-    // Solo si el nodo no es ya una tarea/evento y tiene texto suficiente
-    const TASK_VERBS = /^(confirmar|hacer|pedir|esperar|llamar|enviar|revisar|preparar|crear|actualizar|contactar|comprar|escribir|buscar|entregar|completar|terminar|acabar|organizar|planificar|decidir|analizar|investigar|diseñar|implementar|instalar|configurar|probar|solucionar|arreglar|mejorar|añadir|anadir|quitar|cambiar|mover|hablar|reunirse|visitar|firmar|pagar|cobrar|facturar|contratar|presentar|mostrar|explicar|aprender|estudiar|leer|subir|bajar|descargar|comprobar|verificar|validar|corregir|editar|gestionar|coordinar|definir|publicar|lanzar|cerrar|abrir|iniciar|finalizar|solicitar|aprobar|rechazar|asignar|delegar|seguir|monitorizar|reportar|documentar|actualizar|migrar|integrar|conectar|sincronizar|importar|exportar|generar|calcular|medir|evaluar|comparar|seleccionar|elegir|decidir|confirmar|cancelar|posponer|priorizar|clasificar|ordenar|filtrar|agrupar)\b/i
+    // Usa el regex dinámico (built-in + palabras custom del usuario)
     const normedText = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    if (node.status === null && !node.isEvent && text.length > 5 && TASK_VERBS.test(normedText)) {
+    if (node.status === null && !node.isEvent && text.length > 5 && buildTaskVerbRegex().test(normedText)) {
       setTaskPrediction(true)
     } else {
       setTaskPrediction(false)

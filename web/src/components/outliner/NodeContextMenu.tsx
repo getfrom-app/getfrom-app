@@ -18,6 +18,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { addPredictionWord } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
 
@@ -51,6 +52,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const [showMove, setShowMove] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showPrediction, setShowPrediction] = useState(false)
+  // Texto seleccionado en el momento de abrir el menú
+  const selectedText = window.getSelection()?.toString().trim() || ''
   const [publishing, setPublishing] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -466,6 +470,47 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </div>
         )}
       </div>
+
+      {/* Añadir a predicción — visible si hay texto seleccionado */}
+      {selectedText.length >= 2 && selectedText.length <= 30 && (
+        <>
+          <div className="context-menu-separator" />
+          <div className="context-menu-section">
+            <button
+              className={`context-menu-item${showPrediction ? ' active' : ''}`}
+              onClick={() => setShowPrediction(v => !v)}
+            >
+              <span className="context-menu-icon">✦</span>
+              Enseñar a From: <em style={{ color: 'var(--text-accent)', marginLeft: 4 }}>"{selectedText}"</em>
+              <span className="context-menu-shortcut">{showPrediction ? '▾' : '›'}</span>
+            </button>
+            {showPrediction && (
+              <div className="context-menu-submenu-inline">
+                <button className="context-menu-item" onClick={() => {
+                  const added = addPredictionWord('task', selectedText)
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? `✦ "${selectedText}" → detectar como tarea` : `Ya estaba en la lista`,
+                    type: added ? 'success' : 'info'
+                  }}))
+                  onClose()
+                }}>
+                  <span className="context-menu-icon">☐</span> Es un verbo de tarea
+                </button>
+                <button className="context-menu-item" onClick={() => {
+                  const added = addPredictionWord('event', selectedText)
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? `✦ "${selectedText}" → detectar como evento` : `Ya estaba en la lista`,
+                    type: added ? 'success' : 'info'
+                  }}))
+                  onClose()
+                }}>
+                  <span className="context-menu-icon">📅</span> Es una palabra de evento
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Eliminar — siempre disponible, va a la papelera */}
       <div className="context-menu-separator" />
