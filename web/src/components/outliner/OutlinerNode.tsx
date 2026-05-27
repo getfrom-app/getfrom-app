@@ -713,10 +713,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
-    // ── Detección de fecha al final del texto (solo en tareas/nodos normales) ──
-    if (node.status !== null || text.length > 3) {
-      const extraction = extractDateFromEnd(text)
-      setDatePrediction(extraction)
+    // ── Detección de fecha al final de cualquier nodo ──────────────────────
+    if (text.length > 3) {
+      setDatePrediction(extractDateFromEnd(text))
     } else {
       setDatePrediction(null)
     }
@@ -1618,7 +1617,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         siblingOrder: lastOrder + 1,
         extraData: JSON.stringify(ed),
       }
-      if (isEvent) updates.isEvent = true
+      if (isEvent) {
+        updates.isEvent = true
+      } else if (node.status === null) {
+        // Nodo normal → convertir en tarea al moverlo
+        updates.status = 'pending'
+      }
       if (timeStr) updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), parseInt(timeStr.split(':')[0]), parseInt(timeStr.split(':')[1])).toISOString()
       store.updateNode(node.id, updates)
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
