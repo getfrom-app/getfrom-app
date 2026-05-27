@@ -128,10 +128,10 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
   if (!selRect) return null
 
   // ── Posición ──────────────────────────────────────────────────────────────
-  const MAIN_W   = 260
-  const COLOR_W  = 236
+  const MAIN_W   = 340   // suficiente para H1 H2 H3 | B I S | <> 🔗 | A sin cortes
+  const COLOR_W  = 300
   const W = showColors ? COLOR_W : MAIN_W
-  const H = showColors ? 100 : 36
+  const H = showColors ? 110 : 40
 
   let left = selRect.left + selRect.width / 2 - W / 2
   let top  = selRect.top - H - 10

@@ -9672,12 +9672,12 @@ a:focus-visible {
   z-index: 2000;
   display: flex;
   align-items: center;
-  gap: 1px;
-  background: #1e1e1e;
-  border: 1px solid rgba(255,255,255,0.12);
+  gap: 2px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  padding: 3px 5px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+  padding: 4px 6px;
   user-select: none;
   animation: wf-ft-in 0.1s ease;
 }
@@ -9689,24 +9689,24 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 5px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.85);
+  color: #374151;
   border-radius: 5px;
   cursor: pointer;
   font-size: 13px;
   transition: background 0.1s, color 0.1s;
   white-space: nowrap;
 }
-.ft-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.ft-btn:hover { background: #f3f4f6; color: #111827; }
 .ft-sep {
   width: 1px;
-  height: 16px;
-  background: rgba(255,255,255,0.15);
-  margin: 0 3px;
+  height: 18px;
+  background: #e5e7eb;
+  margin: 0 4px;
   flex-shrink: 0;
 }
 
@@ -9725,7 +9725,7 @@ a:focus-visible {
 }
 .ft-color-label {
   font-size: 10px;
-  color: rgba(255,255,255,0.4);
+  color: #9ca3af;
   width: 50px;
   flex-shrink: 0;
   font-weight: 500;
@@ -9743,34 +9743,34 @@ a:focus-visible {
   justify-content: center;
   transition: background 0.1s;
 }
-.ft-color-swatch:hover { background: rgba(255,255,255,0.12); }
+.ft-color-swatch:hover { background: #f3f4f6; }
 .ft-erase-btn {
   width: 22px;
   height: 22px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid #e5e7eb;
   background: transparent;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.5);
+  color: #9ca3af;
   transition: background 0.1s, color 0.1s;
 }
-.ft-erase-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.ft-erase-btn:hover { background: #f3f4f6; color: #374151; }
 .ft-color-footer {
   display: flex;
   align-items: center;
-  padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 4px;
+  border-top: 1px solid #f3f4f6;
   margin-top: 2px;
 }
 .ft-back-btn {
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.4);
+  color: #9ca3af;
   font-size: 10px;
   cursor: pointer;
   padding: 0;
 }
-.ft-back-btn:hover { color: rgba(255,255,255,0.8); }
+.ft-back-btn:hover { color: #374151; }
