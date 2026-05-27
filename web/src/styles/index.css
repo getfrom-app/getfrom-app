@@ -434,23 +434,29 @@ a { color: inherit; text-decoration: none; }
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Contenedor del ghost — inline, fluye con el texto */
+/* Contenedor del ghost — flex item inline en node-text-group */
 .from-ghost {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-left: 7px;
+  flex-shrink: 0;          /* nunca se comprime */
+  margin-left: 2px;
   padding: 1px 6px 1px 7px;
   background: var(--ghost-bg);
   border: 1px solid var(--ghost-border);
   border-radius: 5px;
-  font-size: 0.85em;
+  font-size: 0.82em;
   line-height: 1.5;
   vertical-align: middle;
   pointer-events: none;
   user-select: none;
   animation: from-ghost-in 0.12s ease-out;
   white-space: nowrap;
+}
+
+/* Cuando hay ghost, el texto no se expande al máximo */
+.node-text-group:has(.from-ghost) .node-text {
+  flex: 0 1 auto;
 }
 
 /* Texto principal de la predicción */

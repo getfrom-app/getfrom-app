@@ -2749,6 +2749,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               } catch { return null }
             })()}
 
+            {/* Ghost text predictivo de fecha — inline en el mismo flex row */}
+            {datePrediction && isEditing && (
+              <span className="from-ghost">
+                <span className="from-ghost-text">
+                  {datePrediction.parsed.label}
+                  {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
+                  {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
+                </span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">↵</span>
+              </span>
+            )}
+
             {/* Atajo WF — estrella visible en hover o si ya es atajo */}
             {(() => {
               const isShortcut = isShortcutState
@@ -2778,23 +2791,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
       </div>
 
-
       {/* Smart date assigned badge */}
       {dateAssignedMsg && (
         <div className="node-date-assigned-badge">{dateAssignedMsg}</div>
-      )}
-
-      {/* Ghost text predictivo de fecha — sistema .from-ghost */}
-      {datePrediction && isEditing && (
-        <span className="from-ghost">
-          <span className="from-ghost-text">
-            {datePrediction.parsed.label}
-            {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
-            {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
-          </span>
-          <span className="from-ghost-sep">·</span>
-          <span className="from-ghost-key">↵</span>
-        </span>
       )}
 
       {/* Format toolbar — aparece al seleccionar texto */}
