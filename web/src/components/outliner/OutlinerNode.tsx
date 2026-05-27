@@ -439,6 +439,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     prevStatusRef.current = node.status
   }, [node.status])
 
+  // Re-evaluar predicciones cuando el usuario añade palabras al diccionario
+  useEffect(() => {
+    function onWordsChanged() {
+      if (!isEditing || !contentRef.current) return
+      const text = (contentRef.current.textContent || '').replace(/ /g, ' ')
+      const normedText = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+      if (node.status === null && !node.isEvent && text.length > 5 && buildTaskVerbRegex().test(normedText)) {
+        setTaskPrediction(true)
+      }
+    }
+    window.addEventListener('from:prediction-words-changed', onWordsChanged)
+    return () => window.removeEventListener('from:prediction-words-changed', onWordsChanged)
+  }, [isEditing, node.status, node.isEvent]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Focus when selected + scroll into view
   // Sin guarda !isEditing: el efecto sólo corre cuando isSelected CAMBIA (dep array),
   // no en cada render. Al deseleccionar reseteamos isEditing para que el siguiente
