@@ -37,6 +37,7 @@ interface Props {
   className?: string
   filterText?: string
   filterMatchIds?: Set<string>   // WF smart filter: IDs que coinciden (oculta los demás)
+  temporalSort?: 'year' | 'month'  // WF: orden por mes (dentro de año) o por día (dentro de mes)
   compact?: boolean
 }
 
@@ -52,7 +53,20 @@ const SORT_LABELS: Record<SortMode, string> = {
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, compact }: Props) {
+const MONTHS_ES_ORDER = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+function getMonthIndex(text: string): number {
+  return MONTHS_ES_ORDER.findIndex(m => m.toLowerCase() === (text || '').toLowerCase())
+}
+
+function getDayNumber(node: Node): number {
+  if (node.diaryDate) return new Date(node.diaryDate).getDate()
+  // Intentar extraer número del texto si no hay diaryDate
+  const m = (node.text || '').match(/\b(\d{1,2})\b/)
+  return m ? parseInt(m[1]) : 999
+}
+
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, temporalSort, compact }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -68,6 +82,32 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Apply visual sort without modifying siblingOrder
   const nodes = (() => {
+    // WF temporal sort: mes dentro de año → por índice de mes; día dentro de mes → por número de día
+    if (temporalSort === 'year') {
+      const sorted = [...rawNodes]
+      sorted.sort((a, b) => {
+        const ai = getMonthIndex(a.text || '')
+        const bi = getMonthIndex(b.text || '')
+        // Nodos que NO son meses van al final (mantienen su orden relativo)
+        if (ai === -1 && bi === -1) return a.siblingOrder - b.siblingOrder
+        if (ai === -1) return 1
+        if (bi === -1) return -1
+        return ai - bi
+      })
+      return sorted
+    }
+    if (temporalSort === 'month') {
+      const sorted = [...rawNodes]
+      sorted.sort((a, b) => {
+        const ad = getDayNumber(a)
+        const bd = getDayNumber(b)
+        if (ad === 999 && bd === 999) return a.siblingOrder - b.siblingOrder
+        if (ad === 999) return 1
+        if (bd === 999) return -1
+        return ad - bd
+      })
+      return sorted
+    }
     if (sortMode === 'none') return rawNodes
     const sorted = [...rawNodes]
     if (sortMode === 'alpha') {

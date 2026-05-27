@@ -2022,51 +2022,74 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Multi-view tabs (Notion-style) — solo si el usuario ha creado vistas custom */}
-          {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
-            <NodeViewTabs
-              parentId={node.id}
-              activeViewId={activeViewId}
-              onSelect={handleSelectView}
-            />
-          )}
+          {/* En WF mode, nodos temporales usan WFTemporalView + outliner libre.
+              En modo normal, usan los bloques originales de From. */}
+          {(() => {
+            const isWFMode = !!document.querySelector('.wf-layout')
+            const isWFTemporal = isWFMode && (temporalNodeType === 'year' || temporalNodeType === 'month')
 
-          {/* Días/Semanas/Meses cuando el nodo es temporal */}
-          {temporalNodeType && (
-            <TemporalChildrenBlock
-              node={node}
-              type={temporalNodeType}
-              onNavigate={(id) => navigate(`/node/${id}`)}
-            />
-          )}
+            return (
+              <>
+                {/* ── Modo WF: temporal nodes ── */}
+                {isWFTemporal && (
+                  <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
+                )}
+                {isWFMode && node.isDiaryEntry && (
+                  <WFTemporalView node={node} temporalType="diary" />
+                )}
 
-          {/* Inline view modes — driven by viewKind (multi-vista o legacy) */}
-          {viewKind === 'table' && !node.isDiaryEntry && (
-            <NodeTableView parentId={node.id} />
-          )}
-          {viewKind === 'kanban' && !node.isDiaryEntry && (
-            <NodeKanbanView parentId={node.id} />
-          )}
-          {viewKind === 'calendar' && !node.isDiaryEntry && (
-            <NodeCalendarView parentId={node.id} />
-          )}
+                {/* ── Modo normal (no WF): bloques originales ── */}
+                {!isWFMode && (
+                  <>
+                    {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
+                      <NodeViewTabs
+                        parentId={node.id}
+                        activeViewId={activeViewId}
+                        onSelect={handleSelectView}
+                      />
+                    )}
+                    {temporalNodeType && (
+                      <TemporalChildrenBlock
+                        node={node}
+                        type={temporalNodeType}
+                        onNavigate={(id) => navigate(`/node/${id}`)}
+                      />
+                    )}
+                    {viewKind === 'table' && !node.isDiaryEntry && <NodeTableView parentId={node.id} />}
+                    {viewKind === 'kanban' && !node.isDiaryEntry && <NodeKanbanView parentId={node.id} />}
+                    {viewKind === 'calendar' && !node.isDiaryEntry && <NodeCalendarView parentId={node.id} />}
+                  </>
+                )}
 
-          {/* WF Temporal rendering — month/day pills (only in WF mode) */}
-          {(temporalNodeType === 'year' || temporalNodeType === 'month') && (
-            <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
-          )}
-          {node.isDiaryEntry && (
-            <WFTemporalView node={node} temporalType="diary" />
-          )}
+                {/* ── Vistas no-temporales en WF (tabla, kanban, cal) — se mantienen ── */}
+                {isWFMode && !isWFTemporal && !node.isDiaryEntry && (
+                  <>
+                    {!node.isDiaryEntry && store.getViews(node.id).length > 0 && (
+                      <NodeViewTabs parentId={node.id} activeViewId={activeViewId} onSelect={handleSelectView} />
+                    )}
+                    {viewKind === 'table' && <NodeTableView parentId={node.id} />}
+                    {viewKind === 'kanban' && <NodeKanbanView parentId={node.id} />}
+                    {viewKind === 'calendar' && <NodeCalendarView parentId={node.id} />}
+                  </>
+                )}
 
-          <div className={`outliner-section${viewKind !== 'list' && !node.isDiaryEntry ? ' outliner-section--hidden' : ''}`}>
-            <Outliner
-              parentId={node.id}
-              autoFocusEmpty
-              placeholder="Añade contenido..."
-              filterText={inDocSearch || undefined}
-            />
-          </div>
+                {/* ── Outliner: siempre visible en WF; en modo normal solo en vista lista ── */}
+                <div className={`outliner-section${
+                  !isWFMode && viewKind !== 'list' && !node.isDiaryEntry
+                    ? ' outliner-section--hidden'
+                    : ''
+                }`}>
+                  <Outliner
+                    parentId={node.id}
+                    autoFocusEmpty
+                    placeholder="Añade contenido…"
+                    filterText={inDocSearch || undefined}
+                    temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
+                  />
+                </div>
+              </>
+            )
+          })()}
         </div>
       </div>
 
