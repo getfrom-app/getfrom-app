@@ -16,6 +16,7 @@ import DiaryRightPanel from '../panels/DiaryRightPanel'
 import TagNodesPanel from '../panels/TagNodesPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { recordRecentNode } from '../CommandPalette'
+import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
@@ -52,6 +53,7 @@ export default function NodeView() {
   const [focusMode, setFocusMode] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [showMoveModal, setShowMoveModal] = useState(false)
+  const [titleContextMenu, setTitleContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [timelineOpen, setTimelineOpen] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -192,11 +194,11 @@ export default function NodeView() {
   useEffect(() => {
     if (!titleEditing && titleRef.current) {
       let displayText = node?.text || ''
-      if (node?.isDiaryEntry && node?.diaryDate) {
-        // diaryDate puede ser UTC midnight de fecha local ("2026-05-22T00:00:00Z")
-        // o medianoche local en UTC ("2026-05-21T22:00:00Z" para UTC+2).
-        // En ambos casos, new Date().toLocaleDateString() convierte correctamente
-        // a la hora local y muestra el día correcto. No hacer ajuste manual.
+      // En WF mode mostramos node.text directamente (sin reformatear)
+      // para que display y edición sean consistentes.
+      // En modo normal, los diarios muestran la fecha completa formateada.
+      const isWFMode = !!document.querySelector('.wf-layout')
+      if (!isWFMode && node?.isDiaryEntry && node?.diaryDate) {
         const d = new Date(node.diaryDate)
         displayText = d.toLocaleDateString('es-ES', {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -1592,8 +1594,16 @@ export default function NodeView() {
               {/* ── ··· Más opciones ── */}
               <div style={{ position: 'relative' }}>
                 <button
-                  className={`node-action-icon-btn ${showMoreMenu ? 'active' : ''}`}
-                  onClick={() => setShowMoreMenu(v => !v)}
+                  className={`node-action-icon-btn ${(showMoreMenu || titleContextMenu) ? 'active' : ''}`}
+                  onClick={e => {
+                    if (document.querySelector('.wf-layout')) {
+                      // En WF mode: abrir NodeContextMenu igual que cualquier nodo
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setTitleContextMenu({ x: rect.left, y: rect.bottom + 4 })
+                    } else {
+                      setShowMoreMenu(v => !v)
+                    }
+                  }}
                   title="Más opciones"
                 >
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
@@ -2158,6 +2168,18 @@ export default function NodeView() {
         <MoveNodeModal
           node={node}
           onClose={() => setShowMoveModal(false)}
+        />
+      )}
+
+      {/* NodeContextMenu del título — WF mode */}
+      {titleContextMenu && (
+        <NodeContextMenu
+          node={node}
+          x={titleContextMenu.x}
+          y={titleContextMenu.y}
+          onClose={() => setTitleContextMenu(null)}
+          onNavigate={navId => { navigate(`/node/${navId}`); setTitleContextMenu(null) }}
+          onSelect={() => setTitleContextMenu(null)}
         />
       )}
     </div>
