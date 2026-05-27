@@ -1,13 +1,12 @@
 /**
- * WFTopBar — Top bar estilo Workflowy para la rama experiment/workflowy
- * Minimal: back/forward + home + breadcrumb + filter + menú
+ * WFTopBar — Top bar estilo Workflowy
+ * 🏠 › Padre › Nodo actual   [filtro con categorías]   ⌘K  ···
  */
-import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { addFilterShortcut, getShortcuts } from '../../store/shortcutsStore'
-import { FILTER_SUGGESTIONS } from '../../utils/wfFilter'
 
 interface Props {
   onFilter: (text: string) => void
@@ -18,6 +17,22 @@ interface Props {
   onToggleSidebar: () => void
   sidebarOpen: boolean
 }
+
+// ── Categorías del filtro ──────────────────────────────────────────────────
+type FilterCategory = 'tags' | 'dates' | 'tasks' | null
+
+const DATE_CHIPS = [
+  { label: 'Hoy',        query: 'hoy' },
+  { label: 'Mañana',     query: 'mañana' },
+  { label: 'Esta semana',query: 'semana' },
+  { label: 'Vencido',    query: 'vencido' },
+]
+const TASK_CHIPS = [
+  { label: 'Pendientes', query: 'pendiente' },
+  { label: 'Hechos',     query: 'hecho' },
+  { label: 'Tareas hoy', query: 'hoy tarea' },
+  { label: 'Eventos',    query: 'evento' },
+]
 
 export default function WFTopBar({
   onFilter,
@@ -33,205 +48,319 @@ export default function WFTopBar({
   const s = useStore()
   const { theme, setTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [filterFocused, setFilterFocused] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterCategory, setFilterCategory] = useState<FilterCategory>(null)
   const filterRef = useRef<HTMLInputElement>(null)
+  const filterWrapRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Breadcrumb — build path for /node/:id
+  // ── Breadcrumb ────────────────────────────────────────────────────────────
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isNodeView = path.startsWith('/node/')
   const nodeId = isNodeView ? path.split('/node/')[1] : null
 
-  function getBreadcrumbs(): Array<{ label: string; path: string }> {
-    if (!nodeId) return []
-    const crumbs: Array<{ label: string; path: string }> = []
+  const { ancestors, current } = useMemo(() => {
+    if (!nodeId) return { ancestors: [], current: null }
+    // Build path walking UP from current node
+    const fullPath: Array<{ label: string; id: string }> = []
     let cur = s.getNode(nodeId)
     const visited = new Set<string>()
-    while (cur && cur.parentId && !visited.has(cur.id)) {
+    while (cur && !visited.has(cur.id)) {
       visited.add(cur.id)
-      crumbs.unshift({ label: cur.text || 'Sin título', path: `/node/${cur.id}` })
+      fullPath.unshift({ label: cur.text || 'Sin título', id: cur.id })
+      if (!cur.parentId) break
       cur = s.getNode(cur.parentId) ?? undefined
     }
-    return crumbs
-  }
+    // fullPath = [root, ..., parent, current]
+    const current = fullPath[fullPath.length - 1] ?? null
+    const ancestors = fullPath.slice(0, -1)
+    return { ancestors, current }
+  }, [nodeId, s]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const breadcrumbs = useMemo(() => getBreadcrumbs(), [nodeId]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Only show ancestors, not current node (shown as big title in view)
-  const ancestorCrumbs = breadcrumbs.slice(0, -1)
+  // Truncate long labels for display
+  const truncate = (label: string, max = 22) =>
+    label.length > max ? label.slice(0, max) + '…' : label
 
-  // Close menu on outside click
+  // ── User tags (para el filtro de #tags) ──────────────────────────────────
+  const userTags = useMemo(() => s.allUsedTags().slice(0, 20), [s])
+
+  // ── Close on outside click ────────────────────────────────────────────────
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
         setMenuOpen(false)
+      if (filterWrapRef.current && !filterWrapRef.current.contains(e.target as Node)) {
+        setFilterOpen(false)
+        setFilterCategory(null)
       }
     }
-    if (menuOpen) document.addEventListener('mousedown', handleClick)
+    document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [menuOpen])
+  }, [])
 
-  // ⌘F → focus filter
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault()
         filterRef.current?.focus()
         filterRef.current?.select()
+        setFilterOpen(true)
       }
-      if (e.key === 'Escape' && filterFocused) {
+      if (e.key === 'Escape' && filterOpen) {
         onFilter('')
+        setFilterOpen(false)
+        setFilterCategory(null)
         filterRef.current?.blur()
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [filterFocused, onFilter])
+  }, [filterOpen, onFilter])
+
+  // ── Apply chip filter ─────────────────────────────────────────────────────
+  function applyChip(query: string) {
+    // Toggle: if already active, remove it; otherwise set it
+    if (filterText === query) {
+      onFilter('')
+    } else {
+      onFilter(query)
+    }
+    filterRef.current?.blur()
+    setFilterOpen(false)
+    setFilterCategory(null)
+  }
+
+  function applyTagFilter(tag: string) {
+    const q = `#${tag}`
+    applyChip(q)
+  }
 
   function goHome() { navigate('/') }
-  function goToday() {
-    const diary = s.todayDiary()
-    if (diary) navigate(`/node/${diary.id}`)
-  }
+
+  const alreadySaved = filterText ? getShortcuts().some(s => s.query === filterText) : false
 
   return (
     <div className="wf-topbar">
-      {/* Nav: back + forward + home */}
+
+      {/* ── Nav: back + forward ── */}
       <div className="wf-topbar-nav">
-        <button
-          className="wf-topbar-btn"
-          onClick={() => window.history.back()}
-          title="Atrás (⌘[)"
-        >
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <button className="wf-topbar-btn" onClick={() => window.history.back()} title="Atrás (⌘[)">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </button>
-        <button
-          className="wf-topbar-btn"
-          onClick={() => window.history.forward()}
-          title="Adelante (⌘])"
-        >
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <button className="wf-topbar-btn" onClick={() => window.history.forward()} title="Adelante (⌘])">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-          </svg>
-        </button>
-        <button
-          className="wf-topbar-btn wf-topbar-home"
-          onClick={goHome}
-          title="Inicio"
-        >
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
         </button>
       </div>
 
-      {/* Breadcrumb */}
-      {ancestorCrumbs.length > 0 && (
-        <div className="wf-topbar-breadcrumb">
-          {ancestorCrumbs.map((crumb, i) => (
-            <span key={crumb.path}>
-              {i > 0 && <span className="wf-topbar-crumb-sep">›</span>}
-              <button
-                className="wf-topbar-crumb-btn"
-                onClick={() => navigate(crumb.path)}
-              >
-                {crumb.label.length > 24 ? crumb.label.slice(0, 24) + '…' : crumb.label}
-              </button>
+      {/* ── Breadcrumb integrado con casa ── */}
+      <div className="wf-topbar-breadcrumb">
+        {/* Casa — siempre visible, lleva al raíz */}
+        <button className="wf-topbar-crumb-home" onClick={goHome} title="Inicio">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+        </button>
+
+        {/* Ancestros clickables */}
+        {ancestors.map(a => (
+          <span key={a.id} className="wf-topbar-crumb-segment">
+            <span className="wf-topbar-crumb-sep">›</span>
+            <button
+              className="wf-topbar-crumb-btn"
+              onClick={() => navigate(`/node/${a.id}`)}
+              title={a.label}
+            >
+              {truncate(a.label)}
+            </button>
+          </span>
+        ))}
+
+        {/* Nodo actual — no clickable, diferenciado */}
+        {current && (
+          <span className="wf-topbar-crumb-segment">
+            <span className="wf-topbar-crumb-sep">›</span>
+            <span className="wf-topbar-crumb-current" title={current.label}>
+              {truncate(current.label, 28)}
             </span>
-          ))}
-          <span className="wf-topbar-crumb-sep">›</span>
-        </div>
-      )}
+          </span>
+        )}
+      </div>
 
       <div className="wf-topbar-spacer" />
 
-      {/* Filter input */}
-      <div className={`wf-topbar-filter ${filterFocused || filterText ? 'focused' : ''}`} style={{ position: 'relative' }}>
-        <svg className="wf-topbar-filter-icon" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-        </svg>
-        <input
-          ref={filterRef}
-          className="wf-topbar-filter-input"
-          placeholder="Filtrar… (⌘F)"
-          value={filterText}
-          onChange={e => onFilter(e.target.value)}
-          onFocus={() => setFilterFocused(true)}
-          onBlur={() => setTimeout(() => setFilterFocused(false), 150)}
-        />
-        {filterText && (
-          <button
-            className="wf-topbar-filter-clear"
-            onClick={() => { onFilter(''); filterRef.current?.focus() }}
-          >
-            ×
-          </button>
-        )}
-        {/* Filter suggestion chips — shown when focused and no text */}
-        {filterFocused && !filterText && (
-          <div className="wf-filter-suggestions">
-            {FILTER_SUGGESTIONS.map(s => (
+      {/* ── Filtro tipo Workflowy ── */}
+      <div className="wf-topbar-filter-wrap" ref={filterWrapRef}>
+        <div className={`wf-topbar-filter ${filterOpen || filterText ? 'focused' : ''}`}>
+          <svg className="wf-topbar-filter-icon" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+          </svg>
+          <input
+            ref={filterRef}
+            className="wf-topbar-filter-input"
+            placeholder="Filtrar… (⌘F)"
+            value={filterText}
+            onChange={e => onFilter(e.target.value)}
+            onFocus={() => setFilterOpen(true)}
+          />
+          {filterText && (
+            <button
+              className="wf-topbar-filter-clear"
+              onMouseDown={e => { e.preventDefault(); onFilter(''); filterRef.current?.focus() }}
+            >×</button>
+          )}
+        </div>
+
+        {/* Panel de filtro — se muestra al hacer focus */}
+        {filterOpen && (
+          <div className="wf-filter-panel">
+            {/* Fila de categorías */}
+            <div className="wf-filter-cats">
               <button
-                key={s.query}
-                className="wf-filter-chip"
-                onMouseDown={e => { e.preventDefault(); onFilter(s.query) }}
+                className={`wf-filter-cat ${filterCategory === 'tags' ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); setFilterCategory(c => c === 'tags' ? null : 'tags') }}
+                title="Filtrar por tag"
               >
-                {s.label}
+                <span>#</span>
               </button>
-            ))}
+              <button
+                className={`wf-filter-cat ${filterCategory === 'dates' ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); setFilterCategory(c => c === 'dates' ? null : 'dates') }}
+                title="Filtrar por fecha"
+              >
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <button
+                className={`wf-filter-cat ${filterCategory === 'tasks' ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); setFilterCategory(c => c === 'tasks' ? null : 'tasks') }}
+                title="Filtrar por tipo"
+              >
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Chips de la categoría activa */}
+            {filterCategory === 'tags' && (
+              <div className="wf-filter-chips">
+                {userTags.length === 0 && (
+                  <span className="wf-filter-chips-empty">Sin tags aún</span>
+                )}
+                {userTags.map(tag => (
+                  <button
+                    key={tag}
+                    className={`wf-filter-chip ${filterText === `#${tag}` ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyTagFilter(tag) }}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {filterCategory === 'dates' && (
+              <div className="wf-filter-chips">
+                {DATE_CHIPS.map(c => (
+                  <button
+                    key={c.query}
+                    className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {filterCategory === 'tasks' && (
+              <div className="wf-filter-chips">
+                {TASK_CHIPS.map(c => (
+                  <button
+                    key={c.query}
+                    className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Sin categoría seleccionada: mostrar todos los tags del usuario */}
+            {!filterCategory && (
+              <div className="wf-filter-chips">
+                {DATE_CHIPS.slice(0,2).map(c => (
+                  <button key={c.query} className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}>
+                    {c.label}
+                  </button>
+                ))}
+                <button className={`wf-filter-chip ${filterText === 'tarea' ? 'active' : ''}`}
+                  onMouseDown={e => { e.preventDefault(); applyChip('tarea') }}>
+                  Tareas
+                </button>
+                <button className={`wf-filter-chip ${filterText === 'pendiente' ? 'active' : ''}`}
+                  onMouseDown={e => { e.preventDefault(); applyChip('pendiente') }}>
+                  Pendientes
+                </button>
+                {userTags.slice(0, 5).map(tag => (
+                  <button key={tag}
+                    className={`wf-filter-chip wf-filter-chip--tag ${filterText === `#${tag}` ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyTagFilter(tag) }}>
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* ⭐ Guardar filtro como atajo — solo visible cuando hay texto en el filtro */}
-      {filterText && (() => {
-        const alreadySaved = getShortcuts().some(s => s.query === filterText)
-        return (
-          <button
-            className={`wf-topbar-btn wf-topbar-star${alreadySaved ? ' starred' : ''}`}
-            title={alreadySaved ? 'Ya guardado como atajo' : 'Guardar filtro como atajo (⭐)'}
-            onClick={() => {
-              if (alreadySaved) return
-              const name = prompt('Nombre para este atajo:', filterText)
-              if (!name) return
-              addFilterShortcut(name, filterText)
-              window.dispatchEvent(new Event('wf:shortcuts-changed'))
-            }}
-          >
-            {alreadySaved ? '★' : '☆'}
-          </button>
-        )
-      })()}
+      {/* ⭐ Guardar como atajo */}
+      {filterText && (
+        <button
+          className={`wf-topbar-btn wf-topbar-star${alreadySaved ? ' starred' : ''}`}
+          title={alreadySaved ? 'Ya guardado' : 'Guardar filtro como atajo'}
+          onClick={() => {
+            if (alreadySaved) return
+            const name = prompt('Nombre para este atajo:', filterText)
+            if (!name) return
+            addFilterShortcut(name, filterText)
+            window.dispatchEvent(new Event('wf:shortcuts-changed'))
+          }}
+        >
+          {alreadySaved ? '★' : '☆'}
+        </button>
+      )}
 
       {/* ⌘K */}
-      <button
-        className="wf-topbar-btn"
-        onClick={onCommandPalette}
-        title="Búsqueda rápida (⌘K)"
-      >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+      <button className="wf-topbar-btn" onClick={onCommandPalette} title="Búsqueda rápida (⌘K)">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
         </svg>
         <span className="wf-topbar-shortcut-hint">⌘K</span>
       </button>
 
-      {/* Menú general */}
+      {/* ··· Menú general */}
       <div className="wf-topbar-menu-wrap" ref={menuRef}>
         <button
-          className={`wf-topbar-btn wf-topbar-menu-btn ${menuOpen ? 'active' : ''}`}
+          className={`wf-topbar-btn ${menuOpen ? 'active' : ''}`}
           onClick={() => setMenuOpen(v => !v)}
           title="Menú"
         >
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
           </svg>
         </button>
         {menuOpen && (
           <div className="wf-topbar-dropdown">
-            <button className="wf-topbar-dropdown-item" onClick={() => { goToday(); setMenuOpen(false) }}>
-              <span>📓</span> Ir a hoy
-            </button>
             <button className="wf-topbar-dropdown-item" onClick={() => { navigate('/calendar'); setMenuOpen(false) }}>
               <span>📅</span> Calendario
             </button>
@@ -246,7 +375,7 @@ export default function WFTopBar({
               <span>⚙️</span> Ajustes
             </button>
             <div className="wf-topbar-dropdown-sep" />
-            <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={() => { onLogout(); setMenuOpen(false) }}>
+            <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>
               <span>↩</span> Cerrar sesión
             </button>
           </div>
