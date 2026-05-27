@@ -145,7 +145,10 @@ export async function relocateRootDiariesToAgenda(): Promise<void> {
     }
   }
 
-  // El store ya marca los nodos como dirty en updateNode/deleteNode, la sync es automática
+  // Forzar sync inmediato para que el cambio se persista en el servidor
+  // antes de que el usuario pueda recargar la página (sin esto, la reubicación
+  // podría perderse si el usuario recarga en los primeros 1.5s)
+  await store.sync(true)
 }
 
 // Mantener para compatibilidad con imports existentes

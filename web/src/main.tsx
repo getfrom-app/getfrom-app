@@ -20,7 +20,10 @@ applyAccent(getStoredAccent())
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter basename="/app">
+    <BrowserRouter
+      basename="/app"
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <App />
     </BrowserRouter>
   </React.StrictMode>
