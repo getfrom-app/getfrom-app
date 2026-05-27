@@ -1,6 +1,57 @@
 # From — Manual de usuario
 
-> Versión 3.20 / Web v8.22 · iOS 1.2 · macOS 14+ · iOS 17+ · getfrom.app/app
+> Web v9.0 · iOS 1.0 · Mac (Tauri v2, en desarrollo) · getfrom.app
+
+---
+
+## Arquitectura de código — ramas y repositorios (2026-05-28)
+
+### Repos activos
+
+| Repo | URL | Rama activa | Descripción |
+|---|---|---|---|
+| **getfrom-app** | github.com/getfrom-app/getfrom-app | `main` | Web v9.0 en producción + servidor landing |
+| **from-mac** | github.com/albertolezaun-afk/from-mac | `main` | Mac app Tauri v2 (en desarrollo) |
+| **from-server** | github.com/albertolezaun-afk/from-server | `main` | API Railway (Hono + Bun + PostgreSQL) |
+| **from-app** | github.com/albertolezaun-afk/from-app | `main` | iOS app Swift — App Store |
+| **from-meta** | github.com/albertolezaun-afk/from-meta | `main` | Logs, ESTADO.md, documentación interna |
+
+### Ramas de backup (no tocar, solo recuperar si hace falta)
+
+| Repo | Rama | Qué guarda |
+|---|---|---|
+| getfrom-app | `backup/pre-wf-web-main` | Web v8.56 — arquitectura anterior a la v9 WF |
+| from-app | `backup/pre-tauri-swift-main` | Todo el código Swift Mac (v3.20 build 105) antes de la transición a Tauri |
+
+### Ramas congeladas (desarrollo terminado, no se toca)
+
+| Repo | Rama | Estado |
+|---|---|---|
+| getfrom-app | `experiment/workflowy` | Mergeado a main en v9.0. Congelada. |
+
+### Cómo recuperar un backup
+
+```bash
+# Ejemplo: recuperar la web antigua
+cd /path/to/getfrom-app
+git checkout backup/pre-wf-web-main
+
+# Ejemplo: recuperar el código Swift del Mac
+cd /path/to/from-app
+git checkout backup/pre-tauri-swift-main
+```
+
+---
+
+## Stack tecnológico (Mayo 2026)
+
+| Plataforma | Tecnología | Estado |
+|---|---|---|
+| **Web** | React 18 + TypeScript + Vite + React Router v6 | ✅ Producción |
+| **Mac** | Tauri v2 + Rust + WebView (frontend = web React) | 🔧 En desarrollo |
+| **iOS** | Swift + SwiftUI | ✅ App Store |
+| **Servidor** | Hono + Bun + Drizzle ORM + PostgreSQL (Railway) | ✅ Producción |
+| **Archivos** | Cloudflare R2 | ✅ Producción |
 
 ---
 
