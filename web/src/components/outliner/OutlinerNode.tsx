@@ -1763,7 +1763,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             _movedRef: true,
             _refTarget: node.id,
             _refLabel: opts.label,
-            _refWasTask: node.status !== null,
+            // wasTask: era tarea ya, o se convirtió en tarea al mover
+            _refWasTask: node.status !== null || !!opts.makeTask || !!opts.isEvent,
           })
         })
       }
@@ -2278,15 +2279,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         >
           {/* Colapsar placeholder — mismo espacio que nodo normal */}
           <button className="collapse-btn" style={{ visibility: 'hidden' }} tabIndex={-1} />
-          {/* Bullet o checkbox gris con SVG igual al normal */}
+          {/* Misma estructura que nodo normal: nav-dot + bullet/checkbox */}
+          <button className="bullet-nav-dot" tabIndex={-1} style={{ cursor: 'default' }} />
           {movedRef.wasTask ? (
-            <button className="bullet-btn task task-sq--future" tabIndex={-1} style={{ opacity: 0.4, cursor: 'default' }}>
+            <button className="bullet-btn task task-sq--future" tabIndex={-1} style={{ opacity: 0.5, cursor: 'default' }}>
               <svg width="14" height="14" viewBox="0 0 14 14">
                 <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.06"/>
               </svg>
             </button>
           ) : (
-            <button className="bullet-btn" tabIndex={-1} style={{ opacity: 0.35, cursor: 'default' }}>
+            <button className="bullet-btn" tabIndex={-1} style={{ cursor: 'default' }}>
               <span className="bullet-dot" />
             </button>
           )}
