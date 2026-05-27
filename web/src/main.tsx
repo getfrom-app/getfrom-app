@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/index.css'
 import { getStoredTheme, applyTheme, getStoredDensity, applyDensity, getStoredAccent, applyAccent } from './hooks/useTheme'
+
 // Apply all preferences immediately to avoid FOUC
 applyTheme(getStoredTheme())
 applyDensity(getStoredDensity())
@@ -13,6 +14,12 @@ applyAccent(getStoredAccent())
 // import.meta.env.VITE_TAURI = "true" se inyecta en vite.config.tauri.ts en build time
 const isTauri = import.meta.env.VITE_TAURI === 'true'
 const basename = isTauri ? '/' : '/app'
+
+// En Tauri: añadir clase al body para CSS específico (titlebar, etc.)
+if (isTauri) {
+  document.documentElement.classList.add('tauri-mac')
+  document.body.classList.add('tauri-mac')
+}
 
 // GitHub Pages SPA redirect: restore path from ?p= param (solo en web)
 if (!isTauri) {

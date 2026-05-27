@@ -7,6 +7,19 @@ const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string
 const APPLE_WEB_SERVICE_ID = import.meta.env.VITE_APPLE_WEB_SERVICE_ID as string | undefined
 const APPLE_REDIRECT_URI   = import.meta.env.VITE_APPLE_REDIRECT_URI as string | undefined
 
+// En Tauri: OAuth se abre en el browser del sistema vía tauri-plugin-shell
+const isTauri = import.meta.env.VITE_TAURI === 'true'
+
+async function openInBrowser(url: string) {
+  if (isTauri) {
+    // Importación dinámica para no romper el build web
+    const { open } = await import('@tauri-apps/plugin-shell')
+    await open(url)
+  } else {
+    window.open(url, '_blank')
+  }
+}
+
 // Carga dinámica de scripts de terceros (Google/Apple) — solo en AuthPage
 // Así no interfieren con el DOM de React en el resto de la app
 function loadScript(src: string, id: string): Promise<void> {
@@ -110,6 +123,14 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   }, [handleGoogleCredential])
 
   async function handleGoogleClick() {
+    if (isTauri) {
+      // En Tauri: abrir OAuth de Google en el browser del sistema
+      // El servidor maneja el callback y emite un deep link from://auth-callback?token=...
+      const redirectUri = 'from://auth-callback'
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_WEB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`
+      await openInBrowser(googleAuthUrl)
+      return
+    }
     if (!GOOGLE_WEB_CLIENT_ID || !window.google?.accounts?.id) {
       setError('Google Sign-In no está disponible')
       return
@@ -136,6 +157,13 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   }, [])
 
   async function handleAppleClick() {
+    if (isTauri) {
+      // En Tauri: abrir Apple Sign-In en browser del sistema
+      const redirectUri = 'from://auth-callback'
+      const appleAuthUrl = `https://appleid.apple.com/auth/authorize?client_id=${APPLE_WEB_SERVICE_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code%20id_token&scope=email%20name&response_mode=fragment`
+      await openInBrowser(appleAuthUrl)
+      return
+    }
     if (!APPLE_WEB_SERVICE_ID || !window.AppleID?.auth) {
       setError('Apple Sign-In no está disponible')
       return

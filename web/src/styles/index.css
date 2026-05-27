@@ -10324,3 +10324,22 @@ a:focus-visible {
   letter-spacing: 0.05em;
   margin-bottom: 2px;
 }
+
+/* ── Tauri Mac — ajustes para titlebar overlay ──────────────────────────────
+   titleBarStyle: Overlay coloca los traffic lights encima del contenido.
+   Añadimos padding-top al sidebar-header para que no queden tapados.     */
+.tauri-mac .sidebar-header {
+  padding-top: 36px;
+  min-height: 72px;
+}
+
+/* Área draggable para mover la ventana (encima del sidebar-header) */
+.tauri-mac .sidebar-header {
+  -webkit-app-region: drag;
+}
+/* Los botones dentro del header no deben ser draggables */
+.tauri-mac .sidebar-header button,
+.tauri-mac .sidebar-header a,
+.tauri-mac .sidebar-header [role="button"] {
+  -webkit-app-region: no-drag;
+}
