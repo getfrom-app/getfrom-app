@@ -432,27 +432,42 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '@') {
-      // @ — contextos del árbol 🧠 Contexto primero (slugs jerárquicos), luego allUsedTags
-      const treeTagSlugs: string[] = []
+      // @ — contextos del árbol 🧠 Contexto: buscar por nombre visible, no por slug
+      const treeItems: { id: string; label: string; slug: string }[] = []
       const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
       if (tagsRoot) {
-        function collectSlugs(parentId: string, prefix: string) {
+        function collectContextNodes(parentId: string, prefix: string) {
           for (const child of store.children(parentId)) {
             if (child.deletedAt) continue
             const slug = (prefix ? prefix + '/' : '') +
               (child.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-            treeTagSlugs.push(slug)
-            collectSlugs(child.id, slug)
+            treeItems.push({ id: slug, label: child.text || slug, slug })
+            collectContextNodes(child.id, slug)
           }
         }
-        collectSlugs(tagsRoot.id, '')
+        collectContextNodes(tagsRoot.id, '')
       }
-      const userTags = store.allUsedTags()
-      const allTags = Array.from(new Set([...treeTagSlugs, ...userTags, ...COMMON_TYPES]))
-      return allTags
-        .filter(t => !query || t.toLowerCase().includes(query.toLowerCase()))
+      // Fallback: allUsedTags que no estén ya en treeItems
+      const existingSlugs = new Set(treeItems.map(i => i.slug))
+      const userTags = store.allUsedTags().filter(t => !existingSlugs.has(t))
+      const allItems = [
+        ...treeItems,
+        ...userTags.map(t => ({ id: t, label: t, slug: t })),
+        ...COMMON_TYPES.filter(t => !existingSlugs.has(t)).map(t => ({ id: t, label: t, slug: t })),
+      ]
+      const q = query.trim().toLowerCase()
+      return allItems
+        .filter(item => !q || item.label.toLowerCase().includes(q) || item.slug.includes(q))
+        .sort((a, b) => {
+          // Priorizar: empieza por query > contiene query en label
+          const al = a.label.toLowerCase(), bl = b.label.toLowerCase()
+          const aStarts = al.startsWith(q), bStarts = bl.startsWith(q)
+          if (aStarts && !bStarts) return -1
+          if (!aStarts && bStarts) return 1
+          return al.localeCompare(bl)
+        })
         .slice(0, 10)
-        .map(t => ({ id: t, label: t }))
+        .map(item => ({ id: item.id, label: item.label }))
     }
     // # — search nodes (node references), include status/types/body preview
     return store.allActive()
@@ -574,7 +589,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const pos = getCaretPosition(contentRef.current!)
     const before = text.slice(0, pos)
 
-    const atMatch = before.match(/@([\wÀ-ɏ]*)$/)
+    const atMatch = before.match(/@([^@\n]*)$/)
     const hashMatch = before.match(/#(\w*)$/)
 
     if (picker?.type === 'mirror') {
