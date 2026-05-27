@@ -1,341 +1,833 @@
 # From — Manual de usuario v9.0
 
-> Web · Mac · iOS · getfrom.app
+> Web · Mac · iPhone · getfrom.app
 
 ---
 
-## Primeros pasos
+## 1. ¿Qué es From?
 
-### ¿Qué es From?
+From es tu segundo cerebro. Una app de notas, tareas y gestión de conocimiento personal que organiza todo lo que piensas, haces y quieres recordar en un único árbol jerarquizado, disponible en cualquier dispositivo y con IA integrada que realmente conoce tu información.
 
-From es una app de notas y gestión de conocimiento personal (PKM) para Mac, iPhone y navegador. Funciona como un árbol de nodos colapsable al estilo Workflowy, con sincronización en tiempo real entre dispositivos e IA integrada de forma nativa.
+Existe para la persona que tiene demasiadas cosas en la cabeza, demasiadas apps para gestionarlas y no quiere invertir horas configurando sistemas complejos. En From, capturas, organizas y actúas desde un solo lugar.
 
-Todo en From vive en un único árbol. No hay carpetas ni archivos que gestionar: cada nota, tarea y evento es un nodo que puede tener hijos, moverse libremente y referenciarse desde cualquier parte.
+---
 
-### Crear una cuenta
+## 2. Primeros pasos
 
-1. Ve a [getfrom.app](https://getfrom.app) y pulsa **Crear cuenta**.
-2. Regístrate con email/contraseña, Google o Apple ID.
-3. Accede en el navegador, descarga la app Mac o instala la app iOS — todos sincronizan con la misma cuenta.
+### Crear cuenta
+
+Ve a [getfrom.app](https://getfrom.app) y pulsa **Crear cuenta**. Puedes registrarte con:
+
+- Email y contraseña
+- Cuenta de Google
+- Apple ID
+
+Con la misma cuenta accedes desde el navegador, Mac e iPhone. Todo sincroniza automáticamente.
+
+### Acceder desde el navegador
+
+Ve a [getfrom.app/app](https://getfrom.app/app) desde cualquier navegador moderno. No necesitas instalar nada.
+
+También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa el icono de instalación en la barra de dirección. En Safari iOS: Compartir → "Añadir a pantalla de inicio".
 
 ### Instalar en Mac
 
 1. Ve a [getfrom.app/download](https://getfrom.app/download) y descarga el archivo `From.dmg`.
-2. Abre el DMG y arrastra From a la carpeta Aplicaciones.
-3. Lanza From desde el Launchpad o desde Aplicaciones.
-4. Inicia sesión con tu cuenta.
+2. Abre el DMG y arrastra el icono de From a la carpeta **Aplicaciones**.
+3. Abre From desde el Launchpad o desde la carpeta Aplicaciones.
+4. Si macOS advierte que no puede comprobar el desarrollador, ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
+5. Inicia sesión con tu cuenta.
 
-Las actualizaciones se instalan automáticamente en segundo plano (Sparkle).
+Las actualizaciones de Mac se instalan automáticamente en segundo plano.
 
 ### Instalar en iPhone
 
-Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](https://getfrom.app/ios).
+Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](https://getfrom.app/ios). Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
 
-Inicia sesión con la misma cuenta para que tus notas aparezcan de inmediato.
+### El primer arranque: qué ves
 
-### Usar en el navegador
+Cuando entras en From por primera vez encuentras:
 
-Accede a [getfrom.app/app](https://getfrom.app/app) desde cualquier navegador moderno. No necesitas instalar nada.
+- **El árbol principal** en el centro: tu espacio de trabajo. Al principio está vacío salvo por los nodos raíz del sistema (Agenda, Contexto, Plantillas, Atajos).
+- **El sidebar izquierdo**: accesos rápidos, navegación y ajustes.
+- **El panel derecho**: propiedades y contenido del nodo seleccionado.
+- **La barra superior**: breadcrumb de navegación y controles de filtro y vista.
 
-Puedes instalarlo como PWA: en Chrome o Edge, haz clic en el icono de instalación de la barra de dirección. En Safari iOS: compartir → "Añadir a pantalla de inicio".
+Para empezar: haz clic en el área en blanco del árbol o pulsa `Enter` para crear tu primer nodo.
 
 ---
 
-## El árbol — cómo funciona From
+## 3. El árbol — cómo funciona From
 
-From organiza toda tu información como un árbol de nodos. Cada nodo puede contener texto, tareas, eventos u otros nodos hijos. No hay jerarquía fija: tú decides cómo anidas y organizas.
+Todo en From vive en un único árbol. No hay carpetas, no hay archivos: cada nota, tarea, evento o recurso es un **nodo** que puede contener otros nodos hijos.
 
-### Navegar por el árbol
+### Todo es un nodo
 
-- El árbol principal se muestra en la columna izquierda.
-- Haz clic en un nodo para abrirlo y ver su contenido completo en el panel central.
-- Haz clic en **▶** (o en el espacio a la izquierda del nodo) para colapsar o expandir sus hijos.
-- El botón **⟶** en hover sobre un nodo hace zoom: ese nodo pasa a ser la raíz visible del árbol (útil para trabajar dentro de un proyecto).
+Un proyecto es un nodo. Una tarea dentro de ese proyecto es un nodo hijo. Una nota que documenta la reunión de ese proyecto es otro nodo hijo. Todo anidado, todo visible, todo movible.
 
-### Crear y editar nodos
+### Crear nodos
 
-- **Enter**: crea un nuevo nodo hermano debajo del actual.
-- **Tab**: indenta el nodo (lo convierte en hijo del nodo anterior).
-- **Shift+Tab**: desindenta el nodo (lo sube un nivel).
-- Haz clic en el texto de cualquier nodo para editarlo directamente.
+- **Enter**: crea un nuevo nodo hermano debajo del actual. El cursor se mueve automáticamente al nuevo nodo.
+- **Clic en zona vacía**: crea un nodo al final del nivel en el que haces clic.
+
+Para editar cualquier nodo, haz clic en su texto.
+
+### Indentar y desindentar
+
+- **Tab**: indenta el nodo actual, convirtiéndolo en hijo del nodo de arriba.
+- **Shift+Tab**: desindenta el nodo, subiéndolo un nivel en la jerarquía.
+
+Ejemplo: tienes "Proyecto web" y creas "Reunión con diseñador" debajo. Si pulsas Tab en "Reunión con diseñador", pasa a ser hijo de "Proyecto web".
+
+### Colapsar y expandir
+
+Haz clic en el triángulo **▶** a la izquierda de un nodo para colapsar sus hijos. Haz clic de nuevo para expandirlos. Los nodos con hijos empiezan colapsados por defecto para mantener el árbol limpio.
+
+Atajos del slash menu:
+
+- `/Expandir todo` — expande todos los descendientes del nodo actual.
+- `/Colapsar todo` — colapsa todos los descendientes.
 
 ### Reorganizar con drag & drop
 
-- Arrastra cualquier nodo desde el handle `⋮⋮` (visible al pasar el cursor) para moverlo a otro lugar del árbol.
-- Puedes arrastrarlo para cambiar su posición entre hermanos o para reparentarlo bajo otro nodo.
+Pasa el cursor sobre cualquier nodo y aparecerá el handle de arrastre `⋮⋮` a la izquierda. Arrastra desde ese handle para:
+
+- Cambiar el orden del nodo entre sus hermanos.
+- Moverlo dentro de otro nodo (reparentar).
+
+Mientras arrastras, una línea de destino indica dónde caerá el nodo al soltar.
 
 ### Selección multinodo
 
-Arrastra el cursor desde una zona vacía sobre varios nodos para seleccionarlos con un rectángulo de selección. Los nodos seleccionados se marcan en azul. Con la selección activa puedes eliminarlos, moverlos o aplicar acciones en masa.
+Arrastra el cursor desde una zona vacía del árbol sobre varios nodos. Cuando el cursor sale del nodo inicial, se activa la selección por área: los nodos que cruzan el punto medio del cursor quedan seleccionados (marcados en azul). Con la selección activa puedes eliminarlos, moverlos o aplicar acciones en masa.
+
+También puedes arrastrar directamente desde el punto/bullet del nodo para iniciar la selección de inmediato.
+
+### Zoom en un nodo
+
+Pasa el cursor sobre cualquier nodo y aparece el icono **→** a su derecha. Haz clic para hacer zoom: ese nodo se convierte en la raíz visible del árbol. Útil para trabajar dentro de un proyecto sin que el resto del árbol distraiga.
+
+El **breadcrumb de navegación** en la barra superior muestra dónde estás y te permite volver a cualquier nivel anterior con un clic.
 
 ---
 
-## Slash menu — acciones rápidas
+## 4. Tipos de nodo
 
-Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Desde aquí puedes:
+### Nota (por defecto)
 
-| Acción | Qué hace |
+Cualquier nodo sin tipo especial es una nota. Escribe texto libre con formato Markdown inline:
+
+| Formato | Sintaxis |
 |---|---|
-| `/tarea` | Convierte el nodo en tarea con checkbox |
-| `/evento` | Convierte el nodo en evento con hora |
-| `/espejo` | Crea un espejo (⬡) del nodo actual en otro lugar |
-| `/fecha` | Abre el selector de fecha para el nodo |
-| `/mover` | Mueve el nodo a otro lugar del árbol |
-| `/hoy` | Navega al nodo del día actual en la Agenda |
-| `/contexto` | Añade un @contexto al nodo |
+| **Negrita** | `**texto**` |
+| *Cursiva* | `*texto*` |
+| `Código` | `` `texto` `` |
+| ~~Tachado~~ | `~~texto~~` |
+| [Enlace](url) | `[texto](url)` |
 
-Escribe después de `/` para filtrar opciones. Por ejemplo, `/ta` filtra y muestra `/tarea`.
+Las notas también pueden tener un **body**: contenido largo, multilínea, con Markdown completo. Al seleccionar una nota, su body aparece en el panel derecho donde puedes editarlo libremente. Útil para desarrollar ideas, documentar proyectos o guardar notas extensas.
 
----
+**Bloques de texto** (desde el slash menu):
 
-## Tipos de nodo
+- **Título** (H1, H2, H3): encabezados para estructurar el contenido.
+- **Lista**: un ítem con guión visual, mayor indentación. Diferente al bullet normal.
+- **Cita**: bloque con barra lateral izquierda.
+- **Código**: bloque con fuente monoespaciada y fondo diferenciado.
+- **Separador**: línea horizontal para dividir secciones.
 
-### Nota (bullet por defecto)
+**Atajos Markdown al escribir:**
 
-Cualquier nodo sin tipo especial es una nota. Puede contener texto libre con formato Markdown inline: **negrita** (`**texto**`), *cursiva* (`*texto*`), `código` (`` `texto` ``), ~~tachado~~ (`~~texto~~`) y [enlaces](url) (`[texto](url)`).
+- Escribe `# ` al inicio → Título H1
+- Escribe `## ` → Título H2
+- Escribe `### ` → Título H3
+- Escribe `- ` → bullet tipo Lista
 
 ### Tarea
 
-Las tareas tienen un checkbox ☐/☑ a la izquierda del texto.
+Las tareas tienen un checkbox ☐/☑ a la izquierda del texto. Marcarla como hecha archiva la tarea y actualiza su estado.
 
-**Crear una tarea:**
-- Escribe `/tarea` en un nodo, o
-- Usa el atajo de teclado correspondiente, o
-- Escribe `- [ ] ` al inicio del texto.
+**Cómo crear una tarea:**
 
-**Propiedades de tarea:**
-- **Fecha de vencimiento**: asigna una fecha desde el panel de propiedades o escribiendo en el campo de fecha con lenguaje natural (`hoy`, `mañana`, `lunes`, `15 mayo`).
-- **Prioridad**: alta, media o baja. Visible como badge junto al texto.
-- **Estado**: pendiente, en progreso, hecho, vencido.
+- Escribe `/tarea` en el slash menu.
+- Escribe `[ ] ` al inicio del texto del nodo.
+- Escribe `[x] ` para crear una tarea ya marcada como hecha.
+- Usa el atajo `⌘+Enter` sobre un nodo para convertirlo en tarea.
 
-Haz clic en el checkbox para marcar la tarea como hecha. Un clic más la desmarca.
+**Propiedades de tarea (panel derecho):**
+
+- **Estado**: Pendiente / En progreso / Hecho / Vencido.
+- **Fecha de vencimiento**: asígnala escribiendo en el campo de fecha con lenguaje natural. From detecta automáticamente expresiones como:
+  - `hoy`, `mañana`, `pasado mañana`
+  - `el lunes`, `el próximo viernes`
+  - `en 3 días`, `en 2 semanas`
+  - `15 junio`, `15/06`
+  - While escribes, aparece texto en gris (ghost text) con la fecha interpretada. Pulsa `Tab` para aceptarla.
+- **Prioridad**: alta, media o baja. Aparece como badge junto al texto.
+- **Repetición**: diaria, semanal, mensual o personalizada (cada N días/semanas/meses/años).
+
+**Marcar como hecha:** haz clic en el checkbox. Para desmarcarla, vuelve a hacer clic.
+
+**Ampliar una tarea:** cuando descubres que una tarea es más grande de lo que pensabas y necesita sub-tareas o notas, usa `/Ampliar` desde el slash menu. La tarea se convierte en un contenedor que puede tener hijos.
 
 ### Evento
 
-Los eventos tienen hora de inicio y fin. Se muestran en la Agenda y, si tienes Google Calendar conectado, sincronizan automáticamente.
+Los eventos tienen hora de inicio y hora de fin. Aparecen en el Planificador y en la vista de la Agenda del día correspondiente. Si tienes Google Calendar conectado, los eventos sincronizan automáticamente en ambas direcciones.
 
-**Crear un evento:**
-- Escribe `/evento` en un nodo, o
+**Cómo crear un evento:**
+
+- Escribe `/evento` en el slash menu.
 - Escribe `-e ` al inicio del texto.
+
+El modal de creación de evento te permite:
+
+- Poner título al evento.
+- Elegir fecha (obligatoria).
+- Añadir hora de inicio y fin (opcional; si no hay hora, es un evento de todo el día).
+- Activar repetición.
 
 ### Espejo ⬡
 
-Un espejo es una referencia a otro nodo. Aparece con el icono ⬡ y muestra el contenido del nodo original. Editar el espejo edita el nodo original (y viceversa). Útil para mostrar el mismo nodo en varios contextos sin duplicarlo.
+Un espejo es una referencia sincronizada a otro nodo. Muestra exactamente el mismo contenido que el original. Si editas el espejo, editas el original (y viceversa). Si editas el original, el espejo refleja el cambio de inmediato.
+
+**Para qué sirve un espejo:**
+
+- Quieres que una tarea aparezca tanto en "Trabajo" como en "Proyecto X" sin duplicarla.
+- Mueves una tarea a otro día: el nodo original queda con un espejo automático en su lugar para que no pierdas el rastro.
+- Un recurso o nota que es relevante en varios contextos.
+
+**Cómo crear un espejo:**
+
+- Slash menu → `/Espejo` → se abre un buscador → selecciona el nodo que quieres reflejar.
+- Clic derecho sobre el nodo → "Crear espejo".
+
+Los espejos se identifican visualmente con el icono ⬡ junto al texto.
+
+### Recurso
+
+Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube, un podcast, una página web. From intenta extraer automáticamente el título del enlace al pegarlo.
+
+**Cómo crear un recurso:**
+
+- Slash menu → `/Recurso`.
+- Pega una URL directamente en un nodo vacío: From la detecta y ofrece convertirla en recurso.
+
+**Propiedades de un recurso (panel derecho):**
+
+- URL del enlace.
+- Estado: Pendiente / Futuro / Hecho (para marcar si lo has consumido o no).
+- Tipo detectado automáticamente (artículo, vídeo YouTube, podcast...).
+
+Los recursos aparecen en el bloque de recursos de la Agenda diaria para que recuerdes lo que tienes pendiente de revisar.
+
+### Agente IA
+
+Un agente es un nodo especial que ejecuta una tarea con IA de forma autónoma. Define qué debe hacer (prompt), cuándo se activa (schedule) y qué acciones puede realizar (crear nodos, buscar, leer tu árbol).
+
+**Cómo crear un agente:** slash menu → `/Agente`.
+
+**Casos de uso:**
+
+- Resumir el diario de hoy cada noche a las 23:00.
+- Extraer tareas de una nota larga cuando la terminas.
+- Procesar el inbox de capturas y clasificar los items.
+- Buscar en internet y guardar el resumen como nota.
+
+Los agentes se configuran desde el panel derecho: prompt, schedule (al abrir la app / diario / semanal / hora concreta) y permisos.
+
+### Prompt
+
+Un prompt es una plantilla de texto reutilizable para la IA. Créalo una vez y úsalo cuando quieras lanzar siempre el mismo tipo de instrucción.
+
+**Cómo crear un prompt:** slash menu → `/Prompt`.
+
+Útil para: "resume esto en 3 bullets", "extrae las tareas", "traduce al inglés", "mejora el tono formal".
 
 ---
 
-## Sistema @ (Contextos)
+## 5. El Slash Menu — acciones rápidas
 
-Los contextos son etiquetas que agrupan nodos relacionados. Funcionan de forma similar a las áreas o proyectos en otros sistemas.
+Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Puedes seguir escribiendo para filtrar: `/ta` muestra todas las opciones que contienen "ta".
+
+### Texto
+
+| Acción | Resultado |
+|---|---|
+| Texto | Nodo de texto normal (por defecto) |
+| Lista | Nodo con guión visual y mayor indentación |
+| Título 1 | Encabezado grande (H1) |
+| Título 2 | Encabezado mediano (H2) |
+| Título 3 | Encabezado pequeño (H3) |
+| Cita | Bloque de cita con barra lateral |
+| Código | Bloque de código con fuente monoespaciada |
+| Separador | Línea horizontal divisoria |
+
+### Objetos
+
+| Acción | Resultado |
+|---|---|
+| Nota | Convierte el nodo en nota (tipo base) |
+| Tarea | Convierte el nodo en tarea con checkbox |
+| Evento | Convierte el nodo en evento con hora |
+| Recurso | Convierte el nodo en recurso (enlace externo) |
+| Ampliar | Convierte una tarea en un contenedor expandible |
+
+### IA
+
+| Acción | Resultado |
+|---|---|
+| Agente | Crea un nodo de tipo agente autónomo |
+| Prompt | Crea una plantilla de prompt reutilizable |
+| Resumir | Resume el contenido del nodo y sus hijos |
+| Encontrar tareas | Extrae tareas del texto del nodo y las crea como hijos |
+
+### Vistas
+
+| Acción | Resultado |
+|---|---|
+| Lista inline | Muestra los hijos en vista de lista (árbol) |
+| Tabla inline | Muestra los hijos en vista de tabla con columnas |
+| Kanban inline | Muestra los hijos en tablero kanban por estado |
+| Calendario inline | Muestra los hijos en vista de calendario |
+
+### Mover
+
+| Acción | Resultado |
+|---|---|
+| Mover a fecha… | Abre selector: escribe una fecha en lenguaje natural |
+| Mover a hoy | Mueve el nodo al día de hoy en la Agenda |
+| Mover a mañana | Mueve el nodo al día de mañana |
+| Mover a próxima semana | Mueve al primer día de la semana siguiente |
+
+Al mover un nodo a otro día, se deja un espejo ⬡ en la posición original para que no pierdas el rastro.
+
+### Árbol
+
+| Acción | Resultado |
+|---|---|
+| Expandir todo | Expande todos los nodos hijos recursivamente |
+| Colapsar todo | Colapsa todos los nodos hijos |
+| Contar hijos | Muestra cuántos descendientes tiene el nodo |
+| Duplicar | Crea una copia exacta del nodo con todos sus hijos |
+| Espejo | Crea un espejo de este nodo en otro lugar |
+
+---
+
+## 6. El Sidebar
+
+El sidebar es el panel izquierdo de navegación. Contiene:
+
+**📌 Atajos** — tus accesos rápidos personalizados, sincronizados entre dispositivos. Aparecen en la parte superior para que llegues de un clic a los nodos y filtros que usas más. Puedes reordenarlos arrastrándolos.
+
+**Hoy** — abre el nodo del día actual en la Agenda. Tu punto de partida cada mañana.
+
+**Planificador** — vista de calendario con tus tareas y eventos del mes. Desde aquí planificas y navegas entre días.
+
+**Papelera** — contiene los nodos eliminados. Puedes recuperarlos en cualquier momento (clic derecho → "Restaurar") o eliminarlos definitivamente.
+
+**Ajustes** — abre el panel de configuración: cuenta, IA, integraciones, apariencia, backup y preferencias.
+
+**Cerrar sesión** — cierra la sesión activa.
+
+---
+
+## 7. La barra superior
+
+La barra superior muestra en todo momento dónde estás y te da acceso a los controles de la vista actual.
+
+- **Breadcrumb de navegación**: muestra la ruta desde el nodo raíz hasta el nodo actual. Cada elemento es clicable para volver a ese nivel. Ejemplo: `Árbol > Trabajo > Proyecto web > Reunión 27 mayo`.
+- **⌘F** — activa el filtro inteligente inline. El árbol se filtra en tiempo real según los operadores que escribas.
+- **Iconos de vista**: cambian entre lista, tabla, kanban o calendario para el nodo actual.
+- **Modo oscuro** (icono luna): alterna entre tema claro y oscuro.
+
+---
+
+## 8. Sistema @ — Contextos
+
+Los contextos son etiquetas que agrupan nodos relacionados más allá de la jerarquía del árbol. Imagina que tienes proyectos de trabajo repartidos en distintas ramas del árbol: con un contexto `@trabajo` puedes verlos todos juntos de golpe sin reorganizar nada.
 
 ### Asignar un contexto
 
-Escribe `@` en cualquier nodo para abrir el picker de contextos. Busca o selecciona el contexto que quieres asignar. El nodo queda etiquetado.
+Escribe `@` en cualquier nodo. Se abre el picker de contextos con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
 
-### Dónde viven los contextos
+Puedes asignar más de un contexto al mismo nodo.
 
-Todos tus contextos se definen y gestionan en el nodo raíz del sistema **🧠 Contexto**. Abre ese nodo para crear nuevos contextos, renombrarlos o reorganizarlos.
+### Dónde se definen los contextos
+
+Todos tus contextos viven en el nodo raíz **🧠 Contexto**. Ábrelo para:
+
+- Crear nuevos contextos.
+- Renombrarlos.
+- Organizarlos en grupos.
+- Añadir a cada contexto información de fondo que la IA usa como contexto adicional al trabajar contigo (por ejemplo, en el contexto `@trabajo` puedes describir en qué empresa trabajas, cuál es tu rol y qué proyectos llevas).
+
+Dentro de **🧠 Contexto** también vive tu **Perfil**: información personal que la IA carga siempre para entenderte mejor sin que tengas que explicarte en cada conversación.
 
 ### Filtrar por @contexto
 
-En la barra de filtros (⌘F o barra superior), escribe `@trabajo` (o el nombre de tu contexto) para ver solo los nodos que tienen ese contexto asignado. Los resultados aparecen en el panel de filtro, con las mismas vistas disponibles (lista, tabla, kanban, calendario).
+En la barra de filtros (⌘F), escribe `@trabajo` (o el nombre de tu contexto) para ver todos los nodos con ese contexto asignado. Los contextos más usados aparecen como chips de sugerencia debajo del campo de filtro.
+
+### Por qué usar contextos
+
+Los contextos te permiten cruzar el árbol por dimensión. Tus tareas de trabajo están repartidas por proyectos en distintas ramas, pero con `@trabajo` las ves todas juntas. Tus lecturas pendientes en distintas carpetas aparecen juntas con `@leer`. Sin mover nada, sin duplicar nada.
 
 ---
 
-## Nodos raíz del sistema
+## 9. Nodos raíz del sistema
 
-From incluye varios nodos raíz especiales visibles en el sidebar. Son la estructura base del sistema:
+Siempre presentes al fondo del árbol (no se pueden eliminar):
 
-| Nodo | Función |
-|---|---|
-| **📅 Agenda** | Diario jerárquico: Año → Mes → Día. El día de hoy siempre está accesible. |
-| **🧠 Contexto** | Tus contextos (@trabajo, @personal, @proyecto...). |
-| **📋 Plantillas** | Plantillas reutilizables. Aplica una con `/plantilla`. |
-| **📌 Atajos** | Accesos rápidos que aparecen en el sidebar. Sincronizados entre dispositivos. |
-| **⚙️ Ajustes** | Configuración de cuenta, IA, integraciones y preferencias. |
+### 📅 Agenda
 
-### Agenda: el diario
+El diario de From. Organiza el tiempo en una jerarquía: **Agenda → Año → Mes → Día**. Cada día tiene su propia nota, y dentro de ella encuentras:
 
-El nodo 📅 Agenda organiza el tiempo en una jerarquía Año → Mes → Día. Al abrir el día de hoy encuentras:
-
-- Las tareas con vencimiento hoy (y las vencidas).
+- Las tareas con vencimiento ese día (incluidas las vencidas que siguen pendientes).
 - Los eventos del día (sincronizados con Google Calendar si está conectado).
-- Un espacio para escribir libremente: notas del día, capturas rápidas, ideas.
+- Un área de escritura libre: notas del día, capturas rápidas, ideas.
 
-Navega a días pasados o futuros expandiendo el árbol de la Agenda o usando el selector de fecha.
+**Ir al día de hoy:** pulsa **Hoy** en el sidebar o escribe `/hoy` en cualquier nodo.
 
-**Ir al día de hoy:** escribe `/hoy` en cualquier nodo, o pulsa el botón 📅 del sidebar.
+**Navegar a otros días:** expande el árbol de la Agenda. También puedes navegar desde el Planificador haciendo clic en cualquier día del calendario.
 
-### Plantillas
+**Cuando mueves una tarea "a hoy" o "a mañana"**, From la coloca dentro del nodo de ese día en la Agenda. En su posición original deja un espejo automático para que no pierdas la referencia.
 
-Guarda cualquier nodo como plantilla en 📋 Plantillas. Cuando apliques la plantilla con `/plantilla`, From crea una copia de ese nodo (con todos sus hijos) en el lugar actual.
+Los nodos con tareas pendientes en su interior se muestran con un icono 📁 (contenedor vivo), indicando que hay trabajo activo dentro aunque el nodo esté colapsado.
 
-Útil para reuniones recurrentes, checklist de proyectos, estructuras de notas que repites.
+### 🧠 Contexto
 
-### Atajos
+Gestiona tus contextos de trabajo y tu perfil personal para la IA.
 
-Fija cualquier nodo como atajo desde el menú contextual del nodo (clic derecho → "Fijar como atajo"). Aparece en el panel de 📌 Atajos del sidebar y sincroniza entre todos tus dispositivos.
+- **Perfil**: nodo especial dentro de Contexto. La IA lo carga siempre. Escribe aquí quién eres, en qué trabajas y cualquier información que quieras que la IA tenga siempre presente.
+- **Contextos**: crea aquí los @contextos que quieras. Puedes añadir dentro de cada contexto una descripción o instrucciones que la IA usará cuando trabajes en ese contexto.
+- **Prompts de IA por contexto**: dentro de cualquier contexto puedes añadir prompts específicos (hijos del tipo Prompt). La IA los detecta y los usa automáticamente cuando ese contexto está activo.
+
+### 📋 Plantillas
+
+Guarda aquí cualquier nodo (con todos sus hijos) como plantilla reutilizable. Una plantilla puede ser una estructura de proyecto, una checklist de onboarding, el formato de reunión semanal, o cualquier cosa que repitas.
+
+Para usar una plantilla: slash menu → `/Plantilla` en cualquier nodo. From crea una copia de la plantilla en la posición actual.
+
+### 📌 Atajos
+
+Contiene los atajos que has fijado. Desde aquí puedes reorganizarlos, renombrarlos o eliminarlos. También puedes hacer clic derecho en cualquier atajo del sidebar para gestionarlo directamente.
+
+### ⚙️ Ajustes
+
+Accesible también desde el sidebar. Contiene:
+
+- **Cuenta**: email, contraseña, plan actual, cancelar suscripción.
+- **IA**: modelo de IA activo, claves API propias (plan Pro/Lifetime), configuración de agentes.
+- **Predicciones**: añade palabras propias para que From las reconozca como señal de tarea o evento al escribir.
+- **Integraciones**: Google Calendar, conexión MCP con Claude.
+- **Datos / Backup**: historial de snapshots, crear snapshot manual, restaurar backup, exportar en JSON o Markdown.
+- **Apariencia**: tema claro/oscuro/sistema, densidad (compacto/normal/espacioso), color de acento, rango horario del planificador.
+- **Notificaciones**: configura qué alertas recibes y cómo.
 
 ---
 
-## Filtros inteligentes
+## 10. Filtros inteligentes
 
-### Abrir el filtro
+Los filtros te permiten ver exactamente lo que necesitas en cada momento, sin reorganizar el árbol.
 
-- **⌘F** desde cualquier vista, o
-- Usa la barra de filtros en la parte superior.
+**Activar:** ⌘F o clic en la barra de filtro superior.
 
-### Filtros disponibles
+### Operadores disponibles
 
-| Filtro | Muestra |
+| Operador | Muestra |
 |---|---|
-| `hoy` | Nodos con vencimiento hoy |
-| `mañana` | Vencimiento mañana |
-| `semana` | Vencimiento esta semana |
-| `pendiente` | Tareas no completadas |
+| `hoy` | Nodos con fecha de hoy o nota de diario de hoy |
+| `mañana` | Nodos con fecha de mañana |
+| `semana` | Nodos con fecha en la semana actual |
+| `tarea` | Todos los nodos que son tareas |
+| `pendiente` | Tareas pendientes (no completadas) |
 | `hecho` | Tareas completadas |
-| `vencido` | Tareas cuya fecha ya pasó |
+| `vencido` | Tareas cuya fecha ya pasó y no están hechas |
+| `evento` | Todos los eventos |
 | `@contexto` | Nodos con ese contexto asignado |
-| `#tag` | Nodos con ese tag |
-| `[[nombre]]` | Nodos que referencian ese nodo vía wiki-link |
-| `node:ID` | Nodo concreto por su ID |
+| `#tag` | Nodos que contienen ese tag en el texto |
+| `[[nombre]]` | Nodos que referencian ese nodo por nombre (wiki-link) |
+| `node:ID` | Nodo concreto y todos sus descendientes o referencias |
 
-Puedes combinar filtros. Ejemplo: `@trabajo pendiente` muestra las tareas pendientes del contexto trabajo.
+Los filtros son combinables. Escribe varios seguidos separados por espacio:
 
-### Vistas de resultados
+- `hoy pendiente` → tareas pendientes con fecha de hoy.
+- `@trabajo pendiente` → tareas pendientes del contexto trabajo.
+- `hoy pendiente @trabajo` → tareas pendientes de hoy en el contexto trabajo.
+- `vencido @personal` → tareas vencidas del contexto personal.
 
-Los resultados del filtro pueden verse en cuatro modos:
+La búsqueda ignora tildes y mayúsculas. `trabajo` encuentra también `Trabajo` y `trabájo`.
+
+### Chips de sugerencia
+
+Debajo del campo de filtro aparecen chips de acceso rápido: **Hoy**, **Tareas**, **Pendientes**, **Esta semana**, **Vencidas**, **Eventos**. Haz clic para activarlos directamente.
+
+### Vistas de resultado
+
+Los resultados pueden verse en cuatro modos. Cambia con los iconos de la barra:
 
 | Vista | Cuándo usarla |
 |---|---|
-| **Lista** | Vista jerárquica estándar, editable inline |
-| **Tabla** | Propiedades en columnas, útil para muchos nodos con metadatos |
-| **Kanban** | Tablero por estado o prioridad, drag & drop entre columnas |
-| **Calendario** | Distribución temporal por fecha de vencimiento |
+| **Lista** | Árbol filtrado editable inline. Vista estándar. |
+| **Tabla** | Columnas con propiedades (estado, fecha, prioridad). Ideal para muchos nodos con metadatos. |
+| **Kanban** | Tablero con columnas por estado o prioridad. Drag & drop entre columnas. |
+| **Calendario** | Vista mensual con nodos distribuidos por fecha de vencimiento. |
 
-Cambia de vista con los iconos en la barra superior del panel de resultados.
+### Guardar un filtro como atajo
 
-### Guardar como atajo
-
-Cualquier filtro puede fijarse como atajo con el botón 📌. Aparece en el sidebar para acceder con un clic. Útil para filtros frecuentes: "mis tareas de hoy", "@trabajo pendiente", "#cliente".
+Cuando tienes un filtro útil, fíjalo en el sidebar con el botón 📌 de la barra de resultados. Aparece en tus atajos y lo tienes disponible con un clic desde cualquier vista.
 
 ---
 
-## IA integrada
+## 11. Atajos (📌)
 
-### Chat IA
+Los atajos son accesos directos fijos en la parte superior del sidebar. Hay dos tipos:
 
-From incluye un chat de IA que tiene acceso a tu árbol de nodos. Puede leer tus notas, crear nuevos nodos y editar los existentes.
+**Atajo de nodo**: muestra ese nodo y todos sus descendientes y referencias. Como hacer zoom en ese nodo pero accesible siempre desde el sidebar.
 
-**Abrir el chat:**
-- Pulsa el icono de chat en la barra lateral, o
-- Escribe un espacio al inicio de un bloque vacío.
+**Atajo de filtro**: el resultado de un filtro guardado. Por ejemplo: "mis tareas de hoy", "@trabajo pendiente", "#lectura".
+
+### Cómo crear un atajo
+
+**Desde un filtro activo:** con el filtro en pantalla, pulsa el icono 📌 en la barra de resultados.
+
+**Desde un nodo:** clic derecho sobre el nodo → "Fijar como atajo". El atajo muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo desde otras partes del árbol.
+
+### Gestionar atajos
+
+- Los atajos tienen una vista asociada (lista/tabla/kanban/calendario) que se recuerda.
+- Se sincronizan entre todos tus dispositivos.
+- Para eliminar un atajo: clic derecho en el sidebar → "Eliminar". El nodo no se borra, solo el atajo.
+- Para reorganizar: arrastra los atajos en el sidebar o entra al nodo 📌 Atajos del árbol.
+
+---
+
+## 12. Vistas inline
+
+Cualquier nodo que tenga hijos puede mostrar esos hijos en cuatro modos de visualización distintos. Las vistas inline no cambian cómo se almacenan los datos, solo cómo los ves.
+
+Activa la vista desde el slash menu (→ Vistas) o desde los iconos de la barra superior del nodo.
+
+### Lista (por defecto)
+
+El árbol anidado clásico. Cada hijo aparece como un nodo con posibilidad de expandir sus propios hijos. Editable inline.
+
+### Tabla
+
+Cada hijo del nodo es una fila. Las columnas son las propiedades: estado, fecha de vencimiento, prioridad, y cualquier columna personalizada que crees.
+
+**Columnas personalizadas:** haz clic en "+" en la cabecera de la tabla para añadir una columna. Tipos disponibles: texto, número, selección, selección múltiple, fecha, checkbox, URL, tag, tarea, recordatorio.
+
+- Los headers de columna son clicables para ordenar (ascendente/descendente/original).
+- Puedes renombrar, reordenar y eliminar columnas.
+- Las columnas se comparten entre todas las vistas del mismo nodo (la tabla y el kanban ven los mismos datos).
+
+### Kanban
+
+Los hijos aparecen como tarjetas en columnas. Por defecto las columnas son los estados (Pendiente, En progreso, Hecho). Puedes agrupar por:
+
+- Estado
+- Prioridad
+- Cualquier columna de tipo selección
+
+Arrastra tarjetas entre columnas para actualizar el valor directamente. Haz clic en "+" dentro de una columna para crear un nuevo nodo con ese estado/valor ya asignado.
+
+### Calendario
+
+Los hijos con fecha de vencimiento aparecen en el día correspondiente de un calendario mensual. Haz clic en cualquier día para crear un nuevo nodo con esa fecha.
+
+### Multi-vistas: guarda más de una vista por nodo
+
+Puedes crear múltiples vistas para el mismo nodo (como las vistas de Notion). Pulsa el "+" junto a los tabs de vista para añadir una nueva. Cada vista guarda su tipo, configuración y nombre de forma independiente. Puedes renombrar, duplicar y eliminar vistas.
+
+---
+
+## 13. IA integrada
+
+### Chat IA (⌘J)
+
+El chat de IA vive en un panel lateral. La IA no es un chatbot genérico: conoce tu árbol, el nodo que tienes abierto, tus tareas del día y tu perfil.
+
+**Abrir el chat:** ⌘J o el icono de chat en la barra lateral.
 
 **Qué puede hacer:**
-- Resumir el contenido de una nota o proyecto.
-- Crear subtareas a partir de una descripción.
-- Buscar información dentro de tus notas ("¿qué decidimos sobre el cliente X?").
-- Redactar texto con el contexto de tu nota actual.
-- Añadir tareas directamente al árbol.
 
-**Contexto automático:** la IA conoce el nodo que tienes abierto, sus hijos y su contexto (@). No necesitas explicarle en qué estás trabajando.
+- Resumir el contenido del nodo actual y sus hijos.
+- Crear tareas, notas o eventos directamente en tu árbol (te pide confirmación antes de escribir).
+- Buscar en tus notas ("¿qué decidimos sobre el cliente X?").
+- Redactar texto con el contexto de lo que estás haciendo.
+- Responder preguntas usando tus propias notas como fuente.
+- Ejecutar acciones en masa ("marca como hecho todo lo de hoy").
 
-### IA Inline
+**Chips de acceso rápido:** al abrir el chat, aparecen chips de acciones sugeridas según el nodo que tienes abierto (Resumir, Priorizar, Organizar, Continuar escribiendo...). Haz clic para lanzar esa acción directamente.
 
-Dentro de cualquier nodo, pulsa el botón ✨ (visible en hover) para pedir ayuda al modelo directamente en ese punto. La respuesta se inserta como contenido del nodo con streaming en tiempo real.
+**Quick reply chips:** la IA puede sugerirte opciones de respuesta rápida en forma de chips. Haz clic en uno para enviarlo como tu próximo mensaje.
 
-**Casos de uso:**
-- Continuar o expandir el texto que estás escribiendo.
-- Generar una lista de ideas a partir del título del nodo.
-- Reformular o acortar el contenido existente.
+**Contexto automático:** no tienes que explicarle en qué estás. La IA carga automáticamente:
+- El nodo abierto con su título, body e hijos.
+- El diario de hoy con tus tareas y eventos.
+- Tus tareas pendientes (vencidas, hoy, próximas, sin fecha).
+- Los contextos (@) activos con sus instrucciones.
+- Tu perfil desde 🧠 Contexto.
 
-**Tab**: acepta la sugerencia de IA inline.
-**Esc**: descarta la sugerencia.
+### IA Inline (✨)
 
-### Agentes
+Dentro de cualquier nodo puedes pedir ayuda a la IA sin salir del editor.
 
-Los agentes son automatizaciones de IA que se ejecutan de forma programada o manual. Se crean como nodos normales y pueden leer tu árbol, crear notas y buscar en internet.
+**Cómo activar:**
 
-Configura el schedule desde el panel de propiedades del agente: al abrir la app, diario, semanal, o a una hora concreta.
+- Pulsa Espacio al principio de un nodo con bullet/lista para que aparezca el campo de prompt inline.
+- Usa `/Resumir` para resumir el contenido del nodo y sus hijos.
+- Usa `/Encontrar tareas` para que la IA lea el texto y extraiga las tareas, creándolas como hijos.
+
+La respuesta se inserta como hijos del nodo, con streaming en tiempo real. El resultado es editable inmediatamente.
+
+### Ghost text — predicciones mientras escribes
+
+Mientras escribes en cualquier nodo, From muestra sugerencias en gris claro (ghost text):
+
+- Si detecta un **verbo de acción** o una expresión que suena a tarea → sugiere convertir el nodo en tarea. Pulsa `Tab` para aceptar.
+- Si detecta una **fecha en lenguaje natural** (`mañana`, `el lunes`, `15 junio`) → sugiere esa fecha como vencimiento. Pulsa `Tab` para aceptar.
+- Si el texto parece un **evento** (hora, reunión, llamada) → sugiere tipo evento.
+
+Personaliza qué palabras activan estas sugerencias en **Ajustes → Predicciones**. Puedes añadir tus propios términos clave.
+
+### Códigos de variables en prompts
+
+Dentro de cualquier agente o prompt puedes usar variables que From resuelve antes de enviar a la IA:
+
+| Código | Se reemplaza por |
+|---|---|
+| `{{fecha}}` | Fecha actual completa |
+| `{{fecha_corta}}` | Fecha en formato corto (27/05/2026) |
+| `{{dia}}` | Nombre del día (miércoles) |
+| `{{semana}}` | Número de semana del año |
+| `{{mes}}` | Nombre del mes |
+| `{{año}}` | Año actual |
+| `{{hora}}` | Hora actual |
+| `{{nota}}` | Contenido del nodo actual |
+| `{{tag}}` | Tags/contextos del nodo actual |
+
+Para insertar un código en el editor: escribe `{{` y se abre un picker con todas las variables disponibles.
+
+### Agentes autónomos
+
+Los agentes son nodos de tipo Agente que se ejecutan de forma programada o manual. Pueden leer tu árbol, crear notas, ejecutar búsquedas en internet y modificar nodos.
+
+Los agentes se configuran en su panel de propiedades:
+
+- **Prompt**: qué debe hacer.
+- **Schedule**: cuándo se activa (al abrir la app, diario, semanal, hora concreta).
+- **Acciones permitidas**: crear nodos, modificar nodos, buscar en internet.
+
+**Ejemplos de agentes:**
+
+- Cada noche a las 23:30: "Resume el diario de hoy en 3 puntos clave y añádelos como hijos".
+- Cada lunes: "Lista las tareas de la semana que vienen y crea un resumen en Agenda".
+- Al abrir la app: "Muestra las tareas vencidas y pregunta qué hacer con cada una".
 
 ---
 
-## Backup y privacidad
+## 14. El Planificador
 
-### Backup automático
+El Planificador es la vista de calendario de From. Accede desde el sidebar (icono de calendario) o desde la barra lateral.
 
-From guarda un snapshot completo de tus notas en el servidor cada 2 horas (solo cuando hay cambios). Los últimos 12 snapshots se conservan (~24 horas de historia continua).
+- Vista **mensual** por defecto, con las tareas y eventos del mes distribuidos en sus días.
+- Las tareas con fecha aparecen en el día correspondiente.
+- Los eventos de Google Calendar aparecen con su color de calendario.
+- Haz clic en cualquier **día** para ir a ese día en la Agenda.
+- Haz clic en un **evento** para editarlo: cambiar título, hora, o eliminarlo.
+- El rango de horas del planificador se configura en Ajustes → Apariencia → Calendario y Timeline (por defecto 7:00-23:00).
 
-Puedes crear un snapshot manual en cualquier momento desde **Ajustes → Datos → Backups → "Crear snapshot ahora"**.
+---
+
+## 15. Google Calendar
+
+### Conectar
+
+Ve a **Ajustes → Integraciones → Google Calendar** y sigue el proceso de autorización. Solo necesitas hacerlo una vez.
+
+### Cómo funciona
+
+- Tus eventos de Google Calendar aparecen en el Planificador con el color de cada calendario.
+- Crear un evento en From lo crea también en Google Calendar.
+- Editar o eliminar un evento funciona en ambas direcciones: lo que cambias en From se refleja en Google Calendar, y viceversa.
+- Los colores de tus calendarios de Google se respetan.
+- La sincronización tiene en cuenta tu zona horaria local.
+
+### Eventos en la Agenda
+
+Si tienes Google Calendar conectado, los eventos del día aparecen en el nodo del día en la Agenda, junto a tus tareas. En el Planificador, los eventos de Google se muestran con su color original.
+
+---
+
+## 16. Mover nodos
+
+Hay varias formas de mover un nodo a otro lugar:
+
+**Drag & drop:** arrastra desde el handle `⋮⋮` (visible al pasar el cursor) y suelta en el destino.
+
+**Slash menu:**
+
+- `/Mover a hoy` → mueve al nodo del día de hoy en la Agenda.
+- `/Mover a mañana` → mueve al nodo de mañana.
+- `/Mover a próxima semana` → mueve al primer día de la semana siguiente.
+- `/Mover a fecha…` → escribe cualquier fecha en lenguaje natural.
+
+**Clic derecho → "Mover a..."** → abre un buscador para elegir el destino.
+
+**Atajos de teclado:**
+
+- `⌘↑` / `⌘↓` → mueve el nodo arriba o abajo entre sus hermanos.
+
+Al mover un nodo a otro día o lugar, el nodo original deja un **espejo automático ⬡** en su posición. Así no pierdes el rastro de dónde estaba.
+
+---
+
+## 17. Backup y privacidad
+
+### Backup automático en el servidor
+
+From crea un snapshot completo de tus datos en el servidor cada 2 horas (solo cuando hay cambios). Se conservan los últimos **12 snapshots** (~24 horas de historial continuo).
+
+Puedes crear un snapshot manual cuando quieras: **Ajustes → Datos → Backups → "Crear snapshot ahora"**.
 
 ### Restaurar un backup
 
-Elige un snapshot de la lista y pulsa "Restaurar". Antes de pisar tus datos, el servidor crea automáticamente un snapshot de seguridad (`pre-restore`) para que puedas deshacer si te equivocas.
+En **Ajustes → Datos → Backups**, elige cualquier snapshot de la lista y pulsa "Restaurar". Antes de sobrescribir tus datos, el servidor crea automáticamente un snapshot de seguridad (`pre-restore`) para que puedas deshacer si te equivocas.
 
 ### Exportar tus datos
 
-En **Ajustes → Exportar** puedes descargar todos tus datos en JSON o Markdown en cualquier momento. Tus datos no están atrapados en From.
+En **Ajustes → Exportar** puedes descargar todos tus datos en cualquier momento:
+
+- **JSON**: formato estructurado con todos los metadatos (para uso programático o migraciones).
+- **Markdown**: una carpeta de archivos `.md`, uno por nodo con cuerpo. Legible en cualquier editor.
+
+Tus datos no están atrapados en From. La exportación es completa, sin restricciones y funciona en el plan gratuito.
 
 ### Privacidad
 
-- Tus datos nunca dependen solo de la nube. El backup local y la exportación te dan control completo.
-- La IA solo accede a los nodos que tú decides compartir con ella en cada sesión.
+- La IA solo accede al contenido que está en el contexto de la conversación activa: el nodo abierto, sus hijos y los contextos que tengas activos. No escanea todo el árbol de forma automática.
+- El backup local en Mac se guarda en `Application Support/From/Backups/` en tu propio ordenador.
 
 ---
 
-## Atajos de teclado principales
+## 18. Atajos de teclado
 
-| Atajo | Acción |
+| Acción | Atajo |
 |---|---|
-| `⌘F` | Filtro/búsqueda inline en el árbol |
-| `⌘K` | Command palette — búsqueda global |
-| `/` | Slash menu — acciones rápidas |
-| `Tab` | Indentar nodo (convertir en hijo) |
-| `Shift+Tab` | Desindentar nodo (subir un nivel) |
-| `⌘↑` | Mover nodo arriba entre hermanos |
-| `⌘↓` | Mover nodo abajo entre hermanos |
-| `Enter` | Nuevo nodo hermano debajo del actual |
-| `⌘Enter` | Abrir el nodo en vista completa / hacer zoom |
-| `⌘B` | Negrita |
-| `⌘I` | Cursiva |
-| `⌘Z` | Deshacer |
-| `⌘⇧Z` | Rehacer |
-| `Esc` | Cerrar filtro / volver a la vista anterior |
+| Nuevo nodo hermano | `Enter` |
+| Indentar nodo | `Tab` |
+| Desindentar nodo | `Shift+Tab` |
+| Mover nodo arriba entre hermanos | `⌘↑` |
+| Mover nodo abajo entre hermanos | `⌘↓` |
+| Colapsar/expandir nodo | Clic en ▶ |
+| Filtro inteligente inline | `⌘F` |
+| Chat IA | `⌘J` |
+| Slash menu | `/` |
+| Paleta de comandos (búsqueda global) | `⌘K` |
+| Toggle nodo ↔ tarea | `⌘Enter` |
+| Negrita | `⌘B` |
+| Cursiva | `⌘I` |
+| Deshacer | `⌘Z` |
+| Rehacer | `⌘⇧Z` |
+| Aceptar sugerencia ghost text | `Tab` |
+| Descartar sugerencia ghost text | `Esc` |
+| Cerrar filtro / volver | `Esc` |
 
 ---
 
-## Instalación paso a paso
+## 19. Ajustes
 
-### Mac
+### Cuenta
 
-1. Descarga `From.dmg` desde [getfrom.app/download](https://getfrom.app/download).
-2. Abre el DMG y arrastra el icono de From a la carpeta **Aplicaciones**.
-3. Abre From desde el Launchpad.
-4. En el primer arranque, macOS puede pedir que confirmes que confías en el desarrollador. Ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
-5. Inicia sesión con tu cuenta.
+- Email y contraseña.
+- Plan actual y fechas de renovación.
+- Cancelar suscripción (el acceso se mantiene hasta el final del periodo pagado).
+- Historial de tokens de IA consumidos.
 
-Las actualizaciones se instalan automáticamente. Puedes comprobar la versión instalada en **From → Acerca de From**.
+### Apariencia
 
-### iOS
+- **Tema**: claro, oscuro o automático (sigue el sistema).
+- **Densidad**: compacto, normal o espacioso. Cambia el espaciado entre nodos.
+- **Color de acento**: el color del interfaz (por defecto morado).
+- **Calendario y Timeline**: rango de horas mostrado en el planificador (por defecto 7:00-23:00).
 
-1. Abre el App Store en tu iPhone.
-2. Busca **From — Notas y PKM** o accede desde [getfrom.app/ios](https://getfrom.app/ios).
-3. Pulsa **Obtener** e instala.
-4. Abre From e inicia sesión con la misma cuenta que usas en Mac o web.
+### IA
 
-Tus notas aparecen en segundos tras el primer sync.
+- **Modelo**: el modelo de IA que usa From por defecto (Claude, GPT, Gemini).
+- **Claves API propias**: si tienes plan Pro o Lifetime, puedes usar tus propias claves de API de Anthropic, OpenAI o Google para que el consumo vaya a tu cuenta.
+- **Configuración de agentes**: permisos y límites generales de los agentes autónomos.
+
+### Predicciones
+
+Añade palabras clave propias para que From las reconozca como señal de tarea o evento mientras escribes. Por ejemplo: si añades "llamar", cada vez que escribas "llamar a..." From sugerirá convertirlo en tarea automáticamente.
+
+### Integraciones
+
+- **Google Calendar**: conectar, desconectar, ver estado de sincronización.
+- **Claude (MCP)**: genera tu token de API para conectar From con Claude Desktop o Claude Code. Ver instrucciones detalladas más abajo.
+
+### Datos / Backup
+
+- Historial de snapshots automáticos.
+- Botón para crear snapshot manual.
+- Restaurar un snapshot anterior.
+- Exportar en JSON o Markdown.
+
+### Importar
+
+From puede importar notas desde otras apps:
+
+- Obsidian (vault de Markdown)
+- Notion (export JSON)
+- LogSeq
+- NotePlan
+- Bear
+- Apple Notes
+- Cualquier carpeta de archivos Markdown
+
+Ve a **Ajustes → Importar**, elige la fuente y sigue el proceso.
 
 ---
 
-## Planes y precios
+## 20. Conexión con Claude (MCP)
+
+From tiene integración nativa con Claude Desktop y Claude Code. Una vez conectado, Claude puede leer y escribir en tu árbol de From directamente desde el chat.
+
+### Cómo conectar
+
+1. Ve a **Ajustes → Integraciones → Claude (MCP)**.
+2. Pulsa "Generar token de API". El token dura 1 año.
+3. Sigue las instrucciones que aparecen en pantalla para añadir el MCP a tu configuración de Claude.
+4. Reinicia Claude. Las herramientas de From aparecen automáticamente.
+
+### Qué puede hacer Claude con tu From
+
+- **Crear notas y tareas**: Claude puede añadir nodos directamente a tu árbol.
+- **Editar nodos existentes**: actualizar contenido, cambiar estado de tareas.
+- **Buscar en tu árbol**: "¿qué tengo apuntado sobre el proyecto X?" → Claude busca en tus notas y responde con contexto real.
+- **Listar tareas pendientes**: ver todas tus tareas por estado, fecha o contexto.
+
+**Ejemplo de uso:**
+
+```
+"Claude, crea en From un resumen de esta conversación"
+"¿Qué tareas tengo pendientes para hoy?"
+"Añade a From una tarea para llamar a Adrián mañana a las 10"
+"Busca en mis notas todo lo relacionado con La Isla"
+```
+
+---
+
+## 21. Planes y precios
 
 | Plan | Precio | Incluye |
 |---|---|---|
-| **Gratis** | €0 | Hasta 1.000 nodos, sin IA, sin archivos adjuntos |
-| **Pro** | €7/mes o €49/año | Nodos ilimitados, IA completa, archivos adjuntos, URL pública |
-| **Lifetime** | €149 pago único | Todo lo de Pro para siempre + 3M tokens IA incluidos |
+| **Gratis** | €0 | Hasta 1.000 nodos sync, sin IA, sin archivos |
+| **Pro Mensual** | €7/mes | Nodos ilimitados, IA completa, archivos adjuntos, notas públicas |
+| **Pro Anual** | €49/año (€4,08/mes) | Todo lo de Pro Mensual, facturado anualmente |
+| **Lifetime** | €149 pago único | Todo lo de Pro para siempre + 3M tokens de IA incluidos |
 
-Gestiona tu suscripción en **Ajustes → Cuenta → Suscripción**.
+Gestiona tu suscripción en **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
 
 Si tienes código de beta o cupón, introdúcelo en el checkout al comprar.
 
@@ -344,38 +836,38 @@ Si tienes código de beta o cupón, introdúcelo en el checkout al comprar.
 ## Preguntas frecuentes
 
 **¿Puedo usar From sin conexión?**
-Sí. La app Mac e iOS funciona sin conexión. Los cambios se sincronizan automáticamente cuando recuperas la conexión.
+Sí. La app Mac e iPhone funciona sin conexión. Los cambios se sincronizan automáticamente cuando recuperas la conexión.
 
 **¿Qué pasa si supero los 1.000 nodos en el plan gratuito?**
 Puedes seguir leyendo tus notas, pero no crear nuevas hasta que elimines nodos o actualices a Pro.
 
 **¿Dónde se guardan mis datos?**
-En el servidor de From (Railway, Europa) y en tu backup local. Puedes exportar todo en JSON o Markdown desde Ajustes en cualquier momento.
+En los servidores de From (Europa) y, en Mac, también en un backup local en tu propio ordenador. Puedes exportar todo en JSON o Markdown desde Ajustes en cualquier momento.
 
 **¿La IA lee todas mis notas?**
-La IA solo accede al contenido que está en el contexto de la conversación: el nodo abierto, sus hijos y los nodos que le indiques explícitamente. No escanea todo el árbol de forma automática.
+No. La IA solo accede al contenido que está en el contexto de la conversación activa: el nodo abierto, sus hijos y los contextos que tengas activos. No escanea el árbol completo de forma automática.
 
 **¿Puedo importar mis notas de Obsidian, Notion u otras apps?**
-Sí. Ve a **Ajustes → Importar** para importar desde Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes o cualquier carpeta de archivos Markdown.
-
-**¿Cómo funciona la sincronización entre dispositivos?**
-Los cambios se sincronizan en tiempo real (delta: solo viajan los cambios, no toda la base de datos). En condiciones normales los cambios aparecen en segundos en todos tus dispositivos.
+Sí. Ve a **Ajustes → Importar**. From acepta exports de Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes y carpetas de Markdown en general.
 
 **¿Los espejos (⬡) sincronizan en ambas direcciones?**
-Sí. Un espejo muestra el contenido del nodo original y cualquier edición desde el espejo modifica el original.
+Sí. Editar el espejo edita el original, y cualquier cambio en el original se refleja en todos sus espejos inmediatamente.
 
 **¿Puedo compartir una nota con alguien que no tiene From?**
-Sí. Desde el menú contextual del nodo (clic derecho), selecciona "Publicar". From genera una URL pública del tipo `getfrom.app/p/...` con el contenido de la nota renderizado. Solo los usuarios con la URL pueden verla.
+Sí. Clic derecho sobre el nodo → "Publicar". From genera una URL pública del tipo `getfrom.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
 
-**¿El backup automático cada 2 horas consume cuota?**
-No. Los snapshots automáticos son parte del servicio. El historial guarda los últimos 12 snapshots por usuario.
+**¿Cómo funciona la sincronización entre dispositivos?**
+Los cambios se sincronizan en tiempo real (delta: solo viajan los cambios, no toda la base de datos). En condiciones normales, los cambios aparecen en segundos en todos tus dispositivos.
+
+**¿El backup automático consume cuota?**
+No. Los snapshots automáticos son parte del servicio en todos los planes. El historial guarda los últimos 12 snapshots.
 
 **¿Cómo cancelo la suscripción?**
-Desde **Ajustes → Cuenta → Suscripción** o directamente en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). Tu acceso Pro se mantiene hasta el final del periodo pagado.
+Desde **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). Tu acceso Pro se mantiene hasta el final del periodo pagado.
 
-**¿Puedo conectar From con Claude?**
-Sí. From tiene integración MCP con Claude Desktop y Claude Code. Ve a **Ajustes → Cuenta → Integraciones**, genera tu token de API e instala la extensión. Claude podrá leer y escribir en tu árbol de notas directamente desde el chat.
+**¿Puedo usar mis propias claves de API de IA?**
+Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de From.
 
 ---
 
-*getfrom.app*
+*getfrom.app — Tu segundo cerebro. En todos tus dispositivos.*
