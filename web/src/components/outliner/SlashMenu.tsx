@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { parseNaturalDate } from '../../utils/naturalDate'
+import { parseNaturalDate, getSuggestion } from '../../utils/naturalDate'
 import type { RecurrenceConfig } from '../../utils/naturalDate'
 
 export type SlashAction =
@@ -135,6 +135,13 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault(); e.stopPropagation()
         setActiveIdx(i => Math.max(i - 1, 0))
+      } else if (e.key === 'Tab' && isMoveMode) {
+        // Tab: aceptar sugerencia de autocompletado
+        e.preventDefault(); e.stopPropagation()
+        if (parsedMove) {
+          onSelect({ prefix: '', action: 'move-to', moveToDate: parsedMove.date, moveToRecurrence: parsedMove.recurrence })
+        }
+        return
       } else if (e.key === 'Enter') {
         e.preventDefault(); e.stopPropagation()
         // En modo "mover a": confirmar si hay fecha parseada
@@ -167,27 +174,33 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
 
   // ── Render modo "mover a" ──────────────────────────────────────────────────
   if (isMoveMode) {
-    const EXAMPLES = ['mañana', 'viernes', '29 mayo', 'todos los martes', 'en 3 días', 'próximo lunes']
+    const suggestion = moveDateQuery ? getSuggestion(moveDateQuery) : null
+    const EXAMPLES = ['mañana', 'lunes', '29 mayo', 'todos los martes', 'cada mes', 'al 1 de cada mes']
+
     return createPortal(
-      <div ref={menuRef} className="slash-menu slash-menu--move" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000, minWidth: 240 }}>
-        <div className="slash-menu-move-header">
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>📅 Mover a…</span>
+      <div ref={menuRef} className="slash-menu slash-menu--move" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000, minWidth: 220 }}>
+        {/* Campo con texto tapiz predictivo */}
+        <div className="slash-menu-move-field">
+          <span className="slash-menu-move-icon">📅</span>
+          <span className="slash-menu-move-typed">{moveDateQuery || ''}</span>
+          {suggestion && <span className="slash-menu-move-ghost">{suggestion}</span>}
+          {!moveDateQuery && <span className="slash-menu-move-placeholder">escribe una fecha…</span>}
         </div>
+
+        {/* Resultado parseado */}
         {parsedMove ? (
-          <button
-            className="slash-menu-move-confirm"
-            onMouseDown={e => {
-              e.preventDefault()
-              onSelect({ prefix: '', action: 'move-to', moveToDate: parsedMove.date, moveToRecurrence: parsedMove.recurrence })
-            }}
-          >
-            <span className="slash-menu-move-label">{parsedMove.label}</span>
-            <span className="slash-menu-move-hint">↵ confirmar</span>
-          </button>
+          <div className="slash-menu-move-result">
+            <span className="slash-menu-move-result-label">{parsedMove.label}</span>
+            <span className="slash-menu-move-result-hint">↵ mover</span>
+          </div>
+        ) : moveDateQuery ? (
+          <div className="slash-menu-move-no-match">No reconocido</div>
         ) : (
           <div className="slash-menu-move-examples">
             {EXAMPLES.map(ex => (
-              <span key={ex} className="slash-menu-move-example">{ex}</span>
+              <span key={ex} className="slash-menu-move-example"
+                onMouseDown={e => { e.preventDefault(); onSelect({ prefix: '', action: 'move-to', moveToDate: parseNaturalDate(ex)?.date || new Date(), moveToRecurrence: parseNaturalDate(ex)?.recurrence }) }}
+              >{ex}</span>
             ))}
           </div>
         )}

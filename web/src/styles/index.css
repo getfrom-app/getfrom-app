@@ -331,44 +331,85 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── Slash menu: modo "mover a" ─────────────────────────────────────────── */
-.slash-menu-move-header {
-  padding: 8px 12px 6px;
-  border-bottom: 1px solid var(--border);
+.slash-menu--move {
+  padding: 6px;
 }
-.slash-menu-move-confirm {
+
+/* Campo de entrada con texto predictivo */
+.slash-menu-move-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  min-height: 30px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.slash-menu-move-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.slash-menu-move-typed {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.slash-menu-move-ghost {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+.slash-menu-move-placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+/* Resultado parseado */
+.slash-menu-move-result {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding: 10px 12px;
-  background: var(--accent-soft);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  margin: 6px 4px;
-  width: calc(100% - 8px);
+  padding: 5px 8px 2px;
+  margin-top: 2px;
 }
-.slash-menu-move-label {
+.slash-menu-move-result-label {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-accent);
+  font-weight: 600;
+  color: var(--accent);
 }
-.slash-menu-move-hint {
+.slash-menu-move-result-hint {
   font-size: 11px;
   color: var(--text-tertiary);
+  opacity: 0.7;
 }
+
+.slash-menu-move-no-match {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 4px 8px;
+  opacity: 0.6;
+}
+
 .slash-menu-move-examples {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 3px;
+  padding: 5px 4px 2px;
 }
 .slash-menu-move-example {
   font-size: 11px;
-  color: var(--text-tertiary);
-  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  background: var(--bg-hover);
   border-radius: 4px;
   padding: 2px 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.slash-menu-move-example:hover {
+  background: var(--accent-soft);
+  color: var(--text-accent);
 }
 
 /* ── Badge de recurrencia ─────────────────────────────────────────────── */
