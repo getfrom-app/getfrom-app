@@ -1441,6 +1441,10 @@ export default function NodeView() {
                   setTitleTagPicker(null)
                 }
               })}
+              onContextMenu={e => {
+                e.preventDefault()
+                setTitleContextMenu({ x: e.clientX, y: e.clientY })
+              }}
             >
               {/* content managed via useEffect — no React children to avoid cursor reset */}
             </h1>
