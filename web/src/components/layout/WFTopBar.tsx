@@ -203,13 +203,14 @@ export default function WFTopBar({
       {/* ── Filtro tipo Workflowy ── */}
       <div className="wf-topbar-filter-wrap" ref={filterWrapRef}>
         <div className={`wf-topbar-filter ${filterOpen || filterText ? 'focused' : ''}`}>
+          {/* Icono embudo — distingue del buscador ⌘K */}
           <svg className="wf-topbar-filter-icon" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 01.8 1.6L13 10.17V16a1 1 0 01-.553.894l-4 2A1 1 0 017 18v-7.83L3.2 4.6A1 1 0 013 4V3z" clipRule="evenodd" />
           </svg>
           <input
             ref={filterRef}
             className="wf-topbar-filter-input"
-            placeholder="Filtrar… (⌘F)"
+            placeholder="Filtrar árbol… (⌘F)"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
             onFocus={() => setFilterOpen(true)}
@@ -402,10 +403,10 @@ export default function WFTopBar({
         {theme === 'dark' ? '☀️' : '🌙'}
       </button>
 
-      {/* ⌘K */}
-      <button className="wf-topbar-btn" onClick={onCommandPalette} title="Búsqueda rápida (⌘K)">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+      {/* ⌘K — Acciones rápidas (rayo, distinto del filtro embudo) */}
+      <button className="wf-topbar-btn wf-topbar-cmd-btn" onClick={onCommandPalette} title="Acciones rápidas — crear, buscar, colapsar… (⌘K)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
         <span className="wf-topbar-shortcut-hint">⌘K</span>
       </button>

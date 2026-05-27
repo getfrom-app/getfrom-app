@@ -8985,6 +8985,10 @@ a:focus-visible {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+/* Botón ⌘K — rayo con toque de acento en hover */
+.wf-topbar-cmd-btn:hover {
+  color: var(--accent) !important;
+}
 .wf-topbar-home {
   color: var(--text-tertiary);
 }
