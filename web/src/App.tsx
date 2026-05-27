@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { getToken } from './api/client'
+import { getToken, setTokens } from './api/client'
 import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
@@ -107,21 +107,53 @@ function GoogleCallbackPage() {
   )
 }
 
+// Maneja deep links de OAuth desktop: from://auth-callback?accessToken=...&refreshToken=...
+function useDesktopOAuthCallback() {
+  const navigate = useNavigate ? useNavigate() : null
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    // Tauri emite 'oauth-callback' cuando llega un deep link from://
+    // También escuchamos el evento nativo de deep-link plugin
+    const handleOAuth = (event: CustomEvent | Event) => {
+      const url = (event as CustomEvent).detail as string ?? ''
+      if (!url.includes('auth-callback')) return
+      try {
+        const params = new URL(url).searchParams
+        const accessToken = params.get('accessToken')
+        const refreshToken = params.get('refreshToken')
+        if (accessToken && refreshToken) {
+          setTokens(accessToken, refreshToken)
+          window.location.href = '/'
+        }
+      } catch {}
+    }
+    window.addEventListener('oauth-callback', handleOAuth as EventListener)
+    return () => window.removeEventListener('oauth-callback', handleOAuth as EventListener)
+  }, [])
+}
+
+function AppInner() {
+  useDesktopOAuthCallback()
+  return (
+    <Routes>
+      {/* Rutas públicas */}
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/register" element={<AuthPage initialMode="register" />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/pricing" element={<PricingView />} />
+      {/* Google OAuth callback — accesible sin estar en MainLayout pero requiere token */}
+      <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
+      {/* Toda la app requiere cuenta */}
+      <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
+    </Routes>
+  )
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/login" element={<AuthPage />} />
-        <Route path="/register" element={<AuthPage initialMode="register" />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/pricing" element={<PricingView />} />
-        {/* Google OAuth callback — accesible sin estar en MainLayout pero requiere token */}
-        <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
-        {/* Toda la app requiere cuenta */}
-        <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
-      </Routes>
+      <AppInner />
     </ErrorBoundary>
   )
 }

@@ -124,11 +124,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
   async function handleGoogleClick() {
     if (isTauri) {
-      // En Tauri: abrir OAuth de Google en el browser del sistema
-      // El servidor maneja el callback y emite un deep link from://auth-callback?token=...
-      const redirectUri = 'from://auth-callback'
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_WEB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`
-      await openInBrowser(googleAuthUrl)
+      // En Tauri: el servidor Railway actúa de intermediario OAuth
+      // Google → from-server/auth/google-desktop-callback → from://auth-callback?tokens
+      await openInBrowser('https://from-server-production.up.railway.app/auth/google-desktop')
       return
     }
     if (!GOOGLE_WEB_CLIENT_ID || !window.google?.accounts?.id) {
@@ -158,10 +156,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
   async function handleAppleClick() {
     if (isTauri) {
-      // En Tauri: abrir Apple Sign-In en browser del sistema
-      const redirectUri = 'from://auth-callback'
-      const appleAuthUrl = `https://appleid.apple.com/auth/authorize?client_id=${APPLE_WEB_SERVICE_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code%20id_token&scope=email%20name&response_mode=fragment`
-      await openInBrowser(appleAuthUrl)
+      // En Tauri: el servidor Railway actúa de intermediario OAuth
+      // Apple → from-server/auth/apple-desktop-callback → from://auth-callback?tokens
+      await openInBrowser('https://from-server-production.up.railway.app/auth/apple-desktop')
       return
     }
     if (!APPLE_WEB_SERVICE_ID || !window.AppleID?.auth) {
