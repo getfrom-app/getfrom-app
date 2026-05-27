@@ -722,13 +722,39 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
               onClick={async () => {
-                const dayNode = getTodayDiaryUnderAgenda()
-                // Si el nodo se acaba de crear (está sucio), sincronizar con el servidor
-                // antes de navegar para evitar que el siguiente sync lo sobrescriba
-                const nodeInStore = store.getNode(dayNode.id)
-                if (nodeInStore?._isDirty) {
+                // 1. Crear la jerarquía si no existe
+                const firstAttempt = getTodayDiaryUnderAgenda()
+
+                // 2. Si es nuevo (sucio), sincronizar con el servidor
+                if (store.getNode(firstAttempt.id)?._isDirty) {
                   await store.sync()
                 }
+
+                // 3. Obtener el ID DESPUÉS del sync — puede haber cambiado si el
+                //    servidor devolvió una versión diferente (ej: creado por Mac)
+                const dayNode = getTodayDiaryUnderAgenda()
+
+                // 4. Verificar que el nodo existe en el store antes de navegar
+                const verified = store.getNode(dayNode.id)
+                if (!verified || verified.deletedAt) {
+                  // Fallback: ir a Mayo (el mes siempre es más estable)
+                  const today = new Date()
+                  const y = today.getFullYear()
+                  const m = today.getMonth()
+                  const { findAgendaRoot } = await import('../../utils/agendaHelper')
+                  const agenda = findAgendaRoot()
+                  if (agenda) {
+                    const yearNode = store.children(agenda.id).find(c => !c.deletedAt && c.text === String(y))
+                    if (yearNode) {
+                      const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+                      const monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === MONTHS[m].toLowerCase())
+                      if (monthNode) { navigate(`/node/${monthNode.id}`); return }
+                    }
+                  }
+                  navigate('/')
+                  return
+                }
+
                 navigate(`/node/${dayNode.id}`)
               }}
               title="Hoy — ir a la nota del día"
