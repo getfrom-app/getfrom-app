@@ -1119,6 +1119,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return true
     }
 
+    // Shift+Enter → zoom in al nodo actual + cursor en primer hijo vacío
+    // Equivale a hacer clic en el dot bullet: entra en el nodo como contexto.
+    if (e.key === 'Enter' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      // Guardar texto actual si ha cambiado
+      const currentText = contentRef.current?.textContent ?? ''
+      if (currentText !== node.text) {
+        store.updateNode(node.id, { text: currentText })
+      }
+      // Navegar al nodo
+      navigate(`/node/${node.id}`)
+      // Tras navegar, crear o focalizar el primer hijo vacío
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('wf:new-child-today', { detail: { parentId: node.id } }))
+      }, 150)
+      return
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
 
