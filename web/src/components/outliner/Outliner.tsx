@@ -8,6 +8,13 @@ function getNodeIdFromEl(el: Element | null): string | null {
   return el?.closest('[data-node-id]')?.getAttribute('data-node-id') ?? null
 }
 
+// ── Coordinación entre instancias de Outliner ─────────────────────────────────
+// Hay múltiples instancias de Outliner anidadas (una por nivel del árbol).
+// Cuando el usuario inicia un drag, solo la instancia responsable de ese nodo
+// debe gestionar la selección. Las demás deben ignorar los eventos.
+// Este ref a nivel de módulo garantiza que solo UNA instancia esté activa.
+let _activeDragContainer: HTMLElement | null = null
+
 // Devuelve true SOLO si el target ES el propio elemento de texto/input
 // (no si es un padre que contiene un contenteditable).
 // Esto permite iniciar drag-select desde los márgenes o padding del nodo,
@@ -258,17 +265,20 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     // ── mousedown nativo (capture) ────────────────────────────────────────
     // Cada instancia de Outliner (una por nivel) escucha todos los mousedowns,
     // pero SOLO actúa si el nodo clickado pertenece a su propio nivel.
-    // Esto evita que el Outliner raíz interfiera con drag de nodos hijos.
+    // Solo una instancia de Outliner puede estar activa al mismo tiempo.
+    // _activeDragContainer (módulo-level) indica cuál está manejando el drag.
+    const myContainer = containerRef  // ref estable para este Outliner
+
     function onDown(e: MouseEvent) {
       const target = e.target as Element
-      if (isControlEl(target) || !containerRef.current?.contains(target)) return
+      if (isControlEl(target) || !myContainer.current?.contains(target)) return
       if ((target as HTMLElement).closest('.node-drag-handle')) return
 
       const id = getNodeIdFromEl(target)
+      if (id && !ownNodeIds.has(id)) return  // nodo de otro nivel → ignorar
 
-      // Si el nodo clickado no pertenece a este nivel → ignorar
-      // (lo gestionará el Outliner del nivel correspondiente)
-      if (id && !ownNodeIds.has(id)) return
+      // Reclamar este drag para esta instancia
+      _activeDragContainer = myContainer.current
 
       dragAnchorPos.current = e.clientY
       lastMouseY.current = e.clientY
@@ -280,6 +290,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     // ── mousemove ─────────────────────────────────────────────────────────
     function onMove(e: MouseEvent) {
       lastMouseY.current = e.clientY
+      // Solo actuar si ESTA instancia es la que controla el drag actual
+      if (_activeDragContainer !== myContainer.current) return
       if (!dragAnchorId.current) return
 
       // ── Espacio vacío ──────────────────────────────────────────────────
@@ -298,11 +310,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       const anchorId = dragAnchorId.current!
 
-      // ── Drag desde texto: detectar cruce usando bounding rect de .node-row ──
-      // La selección del browser no puede cruzar entre distintos contenteditable,
-      // así que selectionchange no funciona. Usamos posición del cursor vs rect.
+      // ── Drag desde texto: bounding rect de .node-row ───────────────────
       if (dragFromText.current && !isDragSelectingRef.current) {
-        const nodeEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`)
+        const nodeEl = myContainer.current?.querySelector(`[data-node-id="${anchorId}"]`)
         const rowEl  = nodeEl?.querySelector('.node-row') as HTMLElement | null
         const rect   = (rowEl ?? nodeEl as HTMLElement | null)?.getBoundingClientRect()
         if (rect && (e.clientY < rect.top || e.clientY > rect.bottom)) {
@@ -314,7 +324,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         return
       }
 
-      // ── Drag desde zona no-texto (bullet, padding) ─────────────────────
+      // ── Drag desde zona no-texto ───────────────────────────────────────
       if (!dragFromText.current) {
         if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
         if (!isDragSelectingRef.current) {
@@ -325,15 +335,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       }
     }
 
-    // ── dragstart: prevenir drag nativo cuando empezamos desde texto ───────
-    // El browser dispara dragstart al mover texto seleccionado. Si lo dejamos
-    // pasar, cancela nuestro tracking. Lo prevenimos si venía de texto o
-    // si ya estamos en node-select.
+    // ── dragstart ─────────────────────────────────────────────────────────
     function onDragStart(e: Event) {
+      if (_activeDragContainer !== myContainer.current) return
       if (dragFromText.current || isDragSelectingRef.current) {
         e.preventDefault()
       } else {
-        // Drag real de nodo (reordenar) — limpiar nuestro estado
+        _activeDragContainer = null
         dragAnchorId.current = null
         dragFromText.current = false
         stopDragSelect()
@@ -342,6 +350,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
     // ── mouseup ───────────────────────────────────────────────────────────
     function onUp() {
+      if (_activeDragContainer === myContainer.current) {
+        _activeDragContainer = null
+      }
       dragAnchorId.current = null
       dragFromText.current = false
       stopDragSelect()
@@ -352,6 +363,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     document.addEventListener('dragstart', onDragStart)
     document.addEventListener('mouseup',   onUp)
     return () => {
+      if (_activeDragContainer === myContainer.current) _activeDragContainer = null
       document.removeEventListener('mousedown', onDown, { capture: true })
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('dragstart', onDragStart)
