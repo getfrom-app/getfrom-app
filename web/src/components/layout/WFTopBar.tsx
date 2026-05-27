@@ -215,10 +215,34 @@ export default function WFTopBar({
             onFocus={() => setFilterOpen(true)}
           />
           {filterText && (
-            <button
-              className="wf-topbar-filter-clear"
-              onMouseDown={e => { e.preventDefault(); onFilter(''); filterRef.current?.focus() }}
-            >×</button>
+            <>
+              <button
+                className="wf-topbar-filter-save"
+                title="Guardar como atajo"
+                onMouseDown={e => {
+                  e.preventDefault()
+                  const query = filterText.trim()
+                  if (!query) return
+                  // Nombre legible: capitalizar y limpiar
+                  const name = query.startsWith('@') || query.startsWith('#')
+                    ? query
+                    : query.charAt(0).toUpperCase() + query.slice(1)
+                  addFilterShortcut(name, query)
+                  window.dispatchEvent(new Event('wf:shortcuts-changed'))
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo guardado: "${name}"`, type: 'success' } }))
+                  filterRef.current?.focus()
+                }}
+              >
+                {/* Bookmark icon */}
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13l-5-3-5 3V2z"/>
+                </svg>
+              </button>
+              <button
+                className="wf-topbar-filter-clear"
+                onMouseDown={e => { e.preventDefault(); onFilter(''); filterRef.current?.focus() }}
+              >×</button>
+            </>
           )}
         </div>
 

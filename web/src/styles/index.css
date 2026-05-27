@@ -9125,6 +9125,20 @@ a:focus-visible {
 }
 .wf-topbar-filter-clear:hover { color: var(--text-primary); }
 
+.wf-topbar-filter-save {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.12s, color 0.12s;
+}
+.wf-topbar-filter-save:hover { color: var(--accent); opacity: 1; }
+
 /* Dropdown menú */
 .wf-topbar-menu-wrap { position: relative; }
 .wf-topbar-dropdown {
