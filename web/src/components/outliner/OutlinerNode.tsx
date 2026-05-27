@@ -1768,14 +1768,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return new Date(node.due!) < todayStart
   })()
 
-  // Clase de color del checkbox de tarea según estado/vencimiento
+  // Clase de color del checkbox:
+  //   🟠 Naranja  = vencida (overdue: due < hoy)
+  //   🟡 Amarilla = tarea de hoy (due === hoy)
+  //   🔵 Azul     = tarea futura (due > hoy) o sin fecha
+  //   🟢 Verde    = completada
+  const isToday = !!node.due && !isOverdue && (() => {
+    const d = new Date(node.due!)
+    const now = new Date()
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  })()
+
   const taskCheckClass = node.status === 'done'
     ? 'task-sq--done'
-    : node.status === 'future'
-      ? 'task-sq--future'
-      : isOverdue
-        ? 'task-sq--overdue'
-        : 'task-sq--pending'
+    : isOverdue
+      ? 'task-sq--overdue'           // naranja
+      : isToday
+        ? 'task-sq--pending'         // amarillo — tarea de hoy
+        : 'task-sq--future'          // azul — futura o sin fecha
 
   // ── Recurso ──────────────────────────────────────────────────────────────
   const resourceData = (() => {
