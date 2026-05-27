@@ -889,12 +889,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
-    // Cmd+Enter → marcar tarea como done/pending
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    // Cmd+Enter (Mac) / Ctrl+Enter (Win) → ciclar estado: normal → pendiente → hecha → normal
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
       e.preventDefault()
       e.stopPropagation()
-      if (node.status !== null) {
-        store.updateNode(node.id, { status: node.status === 'done' ? 'pending' : 'done' })
+      if (node.status === null || node.status === undefined) {
+        // Normal → Tarea pendiente
+        store.updateNode(node.id, { status: 'pending' })
+      } else if (node.status === 'pending') {
+        // Pendiente → Completada
+        store.updateNode(node.id, { status: 'done' })
+      } else {
+        // Completada → Normal (quita la tarea)
+        store.updateNode(node.id, { status: null, due: null })
       }
       return
     }
