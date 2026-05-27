@@ -41,7 +41,15 @@ export function createNodeShortcut(nodeId: string, name: string): string {
   const siblings = store.children(parent.id)
   const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
   const node = store.createNode({ text: name, parentId: parent.id, siblingOrder: maxOrder + 1 })
-  store.updateNode(node.id, { extraData: JSON.stringify({ _shortcutNodeId: nodeId }) })
+  // Store both nodeId (for icon fallback) AND the combined query that shows
+  // structural descendants + nodes that reference this node by @slug
+  store.updateNode(node.id, {
+    extraData: JSON.stringify({
+      _shortcutNodeId: nodeId,
+      _shortcutQuery: `node:${nodeId}`,
+      _shortcutView: 'lista',
+    })
+  })
   window.dispatchEvent(new Event('wf:shortcuts-changed'))
   return node.id
 }
@@ -52,7 +60,7 @@ export function getShortcutData(nodeId: string): { query?: string; view?: string
   if (!n) return null
   try {
     const ed = JSON.parse(n.extraData || '{}')
-    if (ed._shortcutQuery !== undefined) return { query: ed._shortcutQuery, view: ed._shortcutView }
+    if (ed._shortcutQuery !== undefined) return { query: ed._shortcutQuery, view: ed._shortcutView, nodeId: ed._shortcutNodeId }
     if (ed._shortcutNodeId) return { nodeId: ed._shortcutNodeId }
   } catch {}
   return null

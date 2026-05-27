@@ -134,6 +134,12 @@ const COMMON_TYPES = [
   'pendiente', 'importante', 'trabajo', 'personal',
 ]
 
+// ── Context usage tracking (in-memory, resets on page load) ──────────────────
+const _ctxUsageCount = new Map<string, number>()
+export function recordCtxUsage(slug: string) {
+  _ctxUsageCount.set(slug, (_ctxUsageCount.get(slug) || 0) + 1)
+}
+
 interface PickerItem {
   id: string
   label: string
@@ -569,9 +575,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ...COMMON_TYPES.filter(t => !existingSlugs.has(t)).map(t => ({ id: t, label: t, slug: t })),
       ]
       const q = query.trim().toLowerCase()
+      const nodeCurrentTypes = new Set(node.types || [])
       const contextItems = allItems
         .filter(item => !q || item.label.toLowerCase().includes(q) || item.slug.includes(q))
         .sort((a, b) => {
+          // 1. Contexts already on this node rise to the very top
+          const aOnNode = nodeCurrentTypes.has(a.id) ? 1 : 0
+          const bOnNode = nodeCurrentTypes.has(b.id) ? 1 : 0
+          if (aOnNode !== bOnNode) return bOnNode - aOnNode
+          // 2. Sort by usage frequency
+          const au = _ctxUsageCount.get(a.id) || 0
+          const bu = _ctxUsageCount.get(b.id) || 0
+          if (au !== bu) return bu - au
+          // 3. Starts-with match for the typed query
           const al = a.label.toLowerCase(), bl = b.label.toLowerCase()
           const aStarts = al.startsWith(q), bStarts = bl.startsWith(q)
           if (aStarts && !bStarts) return -1
@@ -887,6 +903,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
       ensureTagInTree(item.id)
+      // Track usage for frecuency-based sorting in future @ pickers
+      recordCtxUsage(item.id)
       if (contentRef.current) {
         // Renderizar inline inmediatamente (no esperar al blur)
         contentRef.current.innerHTML = renderInlineToHtml(newText)

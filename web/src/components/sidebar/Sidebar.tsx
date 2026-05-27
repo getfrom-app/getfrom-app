@@ -561,11 +561,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
 
     // Determine icon
     let icon = '📄'
-    if (scData?.query !== undefined) {
-      icon = '🔍'
-    } else if (scData?.nodeId) {
+    if (scData?.nodeId) {
+      // Node shortcut (may also have a combined query): show target node's icon
       const targetNode = s.getNode(scData.nodeId)
       icon = targetNode ? getNodeIcon(targetNode) : '📄'
+    } else if (scData?.query !== undefined) {
+      icon = '🔍'
     } else if (hasChildren) {
       icon = isCollapsed ? '▸' : '▾'
     }

@@ -86,10 +86,64 @@ export function applyWFFilter(
         tokenMatch = node.status === 'done'
       } else if (token === 'overdue' || token === 'vencido') {
         tokenMatch = node.status === 'pending' && isOverdue(node.due)
+      } else if (token.startsWith('node:')) {
+        const targetNodeId = token.slice(5)
+        // Exclude the target node itself (it's the container)
+        if (node.id === targetNodeId) {
+          tokenMatch = false
+        } else {
+          // Check if current node is a descendant of targetNodeId
+          const isDescendant = (() => {
+            let cur = nodes.get(node.id)
+            const vis = new Set<string>()
+            while (cur?.parentId && !vis.has(cur.id)) {
+              vis.add(cur.id)
+              if (cur.parentId === targetNodeId) return true
+              cur = nodes.get(cur.parentId)
+            }
+            return false
+          })()
+
+          // Check if node has the target node's slug in its types or text
+          const targetNode = nodes.get(targetNodeId)
+          const targetSlug = targetNode
+            ? (targetNode.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+            : ''
+          const hasSlug = !!targetSlug && (
+            (node.types || []).some(t => t === targetSlug || t.endsWith('/' + targetSlug)) ||
+            normalizeText(node.text || '').includes(`@${targetSlug}`)
+          )
+
+          tokenMatch = isDescendant || hasSlug
+        }
       } else if (token.startsWith('@') || token.startsWith('#')) {
         const tagName = token.slice(1)
-        tokenMatch = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
-                     normalizeText(node.text || '').includes(token)
+        // Direct type match
+        const hasType = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
+                        normalizeText(node.text || '').includes(token)
+
+        // Structural: is this node a descendant of the context node with this slug?
+        const isStructuralChild = (() => {
+          // Find a context node whose slug matches tagName
+          let contextNode: Node | null = null
+          for (const [, n] of nodes) {
+            if (n.deletedAt) continue
+            const slug = normalizeText(n.text || '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+            if (slug === tagName || slug.endsWith('/' + tagName)) { contextNode = n; break }
+          }
+          if (!contextNode) return false
+          const ctxId = contextNode.id
+          let cur = nodes.get(node.id)
+          const vis = new Set<string>()
+          while (cur?.parentId && !vis.has(cur.id)) {
+            vis.add(cur.id)
+            if (cur.parentId === ctxId) return true
+            cur = nodes.get(cur.parentId)
+          }
+          return false
+        })()
+
+        tokenMatch = hasType || isStructuralChild
       } else if (token.startsWith('[[') && token.endsWith(']]')) {
         // [[wiki-link]]: encuentra nodos que mencionan esa nota
         const refName = normalizeText(token.slice(2, -2))
@@ -128,7 +182,7 @@ const SMART_OPERATORS = ['hoy', 'mañana', 'semana', 'tarea', 'pendiente', 'hech
 
 export function isSmartQuery(text: string): boolean {
   const lower = text.toLowerCase()
-  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@') || lower.includes('[[')
+  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@') || lower.includes('[[') || lower.startsWith('node:')
 }
 
 /** Suggestion chips to show below filter input */
