@@ -28,6 +28,7 @@ export interface HotkeyDef {
 
 export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   // Navegación global
+  { id: 'go-today',         category: 'Captura',      label: 'Ir a hoy',                description: 'Navegar a la nota del día de hoy',                defaultKey: 'h',          configurable: true },
   { id: 'new-today',        category: 'Captura',      label: 'Nuevo nodo hoy',          description: 'Ir al diario de hoy y crear nodo vacío',          defaultKey: 'n',          configurable: true },
   { id: 'command-palette',  category: 'Navegación',   label: 'Paleta de comandos',       description: 'Búsqueda rápida, comandos, contextos',             defaultKey: 'k',          modifiers: ['meta'], configurable: true },
   { id: 'ai-chat',          category: 'IA',           label: 'Chat IA',                  description: 'Abrir / cerrar el chat con From AI',              defaultKey: 'j',          modifiers: ['meta'], configurable: false },

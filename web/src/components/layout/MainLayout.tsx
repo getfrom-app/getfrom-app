@@ -187,6 +187,16 @@ export default function MainLayout() {
         e.preventDefault()
         setShowCommandPalette(v => !v)
       }
+      // H (sin modificador) → ir al diario de hoy sin crear nodo
+      if (e.key === 'h' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          const today = getTodayDiaryUnderAgenda()
+          navigate(`/node/${today.id}`)
+        }
+      }
       // N (sin modificador) → crear nodo en el diario de hoy y enfocar
       if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
@@ -194,9 +204,7 @@ export default function MainLayout() {
         if (!isInputFocused) {
           e.preventDefault()
           const today = getTodayDiaryUnderAgenda()
-          // Navegar al diario de hoy y señalar que hay que crear un nodo nuevo
           navigate(`/node/${today.id}`)
-          // Pequeño delay para que NodeView monte, luego disparar creación de hijo
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('wf:new-child-today', { detail: { parentId: today.id } }))
           }, 150)

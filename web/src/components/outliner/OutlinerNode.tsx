@@ -2661,139 +2661,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Quick-props badge: tareas (no eventos, tienen su propio badge) */}
-            {node.status !== null && !node.isSeguimiento && !node.isEvent && (
-              <div className="node-qp-wrap">
-                <button
-                  ref={quickPropsBtnRef}
-                  className={`node-qp-badge${node.due ? (isOverdue ? ' has-date overdue' : ' has-date') : ''}`}
-                  onClick={e => {
-                    e.stopPropagation()
-                    if (!showQuickProps && quickPropsBtnRef.current) {
-                      const rect = quickPropsBtnRef.current.getBoundingClientRect()
-                      setQuickPropsPos({
-                        top: rect.bottom + 4,
-                        left: Math.max(8, Math.min(rect.left, window.innerWidth - 232))
-                      })
-                    }
-                    setShowQuickProps(v => !v)
-                  }}
-                  tabIndex={-1}
-                  title="Fecha, hora, repetición, prioridad"
-                >
-                  {node.due ? `📅 ${qDueBadgeLabel}` : 'sin fecha'}
-                </button>
-                {/* Badge de recurrencia */}
-                {(() => {
-                  try {
-                    const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
-                    if (!rec) return null
-                    return (
-                      <span className="node-recurrence-badge" title={`Recurrencia: ${rec.display}`}>
-                        ↻ {rec.display}
-                      </span>
-                    )
-                  } catch { return null }
-                })()}
-                {showQuickProps && createPortal(
-                  <div
-                    className="nqp-modal-overlay"
-                    onMouseDown={e => { e.stopPropagation(); setShowQuickProps(false) }}
-                  >
-                  <div
-                    ref={quickPropsPopupRef}
-                    className="node-qp-popup nqp-modal-box"
-                    onMouseDown={e => e.stopPropagation()}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {/* Fechas rápidas */}
-                    <div className="nqp-quick-row">
-                      {[
-                        { label: 'Hoy', days: 0 },
-                        { label: 'Mañana', days: 1 },
-                        { label: 'Lunes', days: qNextMondayDays },
-                        { label: '+7 días', days: 7 },
-                      ].map(({ label, days }) => {
-                        const d = new Date(); d.setDate(d.getDate() + days)
-                        const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
-                        return (
-                          <button
-                            key={label}
-                            className={`nqp-qbtn${qDueDate === iso ? ' active' : ''}`}
-                            onClick={() => setQDue(iso, hasLocalTime(node.due) ? qDueTime : '')}
-                          >{label}</button>
-                        )
-                      })}
-                      {node.due && (
-                        <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null, recurrence: null })}>✕</button>
-                      )}
-                    </div>
-                    {/* Inputs fecha + hora (hora opcional) */}
-                    <div className="nqp-inputs-row">
-                      <input type="date" className="nqp-date-input" value={qDueDate}
-                        onChange={e => setQDue(e.target.value, hasLocalTime(node.due) ? qDueTime : '')} />
-                      <input type="time" className="nqp-time-input"
-                        value={hasLocalTime(node.due) ? qDueTime : ''}
-                        onChange={e => setQDue(qDueDate, e.target.value)} disabled={!qDueDate}
-                        placeholder="HH:MM" />
-                      {hasLocalTime(node.due) && (
-                        <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-                          onClick={() => setQDue(qDueDate, '')} title="Quitar hora">✕h</button>
-                      )}
-                    </div>
-                    {/* Repetición: número + unidad */}
-                    <div className="nqp-label">Repetición</div>
-                    <div className="nqp-rec-row">
-                      <button
-                        className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
-                        onClick={() => store.updateNode(node.id, { recurrence: null })}
-                      >–</button>
-                      <input
-                        type="number"
-                        className="nqp-rec-n"
-                        min={1} max={999}
-                        value={node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1}
-                        disabled={!node.recurrence}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => {
-                          const n = Math.max(1, parseInt(e.target.value) || 1)
-                          const unit = node.recurrence ? node.recurrence.split(':')[0] : 'daily'
-                          store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
-                        }}
-                      />
-                      {([['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']] as [string, string][]).map(([unit, label]) => (
-                        <button
-                          key={unit}
-                          className={`nqp-chip${!!node.recurrence && node.recurrence.split(':')[0] === unit ? ' active' : ''}`}
-                          onClick={() => {
-                            const n = node.recurrence ? (parseInt(node.recurrence.split(':')[1] || '1') || 1) : 1
-                            store.updateNode(node.id, { recurrence: n === 1 ? unit : `${unit}:${n}` })
-                          }}
-                        >{label}</button>
-                      ))}
-                    </div>
-                    {/* Prioridad */}
-                    <div className="nqp-label">Prioridad</div>
-                    <div className="nqp-chips-row">
-                      {([
-                        { v: null,     l: '–',    c: '' },
-                        { v: 'low',    l: 'Baja',  c: '#6b7280' },
-                        { v: 'medium', l: 'Media', c: '#f59e0b' },
-                        { v: 'high',   l: 'Alta',  c: '#ef4444' },
-                      ] as { v: Node['priority']; l: string; c: string }[]).map(opt => (
-                        <button key={String(opt.v)}
-                          className={`nqp-chip${node.priority === opt.v ? ' active' : ''}`}
-                          style={opt.c ? { color: opt.c, ...(node.priority === opt.v ? { borderColor: opt.c, background: opt.c + '20' } : {}) } : {}}
-                          onClick={() => store.updateNode(node.id, { priority: opt.v })}
-                        >{opt.l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  </div>,
-                  document.body
-                )}
-              </div>
-            )}
+            {/* Badge de recurrencia (tareas con /mover a recurrente) */}
+            {node.status !== null && !node.isSeguimiento && !node.isEvent && (() => {
+              try {
+                const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
+                if (!rec) return null
+                return (
+                  <span className="node-recurrence-badge" title={`Recurrencia: ${rec.display}`}>
+                    ↻ {rec.display}
+                  </span>
+                )
+              } catch { return null }
+            })()}
 
             {/* Atajo WF — estrella visible en hover o si ya es atajo */}
             {(() => {
