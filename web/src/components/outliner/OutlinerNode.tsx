@@ -826,24 +826,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const tagSlug = tagMatch[1]
       // Confirmar el tag: crear en árbol si no existe
       try { ensureTagInTree(tagSlug) } catch { /* silencioso */ }
-      // Añadir un espacio después del tag para salir de él (cursor avanza)
+      // Añadir un espacio después del tag y renderizar con colores
       if (contentRef.current) {
         const after = text.slice(pos)
-        const newText = beforeCursor + ' ' + after
-        contentRef.current.textContent = newText
-        // Posicionar cursor después del espacio
+        const newText = (beforeCursor + ' ' + after).trimEnd()
+        const trimmed = newText.trimStart()
+
+        // Guardar texto
+        store.updateNode(node.id, { text: trimmed })
+
+        // Renderizar con colores inmediatamente (innerHTML con tags coloreados)
+        const rendered = renderInlineToHtml(trimmed)
+        contentRef.current.innerHTML = rendered
+
+        // Posicionar cursor al final del texto renderizado
         const sel = window.getSelection()
         const range = document.createRange()
-        const textNode = contentRef.current.firstChild
-        if (textNode) {
-          const newPos = beforeCursor.length + 1
-          range.setStart(textNode, Math.min(newPos, textNode.textContent?.length ?? 0))
-          range.collapse(true)
-          sel?.removeAllRanges()
-          sel?.addRange(range)
-        }
-        // Guardar el texto actualizado
-        store.updateNode(node.id, { text: newText.trim() })
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
       }
       // Tab: no hacer nada más. Enter: esperar segundo Enter para crear línea
       return

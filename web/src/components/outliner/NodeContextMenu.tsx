@@ -18,6 +18,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -61,6 +62,35 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const isDiary = node.isDiaryEntry
   const isTemporal = isTemporalNode(node)
   const publicSlug = node.publicSlug
+
+  // Color — detectar si es un nodo de tag para usar setTagColor
+  const tagSlug = getNodeTagSlug(node.id)  // null si no está bajo 🏷 Tags
+  const currentColor = tagSlug
+    ? store.tagColor(tagSlug)   // color del tag (sin ser el determinístico por hash)
+    : (meta.color ?? null)      // color del nodo genérico
+
+  const [showColorPicker, setShowColorPicker] = useState(false)
+
+  const COLOR_SWATCHES = [
+    '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
+    '#ef4444', '#ec4899', '#06b6d4', '#84cc16',
+    '#f97316', '#64748b',
+  ]
+
+  function applyColor(color: string | null) {
+    if (tagSlug) {
+      // Nodo de tag → colorear el chip en todos los lugares
+      store.setTagColor(tagSlug, color)
+    } else {
+      // Nodo genérico → color en extraData
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        if (color) ed.color = color; else delete ed.color
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
+    }
+    setShowColorPicker(false)
+  }
 
   // Plantillas: hijos del nodo "Plantillas"
   const templateParent = store.allActive().find(n =>
@@ -281,6 +311,52 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
           {isFav ? 'Quitar de atajos' : 'Añadir a atajos'}
         </button>
+      </div>
+
+      <div className="context-menu-separator" />
+
+      {/* Color */}
+      <div className="context-menu-section">
+        <button
+          className={`context-menu-item${showColorPicker ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowColorPicker(v => !v) }}
+        >
+          <span
+            className="context-menu-icon"
+            style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: currentColor || 'var(--text-tertiary)', border: '1.5px solid var(--border)', verticalAlign: 'middle' }}
+          />
+          {tagSlug ? 'Color del tag' : 'Color del nodo'}
+          <span className="context-menu-shortcut">{showColorPicker ? '▾' : '›'}</span>
+        </button>
+        {showColorPicker && (
+          <div className="context-menu-submenu-inline" style={{ padding: '6px 10px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {COLOR_SWATCHES.map(c => (
+                <button
+                  key={c}
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); applyColor(c) }}
+                  style={{
+                    width: 20, height: 20, borderRadius: '50%', background: c,
+                    border: currentColor === c ? '2px solid var(--text-primary)' : '2px solid transparent',
+                    cursor: 'pointer', flexShrink: 0,
+                  }}
+                  title={c}
+                />
+              ))}
+              {/* Sin color */}
+              <button
+                onClick={e => { e.preventDefault(); e.stopPropagation(); applyColor(null) }}
+                style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: 'transparent',
+                  border: !currentColor ? '2px solid var(--text-primary)' : '2px solid var(--border)',
+                  cursor: 'pointer', flexShrink: 0, fontSize: 10, lineHeight: 1,
+                }}
+                title="Sin color"
+              >✕</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Propiedades de tarea (solo si es tarea) */}
