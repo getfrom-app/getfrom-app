@@ -137,6 +137,7 @@ interface PickerItem {
   status?: string | null
   types?: string[]
   bodyPreview?: string
+  group?: 'context' | 'note'  // para @ picker con dos secciones
 }
 
 interface InlinePicker {
@@ -456,18 +457,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ...COMMON_TYPES.filter(t => !existingSlugs.has(t)).map(t => ({ id: t, label: t, slug: t })),
       ]
       const q = query.trim().toLowerCase()
-      return allItems
+      const contextItems = allItems
         .filter(item => !q || item.label.toLowerCase().includes(q) || item.slug.includes(q))
         .sort((a, b) => {
-          // Priorizar: empieza por query > contiene query en label
           const al = a.label.toLowerCase(), bl = b.label.toLowerCase()
           const aStarts = al.startsWith(q), bStarts = bl.startsWith(q)
           if (aStarts && !bStarts) return -1
           if (!aStarts && bStarts) return 1
           return al.localeCompare(bl)
         })
-        .slice(0, 10)
-        .map(item => ({ id: item.id, label: item.label }))
+        .slice(0, 8)
+        .map(item => ({ id: item.id, label: item.label, group: 'context' as const }))
+
+      // Grupo "Notas": búsqueda en todos los nodos (como el picker #)
+      const noteItems = q
+        ? store.allActive()
+            .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(q))
+            .slice(0, 5)
+            .map(n => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], bodyPreview: n.body?.slice(0, 30), group: 'note' as const }))
+        : []
+
+      return [...contextItems, ...noteItems]
     }
     // # — search nodes (node references), include status/types/body preview
     return store.allActive()
@@ -640,7 +650,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function applyPickerSelection(item: { id: string; label: string }) {
+  function applyPickerSelection(item: PickerItem) {
     if (!picker || !contentRef.current) return
 
     // ── Mirror: convertir el nodo actual en espejo del nodo seleccionado ──
@@ -665,6 +675,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const queryLen = picker.query.length
     const newBefore = before.slice(0, before.length - queryLen - 1) // remove @/# + query
     const after = text.slice(pos)
+
+    if (picker.type === '@' && item.group === 'note') {
+      // @ + nota genérica → insertar [[wiki-link]] inline donde se escribió
+      const wikiText = `[[${item.label}]]`
+      const newText = newBefore + wikiText + (after || '')
+      store.updateNode(node.id, { text: newText })
+      if (contentRef.current) {
+        contentRef.current.textContent = newText
+        // Cursor after the wiki-link
+        const range = document.createRange()
+        const sel = window.getSelection()
+        const textNode = contentRef.current.firstChild
+        const insertPos = newBefore.length + wikiText.length
+        if (textNode && textNode.textContent && insertPos <= textNode.textContent.length) {
+          range.setStart(textNode, insertPos)
+          range.collapse(true)
+          sel?.removeAllRanges()
+          sel?.addRange(range)
+        }
+      }
+      setPicker(null)
+      return
+    }
 
     if (picker.type === '@') {
       // @ context/tag: siempre al final del texto, no inline donde se escribió
@@ -2663,7 +2696,41 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               ⬡ Espejo — selecciona el nodo a reflejar aquí
             </div>
           )}
-          {picker.items.map((item, idx) => (
+          {picker.type === '@' ? (() => {
+            const contextItems = picker.items.filter(i => i.group === 'context')
+            const noteItems = picker.items.filter(i => i.group === 'note')
+            const renderItem = (item: PickerItem, idx: number) => (
+              <button
+                key={item.id}
+                className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
+              >
+                <span className="inline-picker-icon">{item.group === 'note' ? '📄' : '@'}</span>
+                <span className="inline-picker-content">
+                  <span className="inline-picker-label">{item.label}</span>
+                  {item.group === 'note' && item.bodyPreview && (
+                    <span className="inline-picker-preview">{item.bodyPreview}…</span>
+                  )}
+                </span>
+              </button>
+            )
+            return (
+              <>
+                {contextItems.length > 0 && (
+                  <>
+                    <div className="inline-picker-section-header">Contextos</div>
+                    {contextItems.map((item, i) => renderItem(item, i))}
+                  </>
+                )}
+                {noteItems.length > 0 && (
+                  <>
+                    <div className="inline-picker-section-header" style={{ borderTop: contextItems.length > 0 ? '1px solid var(--border)' : undefined, marginTop: contextItems.length > 0 ? 4 : 0 }}>Notas</div>
+                    {noteItems.map((item, i) => renderItem(item, contextItems.length + i))}
+                  </>
+                )}
+              </>
+            )
+          })() : picker.items.map((item, idx) => (
             <button
               key={item.id}
               className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
@@ -2672,7 +2739,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 applyPickerSelection(item)
               }}
             >
-              <span className="inline-picker-icon">{picker.type === '@' ? '@' : picker.type === 'mirror' ? '⬡' : '#'}</span>
+              <span className="inline-picker-icon">{picker.type === 'mirror' ? '⬡' : '#'}</span>
               <span className="inline-picker-content">
                 <span className="inline-picker-label">{item.label}</span>
                 {picker.type === '#' && (

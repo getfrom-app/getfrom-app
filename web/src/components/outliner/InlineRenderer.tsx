@@ -14,6 +14,15 @@ function tagStyle(hex: string): string {
 // Color para chips de contexto @mention
 const CONTEXT_COLOR = '#7c3aed'
 
+// Convierte slug de contexto a nombre legible: "la-isla" → "La Isla", "media-sector/radio" → "Radio"
+function slugToDisplayName(slug: string): string {
+  // Tomar solo la última parte del path jerárquico
+  const part = slug.split('/').pop() || slug
+  return part
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
 // Render text with colored hashtags and @context chips
 function renderWithTags(text: string, key: number): React.ReactNode {
   const parts = text.split(/(#[\wÀ-ɏ/\-]+|@[\wÀ-ɏ][\w\sÀ-ɏ\-]*)/g)
@@ -35,13 +44,23 @@ function renderWithTags(text: string, key: number): React.ReactNode {
           )
         }
         if (part.startsWith('@') && part.length > 1) {
+          const slug = part.slice(1).trim()
+          const displayName = slugToDisplayName(slug)
           return (
             <span
               key={`ctx-${key}-${i}`}
               className="context-inline"
-              style={{ background: CONTEXT_COLOR + '20', color: CONTEXT_COLOR, border: `1px solid ${CONTEXT_COLOR}40`, borderRadius: 4, padding: '0 5px', fontSize: '0.85em', fontWeight: 500 }}
+              data-slug={slug}
+              style={{
+                color: CONTEXT_COLOR,
+                fontSize: '0.8em',
+                fontWeight: 500,
+                borderBottom: `1px dashed ${CONTEXT_COLOR}80`,
+                padding: '0 2px',
+                cursor: 'pointer',
+              }}
             >
-              {part}
+              {displayName}
             </span>
           )
         }
@@ -267,10 +286,14 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
       const hex = store.tagColor(tag)
       return `<span class="tag-inline" style="${tagStyle(hex)}">${match}</span>`
     })
-    // @contextos con estilo de chip morado
-    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (match) => {
+    // @contextos \u2014 nombre limpio, sin @, sin guiones, sin fondo, underline punteado
+    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (_match, slug) => {
       const hex = '#7c3aed'
-      return `<span class="context-inline" style="background:${hex}20;color:${hex};border:1px solid ${hex}40;border-radius:4px;padding:0 5px;font-size:0.85em;font-weight:500">${match}</span>`
+      // De-slug: tomar \u00FAltima parte del path y capitalizar
+      const part = (slug.trim().split('/').pop() || slug.trim())
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, (c: string) => c.toUpperCase())
+      return `<span class="context-inline" data-slug="${esc(slug.trim())}" style="color:${hex};font-size:0.8em;font-weight:500;border-bottom:1px dashed ${hex}80;padding:0 2px;cursor:pointer">${esc(part)}</span>`
     })
 
   // Aplicar highlight de búsqueda si existe
