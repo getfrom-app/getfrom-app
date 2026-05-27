@@ -9873,6 +9873,43 @@ a:focus-visible {
 .filter-cal-task.done { opacity: 0.5; text-decoration: line-through; }
 .filter-cal-more { font-size: 10px; color: var(--text-tertiary); padding: 1px 4px; }
 
+/* ── Vista tabla de filtro ───────────────────────────────────────── */
+.filter-table-view { overflow-x: auto; }
+.filter-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.filter-table th {
+  text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 600;
+  color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.filter-table-row { cursor: pointer; transition: background 0.08s; }
+.filter-table-row:hover { background: var(--bg-hover); }
+.filter-table-row td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.filter-table-status { width: 32px; }
+.filter-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); }
+.filter-status-dot.pending { background: #fbbf24; }
+.filter-status-dot.done { background: #22c55e; }
+.filter-table-text { font-weight: 500; color: var(--text-primary); }
+.filter-table-crumb { font-size: 11px; color: var(--text-tertiary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-table-date { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+/* ── Vista kanban de filtro ──────────────────────────────────────── */
+.filter-kanban-view { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; min-height: 200px; }
+.filter-kanban-col { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px; }
+.filter-kanban-col-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-top: 3px solid var(--border);
+  background: var(--bg-secondary); border-radius: 6px; font-size: 12px; font-weight: 600;
+}
+.filter-kanban-count { font-size: 11px; color: var(--text-tertiary); font-weight: 400; }
+.filter-kanban-cards { display: flex; flex-direction: column; gap: 4px; }
+.filter-kanban-card {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: background 0.08s;
+}
+.filter-kanban-card:hover { background: var(--bg-hover); }
+.filter-kanban-card-text { font-size: 12px; color: var(--text-primary); line-height: 1.4; }
+.filter-kanban-card-crumb { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; }
+
 /* ── Lista plana de resultados de filtro ──────────────────────────── */
 /* Nodo ancestro en modo filtro — da contexto pero no es el resultado */
 .wf-layout .node-row.wf-filter-ancestor { opacity: 0.45; }

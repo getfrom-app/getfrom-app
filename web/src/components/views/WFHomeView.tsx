@@ -6,7 +6,7 @@ import { useMemo, useEffect, useState } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
-import { FilterViewSwitcher, FlatView, CalendarView } from './FilterResultsView'
+import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
@@ -74,20 +74,22 @@ export default function WFHomeView({ filterText }: Props) {
           view={filterView}
           onChange={changeFilterView}
           count={matchCount}
-          filterText={filterText!}
           onClear={() => window.dispatchEvent(new CustomEvent('wf:clear-filter'))}
         />
       )}
 
-      {/* Vista seleccionada */}
-      {filterResult?.hasFilter && matchCount > 0 && filterView === 'plano' && (
-        <FlatView matchIds={filterResult.matchIds} />
+      {/* Vistas alternativas cuando hay filtro activo */}
+      {filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
+        <TableView matchIds={filterResult.matchIds} />
+      )}
+      {filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
+        <KanbanView matchIds={filterResult.matchIds} />
       )}
       {filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
         <CalendarView matchIds={filterResult.matchIds} />
       )}
 
-      {/* Árbol — siempre visible en vista lista, o cuando no hay filtro */}
+      {/* Árbol — vista lista (default) o sin filtro */}
       <div style={{ display: (filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
         <Outliner
           parentId={null}

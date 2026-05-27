@@ -1,18 +1,23 @@
 /**
  * FilterResultsView — Vistas alternativas para resultados de filtro.
- * Lista plana o calendario agrupado por día.
+ * Árbol (default), tabla, kanban, calendario — mismos iconos que NodeView.
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
-interface Props {
-  matchIds: Set<string>
-  filterText: string
+// ── Mismo SVG que NodeView ─────────────────────────────────────────────────
+const ICONS = {
+  lista: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg>,
+  tabla: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg>,
+  kanban: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg>,
+  calendario: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="2" width="14" height="13" rx="1"/><line x1="1" y1="6" x2="15" y2="6"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg>,
 }
 
-// ── Obtener la fecha del día de un nodo (buscando ancestro diary) ──────────
+export type FilterView = 'lista' | 'tabla' | 'kanban' | 'calendario'
+
+// ── Fecha del día de un nodo (buscando ancestro diary) ─────────────────────
 function getDayDate(node: Node): string | null {
   let cur: Node | undefined = node
   const visited = new Set<string>()
@@ -25,8 +30,21 @@ function getDayDate(node: Node): string | null {
   return node.due ?? null
 }
 
-// ── Vista plana ────────────────────────────────────────────────────────────
-function FlatView({ matchIds }: { matchIds: Set<string> }) {
+// ── Breadcrumb ─────────────────────────────────────────────────────────────
+function getBreadcrumb(node: Node, max = 3): string {
+  const crumbs: string[] = []
+  let cur = node.parentId ? store.getNode(node.parentId) : undefined
+  const vis = new Set<string>()
+  while (cur && !vis.has(cur.id) && crumbs.length < max) {
+    vis.add(cur.id)
+    if (cur.text) crumbs.unshift(cur.text.slice(0, 25))
+    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
+  }
+  return crumbs.join(' › ')
+}
+
+// ── Vista tabla ────────────────────────────────────────────────────────────
+function TableView({ matchIds }: { matchIds: Set<string> }) {
   const s = useStore()
   const navigate = useNavigate()
   const nodes = useMemo(() =>
@@ -37,32 +55,77 @@ function FlatView({ matchIds }: { matchIds: Set<string> }) {
   , [matchIds, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="filter-flat-view">
-      {nodes.map(n => {
-        // Build breadcrumb
-        const crumbs: string[] = []
-        let cur = n.parentId ? store.getNode(n.parentId) : undefined
-        const vis = new Set<string>()
-        while (cur && !vis.has(cur.id)) {
-          vis.add(cur.id)
-          if (cur.text) crumbs.unshift(cur.text.slice(0, 30))
-          if (crumbs.length >= 3) break
-          cur = cur.parentId ? store.getNode(cur.parentId) : undefined
-        }
+    <div className="filter-table-view">
+      <table className="filter-table">
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Tarea / Nota</th>
+            <th>Contexto</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {nodes.map(n => (
+            <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)} className="filter-table-row">
+              <td className="filter-table-status">
+                <span className={`filter-status-dot ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`} />
+              </td>
+              <td className="filter-table-text">{n.text || 'Sin título'}</td>
+              <td className="filter-table-crumb">{getBreadcrumb(n)}</td>
+              <td className="filter-table-date">
+                {n.due ? new Date(n.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ── Vista kanban ───────────────────────────────────────────────────────────
+const KANBAN_COLS = [
+  { id: 'pending', label: 'Pendiente', color: '#fbbf24' },
+  { id: 'future',  label: 'Futuro',    color: '#60a5fa' },
+  { id: 'done',    label: 'Hecho',     color: '#22c55e' },
+  { id: 'other',   label: 'Sin estado',color: '#6b7280' },
+]
+
+function KanbanView({ matchIds }: { matchIds: Set<string> }) {
+  const s = useStore()
+  const navigate = useNavigate()
+  const nodes = useMemo(() =>
+    Array.from(matchIds)
+      .map(id => s.getNode(id))
+      .filter((n): n is Node => !!n && !n.deletedAt)
+  , [matchIds, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function getCol(n: Node) {
+    if (n.status === 'done') return 'done'
+    if (n.status === 'pending') return 'pending'
+    if (n.status === 'future') return 'future'
+    if (n.status !== null && n.status !== undefined) return 'pending'
+    return 'other'
+  }
+
+  return (
+    <div className="filter-kanban-view">
+      {KANBAN_COLS.map(col => {
+        const colNodes = nodes.filter(n => getCol(n) === col.id)
         return (
-          <div
-            key={n.id}
-            className="filter-flat-item"
-            onClick={() => navigate(`/node/${n.id}`)}
-          >
-            <span className={`filter-flat-checkbox ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`}>
-              {n.status === 'done' ? '✓' : n.status === 'pending' ? '○' : '·'}
-            </span>
-            <div className="filter-flat-content">
-              <span className="filter-flat-text">{n.text || 'Sin título'}</span>
-              {crumbs.length > 0 && (
-                <span className="filter-flat-crumb">{crumbs.join(' › ')}</span>
-              )}
+          <div key={col.id} className="filter-kanban-col">
+            <div className="filter-kanban-col-header" style={{ borderTopColor: col.color }}>
+              <span style={{ color: col.color }}>{col.label}</span>
+              <span className="filter-kanban-count">{colNodes.length}</span>
+            </div>
+            <div className="filter-kanban-cards">
+              {colNodes.map(n => (
+                <div key={n.id} className="filter-kanban-card" onClick={() => navigate(`/node/${n.id}`)}>
+                  <div className="filter-kanban-card-text">{n.text || 'Sin título'}</div>
+                  <div className="filter-kanban-card-crumb">{getBreadcrumb(n, 2)}</div>
+                </div>
+              ))}
             </div>
           </div>
         )
@@ -88,7 +151,7 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
       if (!n || n.deletedAt) continue
       const dayDate = getDayDate(n)
       if (!dayDate) continue
-      const key = dayDate.slice(0, 10) // YYYY-MM-DD
+      const key = dayDate.slice(0, 10)
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(n)
     }
@@ -98,16 +161,14 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
   const firstDay = new Date(year, month, 1)
-  // Monday-based: 0=Mon … 6=Sun
   let startDow = (firstDay.getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const pad = (n: number) => String(n).padStart(2, '0')
 
   const cells: (number | null)[] = []
   for (let i = 0; i < startDow; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
   while (cells.length % 7 !== 0) cells.push(null)
-
-  const pad = (n: number) => String(n).padStart(2, '0')
 
   return (
     <div className="filter-cal-view">
@@ -128,18 +189,12 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
               <span className="filter-cal-day-num">{day}</span>
               <div className="filter-cal-tasks">
                 {nodes.slice(0, 3).map(n => (
-                  <div
-                    key={n.id}
-                    className={`filter-cal-task ${n.status === 'done' ? 'done' : ''}`}
-                    onClick={() => navigate(`/node/${n.id}`)}
-                    title={n.text || ''}
-                  >
-                    {n.text?.slice(0, 25) || 'Sin título'}
+                  <div key={n.id} className={`filter-cal-task ${n.status === 'done' ? 'done' : ''}`}
+                    onClick={() => navigate(`/node/${n.id}`)} title={n.text || ''}>
+                    {n.text?.slice(0, 22) || 'Sin título'}
                   </div>
                 ))}
-                {nodes.length > 3 && (
-                  <div className="filter-cal-more">+{nodes.length - 3} más</div>
-                )}
+                {nodes.length > 3 && <div className="filter-cal-more">+{nodes.length - 3}</div>}
               </div>
             </div>
           )
@@ -149,18 +204,21 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
   )
 }
 
-// ── Componente principal ───────────────────────────────────────────────────
-export type FilterView = 'lista' | 'plano' | 'calendario'
-
+// ── Barra de resultados + selector de vista ────────────────────────────────
 interface SwitcherProps {
   view: FilterView
   onChange: (v: FilterView) => void
   count: number
-  filterText: string
   onClear: () => void
 }
 
-export function FilterViewSwitcher({ view, onChange, count, filterText, onClear }: SwitcherProps) {
+export function FilterViewSwitcher({ view, onChange, count, onClear }: SwitcherProps) {
+  const modes: { id: FilterView; title: string }[] = [
+    { id: 'lista',     title: 'Árbol' },
+    { id: 'tabla',     title: 'Tabla' },
+    { id: 'kanban',    title: 'Kanban' },
+    { id: 'calendario',title: 'Calendario' },
+  ]
   return (
     <div className="filter-results-bar">
       <span className="filter-results-count">
@@ -168,18 +226,14 @@ export function FilterViewSwitcher({ view, onChange, count, filterText, onClear 
         {' '}· <button className="wf-filter-clear-btn" onClick={onClear}>Limpiar</button>
       </span>
       <div className="filter-view-switcher">
-        {([
-          { id: 'lista', icon: '≡', title: 'Vista árbol' },
-          { id: 'plano', icon: '☰', title: 'Lista plana' },
-          { id: 'calendario', icon: '🗓', title: 'Calendario' },
-        ] as { id: FilterView; icon: string; title: string }[]).map(v => (
+        {modes.map(m => (
           <button
-            key={v.id}
-            className={`filter-view-btn ${view === v.id ? 'active' : ''}`}
-            onClick={() => onChange(v.id)}
-            title={v.title}
+            key={m.id}
+            className={`node-view-mode-btn ${view === m.id ? 'active' : ''}`}
+            onClick={() => onChange(m.id)}
+            title={m.title}
           >
-            {v.icon}
+            {ICONS[m.id]}
           </button>
         ))}
       </div>
@@ -187,4 +241,4 @@ export function FilterViewSwitcher({ view, onChange, count, filterText, onClear 
   )
 }
 
-export { FlatView, CalendarView }
+export { TableView, KanbanView, CalendarView }
