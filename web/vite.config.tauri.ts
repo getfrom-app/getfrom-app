@@ -9,6 +9,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  define: {
+    // Inyectado en tiempo de build — 100% fiable para detectar entorno Tauri
+    'import.meta.env.VITE_TAURI': '"true"',
+  },
   build: {
     outDir: '../app-tauri',
     emptyOutDir: true,

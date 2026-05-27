@@ -10,7 +10,8 @@ applyDensity(getStoredDensity())
 applyAccent(getStoredAccent())
 
 // Detectar entorno: Tauri (app desktop) vs web
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+// import.meta.env.VITE_TAURI = "true" se inyecta en vite.config.tauri.ts en build time
+const isTauri = import.meta.env.VITE_TAURI === 'true'
 const basename = isTauri ? '/' : '/app'
 
 // GitHub Pages SPA redirect: restore path from ?p= param (solo en web)
