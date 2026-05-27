@@ -60,7 +60,7 @@ export function getShortcutData(nodeId: string): { query?: string; view?: string
 
 // Migrate from localStorage shortcuts (one-time)
 export function migrateLocalStorageShortcuts() {
-  const KEY = 'wf_shortcuts'
+  const KEY = 'from_wf_shortcuts'  // clave real del shortcutsStore
   const raw = localStorage.getItem(KEY)
   if (!raw) return
   try {
