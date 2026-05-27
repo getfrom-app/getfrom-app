@@ -139,7 +139,7 @@ interface PickerItem {
 }
 
 interface InlinePicker {
-  type: '@' | '#'
+  type: '@' | '#' | 'mirror'
   query: string
   items: PickerItem[]
   activeIdx: number
@@ -586,7 +586,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const atMatch = before.match(/@([\wÀ-ɏ]*)$/)
     const hashMatch = before.match(/#(\w*)$/)
 
-    if (atMatch) {
+    if (picker?.type === 'mirror') {
+      // En modo mirror, el texto que escribe es el query de búsqueda
+      const query = text
+      const items = store.allActive()
+        .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 10)
+        .map(n => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], bodyPreview: n.body?.slice(0, 30) }))
+      setPicker(p => p ? { ...p, query, items, activeIdx: 0 } : p)
+    } else if (atMatch) {
       const query = atMatch[1]
       const items = buildPickerItems('@', query)
       setPicker({ type: '@', query, items, activeIdx: 0 })
@@ -628,6 +636,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function applyPickerSelection(item: { id: string; label: string }) {
     if (!picker || !contentRef.current) return
+
+    // ── Mirror: convertir el nodo actual en espejo del nodo seleccionado ──
+    if (picker.type === 'mirror') {
+      const originalNode = store.getNode(item.id)
+      if (!originalNode) { setPicker(null); return }
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed._mirrorOf = item.id
+      store.updateNode(node.id, { text: originalNode.text, extraData: JSON.stringify(ed) })
+      if (contentRef.current) contentRef.current.textContent = originalNode.text || ''
+      setPicker(null)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `⬡ Espejo de "${(originalNode.text || '').slice(0, 30)}" creado`, type: 'success' } }))
+      return
+    }
+
     const text = contentRef.current.textContent || ''
     const pos = getCaretPosition(contentRef.current)
     const before = text.slice(0, pos)
@@ -1663,6 +1686,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, { deletedAt: new Date().toISOString() })
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' } }))
       return
+    } else if (action === 'mirror') {
+      // Abrir picker de búsqueda para seleccionar el nodo a espejar
+      // El nodo actual (donde se escribió /Espejo) se vaciará y convertirá en el espejo
+      const allNodes = store.allActive()
+        .filter(n => !n.deletedAt && n.id !== node.id && n.text)
+        .slice(0, 10)
+        .map(n => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], bodyPreview: n.body?.slice(0, 30) }))
+      store.updateNode(node.id, { text: '' })
+      if (contentRef.current) contentRef.current.textContent = ''
+      setPicker({ type: 'mirror', query: '', items: allNodes, activeIdx: 0 })
+      setTimeout(() => contentRef.current?.focus(), 0)
+      return
     } else if (action === 'duplicate') {
       const parentId = node.parentId
       const sibs = store.children(parentId)
@@ -2568,9 +2603,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         />
       )}
 
-      {/* Inline picker (@ and #) — portal para evitar conflicto DOM */}
+      {/* Inline picker (@ / # / mirror) — portal para evitar conflicto DOM */}
       {picker && picker.items.length > 0 && createPortal(
         <div className="inline-picker" style={pickerStyle}>
+          {picker.type === 'mirror' && (
+            <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
+              ⬡ Espejo — selecciona el nodo a reflejar aquí
+            </div>
+          )}
           {picker.items.map((item, idx) => (
             <button
               key={item.id}
@@ -2580,7 +2620,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 applyPickerSelection(item)
               }}
             >
-              <span className="inline-picker-icon">{picker.type === '@' ? '@' : '#'}</span>
+              <span className="inline-picker-icon">{picker.type === '@' ? '@' : picker.type === 'mirror' ? '⬡' : '#'}</span>
               <span className="inline-picker-content">
                 <span className="inline-picker-label">{item.label}</span>
                 {picker.type === '#' && (

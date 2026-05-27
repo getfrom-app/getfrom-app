@@ -12,6 +12,7 @@ export type SlashAction =
   | 'ai-summarize' | 'ai-find-tasks' | 'ai-draft-outline' | 'ai-fix-grammar' | 'ai-make-shorter'
   | 'duplicate' | 'delete'
   | 'add-date'
+  | 'mirror'
 
 export interface SlashMenuOption {
   label: string
@@ -55,6 +56,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Árbol', label: 'Colapsar todo', icon: '▸', prefix: '', description: 'Colapsar todos los hijos', action: 'collapse-all' },
   { group: 'Árbol', label: 'Contar hijos', icon: '#', prefix: '', description: 'Mostrar número de nodos hijos', action: 'count-children' },
   { group: 'Árbol', label: 'Duplicar', icon: '⧉', prefix: '', description: 'Duplicar este nodo y sus hijos', action: 'duplicate' },
+  { group: 'Árbol', label: 'Espejo',   icon: '⬡', prefix: '', description: 'Insertar un espejo de otra nota aquí', action: 'mirror' },
   // ── IA ────────────────────────────────────────────────────────────────────
   { group: 'IA', label: 'Resumir', icon: '📝', prefix: '', description: 'Resumir el contenido con IA', action: 'ai-summarize' },
   { group: 'IA', label: 'Encontrar tareas', icon: '✓', prefix: '', description: 'Extraer tareas del contenido', action: 'ai-find-tasks' },
