@@ -349,7 +349,15 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       stopDragSelect()
     }
 
-    function onDragStart() {
+    function onDragStart(e: Event) {
+      // Si el drag empezó en un contenteditable (dragFromText), el browser está
+      // intentando arrastrar el texto seleccionado. Cancelamos ese comportamiento
+      // y dejamos que nuestro onMove detecte el cruce de nodo.
+      if (dragFromText.current) {
+        e.preventDefault()
+        return
+      }
+      // Drag real de nodo (reordenar) → limpiar selección
       dragAnchorId.current = null
       dragFromText.current = false
       stopDragSelect()
