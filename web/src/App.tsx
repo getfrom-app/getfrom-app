@@ -108,27 +108,41 @@ function GoogleCallbackPage() {
 }
 
 // Maneja deep links de OAuth desktop: from://auth-callback?accessToken=...&refreshToken=...
-function useDesktopOAuthCallback() {
-  const navigate = useNavigate ? useNavigate() : null
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    // Tauri emite 'oauth-callback' cuando llega un deep link from://
-    // También escuchamos el evento nativo de deep-link plugin
-    const handleOAuth = (event: CustomEvent | Event) => {
-      const url = (event as CustomEvent).detail as string ?? ''
-      if (!url.includes('auth-callback')) return
-      try {
-        const params = new URL(url).searchParams
-        const accessToken = params.get('accessToken')
-        const refreshToken = params.get('refreshToken')
-        if (accessToken && refreshToken) {
-          setTokens(accessToken, refreshToken)
-          window.location.href = '/'
-        }
-      } catch {}
+const isTauriEnv = import.meta.env.VITE_TAURI === 'true'
+
+function handleOAuthUrl(url: string) {
+  if (!url.includes('auth-callback')) return
+  try {
+    const params = new URL(url).searchParams
+    const accessToken = params.get('accessToken')
+    const refreshToken = params.get('refreshToken')
+    if (accessToken && refreshToken) {
+      setTokens(accessToken, refreshToken)
+      window.location.href = '/'
     }
-    window.addEventListener('oauth-callback', handleOAuth as EventListener)
-    return () => window.removeEventListener('oauth-callback', handleOAuth as EventListener)
+  } catch {}
+}
+
+function useDesktopOAuthCallback() {
+  useEffect(() => {
+    if (!isTauriEnv) return
+    let unlisten: (() => void) | null = null
+
+    // Escuchar deep links via tauri-plugin-deep-link (método correcto en Tauri v2)
+    import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
+      onOpenUrl((urls) => {
+        for (const url of urls) handleOAuthUrl(url)
+      }).then((fn) => { unlisten = fn })
+    }).catch(() => {
+      // Fallback: escuchar evento emitido desde Rust via @tauri-apps/api
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        listen<string>('oauth-callback', (event) => {
+          handleOAuthUrl(event.payload)
+        }).then((fn) => { unlisten = fn })
+      }).catch(() => {})
+    })
+
+    return () => { unlisten?.() }
   }, [])
 }
 
