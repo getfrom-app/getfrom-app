@@ -20,6 +20,8 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
+import { nextRecurrence } from '../../utils/naturalDate'
+import type { RecurrenceConfig } from '../../utils/naturalDate'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -1560,6 +1562,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, { status: 'pending', due: node.due ?? todayISO })
     } else if (node.status === 'pending') {
       store.updateNode(node.id, { status: 'done' })
+      // ── Recurrencia: crear siguiente instancia ────────────────────────────
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        const rec = ed._recurrence as RecurrenceConfig | undefined
+        if (rec) {
+          // Calcular base: fecha del nodo padre (diary day) o hoy
+          const parent = store.getNode(node.parentId || '')
+          const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
+          baseDate.setHours(0, 0, 0, 0)
+          const nextDate = nextRecurrence(baseDate, rec)
+          const dayNode = ensureDayPath(nextDate)
+          const sibs = store.children(dayNode.id)
+          const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+          const newNode = store.createNode({
+            text: node.text,
+            parentId: dayNode.id,
+            siblingOrder: lastOrder + 1,
+            isTask: true,
+            types: node.types,
+          })
+          // Copiar extraData con recurrencia al nodo recién creado
+          store.updateNode(newNode.id, {
+            status: 'pending',
+            extraData: JSON.stringify({ ...ed, _recurrence: rec }),
+          })
+        }
+      } catch { /* ignorar errores de recurrencia */ }
     } else {
       store.updateNode(node.id, { status: null })
     }
@@ -1599,7 +1628,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setCodeQuery('')
   }
 
-  function handleSlashSelect({ prefix, action }: SlashSelectPayload) {
+  function handleSlashSelect(payload: SlashSelectPayload) {
+    const { prefix, action } = payload
     setShowSlash(false)
     setSlashQuery('')
 
@@ -1755,6 +1785,30 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
       store.updateNode(node.id, { parentId: dayNode.id, siblingOrder: lastOrder + 1 })
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a hoy', type: 'success' } }))
+      return
+    } else if (action === 'move-to' && payload.moveToDate) {
+      // ── Mover a fecha natural ─────────────────────────────────────────────
+      const targetDate = payload.moveToDate
+      targetDate.setHours(0, 0, 0, 0)
+      const diaryNode = ensureDayPath(targetDate)
+      const sibs = store.children(diaryNode.id)
+      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+      // Guardar recurrencia en extraData si existe
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* */ }
+      if (payload.moveToRecurrence) {
+        ed._recurrence = payload.moveToRecurrence
+      } else {
+        delete ed._recurrence
+      }
+      store.updateNode(node.id, {
+        parentId: diaryNode.id,
+        siblingOrder: lastOrder + 1,
+        extraData: JSON.stringify(ed),
+      })
+      const label = targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      const recLabel = payload.moveToRecurrence ? ` · ↻ ${payload.moveToRecurrence.display}` : ''
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido al ${label}${recLabel}`, type: 'success' } }))
       return
     } else if (action === 'move-tomorrow' || action === 'move-next-week') {
       const targetDate = new Date()
@@ -2621,6 +2675,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 >
                   {node.due ? `📅 ${qDueBadgeLabel}` : 'sin fecha'}
                 </button>
+                {/* Badge de recurrencia */}
+                {(() => {
+                  try {
+                    const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
+                    if (!rec) return null
+                    return (
+                      <span className="node-recurrence-badge" title={`Recurrencia: ${rec.display}`}>
+                        ↻ {rec.display}
+                      </span>
+                    )
+                  } catch { return null }
+                })()}
                 {showQuickProps && createPortal(
                   <div
                     className="nqp-modal-overlay"

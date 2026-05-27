@@ -330,6 +330,63 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
 }
 
+/* ── Slash menu: modo "mover a" ─────────────────────────────────────────── */
+.slash-menu-move-header {
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.slash-menu-move-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin: 6px 4px;
+  width: calc(100% - 8px);
+}
+.slash-menu-move-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-accent);
+}
+.slash-menu-move-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.slash-menu-move-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px;
+}
+.slash-menu-move-example {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* ── Badge de recurrencia ─────────────────────────────────────────────── */
+.node-recurrence-badge {
+  font-size: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.node-row:hover .node-recurrence-badge,
+.node-recurrence-badge { opacity: 1; }
+
 /* ── Context menu ────────────────────────────────────────────────────────── */
 
 .context-menu {
