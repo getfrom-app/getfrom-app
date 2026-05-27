@@ -23,6 +23,7 @@ import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publis
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
+import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -778,7 +779,27 @@ export default function NodeView() {
   }
 
   function toggleFavorite() {
-    store.updateNode(node!.id, { isFavorite: !node!.isFavorite })
+    if (!node) return
+    const atajosNode = getAtajosNode()
+    // Comprobar si ya existe como atajo (hijo de 📌 Atajos con _shortcutNodeId)
+    const existingShortcut = atajosNode
+      ? store.children(atajosNode.id).find(n => {
+          try { return JSON.parse(n.extraData || '{}')._shortcutNodeId === node.id } catch { return false }
+        })
+      : null
+
+    if (existingShortcut) {
+      // Quitar de atajos
+      store.updateNode(existingShortcut.id, { deletedAt: new Date().toISOString() })
+      store.updateNode(node.id, { isFavorite: false })
+      window.dispatchEvent(new Event('wf:shortcuts-changed'))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Quitado de atajos', type: 'info' } }))
+    } else {
+      // Añadir a atajos
+      createNodeShortcut(node.id, node.text || 'Sin título')
+      store.updateNode(node.id, { isFavorite: true })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Añadido a atajos: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
+    }
   }
 
   async function handleShare() {
@@ -1568,18 +1589,26 @@ export default function NodeView() {
                 </button>
               )}
 
-              {/* ── Pin (Favorito) — igual que Mac ── */}
+              {/* ── Pin (Atajo) — añade/quita de 📌 Atajos ── */}
+              {(() => {
+                const atajosNode = getAtajosNode()
+                const isPinned = node.isFavorite || !!(atajosNode && store.children(atajosNode.id).find(n => {
+                  try { return JSON.parse(n.extraData || '{}')._shortcutNodeId === node.id } catch { return false }
+                }))
+                return (
               <button
-                className={`node-action-icon-btn ${node.isFavorite ? 'active' : ''}`}
+                className={`node-action-icon-btn ${isPinned ? 'active' : ''}`}
                 onClick={toggleFavorite}
-                title={node.isFavorite ? 'Quitar fijado' : 'Fijar nota'}
-                style={{ color: node.isFavorite ? '#ef4444' : undefined }}
+                title={isPinned ? 'Quitar de atajos' : 'Añadir a atajos'}
+                style={{ color: isPinned ? 'var(--accent)' : undefined }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="17" x2="12" y2="22"/>
                   <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
                 </svg>
               </button>
+                )
+              })()}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
