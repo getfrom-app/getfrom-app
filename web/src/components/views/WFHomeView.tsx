@@ -21,19 +21,17 @@ export default function WFHomeView({ filterText }: Props) {
   const s = useStore()
 
   // ── Loading gate ───────────────────────────────────────────────────────
-  // No renderizamos nada hasta que initialLoad() haya terminado.
-  // Esto evita el flash del nodo diario que se crea temporalmente en root.
+  // No renderizamos el Outliner hasta que initialLoad() haya terminado.
+  // Nota: excludeDiaryEntries en el Outliner garantiza que los diarios
+  // nunca aparezcan en root aunque haya un render temprano.
   const [storeReady, setStoreReady] = useState(() => store.isLoaded)
 
   useEffect(() => {
     if (storeReady) return
-    // Suscribirse al store para detectar cuando isLoaded pase a true
     const unsub = store.subscribe(() => {
       if (store.isLoaded) setStoreReady(true)
     })
-    // Failsafe: si por algún motivo isLoaded nunca se activa, mostrar tras 3s
-    const timer = setTimeout(() => setStoreReady(true), 3000)
-    return () => { unsub(); clearTimeout(timer) }
+    return () => unsub()
   }, [storeReady])
 
   // ── Colapsar root nodes al primer arranque en WF mode ──────────────────
@@ -86,6 +84,7 @@ export default function WFHomeView({ filterText }: Props) {
         placeholder="Escribe algo… o pulsa Enter para crear un nodo"
         filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
         filterMatchIds={filterResult?.matchIds}
+        excludeDiaryEntries
       />
     </div>
   )

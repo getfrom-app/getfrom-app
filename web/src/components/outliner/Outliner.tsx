@@ -39,6 +39,9 @@ interface Props {
   filterMatchIds?: Set<string>   // WF smart filter: IDs que coinciden (oculta los demás)
   temporalSort?: 'year' | 'month'  // WF: orden por mes (dentro de año) o por día (dentro de mes)
   compact?: boolean
+  /** Si true, oculta nodos isDiaryEntry de la lista (usados en WFHomeView para que
+   *  los diarios no aparezcan en root — viven bajo 📅 Agenda) */
+  excludeDiaryEntries?: boolean
 }
 
 type SortMode = 'none' | 'alpha' | 'due' | 'priority' | 'status'
@@ -66,7 +69,7 @@ function getDayNumber(node: Node): number {
   return m ? parseInt(m[1]) : 999
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, temporalSort, compact }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, temporalSort, compact, excludeDiaryEntries }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -78,7 +81,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const [localFilterText, setLocalFilterText] = useState('')
   const localFilterRef = useRef<HTMLInputElement>(null)
   const [sortMode, setSortMode] = useState<SortMode>('none')
-  const rawNodes = s.children(parentId)
+  const rawNodes = (() => {
+    const all = s.children(parentId)
+    // En WFHomeView (root), los diarios viven bajo 📅 Agenda — nunca en root
+    if (excludeDiaryEntries) return all.filter(n => !n.isDiaryEntry)
+    return all
+  })()
 
   // Apply visual sort without modifying siblingOrder
   const nodes = (() => {
