@@ -252,8 +252,10 @@ export function ensurePlantillasNode(): void {
   const PLANTILLAS_NAME = '📋 Plantillas'
 
   // Helper que siempre consulta el store fresco (evita array stale)
-  const getAll = () => store.children(null).filter(
-    n => !n.deletedAt && (n.text === PLANTILLAS_NAME || n.text === 'Plantillas')
+  // IMPORTANTE: busca en TODOS los nodos (no solo root) porque algunos pueden
+  // haber quedado bajo Agenda u otro nodo por bugs anteriores
+  const getAll = () => store.allActive().filter(
+    n => n.text === PLANTILLAS_NAME || n.text === 'Plantillas'
   )
 
   // Paso 1: limpiar duplicados (borrar todos excepto el primero)
@@ -264,13 +266,19 @@ export function ensurePlantillasNode(): void {
   const remaining = getAll()
 
   if (remaining.length === 0) {
-    // No existe ninguno → crear
-    store.createNode({ text: PLANTILLAS_NAME, parentId: null })
-  } else if (remaining[0].text !== PLANTILLAS_NAME) {
-    // Existe con nombre antiguo → migrar
-    store.updateNode(remaining[0].id, { text: PLANTILLAS_NAME })
+    // No existe ninguno → crear en root con orden fijo
+    store.createNode({ text: PLANTILLAS_NAME, parentId: null, siblingOrder: 9997 })
+  } else {
+    const keeper = remaining[0]
+    // Asegurar nombre correcto Y que esté en root (parentId === null)
+    const needsUpdate = keeper.text !== PLANTILLAS_NAME || keeper.parentId !== null
+    if (needsUpdate) {
+      store.updateNode(keeper.id, {
+        ...(keeper.text !== PLANTILLAS_NAME ? { text: PLANTILLAS_NAME } : {}),
+        ...(keeper.parentId !== null ? { parentId: null } : {}),
+      })
+    }
   }
-  // Si remaining[0].text === PLANTILLAS_NAME → perfecto, nada que hacer
 }
 
 /**
