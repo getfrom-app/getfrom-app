@@ -9530,3 +9530,53 @@ a:focus-visible {
   font-size: 11px;
   background: var(--bg-hover);
 }
+
+/* ── WF Bug fixes ──────────────────────────────────────────────────────────── */
+
+/* Bug 2: scroll en vista raíz */
+.wf-layout .main-content {
+  overflow-y: auto !important;
+}
+.wf-home-view {
+  padding: 32px 24px 80px;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Bug 3: three-dot no desplaza contenido — siempre en DOM, invisible hasta hover */
+.node-three-dot-btn {
+  opacity: 0;
+  pointer-events: none;
+  /* Mantiene el espacio pero es invisible */
+}
+.node-three-dot-btn.node-three-dot-btn--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* En WF mode, drag handle tampoco desplaza — ya tenía width fija pero
+   sobrescribir con visibility para coherencia visual */
+.wf-layout .node-drag-handle {
+  visibility: hidden;
+}
+.wf-layout .node-row:hover .node-drag-handle,
+.wf-layout .node-row.multi-selected .node-drag-handle {
+  visibility: visible;
+}
+
+/* Bug 4: bullet dot alineado con el texto */
+.wf-layout .bullet-nav-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;          /* altura completa de la fila */
+  margin-top: 0;
+  vertical-align: middle;
+}
+.wf-layout .bullet-nav-dot::after {
+  width: 6px;
+  height: 6px;
+  margin-top: 1px;       /* micro-ajuste fino de alineación */
+}

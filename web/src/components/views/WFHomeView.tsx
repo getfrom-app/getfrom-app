@@ -1,12 +1,14 @@
 /**
  * WFHomeView — Vista raíz estilo Workflowy
  * Muestra los nodos raíz (parentId = null) como outliner puro.
- * Reemplaza DiaryRedirect en la rama experiment/workflowy.
+ * Al primer arranque en WF mode, colapsa todos los nodos raíz.
  */
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import Outliner from '../outliner/Outliner'
-import { useStore } from '../../store/nodeStore'
+import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
+
+const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 
 interface Props {
   filterText?: string
@@ -15,8 +17,38 @@ interface Props {
 export default function WFHomeView({ filterText }: Props) {
   const s = useStore()
 
-  // Solo aplica filtro inteligente cuando hay operadores reconocidos
-  // Para texto libre, el Outliner maneja el resaltado nativo
+  // ── Colapsar root nodes al primer arranque en WF mode ──────────────────
+  useEffect(() => {
+    if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
+    // Esperar a que el store cargue (nodes > 0)
+    const check = () => {
+      const roots = store.children(null).filter(n => !n.deletedAt)
+      if (roots.length === 0) return
+      // Colapsar todos los root nodes que tengan hijos
+      roots.forEach(root => {
+        const kids = store.children(root.id).filter(n => !n.deletedAt)
+        if (kids.length > 0 && !root.isCollapsed) {
+          store.updateNode(root.id, { isCollapsed: true })
+        }
+      })
+      localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
+    }
+    // Si el store ya tiene datos, colapsar ahora
+    if (store.children(null).filter(n => !n.deletedAt).length > 0) {
+      check()
+    } else {
+      // Esperar la carga inicial
+      const unsub = store.subscribe(() => {
+        if (store.children(null).filter(n => !n.deletedAt).length > 0) {
+          check()
+          unsub()
+        }
+      })
+      return unsub
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Filtro inteligente ─────────────────────────────────────────────────
   const filterResult = useMemo(() => {
     if (!filterText?.trim()) return null
     if (!isSmartQuery(filterText)) return null
@@ -27,7 +59,6 @@ export default function WFHomeView({ filterText }: Props) {
 
   return (
     <div className="wf-home-view">
-      {/* Indicador de resultados del filtro */}
       {filterResult?.hasFilter && filterResult.matchIds.size === 0 && (
         <div className="wf-filter-empty">
           Sin resultados para <strong>"{filterText}"</strong>

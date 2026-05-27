@@ -1754,10 +1754,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           >⋮⋮</span>
         )}
 
-        {/* Three-dot hover menu (WF-style) */}
-        {hovered && !isDivider && (
+        {/* Three-dot hover menu (WF-style) — siempre en DOM para no desplazar contenido */}
+        {!isDivider && (
           <button
-            className="node-three-dot-btn"
+            className={`node-three-dot-btn${hovered ? ' node-three-dot-btn--visible' : ''}`}
             onClick={e => {
               e.stopPropagation()
               const rect = e.currentTarget.getBoundingClientRect()
@@ -1765,6 +1765,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             }}
             title="Más opciones"
             tabIndex={-1}
+            aria-hidden={!hovered}
           >
             ···
           </button>
