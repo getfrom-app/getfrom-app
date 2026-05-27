@@ -237,6 +237,18 @@ export function ensurePerfilInsideContexto(): void {
 }
 
 /**
+ * ensurePlantillasNode — crea el nodo raíz 'Plantillas' si no existe.
+ * Es un nodo de sistema que aparece en el árbol desde el primer uso.
+ */
+export function ensurePlantillasNode(): void {
+  const PLANTILLAS_NAME = 'Plantillas'
+  const exists = store.children(null).find(n => !n.deletedAt && n.text === PLANTILLAS_NAME)
+  if (!exists) {
+    store.createNode({ text: PLANTILLAS_NAME, parentId: null })
+  }
+}
+
+/**
  * Asegura que todos los nodos bajo Tags tienen _tagDefinition sincronizado.
  * Llamar una vez al arrancar el store (tras initialLoad).
  */
