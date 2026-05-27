@@ -84,47 +84,28 @@ export function ensureDayPath(date: Date): Node {
 }
 
 /**
- * Busca la nota de hoy específicamente bajo el árbol Agenda.
- * Si no existe, la crea. Devuelve el nodo verificado (garantizado en store.nodes).
+ * Devuelve la nota de hoy.
+ * Estrategia:
+ *  1. Si ya existe un diary entry para hoy en cualquier parte del store → lo usa
+ *  2. Si no → crea la jerarquía Agenda → Año → Mes → Día y lo crea ahí
+ *
+ * Así evitamos conflictos con nodos creados desde Mac/iOS y race conditions de sync.
  */
 export function getTodayDiaryUnderAgenda(): Node {
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const agenda = getOrCreateAgendaRoot()
-
-  // Buscar año
-  const yearText = String(today.getFullYear())
-  let yearNode = store.children(agenda.id).find(c => !c.deletedAt && c.text === yearText)
-  if (!yearNode) yearNode = store.createNode({ text: yearText, parentId: agenda.id })
-
-  // Buscar mes
-  const monthText = MONTHS_ES[today.getMonth()]
-  let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
-  if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
-
-  // Buscar día exacto
   const y = today.getFullYear(), m = today.getMonth(), d = today.getDate()
-  let dayNode = store.children(monthNode.id).find(c => {
-    if (c.deletedAt || !c.diaryDate) return false
-    const dt = new Date(c.diaryDate)
+
+  // 1. Buscar en TODO el store (incluye nodos del Mac/iOS)
+  const existing = Array.from(store.nodes.values()).find(n => {
+    if (!n.isDiaryEntry || n.deletedAt || !n.diaryDate) return false
+    const dt = new Date(n.diaryDate)
     return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
   })
+  if (existing) return existing
 
-  if (!dayNode) {
-    const dayDate = new Date(y, m, d, 0, 0, 0, 0)
-    const dayText = dayDate.toLocaleDateString('es-ES', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-    }).replace(/^\w/, c => c.toUpperCase())
-    dayNode = store.createNode({
-      text: dayText,
-      parentId: monthNode.id,
-      isDiaryEntry: true,
-      diaryDate: dayDate.toISOString(),
-    })
-  }
-
-  // Verificar que el nodo está en el store (defensa contra race conditions)
-  const verified = store.getNode(dayNode.id)
-  return verified ?? dayNode
+  // 2. No existe — crear bajo Agenda
+  const agenda  = getOrCreateAgendaRoot()
+  const yearN   = getOrCreateYearNode(y, agenda.id)
+  const monthN  = getOrCreateMonthNode(m, yearN.id)
+  return getOrCreateDayNode(today, monthN.id)
 }

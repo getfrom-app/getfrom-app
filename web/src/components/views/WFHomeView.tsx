@@ -7,10 +7,7 @@ import { useMemo, useEffect } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
-import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
-
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
-const WF_AGENDA_INIT_KEY   = 'from_wf_agenda_initialized'
 
 interface Props {
   filterText?: string
@@ -18,25 +15,6 @@ interface Props {
 
 export default function WFHomeView({ filterText }: Props) {
   const s = useStore()
-
-  // ── Auto-inicializar Agenda: crea nota de hoy al primer arranque ────────
-  useEffect(() => {
-    if (localStorage.getItem(WF_AGENDA_INIT_KEY)) return
-    // Esperar a que el store cargue
-    const tryInit = () => {
-      if (store.children(null).filter(n => !n.deletedAt).length === 0) return false
-      // Siempre crea/verifica la nota de hoy bajo el árbol Agenda
-      getTodayDiaryUnderAgenda()
-      localStorage.setItem(WF_AGENDA_INIT_KEY, '1')
-      return true
-    }
-    if (!tryInit()) {
-      const unsub = store.subscribe(() => {
-        if (tryInit()) unsub()
-      })
-      return unsub
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Colapsar root nodes al primer arranque en WF mode ──────────────────
   useEffect(() => {
