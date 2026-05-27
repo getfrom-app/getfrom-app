@@ -1819,6 +1819,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     : 'sin fecha'
   const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
 
+  // Nodo es ancestro (da contexto) pero no coincide él mismo → estilo atenuado WF
+  const isAncestorContext = anyDescendantMatches && !matchesFilter && !!filterMatchIds
+
+  // Filtro activo y este nodo es ancestro: forzar expansión para mostrar la cadena hasta el match
+  const showChildren = !isCollapsed || anyDescendantMatches
+
+  if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
+
   // Determine CSS class for block type
   const nodeRowClass = [
     'node-row',
@@ -1828,6 +1836,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     isHeading ? `node-row--${blockType}` : '',
     isBullet ? 'node-row--bullet' : '',
     isDragOver ? 'drag-over' : '',
+    isAncestorContext ? 'wf-filter-ancestor' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)
@@ -1837,11 +1846,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     pickerStyle.top = rect.bottom + 4
     pickerStyle.left = Math.max(8, Math.min(rect.left, window.innerWidth - 220))
   }
-
-  if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
-
-  // Cuando hay filtro activo y este nodo tiene hijos coincidentes → mostrar hijos aunque esté colapsado
-  const showChildren = !isCollapsed || anyDescendantMatches
 
   return (
     <div
@@ -2695,7 +2699,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           if (ed._inline === '1') return null
         } catch { /* fallthrough */ }
         // Excluir tareas atómicas del body — viven en el panel derecho (Tareas asociadas)
-        const bodyChildren = children.filter(c => !(c.isAtomic && c.status !== null))
+        let bodyChildren = children.filter(c => !(c.isAtomic && c.status !== null))
+        // Con filtro smart activo y este nodo es ancestro: solo mostrar hijos que
+        // son match o ancestros de match. Evita renderizar miles de hermanos irrelevantes.
+        if (filterMatchIds && filterMatchIds.size > 0 && anyDescendantMatches) {
+          bodyChildren = bodyChildren.filter(c =>
+            filterMatchIds.has(c.id) || filterAncestorIds?.has(c.id)
+          )
+        }
         return bodyChildren.map(child => (
           <OutlinerNode
             key={child.id}

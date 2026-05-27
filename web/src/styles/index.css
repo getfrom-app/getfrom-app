@@ -9434,6 +9434,12 @@ a:focus-visible {
 }
 
 /* ── Lista plana de resultados de filtro ──────────────────────────── */
+/* Nodo ancestro en modo filtro — da contexto pero no es el resultado */
+.wf-layout .node-row.wf-filter-ancestor { opacity: 0.45; }
+.wf-layout .node-row.wf-filter-ancestor:hover { opacity: 0.65; }
+/* Nodo resultado del filtro — destacado */
+.wf-layout .node-row:not(.wf-filter-ancestor) { opacity: 1; }
+
 .wf-filter-flat-list { display: flex; flex-direction: column; gap: 0; }
 .wf-filter-row {
   display: flex;
