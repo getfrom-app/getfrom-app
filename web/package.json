@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:tauri": "vite --config vite.config.tauri.ts",
     "build": "tsc -b && vite build",
+    "build:tauri": "tsc -b && vite build --config vite.config.tauri.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
