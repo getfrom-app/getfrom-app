@@ -82,8 +82,12 @@ export default function WFTopBar({
   const truncate = (label: string, max = 22) =>
     label.length > max ? label.slice(0, max) + '…' : label
 
-  // ── User tags (para el filtro de #tags) ──────────────────────────────────
-  const userTags = useMemo(() => s.allUsedTags().slice(0, 20), [s])
+  // ── Contextos de 🧠 Contexto (para el filtro @) ──────────────────────────
+  const contextoNodes = useMemo(() => {
+    const root = s.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+    if (!root) return []
+    return s.children(root.id).filter(n => !n.deletedAt && n.text)
+  }, [s])
 
   // ── Close on outside click ────────────────────────────────────────────────
   useEffect(() => {
@@ -132,9 +136,9 @@ export default function WFTopBar({
     setFilterCategory(null)
   }
 
-  function applyTagFilter(tag: string) {
-    const q = `#${tag}`
-    applyChip(q)
+  function applyContextFilter(nodeText: string) {
+    const slug = nodeText.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+    applyChip(`@${slug}`)
   }
 
   function goHome() { navigate('/') }
@@ -224,9 +228,9 @@ export default function WFTopBar({
               <button
                 className={`wf-filter-cat ${filterCategory === 'tags' ? 'active' : ''}`}
                 onMouseDown={e => { e.preventDefault(); setFilterCategory(c => c === 'tags' ? null : 'tags') }}
-                title="Filtrar por tag"
+                title="Filtrar por contexto (@)"
               >
-                <span>#</span>
+                <span style={{ fontWeight: 700 }}>@</span>
               </button>
               <button
                 className={`wf-filter-cat ${filterCategory === 'dates' ? 'active' : ''}`}
@@ -251,18 +255,22 @@ export default function WFTopBar({
             {/* Chips de la categoría activa */}
             {filterCategory === 'tags' && (
               <div className="wf-filter-chips">
-                {userTags.length === 0 && (
-                  <span className="wf-filter-chips-empty">Sin tags aún</span>
+                {contextoNodes.length === 0 && (
+                  <span className="wf-filter-chips-empty">Sin contextos en 🧠 Contexto</span>
                 )}
-                {userTags.map(tag => (
-                  <button
-                    key={tag}
-                    className={`wf-filter-chip ${filterText === `#${tag}` ? 'active' : ''}`}
-                    onMouseDown={e => { e.preventDefault(); applyTagFilter(tag) }}
-                  >
-                    #{tag}
-                  </button>
-                ))}
+                {contextoNodes.map(n => {
+                  const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+                  const query = `@${slug}`
+                  return (
+                    <button
+                      key={n.id}
+                      className={`wf-filter-chip ${filterText === query ? 'active' : ''}`}
+                      onMouseDown={e => { e.preventDefault(); applyContextFilter(n.text || '') }}
+                    >
+                      @{n.text}
+                    </button>
+                  )
+                })}
               </div>
             )}
 
@@ -311,13 +319,16 @@ export default function WFTopBar({
                   onMouseDown={e => { e.preventDefault(); applyChip('pendiente') }}>
                   Pendientes
                 </button>
-                {userTags.slice(0, 5).map(tag => (
-                  <button key={tag}
-                    className={`wf-filter-chip wf-filter-chip--tag ${filterText === `#${tag}` ? 'active' : ''}`}
-                    onMouseDown={e => { e.preventDefault(); applyTagFilter(tag) }}>
-                    #{tag}
-                  </button>
-                ))}
+                {contextoNodes.slice(0, 5).map(n => {
+                  const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+                  return (
+                    <button key={n.id}
+                      className={`wf-filter-chip wf-filter-chip--tag ${filterText === `@${slug}` ? 'active' : ''}`}
+                      onMouseDown={e => { e.preventDefault(); applyContextFilter(n.text || '') }}>
+                      @{n.text}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
