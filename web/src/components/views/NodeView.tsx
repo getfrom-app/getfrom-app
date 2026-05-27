@@ -112,14 +112,12 @@ export default function NodeView() {
 
   function setViewBlock(mode: string) {
     if (!node) return
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (mode === 'lista') delete ed.viewBlock
-      else ed.viewBlock = mode
-      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-    } catch {
-      store.updateNode(node.id, { extraData: JSON.stringify({ viewBlock: mode }) })
-    }
+    // Siempre leer extraData existente para no perder _props, _views, etc.
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* extraData corrupto — empezar vacío */ }
+    if (mode === 'lista') delete ed.viewBlock
+    else ed.viewBlock = mode
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
   }
 
   // ── Vistas múltiples (Notion-style) ─────────────────────────────────────
@@ -2095,9 +2093,9 @@ export default function NodeView() {
                   </>
                 )}
 
-                {/* ── Outliner: siempre visible en WF; en modo normal solo en vista lista ── */}
+                {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario ── */}
                 <div className={`outliner-section${
-                  !isWFMode && viewKind !== 'list' && !node.isDiaryEntry
+                  viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal)
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
