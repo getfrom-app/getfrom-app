@@ -21,7 +21,7 @@ export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
       style={{
         position: 'fixed',
         right: 16,
-        bottom: 16,
+        bottom: 40,
         width: 48,
         height: 48,
         borderRadius: '50%',
