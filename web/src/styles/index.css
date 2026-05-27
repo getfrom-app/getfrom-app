@@ -9137,7 +9137,7 @@ a:focus-visible {
 
 /* ── WFHomeView ───────────────────────────────────────────────────────────── */
 .wf-home-view {
-  padding: 32px 48px 80px 48px;
+  padding: 32px 24px 80px 48px;
   width: 100%;
   min-height: 100%;
   box-sizing: border-box;
@@ -9256,9 +9256,8 @@ a:focus-visible {
 
 /* ── WF NodeView simplification ───────────────────────────────────────────── */
 .wf-layout .breadcrumb-row { display: none; }
-.wf-layout .node-view-main { padding-top: 24px; }
 .wf-layout .node-updated-at-inline { display: none; }
-.wf-layout .node-view { max-width: 860px; margin: 0 auto; }
+.wf-layout .node-view { max-width: none !important; margin: 0 !important; }
 .wf-layout .view-header { padding-bottom: 8px; }
 .wf-layout .node-view .view-title { font-size: 28px; font-weight: 700; }
 
@@ -9595,9 +9594,9 @@ a:focus-visible {
   width: 100%;
   overflow-y: auto;
 }
-/* NodeView en WF: alineado a la izquierda con padding fijo, sin centrado */
+/* NodeView en WF: alineado a la izquierda, padding left generoso, right mínimo */
 .wf-layout .node-view-main {
-  padding: 24px 48px 80px 48px !important;
+  padding: 24px 24px 80px 48px !important;
   box-sizing: border-box;
 }
 .wf-layout .node-view-main .view-header,
