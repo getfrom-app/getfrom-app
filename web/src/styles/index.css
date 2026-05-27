@@ -424,9 +424,16 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-accent);
 }
 
-/* ── Nodo referencia (moved-ref): misma alineación, gris + cursiva ─────── */
-.node-row--moved-ref { cursor: pointer; opacity: 0.45; transition: opacity 0.15s; }
+/* ── Nodo referencia (moved-ref): misma alineación exacta, gris + cursiva ── */
+.node-row--moved-ref { cursor: pointer !important; opacity: 0.45; transition: opacity 0.15s; }
 .node-row--moved-ref:hover { opacity: 0.7; }
+/* Texto cursiva gris */
+.node-row--moved-ref .node-text { font-style: italic; color: var(--text-tertiary) !important; }
+/* Checkbox y bullet más tenues */
+.node-row--moved-ref .bullet-btn { opacity: 0.5; cursor: default !important; pointer-events: none; }
+.node-row--moved-ref .bullet-nav-dot { cursor: default !important; pointer-events: none; opacity: 0 !important; }
+/* No mostrar hover del row */
+.node-row--moved-ref:hover { background: transparent !important; }
 
 /* Badge → Mañana junto al texto */
 .node-moved-ref-badge {

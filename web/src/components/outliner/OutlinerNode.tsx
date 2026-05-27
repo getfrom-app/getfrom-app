@@ -942,7 +942,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   const handleFocus = useCallback(() => {
-    // ctx-ref: no editable — navegar al nodo real en su lugar
+    // moved-ref y ctx-ref: no editables — navegar al nodo real
+    if (movedRef) { navigate(`/node/${movedRef.targetId}`); return }
     if (ctxRef) { navigate(`/node/${ctxRef.targetId}`); return }
     setIsEditing(true)
     onSelect(node.id)
@@ -2373,45 +2374,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
-  // ── Nodo referencia (movedRef): mismo layout que nodo normal, gris/cursiva ──
-  if (movedRef) {
-    const realNode = store.getNode(movedRef.targetId)
-    return (
-      <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>
-        <div
-          className="node-row node-row--moved-ref"
-          style={{ paddingLeft: depth * 22 }}
-          onClick={() => navigate(`/node/${movedRef.targetId}`)}
-          title={`→ ${movedRef.label} — clic para ir`}
-        >
-          {/* Drag handle placeholder — mismo espacio que nodo normal */}
-          <span className="node-drag-handle" style={{ visibility: 'hidden', pointerEvents: 'none' }}>⋮⋮</span>
-          {/* Colapsar placeholder */}
-          <button className="collapse-btn invisible" tabIndex={-1} />
-          {/* nav-dot + checkbox */}
-          <button className="bullet-nav-dot" tabIndex={-1} style={{ cursor: 'default' }} />
-          {movedRef.wasTask ? (
-            <button className="bullet-btn task task-sq--future" tabIndex={-1} style={{ opacity: 0.5, cursor: 'default' }}>
-              <svg width="14" height="14" viewBox="0 0 14 14">
-                <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.06"/>
-              </svg>
-            </button>
-          ) : (
-            <button className="bullet-btn" tabIndex={-1} style={{ cursor: 'default' }}>
-              <span className="bullet-dot" />
-            </button>
-          )}
-          {/* Texto cursiva gris + badge inline */}
-          <div className="node-text-group">
-            <span className="node-text node-text--rendered" style={{ fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
-              {realNode?.text || node.text}
-            </span>
-            <span className="node-moved-ref-badge">→ {movedRef.label}</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // moved-ref: NO hacer render custom — dejar que el nodo renderice normalmente
+  // con la clase node-row--moved-ref aplicada vía nodeRowClass.
+  // Esto garantiza alineación 100% idéntica al resto de nodos.
 
   // Determine CSS class for block type
   const nodeRowClass = [
@@ -3074,6 +3039,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
+
+            {/* Badge → destino para moved-ref */}
+            {movedRef && (
+              <span className="node-moved-ref-badge">→ {movedRef.label}</span>
+            )}
 
             {/* Badge combinado tarea+fecha */}
             {taskPrediction && datePrediction && isEditing && !ctxCompletion && (
