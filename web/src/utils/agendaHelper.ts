@@ -1,10 +1,7 @@
 /**
- * agendaHelper — Utilidades para el árbol temporal de WF
- *
- * Jerarquía: 📅 Agenda → Año → Mes → Día (sin Semana)
- *
- * El nodo raíz se llama "📅 Agenda". Se reconocen también nombres legacy
- * ("Calendario", "Calendar", "Planificador") para compatibilidad.
+ * agendaHelper — Árbol temporal de WF
+ * Jerarquía exclusiva: 📅 Agenda → Año → Mes → Día
+ * NO busca nunca en jerarquía antigua (Semana, etc.)
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
@@ -16,50 +13,37 @@ const MONTHS_ES = [
 
 export const AGENDA_ROOT_NAME = '📅 Agenda'
 
-/** Busca el nodo raíz Agenda */
+// ── Primitivas ────────────────────────────────────────────────────────────────
+
 export function findAgendaRoot(): Node | undefined {
   return store.children(null).find(n => !n.deletedAt && n.text === AGENDA_ROOT_NAME)
 }
 
-/** Encuentra o crea el nodo raíz Agenda */
 export function getOrCreateAgendaRoot(): Node {
   return findAgendaRoot() ?? store.createNode({ text: AGENDA_ROOT_NAME, parentId: null })
 }
 
-/** Encuentra o crea el nodo de año bajo Agenda */
-export function getOrCreateYearNode(year: number, agendaId?: string): Node {
-  const agenda = agendaId ? store.getNode(agendaId) : getOrCreateAgendaRoot()
-  if (!agenda) return getOrCreateAgendaRoot() // fallback
+function getOrCreateYear(year: number, agendaId: string): Node {
   const yearText = String(year)
-  const existing = store.children(agenda.id).find(c => !c.deletedAt && c.text === yearText)
-  if (existing) return existing
-  return store.createNode({ text: yearText, parentId: agenda.id })
+  return store.children(agendaId).find(c => !c.deletedAt && c.text === yearText)
+    ?? store.createNode({ text: yearText, parentId: agendaId })
 }
 
-/** Encuentra o crea el nodo de mes bajo el año */
-export function getOrCreateMonthNode(monthIdx: number, yearId: string): Node {
+function getOrCreateMonth(monthIdx: number, yearId: string): Node {
   const monthText = MONTHS_ES[monthIdx]
-  const existing = store.children(yearId).find(
-    c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase()
-  )
-  if (existing) return existing
-  return store.createNode({ text: monthText, parentId: yearId })
+  return store.children(yearId).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
+    ?? store.createNode({ text: monthText, parentId: yearId })
 }
 
-/** Encuentra o crea el nodo de día (diary entry) bajo el mes */
-export function getOrCreateDayNode(date: Date, monthId: string): Node {
-  const year  = date.getFullYear()
-  const month = date.getMonth()
-  const day   = date.getDate()
-  // Buscar por diaryDate
+function getOrCreateDay(date: Date, monthId: string): Node {
+  const y = date.getFullYear(), m = date.getMonth(), d = date.getDate()
   const existing = store.children(monthId).find(c => {
     if (c.deletedAt || !c.diaryDate) return false
-    const d = new Date(c.diaryDate)
-    return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
+    const dt = new Date(c.diaryDate)
+    return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
   })
   if (existing) return existing
-  // Crear
-  const dayDate = new Date(year, month, day, 0, 0, 0, 0)
+  const dayDate = new Date(y, m, d, 0, 0, 0, 0)
   const dayText = dayDate.toLocaleDateString('es-ES', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   }).replace(/^\w/, c => c.toUpperCase())
@@ -71,41 +55,51 @@ export function getOrCreateDayNode(date: Date, monthId: string): Node {
   })
 }
 
+// ── API pública ───────────────────────────────────────────────────────────────
+
 /**
- * Navega a la nota de un día concreto, creando toda la jerarquía si es necesario.
- * Devuelve el nodo del día.
- * SIEMPRE busca bajo el árbol Agenda — ignora entradas bajo jerarquía antigua (Semana...).
+ * Crea (si no existe) y devuelve el nodo del día dado
+ * bajo la jerarquía Agenda → Año → Mes → Día.
+ * NUNCA busca fuera de Agenda.
  */
 export function ensureDayPath(date: Date): Node {
   const agenda = getOrCreateAgendaRoot()
-  const yearN  = getOrCreateYearNode(date.getFullYear(), agenda.id)
-  const monthN = getOrCreateMonthNode(date.getMonth(), yearN.id)
-  return getOrCreateDayNode(date, monthN.id)
+  const yearN  = getOrCreateYear(date.getFullYear(), agenda.id)
+  const monthN = getOrCreateMonth(date.getMonth(), yearN.id)
+  return getOrCreateDay(date, monthN.id)
 }
 
 /**
- * Devuelve la nota de hoy.
- * Estrategia:
- *  1. Si ya existe un diary entry para hoy en cualquier parte del store → lo usa
- *  2. Si no → crea la jerarquía Agenda → Año → Mes → Día y lo crea ahí
- *
- * Así evitamos conflictos con nodos creados desde Mac/iOS y race conditions de sync.
+ * Devuelve la nota de HOY buscando SOLO bajo Agenda.
+ * Si no existe bajo Agenda la crea — ignora completamente
+ * cualquier diary entry que exista bajo jerarquías antiguas (Semana...).
  */
 export function getTodayDiaryUnderAgenda(): Node {
   const today = new Date()
   const y = today.getFullYear(), m = today.getMonth(), d = today.getDate()
 
-  // 1. Buscar en TODO el store (incluye nodos del Mac/iOS)
-  const existing = Array.from(store.nodes.values()).find(n => {
-    if (!n.isDiaryEntry || n.deletedAt || !n.diaryDate) return false
-    const dt = new Date(n.diaryDate)
-    return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
-  })
-  if (existing) return existing
+  // Buscar SOLO bajo Agenda → Año → Mes
+  const agenda = findAgendaRoot()
+  if (agenda) {
+    const yearNode = store.children(agenda.id)
+      .find(c => !c.deletedAt && c.text === String(y))
+    if (yearNode) {
+      const monthNode = store.children(yearNode.id)
+        .find(c => !c.deletedAt && c.text?.toLowerCase() === MONTHS_ES[m].toLowerCase())
+      if (monthNode) {
+        const dayNode = store.children(monthNode.id).find(c => {
+          if (c.deletedAt || !c.diaryDate) return false
+          const dt = new Date(c.diaryDate)
+          return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
+        })
+        if (dayNode) return dayNode
+      }
+    }
+  }
 
-  // 2. No existe — crear bajo Agenda
-  const agenda  = getOrCreateAgendaRoot()
-  const yearN   = getOrCreateYearNode(y, agenda.id)
-  const monthN  = getOrCreateMonthNode(m, yearN.id)
-  return getOrCreateDayNode(today, monthN.id)
+  // No existe bajo Agenda → crear la jerarquía completa
+  return ensureDayPath(today)
 }
+
+// Mantener para compatibilidad con imports existentes
+export { getOrCreateYear as getOrCreateYearNode, getOrCreateMonth as getOrCreateMonthNode, getOrCreateDay as getOrCreateDayNode }
