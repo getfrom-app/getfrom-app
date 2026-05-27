@@ -48,6 +48,7 @@ import StatusBar from './StatusBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
+import { syncTagDefinitions } from '../../utils/tagsHelper'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -121,15 +122,20 @@ export default function MainLayout() {
 
   useEffect(() => {
     store.isGuest = false
-    store.initialLoad().catch((err: unknown) => {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (msg === 'UNAUTHORIZED') {
-        clearTokens()
-        navigate('/login', { replace: true })
-      } else {
-        setLoadError(msg)
-      }
-    })
+    store.initialLoad()
+      .then(() => {
+        // Tras carga inicial: sincronizar _tagDefinition para nodos bajo 🏷 Tags
+        syncTagDefinitions()
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (msg === 'UNAUTHORIZED') {
+          clearTokens()
+          navigate('/login', { replace: true })
+        } else {
+          setLoadError(msg)
+        }
+      })
     userStore.fetchMe()
   }, [navigate])
 

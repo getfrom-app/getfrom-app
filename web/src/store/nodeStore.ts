@@ -485,6 +485,26 @@ export class NodeStore {
 
   /** Nodo de definición de un tag (con _tagDefinition en extraData) o null */
   getTagDefNode(tagName: string): Node | null {
+    // 1. Buscar en árbol Tags por slug (nueva forma)
+    // Evitar import circular: buscar directamente sin usar tagsHelper
+    const tagsRoot = this.children(null).find(n => !n.deletedAt && n.text === '🏷 Tags')
+    if (tagsRoot) {
+      const slug = tagName.toLowerCase()
+      const parts = slug.split('/')
+      let parent = tagsRoot
+      let found: Node | null = null
+      for (const part of parts) {
+        const match = this.children(parent.id).find(c =>
+          !c.deletedAt &&
+          (c.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '') === part
+        )
+        if (!match) { found = null; break }
+        found = match
+        parent = match
+      }
+      if (found && found.id !== tagsRoot.id) return found
+    }
+    // 2. Fallback: _tagDefinition en extraData (legado)
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
       try {
