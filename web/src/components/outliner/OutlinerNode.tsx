@@ -432,9 +432,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '#') {
-      // Combinar tags del usuario (allUsedTags) + tipos comunes, filtrar por query
+      // Tags del árbol 🏷 Tags primero (slugs jerarquicos), luego allUsedTags
+      const treeTagSlugs: string[] = []
+      const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === '🏷 Tags')
+      if (tagsRoot) {
+        function collectSlugs(parentId: string, prefix: string) {
+          for (const child of store.children(parentId)) {
+            if (child.deletedAt) continue
+            const slug = (prefix ? prefix + '/' : '') +
+              (child.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+            treeTagSlugs.push(slug)
+            collectSlugs(child.id, slug)
+          }
+        }
+        collectSlugs(tagsRoot.id, '')
+      }
       const userTags = store.allUsedTags()
-      const allTags = Array.from(new Set([...userTags, ...COMMON_TYPES]))
+      const allTags = Array.from(new Set([...treeTagSlugs, ...userTags, ...COMMON_TYPES]))
       return allTags
         .filter(t => !query || t.toLowerCase().includes(query.toLowerCase()))
         .slice(0, 10)
@@ -2036,13 +2050,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 return
               }
 
-              // Click en hashtag inline → navegar a TagView
+              // Click en hashtag inline
               if (target.classList.contains('tag-inline') || target.closest('.tag-inline')) {
                 const tagEl = target.classList.contains('tag-inline') ? target : target.closest('.tag-inline') as HTMLElement
                 const tagText = tagEl.textContent?.replace(/^#/, '') || ''
                 if (tagText && !isEditing) {
                   e.preventDefault()
-                  navigate(`/tag/${tagText}`)
+                  // En WF mode: navegar al nodo del tag (zoom in) si existe
+                  if (document.querySelector('.wf-layout')) {
+                    // Import dinámico para evitar circular dep
+                    import('../../utils/tagsHelper').then(({ resolveTagDefNode }) => {
+                      const defNode = resolveTagDefNode(tagText)
+                      if (defNode) navigate(`/node/${defNode.id}`)
+                      else navigate(`/tag/${tagText}`)
+                    }).catch(() => navigate(`/tag/${tagText}`))
+                  } else {
+                    navigate(`/tag/${tagText}`)
+                  }
                 }
               }
             }}
