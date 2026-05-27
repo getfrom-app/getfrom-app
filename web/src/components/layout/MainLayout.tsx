@@ -122,14 +122,20 @@ export default function MainLayout() {
   useTaskNotifications()
 
   useEffect(() => {
+    // WF mode: siempre arrancar en la vista raíz (no en la última URL del browser)
+    navigate('/', { replace: true })
+
     store.isGuest = false
     store.initialLoad()
-      .then(() => {
-        // Reubicar diarios en root bajo 📅 Agenda (si Agenda existe)
-        relocateRootDiariesToAgenda()
-        // Tras carga inicial: limpiar tags accidentales y sincronizar _tagDefinition
+      .then(async () => {
+        // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
+        // para que WFHomeView no los vea nunca en root
+        await relocateRootDiariesToAgenda()
+        // Limpiar tags accidentales y sincronizar _tagDefinition
         cleanupSpuriousTags()
         syncTagDefinitions()
+        // Marcar el store como listo → WFHomeView renderiza con árbol limpio
+        store.setLoaded()
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)

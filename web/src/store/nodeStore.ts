@@ -1433,7 +1433,12 @@ export class NodeStore {
       await this.createTodayDiary()
     }
 
-    // Marcar store como completamente cargado
+    // Nota: isLoaded se establece externamente (en MainLayout tras cleanup)
+    // para garantizar que WFHomeView no renderiza hasta que el árbol esté limpio.
+  }
+
+  /** Marcar store como listo para renderizar (llamar desde MainLayout tras cleanup) */
+  setLoaded() {
     this.isLoaded = true
     this.notify()
   }
