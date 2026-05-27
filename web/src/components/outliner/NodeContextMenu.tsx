@@ -237,20 +237,20 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
   function deleteNode() {
     const now = new Date().toISOString()
-    // Borrar moved-refs que apuntan a este nodo
+    // Borrar espejos (_mirrorOf) que apuntan a este nodo
     store.allActive().forEach(n => {
       try {
         const ed = JSON.parse(n.extraData || '{}')
-        if (ed._movedRef && ed._refTarget === node.id) store.updateNode(n.id, { deletedAt: now })
+        if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: now })
       } catch {}
     })
-    // Si está bajo un ctx-ref, borrarlo si queda vacío
+    // Si está bajo un espejo de padre y queda vacío, borrarlo
     if (node.parentId) {
       const parent = store.getNode(node.parentId)
       if (parent) {
         try {
           const ed = JSON.parse(parent.extraData || '{}')
-          if (ed._ctxRef) {
+          if (ed._mirrorOf) {
             const remaining = store.children(parent.id).filter(c => !c.deletedAt && c.id !== node.id)
             if (remaining.length === 0) store.updateNode(parent.id, { deletedAt: now })
           }

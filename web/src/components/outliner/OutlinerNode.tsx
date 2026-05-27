@@ -354,30 +354,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const mirrorSourceNode = mirrorOfId ? store.getNode(mirrorOfId) ?? null : null
   const displayNode = mirrorSourceNode ?? node
 
-  // Nodo referencia: marcador dimmed cuando una tarea se movió a otro día
-  const movedRef = (() => {
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._movedRef) return {
-        targetId: ed._refTarget as string,
-        label: ed._refLabel as string,
-        wasTask: !!ed._refWasTask,
-      }
-    } catch {}
-    return null
-  })()
-
-  // Ctx-ref: nodo gris/cursiva que representa el padre original en el día destino
-  const ctxRef = (() => {
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._ctxRef) return { targetId: ed._ctxRef as string, text: ed._ctxRefText as string }
-    } catch {}
-    return null
-  })()
-
-  // Badge de contexto original — ya no se usa (reemplazado por ctx-ref como nodo)
-  const originParentBadge = null
+  // ctx-ref legacy (ya no se crea, pero puede haber nodos viejos) — ignorar
+  const ctxRef = null
+  // moved-ref legacy — ignorar (ahora se usan espejos nativos)
+  const movedRef = null
 
   const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -942,9 +922,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   const handleFocus = useCallback(() => {
-    // moved-ref y ctx-ref: no editables — navegar al nodo real
-    if (movedRef) { navigate(`/node/${movedRef.targetId}`); return }
-    if (ctxRef) { navigate(`/node/${ctxRef.targetId}`); return }
+    // Espejos de mirrors de padre (no editables) — los espejos de tarea sí se pueden editar
     setIsEditing(true)
     onSelect(node.id)
     // Usar ref (no closure) para obtener el texto más reciente y evitar
@@ -1747,37 +1725,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
   }
 
-  /** ID de navegación: para ctx-ref navega al nodo real, para el resto al propio nodo */
-  const navTargetId = ctxRef ? ctxRef.targetId : node.id
+  /** ID de navegación: para espejos de padre, navega al nodo real */
+  const navTargetId = mirrorOfId && !mirrorSourceNode?.isDiaryEntry ? mirrorOfId : node.id
 
-  /** Borrar nodo + limpiar refs y ctx-ref vacíos */
+  /** Borrar nodo + limpiar espejos que lo referencian */
   function deleteWithCleanup() {
-    // 1. Borrar moved-refs que apuntan a este nodo
+    const now = new Date().toISOString()
+    // Borrar espejos (_mirrorOf) que apuntan a este nodo
     store.allActive().forEach(n => {
       try {
         const ed = JSON.parse(n.extraData || '{}')
-        if (ed._movedRef && ed._refTarget === node.id) {
-          store.updateNode(n.id, { deletedAt: new Date().toISOString() })
-        }
+        if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: now })
       } catch { /* ignore */ }
     })
-    // 2. Si está bajo un ctx-ref, borrarlo si queda vacío
+    // Si está bajo un espejo de padre, borrarlo si queda vacío
     if (node.parentId) {
       const parent = store.getNode(node.parentId)
       if (parent) {
         try {
           const ed = JSON.parse(parent.extraData || '{}')
-          if (ed._ctxRef) {
+          if (ed._mirrorOf) {
             const remaining = store.children(parent.id).filter(c => !c.deletedAt && c.id !== node.id)
-            if (remaining.length === 0) {
-              store.updateNode(parent.id, { deletedAt: new Date().toISOString() })
-            }
+            if (remaining.length === 0) store.updateNode(parent.id, { deletedAt: now })
           }
         } catch { /* ignore */ }
       }
     }
-    // 3. Borrar el propio nodo
-    store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+    store.updateNode(node.id, { deletedAt: now })
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado`, type: 'info' } }))
   }
 
@@ -1834,46 +1808,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const h = parseInt(opts.timeStr.split(':')[0]), m = parseInt(opts.timeStr.split(':')[1])
         updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
       }
-      // Si tiene contexto original significativo:
+      // Si tiene contexto original significativo: usar espejos
       if (originParent) {
-        // 1. Crear/reutilizar ctx-ref en destino (padre gris hija del día)
-        const existingCtxRef = store.children(dayNode.id).find(n => {
-          try { return JSON.parse(n.extraData || '{}')._ctxRef === originParent.id } catch { return false }
+        // 1. Espejo del padre (⬡ Freskue) en destino — reutilizar si ya existe
+        const existingParentMirror = store.children(dayNode.id).find(n => {
+          try { return JSON.parse(n.extraData || '{}')._mirrorOf === originParent.id } catch { return false }
         })
-        let ctxRefId: string
-        if (existingCtxRef) {
-          ctxRefId = existingCtxRef.id
+        let parentMirrorId: string
+        if (existingParentMirror) {
+          parentMirrorId = existingParentMirror.id
         } else {
-          const ctxRefNode = store.createNode({
+          const parentMirror = store.createNode({
             text: originParent.text,
             parentId: dayNode.id,
             siblingOrder: lastOrder + 1,
           })
-          store.updateNode(ctxRefNode.id, {
-            extraData: JSON.stringify({ _ctxRef: originParent.id, _ctxRefText: originParent.text })
+          store.updateNode(parentMirror.id, {
+            extraData: JSON.stringify({ _mirrorOf: originParent.id })
           })
-          ctxRefId = ctxRefNode.id
+          parentMirrorId = parentMirror.id
         }
-        // Mover tarea bajo el ctx-ref (no directamente bajo el día)
-        const ctxSibs = store.children(ctxRefId)
-        const ctxLastOrder = ctxSibs.length > 0 ? Math.max(...ctxSibs.map(x => x.siblingOrder)) : 0
-        updates.parentId = ctxRefId
-        updates.siblingOrder = ctxLastOrder + 1
+        // Mover tarea bajo el espejo del padre
+        const mirrorSibs = store.children(parentMirrorId)
+        const mirrorLastOrder = mirrorSibs.length > 0 ? Math.max(...mirrorSibs.map(x => x.siblingOrder)) : 0
+        updates.parentId = parentMirrorId
+        updates.siblingOrder = mirrorLastOrder + 1
 
-        // 2. Crear moved-ref en la posición original
-        const refNode = store.createNode({
+        // 2. Espejo de la tarea (⬡) en el origen — queda donde estaba
+        const taskMirror = store.createNode({
           text: node.text,
           parentId: node.parentId,
           siblingOrder: node.siblingOrder,
         })
-        store.updateNode(refNode.id, {
-          extraData: JSON.stringify({
-            _movedRef: true,
-            _refTarget: node.id,
-            _refLabel: opts.label,
-            // wasTask: era tarea ya, o se convirtió en tarea al mover
-            _refWasTask: node.status !== null || !!opts.makeTask || !!opts.isEvent,
-          })
+        store.updateNode(taskMirror.id, {
+          extraData: JSON.stringify({ _mirrorOf: node.id })
         })
       }
 
@@ -3039,11 +3007,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
-
-            {/* Badge → destino para moved-ref */}
-            {movedRef && (
-              <span className="node-moved-ref-badge">→ {movedRef.label}</span>
-            )}
 
             {/* Badge combinado tarea+fecha */}
             {taskPrediction && datePrediction && isEditing && !ctxCompletion && (
