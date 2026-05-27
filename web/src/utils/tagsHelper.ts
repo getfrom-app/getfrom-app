@@ -241,7 +241,10 @@ export function ensurePerfilInsideContexto(): void {
  * Es un nodo de sistema que aparece en el árbol desde el primer uso.
  */
 export function ensurePlantillasNode(): void {
-  const PLANTILLAS_NAME = 'Plantillas'
+  const PLANTILLAS_NAME = '📋 Plantillas'
+  // Migrar nombre antiguo sin emoji si existe
+  const old = store.children(null).find(n => !n.deletedAt && n.text === 'Plantillas')
+  if (old) { store.updateNode(old.id, { text: PLANTILLAS_NAME }); return }
   const exists = store.children(null).find(n => !n.deletedAt && n.text === PLANTILLAS_NAME)
   if (!exists) {
     store.createNode({ text: PLANTILLAS_NAME, parentId: null })
