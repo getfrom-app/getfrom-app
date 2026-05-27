@@ -192,6 +192,10 @@ export default function NodeView() {
   useEffect(() => {
     if (!titleEditing && titleRef.current) {
       let displayText = node?.text || ''
+      // Si el icono viene del texto (emoji inicial), quitarlo del título para no duplicar
+      if (iconFromText && nodeIcon && displayText.startsWith(nodeIcon)) {
+        displayText = displayText.slice(nodeIcon.length).trimStart()
+      }
       // En WF mode mostramos node.text directamente (sin reformatear)
       // para que display y edición sean consistentes.
       // En modo normal, los diarios muestran la fecha completa formateada.
@@ -271,14 +275,14 @@ export default function NodeView() {
   }, [titleTagPicker])
 
   // Icono del nodo (extraData.icon)
-  const nodeIcon = useMemo(() => {
+  const { nodeIcon, iconFromText } = useMemo(() => {
     try {
       const fromExtra = JSON.parse(node?.extraData || '{}').icon || null
-      if (fromExtra) return fromExtra
+      if (fromExtra) return { nodeIcon: fromExtra, iconFromText: false }
       // Fallback: primer emoji del título del nodo
       const m = (node?.text || '').match(/^\p{Emoji_Presentation}|\p{Extended_Pictographic}/u)
-      return m ? m[0] : null
-    } catch { return null }
+      return m ? { nodeIcon: m[0], iconFromText: true } : { nodeIcon: null, iconFromText: false }
+    } catch { return { nodeIcon: null, iconFromText: false } }
   }, [node?.extraData, node?.text])
 
   // Color del nodo (extraData.color)
