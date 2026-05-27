@@ -83,11 +83,13 @@ export default function WFTopBar({
     label.length > max ? label.slice(0, max) + '…' : label
 
   // ── Contextos de 🧠 Contexto (para el filtro @) ──────────────────────────
-  const contextoNodes = useMemo(() => {
-    const root = s.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+  // Sin useMemo([s]): s es siempre el mismo objeto, el memo nunca se re-evalúa.
+  // WFTopBar ya re-renderiza en cada cambio del store (useStore sin selector).
+  const contextoNodes = (() => {
+    const root = s.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!root) return []
     return s.children(root.id).filter(n => !n.deletedAt && n.text)
-  }, [s])
+  })()
 
   // ── Close on outside click ────────────────────────────────────────────────
   useEffect(() => {
