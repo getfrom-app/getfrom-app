@@ -486,11 +486,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       newTypes.some((t, i) => t !== currentTypes[i])
     if (typesChanged) {
       store.updateNode(node.id, { text, types: newTypes })
-      // Auto-crear nodos en 🏷 Tags para tags nuevos
-      const addedTags = [...hashTags].filter(t => !currentTypes.includes(t) && !BUILTIN_TYPES.has(t))
-      for (const tag of addedTags) {
-        try { ensureTagInTree(tag) } catch { /* silencioso */ }
-      }
+      // NOTA: ensureTagInTree se llama en onBlur, no aquí, para no crear
+      // un nodo por cada tecla mientras el usuario escribe.
     } else {
       store.updateNode(node.id, { text })
     }
@@ -698,6 +695,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setShowSlash(false)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
+
+    // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
+    // Se ejecuta aquí (blur) y no en handleInput para no crear un nodo por cada tecla.
+    const finalText = contentRef.current?.textContent || ''
+    const BUILTIN = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const tags = [...(finalText.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
+    for (const tag of tags) {
+      if (!BUILTIN.has(tag)) {
+        try { ensureTagInTree(tag) } catch { /* silencioso */ }
+      }
+    }
 
     // Nodo vacío = no existe. Si pierde el foco sin contenido, se borra.
     // Excepción: diarios, y nodos recién creados (< 2s) — el usuario puede estar

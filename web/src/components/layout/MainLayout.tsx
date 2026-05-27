@@ -48,7 +48,7 @@ import StatusBar from './StatusBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
-import { syncTagDefinitions } from '../../utils/tagsHelper'
+import { syncTagDefinitions, cleanupSpuriousTags } from '../../utils/tagsHelper'
 
 export default function MainLayout() {
   const navigate = useNavigate()
@@ -124,7 +124,8 @@ export default function MainLayout() {
     store.isGuest = false
     store.initialLoad()
       .then(() => {
-        // Tras carga inicial: sincronizar _tagDefinition para nodos bajo 🏷 Tags
+        // Tras carga inicial: limpiar tags accidentales y sincronizar _tagDefinition
+        cleanupSpuriousTags()
         syncTagDefinitions()
       })
       .catch((err: unknown) => {

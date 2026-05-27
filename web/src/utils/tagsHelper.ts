@@ -189,6 +189,30 @@ export function ensureTagInTree(slug: string): Node {
 // ── Inicialización ────────────────────────────────────────────────────────────
 
 /**
+ * Elimina nodos huérfanos bajo Tags que no tienen hijos ni body ni fueron creados
+ * con intención (texto muy corto < 3 chars y sin contenido). Limpia los accidentes
+ * de la auto-creación keystroke-by-keystroke.
+ */
+export function cleanupSpuriousTags(): void {
+  const root = findTagsRoot()
+  if (!root) return
+  function clean(parentId: string) {
+    for (const child of store.children(parentId)) {
+      if (child.deletedAt) continue
+      clean(child.id) // limpiar hijos primero
+      const text = (child.text || '').trim()
+      const hasChildren = store.children(child.id).filter(c => !c.deletedAt).length > 0
+      const hasBody = !!(child.body?.trim())
+      // Eliminar si: texto muy corto (< 3 chars) Y sin hijos ni body
+      if (text.length < 3 && !hasChildren && !hasBody) {
+        store.updateNode(child.id, { deletedAt: new Date().toISOString() })
+      }
+    }
+  }
+  clean(root.id)
+}
+
+/**
  * Asegura que todos los nodos bajo Tags tienen _tagDefinition sincronizado.
  * Llamar una vez al arrancar el store (tras initialLoad).
  */
