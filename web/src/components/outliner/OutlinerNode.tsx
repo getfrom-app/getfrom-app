@@ -1673,6 +1673,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
   }
 
+  /** ID de navegación: para ctx-ref navega al nodo real, para el resto al propio nodo */
+  const navTargetId = ctxRef ? ctxRef.targetId : node.id
+
+  /** Borrar nodo + limpiar refs y ctx-ref vacíos */
+  function deleteWithCleanup() {
+    // 1. Borrar moved-refs que apuntan a este nodo
+    store.allActive().forEach(n => {
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._movedRef && ed._refTarget === node.id) {
+          store.updateNode(n.id, { deletedAt: new Date().toISOString() })
+        }
+      } catch { /* ignore */ }
+    })
+    // 2. Si está bajo un ctx-ref, borrarlo si queda vacío
+    if (node.parentId) {
+      const parent = store.getNode(node.parentId)
+      if (parent) {
+        try {
+          const ed = JSON.parse(parent.extraData || '{}')
+          if (ed._ctxRef) {
+            const remaining = store.children(parent.id).filter(c => !c.deletedAt && c.id !== node.id)
+            if (remaining.length === 0) {
+              store.updateNode(parent.id, { deletedAt: new Date().toISOString() })
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    // 3. Borrar el propio nodo
+    store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado`, type: 'info' } }))
+  }
+
   /** ¿El nodo padre es un contexto con significado (no un diary day ni temporal)? */
   function getMeaningfulParent(): { id: string; text: string } | null {
     if (!node.parentId) return null
@@ -2121,8 +2155,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       window.dispatchEvent(new Event('wf:shortcuts-changed'))
       return
     } else if (action === 'delete') {
-      store.updateNode(node.id, { deletedAt: new Date().toISOString() })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' } }))
+      deleteWithCleanup()
       return
     } else if (action === 'mirror') {
       // Abrir picker de búsqueda para seleccionar el nodo a espejar
@@ -2429,7 +2462,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <>
                 <button
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
                   title="Abrir evento"
                 />
@@ -2450,7 +2483,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <>
                 <button
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
                   title="Zoom in →"
                 />
@@ -2478,7 +2511,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <>
                 <button
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
                   title="Abrir recurso"
                 />
