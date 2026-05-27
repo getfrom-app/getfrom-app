@@ -348,6 +348,28 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const mirrorSourceNode = mirrorOfId ? store.getNode(mirrorOfId) ?? null : null
   const displayNode = mirrorSourceNode ?? node
 
+  // Nodo referencia: marcador dimmed cuando una tarea se movió a otro día
+  const movedRef = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._movedRef) return { targetId: ed._refTarget as string, label: ed._refLabel as string }
+    } catch {}
+    return null
+  })()
+
+  // Badge de contexto original: aparece en destino cuando la tarea tiene padre significativo guardado
+  const originParentBadge = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      const op = ed._originParent as { id: string; text: string } | undefined
+      if (!op) return null
+      // Solo mostrar si el padre actual es un diary entry (tarea ya movida)
+      const currentParent = store.getNode(node.parentId || '')
+      if (!currentParent?.isDiaryEntry) return null
+      return op
+    } catch { return null }
+  })()
+
   const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
@@ -1646,26 +1668,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
   }
 
-  function acceptDatePrediction() {
-    if (!datePrediction) return
-    const { cleanText, parsed, timeStr, isEvent, recurrence } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
-    setDatePrediction(null)
+  /** ¿El nodo padre es un contexto con significado (no un diary day ni temporal)? */
+  function getMeaningfulParent(): { id: string; text: string } | null {
+    if (!node.parentId) return null
+    const parent = store.getNode(node.parentId)
+    if (!parent || parent.deletedAt) return null
+    // Excluir: diary entries, años (4 dígitos), meses por nombre, semanas
+    if (parent.isDiaryEntry) return null
+    if (/^\d{4}$/.test(parent.text || '')) return null
+    if (/^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/i.test(parent.text || '')) return null
+    if (/^semana\s/i.test(parent.text || '')) return null
+    if (/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo),/i.test(parent.text || '')) return null
+    return { id: parent.id, text: parent.text || '' }
+  }
 
-    // Actualizar texto del nodo (sin la parte de fecha)
-    nodeTextRef.current = cleanText
-    store.updateNode(node.id, { text: cleanText, status: node.status ?? 'pending' })
-    if (contentRef.current) contentRef.current.textContent = cleanText
-
-    // Calcular día destino
-    const targetDate = parsed.date
-    targetDate.setHours(0, 0, 0, 0)
+  /** Mueve el nodo a un día destino, creando referencia en origen si tiene contexto significativo */
+  function moveNodeToDay(
+    targetDate: Date,
+    opts: { label: string; isEvent?: boolean; timeStr?: string; recurrence?: RecurrenceConfig; makeTask?: boolean }
+  ) {
     const dayNode = ensureDayPath(targetDate)
-
-    // Si es el mismo día, no animar
     const isSameDay = node.parentId === dayNode.id
     if (isSameDay) return
 
-    // ── Animación: la tarea vuela a la derecha ────────────────────────────
+    // Contexto original significativo
+    const originParent = getMeaningfulParent()
+
+    // Animación fly-right
     const rowEl = contentRef.current?.closest('.outliner-node') as HTMLElement | null
     if (rowEl) {
       rowEl.style.transition = 'transform 300ms cubic-bezier(0.4,0,1,1), opacity 250ms'
@@ -1676,27 +1705,55 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setTimeout(() => {
       const sibs = store.children(dayNode.id)
       const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-      // Preparar extraData con recurrencia si hay
       let ed: Record<string, unknown> = {}
       try { ed = JSON.parse(node.extraData || '{}') } catch {}
-      if (parsed.recurrence) ed._recurrence = parsed.recurrence
+      if (opts.recurrence) ed._recurrence = opts.recurrence
+      // Guardar contexto original si lo hay
+      if (originParent) ed._originParent = originParent
       const updates: Record<string, unknown> = {
         parentId: dayNode.id,
         siblingOrder: lastOrder + 1,
         extraData: JSON.stringify(ed),
       }
-      if (isEvent) {
-        updates.isEvent = true
-      } else if (node.status === null) {
-        // Nodo normal → convertir en tarea al moverlo
-        updates.status = 'pending'
+      if (opts.isEvent) updates.isEvent = true
+      else if (opts.makeTask || node.status === null) updates.status = 'pending'
+      if (opts.timeStr) {
+        const h = parseInt(opts.timeStr.split(':')[0]), m = parseInt(opts.timeStr.split(':')[1])
+        updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
       }
-      if (timeStr) updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), parseInt(timeStr.split(':')[0]), parseInt(timeStr.split(':')[1])).toISOString()
       store.updateNode(node.id, updates)
+
+      // Crear nodo referencia en la posición original si tenía contexto significativo
+      if (originParent) {
+        const refNode = store.createNode({
+          text: node.text,
+          parentId: node.parentId,
+          siblingOrder: node.siblingOrder,
+        })
+        store.updateNode(refNode.id, {
+          extraData: JSON.stringify({
+            _movedRef: true,
+            _refTarget: node.id,
+            _refLabel: opts.label,
+          })
+        })
+      }
+
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
-      const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido → ${label}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
     }, 310)
+  }
+
+  function acceptDatePrediction() {
+    if (!datePrediction) return
+    const { cleanText, parsed, timeStr, isEvent } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
+    setDatePrediction(null)
+    nodeTextRef.current = cleanText
+    store.updateNode(node.id, { text: cleanText })
+    if (contentRef.current) contentRef.current.textContent = cleanText
+    const targetDate = new Date(parsed.date); targetDate.setHours(0,0,0,0)
+    const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
+    moveNodeToDay(targetDate, { label, isEvent: !!isEvent, timeStr, recurrence: parsed.recurrence, makeTask: true })
   }
 
   function acceptCtxCompletion() {
@@ -1965,28 +2022,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a hoy', type: 'success' } }))
       return
     } else if (action === 'move-to' && payload.moveToDate) {
-      // ── Mover a fecha natural ─────────────────────────────────────────────
-      const targetDate = payload.moveToDate
-      targetDate.setHours(0, 0, 0, 0)
-      const diaryNode = ensureDayPath(targetDate)
-      const sibs = store.children(diaryNode.id)
-      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-      // Guardar recurrencia en extraData si existe
-      let ed: Record<string, unknown> = {}
-      try { ed = JSON.parse(node.extraData || '{}') } catch { /* */ }
-      if (payload.moveToRecurrence) {
-        ed._recurrence = payload.moveToRecurrence
-      } else {
-        delete ed._recurrence
-      }
-      store.updateNode(node.id, {
-        parentId: diaryNode.id,
-        siblingOrder: lastOrder + 1,
-        extraData: JSON.stringify(ed),
-      })
-      const label = targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-      const recLabel = payload.moveToRecurrence ? ` · ↻ ${payload.moveToRecurrence.display}` : ''
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido al ${label}${recLabel}`, type: 'success' } }))
+      const targetDate = new Date(payload.moveToDate); targetDate.setHours(0,0,0,0)
+      const label = targetDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+        + (payload.moveToRecurrence ? ` · ↻ ${payload.moveToRecurrence.display}` : '')
+      moveNodeToDay(targetDate, { label, recurrence: payload.moveToRecurrence })
       return
     } else if (action === 'move-tomorrow' || action === 'move-next-week') {
       const targetDate = new Date()
@@ -2195,6 +2234,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const showChildren = !isCollapsed || anyDescendantMatches
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
+
+  // ── Nodo referencia (movedRef): render especial dimmed + link al nodo real ──
+  if (movedRef) {
+    const realNode = store.getNode(movedRef.targetId)
+    return (
+      <div className="outliner-node">
+        <div
+          className="node-row node-row--moved-ref"
+          style={{ paddingLeft: depth * 22 + 22 }}
+          onClick={() => navigate(`/node/${movedRef.targetId}`)}
+          title={`Tarea movida a ${movedRef.label} — clic para ir`}
+        >
+          <span className="node-moved-ref-bullet">⬡</span>
+          <span className="node-moved-ref-text">{realNode?.text || node.text}</span>
+          <span className="node-moved-ref-badge">→ {movedRef.label}</span>
+        </div>
+      </div>
+    )
+  }
 
   // Determine CSS class for block type
   const nodeRowClass = [
@@ -2855,6 +2913,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
+
+            {/* Badge de contexto original — visible cuando la tarea fue movida desde otro nodo */}
+            {originParentBadge && !isEditing && (
+              <button
+                className="node-origin-parent-badge"
+                onClick={e => { e.stopPropagation(); navigate(`/node/${originParentBadge.id}`) }}
+                title={`Contexto: ${originParentBadge.text}`}
+              >
+                ↩ {originParentBadge.text}
+              </button>
+            )}
 
             {/* Autocompletado de contexto — ghost text al escribir nombre de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
