@@ -272,8 +272,14 @@ export default function NodeView() {
 
   // Icono del nodo (extraData.icon)
   const nodeIcon = useMemo(() => {
-    try { return JSON.parse(node?.extraData || '{}').icon || null } catch { return null }
-  }, [node?.extraData])
+    try {
+      const fromExtra = JSON.parse(node?.extraData || '{}').icon || null
+      if (fromExtra) return fromExtra
+      // Fallback: primer emoji del título del nodo
+      const m = (node?.text || '').match(/^\p{Emoji_Presentation}|\p{Extended_Pictographic}/u)
+      return m ? m[0] : null
+    } catch { return null }
+  }, [node?.extraData, node?.text])
 
   // Color del nodo (extraData.color)
   const nodeColor = useMemo(() => {
@@ -1360,7 +1366,7 @@ export default function NodeView() {
                     onClick={() => setShowEmojiPicker(v => !v)}
                     title="Cambiar icono"
                   >
-                    {nodeIcon || '📄'}
+                    {nodeIcon || '·'}
                   </button>
                   {showEmojiPicker && (
                     <EmojiPicker
