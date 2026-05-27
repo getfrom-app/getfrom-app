@@ -721,9 +721,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           <div className="sidebar-footer">
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
-              onClick={() => {
-                // Busca o crea la nota de hoy bajo Agenda → Año → Mes → Día
+              onClick={async () => {
                 const dayNode = getTodayDiaryUnderAgenda()
+                // Si el nodo se acaba de crear (está sucio), sincronizar con el servidor
+                // antes de navegar para evitar que el siguiente sync lo sobrescriba
+                const nodeInStore = store.getNode(dayNode.id)
+                if (nodeInStore?._isDirty) {
+                  await store.sync()
+                }
                 navigate(`/node/${dayNode.id}`)
               }}
               title="Hoy — ir a la nota del día"
