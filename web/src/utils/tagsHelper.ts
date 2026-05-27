@@ -238,8 +238,11 @@ export function ensurePerfilInsideContexto(): void {
 
 /**
  * ensurePlantillasNode — crea el nodo raíz '📋 Plantillas' si no existe.
- * Usa un flag de módulo para ejecutarse una sola vez por sesión (evita duplicados
- * por StrictMode de React que invoca effects dos veces en desarrollo).
+ *
+ * Problemas que resuelve:
+ * - StrictMode de React invoca el effect dos veces → flag _plantillasDone
+ * - Array stale: NO se guarda el array inicial; se re-consulta el store tras
+ *   cada mutación para que las eliminaciones sean visibles antes de continuar
  */
 let _plantillasDone = false
 export function ensurePlantillasNode(): void {
@@ -247,24 +250,27 @@ export function ensurePlantillasNode(): void {
   _plantillasDone = true
 
   const PLANTILLAS_NAME = '📋 Plantillas'
-  const roots = store.children(null).filter(n => !n.deletedAt)
 
-  // Eliminar duplicados si hay más de uno (puede pasar si ya se crearon)
-  const all = roots.filter(n => n.text === PLANTILLAS_NAME || n.text === 'Plantillas')
-  if (all.length > 1) {
-    // Mantener el primero, borrar el resto
-    for (const dup of all.slice(1)) store.deleteNode(dup.id)
-  }
+  // Helper que siempre consulta el store fresco (evita array stale)
+  const getAll = () => store.children(null).filter(
+    n => !n.deletedAt && (n.text === PLANTILLAS_NAME || n.text === 'Plantillas')
+  )
 
-  // Migrar nombre antiguo sin emoji
-  const old = roots.find(n => n.text === 'Plantillas')
-  if (old) { store.updateNode(old.id, { text: PLANTILLAS_NAME }); return }
+  // Paso 1: limpiar duplicados (borrar todos excepto el primero)
+  const initial = getAll()
+  for (const dup of initial.slice(1)) store.deleteNode(dup.id)
 
-  // Crear si no existe
-  const exists = roots.find(n => n.text === PLANTILLAS_NAME)
-  if (!exists) {
+  // Paso 2: consultar de nuevo tras las eliminaciones
+  const remaining = getAll()
+
+  if (remaining.length === 0) {
+    // No existe ninguno → crear
     store.createNode({ text: PLANTILLAS_NAME, parentId: null })
+  } else if (remaining[0].text !== PLANTILLAS_NAME) {
+    // Existe con nombre antiguo → migrar
+    store.updateNode(remaining[0].id, { text: PLANTILLAS_NAME })
   }
+  // Si remaining[0].text === PLANTILLAS_NAME → perfecto, nada que hacer
 }
 
 /**
