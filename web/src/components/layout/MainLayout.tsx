@@ -7,6 +7,7 @@ import Sidebar from '../sidebar/Sidebar'
 import NodeView from '../views/NodeView'
 
 import WFHomeView from '../views/WFHomeView'
+import { relocateRootDiariesToAgenda } from '../../utils/agendaHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
@@ -124,6 +125,8 @@ export default function MainLayout() {
     store.isGuest = false
     store.initialLoad()
       .then(() => {
+        // Reubicar diarios en root bajo 📅 Agenda (si Agenda existe)
+        relocateRootDiariesToAgenda()
         // Tras carga inicial: limpiar tags accidentales y sincronizar _tagDefinition
         cleanupSpuriousTags()
         syncTagDefinitions()

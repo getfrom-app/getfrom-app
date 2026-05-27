@@ -394,9 +394,16 @@ export class NodeStore {
     for (const [, diaries] of byDay) {
       if (diaries.length < 2) continue
       diaries.sort((a, b) => {
+        // Prioridad 1: preferir diario bajo Agenda (parentId != null) sobre root
+        // En WF mode el diario vive bajo 📅 Agenda, no en root
+        const aIsRoot = a.parentId ? 0 : 1
+        const bIsRoot = b.parentId ? 0 : 1
+        if (aIsRoot !== bIsRoot) return aIsRoot - bIsRoot
+        // Prioridad 2: más hijos primero
         const ca = this.children(a.id).length
         const cb = this.children(b.id).length
         if (cb !== ca) return cb - ca
+        // Prioridad 3: más antiguo primero
         return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
       })
       const canonical = diaries[0]
@@ -1454,6 +1461,17 @@ export class NodeStore {
     const m = String(today.getMonth() + 1).padStart(2, '0')
     const d = String(today.getDate()).padStart(2, '0')
     const diaryDateISO = `${y}-${m}-${d}T00:00:00.000Z`
+
+    // En WF mode: si existe 📅 Agenda en root, no crear diario suelto en root.
+    // El diario se creará bajo Agenda cuando el usuario pulse "Hoy" (via agendaHelper).
+    const AGENDA_ROOT_NAME = '📅 Agenda'
+    const agendaRoot = Array.from(this.nodes.values()).find(
+      n => !n.deletedAt && !n.parentId && n.text === AGENDA_ROOT_NAME
+    )
+    if (agendaRoot) {
+      // No crear en root — existe estructura Agenda que gestiona el diario
+      return
+    }
 
     this.createNode({
       text: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),

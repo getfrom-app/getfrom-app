@@ -101,5 +101,52 @@ export function getTodayDiaryUnderAgenda(): Node {
   return ensureDayPath(today)
 }
 
+/**
+ * relocateRootDiariesToAgenda — mueve diarios sueltos de root hacia Agenda
+ *
+ * Se llama una vez tras initialLoad() para sanear el estado: si existen
+ * nodos isDiaryEntry en root (parentId === null) Y existe 📅 Agenda, los
+ * reubica bajo la jerarquía correcta Agenda → Año → Mes → Día.
+ *
+ * Caso habitual: versiones anteriores creaban el diario en root, ahora
+ * debe vivir bajo Agenda. Solo mueve, no duplica.
+ */
+export async function relocateRootDiariesToAgenda(): Promise<void> {
+  const agenda = findAgendaRoot()
+  if (!agenda) return  // sin Agenda no hacemos nada
+
+  const rootDiaries = store.allActive().filter(n => n.isDiaryEntry && !n.parentId && n.diaryDate)
+  if (rootDiaries.length === 0) return
+
+  for (const diary of rootDiaries) {
+    const date = new Date(diary.diaryDate!)
+    // Obtener o crear la jerarquía Agenda → Año → Mes
+    const agendaId = agenda.id
+    const yearNode = await getOrCreateYear(date.getFullYear(), agendaId)
+    const monthNode = await getOrCreateMonth(date.getMonth(), yearNode.id)
+
+    // Comprobar si ya existe un diario para ese día bajo la jerarquía Agenda
+    const y = date.getFullYear(), mo = date.getMonth(), d = date.getDate()
+    const existing = store.children(monthNode.id).find(c => {
+      if (c.deletedAt || !c.diaryDate || c.id === diary.id) return false
+      const dt = new Date(c.diaryDate)
+      return dt.getFullYear() === y && dt.getMonth() === mo && dt.getDate() === d
+    })
+
+    if (existing) {
+      // Ya hay un diario bajo Agenda → mover hijos del diario root al existente y borrar root
+      for (const child of store.children(diary.id)) {
+        store.updateNode(child.id, { parentId: existing.id })
+      }
+      store.deleteNode(diary.id)
+    } else {
+      // No hay diario bajo Agenda → mover el diario root allí
+      store.updateNode(diary.id, { parentId: monthNode.id })
+    }
+  }
+
+  // El store ya marca los nodos como dirty en updateNode/deleteNode, la sync es automática
+}
+
 // Mantener para compatibilidad con imports existentes
 export { getOrCreateYear as getOrCreateYearNode, getOrCreateMonth as getOrCreateMonthNode, getOrCreateDay as getOrCreateDayNode }
