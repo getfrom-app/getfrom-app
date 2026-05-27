@@ -2270,24 +2270,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   if (movedRef) {
     const realNode = store.getNode(movedRef.targetId)
     return (
-      <div className="outliner-node" data-node-id={node.id}>
+      <div className="outliner-node" data-node-id={node.id} style={{ '--depth': depth } as React.CSSProperties}>
         <div
           className="node-row node-row--moved-ref"
-          style={{ paddingLeft: depth * 22 }}
           onClick={() => navigate(`/node/${movedRef.targetId}`)}
           title={`→ ${movedRef.label} — clic para ir`}
         >
-          {/* Expand placeholder */}
-          <button className="node-expand-btn" style={{ visibility: 'hidden' }} tabIndex={-1}>›</button>
-          {/* Bullet o checkbox gris */}
+          {/* Colapsar placeholder — mismo espacio que nodo normal */}
+          <button className="collapse-btn" style={{ visibility: 'hidden' }} tabIndex={-1} />
+          {/* Bullet o checkbox gris con SVG igual al normal */}
           {movedRef.wasTask ? (
-            <span className="bullet-btn task task-sq task-sq--ref" />
+            <button className="bullet-btn task task-sq--future" tabIndex={-1} style={{ opacity: 0.4, cursor: 'default' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14">
+                <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.06"/>
+              </svg>
+            </button>
           ) : (
-            <span className="bullet-btn node-bullet node-bullet--ref" />
+            <button className="bullet-btn" tabIndex={-1} style={{ opacity: 0.35, cursor: 'default' }}>
+              <span className="bullet-dot" />
+            </button>
           )}
           {/* Texto cursiva gris + badge inline */}
           <div className="node-text-group">
-            <span className="node-text node-text--rendered node-text--ref">
+            <span className="node-text node-text--rendered" style={{ fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
               {realNode?.text || node.text}
             </span>
             <span className="node-moved-ref-badge">→ {movedRef.label}</span>
@@ -2295,11 +2300,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         </div>
       </div>
     )
-  }
-
-  // ── Ctx-ref (nodo padre gris en destino): como nodo normal, no editable ──
-  if (ctxRef) {
-    // Se añade 'is-ctx-ref' al nodeRowClass — el render sigue normal pero con estilo override
   }
 
   // Determine CSS class for block type
