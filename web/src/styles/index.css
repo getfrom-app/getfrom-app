@@ -9104,6 +9104,15 @@ a:focus-visible {
 .wf-topbar-filter-input::placeholder {
   color: var(--text-tertiary);
 }
+
+/* Flash de confirmación al recibir filtro por fly-to-filter */
+@keyframes filter-bar-flash {
+  0%   { background: rgba(124, 58, 237, 0.18); }
+  100% { background: transparent; }
+}
+.wf-topbar-filter.filter-flash {
+  animation: filter-bar-flash 400ms ease-out forwards;
+}
 .wf-topbar-filter-clear {
   border: none;
   background: transparent;

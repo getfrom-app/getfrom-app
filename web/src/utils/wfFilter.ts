@@ -54,8 +54,12 @@ export function applyWFFilter(
 
   if (!text) return { matchIds: new Set(), ancestorIds: new Set(), hasFilter: false }
 
-  // Parse tokens
-  const tokens = text.split(/\s+/).filter(Boolean)
+  // Parse tokens — respetar [[wiki-link]] como token único
+  const rawTokens: string[] = []
+  const tokenRegex = /\[\[[^\]]+\]\]|@[\wÀ-ɏ\/\-]+|#[\wÀ-ɏ\/\-]+|\S+/g
+  let m: RegExpExecArray | null
+  while ((m = tokenRegex.exec(filterText.trim())) !== null) rawTokens.push(m[0])
+  const tokens = rawTokens.map(t => normalizeText(t)).filter(Boolean)
 
   const matchIds = new Set<string>()
 
@@ -86,6 +90,11 @@ export function applyWFFilter(
         const tagName = token.slice(1)
         tokenMatch = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
                      normalizeText(node.text || '').includes(token)
+      } else if (token.startsWith('[[') && token.endsWith(']]')) {
+        // [[wiki-link]]: encuentra nodos que mencionan esa nota
+        const refName = normalizeText(token.slice(2, -2))
+        tokenMatch = normalizeText(node.text || '').includes(`[[${refName}`) ||
+                     normalizeText(node.body || '').includes(`[[${refName}`)
       } else {
         // Plain text search — sin tildes ni mayúsculas
         tokenMatch = normalizeText(node.text || '').includes(token) ||
@@ -119,7 +128,7 @@ const SMART_OPERATORS = ['hoy', 'mañana', 'semana', 'tarea', 'pendiente', 'hech
 
 export function isSmartQuery(text: string): boolean {
   const lower = text.toLowerCase()
-  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@')
+  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@') || lower.includes('[[')
 }
 
 /** Suggestion chips to show below filter input */

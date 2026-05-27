@@ -147,6 +147,68 @@ interface InlinePicker {
   activeIdx: number
 }
 
+/** Animación "fly to filter": el elemento fuente vuela hasta la barra de filtro */
+function flyToFilter(sourceEl: HTMLElement, filterQuery: string) {
+  const filterInput = document.querySelector('.wf-topbar-filter-input') as HTMLElement | null
+  const srcRect = sourceEl.getBoundingClientRect()
+
+  // Crear clon flotante en posición exacta del elemento original
+  const clone = sourceEl.cloneNode(true) as HTMLElement
+  Object.assign(clone.style, {
+    position: 'fixed',
+    left: `${srcRect.left}px`,
+    top: `${srcRect.top}px`,
+    width: `${srcRect.width}px`,
+    height: `${srcRect.height}px`,
+    margin: '0',
+    zIndex: '9999',
+    pointerEvents: 'none',
+    transition: 'left 280ms cubic-bezier(0.4,0,0.2,1), top 280ms cubic-bezier(0.4,0,0.2,1), transform 280ms, opacity 280ms',
+    transformOrigin: 'left center',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    // Aplicar mismo estilo visible
+    color: '#7c3aed',
+    fontSize: '0.8em',
+    fontWeight: '500',
+    borderBottom: '1px dashed rgba(124,58,237,0.5)',
+    padding: '0 2px',
+    background: 'transparent',
+  })
+  document.body.appendChild(clone)
+
+  const dstRect = filterInput
+    ? filterInput.getBoundingClientRect()
+    : { left: window.innerWidth / 2, top: 8, width: 120, height: 28 }
+
+  // Forzar layout antes de animar
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      Object.assign(clone.style, {
+        left: `${dstRect.left + dstRect.width * 0.1}px`,
+        top: `${dstRect.top + (dstRect.height - srcRect.height) / 2}px`,
+        transform: 'scale(0.7)',
+        opacity: '0',
+      })
+    })
+  })
+
+  setTimeout(() => {
+    clone.remove()
+    // Disparar el filtro
+    window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: filterQuery }))
+    // Flash en la barra de filtro para feedback visual
+    if (filterInput) {
+      const filterBar = filterInput.closest('.wf-topbar-filter') as HTMLElement | null
+      if (filterBar) {
+        filterBar.classList.add('filter-flash')
+        setTimeout(() => filterBar.classList.remove('filter-flash'), 400)
+      }
+      filterInput.focus()
+    }
+  }, 300)
+}
+
 function getCaretPosition(el: HTMLElement): number {
   const sel = window.getSelection()
   if (!sel || sel.rangeCount === 0) return 0
@@ -2217,13 +2279,42 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onClick={e => {
               const target = e.target as HTMLElement
 
-              // Click en mention-inline → navegar al nodo referenciado (@ o [[wiki]])
+              // Click en @context-inline → animar y filtrar
+              const ctxEl = target.classList.contains('context-inline')
+                ? target
+                : target.closest('.context-inline') as HTMLElement | null
+              if (ctxEl && !isEditing) {
+                e.preventDefault()
+                e.stopPropagation()
+                const slug = ctxEl.dataset.slug || ''
+                if (slug && document.querySelector('.wf-layout')) {
+                  flyToFilter(ctxEl, `@${slug}`)
+                }
+                return
+              }
+
+              // Click en mention-inline ([[wiki-link]]) → animar+filtrar en WF, navegar en modo normal
               const mentionEl = target.classList.contains('mention-inline')
                 ? target
                 : target.closest('.mention-inline') as HTMLElement | null
               if (mentionEl && !isEditing) {
                 e.preventDefault()
-                // Extraer texto: quitar @ al inicio, o [[...]]
+                // En WF mode: animar hacia el filtro y filtrar por referencias a esa nota
+                if (document.querySelector('.wf-layout')) {
+                  const rawText = mentionEl.textContent || ''
+                  const refText = mentionEl.dataset.refText ||
+                    rawText.replace(/^\[\[/, '').replace(/\]\]$/, '').trim()
+                  if (refText) {
+                    // Buscar el nodo referenciado para filtrar por su ID
+                    const refNode = store.allActive().find(n =>
+                      !n.deletedAt && (n.text === refText || n.text.toLowerCase() === refText.toLowerCase())
+                    )
+                    // Filtrar: buscar texto [[refText]] captura todos los nodos que lo mencionan
+                    flyToFilter(mentionEl, `[[${refNode?.text || refText}]]`)
+                  }
+                  return
+                }
+                // Fuera de WF mode: navegar al nodo referenciado
                 const rawText = mentionEl.textContent || ''
                 const refText = mentionEl.dataset.refText ||
                   rawText.replace(/^@/, '').replace(/^\[\[/, '').replace(/\]\]$/, '')
