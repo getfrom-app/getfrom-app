@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
+import ContextChips, { expandSpecialPrompt } from './ContextChips'
 
 /** Chips de seguimiento que aparecen debajo del último mensaje del assistant */
 function QuickReplyChips({ chips, onSelect, disabled }: {
@@ -132,11 +133,19 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
     setIsRecording(true)
   }
 
-  function handleSend() {
-    const text = input.trim()
+  function handleSend(overrideText?: string) {
+    const text = (overrideText ?? input).trim()
     if (!text || chat.isStreaming) return
     setInput('')
-    chat.send(text, currentNodeId)
+    // Expandir prompts especiales de los context chips
+    const finalText = text.startsWith('__') ? expandSpecialPrompt(text) : text
+    chat.send(finalText, currentNodeId)
+  }
+
+  /** Cuando el usuario selecciona un context chip */
+  function handleChipSelect(prompt: string) {
+    if (chat.isStreaming) return
+    handleSend(prompt)
   }
 
   function onTextareaKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -200,7 +209,15 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 0' }}>
           {chat.messages.length === 0 && !chat.pendingActions ? (
-            <EmptyState />
+            <>
+              <EmptyState />
+              {/* Context chips — solo cuando no hay mensajes y el usuario no ha escrito */}
+              <ContextChips
+                nodeId={currentNodeId}
+                visible={chat.messages.length === 0 && !input.trim()}
+                onSelect={handleChipSelect}
+              />
+            </>
           ) : (
             chat.messages.map(msg => (
               <MessageBubble key={msg.id} msg={msg} onOpenNode={(id) => { navigate(`/node/${id}`); onClose() }} />
@@ -281,7 +298,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             }}
           >{isRecording ? '🎙' : '🎤'}</button>
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim() || chat.isStreaming}
             style={{
               background: input.trim() && !chat.isStreaming ? 'var(--accent)' : 'var(--bg-secondary)',
