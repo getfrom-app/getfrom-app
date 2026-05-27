@@ -71,11 +71,14 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [showColors, setShowColors] = useState(false)
   const toolbarRef = useRef<HTMLDivElement>(null)
+  // Suprimir toolbar mientras el mouse esté pulsado (durante el drag)
+  const isMouseDownRef = useRef(false)
 
-  // Detectar selección dentro del nodo
+  // Detectar selección dentro del nodo — SOLO mostrar tras soltar el ratón
   useEffect(() => {
     function onSelectionChange() {
-      // Pequeño delay para que la selección se estabilice
+      // No mostrar nada mientras el ratón esté pulsado
+      if (isMouseDownRef.current) return
       setTimeout(() => {
         const rect = getSelectionRectInNode(nodeRef.current ?? null)
         if (!rect) {
@@ -90,17 +93,35 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
     return () => document.removeEventListener('selectionchange', onSelectionChange)
   }, [nodeRef])
 
-  // Cerrar al hacer clic fuera
+  // Trackear estado del ratón + cerrar al hacer clic fuera
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
+      // Si el clic es dentro del toolbar, ignorar (no cerrar)
       if (toolbarRef.current?.contains(e.target as Node)) return
+      isMouseDownRef.current = true
+      // Ocultar toolbar inmediatamente al iniciar un nuevo drag/clic
+      setSelRect(null)
+      setShowColors(false)
+    }
+    function onMouseUp() {
+      isMouseDownRef.current = false
+      // Al soltar, comprobar si hay selección válida dentro de este nodo
       setTimeout(() => {
         const rect = getSelectionRectInNode(nodeRef.current ?? null)
-        if (!rect) { setSelRect(null); setShowColors(false) }
-      }, 50)
+        if (rect) {
+          setSelRect(rect)
+        } else {
+          setSelRect(null)
+          setShowColors(false)
+        }
+      }, 20)
     }
     document.addEventListener('mousedown', onMouseDown)
-    return () => document.removeEventListener('mousedown', onMouseDown)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
   }, [nodeRef])
 
   // No mostrar nada si no hay selección
