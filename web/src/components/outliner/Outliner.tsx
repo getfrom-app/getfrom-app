@@ -212,10 +212,14 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // dragFromText: indica si el drag empezó desde un contenteditable
   const dragFromText = useRef(false)
 
-  // Devuelve el rect del row completo del nodo (para la heurística del 50%)
+  // Devuelve el rect de la FILA visible del nodo (no del contenedor completo con hijos).
+  // data-node-id está en div.outliner-node que incluye hijos expandidos → rect enorme.
+  // Usamos div.node-row (la fila real) para cálculos precisos de 50% y detección de salida.
   function getNodeRowRect(id: string): DOMRect | null {
-    const el = containerRef.current?.querySelector(`[data-node-id="${id}"]`)
-    return el ? (el as HTMLElement).getBoundingClientRect() : null
+    const nodeEl = containerRef.current?.querySelector(`[data-node-id="${id}"]`)
+    if (!nodeEl) return null
+    const rowEl = nodeEl.querySelector('.node-row') as HTMLElement | null
+    return (rowEl ?? nodeEl as HTMLElement).getBoundingClientRect()
   }
 
   // Calcula qué nodos incluir usando la heurística del 50%:
@@ -307,8 +311,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       // cuando el cursor está en padding entre nodos o en otro contenteditable).
       // isDragSelectingRef.current evita el stale closure de isDragSelecting.
       if (dragFromText.current && !isDragSelectingRef.current) {
-        const anchorEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`) as HTMLElement | null
-        const anchorRect = anchorEl?.getBoundingClientRect()
+        // Usamos .node-row (no .outliner-node que incluye hijos expandidos → rect enorme)
+        const anchorEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`)
+        const rowEl = anchorEl?.querySelector('.node-row') as HTMLElement | null
+        const anchorRect = (rowEl ?? anchorEl as HTMLElement | null)?.getBoundingClientRect()
         const isOutside = anchorRect
           ? (e.clientY < anchorRect.top || e.clientY > anchorRect.bottom)
           : (hoveredId !== null && hoveredId !== anchorId)

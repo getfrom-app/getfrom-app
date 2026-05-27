@@ -3061,7 +3061,9 @@ mark.inline-highlight {
 .node-row.drag-over { border-top: 2px solid var(--accent); }
 .node-row[draggable="true"] { cursor: grab; }
 .node-row[draggable="true"]:active { cursor: grabbing; }
-.drop-as-child { height: 10px; margin-left: 32px; border-radius: 3px; transition: background 0.1s; cursor: copy; }
+.drop-as-child { height: 10px; margin-left: 32px; border-radius: 3px; transition: background 0.1s; cursor: default; }
+/* WF mode: ocultar drop-as-child (no se usa drag-to-reorder como child en WF) */
+.wf-layout .drop-as-child { display: none; }
 .drop-as-child.active { background: var(--accent); opacity: 0.7; height: 14px; }
 /* Indicador de línea drag-over en node-row */
 .node-row.drag-over::before { content: ''; display: block; height: 2px; background: var(--accent); border-radius: 1px; position: absolute; left: 0; right: 0; top: -1px; pointer-events: none; }
