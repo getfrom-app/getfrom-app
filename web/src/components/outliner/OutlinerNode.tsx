@@ -363,6 +363,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // moved-ref legacy — ignorar (ahora se usan espejos nativos)
   const movedRef = null
 
+  // Para espejos: usar el nodo original como fuente de status/event/due
+  // El mirror node en sí tiene status=null, pero queremos mostrar el checkbox del original
+  const effectiveNode = mirrorSourceNode ?? node
+
   const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
   const isDivider = blockType === 'divider'
@@ -2290,28 +2294,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   const hasChildren = children.length > 0
 
-  // Overdue check — reutilizado en checkbox y due-chip
-  const isOverdue = !!node.due && node.status !== 'done' && (() => {
+  // Overdue check — usa effectiveNode (el original si es espejo)
+  const isOverdue = !!effectiveNode.due && effectiveNode.status !== 'done' && (() => {
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    return new Date(node.due!) < todayStart
+    return new Date(effectiveNode.due!) < todayStart
   })()
 
-  // Clase de color del checkbox:
-  //   🟠 Naranja  = vencida (overdue: due < hoy)
-  //   🟡 Amarilla = tarea de hoy (due === hoy)
-  //   🔵 Azul     = tarea futura (due > hoy) o sin fecha
-  //   🟢 Verde    = completada
-  const isToday = !!node.due && !isOverdue && (() => {
-    const d = new Date(node.due!)
+  // Clase de color del checkbox (usa effectiveNode para espejos)
+  const isToday = !!effectiveNode.due && !isOverdue && (() => {
+    const d = new Date(effectiveNode.due!)
     const now = new Date()
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
   })()
 
-  const taskCheckClass = node.status === 'done'
+  const taskCheckClass = effectiveNode.status === 'done'
     ? 'task-sq--done'
     : isOverdue
-      ? 'task-sq--overdue'           // naranja
+      ? 'task-sq--overdue'
       : isToday
         ? 'task-sq--pending'         // amarillo — tarea de hoy
         : 'task-sq--future'          // azul — futura o sin fecha
@@ -2495,18 +2495,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {/* Bullet / task checkbox / nota icon — hidden for headings and dividers */}
         {!isDivider && !isHeading && (
           <>
-            {node.isEvent ? (
-              // Evento: nav-dot + icono calendario azul
+            {effectiveNode.isEvent ? (
+              // Evento: nav-dot (o ⬡ si es espejo) + icono calendario
               <>
-                <button
-                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
-                  tabIndex={-1}
-                  title="Abrir evento"
-                />
+                {mirrorOfId
+                  ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                  : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Abrir evento" />
+                }
                 <button
                   className="bullet-btn bullet-btn--event"
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
                   title="Evento"
                 >
@@ -2516,15 +2514,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </svg>
                 </button>
               </>
-            ) : node.status !== null ? (
-              // Tarea: nav-dot (navega al nodo) + checkbox cuadrado coloreado
+            ) : effectiveNode.status !== null ? (
+              // Tarea: nav-dot (o ⬡ si es espejo) + checkbox coloreado
               <>
-                <button
-                  className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
-                  tabIndex={-1}
-                  title="Zoom in →"
-                />
+                {mirrorOfId
+                  ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                  : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
+                }
                 <button
                   className={`bullet-btn task ${taskCheckClass}`}
                   onClick={toggleTask}
@@ -2532,7 +2528,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   aria-label="Toggle tarea"
                   title="Marcar hecha/pendiente"
                 >
-                  {node.status === 'done' ? (
+                  {effectiveNode.status === 'done' ? (
                     <svg width="14" height="14" viewBox="0 0 14 14">
                       <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15"/>
                       <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2590,13 +2586,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 title="Zoom in →"
               />
             ) : (
-              // Texto normal: dot navegador (visible en hover, o siempre si tiene hijos)
-              <button
-                className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
-                onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
-                tabIndex={-1}
-                title="Zoom in →"
-              />
+              // Texto normal: dot navegador (o ⬡ si es espejo)
+              mirrorOfId
+                ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
             )}
           </>
         )}
@@ -2615,9 +2608,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
             }}
           >
-            {/* Espejo: indicador visual si este nodo es un espejo de otro */}
-            {mirrorSourceNode && <span className="node-mirror-icon" title={`Espejo de: ${mirrorSourceNode.text}`} style={{ opacity: 0.6, marginRight: 4, fontSize: '0.85em' }}>⬡</span>}
-            {/* Badge de destino para espejos de tarea movida */}
+            {/* Badge de destino para espejos de tarea movida (→ Vie 30 may) */}
             {mirrorDestLabel && (
               <span className="node-mirror-dest-badge">→ {mirrorDestLabel}</span>
             )}
