@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { ensureDayPath } from '../../utils/agendaHelper'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
@@ -1504,54 +1505,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     // ── Nuevas acciones WF ──────────────────────────────────────────────────
     if (action === 'move-today') {
-      const today = store.todayDiary()
-      if (today) {
-        const sibs = store.children(today.id)
-        const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-        store.updateNode(node.id, { parentId: today.id, siblingOrder: lastOrder + 1 })
-      } else {
-        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'No se encontró el diario de hoy' } }))
-      }
+      const dayNode = ensureDayPath(new Date())
+      const sibs = store.children(dayNode.id)
+      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+      store.updateNode(node.id, { parentId: dayNode.id, siblingOrder: lastOrder + 1 })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a hoy', type: 'success' } }))
       return
     } else if (action === 'move-tomorrow' || action === 'move-next-week') {
       const targetDate = new Date()
       if (action === 'move-tomorrow') {
         targetDate.setDate(targetDate.getDate() + 1)
       } else {
-        // Próximo lunes
-        const day = targetDate.getDay()
-        const daysUntilMonday = day === 0 ? 1 : 8 - day
-        targetDate.setDate(targetDate.getDate() + daysUntilMonday)
+        const dow = targetDate.getDay()
+        targetDate.setDate(targetDate.getDate() + (dow === 0 ? 1 : 8 - dow))
       }
       targetDate.setHours(0, 0, 0, 0)
-      const MONTHS_ES_LOCAL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-      const year = targetDate.getFullYear()
-      const monthIdx = targetDate.getMonth()
-      // Buscar nodo diario para la fecha objetivo
-      let diaryNode = Array.from(store.nodes.values()).find(n => {
-        if (!n.isDiaryEntry || n.deletedAt) return false
-        if (!n.diaryDate) return false
-        const d = new Date(n.diaryDate)
-        return d.getFullYear() === year && d.getMonth() === monthIdx && d.getDate() === targetDate.getDate()
-      })
-      if (!diaryNode) {
-        // Crear jerarquía
-        const roots = store.children(null)
-        let calNode = roots.find(n => !n.deletedAt && (
-          n.text?.toLowerCase() === 'planificador' ||
-          n.text?.toLowerCase().includes('planificador') ||
-          n.text?.toLowerCase() === 'calendario' ||
-          n.text?.toLowerCase() === 'calendar'
-        ))
-        if (!calNode) calNode = store.createNode({ text: '📋 Planificador', parentId: null })
-        let yearNode = store.children(calNode.id).find(c => !c.deletedAt && c.text === String(year))
-        if (!yearNode) yearNode = store.createNode({ text: String(year), parentId: calNode.id })
-        const monthText = MONTHS_ES_LOCAL[monthIdx]
-        let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
-        if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
-        const dayText = targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase())
-        diaryNode = store.createNode({ text: dayText, parentId: monthNode.id, isDiaryEntry: true, diaryDate: targetDate.toISOString() })
-      }
+      const diaryNode = ensureDayPath(targetDate)
       const sibs = store.children(diaryNode.id)
       const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
       store.updateNode(node.id, { parentId: diaryNode.id, siblingOrder: lastOrder + 1 })

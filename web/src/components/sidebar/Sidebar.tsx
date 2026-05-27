@@ -8,6 +8,7 @@ import {
   getShortcuts, saveShortcuts, removeShortcut,
   type WFShortcut,
 } from '../../store/shortcutsStore'
+import { ensureDayPath } from '../../utils/agendaHelper'
 // (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
 
 // ── Tag hierarchy helpers ───────────────────────────────────────────────────
@@ -713,34 +714,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           <div className="sidebar-footer">
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
-              onClick={async () => {
-                // Find or create today's diary hierarchy
-                const diary = store.todayDiary()
-                if (diary) { navigate(`/node/${diary.id}`); return }
-                const today = new Date()
-                const year = today.getFullYear()
-                const monthIdx = today.getMonth()
-                const day = today.getDate()
-                const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-                const roots = store.children(null)
-                let calNode = roots.find(n => !n.deletedAt && (
-                  n.text?.toLowerCase() === 'planificador' ||
-                  n.text?.toLowerCase().includes('planificador') ||
-                  n.text?.toLowerCase() === 'calendario' ||
-                  n.text?.toLowerCase() === 'calendar'
-                ))
-                if (!calNode) calNode = store.createNode({ text: '📋 Planificador', parentId: null })
-                let yearNode = store.children(calNode.id).find(c => !c.deletedAt && c.text === String(year))
-                if (!yearNode) yearNode = store.createNode({ text: String(year), parentId: calNode.id })
-                const monthText = MONTHS_ES[monthIdx]
-                let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
-                if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
-                const dayDate = new Date(year, monthIdx, day, 0, 0, 0, 0)
-                const dayText = dayDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase())
-                const dayNode = store.createNode({ text: dayText, parentId: monthNode.id, isDiaryEntry: true, diaryDate: dayDate.toISOString() })
+              onClick={() => {
+                // Crea Agenda → Año → Mes → Día si no existe, y navega
+                const dayNode = ensureDayPath(new Date())
                 navigate(`/node/${dayNode.id}`)
               }}
-              title="Hoy"
+              title="Hoy — ir a la nota del día"
             >
               <span className="nav-icon">📓</span>
               <span>Hoy</span>
@@ -748,10 +727,10 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
               onClick={() => navigate('/calendar')}
-              title="Calendario"
+              title="Planificador"
             >
               <span className="nav-icon">📅</span>
-              <span>Calendario</span>
+              <span>Planificador</span>
             </button>
             <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}

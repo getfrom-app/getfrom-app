@@ -7,6 +7,7 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { addFilterShortcut, getShortcuts } from '../../store/shortcutsStore'
+import { ensureDayPath } from '../../utils/agendaHelper'
 
 interface Props {
   onFilter: (text: string) => void
