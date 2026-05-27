@@ -260,6 +260,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
+  // Autocompletado de contextos — detecta nombres de 🧠 Contexto mientras escribes
+  const [ctxCompletion, setCtxCompletion] = useState<{
+    slug: string; displayName: string; typedLen: number; ghost: string
+  } | null>(null)
   const [showSlash, setShowSlash] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [showCodePicker, setShowCodePicker] = useState(false)
@@ -719,6 +723,55 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     } else {
       setDatePrediction(null)
     }
+
+    // ── Autocompletado de contextos (sin @) ─────────────────────────────────
+    // Solo si no hay @ picker activo y el texto tiene >= 3 chars
+    if (!picker && text.length >= 3) {
+      const pos = contentRef.current ? getCaretPosition(contentRef.current) : text.length
+      const beforeCursor = text.slice(0, pos)
+      // No activar si ya hay un @ justo antes (lo gestiona el picker)
+      if (!/@[\wÀ-ɏ\s]*$/.test(beforeCursor)) {
+        const ctxNodes: { slug: string; displayName: string }[] = []
+        const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+        if (tagsRoot) {
+          const collectCtx = (parentId: string, prefix: string) => {
+            for (const child of store.children(parentId)) {
+              if (child.deletedAt || !child.text) continue
+              const slug = (prefix ? prefix + '/' : '') +
+                child.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+              ctxNodes.push({ slug, displayName: child.text })
+              collectCtx(child.id, slug)
+            }
+          }
+          collectCtx(tagsRoot.id, '')
+        }
+
+        const normStr = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+        let found: typeof ctxCompletion = null
+
+        for (const ctx of ctxNodes) {
+          const ctxNorm = normStr(ctx.displayName)
+          // Buscar el prefijo más largo del final de beforeCursor que coincida con inicio del contexto
+          for (let len = Math.min(beforeCursor.length, ctxNorm.length - 1); len >= 3; len--) {
+            const tail = normStr(beforeCursor.slice(-len))
+            // Debe empezar en límite de palabra (espacio, inicio o puntuación)
+            const charBefore = beforeCursor[beforeCursor.length - len - 1]
+            const isWordStart = !charBefore || /[\s,;:([\-]/.test(charBefore)
+            if (isWordStart && ctxNorm.startsWith(tail) && tail !== ctxNorm) {
+              const ghost = ctx.displayName.slice(len) // resto sin cambiar case
+              found = { slug: ctx.slug, displayName: ctx.displayName, typedLen: len, ghost }
+              break
+            }
+          }
+          if (found) break
+        }
+        setCtxCompletion(found)
+      } else {
+        setCtxCompletion(null)
+      }
+    } else {
+      setCtxCompletion(null)
+    }
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function applyPickerSelection(item: PickerItem) {
@@ -840,6 +893,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setIsEditing(false)
     setShowSlash(false)
     setDatePrediction(null)
+    setCtxCompletion(null)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
 
@@ -918,6 +972,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (showSlash) {
       if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key)) {
         e.preventDefault()
+        return
+      }
+    }
+
+    // ── Aceptar autocompletado de contexto (Tab) ─────────────────────────────
+    if (ctxCompletion && !picker && !showSlash) {
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        acceptCtxCompletion()
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setCtxCompletion(null)
         return
       }
     }
@@ -1629,6 +1697,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido → ${label}`, type: 'success' } }))
     }, 310)
+  }
+
+  function acceptCtxCompletion() {
+    if (!ctxCompletion || !contentRef.current) return
+    const text = contentRef.current.textContent || ''
+    const pos = getCaretPosition(contentRef.current)
+    const before = text.slice(0, pos)
+    const after = text.slice(pos)
+    // Quitar el trozo que ya escribió el usuario y reemplazar por @slug al final
+    const beforeWithout = before.slice(0, before.length - ctxCompletion.typedLen)
+    const cleanText = (beforeWithout + after).trim()
+    const tagText = `@${ctxCompletion.slug}`
+    const newText = cleanText + (cleanText ? ' ' : '') + tagText
+    const newTypes = (node.types || []).includes(ctxCompletion.slug)
+      ? node.types : [...(node.types || []), ctxCompletion.slug]
+    store.updateNode(node.id, { text: newText, types: newTypes })
+    ensureTagInTree(ctxCompletion.slug)
+    if (contentRef.current) {
+      contentRef.current.innerHTML = renderInlineToHtml(newText)
+      const range = document.createRange()
+      const sel = window.getSelection()
+      range.selectNodeContents(contentRef.current)
+      range.collapse(false)
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+    }
+    setCtxCompletion(null)
   }
 
   function toggleTask() {
@@ -2760,6 +2855,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
+
+            {/* Autocompletado de contexto — ghost text al escribir nombre de contexto */}
+            {ctxCompletion && isEditing && !datePrediction && (
+              <span className="from-ghost from-ghost--ctx">
+                <span className="from-ghost-text">{ctxCompletion.ghost}</span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">⇥</span>
+              </span>
+            )}
 
             {/* Ghost text predictivo de fecha — inline en el mismo flex row */}
             {datePrediction && isEditing && (
