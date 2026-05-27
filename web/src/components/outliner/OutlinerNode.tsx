@@ -352,23 +352,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const movedRef = (() => {
     try {
       const ed = JSON.parse(node.extraData || '{}')
-      if (ed._movedRef) return { targetId: ed._refTarget as string, label: ed._refLabel as string }
+      if (ed._movedRef) return {
+        targetId: ed._refTarget as string,
+        label: ed._refLabel as string,
+        wasTask: !!ed._refWasTask,
+      }
     } catch {}
     return null
   })()
 
-  // Badge de contexto original: aparece en destino cuando la tarea tiene padre significativo guardado
-  const originParentBadge = (() => {
+  // Ctx-ref: nodo gris/cursiva que representa el padre original en el día destino
+  const ctxRef = (() => {
     try {
       const ed = JSON.parse(node.extraData || '{}')
-      const op = ed._originParent as { id: string; text: string } | undefined
-      if (!op) return null
-      // Solo mostrar si el padre actual es un diary entry (tarea ya movida)
-      const currentParent = store.getNode(node.parentId || '')
-      if (!currentParent?.isDiaryEntry) return null
-      return op
-    } catch { return null }
+      if (ed._ctxRef) return { targetId: ed._ctxRef as string, text: ed._ctxRefText as string }
+    } catch {}
+    return null
   })()
+
+  // Badge de contexto original — ya no se usa (reemplazado por ctx-ref como nodo)
+  const originParentBadge = null
 
   const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
@@ -901,6 +904,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   const handleFocus = useCallback(() => {
+    // ctx-ref: no editable — navegar al nodo real en su lugar
+    if (ctxRef) { navigate(`/node/${ctxRef.targetId}`); return }
     setIsEditing(true)
     onSelect(node.id)
     // Usar ref (no closure) para obtener el texto más reciente y evitar
@@ -1721,10 +1726,33 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const h = parseInt(opts.timeStr.split(':')[0]), m = parseInt(opts.timeStr.split(':')[1])
         updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
       }
-      store.updateNode(node.id, updates)
-
-      // Crear nodo referencia en la posición original si tenía contexto significativo
+      // Si tiene contexto original significativo:
       if (originParent) {
+        // 1. Crear/reutilizar ctx-ref en destino (padre gris hija del día)
+        const existingCtxRef = store.children(dayNode.id).find(n => {
+          try { return JSON.parse(n.extraData || '{}')._ctxRef === originParent.id } catch { return false }
+        })
+        let ctxRefId: string
+        if (existingCtxRef) {
+          ctxRefId = existingCtxRef.id
+        } else {
+          const ctxRefNode = store.createNode({
+            text: originParent.text,
+            parentId: dayNode.id,
+            siblingOrder: lastOrder + 1,
+          })
+          store.updateNode(ctxRefNode.id, {
+            extraData: JSON.stringify({ _ctxRef: originParent.id, _ctxRefText: originParent.text })
+          })
+          ctxRefId = ctxRefNode.id
+        }
+        // Mover tarea bajo el ctx-ref (no directamente bajo el día)
+        const ctxSibs = store.children(ctxRefId)
+        const ctxLastOrder = ctxSibs.length > 0 ? Math.max(...ctxSibs.map(x => x.siblingOrder)) : 0
+        updates.parentId = ctxRefId
+        updates.siblingOrder = ctxLastOrder + 1
+
+        // 2. Crear moved-ref en la posición original
         const refNode = store.createNode({
           text: node.text,
           parentId: node.parentId,
@@ -1735,9 +1763,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             _movedRef: true,
             _refTarget: node.id,
             _refLabel: opts.label,
+            _refWasTask: node.status !== null,
           })
         })
       }
+
+      store.updateNode(node.id, updates)
 
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
@@ -2235,23 +2266,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
-  // ── Nodo referencia (movedRef): render especial dimmed + link al nodo real ──
+  // ── Nodo referencia (movedRef): mismo layout que nodo normal, gris/cursiva ──
   if (movedRef) {
     const realNode = store.getNode(movedRef.targetId)
     return (
-      <div className="outliner-node">
+      <div className="outliner-node" data-node-id={node.id}>
         <div
           className="node-row node-row--moved-ref"
-          style={{ paddingLeft: depth * 22 + 22 }}
+          style={{ paddingLeft: depth * 22 }}
           onClick={() => navigate(`/node/${movedRef.targetId}`)}
-          title={`Tarea movida a ${movedRef.label} — clic para ir`}
+          title={`→ ${movedRef.label} — clic para ir`}
         >
-          <span className="node-moved-ref-bullet">⬡</span>
-          <span className="node-moved-ref-text">{realNode?.text || node.text}</span>
-          <span className="node-moved-ref-badge">→ {movedRef.label}</span>
+          {/* Expand placeholder */}
+          <button className="node-expand-btn" style={{ visibility: 'hidden' }} tabIndex={-1}>›</button>
+          {/* Bullet o checkbox gris */}
+          {movedRef.wasTask ? (
+            <span className="bullet-btn task task-sq task-sq--ref" />
+          ) : (
+            <span className="bullet-btn node-bullet node-bullet--ref" />
+          )}
+          {/* Texto cursiva gris + badge inline */}
+          <div className="node-text-group">
+            <span className="node-text node-text--rendered node-text--ref">
+              {realNode?.text || node.text}
+            </span>
+            <span className="node-moved-ref-badge">→ {movedRef.label}</span>
+          </div>
         </div>
       </div>
     )
+  }
+
+  // ── Ctx-ref (nodo padre gris en destino): como nodo normal, no editable ──
+  if (ctxRef) {
+    // Se añade 'is-ctx-ref' al nodeRowClass — el render sigue normal pero con estilo override
   }
 
   // Determine CSS class for block type
@@ -2264,6 +2312,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     isBullet ? 'node-row--bullet' : '',
     isDragOver ? 'drag-over' : '',
     isAncestorContext ? 'wf-filter-ancestor' : '',
+    ctxRef ? 'node-row--ctx-ref' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)
@@ -2913,17 +2962,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
-
-            {/* Badge de contexto original — visible cuando la tarea fue movida desde otro nodo */}
-            {originParentBadge && !isEditing && (
-              <button
-                className="node-origin-parent-badge"
-                onClick={e => { e.stopPropagation(); navigate(`/node/${originParentBadge.id}`) }}
-                title={`Contexto: ${originParentBadge.text}`}
-              >
-                ↩ {originParentBadge.text}
-              </button>
-            )}
 
             {/* Autocompletado de contexto — ghost text al escribir nombre de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
