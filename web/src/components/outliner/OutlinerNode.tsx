@@ -1372,7 +1372,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  function applyFormat(type: 'bold' | 'italic' | 'code' | 'strikethrough' | 'underline' | 'link' | 'copy') {
+  function applyFormat(type: import('./FormatToolbar').FormatType, extra?: string) {
     if (type === 'copy') {
       const plainText = contentRef.current?.textContent || ''
       navigator.clipboard.writeText(plainText).catch(console.error)
@@ -1386,12 +1386,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     const range = sel.getRangeAt(0)
     let wrapped = ''
-    if (type === 'bold') wrapped = `**${selectedText}**`
-    else if (type === 'italic') wrapped = `*${selectedText}*`
-    else if (type === 'code') wrapped = `\`${selectedText}\``
+    if (type === 'bold')          wrapped = `**${selectedText}**`
+    else if (type === 'italic')   wrapped = `*${selectedText}*`
+    else if (type === 'code')     wrapped = `\`${selectedText}\``
     else if (type === 'strikethrough') wrapped = `~~${selectedText}~~`
     else if (type === 'underline') wrapped = `<u>${selectedText}</u>`
-    else if (type === 'link') wrapped = `[${selectedText}](url)`
+    else if (type === 'link')     wrapped = `[${selectedText}](url)`
+    else if (type === 'h1')       wrapped = `# ${selectedText}`
+    else if (type === 'h2')       wrapped = `## ${selectedText}`
+    else if (type === 'h3')       wrapped = `### ${selectedText}`
+    else if (type === 'color') {
+      wrapped = extra ? `<span style="color:${extra}">${selectedText}</span>` : selectedText
+    }
 
     // Reemplazar la selección con texto formateado
     range.deleteContents()
@@ -2563,7 +2569,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       )}
 
       {/* Format toolbar — aparece al seleccionar texto */}
-      {isEditing && <FormatToolbar onFormat={applyFormat} />}
+      {/* FormatToolbar: se muestra solo cuando hay selección DENTRO de este nodo */}
+      <FormatToolbar onFormat={applyFormat} nodeRef={contentRef} />
 
       {/* Slash menu */}
       {showSlash && (

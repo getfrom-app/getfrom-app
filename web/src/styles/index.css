@@ -9676,3 +9676,47 @@ a:focus-visible {
   background: var(--bg-hover);
   color: var(--accent);
 }
+
+/* ── FormatToolbar WF — estilo Workflowy ───────────────────────────────────── */
+.wf-format-toolbar {
+  position: fixed;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: #1e1e1e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  padding: 3px 5px;
+  user-select: none;
+  animation: wf-ft-in 0.1s ease;
+}
+@keyframes wf-ft-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ft-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.85);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.ft-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.ft-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
