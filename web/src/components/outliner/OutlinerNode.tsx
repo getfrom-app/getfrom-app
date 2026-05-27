@@ -1570,9 +1570,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Reescribe este contenido de forma más concisa y directa, sin perder información clave.' } }))
       return
     } else if (action === 'delete') {
-      if (window.confirm(`¿Eliminar "${node.text || 'este nodo'}"?`)) {
-        store.updateNode(node.id, { deletedAt: new Date().toISOString() })
-      }
+      store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' } }))
       return
     } else if (action === 'duplicate') {
       const parentId = node.parentId

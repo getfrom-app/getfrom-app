@@ -9263,22 +9263,41 @@ a:focus-visible {
 .wf-layout .view-header { padding-bottom: 8px; }
 .wf-layout .node-view .view-title { font-size: 28px; font-weight: 700; }
 
-/* ── WF bullet dot — visible and clickable ───────────────────────────────── */
+/* ── WF bullet dot — REGLA MAESTRA (no añadir más reglas para este selector) ── */
+/* El BOTÓN es un contenedor cuadrado 20×20px; el DOT es el ::after 6×6px */
 .wf-layout .bullet-nav-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
+  /* Tamaño del contenedor */
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  /* Layout */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  /* Reset forma — el botón NO es un círculo */
+  border-radius: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  /* Visibilidad */
   opacity: 0;
   cursor: pointer;
-  transition: opacity 0.1s, transform 0.1s, background 0.1s;
-  border: none;
-  padding: 0;
-  flex-shrink: 0;
+  transition: opacity 0.12s, background 0.1s;
 }
-.wf-layout .node-row:hover .bullet-nav-dot,
-.wf-layout .bullet-nav-dot--has-children { opacity: 0.4; }
-.wf-layout .bullet-nav-dot:hover { opacity: 1 !important; transform: scale(1.3); background: var(--accent); }
-.wf-layout .bullet-nav-dot--has-children { opacity: 0.6; }
+.wf-layout .bullet-nav-dot::after {
+  content: '' !important;
+  display: block !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--text-secondary) !important;
+  flex-shrink: 0 !important;
+}
+.wf-layout .node-row:hover .bullet-nav-dot { opacity: 0.5; }
+.wf-layout .bullet-nav-dot--has-children   { opacity: 0.55; }
+.wf-layout .bullet-nav-dot:hover           { opacity: 1 !important; background: var(--bg-hover) !important; }
 
 /* ── WF three-dot hover button ────────────────────────────────────────────── */
 .node-three-dot-btn {
@@ -9566,20 +9585,7 @@ a:focus-visible {
   visibility: visible;
 }
 
-/* Bug 4: bullet dot alineado con el texto */
-.wf-layout .bullet-nav-dot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;          /* altura completa de la fila */
-  margin-top: 0;
-  vertical-align: middle;
-}
-.wf-layout .bullet-nav-dot::after {
-  width: 6px;
-  height: 6px;
-  margin-top: 1px;       /* micro-ajuste fino de alineación */
-}
+/* Bug 4: dot alineado — resuelto en regla maestra arriba */
 
 /* ── WF: eliminar panel derecho completamente del layout ──────────────────── */
 /* Ocultar el wrapper completo del panel derecho (incluye toggle button) */
@@ -9618,19 +9624,7 @@ a:focus-visible {
   padding: 2px 0;
 }
 
-/* Eliminar override anterior de height: 100% que rompía alineación */
-.wf-layout .bullet-nav-dot {
-  height: 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-top: 0 !important;
-}
-.wf-layout .bullet-nav-dot::after {
-  width: 6px !important;
-  height: 6px !important;
-  margin-top: 0 !important;
-}
+/* dot: regla maestra más arriba */
 
 /* Tamaño de fuente más grande en WF */
 .wf-layout .node-text,
