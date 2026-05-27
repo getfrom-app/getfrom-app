@@ -2499,7 +2499,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // Evento: nav-dot (o ⬡ si es espejo) + icono calendario
               <>
                 {mirrorOfId
-                  ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                  ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
                   : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Abrir evento" />
                 }
                 <button
@@ -2518,7 +2518,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // Tarea: nav-dot (o ⬡ si es espejo) + checkbox coloreado
               <>
                 {mirrorOfId
-                  ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                  ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
                   : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
                 }
                 <button
@@ -2588,7 +2588,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             ) : (
               // Texto normal: dot navegador (o ⬡ si es espejo)
               mirrorOfId
-                ? <button className="bullet-nav-dot bullet-nav-dot--mirror" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
+                ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
                 : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
             )}
           </>
