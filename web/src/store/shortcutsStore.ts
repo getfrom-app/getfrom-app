@@ -21,14 +21,11 @@ export type WFShortcut = {
 }
 
 const KEY = 'from_wf_shortcuts'
+
+// IDs de atajos legacy que deben eliminarse automáticamente
+const LEGACY_IDS = new Set(['__today_tasks__'])
+
 const DEFAULT_SHORTCUTS: WFShortcut[] = [
-  {
-    id: '__today_tasks__',
-    type: 'filter',
-    name: 'Tareas de hoy',
-    query: 'hoy tarea',
-    createdAt: '',
-  },
   {
     id: '__pending__',
     type: 'filter',
@@ -48,19 +45,20 @@ const DEFAULT_SHORTCUTS: WFShortcut[] = [
 export function getShortcuts(): WFShortcut[] {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return migrateAndSave()
-    const saved = JSON.parse(raw) as WFShortcut[]
-    // Ensure default shortcuts are present (migrate if missing)
-    const hasAllDefaults = DEFAULT_SHORTCUTS.every(d => saved.some(s => s.id === d.id))
-    if (!hasAllDefaults) {
-      const merged = [
-        ...DEFAULT_SHORTCUTS,
-        ...saved.filter(s => !DEFAULT_SHORTCUTS.some(d => d.id === s.id)),
-      ]
-      saveShortcuts(merged)
-      return merged
+    const saved: WFShortcut[] = raw ? JSON.parse(raw) : []
+
+    // Eliminar atajos legacy + añadir defaults que falten
+    const filtered = saved.filter(s => !LEGACY_IDS.has(s.id))
+    const withDefaults = [
+      ...DEFAULT_SHORTCUTS.filter(d => !filtered.some(s => s.id === d.id)),
+      ...filtered,
+    ]
+
+    // Guardar si hubo cambios (legacy eliminado o defaults añadidos)
+    if (withDefaults.length !== saved.length || !raw) {
+      saveShortcuts(withDefaults)
     }
-    return saved
+    return withDefaults
   } catch {
     return DEFAULT_SHORTCUTS
   }
