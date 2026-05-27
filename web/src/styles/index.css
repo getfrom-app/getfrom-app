@@ -9824,3 +9824,51 @@ a:focus-visible {
   padding: 0;
 }
 .ft-back-btn:hover { color: #374151; }
+
+/* ── WF mode: badge de fecha inline (junto al texto, no al extremo) ─────── */
+/* En WF, node-text NO crece para absorber todo el espacio: el badge
+   queda inmediatamente después del texto y las chips de contexto. */
+.wf-layout .node-text-group .node-text {
+  flex: 0 1 auto;   /* no crecer — solo el tamaño del contenido */
+}
+.wf-layout .node-text-group {
+  flex-wrap: wrap;  /* permite que el badge baje de línea en nodos muy largos */
+  gap: 4px;
+}
+.wf-layout .node-qp-badge {
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ── Modal centrado para quick-props (fecha / evento) ───────────────────── */
+.nqp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.nqp-modal-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  padding: 16px;
+  min-width: 260px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nqp-modal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
