@@ -192,6 +192,10 @@ export default function NodeView() {
   useEffect(() => {
     if (!titleEditing && titleRef.current) {
       let displayText = node?.text || ''
+      // Si el icono es de extraData, añadirlo al inicio del título para consistencia visual
+      if (nodeIcon && iconSource === 'extra' && !displayText.startsWith(nodeIcon)) {
+        displayText = `${nodeIcon} ${displayText}`
+      }
       // En WF mode mostramos node.text directamente (sin reformatear)
       // para que display y edición sean consistentes.
       // En modo normal, los diarios muestran la fecha completa formateada.
@@ -271,12 +275,17 @@ export default function NodeView() {
   }, [titleTagPicker])
 
   // Icono del nodo (extraData.icon)
-  // Icono explícito solo desde extraData.icon (lo asigna el emoji picker)
-  // Si el texto empieza con emoji, es parte del texto — no interferir
-  const nodeIcon = useMemo(() => {
-    try { return JSON.parse(node?.extraData || '{}').icon || null } catch { return null }
-  }, [node?.extraData])
-  const iconFromText = false  // nunca extraer emoji del texto como icono
+  // ── Icono unificado: extraData.icon || primer emoji del texto ─────────────
+  const { nodeIcon, iconSource } = useMemo(() => {
+    try {
+      const extraIcon = JSON.parse(node?.extraData || '{}').icon || null
+      if (extraIcon) return { nodeIcon: extraIcon, iconSource: 'extra' as const }
+    } catch {}
+    const m = (node?.text || '').match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u)
+    if (m) return { nodeIcon: m[0], iconSource: 'text' as const }
+    return { nodeIcon: null, iconSource: null }
+  }, [node?.extraData, node?.text])
+  // iconSource: 'extra' | 'text' | null — indica de dónde viene el icono
 
   // Color del nodo (extraData.color)
   const nodeColor = useMemo(() => {
@@ -1354,11 +1363,9 @@ export default function NodeView() {
                   )
                 }
               } catch {}
-              // Solo mostrar el botón de icono si hay icono explícito O si el texto NO empieza con emoji
-              // (si el texto ya tiene emoji, el icono está en el texto — no duplicar)
               if (node.isDiaryEntry) return null
-              const textStartsWithEmoji = /^\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(node.text || '')
-              if (!nodeIcon && textStartsWithEmoji) return null  // emoji en texto = sin botón
+              // Sin ningún icono (ni en texto ni en extra) → mostrar el 📄 por defecto
+              // Con icono → siempre mostrar el botón para poder cambiarlo
               return (
                 <div className="node-icon-wrapper">
                   <button
