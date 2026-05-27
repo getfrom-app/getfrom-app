@@ -568,13 +568,16 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
         ) : (
           shortcuts.map(sc => {
             const isNodeActive = sc.type === 'node' && location.pathname === `/node/${sc.nodeId}`
-            const isFilterActive = sc.type === 'filter' && location.search === `?q=${encodeURIComponent(sc.query || '')}` && location.pathname === '/search'
+            // Filtro activo: estamos en / y el filterText coincide
+            const isFilterActive = sc.type === 'filter' &&
+              (location.pathname === '/' || location.pathname === '') &&
+              typeof window !== 'undefined' &&
+              (window as any).__wfFilterText === (sc.query || '')
             const isActive = isNodeActive || isFilterActive
-            const isDefault = sc.id === '__today_tasks__'
 
             // Icono según tipo
             const icon = sc.type === 'filter'
-              ? (isDefault ? '📅' : '🔍')
+              ? '🔍'
               : (() => {
                   const node = sc.nodeId ? s.getNode(sc.nodeId) : undefined
                   return node ? getNodeIcon(node) : '📄'
@@ -585,10 +588,16 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
                 key={sc.id}
                 className={`wf-qa-item${isActive ? ' active' : ''}`}
                 onClick={() => {
-                  if (sc.type === 'filter') navigate(`/search?q=${encodeURIComponent(sc.query || '')}`)
-                  else if (sc.nodeId) navigate(`/node/${sc.nodeId}`)
+                  if (sc.type === 'filter') {
+                    // Filtrar el árbol inline, sin navegar a /search
+                    window.dispatchEvent(new CustomEvent('wf:set-filter', {
+                      detail: { query: sc.query || '' }
+                    }))
+                  } else if (sc.nodeId) {
+                    navigate(`/node/${sc.nodeId}`)
+                  }
                 }}
-                title={sc.type === 'filter' ? sc.query : sc.name}
+                title={sc.type === 'filter' ? `Filtrar: ${sc.query}` : sc.name}
               >
                 <span className="wf-qa-item-icon">{icon}</span>
                 <span className="wf-qa-item-name">{sc.name}</span>

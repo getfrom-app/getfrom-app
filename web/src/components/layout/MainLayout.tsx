@@ -98,12 +98,23 @@ export default function MainLayout() {
   const [showAIChat, setShowAIChat] = useState(false)
   const [filterText, setFilterText] = useState('')
 
-  // Limpiar filtro desde WFHomeView
+  // Limpiar / aplicar filtro desde cualquier componente
   useEffect(() => {
     function handleClearFilter() { setFilterText('') }
+    function handleSetFilter(e: Event) {
+      const q = (e as CustomEvent<{ query: string }>).detail?.query ?? ''
+      setFilterText(q)
+      // Asegurar que estamos en la vista raíz para ver el árbol filtrado
+      const path = window.location.pathname.replace(/^\/app/, '') || '/'
+      if (path !== '/' && path !== '') navigate('/')
+    }
     window.addEventListener('wf:clear-filter', handleClearFilter)
-    return () => window.removeEventListener('wf:clear-filter', handleClearFilter)
-  }, [])
+    window.addEventListener('wf:set-filter', handleSetFilter)
+    return () => {
+      window.removeEventListener('wf:clear-filter', handleClearFilter)
+      window.removeEventListener('wf:set-filter', handleSetFilter)
+    }
+  }, [navigate])
   const prevIsSyncing = useRef(false)
 
   useTaskNotifications()
