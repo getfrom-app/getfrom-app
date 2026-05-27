@@ -260,6 +260,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
+  // Predicción de tarea — el texto empieza por un verbo de acción
+  const [taskPrediction, setTaskPrediction] = useState(false)
   // Autocompletado de contextos — detecta nombres de 🧠 Contexto mientras escribes
   const [ctxCompletion, setCtxCompletion] = useState<{
     slug: string; displayName: string; typedLen: number; ghost: string
@@ -742,6 +744,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
+    // ── Detección de intención de tarea por verbo de acción ────────────────
+    // Solo si el nodo no es ya una tarea/evento y tiene texto suficiente
+    const TASK_VERBS = /^(confirmar|hacer|pedir|esperar|llamar|enviar|revisar|preparar|crear|actualizar|contactar|comprar|escribir|buscar|entregar|completar|terminar|acabar|organizar|planificar|decidir|analizar|investigar|diseñar|implementar|instalar|configurar|probar|solucionar|arreglar|mejorar|añadir|anadir|quitar|cambiar|mover|hablar|reunirse|visitar|firmar|pagar|cobrar|facturar|contratar|presentar|mostrar|explicar|aprender|estudiar|leer|subir|bajar|descargar|comprobar|verificar|validar|corregir|editar|gestionar|coordinar|definir|publicar|lanzar|cerrar|abrir|iniciar|finalizar|solicitar|aprobar|rechazar|asignar|delegar|seguir|monitorizar|reportar|documentar|actualizar|migrar|integrar|conectar|sincronizar|importar|exportar|generar|calcular|medir|evaluar|comparar|seleccionar|elegir|decidir|confirmar|cancelar|posponer|priorizar|clasificar|ordenar|filtrar|agrupar)\b/i
+    const normedText = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    if (node.status === null && !node.isEvent && text.length > 5 && TASK_VERBS.test(normedText)) {
+      setTaskPrediction(true)
+    } else {
+      setTaskPrediction(false)
+    }
+
     // ── Detección de fecha al final de cualquier nodo ──────────────────────
     if (text.length > 3) {
       setDatePrediction(extractDateFromEnd(text))
@@ -921,6 +933,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setShowSlash(false)
     setDatePrediction(null)
     setCtxCompletion(null)
+    setTaskPrediction(false)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
 
@@ -1014,6 +1027,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         e.preventDefault()
         setCtxCompletion(null)
         return
+      }
+    }
+
+    // ── Predicción de tarea: Escape cancela, Enter convierte antes de crear hermano ──
+    if (taskPrediction && !picker && !showSlash && !datePrediction && !ctxCompletion) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setTaskPrediction(false)
+        return
+      }
+      if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        // Convertir a tarea ANTES de que el Enter cree el hermano
+        store.updateNode(node.id, { status: 'pending' })
+        setTaskPrediction(false)
+        // dejar que el Enter siga su curso normal (crea el hermano)
       }
     }
 
@@ -2997,6 +3025,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )
               } catch { return null }
             })()}
+
+            {/* Badge predicción de tarea — verbo de acción al inicio */}
+            {taskPrediction && isEditing && !datePrediction && !ctxCompletion && (
+              <span className="from-ghost from-ghost--task">
+                <span className="from-ghost-text">☐ tarea</span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">↵</span>
+              </span>
+            )}
 
             {/* Autocompletado de contexto — ghost text al escribir nombre de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
