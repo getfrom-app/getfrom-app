@@ -298,9 +298,17 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       const anchorId = dragAnchorId.current!
 
       // ── Drag desde texto: detectar cruce de nodo ──────────────────────────
+      // Usamos bounding rect del nodo ancla (no elementFromPoint) para detectar
+      // cuándo el cursor sale del nodo: es más fiable cuando el cursor está en
+      // el padding entre nodos o dentro de un contenteditable de otro nodo.
       if (dragFromText.current && !isDragSelecting) {
-        // ¿El cursor ha salido del nodo ancla?
-        if (hoveredId && hoveredId !== anchorId) {
+        const anchorEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`) as HTMLElement | null
+        const anchorRect = anchorEl?.getBoundingClientRect()
+        const isOutside = anchorRect
+          ? (e.clientY < anchorRect.top || e.clientY > anchorRect.bottom)
+          : (hoveredId !== null && hoveredId !== anchorId)
+
+        if (isOutside) {
           // Limpiar la selección de texto del browser y entrar en modo node-select
           window.getSelection()?.removeAllRanges()
           setIsDragSelecting(true)
@@ -457,19 +465,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     })
   }, [])
 
-  // Multi-select actions
+  // Multi-select: borrar seleccionados (también usado por teclado)
   function handleDeleteSelected() {
     for (const id of selectedIds) store.deleteNode(id)
-    setSelectedIds(new Set())
-  }
-
-  function handleMarkAsTask() {
-    for (const id of selectedIds) {
-      const n = store.getNode(id)
-      if (n && n.status === null) {
-        store.updateNode(id, { status: 'pending' })
-      }
-    }
     setSelectedIds(new Set())
   }
 
@@ -506,21 +504,6 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''} ${isDragSelecting ? 'is-drag-selecting' : ''}`}
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
-        onContextMenu={selectedIds.size > 0 ? (e) => {
-          e.preventDefault()
-          const flat = flatVisibleIds()
-          const texts = flat.filter(id => selectedIds.has(id)).map(id => store.getNode(id)?.text || '').filter(Boolean)
-          if (texts.length === 0) return
-          // Crear nota con los nodos seleccionados
-          const title = texts[0]
-          const newNode = store.createNode({ text: title, parentId: null })
-          for (let i = 1; i < texts.length; i++) {
-            store.createNode({ text: texts[i], parentId: newNode.id, siblingOrder: i })
-          }
-          setSelectedIds(new Set())
-          // Navegar a la nueva nota
-          window.location.href = `/app/node/${newNode.id}`
-        } : undefined}
       >
         {nodes.length === 0 && placeholder && (
           <div className="outliner-placeholder">{placeholder}</div>
@@ -557,124 +540,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         ))}
       </div>
 
-      {/* Multi-select action bar */}
-      {selectedIds.size > 0 && (
-        <div className="multi-select-bar">
-          <span className="multi-select-count">
-            {selectedIds.size} {selectedIds.size === 1 ? 'seleccionado' : 'seleccionados'}
-          </span>
-          <div className="multi-select-divider" />
-          <button
-            className="multi-select-action"
-            onClick={handleMarkAsTask}
-            title="Convertir en tarea"
-          >
-            ○ Marcar como tarea
-          </button>
-          <button
-            className="multi-select-action"
-            onClick={() => {
-              for (const id of selectedIds) {
-                const n = store.getNode(id)
-                if (n) store.updateNode(id, { status: n.status === 'done' ? 'pending' : (n.status === 'pending' ? 'done' : 'pending') })
-              }
-              setSelectedIds(new Set())
-            }}
-            title="Toggle done"
-          >
-            ✓ Toggle done
-          </button>
-          <button
-            className="multi-select-action"
-            onClick={() => {
-              for (const id of selectedIds) {
-                const n = store.getNode(id)
-                if (n) store.updateNode(id, { isFavorite: !n.isFavorite })
-              }
-              setSelectedIds(new Set())
-            }}
-            title="Toggle favorito"
-          >
-            ★ Favorito
-          </button>
-          <button
-            className="multi-select-action"
-            onClick={() => {
-              const flat = flatVisibleIds()
-              const selected = flat.filter(id => selectedIds.has(id))
-              for (const id of selected) {
-                const n = store.getNode(id)
-                if (!n) continue
-                const siblings = store.children(n.parentId || null)
-                const idx = siblings.findIndex(s => s.id === id)
-                if (idx <= 0) continue
-                const prev = siblings[idx - 1]
-                const prevChildren = store.children(prev.id)
-                const newOrder = prevChildren.length > 0 ? prevChildren[prevChildren.length - 1].siblingOrder + 1 : 1
-                store.updateNode(id, { parentId: prev.id, siblingOrder: newOrder })
-              }
-            }}
-            title="Indentar (Tab)"
-          >
-            → Indentar
-          </button>
-          <button
-            className="multi-select-action"
-            onClick={() => {
-              const flat = flatVisibleIds()
-              const selected = flat.filter(id => selectedIds.has(id))
-              for (const id of selected) {
-                const n = store.getNode(id)
-                if (!n || !n.parentId || n.parentId === parentId) continue
-                const grandParent = store.getNode(n.parentId)
-                if (!grandParent) continue
-                const newParentId = grandParent.parentId ?? parentId
-                const siblings = store.children(newParentId || null)
-                const gpIdx = siblings.findIndex(s => s.id === n.parentId)
-                store.updateNode(id, { parentId: newParentId, siblingOrder: (siblings[gpIdx]?.siblingOrder ?? 0) + 0.5 })
-              }
-            }}
-            title="Desindentar (Shift+Tab)"
-          >
-            ← Desindentar
-          </button>
-          <button
-            className="multi-select-action"
-            onClick={() => {
-              const flat = flatVisibleIds()
-              const texts = flat
-                .filter(id => selectedIds.has(id))
-                .map(id => store.getNode(id)?.text || '')
-                .filter(Boolean)
-              if (texts.length === 0) return
-              const title = texts[0]
-              const newNode = store.createNode({ text: title, parentId: null })
-              for (let i = 1; i < texts.length; i++) {
-                store.createNode({ text: texts[i], parentId: newNode.id, siblingOrder: i })
-              }
-              setSelectedIds(new Set())
-            }}
-            title="Crear nota con la selección"
-          >
-            ✦ Crear nota
-          </button>
-          <button
-            className="multi-select-action multi-select-action--danger"
-            onClick={handleDeleteSelected}
-            title="Borrar seleccionados"
-          >
-            ✕ Borrar
-          </button>
-          <div className="multi-select-divider" />
-          <button
-            className="multi-select-clear"
-            onClick={() => setSelectedIds(new Set())}
-            title="Deseleccionar todo"
-          >
-            ×
-          </button>
-        </div>
-      )}
+      {/* WF-style: no hay barra inferior. La multi-selección se opera
+          solo con el teclado: Delete borrar · Tab indentar · Shift+Tab
+          desindentar · ⌘C copiar · Escape limpiar.
+          Los nodos seleccionados se resaltan con fondo azul via CSS. */}
     </>
   )
 }
