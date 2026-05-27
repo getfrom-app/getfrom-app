@@ -374,38 +374,10 @@ export class NodeStore {
   }
 
   /**
-   * Limpia nodos que están incorrectamente bajo nodos de estructura temporal
-   * (año "2026", mes "Mayo", semana "Semana 22"). La jerarquía correcta es:
-   *   2026 → sólo meses   Mayo → sólo semanas   Semana N → sólo diary entries
-   * Cualquier nota/tarea real que tenga como parent un nodo temporal se mueve
-   * a root (parentId = null). Las diary entries son la excepción: sus parents
-   * son semanas → correcto, no se tocan.
+   * @deprecated Eliminado — en From WF cualquier nodo puede estar en cualquier posición.
+   * La regla "notas bajo temporales → mover a root" ya no aplica.
    */
-  fixTemporalHierarchyOrphans(): number {
-    const MONTHS_SET = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
-    const isTemporal = (n: Node) => {
-      const t = (n.text || '').trim()
-      return /^\d{4}$/.test(t) || MONTHS_SET.has(t) || /^Semana \d+$/i.test(t)
-    }
-
-    let moved = 0
-    for (const [id, node] of this.nodes.entries()) {
-      if (node.deletedAt || !node.parentId) continue
-      if (node.isDiaryEntry) continue     // diary entries bajo semana/mes → correcto
-      if (isTemporal(node)) continue      // nodos temporales (año/mes/semana) pueden estar bajo otro temporal
-
-      const parent = this.getNode(node.parentId)
-      if (!parent || parent.deletedAt || !isTemporal(parent)) continue
-
-      // Nota/tarea real hija directa de nodo temporal → mover a root
-      this.nodes.set(id, { ...node, parentId: null, _isDirty: true, updatedAt: new Date().toISOString() })
-      this.dirtyIds.add(id)
-      moved++
-    }
-    if (moved > 0) this.invalidateChildrenCache()
-    return moved
-  }
+  fixTemporalHierarchyOrphans(): number { return 0 }
 
   mergeDuplicateDiaries(): number {
     const byDay = new Map<string, Node[]>()
