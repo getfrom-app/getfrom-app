@@ -147,6 +147,45 @@ export function getTagAIContext(slug: string): string | null {
   return parts.join('\n') || null
 }
 
+// ── Auto-creación de tag en el árbol ─────────────────────────────────────────
+
+/**
+ * Asegura que existe un nodo para el tag (o subtag) dado.
+ * Si el árbol Tags no existe, lo crea.
+ * Si el tag tiene jerarquía ("la-isla/ops"), crea cada nivel.
+ *
+ * "la-isla"     → 🏷 Tags → La Isla
+ * "la-isla/ops" → 🏷 Tags → La Isla → Ops
+ *
+ * Returns el nodo hoja del tag.
+ */
+export function ensureTagInTree(slug: string): Node {
+  const root = getOrCreateTagsRoot()
+
+  const parts = slug.toLowerCase().split('/').filter(Boolean)
+  let parent = root
+
+  for (const part of parts) {
+    const existing = store.children(parent.id).find(c =>
+      !c.deletedAt && textToTagSlug(c.text || '') === part
+    )
+    if (existing) {
+      parent = existing
+    } else {
+      // Convertir slug → nombre legible: "la-isla" → "La Isla"
+      const displayName = part
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+      const newNode = store.createNode({ text: displayName, parentId: parent.id })
+      // Auto-poner _tagDefinition para que la IA lo reconozca
+      ensureTagDefinition(newNode.id)
+      parent = newNode
+    }
+  }
+
+  return parent
+}
+
 // ── Inicialización ────────────────────────────────────────────────────────────
 
 /**

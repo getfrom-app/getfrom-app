@@ -18,6 +18,7 @@ import { aiInlineStream } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
+import { ensureTagInTree } from '../../utils/tagsHelper'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -485,6 +486,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       newTypes.some((t, i) => t !== currentTypes[i])
     if (typesChanged) {
       store.updateNode(node.id, { text, types: newTypes })
+      // Auto-crear nodos en 🏷 Tags para tags nuevos
+      const addedTags = [...hashTags].filter(t => !currentTypes.includes(t) && !BUILTIN_TYPES.has(t))
+      for (const tag of addedTags) {
+        try { ensureTagInTree(tag) } catch { /* silencioso */ }
+      }
     } else {
       store.updateNode(node.id, { text })
     }
@@ -629,6 +635,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const newText = cleanText + (cleanText ? ' ' : '') + tagText
       const newTypes = (node.types || []).includes(item.id) ? node.types : [...(node.types || []), item.id]
       store.updateNode(node.id, { text: newText, types: newTypes })
+      // Auto-crear nodo en 🏷 Tags si no existe (crea la jerarquía completa)
+      ensureTagInTree(item.id)
       if (contentRef.current) {
         contentRef.current.textContent = newText
         // Cursor al final
