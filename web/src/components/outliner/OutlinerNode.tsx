@@ -197,7 +197,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [codeQuery, setCodeQuery] = useState('')
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [isDragOverChild, setIsDragOverChild] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [isAiStreaming, setIsAiStreaming] = useState(false)
   const [aiPendingText, setAiPendingText] = useState<string | null>(null)
@@ -1344,30 +1343,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }
 
-  function handleDropAsChild(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault()
-    setIsDragOverChild(false)
-    const draggedId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
-    _draggedNodeId = null
-    if (!draggedId || draggedId === node.id) return
-    const draggedNode = store.getNode(draggedId)
-    if (!draggedNode) return
-    // Verificar que no es descendiente
-    if (isDescendant(draggedId, node.id)) return
-    // Mover como último hijo de este nodo
-    const childNodes = store.children(node.id).sort((a, b) => a.siblingOrder - b.siblingOrder)
-    const lastOrder = childNodes.length > 0 ? childNodes[childNodes.length - 1].siblingOrder : 0
-    store.updateNode(draggedId, { parentId: node.id, siblingOrder: lastOrder + 1000 })
-    // Expandir si estaba colapsado
-    if (node.isCollapsed) {
-      store.updateNode(node.id, { isCollapsed: false })
-    }
-  }
-
   function handleDragEnd() {
     _draggedNodeId = null
     setIsDragOver(false)
-    setIsDragOverChild(false)
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -2545,15 +2523,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
       </div>
 
-      {/* Drop zone: make child */}
-      {!isDivider && !isHeading && (
-        <div
-          className={`drop-as-child ${isDragOverChild ? 'active' : ''}`}
-          onDragOver={e => { e.preventDefault(); setIsDragOverChild(true) }}
-          onDragLeave={() => setIsDragOverChild(false)}
-          onDrop={handleDropAsChild}
-        />
-      )}
 
       {/* Smart date assigned badge */}
       {dateAssignedMsg && (

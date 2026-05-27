@@ -3061,10 +3061,6 @@ mark.inline-highlight {
 .node-row.drag-over { border-top: 2px solid var(--accent); }
 .node-row[draggable="true"] { cursor: grab; }
 .node-row[draggable="true"]:active { cursor: grabbing; }
-.drop-as-child { height: 10px; margin-left: 32px; border-radius: 3px; transition: background 0.1s; cursor: default; }
-/* WF mode: ocultar drop-as-child (no se usa drag-to-reorder como child en WF) */
-.wf-layout .drop-as-child { display: none; }
-.drop-as-child.active { background: var(--accent); opacity: 0.7; height: 14px; }
 /* Indicador de línea drag-over en node-row */
 .node-row.drag-over::before { content: ''; display: block; height: 2px; background: var(--accent); border-radius: 1px; position: absolute; left: 0; right: 0; top: -1px; pointer-events: none; }
 
@@ -6552,14 +6548,6 @@ select:focus { outline: none; }
 }
 @keyframes dropLine { from { opacity: 0.7; } to { opacity: 1; } }
 
-/* Drop zone child indicator */
-.drop-as-child.active {
-  background: rgba(139,92,246,0.1) !important;
-  height: 6px;
-  margin-left: 20px;
-  border-radius: 3px;
-  border-left: 3px solid var(--accent);
-}
 
 /* ── Node Insights panel ────────────────────────────────────────────────────── */
 .context-insights { padding: 8px !important; }
@@ -7509,7 +7497,6 @@ a:focus-visible {
 
 /* Mejor visual feedback para drop targets */
 .node-row.drag-over { box-shadow: inset 0 -2px 0 var(--accent); }
-.drop-as-child.active { background: var(--accent-soft); outline: 2px dashed var(--accent); }
 
 /* Multi-select highlight */
 .node-row.multi-selected { background: var(--accent-soft); border-radius: 6px; }
