@@ -6,6 +6,12 @@ export type SlashAction =
   | 'heading-1' | 'heading-2' | 'heading-3'
   | 'view-table' | 'view-kanban' | 'view-calendar' | 'view-list'
   | 'agent' | 'prompt' | 'resource'
+  | 'move-today' | 'move-tomorrow' | 'move-next-week'
+  | 'expand-all' | 'collapse-all'
+  | 'count-children'
+  | 'ai-summarize' | 'ai-find-tasks' | 'ai-draft-outline' | 'ai-fix-grammar' | 'ai-make-shorter'
+  | 'duplicate' | 'delete'
+  | 'add-date'
 
 export interface SlashMenuOption {
   label: string
@@ -40,6 +46,24 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
   { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
+  // ── Mover ─────────────────────────────────────────────────────────────────
+  { group: 'Mover', label: 'Mover a hoy', icon: '📅', prefix: '', description: 'Mover esta nota al diario de hoy', action: 'move-today' },
+  { group: 'Mover', label: 'Mover a mañana', icon: '📆', prefix: '', description: 'Mover al diario de mañana', action: 'move-tomorrow' },
+  { group: 'Mover', label: 'Mover a próxima semana', icon: '📋', prefix: '', description: 'Mover al inicio de la próxima semana', action: 'move-next-week' },
+  // ── Árbol ─────────────────────────────────────────────────────────────────
+  { group: 'Árbol', label: 'Expandir todo', icon: '▿', prefix: '', description: 'Expandir todos los hijos', action: 'expand-all' },
+  { group: 'Árbol', label: 'Colapsar todo', icon: '▸', prefix: '', description: 'Colapsar todos los hijos', action: 'collapse-all' },
+  { group: 'Árbol', label: 'Contar hijos', icon: '#', prefix: '', description: 'Mostrar número de nodos hijos', action: 'count-children' },
+  { group: 'Árbol', label: 'Duplicar', icon: '⧉', prefix: '', description: 'Duplicar este nodo y sus hijos', action: 'duplicate' },
+  // ── IA ────────────────────────────────────────────────────────────────────
+  { group: 'IA', label: 'Resumir', icon: '📝', prefix: '', description: 'Resumir el contenido con IA', action: 'ai-summarize' },
+  { group: 'IA', label: 'Encontrar tareas', icon: '✓', prefix: '', description: 'Extraer tareas del contenido', action: 'ai-find-tasks' },
+  { group: 'IA', label: 'Crear esquema', icon: '📋', prefix: '', description: 'Generar un outline del contenido', action: 'ai-draft-outline' },
+  { group: 'IA', label: 'Corregir gramática', icon: '✏️', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
+  { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
+  // ── Gestión ───────────────────────────────────────────────────────────────
+  { group: 'Gestión', label: 'Añadir fecha', icon: '🗓', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
+  { group: 'Gestión', label: 'Eliminar', icon: '🗑', prefix: '', description: 'Eliminar este nodo', action: 'delete' },
 ]
 
 export interface SlashSelectPayload {

@@ -713,19 +713,32 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
           <div className="sidebar-footer">
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
-              onClick={() => navigate('/')}
+              onClick={async () => {
+                // Find or create today's diary hierarchy
+                const diary = store.todayDiary()
+                if (diary) { navigate(`/node/${diary.id}`); return }
+                const today = new Date()
+                const year = today.getFullYear()
+                const monthIdx = today.getMonth()
+                const day = today.getDate()
+                const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+                const roots = store.children(null)
+                let calNode = roots.find(n => !n.deletedAt && (n.text?.toLowerCase() === 'calendario' || n.text?.toLowerCase() === 'calendar'))
+                if (!calNode) calNode = store.createNode({ text: 'Calendario', parentId: null })
+                let yearNode = store.children(calNode.id).find(c => !c.deletedAt && c.text === String(year))
+                if (!yearNode) yearNode = store.createNode({ text: String(year), parentId: calNode.id })
+                const monthText = MONTHS_ES[monthIdx]
+                let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
+                if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
+                const dayDate = new Date(year, monthIdx, day, 0, 0, 0, 0)
+                const dayText = dayDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase())
+                const dayNode = store.createNode({ text: dayText, parentId: monthNode.id, isDiaryEntry: true, diaryDate: dayDate.toISOString() })
+                navigate(`/node/${dayNode.id}`)
+              }}
               title="Hoy"
             >
               <span className="nav-icon">📓</span>
               <span>Hoy</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
-              onClick={() => navigate('/tasks')}
-              title="Tareas"
-            >
-              <span className="nav-icon">✓</span>
-              <span>Tareas{pendingCount > 0 ? ` (${pendingCount})` : ''}</span>
             </button>
             <button
               className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
@@ -734,14 +747,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             >
               <span className="nav-icon">📅</span>
               <span>Calendario</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/resources') ? 'active' : ''}`}
-              onClick={() => navigate('/resources')}
-              title="Recursos"
-            >
-              <span className="nav-icon">🔗</span>
-              <span>Recursos</span>
             </button>
             <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
@@ -758,16 +763,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             >
               <span className="nav-icon">⚙</span>
               <span>Ajustes</span>
-            </button>
-            <button
-              className="nav-item"
-              onClick={() => {
-                window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))
-              }}
-              title="Atajos de teclado (?)"
-            >
-              <span className="nav-icon">⌨</span>
-              <span>Atajos</span>
             </button>
             {!isGuest ? (
               <button className="nav-item" onClick={onLogout} title="Cerrar sesión">

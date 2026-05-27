@@ -8,6 +8,7 @@ import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
+import WFTemporalView from './WFTemporalView'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeRightPanel from '../panels/NodeRightPanel'
@@ -2048,6 +2049,14 @@ export default function NodeView() {
           )}
           {viewKind === 'calendar' && !node.isDiaryEntry && (
             <NodeCalendarView parentId={node.id} />
+          )}
+
+          {/* WF Temporal rendering — month/day pills (only in WF mode) */}
+          {(temporalNodeType === 'year' || temporalNodeType === 'month') && (
+            <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
+          )}
+          {node.isDiaryEntry && (
+            <WFTemporalView node={node} temporalType="diary" />
           )}
 
           <div className={`outliner-section${viewKind !== 'list' && !node.isDiaryEntry ? ' outliner-section--hidden' : ''}`}>

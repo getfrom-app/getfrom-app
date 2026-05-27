@@ -202,6 +202,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // IA inline: estado del prompt previo al stream
   const [isAiPrompting, setIsAiPrompting] = useState(false)
   const [aiPromptText, setAiPromptText] = useState('')
+
+  // Performance: memoize isNodeShortcut to avoid localStorage on every render
+  const [isShortcutState, setIsShortcutState] = useState(() => isNodeShortcut(node.id))
+  useEffect(() => {
+    function update() { setIsShortcutState(isNodeShortcut(node.id)) }
+    window.addEventListener('wf:shortcuts-changed', update)
+    return () => window.removeEventListener('wf:shortcuts-changed', update)
+  }, [node.id])
   const aiPromptRef = useRef<HTMLInputElement>(null)
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
   // Quick-props inline popup (fecha/hora/repetición/prioridad)
@@ -870,7 +878,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Cmd+Shift+F → toggle shortcut (WF: unified star)
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
-      if (isNodeShortcut(node.id)) {
+      if (isShortcutState) {
         removeNodeShortcut(node.id)
         store.updateNode(node.id, { isFavorite: false })
       } else {
@@ -1471,6 +1479,90 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
+    // ── Nuevas acciones WF ──────────────────────────────────────────────────
+    if (action === 'move-today') {
+      const today = store.todayDiary()
+      if (today) {
+        const sibs = store.children(today.id)
+        const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+        store.updateNode(node.id, { parentId: today.id, siblingOrder: lastOrder + 1 })
+      } else {
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'No se encontró el diario de hoy' } }))
+      }
+      return
+    } else if (action === 'move-tomorrow') {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Mover a mañana — próximamente' } }))
+      return
+    } else if (action === 'move-next-week') {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Mover a próxima semana — próximamente' } }))
+      return
+    } else if (action === 'expand-all') {
+      const getAllDescEx = (id: string): string[] => {
+        const kids = store.children(id)
+        return kids.flatMap(k => [k.id, ...getAllDescEx(k.id)])
+      }
+      store.updateNode(node.id, { isCollapsed: false })
+      for (const id of getAllDescEx(node.id)) store.updateNode(id, { isCollapsed: false })
+      return
+    } else if (action === 'collapse-all') {
+      const getAllDescCo = (id: string): string[] => {
+        const kids = store.children(id)
+        return kids.flatMap(k => [k.id, ...getAllDescCo(k.id)])
+      }
+      for (const id of getAllDescCo(node.id)) store.updateNode(id, { isCollapsed: true })
+      return
+    } else if (action === 'count-children') {
+      const count = store.children(node.id).filter(c => !c.deletedAt).length
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${count} nodo${count !== 1 ? 's' : ''} hijo${count !== 1 ? 's' : ''}` } }))
+      return
+    } else if (action === 'ai-summarize') {
+      window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Resume el contenido de este nodo y sus hijos en un párrafo conciso.' } }))
+      return
+    } else if (action === 'ai-find-tasks') {
+      window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Encuentra y lista todas las tareas pendientes o acciones mencionadas en este nodo y sus hijos.' } }))
+      return
+    } else if (action === 'ai-draft-outline') {
+      window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Crea un esquema estructurado (outline) del contenido de este nodo.' } }))
+      return
+    } else if (action === 'ai-fix-grammar') {
+      window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Corrige los errores gramaticales y de estilo del texto de este nodo manteniendo el significado.' } }))
+      return
+    } else if (action === 'ai-make-shorter') {
+      window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Reescribe este contenido de forma más concisa y directa, sin perder información clave.' } }))
+      return
+    } else if (action === 'delete') {
+      if (window.confirm(`¿Eliminar "${node.text || 'este nodo'}"?`)) {
+        store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+      }
+      return
+    } else if (action === 'duplicate') {
+      const parentId = node.parentId
+      const sibs = store.children(parentId)
+      const newOrder = node.siblingOrder + 1
+      for (const s of sibs) {
+        if (s.siblingOrder >= newOrder && s.id !== node.id) {
+          store.updateNode(s.id, { siblingOrder: s.siblingOrder + 1 })
+        }
+      }
+      store.createNode({
+        text: node.text,
+        parentId,
+        isTask: node.status !== null && node.status !== undefined,
+        due: node.due,
+        siblingOrder: newOrder,
+      })
+      return
+    } else if (action === 'add-date') {
+      const dateStr = prompt('Fecha de vencimiento (YYYY-MM-DD):', new Date().toISOString().slice(0, 10))
+      if (dateStr) {
+        const d = new Date(dateStr + 'T00:00:00')
+        if (!isNaN(d.getTime())) {
+          store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
+        }
+      }
+      return
+    }
+
     store.updateNode(node.id, updates)
 
     if (contentRef.current) {
@@ -1623,6 +1715,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           >⋮⋮</span>
         )}
 
+        {/* Three-dot hover menu (WF-style) */}
+        {hovered && !isDivider && (
+          <button
+            className="node-three-dot-btn"
+            onClick={e => {
+              e.stopPropagation()
+              const rect = e.currentTarget.getBoundingClientRect()
+              setContextMenu({ x: rect.left, y: rect.bottom })
+            }}
+            title="Más opciones"
+            tabIndex={-1}
+          >
+            ···
+          </button>
+        )}
+
         {/* Collapse toggle — hidden for headings and dividers */}
         {!isDivider && (
           <button
@@ -1687,7 +1795,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                   onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                   tabIndex={-1}
-                  title="Abrir nota"
+                  title="Zoom in →"
                 />
                 <button
                   className={`bullet-btn task ${taskCheckClass}`}
@@ -1751,7 +1859,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                 onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                 tabIndex={-1}
-                title="Abrir nota"
+                title="Zoom in →"
               />
             ) : (
               // Texto normal: dot navegador (visible en hover, o siempre si tiene hijos)
@@ -1759,7 +1867,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                 onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                 tabIndex={-1}
-                title="Abrir nota"
+                title="Zoom in →"
               />
             )}
           </>
@@ -2256,7 +2364,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
             {/* Atajo WF — estrella visible en hover o si ya es atajo */}
             {(() => {
-              const isShortcut = isNodeShortcut(node.id)
+              const isShortcut = isShortcutState
               if (!isShortcut && !hovered) return null
               return (
                 <button

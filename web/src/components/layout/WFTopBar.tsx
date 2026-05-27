@@ -5,8 +5,9 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { addFilterShortcut, getShortcuts } from '../../store/shortcutsStore'
+import { FILTER_SUGGESTIONS } from '../../utils/wfFilter'
 
 interface Props {
   onFilter: (text: string) => void
@@ -54,7 +55,7 @@ export default function WFTopBar({
     return crumbs
   }
 
-  const breadcrumbs = getBreadcrumbs()
+  const breadcrumbs = useMemo(() => getBreadcrumbs(), [nodeId]) // eslint-disable-line react-hooks/exhaustive-deps
   // Only show ancestors, not current node (shown as big title in view)
   const ancestorCrumbs = breadcrumbs.slice(0, -1)
 
@@ -146,7 +147,7 @@ export default function WFTopBar({
       <div className="wf-topbar-spacer" />
 
       {/* Filter input */}
-      <div className={`wf-topbar-filter ${filterFocused || filterText ? 'focused' : ''}`}>
+      <div className={`wf-topbar-filter ${filterFocused || filterText ? 'focused' : ''}`} style={{ position: 'relative' }}>
         <svg className="wf-topbar-filter-icon" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
         </svg>
@@ -157,7 +158,7 @@ export default function WFTopBar({
           value={filterText}
           onChange={e => onFilter(e.target.value)}
           onFocus={() => setFilterFocused(true)}
-          onBlur={() => setFilterFocused(false)}
+          onBlur={() => setTimeout(() => setFilterFocused(false), 150)}
         />
         {filterText && (
           <button
@@ -166,6 +167,20 @@ export default function WFTopBar({
           >
             ×
           </button>
+        )}
+        {/* Filter suggestion chips — shown when focused and no text */}
+        {filterFocused && !filterText && (
+          <div className="wf-filter-suggestions">
+            {FILTER_SUGGESTIONS.map(s => (
+              <button
+                key={s.query}
+                className="wf-filter-chip"
+                onMouseDown={e => { e.preventDefault(); onFilter(s.query) }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

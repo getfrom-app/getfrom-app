@@ -9204,3 +9204,160 @@ a:focus-visible {
 
 .wf-topbar-star { font-size: 14px; }
 .wf-topbar-star.starred { color: #f59e0b; }
+
+/* ── WF zoom animation ─────────────────────────────────────────────────────── */
+.wf-layout .main-content > .view,
+.wf-layout .main-content > .wf-home-view {
+  animation: wf-zoom-in 0.15s ease;
+}
+@keyframes wf-zoom-in {
+  from { opacity: 0.6; transform: scale(0.99) translateY(4px); }
+  to   { opacity: 1;   transform: scale(1)    translateY(0); }
+}
+
+/* ── WF NodeView simplification ───────────────────────────────────────────── */
+.wf-layout .breadcrumb-row { display: none; }
+.wf-layout .node-view-main { padding-top: 24px; }
+.wf-layout .node-updated-at-inline { display: none; }
+.wf-layout .node-view { max-width: 860px; margin: 0 auto; }
+.wf-layout .view-header { padding-bottom: 8px; }
+.wf-layout .node-view .view-title { font-size: 28px; font-weight: 700; }
+
+/* ── WF bullet dot — visible and clickable ───────────────────────────────── */
+.wf-layout .bullet-nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.1s, transform 0.1s, background 0.1s;
+  border: none;
+  padding: 0;
+  flex-shrink: 0;
+}
+.wf-layout .node-row:hover .bullet-nav-dot,
+.wf-layout .bullet-nav-dot--has-children { opacity: 0.4; }
+.wf-layout .bullet-nav-dot:hover { opacity: 1 !important; transform: scale(1.3); background: var(--accent); }
+.wf-layout .bullet-nav-dot--has-children { opacity: 0.6; }
+
+/* ── WF three-dot hover button ────────────────────────────────────────────── */
+.node-three-dot-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.node-row:hover .node-three-dot-btn { opacity: 1; }
+.node-three-dot-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── WF filter suggestions dropdown ──────────────────────────────────────── */
+.wf-filter-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  animation: wf-dropdown-in 0.1s ease;
+}
+@keyframes wf-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wf-filter-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.wf-filter-chip:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* WF filter empty/hint */
+.wf-filter-empty { padding: 16px 0; font-size: 14px; color: var(--text-tertiary); text-align: center; }
+.wf-filter-results-hint { padding: 4px 0 12px; font-size: 12px; color: var(--text-tertiary); }
+
+/* ── WF Temporal — Year view ─────────────────────────────────────────────── */
+.wf-temporal-year { padding: 16px 0 24px; }
+.wf-temporal-months-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 0 16px;
+}
+.wf-temporal-month-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wf-temporal-month-pill:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.wf-temporal-month-pill.exists { border-color: var(--accent); color: var(--accent); }
+.wf-temporal-month-pill.exists:hover { background: var(--accent); color: white; }
+
+/* ── WF Temporal — Month view ────────────────────────────────────────────── */
+.wf-temporal-month { padding: 0 0 24px; }
+.wf-temporal-days-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  scrollbar-width: none;
+}
+.wf-temporal-days-strip::-webkit-scrollbar { display: none; }
+.wf-temporal-day-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  min-width: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  color: var(--text-primary);
+}
+.wf-temporal-day-pill:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.wf-temporal-day-pill.today { border-color: var(--accent); background: var(--accent); color: white; font-weight: 700; }
+.wf-temporal-day-pill.exists { border-color: var(--accent); }
+.wf-temporal-day-weekday { font-size: 9px; opacity: 0.6; text-transform: uppercase; }
+.wf-temporal-day-num { font-size: 14px; font-weight: 600; }
+.wf-temporal-month-nav {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+.wf-temporal-nav-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.wf-temporal-nav-btn:hover { background: var(--bg-hover); color: var(--text-primary); }

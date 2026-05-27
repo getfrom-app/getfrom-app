@@ -26,16 +26,41 @@ const DEFAULT_SHORTCUTS: WFShortcut[] = [
     id: '__today_tasks__',
     type: 'filter',
     name: 'Tareas de hoy',
-    query: 'fecha:hoy tipo:tarea',
+    query: 'hoy tarea',
     createdAt: '',
-  }
+  },
+  {
+    id: '__pending__',
+    type: 'filter',
+    name: 'Pendientes',
+    query: 'pendiente',
+    createdAt: '',
+  },
+  {
+    id: '__this_week__',
+    type: 'filter',
+    name: 'Esta semana',
+    query: 'semana',
+    createdAt: '',
+  },
 ]
 
 export function getShortcuts(): WFShortcut[] {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return migrateAndSave()
-    return JSON.parse(raw) as WFShortcut[]
+    const saved = JSON.parse(raw) as WFShortcut[]
+    // Ensure default shortcuts are present (migrate if missing)
+    const hasAllDefaults = DEFAULT_SHORTCUTS.every(d => saved.some(s => s.id === d.id))
+    if (!hasAllDefaults) {
+      const merged = [
+        ...DEFAULT_SHORTCUTS,
+        ...saved.filter(s => !DEFAULT_SHORTCUTS.some(d => d.id === s.id)),
+      ]
+      saveShortcuts(merged)
+      return merged
+    }
+    return saved
   } catch {
     return DEFAULT_SHORTCUTS
   }
