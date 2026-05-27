@@ -355,17 +355,13 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         )}
       </div>
 
-      {/* Eliminar — no para diarios ni temporales */}
-      {!isDiary && !isTemporal && (
-        <>
-          <div className="context-menu-separator" />
-          <div className="context-menu-section">
-            <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
-              <span className="context-menu-icon">🗑</span> Eliminar
-            </button>
-          </div>
-        </>
-      )}
+      {/* Eliminar — siempre disponible, va a la papelera */}
+      <div className="context-menu-separator" />
+      <div className="context-menu-section">
+        <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
+          <span className="context-menu-icon">🗑</span> Eliminar
+        </button>
+      </div>
     </div>,
     document.body
   ) : null

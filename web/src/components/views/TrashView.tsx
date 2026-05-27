@@ -14,14 +14,43 @@ export default function TrashView() {
 
   const deletedNodes = useMemo(() => {
     return [...store.nodes.values()]
-      .filter(n => n.deletedAt && !n.isDiaryEntry)
-      .filter(n => !search || n.text.toLowerCase().includes(search.toLowerCase()))
+      .filter(n => n.deletedAt)   // todos los eliminados, incluyendo diarios y temporales
+      .filter(n => !search || (n.text || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
       .slice(0, 100)
   }, [s, search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleRestore(id: string) {
-    store.updateNode(id, { deletedAt: null })
+    const deleted = store.getNode(id)
+    if (!deleted) return
+
+    // Buscar si ya existe un nodo activo con el mismo nombre bajo el mismo padre
+    const siblings = store.children(deleted.parentId ?? null)
+    const conflict = siblings.find(n =>
+      n.id !== id &&
+      !n.deletedAt &&
+      (n.text || '').toLowerCase() === (deleted.text || '').toLowerCase()
+    )
+
+    if (conflict) {
+      // Merge: mover todos los hijos del nodo eliminado al nodo existente
+      const children = store.children(id)
+      const existingChildrenCount = store.children(conflict.id).filter(c => !c.deletedAt).length
+      children.forEach((child, idx) => {
+        store.updateNode(child.id, {
+          parentId: conflict.id,
+          siblingOrder: existingChildrenCount + idx + 1,
+        })
+      })
+      // Eliminar permanentemente el duplicado (ya fusionado)
+      store.updateNode(id, { deletedAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString() })
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `"${deleted.text}" fusionado con nodo existente`, type: 'success' }
+      }))
+    } else {
+      // Restaurar normalmente
+      store.updateNode(id, { deletedAt: null })
+    }
   }
 
   function handlePermanentDelete(id: string) {
