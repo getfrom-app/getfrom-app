@@ -74,7 +74,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // Drag-to-select state
+  // isDragSelectingRef es el valor síncrono (evita stale closure en onMove).
+  // isDragSelecting es el state para React (CSS, renders).
   const [isDragSelecting, setIsDragSelecting] = useState(false)
+  const isDragSelectingRef = useRef(false)
+  function startDragSelect() { isDragSelectingRef.current = true; setIsDragSelecting(true) }
+  function stopDragSelect()  { isDragSelectingRef.current = false; setIsDragSelecting(false) }
   const dragAnchorId = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [localFilterOpen, setLocalFilterOpen] = useState(false)
@@ -289,7 +294,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         if (!anchorId) return
         dragAnchorId.current = anchorId
         dragFromText.current = false
-        setIsDragSelecting(true)
+        startDragSelect()
         setSelectedId(null)
         setSelectedIds(new Set([anchorId]))
         return
@@ -298,10 +303,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       const anchorId = dragAnchorId.current!
 
       // ── Drag desde texto: detectar cruce de nodo ──────────────────────────
-      // Usamos bounding rect del nodo ancla (no elementFromPoint) para detectar
-      // cuándo el cursor sale del nodo: es más fiable cuando el cursor está en
-      // el padding entre nodos o dentro de un contenteditable de otro nodo.
-      if (dragFromText.current && !isDragSelecting) {
+      // Usamos bounding rect del nodo ancla (más fiable que elementFromPoint
+      // cuando el cursor está en padding entre nodos o en otro contenteditable).
+      // isDragSelectingRef.current evita el stale closure de isDragSelecting.
+      if (dragFromText.current && !isDragSelectingRef.current) {
         const anchorEl = containerRef.current?.querySelector(`[data-node-id="${anchorId}"]`) as HTMLElement | null
         const anchorRect = anchorEl?.getBoundingClientRect()
         const isOutside = anchorRect
@@ -309,23 +314,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           : (hoveredId !== null && hoveredId !== anchorId)
 
         if (isOutside) {
-          // Limpiar la selección de texto del browser y entrar en modo node-select
           window.getSelection()?.removeAllRanges()
-          setIsDragSelecting(true)
+          startDragSelect()
           setSelectedId(null)
           dragFromText.current = false
           setSelectedIds(computeSelectedWithMidpoint(anchorId, e.clientY))
         }
-        // Si sigue dentro del mismo nodo → texto normal, no hacer nada
         return
       }
 
       // ── Drag desde zona no-texto ──────────────────────────────────────────
       const movedEnough = Math.abs(e.clientY - dragAnchorPos.current) > 4
-      if (!isDragSelecting && !movedEnough) return
+      if (!isDragSelectingRef.current && !movedEnough) return
 
-      if (!isDragSelecting) {
-        setIsDragSelecting(true)
+      if (!isDragSelectingRef.current) {
+        startDragSelect()
         setSelectedId(null)
         setSelectedIds(new Set([anchorId]))
       }
@@ -337,13 +340,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     function onUp() {
       dragAnchorId.current = null
       dragFromText.current = false
-      setIsDragSelecting(false)
+      stopDragSelect()
     }
 
     function onDragStart() {
       dragAnchorId.current = null
       dragFromText.current = false
-      setIsDragSelecting(false)
+      stopDragSelect()
     }
 
     document.addEventListener('mousemove', onMove)
@@ -354,7 +357,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       document.removeEventListener('mouseup', onUp)
       document.removeEventListener('dragstart', onDragStart)
     }
-  }, [isDragSelecting, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Nota: quitamos isDragSelecting de las deps — ahora usamos isDragSelectingRef
+  // para evitar stale closure, no necesitamos re-registrar en cada cambio.
 
   // ── Teclado sobre multi-selección ─────────────────────────────────────────
   useEffect(() => {

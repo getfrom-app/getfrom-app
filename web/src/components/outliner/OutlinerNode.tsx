@@ -2271,17 +2271,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 }}
               />
             )}
-            {!node.priority && node.status !== null && !node.isSeguimiento && (
-              <span
-                className="node-priority-dot add"
-                title="Sin prioridad (click para añadir)"
-                onClick={e => {
-                  e.stopPropagation()
-                  store.updateNode(node.id, { priority: 'high' })
-                }}
-              />
-            )}
-
             {/* Recurrencia badge */}
             {node.recurrence && (() => {
               const [unit, nStr] = node.recurrence.split(':')
