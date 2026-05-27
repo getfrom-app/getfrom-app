@@ -9580,3 +9580,31 @@ a:focus-visible {
   height: 6px;
   margin-top: 1px;       /* micro-ajuste fino de alineación */
 }
+
+/* ── WF: eliminar panel derecho completamente del layout ──────────────────── */
+/* Ocultar el wrapper completo del panel derecho (incluye toggle button) */
+.wf-layout .right-panel-area { display: none !important; }
+/* Ocultar paneles de chat y timeline también */
+.wf-layout .node-chat-panel { display: none !important; }
+.wf-layout .diary-timeline-aside { display: none !important; }
+/* El node-view--with-context usa flex row — forzar a columna para ocupar todo el ancho */
+.wf-layout .node-view--with-context {
+  flex-direction: column !important;
+}
+.wf-layout .node-view--with-context .node-view-main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  overflow-y: auto;
+}
+/* Contenido centrado con ancho máximo generoso */
+.wf-layout .node-view-main .view-header,
+.wf-layout .node-view-main .view-body,
+.wf-layout .node-view-main .outliner-section,
+.wf-layout .node-view-main .node-body-section {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
