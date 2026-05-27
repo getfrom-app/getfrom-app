@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
+import { normalizeText } from '../utils/normalize'
 
 interface Props {
   onClose: () => void
@@ -47,8 +48,9 @@ export function recordRecentNode(id: string) {
 
 function scoreMatch(haystack: string, needle: string): number {
   if (!needle.trim()) return 0
-  const h = haystack.toLowerCase()
-  const n = needle.toLowerCase().trim()
+  // Normalizar: sin tildes, sin mayúsculas — "Códigos" === "codigos" === "CODIGOS"
+  const h = normalizeText(haystack)
+  const n = normalizeText(needle.trim())
 
   if (h === n) return 100
   if (h.startsWith(n)) return 80

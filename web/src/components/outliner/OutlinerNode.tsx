@@ -8,6 +8,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
+import { includesNormalized } from '../../utils/normalize'
 import TemplateCodePicker from './TemplateCodePicker'
 import NodeTableView from '../views/NodeTableView'
 import NodeKanbanView from '../views/NodeKanbanView'
@@ -290,13 +291,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // WF smart filter: use filterMatchIds if provided, otherwise fall back to text search
   const matchesFilter = filterMatchIds
     ? filterMatchIds.has(node.id)
-    : (!activeFilter || node.text.toLowerCase().includes(filterText!.toLowerCase()))
+    : (!activeFilter || includesNormalized(node.text, filterText!))
   const anyDescendantMatches = (activeFilter || filterMatchIds) && !matchesFilter
     ? getAllDescendants(node.id).some(id => {
         const n = store.getNode(id)
         if (!n || n.deletedAt) return false
         if (filterMatchIds) return filterMatchIds.has(id)
-        return n.text.toLowerCase().includes(filterText!.toLowerCase())
+        return includesNormalized(n.text, filterText!)
       })
     : false
 

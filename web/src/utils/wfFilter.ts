@@ -3,6 +3,7 @@
  * Soporta operadores: hoy, mañana, semana, tarea, pendiente, hecho, evento, #tag
  */
 import type { Node } from '../types'
+import { normalizeText } from './normalize'
 
 interface FilterResult {
   matchIds: Set<string>       // nodos que coinciden
@@ -49,7 +50,7 @@ export function applyWFFilter(
   nodes: Map<string, Node>,
   filterText: string
 ): FilterResult {
-  const text = filterText.trim().toLowerCase()
+  const text = normalizeText(filterText.trim())
 
   if (!text) return { matchIds: new Set(), ancestorIds: new Set(), hasFilter: false }
 
@@ -83,12 +84,12 @@ export function applyWFFilter(
         tokenMatch = node.status === 'pending' && isOverdue(node.due)
       } else if (token.startsWith('#')) {
         const tagName = token.slice(1)
-        tokenMatch = (node.types || []).some(t => t.toLowerCase().includes(tagName)) ||
-                     (node.text || '').toLowerCase().includes(token)
+        tokenMatch = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
+                     normalizeText(node.text || '').includes(token)
       } else {
-        // Plain text search
-        tokenMatch = (node.text || '').toLowerCase().includes(token) ||
-                     (node.body || '').toLowerCase().includes(token)
+        // Plain text search — sin tildes ni mayúsculas
+        tokenMatch = normalizeText(node.text || '').includes(token) ||
+                     normalizeText(node.body || '').includes(token)
       }
 
       if (!tokenMatch) { matches = false; break }
