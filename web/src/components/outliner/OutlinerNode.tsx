@@ -262,6 +262,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   // Predicción de tarea — el texto empieza por un verbo de acción
   const [taskPrediction, setTaskPrediction] = useState(false)
+  // Animación "checkbox aparece" cuando el nodo se convierte en tarea
+  const [taskConverting, setTaskConverting] = useState(false)
+  const prevStatusRef = useRef<string | null | undefined>(node.status)
   // Autocompletado de contextos — detecta nombres de 🧠 Contexto mientras escribes
   const [ctxCompletion, setCtxCompletion] = useState<{
     slug: string; displayName: string; typedLen: number; ghost: string
@@ -425,6 +428,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       contentRef.current.innerHTML = newHtml
     }
   }, [displayNode.text, isEditing, filterText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animación cuando el nodo pasa de null → pending (se convierte en tarea)
+  useEffect(() => {
+    if (prevStatusRef.current === null && node.status === 'pending') {
+      setTaskConverting(true)
+      setTimeout(() => setTaskConverting(false), 380)
+    }
+    prevStatusRef.current = node.status
+  }, [node.status])
 
   // Focus when selected + scroll into view
   // Sin guarda !isEditing: el efecto sólo corre cuando isSelected CAMBIA (dep array),
@@ -1030,7 +1042,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
-    // ── Predicción de tarea: Escape cancela, Enter convierte antes de crear hermano ──
+    // ── Predicción combinada: tarea + fecha (verbo de acción + indicador temporal) ──
+    if (taskPrediction && datePrediction && !picker && !showSlash && !ctxCompletion) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setTaskPrediction(false)
+        setDatePrediction(null)
+        return
+      }
+      if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        // Convertir a tarea primero
+        store.updateNode(node.id, { status: 'pending' })
+        setTaskPrediction(false)
+        // Luego mover a la fecha (acceptDatePrediction ya maneja el resto)
+        acceptDatePrediction()
+        return
+      }
+    }
+
+    // ── Predicción de tarea sola: Escape cancela, Enter convierte antes de crear hermano ──
     if (taskPrediction && !picker && !showSlash && !datePrediction && !ctxCompletion) {
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -2376,6 +2407,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     isDragOver ? 'drag-over' : '',
     isAncestorContext ? 'wf-filter-ancestor' : '',
     ctxRef ? 'node-row--ctx-ref' : '',
+    taskConverting ? 'node-row--task-converting' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)
@@ -3026,8 +3058,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               } catch { return null }
             })()}
 
-            {/* Badge predicción de tarea — verbo de acción al inicio */}
-            {taskPrediction && isEditing && !datePrediction && !ctxCompletion && (
+            {/* Badge combinado tarea+fecha */}
+            {taskPrediction && datePrediction && isEditing && !ctxCompletion && (
+              <span className="from-ghost from-ghost--task-date">
+                <span className="from-ghost-text">
+                  {'☐ '}{datePrediction.parsed.label}
+                  {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
+                  {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
+                </span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">↵</span>
+              </span>
+            )}
+
+            {/* Badge predicción de tarea sola */}
+            {taskPrediction && !datePrediction && isEditing && !ctxCompletion && (
               <span className="from-ghost from-ghost--task">
                 <span className="from-ghost-text">☐ tarea</span>
                 <span className="from-ghost-sep">·</span>
@@ -3035,7 +3080,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </span>
             )}
 
-            {/* Autocompletado de contexto — ghost text al escribir nombre de contexto */}
+            {/* Autocompletado de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
               <span className="from-ghost from-ghost--ctx">
                 <span className="from-ghost-text">{ctxCompletion.ghost}</span>
@@ -3044,8 +3089,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </span>
             )}
 
-            {/* Ghost text predictivo de fecha — inline en el mismo flex row */}
-            {datePrediction && isEditing && (
+            {/* Ghost de fecha sola */}
+            {datePrediction && !taskPrediction && isEditing && (
               <span className="from-ghost">
                 <span className="from-ghost-text">
                   {datePrediction.parsed.label}
