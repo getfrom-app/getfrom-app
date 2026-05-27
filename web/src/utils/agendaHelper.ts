@@ -83,10 +83,57 @@ export function getOrCreateDayNode(date: Date, monthId: string): Node {
 /**
  * Navega a la nota de un día concreto, creando toda la jerarquía si es necesario.
  * Devuelve el nodo del día.
+ * SIEMPRE busca bajo el árbol Agenda — ignora entradas bajo jerarquía antigua (Semana...).
  */
 export function ensureDayPath(date: Date): Node {
-  const agenda  = getOrCreateAgendaRoot()
-  const yearN   = getOrCreateYearNode(date.getFullYear(), agenda.id)
-  const monthN  = getOrCreateMonthNode(date.getMonth(), yearN.id)
+  const agenda = getOrCreateAgendaRoot()
+  const yearN  = getOrCreateYearNode(date.getFullYear(), agenda.id)
+  const monthN = getOrCreateMonthNode(date.getMonth(), yearN.id)
   return getOrCreateDayNode(date, monthN.id)
+}
+
+/**
+ * Busca la nota de hoy específicamente bajo el árbol Agenda.
+ * Si no existe, la crea. Devuelve el nodo verificado (garantizado en store.nodes).
+ */
+export function getTodayDiaryUnderAgenda(): Node {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const agenda = getOrCreateAgendaRoot()
+
+  // Buscar año
+  const yearText = String(today.getFullYear())
+  let yearNode = store.children(agenda.id).find(c => !c.deletedAt && c.text === yearText)
+  if (!yearNode) yearNode = store.createNode({ text: yearText, parentId: agenda.id })
+
+  // Buscar mes
+  const monthText = MONTHS_ES[today.getMonth()]
+  let monthNode = store.children(yearNode.id).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
+  if (!monthNode) monthNode = store.createNode({ text: monthText, parentId: yearNode.id })
+
+  // Buscar día exacto
+  const y = today.getFullYear(), m = today.getMonth(), d = today.getDate()
+  let dayNode = store.children(monthNode.id).find(c => {
+    if (c.deletedAt || !c.diaryDate) return false
+    const dt = new Date(c.diaryDate)
+    return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
+  })
+
+  if (!dayNode) {
+    const dayDate = new Date(y, m, d, 0, 0, 0, 0)
+    const dayText = dayDate.toLocaleDateString('es-ES', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    }).replace(/^\w/, c => c.toUpperCase())
+    dayNode = store.createNode({
+      text: dayText,
+      parentId: monthNode.id,
+      isDiaryEntry: true,
+      diaryDate: dayDate.toISOString(),
+    })
+  }
+
+  // Verificar que el nodo está en el store (defensa contra race conditions)
+  const verified = store.getNode(dayNode.id)
+  return verified ?? dayNode
 }

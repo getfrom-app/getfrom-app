@@ -8,7 +8,7 @@ import {
   getShortcuts, saveShortcuts, removeShortcut,
   type WFShortcut,
 } from '../../store/shortcutsStore'
-import { ensureDayPath } from '../../utils/agendaHelper'
+import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 // (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
 
 // ── Tag hierarchy helpers ───────────────────────────────────────────────────
@@ -715,8 +715,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
               onClick={() => {
-                // Crea Agenda → Año → Mes → Día si no existe, y navega
-                const dayNode = ensureDayPath(new Date())
+                // Busca o crea la nota de hoy bajo Agenda → Año → Mes → Día
+                const dayNode = getTodayDiaryUnderAgenda()
                 navigate(`/node/${dayNode.id}`)
               }}
               title="Hoy — ir a la nota del día"

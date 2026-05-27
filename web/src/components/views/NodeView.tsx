@@ -537,7 +537,19 @@ export default function NodeView() {
   }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node || node.deletedAt) {
-    return <div className="view-empty">Nodo no encontrado</div>
+    return (
+      <div className="view-empty" style={{ flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontSize: 32 }}>🔍</div>
+        <div>Nodo no encontrado</div>
+        <button
+          className="btn-primary"
+          style={{ marginTop: 8, fontSize: 13, padding: '6px 16px' }}
+          onClick={() => navigate('/')}
+        >
+          Volver al inicio
+        </button>
+      </div>
+    )
   }
 
   // ── Breadcrumb: buscar ancestro diario (incluyendo el nodo actual) ──────

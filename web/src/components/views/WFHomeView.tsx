@@ -7,7 +7,7 @@ import { useMemo, useEffect } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
-import { ensureDayPath } from '../../utils/agendaHelper'
+import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const WF_AGENDA_INIT_KEY   = 'from_wf_agenda_initialized'
@@ -25,11 +25,8 @@ export default function WFHomeView({ filterText }: Props) {
     // Esperar a que el store cargue
     const tryInit = () => {
       if (store.children(null).filter(n => !n.deletedAt).length === 0) return false
-      // Solo inicializar si no existe ya ninguna diary entry de hoy
-      const today = store.todayDiary()
-      if (!today) {
-        ensureDayPath(new Date())  // crea Agenda → Año → Mes → Día
-      }
+      // Siempre crea/verifica la nota de hoy bajo el árbol Agenda
+      getTodayDiaryUnderAgenda()
       localStorage.setItem(WF_AGENDA_INIT_KEY, '1')
       return true
     }
