@@ -9137,11 +9137,10 @@ a:focus-visible {
 
 /* ── WFHomeView ───────────────────────────────────────────────────────────── */
 .wf-home-view {
-  padding: 40px 0 40px 0;
-  max-width: 860px;
-  margin: 0 auto;
+  padding: 32px 48px 80px 48px;
   width: 100%;
   min-height: 100%;
+  box-sizing: border-box;
 }
 
 /* ── Ocultar panel derecho en WF ─────────────────────────────────────────── */
@@ -9163,11 +9162,11 @@ a:focus-visible {
   /* sin cambios, el panel derecho ya está oculto por CSS */
 }
 
-/* ── NodeView en WF: más espacio, sin panel derecho ─────────────────────── */
+/* ── NodeView en WF: alineado a la izquierda, sin max-width ─────────────── */
 .wf-layout .node-view-wrapper {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 0 24px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* ── WF Quick Access — bloque unificado paneles + fijados ──────────────────── */
@@ -9556,14 +9555,7 @@ a:focus-visible {
 .wf-layout .main-content {
   overflow-y: auto !important;
 }
-.wf-home-view {
-  padding: 32px 24px 80px;
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
-  min-height: 100%;
-  box-sizing: border-box;
-}
+/* Regla de .wf-home-view consolidada arriba */
 
 /* Bug 3: three-dot no desplaza contenido — siempre en DOM, invisible hasta hover */
 .node-three-dot-btn {
@@ -9603,16 +9595,24 @@ a:focus-visible {
   width: 100%;
   overflow-y: auto;
 }
-/* Contenido centrado con ancho máximo generoso */
+/* NodeView en WF: alineado a la izquierda con padding fijo, sin centrado */
+.wf-layout .node-view-main {
+  padding: 24px 48px 80px 48px !important;
+  box-sizing: border-box;
+}
 .wf-layout .node-view-main .view-header,
 .wf-layout .node-view-main .view-body,
 .wf-layout .node-view-main .outliner-section,
 .wf-layout .node-view-main .node-body-section {
-  max-width: 860px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   width: 100%;
   box-sizing: border-box;
+}
+/* Node title alineado a la izquierda */
+.wf-layout .node-title {
+  text-align: left;
 }
 
 /* ── WF: alineación, espaciado y tamaño de fuente ────────────────────────── */
