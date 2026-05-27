@@ -8,6 +8,7 @@ import {
   getShortcuts, saveShortcuts, removeShortcut,
   type WFShortcut,
 } from '../../store/shortcutsStore'
+import { getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 // (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
 
@@ -536,79 +537,115 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     )
   }
 
-  // ── Atajos unificados WF ────────────────────────────────────────────────────
-  const [shortcuts, setShortcuts] = useState<WFShortcut[]>(getShortcuts)
+  // ── Atajos unificados WF (tree-based, desde nodeStore) ─────────────────────
+  // Collapsed state para nodos de atajos con hijos (carpetas)
+  const [atajosCollapsed, setAtajosCollapsed] = useState<Record<string, boolean>>({})
 
-  function refreshShortcuts() { setShortcuts(getShortcuts()) }
+  function toggleAtajosCollapsed(nodeId: string) {
+    setAtajosCollapsed(prev => ({ ...prev, [nodeId]: !prev[nodeId] }))
+  }
 
-  // Escuchar evento global para refrescar cuando se añade/quita un atajo
-  useEffect(() => {
-    window.addEventListener('wf:shortcuts-changed', refreshShortcuts)
-    return () => window.removeEventListener('wf:shortcuts-changed', refreshShortcuts)
-  }, [])
-
-  function handleRemoveShortcut(id: string, e: React.MouseEvent) {
+  function handleDeleteAtajoNode(nodeId: string, e: React.MouseEvent) {
     e.stopPropagation()
-    const updated = removeShortcut(id)
-    setShortcuts(updated)
+    store.deleteNode(nodeId)
+    window.dispatchEvent(new Event('wf:shortcuts-changed'))
+  }
+
+  function renderAtajoNode(nodeId: string, depth: number = 0): React.ReactNode {
+    const node = s.getNode(nodeId)
+    if (!node || node.deletedAt) return null
+    const scData = getShortcutData(nodeId)
+    const children = s.children(nodeId).filter(n => !n.deletedAt)
+    const hasChildren = children.length > 0
+    const isCollapsed = atajosCollapsed[nodeId]
+
+    // Determine icon
+    let icon = '📄'
+    if (scData?.query !== undefined) {
+      icon = '🔍'
+    } else if (scData?.nodeId) {
+      const targetNode = s.getNode(scData.nodeId)
+      icon = targetNode ? getNodeIcon(targetNode) : '📄'
+    } else if (hasChildren) {
+      icon = isCollapsed ? '▸' : '▾'
+    }
+
+    // Is active?
+    let isActive = false
+    if (scData?.query !== undefined) {
+      isActive = (location.pathname === '/' || location.pathname === '') &&
+        (window as any).__wfFilterText === (scData.query || '')
+    } else if (scData?.nodeId) {
+      isActive = location.pathname === `/node/${scData.nodeId}`
+    }
+
+    function handleClick() {
+      if (hasChildren && !scData) {
+        toggleAtajosCollapsed(nodeId)
+        return
+      }
+      if (scData?.query !== undefined) {
+        window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: scData.query || '' } }))
+      } else if (scData?.nodeId) {
+        navigate(`/node/${scData.nodeId}`)
+      } else if (hasChildren) {
+        toggleAtajosCollapsed(nodeId)
+      }
+    }
+
+    return (
+      <div key={nodeId}>
+        <div
+          className={`wf-qa-item${isActive ? ' active' : ''}`}
+          style={{ paddingLeft: `${12 + depth * 14}px` }}
+          onClick={handleClick}
+          title={scData?.query !== undefined ? `Filtrar: ${scData.query}` : node.text || ''}
+        >
+          <span className="wf-qa-item-icon">{icon}</span>
+          <span className="wf-qa-item-name">{node.text || 'Sin título'}</span>
+          <button
+            className="wf-qa-item-del"
+            onClick={e => handleDeleteAtajoNode(nodeId, e)}
+            title="Quitar atajo"
+          >×</button>
+        </div>
+        {hasChildren && !isCollapsed && (
+          <div>
+            {children.map(child => renderAtajoNode(child.id, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   function renderShortcuts() {
+    const atajosNode = getAtajosNode()
+    const atajosChildren = atajosNode ? s.children(atajosNode.id).filter(n => !n.deletedAt) : []
+
     return (
       <div className="sidebar-tab-content wf-quick-access">
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
-          <span className="wf-qa-section-label">Atajos</span>
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Pulsa ⭐ en un nodo o filtro para añadirlo">⭐</span>
+          {atajosNode ? (
+            <span
+              className="wf-qa-section-label"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate(`/node/${atajosNode.id}`)}
+              title="Abrir 📌 Atajos"
+            >
+              Atajos
+            </span>
+          ) : (
+            <span className="wf-qa-section-label">Atajos</span>
+          )}
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Pulsa 🔖 en un filtro o ⭐ en un nodo para añadirlo">🔖</span>
         </div>
 
-        {shortcuts.length === 0 ? (
+        {atajosChildren.length === 0 ? (
           <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Pulsa ⭐ en cualquier nodo o filtro para fijarlo aquí
+            Pulsa 🔖 en cualquier filtro o ⭐ en un nodo para fijarlo aquí
           </div>
         ) : (
-          shortcuts.map(sc => {
-            const isNodeActive = sc.type === 'node' && location.pathname === `/node/${sc.nodeId}`
-            // Filtro activo: estamos en / y el filterText coincide
-            const isFilterActive = sc.type === 'filter' &&
-              (location.pathname === '/' || location.pathname === '') &&
-              typeof window !== 'undefined' &&
-              (window as any).__wfFilterText === (sc.query || '')
-            const isActive = isNodeActive || isFilterActive
-
-            // Icono según tipo
-            const icon = sc.type === 'filter'
-              ? '🔍'
-              : (() => {
-                  const node = sc.nodeId ? s.getNode(sc.nodeId) : undefined
-                  return node ? getNodeIcon(node) : '📄'
-                })()
-
-            return (
-              <div
-                key={sc.id}
-                className={`wf-qa-item${isActive ? ' active' : ''}`}
-                onClick={() => {
-                  if (sc.type === 'filter') {
-                    // Filtrar el árbol inline, sin navegar a /search
-                    window.dispatchEvent(new CustomEvent('wf:set-filter', {
-                      detail: { query: sc.query || '' }
-                    }))
-                  } else if (sc.nodeId) {
-                    navigate(`/node/${sc.nodeId}`)
-                  }
-                }}
-                title={sc.type === 'filter' ? `Filtrar: ${sc.query}` : sc.name}
-              >
-                <span className="wf-qa-item-icon">{icon}</span>
-                <span className="wf-qa-item-name">{sc.name}</span>
-                <button
-                  className="wf-qa-item-del"
-                  onClick={e => handleRemoveShortcut(sc.id, e)}
-                  title="Quitar atajo"
-                >×</button>
-              </div>
-            )
-          })
+          atajosChildren.map(child => renderAtajoNode(child.id, 0))
         )}
       </div>
     )

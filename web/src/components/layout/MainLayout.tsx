@@ -50,6 +50,7 @@ import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
+import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -137,6 +138,9 @@ export default function MainLayout() {
         ensurePerfilInsideContexto()
         // Nodos de sistema: Plantillas (se crea solo si no existe)
         ensurePlantillasNode()
+        // Nodo de sistema: 📌 Atajos
+        ensureAtajosNode()
+        migrateLocalStorageShortcuts()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
         cleanupSpuriousTags()

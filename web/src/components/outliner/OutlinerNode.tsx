@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { createNodeShortcut } from '../../utils/atajosHelper'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
@@ -1321,7 +1322,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         removeNodeShortcut(node.id)
         store.updateNode(node.id, { isFavorite: false })
       } else {
-        addNodeShortcut(node.id, node.text || 'Sin título')
+        createNodeShortcut(node.id, node.text || 'Sin título')
         store.updateNode(node.id, { isFavorite: true })
       }
       window.dispatchEvent(new Event('wf:shortcuts-changed'))
@@ -2222,7 +2223,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         store.updateNode(node.id, { isFavorite: false })
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Atajo eliminado', type: 'info' } }))
       } else {
-        addNodeShortcut(node.id, node.text || 'Sin título')
+        createNodeShortcut(node.id, node.text || 'Sin título')
         store.updateNode(node.id, { isFavorite: true })
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo añadido: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
       }

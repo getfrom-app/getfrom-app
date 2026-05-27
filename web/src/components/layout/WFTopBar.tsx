@@ -6,7 +6,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { addFilterShortcut, getShortcuts } from '../../store/shortcutsStore'
+import { getShortcuts } from '../../store/shortcutsStore'
+import { createFilterShortcut } from '../../utils/atajosHelper'
 import { ensureDayPath } from '../../utils/agendaHelper'
 
 interface Props {
@@ -228,8 +229,7 @@ export default function WFTopBar({
                   const name = query.startsWith('@') || query.startsWith('#')
                     ? query
                     : query.charAt(0).toUpperCase() + query.slice(1)
-                  addFilterShortcut(name, query)
-                  window.dispatchEvent(new Event('wf:shortcuts-changed'))
+                  createFilterShortcut(name, query, 'list')
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo guardado: "${name}"`, type: 'success' } }))
                   filterRef.current?.focus()
                 }}
@@ -371,8 +371,7 @@ export default function WFTopBar({
             if (alreadySaved) return
             const name = prompt('Nombre para este atajo:', filterText)
             if (!name) return
-            addFilterShortcut(name, filterText)
-            window.dispatchEvent(new Event('wf:shortcuts-changed'))
+            createFilterShortcut(name, filterText, 'list')
           }}
         >
           {alreadySaved ? '★' : '☆'}

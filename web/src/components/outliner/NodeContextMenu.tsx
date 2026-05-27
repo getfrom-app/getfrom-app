@@ -17,7 +17,8 @@ import { createPortal } from 'react-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
-import { addNodeShortcut, removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { createNodeShortcut } from '../../utils/atajosHelper'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
@@ -171,7 +172,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       removeNodeShortcut(node.id)
       store.updateNode(node.id, { isFavorite: false })
     } else {
-      addNodeShortcut(node.id, node.text || 'Sin título')
+      createNodeShortcut(node.id, node.text || 'Sin título')
       store.updateNode(node.id, { isFavorite: true })
     }
     window.dispatchEvent(new Event('wf:shortcuts-changed'))

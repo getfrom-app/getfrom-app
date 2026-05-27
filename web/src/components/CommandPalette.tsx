@@ -5,6 +5,7 @@ import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
 import { normalizeText } from '../utils/normalize'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { getAtajosNode, getShortcutData } from '../utils/atajosHelper'
 
 interface Props {
   onClose: () => void
@@ -352,8 +353,43 @@ export default function CommandPalette({ onClose }: Props) {
     const searchTerm = parsed.cleanText || q
 
     const results: PaletteItem[] = []
+
+    // ── Atajos (📌 Atajos) — buscar en hijos del nodo sistema ─────────────
+    const atajosRoot = getAtajosNode()
+    if (atajosRoot) {
+      const searchAtajosRecursive = (parentId: string) => {
+        for (const n of store.children(parentId).filter(c => !c.deletedAt)) {
+          const sc2 = scoreMatch(n.text || '', searchTerm)
+          if (sc2 > 0) {
+            const scData = getShortcutData(n.id)
+            results.push({
+              id: `atajo-${n.id}`,
+              label: n.text || 'Sin título',
+              sublabel: scData?.query !== undefined ? `Filtro: ${scData.query}` : scData?.nodeId ? 'Ir al nodo' : 'Atajo',
+              type: 'wf-action' as const,
+              taskStatus: null,
+              score: sc2 + 10, // slight boost for shortcuts
+              action: () => {
+                if (scData?.query !== undefined) {
+                  window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: scData.query || '' } }))
+                } else if (scData?.nodeId) {
+                  navigate(`/node/${scData.nodeId}`)
+                }
+                onClose()
+              },
+            })
+          }
+          // Buscar en hijos (carpetas de atajos)
+          searchAtajosRecursive(n.id)
+        }
+      }
+      searchAtajosRecursive(atajosRoot.id)
+    }
+
     for (const n of store.allActive()) {
       if (n.isDiaryEntry || n.deletedAt) continue
+      // Skip atajo nodes (already handled above) and the atajosRoot itself
+      if (atajosRoot && (n.id === atajosRoot.id || n.parentId === atajosRoot.id)) continue
       const sc = scoreMatch(n.text || '', searchTerm)
       if (sc === 0) continue
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
@@ -542,7 +578,7 @@ export default function CommandPalette({ onClose }: Props) {
                     ) : item.type === 'create' ? (
                       <span className="cmdpalette-create-icon">+</span>
                     ) : item.type === 'wf-action' ? (
-                      <span className="cmdpalette-create-icon">⌘</span>
+                      <span className="cmdpalette-create-icon">{item.id.startsWith('atajo-') ? '📌' : '⌘'}</span>
                     ) : null}
                     <div className="cmdpalette-item-info">
                       <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>
