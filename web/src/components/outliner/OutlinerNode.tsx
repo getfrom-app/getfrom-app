@@ -2780,12 +2780,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         <div className="node-date-assigned-badge">{dateAssignedMsg}</div>
       )}
 
-      {/* Ghost text predictivo de fecha — aparece al detectar fecha al final del texto */}
+      {/* Ghost text predictivo de fecha — sistema .from-ghost */}
       {datePrediction && isEditing && (
-        <div className="node-date-ghost">
-          <span className="node-date-ghost-label">{datePrediction.parsed.label}{datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}</span>
-          <span className="node-date-ghost-hint">↵ mover</span>
-        </div>
+        <span className="from-ghost">
+          <span className="from-ghost-text">
+            {datePrediction.parsed.label}
+            {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
+            {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
+          </span>
+          <span className="from-ghost-sep">·</span>
+          <span className="from-ghost-key">↵</span>
+        </span>
       )}
 
       {/* Format toolbar — aparece al seleccionar texto */}

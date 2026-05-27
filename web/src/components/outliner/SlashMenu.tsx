@@ -187,11 +187,14 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
           {!moveDateQuery && <span className="slash-menu-move-placeholder">escribe una fecha…</span>}
         </div>
 
-        {/* Resultado parseado */}
+        {/* Resultado parseado — usa el sistema from-ghost */}
         {parsedMove ? (
-          <div className="slash-menu-move-result">
-            <span className="slash-menu-move-result-label">{parsedMove.label}</span>
-            <span className="slash-menu-move-result-hint">↵ mover</span>
+          <div style={{ padding: '4px 6px 2px' }}>
+            <span className="from-ghost" style={{ marginLeft: 0 }}>
+              <span className="from-ghost-text">{parsedMove.label}</span>
+              <span className="from-ghost-sep">·</span>
+              <span className="from-ghost-key">↵</span>
+            </span>
           </div>
         ) : moveDateQuery ? (
           <div className="slash-menu-move-no-match">No reconocido</div>
