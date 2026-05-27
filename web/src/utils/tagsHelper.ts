@@ -237,15 +237,31 @@ export function ensurePerfilInsideContexto(): void {
 }
 
 /**
- * ensurePlantillasNode — crea el nodo raíz 'Plantillas' si no existe.
- * Es un nodo de sistema que aparece en el árbol desde el primer uso.
+ * ensurePlantillasNode — crea el nodo raíz '📋 Plantillas' si no existe.
+ * Usa un flag de módulo para ejecutarse una sola vez por sesión (evita duplicados
+ * por StrictMode de React que invoca effects dos veces en desarrollo).
  */
+let _plantillasDone = false
 export function ensurePlantillasNode(): void {
+  if (_plantillasDone) return
+  _plantillasDone = true
+
   const PLANTILLAS_NAME = '📋 Plantillas'
-  // Migrar nombre antiguo sin emoji si existe
-  const old = store.children(null).find(n => !n.deletedAt && n.text === 'Plantillas')
+  const roots = store.children(null).filter(n => !n.deletedAt)
+
+  // Eliminar duplicados si hay más de uno (puede pasar si ya se crearon)
+  const all = roots.filter(n => n.text === PLANTILLAS_NAME || n.text === 'Plantillas')
+  if (all.length > 1) {
+    // Mantener el primero, borrar el resto
+    for (const dup of all.slice(1)) store.deleteNode(dup.id)
+  }
+
+  // Migrar nombre antiguo sin emoji
+  const old = roots.find(n => n.text === 'Plantillas')
   if (old) { store.updateNode(old.id, { text: PLANTILLAS_NAME }); return }
-  const exists = store.children(null).find(n => !n.deletedAt && n.text === PLANTILLAS_NAME)
+
+  // Crear si no existe
+  const exists = roots.find(n => n.text === PLANTILLAS_NAME)
   if (!exists) {
     store.createNode({ text: PLANTILLAS_NAME, parentId: null })
   }

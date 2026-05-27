@@ -189,8 +189,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const nodeTextRef = useRef(node.text)
   nodeTextRef.current = node.text
   const children = store.children(node.id)
-  // Colapsado por defecto: si isCollapsed no es explícitamente false, los nodos con hijos empiezan colapsados
-  const isCollapsed = (node.isCollapsed !== false) && children.length > 0
+  // Colapsado — cuando hay filtro activo y este nodo tiene descendientes que coinciden,
+  // forzamos la expansión para que el usuario vea los resultados aunque estuviera colapsado.
+  const isCollapsed = ((node.isCollapsed !== false) && children.length > 0)
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [showSlash, setShowSlash] = useState(false)
@@ -1837,6 +1838,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
+  // Cuando hay filtro activo y este nodo tiene hijos coincidentes → mostrar hijos aunque esté colapsado
+  const showChildren = !isCollapsed || anyDescendantMatches
+
   return (
     <div
       className="outliner-node"
@@ -2651,7 +2655,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       )}
 
       {/* Inline view block — renderiza tabla/kanban/calendar EN VEZ de los hijos como bullets */}
-      {!isCollapsed && (() => {
+      {showChildren && (() => {
         try {
           const ed = JSON.parse(node.extraData || '{}')
           if (ed._inline !== '1') return null
@@ -2683,7 +2687,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
       {/* Children — selectedId se propaga para que los hijos sepan si están seleccionados.
           Si este nodo es un inline view block, no renderizamos hijos como bullets (los muestra la vista). */}
-      {!isCollapsed && (() => {
+      {showChildren && (() => {
         try {
           const ed = JSON.parse(node.extraData || '{}')
           if (ed._inline === '1') return null
