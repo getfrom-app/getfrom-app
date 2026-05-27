@@ -625,19 +625,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
     return (
       <div className="sidebar-tab-content wf-quick-access">
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
-          {atajosNode ? (
-            <span
-              className="wf-qa-section-label"
-              style={{ cursor: 'pointer' }}
+          <span className="wf-qa-section-label">Atajos</span>
+          {atajosNode && (
+            <button
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1, padding: '0 2px', opacity: 0.6 }}
               onClick={() => navigate(`/node/${atajosNode.id}`)}
-              title="Abrir 📌 Atajos"
-            >
-              Atajos
-            </span>
-          ) : (
-            <span className="wf-qa-section-label">Atajos</span>
+              title="Organizar atajos — abrir 📌 Atajos"
+            >✎</button>
           )}
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Pulsa 🔖 en un filtro o ⭐ en un nodo para añadirlo">🔖</span>
         </div>
 
         {atajosChildren.length === 0 ? (
