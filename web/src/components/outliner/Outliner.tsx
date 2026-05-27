@@ -186,13 +186,29 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // Auto-focus or create first node
   useEffect(() => {
     if (autoFocusEmpty && nodes.length === 0) {
-      // Nota vacía: crear primer nodo y enfocarlo
       const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
       setSelectedId(n.id)
     } else if (autoFocusEmpty && nodes.length > 0 && !selectedId) {
       setSelectedId(nodes[0].id)
     }
   }, [autoFocusEmpty, parentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // N → crear hijo en el diario de hoy
+  // El evento 'wf:new-child-today' lo despacha MainLayout cuando el usuario pulsa N.
+  // Solo actúa el Outliner cuyo parentId coincide con el diario de hoy.
+  useEffect(() => {
+    function handleNewChild(e: Event) {
+      const detail = (e as CustomEvent).detail as { parentId: string }
+      if (detail?.parentId !== parentId) return  // solo el Outliner del diario de hoy
+      // Crear nodo vacío al final y focalizarlo
+      const last = nodes[nodes.length - 1]
+      const newOrder = last ? last.siblingOrder + 1 : Date.now()
+      const n = store.createNode({ text: '', parentId, siblingOrder: newOrder })
+      setSelectedId(n.id)
+    }
+    window.addEventListener('wf:new-child-today', handleNewChild)
+    return () => window.removeEventListener('wf:new-child-today', handleNewChild)
+  }, [parentId, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Flat visible order (respecting collapse) for arrow navigation
   function flatVisible(nodeList: Node[], depth = 0): Node[] {

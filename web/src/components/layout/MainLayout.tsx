@@ -7,7 +7,7 @@ import Sidebar from '../sidebar/Sidebar'
 import NodeView from '../views/NodeView'
 
 import WFHomeView from '../views/WFHomeView'
-import { relocateRootDiariesToAgenda } from '../../utils/agendaHelper'
+import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
@@ -186,6 +186,21 @@ export default function MainLayout() {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowCommandPalette(v => !v)
+      }
+      // N (sin modificador) → crear nodo en el diario de hoy y enfocar
+      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          const today = getTodayDiaryUnderAgenda()
+          // Navegar al diario de hoy y señalar que hay que crear un nodo nuevo
+          navigate(`/node/${today.id}`)
+          // Pequeño delay para que NodeView monte, luego disparar creación de hijo
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('wf:new-child-today', { detail: { parentId: today.id } }))
+          }, 150)
+        }
       }
       // Cmd+J → From AI chat
       if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
