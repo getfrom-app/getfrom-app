@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
 
@@ -12,7 +12,7 @@ interface PaletteItem {
   id: string
   label: string
   sublabel?: string
-  type: 'note' | 'tag' | 'create' | 'panel-save'
+  type: 'note' | 'tag' | 'create' | 'panel-save' | 'wf-action'
   taskStatus?: 'pending' | 'done' | null
   action: () => void
   score: number
@@ -148,7 +148,13 @@ function parseQuery(raw: string): ParsedQuery {
 
 export default function CommandPalette({ onClose }: Props) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { showToast } = useToast()
+  // Nodo actual si estamos en /node/:id
+  const currentNodeId = (() => {
+    const m = location.pathname.match(/\/node\/([^/]+)/)
+    return m ? m[1] : null
+  })()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
   const [creatingPanel, setCreatingPanel] = useState(false)
@@ -258,6 +264,41 @@ export default function CommandPalette({ onClose }: Props) {
     }
     results.sort((a, b) => b.score - a.score)
     results.splice(20)
+
+    // ── Comandos WF: colapsar/expandir todo ──────────────────────────────
+    const collapseTerms = ['colapsar', 'collapse', 'plegar', 'contraer']
+    const expandTerms = ['expandir', 'expand', 'desplegar', 'abrir todo']
+    const qLow = q.toLowerCase()
+    if (collapseTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
+      results.unshift({
+        id: 'wf-collapse-all',
+        label: 'Colapsar todo',
+        sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz',
+        type: 'wf-action',
+        taskStatus: null,
+        score: 200,
+        action: () => {
+          store.collapseAll(currentNodeId)
+          onClose()
+          showToast('Todo colapsado', 'success')
+        },
+      })
+    }
+    if (expandTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
+      results.unshift({
+        id: 'wf-expand-all',
+        label: 'Expandir todo',
+        sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz',
+        type: 'wf-action',
+        taskStatus: null,
+        score: 200,
+        action: () => {
+          store.expandAll(currentNodeId)
+          onClose()
+          showToast('Todo expandido', 'success')
+        },
+      })
+    }
 
     // "Crear nota" solo si no hay resultados
     if (results.length === 0) {
@@ -395,6 +436,8 @@ export default function CommandPalette({ onClose }: Props) {
                       <span className={`cmdpalette-task-dot ${item.taskStatus === 'done' ? 'done' : 'pending'}`} />
                     ) : item.type === 'create' ? (
                       <span className="cmdpalette-create-icon">+</span>
+                    ) : item.type === 'wf-action' ? (
+                      <span className="cmdpalette-create-icon">⌘</span>
                     ) : null}
                     <div className="cmdpalette-item-info">
                       <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>

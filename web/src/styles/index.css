@@ -9608,3 +9608,60 @@ a:focus-visible {
   width: 100%;
   box-sizing: border-box;
 }
+
+/* ── WF: alineación, espaciado y tamaño de fuente ────────────────────────── */
+
+/* Fix dot alineación: cambiar align-items a center en WF mode */
+.wf-layout .node-row {
+  align-items: center !important;
+  min-height: 32px;
+  padding: 2px 0;
+}
+
+/* Eliminar override anterior de height: 100% que rompía alineación */
+.wf-layout .bullet-nav-dot {
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 0 !important;
+}
+.wf-layout .bullet-nav-dot::after {
+  width: 6px !important;
+  height: 6px !important;
+  margin-top: 0 !important;
+}
+
+/* Tamaño de fuente más grande en WF */
+.wf-layout .node-text,
+.wf-layout .node-text [contenteditable],
+.wf-layout .outliner-node .node-text {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Separación entre nodos */
+.wf-layout .outliner-node {
+  margin-bottom: 1px;
+}
+
+/* Collapse button alineado */
+.wf-layout .collapse-btn {
+  align-self: center;
+}
+
+/* Drag handle y three-dot alineados */
+.wf-layout .node-drag-handle,
+.wf-layout .node-three-dot-btn {
+  align-self: center;
+}
+
+/* Separación entre nivel de profundidad más generosa */
+.wf-layout .outliner-children {
+  padding-left: 4px;
+}
+
+/* WF Home view: más espacio vertical entre nodos raíz */
+.wf-home-view > .outliner-container > .outliner-node {
+  margin-bottom: 2px;
+}
