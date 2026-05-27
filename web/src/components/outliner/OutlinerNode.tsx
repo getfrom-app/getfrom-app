@@ -815,6 +815,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
+    // Escape: limpiar selección de texto si la hay
+    if (e.key === 'Escape') {
+      const sel = window.getSelection()
+      if (sel && !sel.isCollapsed) {
+        e.preventDefault()
+        sel.removeAllRanges()
+        return
+      }
+    }
+
     // ── Enter/Tab para confirmar #tag sin picker (cursor al final de #word) ──
     // Detectar si el cursor está al final de un hashtag en curso
     const pos = contentRef.current ? getCaretPosition(contentRef.current) : 0
@@ -2142,9 +2152,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : undefined}
             onPaste={e => {
               const clipText = e.clipboardData.getData('text/plain')
+              const urlRegex = /^https?:\/\/[^\s]+$/
+
+              // Si hay texto seleccionado y el portapapeles es una URL → aplicar como enlace
+              const sel = window.getSelection()
+              if (sel && !sel.isCollapsed && urlRegex.test(clipText.trim()) && contentRef.current?.contains(sel.anchorNode)) {
+                e.preventDefault()
+                const url = clipText.trim()
+                const selectedText = sel.toString()
+                const linked = `[${selectedText}](${url})`
+                const range = sel.getRangeAt(0)
+                range.deleteContents()
+                range.insertNode(document.createTextNode(linked))
+                sel.removeAllRanges()
+                const newText = contentRef.current?.textContent || ''
+                nodeTextRef.current = newText
+                store.updateNode(node.id, { text: newText })
+                return
+              }
 
               // Detectar si el texto pegado es una URL y el nodo está vacío
-              const urlRegex = /^https?:\/\/[^\s]+$/
               const curContent = contentRef.current?.textContent || ''
               if (urlRegex.test(clipText.trim()) && curContent.trim() === '') {
                 e.preventDefault()

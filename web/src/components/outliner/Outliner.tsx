@@ -432,6 +432,26 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         className={`outliner-container ${className || ''} ${compact ? 'outliner-container--compact' : ''} ${isDragSelecting ? 'is-drag-selecting' : ''}`}
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
+        onMouseUp={() => {
+          // Detectar si la selección de texto cruza múltiples nodos
+          const sel = window.getSelection()
+          if (!sel || sel.isCollapsed) return
+          const anchorNode = sel.anchorNode?.parentElement?.closest('[data-node-id]')
+          const focusNode  = sel.focusNode?.parentElement?.closest('[data-node-id]')
+          if (!anchorNode || !focusNode || anchorNode === focusNode) return
+          // La selección cruza nodos → seleccionar ambos como nodos
+          const aId = anchorNode.getAttribute('data-node-id')
+          const fId  = focusNode.getAttribute('data-node-id')
+          if (!aId || !fId) return
+          sel.removeAllRanges()  // limpiar selección de texto
+          setSelectedId(aId)
+          // Seleccionar todos los nodos visibles entre ancla y foco
+          const flat = flatVisibleIds()
+          const ai = flat.indexOf(aId), fi = flat.indexOf(fId)
+          if (ai === -1 || fi === -1) return
+          const from = Math.min(ai, fi), to = Math.max(ai, fi)
+          setSelectedIds(new Set(flat.slice(from, to + 1)))
+        }}
         onContextMenu={selectedIds.size > 0 ? (e) => {
           e.preventDefault()
           const flat = flatVisibleIds()
