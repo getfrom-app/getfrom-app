@@ -350,33 +350,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [isSelected]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cerrar quick-props popup al hacer click fuera
+  // Cerrar modales con Escape
   useEffect(() => {
-    if (!showQuickProps) return
-    function handler(e: MouseEvent) {
-      if (
-        quickPropsPopupRef.current && !quickPropsPopupRef.current.contains(e.target as globalThis.Node) &&
-        (!quickPropsBtnRef.current || !quickPropsBtnRef.current.contains(e.target as globalThis.Node))
-      ) {
+    if (!showQuickProps && !showEventProp) return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
         setShowQuickProps(false)
+        setShowEventProp(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showQuickProps])
-
-  // Cerrar event badge popup al hacer click fuera
-  useEffect(() => {
-    if (!showEventProp) return
-    function handler(e: MouseEvent) {
-      if (
-        eventBadgePopupRef.current && !eventBadgePopupRef.current.contains(e.target as globalThis.Node) &&
-        (!eventBadgeBtnRef.current || !eventBadgeBtnRef.current.contains(e.target as globalThis.Node))
-      ) setShowEventProp(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showEventProp])
+    document.addEventListener('keydown', handler, { capture: true })
+    return () => document.removeEventListener('keydown', handler, { capture: true })
+  }, [showQuickProps, showEventProp])
 
   // ── Helpers de evento ────────────────────────────────────────────────────
   const evtDueDate = isoToLocalDate(node.due)
@@ -2365,11 +2350,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 >
                   {evtBadgeLabel ? `📅 ${evtBadgeLabel}` : 'sin fecha'}
                 </button>
-                {showEventProp && eventPropPos && createPortal(
+                {showEventProp && createPortal(
+                  <div
+                    className="nqp-modal-overlay"
+                    onMouseDown={e => { e.stopPropagation(); setShowEventProp(false) }}
+                  >
                   <div
                     ref={eventBadgePopupRef}
-                    className="node-qp-popup node-evt-popup"
-                    style={{ position: 'fixed', top: eventPropPos.top, left: eventPropPos.left, zIndex: 300 }}
+                    className="node-qp-popup node-evt-popup nqp-modal-box"
                     onMouseDown={e => e.stopPropagation()}
                     onClick={e => e.stopPropagation()}
                   >
@@ -2454,6 +2442,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         ↑ Cambios sincronizados con Google Calendar
                       </div>
                     )}
+                  </div>
                   </div>,
                   document.body
                 )}
@@ -2482,11 +2471,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 >
                   {node.due ? `📅 ${qDueBadgeLabel}` : 'sin fecha'}
                 </button>
-                {showQuickProps && quickPropsPos && createPortal(
+                {showQuickProps && createPortal(
+                  <div
+                    className="nqp-modal-overlay"
+                    onMouseDown={e => { e.stopPropagation(); setShowQuickProps(false) }}
+                  >
                   <div
                     ref={quickPropsPopupRef}
-                    className="node-qp-popup"
-                    style={{ position: 'fixed', top: quickPropsPos.top, left: quickPropsPos.left, zIndex: 300 }}
+                    className="node-qp-popup nqp-modal-box"
                     onMouseDown={e => e.stopPropagation()}
                     onClick={e => e.stopPropagation()}
                   >
@@ -2572,6 +2564,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         >{opt.l}</button>
                       ))}
                     </div>
+                  </div>
                   </div>,
                   document.body
                 )}
