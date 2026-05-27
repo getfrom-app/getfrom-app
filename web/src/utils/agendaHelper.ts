@@ -16,23 +16,14 @@ const MONTHS_ES = [
 
 export const AGENDA_ROOT_NAME = '📅 Agenda'
 
-/** Busca el nodo raíz del planificador (Agenda, Calendario, etc.) */
+/** Busca el nodo raíz Agenda */
 export function findAgendaRoot(): Node | undefined {
-  const roots = store.children(null)
-  return roots.find(n => !n.deletedAt && (
-    n.text === AGENDA_ROOT_NAME ||
-    n.text?.toLowerCase() === 'agenda' ||
-    n.text?.toLowerCase().includes('planificador') ||
-    n.text?.toLowerCase() === 'calendario' ||
-    n.text?.toLowerCase() === 'calendar'
-  ))
+  return store.children(null).find(n => !n.deletedAt && n.text === AGENDA_ROOT_NAME)
 }
 
 /** Encuentra o crea el nodo raíz Agenda */
 export function getOrCreateAgendaRoot(): Node {
-  const existing = findAgendaRoot()
-  if (existing) return existing
-  return store.createNode({ text: AGENDA_ROOT_NAME, parentId: null })
+  return findAgendaRoot() ?? store.createNode({ text: AGENDA_ROOT_NAME, parentId: null })
 }
 
 /** Encuentra o crea el nodo de año bajo Agenda */
