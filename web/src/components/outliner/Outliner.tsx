@@ -85,7 +85,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // isDragSelecting es el state para React (CSS, renders).
   const [isDragSelecting, setIsDragSelecting] = useState(false)
   const isDragSelectingRef = useRef(false)
-  function startDragSelect() { isDragSelectingRef.current = true; setIsDragSelecting(true) }
+  const didDragSelectRef   = useRef(false)  // true si el drag activó node-select (no solo clic)
+  function startDragSelect() { isDragSelectingRef.current = true; didDragSelectRef.current = true; setIsDragSelecting(true) }
   function stopDragSelect()  { isDragSelectingRef.current = false; setIsDragSelecting(false) }
   const dragAnchorId = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -350,12 +351,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
     // ── mouseup ───────────────────────────────────────────────────────────
     function onUp() {
+      const wasDrag = didDragSelectRef.current
+      didDragSelectRef.current = false
+
       if (_activeDragContainer === myContainer.current) {
         _activeDragContainer = null
       }
       dragAnchorId.current = null
       dragFromText.current = false
       stopDragSelect()
+
+      // Clic simple (sin drag) → limpiar selección múltiple
+      // igual que en cualquier editor: clic = mover cursor y deseleccionar
+      if (!wasDrag) {
+        setSelectedIds(new Set())
+      }
     }
 
     document.addEventListener('mousedown', onDown, { capture: true })
