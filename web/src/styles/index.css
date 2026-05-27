@@ -307,13 +307,13 @@ a { color: inherit; text-decoration: none; }
 /* ── Slash menu mejorado (grupos) ─────────────────────────────────────────── */
 
 .slash-menu-group {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 6px 10px 2px;
-  opacity: 0.7;
+  letter-spacing: 0.07em;
+  padding: 5px 8px 1px;
+  opacity: 0.55;
 }
 
 .slash-menu-text {
@@ -2353,21 +2353,24 @@ mark.inline-highlight {
   background: var(--bg-secondary);
   border: 1px solid var(--border-focus);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  min-width: 240px;
-  overflow: hidden;
-  padding: 4px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  min-width: 200px;
+  max-width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 3px;
 }
 
 .slash-menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   width: 100%;
-  padding: 7px 10px;
+  padding: 4px 8px;
   border-radius: var(--radius);
   text-align: left;
-  transition: background 0.1s;
+  transition: background 0.08s;
   cursor: pointer;
 }
 .slash-menu-item:hover,
@@ -2376,31 +2379,29 @@ mark.inline-highlight {
 }
 
 .slash-menu-icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
-  color: var(--text-accent);
+  color: var(--text-tertiary);
   font-style: normal;
 }
 
 .slash-menu-label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-primary);
-  min-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .slash-menu-desc {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  flex: 1;
+  display: none; /* oculto por defecto — estilo WF: solo label */
 }
 
 /* ── NodeView table of contents ───────────────────────────────────────────── */

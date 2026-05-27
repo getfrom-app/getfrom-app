@@ -110,14 +110,21 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
   // Reset selection when filter changes
   useEffect(() => { setActiveIdx(0) }, [query])
 
-  // Position below anchor
+  // Position below anchor — evitar cortes en bordes
   useEffect(() => {
     if (!anchorEl) return
     const rect = anchorEl.getBoundingClientRect()
-    const menuH = 280
-    const spaceBelow = window.innerHeight - rect.bottom - 8
-    const top = spaceBelow > menuH ? rect.bottom + 4 : rect.top - menuH - 4
-    setPos({ top, left: Math.min(rect.left, window.innerWidth - 240) })
+    const menuW = 260
+    const menuH = 320
+    const margin = 8
+    // Vertical: abajo si hay espacio, arriba si no
+    const spaceBelow = window.innerHeight - rect.bottom - margin
+    const top = spaceBelow >= Math.min(menuH, 200)
+      ? rect.bottom + 4
+      : Math.max(margin, rect.top - Math.min(menuH, spaceBelow < 120 ? 280 : menuH) - 4)
+    // Horizontal: alinear a la izquierda del cursor, sin salirse por la derecha
+    const left = Math.max(margin, Math.min(rect.left, window.innerWidth - menuW - margin))
+    setPos({ top, left })
   }, [anchorEl])
 
   useEffect(() => {
