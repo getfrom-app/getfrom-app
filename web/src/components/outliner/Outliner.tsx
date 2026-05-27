@@ -43,7 +43,8 @@ interface Props {
   placeholder?: string
   className?: string
   filterText?: string
-  filterMatchIds?: Set<string>   // WF smart filter: IDs que coinciden (oculta los demás)
+  filterMatchIds?: Set<string>    // WF smart filter: IDs que coinciden
+  filterAncestorIds?: Set<string> // WF smart filter: ancestros de coincidencias (evita O(n²) getAllDescendants)
   temporalSort?: 'year' | 'month'  // WF: orden por mes (dentro de año) o por día (dentro de mes)
   compact?: boolean
   /** Si true, oculta nodos isDiaryEntry de la lista (usados en WFHomeView para que
@@ -76,7 +77,7 @@ function getDayNumber(node: Node): number {
   return m ? parseInt(m[1]) : 999
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, temporalSort, compact, excludeDiaryEntries }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -560,6 +561,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             onShiftSelect={handleShiftSelect}
             filterText={effectiveFilter}
             filterMatchIds={filterMatchIds}
+            filterAncestorIds={filterAncestorIds}
             isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
           />
         ))}

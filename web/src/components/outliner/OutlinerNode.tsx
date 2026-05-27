@@ -119,7 +119,8 @@ interface Props {
   onSelectNext: (id: string, dir: 'up' | 'down') => void
   onShiftSelect?: (id: string) => void
   filterText?: string
-  filterMatchIds?: Set<string>   // WF smart filter — IDs que coinciden
+  filterMatchIds?: Set<string>    // WF smart filter — IDs que coinciden
+  filterAncestorIds?: Set<string> // ancestros de nodos coincidentes (precomputado, evita getAllDescendants)
   isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
 }
 
@@ -181,7 +182,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, isFirstEmpty }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
@@ -300,13 +301,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const matchesFilter = filterMatchIds
     ? filterMatchIds.has(node.id)
     : (!activeFilter || includesNormalized(node.text, filterText!))
+  // anyDescendantMatches: ¿algún hijo coincide? → mostrar este nodo como ancestro.
+  // Si tenemos filterAncestorIds precomputado (O(1)), lo usamos directamente.
+  // Si no, fallback a getAllDescendants (texto libre) — solo en filtro local sin smart filter.
   const anyDescendantMatches = (activeFilter || filterMatchIds) && !matchesFilter
-    ? getAllDescendants(node.id).some(id => {
-        const n = store.getNode(id)
-        if (!n || n.deletedAt) return false
-        if (filterMatchIds) return filterMatchIds.has(id)
-        return includesNormalized(n.text, filterText!)
-      })
+    ? filterAncestorIds
+      ? filterAncestorIds.has(node.id)  // O(1) — precomputado por applyWFFilter
+      : getAllDescendants(node.id).some(id => {
+          const n = store.getNode(id)
+          if (!n || n.deletedAt) return false
+          return includesNormalized(n.text, filterText!)
+        })
     : false
 
   // Sync DOM text with node.text when not editing
@@ -2698,6 +2703,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onShiftSelect={onShiftSelect}
             filterText={filterText}
             filterMatchIds={filterMatchIds}
+            filterAncestorIds={filterAncestorIds}
           />
         ))
       })()}

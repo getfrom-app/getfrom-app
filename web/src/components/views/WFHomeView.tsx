@@ -84,6 +84,7 @@ export default function WFHomeView({ filterText }: Props) {
         placeholder="Escribe algo… o pulsa Enter para crear un nodo"
         filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
         filterMatchIds={filterResult?.matchIds}
+        filterAncestorIds={filterResult?.ancestorIds}
         excludeDiaryEntries
       />
     </div>
