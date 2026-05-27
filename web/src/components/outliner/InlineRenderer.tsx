@@ -1,6 +1,38 @@
 import React from 'react'
 import { store } from '../../store/nodeStore'
 
+/** Normaliza para búsqueda: sin tildes, sin mayúsculas */
+function norm(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
+/**
+ * Highlight accent+case-insensitive en HTML ya generado.
+ * Trabaja en los fragmentos de texto entre tags HTML para no corromper atributos.
+ * Usa posiciones normalizadas → original (funcionan 1:1 para texto latino NFC→NFD).
+ */
+function highlightNormalized(html: string, search: string): string {
+  const normalSearch = norm(search.trim()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  if (!normalSearch) return html
+  const re = new RegExp(normalSearch, 'g')
+
+  // Dividir por tags HTML para no tocar atributos
+  return html.split(/(<[^>]+>)/g).map(part => {
+    if (part.startsWith('<')) return part   // tag HTML — intacto
+    const normalPart = norm(part)
+    let out = ''
+    let lastIdx = 0
+    let m: RegExpExecArray | null
+    while ((m = re.exec(normalPart)) !== null) {
+      out += part.slice(lastIdx, m.index)
+      out += `<mark class="search-highlight">${part.slice(m.index, m.index + m[0].length)}</mark>`
+      lastIdx = m.index + m[0].length
+    }
+    out += part.slice(lastIdx)
+    return out
+  }).join('')
+}
+
 // Color de tag: usa el del store (custom o hash determinista)
 function getTagColor(tag: string): string {
   return store.tagColor(tag)
@@ -296,11 +328,9 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
       return `<span class="context-inline" data-slug="${esc(slug.trim())}" style="color:${hex};font-size:0.8em;font-weight:500;border-bottom:1px dashed ${hex}80;padding:0 2px;cursor:pointer">${esc(part)}</span>`
     })
 
-  // Aplicar highlight de búsqueda si existe
+  // Aplicar highlight de búsqueda insensible a tildes y mayúsculas
   if (highlight && highlight.trim()) {
-    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const re = new RegExp(`(${escapedHighlight})`, 'gi')
-    html = html.replace(re, '<mark class="search-highlight">$1</mark>')
+    html = highlightNormalized(html, highlight)
   }
 
   return wrapClass ? `<span class="${wrapClass}">${html}</span>` : html
