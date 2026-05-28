@@ -18,6 +18,8 @@ interface Props {
   onOpenSettings: () => void
   onToggleSidebar: () => void
   sidebarOpen: boolean
+  onTogglePlanner?: () => void
+  plannerOpen?: boolean
 }
 
 // ── Categorías del filtro ──────────────────────────────────────────────────
@@ -44,6 +46,8 @@ export default function WFTopBar({
   onOpenSettings,
   onToggleSidebar,
   sidebarOpen,
+  onTogglePlanner,
+  plannerOpen,
 }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -408,9 +412,9 @@ export default function WFTopBar({
 
       {/* 📅 Planificador */}
       <button
-        className={`wf-topbar-planner-btn ${location.pathname.includes('/planner') ? 'active' : ''}`}
-        onClick={() => navigate(location.pathname.includes('/planner') ? '/' : '/planner')}
-        title="Planificador — vista de calendario y time blocks"
+        className={`wf-topbar-planner-btn ${plannerOpen ? 'active' : ''}`}
+        onClick={onTogglePlanner}
+        title="Planificador — timeline lateral (Día / Semana / Mes)"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>

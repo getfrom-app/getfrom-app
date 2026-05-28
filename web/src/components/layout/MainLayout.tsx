@@ -30,6 +30,7 @@ const AccountView = lazy(() => import('../views/AccountView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
+import PlannerPanel from '../panels/PlannerPanel'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import MagicChat from '../aichat/MagicChat'
@@ -63,6 +64,7 @@ export default function MainLayout() {
   })()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
+  const [plannerOpen, setPlannerOpen] = useState(false)
 
   // R global hold-to-record
   const isRKeyDownRef = useRef(false)
@@ -472,6 +474,8 @@ export default function MainLayout() {
           onOpenSettings={() => navigate('/settings')}
           onToggleSidebar={() => setSidebarOpen(v => !v)}
           sidebarOpen={sidebarOpen}
+          onTogglePlanner={() => setPlannerOpen(v => !v)}
+          plannerOpen={plannerOpen}
         />
       </div>
 
@@ -557,6 +561,12 @@ export default function MainLayout() {
         </Routes>
         </Suspense>
       </main>
+
+      {/* ── Planner Panel — timeline lateral derecho ── */}
+      {plannerOpen && (
+        <PlannerPanel onClose={() => setPlannerOpen(false)} />
+      )}
+
       </div>{/* .main-body */}
       </div>{/* .main-row */}
       {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
