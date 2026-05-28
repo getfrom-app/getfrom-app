@@ -411,6 +411,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       }
 
       if (id && !dragFromText.current) e.preventDefault()
+      // Si había una drag-select activa de antes, limpiar al iniciar nuevo click
+      if (_gSelectedIds.size > 0) gClearSelected()
     }
 
     // ── mousemove ─────────────────────────────────────────────────────────
@@ -436,28 +438,32 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       const anchorId = dragAnchorId.current!
 
-      // ── Drag desde texto: bounding rect de .node-row ───────────────────
-      if (dragFromText.current && !isDragSelectingRef.current) {
-        const scope = _activeDragRoot ?? myContainer.current ?? document.body
-        const rect = getOwnRowRect(anchorId, scope as HTMLElement)
-        if (rect && (e.clientY < rect.top || e.clientY > rect.bottom)) {
-          window.getSelection()?.removeAllRanges()
-          startDragSelect(); setSelectedId(null)
-          dragFromText.current = false
-          gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
-        }
-        return
+      // ── Drag desde texto: activar con umbral mínimo de movimiento vertical ─
+      // Al superar 5px cancelamos la selección nativa y tratamos igual que
+      // un drag desde zona no-texto (comportamiento estilo Notion).
+      if (dragFromText.current) {
+        const deltaY = Math.abs(e.clientY - dragAnchorPos.current)
+        if (deltaY < 5) return  // movimiento mínimo — puede ser un clic, no drag
+        // Umbral superado → cancelar selección nativa y activar selección de nodos
+        window.getSelection()?.removeAllRanges()
+        // Aplicar user-select:none INMEDIATAMENTE al DOM (sin esperar al re-render de React)
+        // para que el browser no siga extendiendo la selección de texto
+        document.body.style.userSelect = 'none'
+        ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
+        dragFromText.current = false  // tratar desde aquí igual que no-texto
       }
 
-      // ── Drag desde zona no-texto ───────────────────────────────────────
-      if (!dragFromText.current) {
-        if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
-        if (!isDragSelectingRef.current) {
-          startDragSelect(); setSelectedId(null)
-          gSetSelected(new Set([anchorId]))
-        }
-        gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
+      // ── Drag desde zona no-texto (o texto que superó el umbral) ───────────
+      if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
+      if (!isDragSelectingRef.current) {
+        startDragSelect(); setSelectedId(null)
+        gSetSelected(new Set([anchorId]))
       }
+      // Cancelar cualquier selección de texto nativa que el browser pueda crear
+      if (isDragSelectingRef.current && window.getSelection()?.type === 'Range') {
+        window.getSelection()?.removeAllRanges()
+      }
+      gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
     }
 
     // ── dragstart ─────────────────────────────────────────────────────────
@@ -478,6 +484,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       const wasDrag = didDragSelectRef.current
       didDragSelectRef.current = false
 
+      // Restaurar user-select (lo pusimos en 'none' al inicio del drag desde texto)
+      document.body.style.userSelect = ''
+      ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = ''
+
       if (_activeDragContainer === myContainer.current) {
         _activeDragContainer = null
         _activeDragRoot = null
@@ -493,19 +503,38 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       }
     }
 
-    document.addEventListener('mousedown', onDown, { capture: true })
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('dragstart', onDragStart)
-    document.addEventListener('mouseup',   onUp)
+    // ── selectstart — prevenir selección de texto nativa durante node-drag ──
+    // El browser dispara selectstart antes de empezar la selección de texto.
+    // Lo bloqueamos si ya estamos en modo drag-select de nodos O si el drag
+    // viene de texto y ya superamos el umbral vertical (dragFromText=false pero
+    // aún en los primeros frames).
+    function onSelectStart(e: Event) {
+      if (isDragSelectingRef.current) {
+        e.preventDefault()
+        return
+      }
+      // Bloquear también si hay un ancla activa y movimiento vertical suficiente
+      if (dragAnchorId.current && !dragFromText.current &&
+          Math.abs(lastMouseY.current - dragAnchorPos.current) >= 5) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener('mousedown',   onDown, { capture: true })
+    document.addEventListener('mousemove',   onMove)
+    document.addEventListener('dragstart',   onDragStart)
+    document.addEventListener('mouseup',     onUp)
+    document.addEventListener('selectstart', onSelectStart)
     return () => {
       if (_activeDragContainer === myContainer.current) {
         _activeDragContainer = null
         _activeDragRoot = null
       }
-      document.removeEventListener('mousedown', onDown, { capture: true })
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('dragstart', onDragStart)
-      document.removeEventListener('mouseup',   onUp)
+      document.removeEventListener('mousedown',   onDown, { capture: true })
+      document.removeEventListener('mousemove',   onMove)
+      document.removeEventListener('dragstart',   onDragStart)
+      document.removeEventListener('mouseup',     onUp)
+      document.removeEventListener('selectstart', onSelectStart)
     }
   }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
 
