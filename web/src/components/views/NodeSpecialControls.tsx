@@ -42,13 +42,29 @@ const SCHEDULE_OPTIONS = [
   { value: 'weekly:0:09:00', label: 'Semanal — domingo 21:00' },
 ]
 
-function setAgentSchedule(nodeId: string, schedule: string) {
+async function setAgentSchedule(nodeId: string, schedule: string) {
   const n = store.getNode(nodeId)
   if (!n) return
   try {
     const ed = JSON.parse(n.extraData || '{}')
     ed._agentSchedule = schedule
     store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+
+    // Sync al servidor solo si hay sesión
+    if (!getToken()) return
+    const payload = {
+      nodeId,
+      agentId:      ed._agentId      ?? nodeId,
+      agentTitle:   n.text,
+      systemPrompt: ed._agentSystemPrompt ?? '',
+      userMessage:  ed._agentUserMessage  ?? '',
+      schedule,
+      enabled:      ed._agentEnabled !== false,
+    }
+    // Solo podemos registrar si tenemos systemPrompt/userMessage
+    if (!payload.systemPrompt || !payload.userMessage) return
+    apiRequest('/agents/schedule', { method: 'POST', body: JSON.stringify(payload) })
+      .catch(err => console.warn('[schedule sync]', err))
   } catch { /* ignore */ }
 }
 
