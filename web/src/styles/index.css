@@ -11847,7 +11847,7 @@ a:focus-visible {
 }
 .cp-day-col-wrap { border-right: 1px solid var(--border); }
 .cp-day-col-wrap:last-child { border-right: none; }
-.cp-day-col { cursor: crosshair; }
+.cp-day-col { cursor: crosshair; position: relative; }
 .cp-slot { position: absolute; left: 0; right: 0; height: 40px; pointer-events: none; }
 .cp-slot--hr   { border-top: 1px solid var(--border); }
 .cp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }
@@ -11992,7 +11992,7 @@ a:focus-visible {
 .pp-axis-label { position: absolute; right: 4px; font-size: 8px; font-weight: 500; color: var(--text-tertiary); pointer-events: none; }
 .pp-col-wrap { border-right: 1px solid var(--border); }
 .pp-col-wrap:last-child { border-right: none; }
-.pp-col { cursor: crosshair; }
+.pp-col { cursor: crosshair; position: relative; }
 .pp-slot { position: absolute; left: 0; right: 0; pointer-events: none; }
 .pp-slot--hr   { border-top: 1px solid var(--border); height: 80px; }
 .pp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); height: 40px; }
