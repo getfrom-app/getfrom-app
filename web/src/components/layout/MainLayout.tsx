@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
@@ -22,7 +22,7 @@ function DiaryRedirect() {
 const TasksView = lazy(() => import('../views/TasksView'))
 const SearchView = lazy(() => import('../views/SearchView'))
 const AccountView = lazy(() => import('../views/AccountView'))
-const CalendarView = lazy(() => import('../views/CalendarView'))
+// CalendarView (Planificador) eliminado en v9.0
 const AgentsView = lazy(() => import('../views/AgentsView'))
 const ChatView = lazy(() => import('../views/ChatView'))
 const KanbanView = lazy(() => import('../views/KanbanView'))
@@ -277,9 +277,9 @@ export default function MainLayout() {
       // Ctrl+1-9 → cambiar de vista (SIN Cmd, para no interferir con el sistema)
       if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         const viewMap: Record<string, string> = {
-          '1': '/', '2': '/tasks', '3': '/calendar',
-          '4': '/search', '5': '/kanban',
-          '6': '/agents', '7': '/chat',
+          '1': '/', '2': '/tasks',
+          '3': '/search', '4': '/kanban',
+          '5': '/agents', '6': '/chat',
         }
         if (viewMap[e.key]) {
           const active = document.activeElement
@@ -444,7 +444,8 @@ export default function MainLayout() {
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />
           <Route path="search" element={<SearchView />} />
-          <Route path="calendar" element={<CalendarView />} />
+          {/* /calendar (Planificador) eliminado en v9.0 — redirige a inicio */}
+          <Route path="calendar" element={<Navigate to="/" replace />} />
           <Route path="resources" element={<ResourcesView />} />
           <Route path="kanban" element={<KanbanView />} />
           <Route path="agents" element={<AgentsView />} />
