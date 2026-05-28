@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { getShortcuts } from '../../store/shortcutsStore'
 import { createFilterShortcut } from '../../utils/atajosHelper'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { interpretFilterQuery, needsInterpretation, cancelInterpretation } from '../../utils/filterInterpreter'
 
 interface Props {
   onFilter: (text: string) => void
@@ -56,6 +57,7 @@ export default function WFTopBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterCategory, setFilterCategory] = useState<FilterCategory>(null)
+  const [interpreting, setInterpreting] = useState(false)
   const filterRef = useRef<HTMLInputElement>(null)
   const filterWrapRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -129,6 +131,35 @@ export default function WFTopBar({
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [filterOpen, onFilter])
+
+  // ── Interpretación automática de lenguaje natural ──────────────────────────
+  // Cuando el usuario escribe algo que no es una query técnica conocida,
+  // esperamos 800ms y lo interpretamos con Haiku (gratuito, systemBudget).
+  // El resultado sustituye el texto del filtro y se aplica automáticamente.
+  useEffect(() => {
+    if (!filterText || !needsInterpretation(filterText)) {
+      cancelInterpretation()
+      setInterpreting(false)
+      return
+    }
+
+    setInterpreting(true)
+    const timer = setTimeout(async () => {
+      const query = await interpretFilterQuery(filterText)
+      setInterpreting(false)
+      if (query && query !== filterText) {
+        onFilter(query)
+        // Actualizar el input visualmente para mostrar la query técnica
+        if (filterRef.current) filterRef.current.value = query
+      }
+    }, 800)
+
+    return () => {
+      clearTimeout(timer)
+      cancelInterpretation()
+      setInterpreting(false)
+    }
+  }, [filterText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Apply chip filter — combina tokens en lugar de reemplazar ────────────
   function applyChip(token: string) {
@@ -220,11 +251,15 @@ export default function WFTopBar({
           <input
             ref={filterRef}
             className="wf-topbar-filter-input"
-            placeholder="Filtrar árbol… (⌘F)"
+            placeholder="Filtrar o describir en lenguaje natural… (⌘F)"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
             onFocus={() => setFilterOpen(true)}
           />
+          {/* Indicador de interpretación IA en curso */}
+          {interpreting && (
+            <span className="wf-topbar-filter-ai-hint" title="From interpreta tu búsqueda…">✨</span>
+          )}
           {filterText && (
             <>
               <button

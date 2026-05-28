@@ -252,11 +252,16 @@ export async function aiInlineStream(
     /** Micro-op gratuita: usa Haiku con presupuesto de sistema, no consume tokens del usuario.
      *  Usar para auto-títulos, renombrado de sesiones y operaciones secundarias. */
     systemBudget?: boolean
+    /** Override del system prompt — solo válido con systemBudget:true. */
+    systemOverride?: string
+    /** AbortSignal para cancelar la petición. */
+    signal?: AbortSignal
   }
 ): Promise<string> {
   const token = getToken()
   const res = await fetch(`${BASE}/ai/inline`, {
     method: 'POST',
+    signal: opts?.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -264,12 +269,13 @@ export async function aiInlineStream(
     body: JSON.stringify({
       prompt,
       context,
-      maxTokens: opts?.systemBudget ? 200 : 800,
+      maxTokens: opts?.systemBudget ? 50 : 800,
       resourceUrl: opts?.resourceUrl,
       resourceKind: opts?.resourceKind,
       userProfile: opts?.userProfile,
       tagDefinitions: opts?.tagDefinitions,
       systemBudget: opts?.systemBudget,
+      systemOverride: opts?.systemOverride,
     }),
   })
   await assertAIResponse(res)

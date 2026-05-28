@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
+import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
 
 interface Props {
   onClose: () => void
@@ -256,11 +257,30 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
   }
 
   // ── Enviar ────────────────────────────────────────────────────────────────
-  function handleSend(text?: string) {
+  // Palabras que indican intención de filtrar/mostrar/buscar nodos
+  const FILTER_INTENT = /\b(muéstrame|enseñame|filtra|muestra|encuentra|busca|ver|show|find|filter|quiero ver|dame|lista|dime)\b/i
+
+  async function handleSend(text?: string) {
     const t = (text ?? inputRef.current).trim()
     if (!t || chat.isStreaming) return
     setInput('')
     const final = t.startsWith('__') ? expandSpecialPrompt(t) : t
+
+    // Detectar intención de filtro: si el mensaje tiene palabras de "mostrar/buscar"
+    // Y el texto (sin esas palabras) parece lenguaje natural filtrable
+    if (FILTER_INTENT.test(final)) {
+      const cleanedForFilter = final.replace(FILTER_INTENT, '').trim()
+      if (needsInterpretation(cleanedForFilter) || cleanedForFilter.length > 3) {
+        const query = await interpretFilterQuery(final)
+        if (query) {
+          // Aplicar el filtro y cerrar Magic
+          window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query } }))
+          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Filtro aplicado: ${query}`, type: 'success' } }))
+          return
+        }
+      }
+    }
+
     chat.send(final, currentNodeId)
   }
 
