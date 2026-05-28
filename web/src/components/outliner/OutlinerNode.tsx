@@ -1821,6 +1821,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
 
     setTimeout(() => {
+      store.beginBatch()
       const sibs = store.children(dayNode.id)
       const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
       let ed: Record<string, unknown> = {}
@@ -1917,6 +1918,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }
       }
 
+      store.endBatch()
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
     }, 310)
