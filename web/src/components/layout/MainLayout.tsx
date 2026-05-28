@@ -398,19 +398,6 @@ export default function MainLayout() {
         isGuest={false}
         onOpenSettings={() => navigate('/settings')}
       />
-      {/* Sidebar resize/collapse handle */}
-      <div
-        className="sidebar-divider"
-        onMouseDown={handleDividerMouseDown}
-      >
-        <button
-          className="sidebar-divider-handle"
-          onClick={e => { e.stopPropagation(); setSidebarOpen(v => !v) }}
-          title={sidebarOpen ? 'Colapsar sidebar (⌘⇧S)' : 'Expandir sidebar (⌘⇧S)'}
-        >
-          {sidebarOpen ? '‹' : '›'}
-        </button>
-      </div>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
