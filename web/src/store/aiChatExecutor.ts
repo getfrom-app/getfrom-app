@@ -5,6 +5,19 @@
 
 import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
+import { ensureDayPath } from '../utils/agendaHelper'
+
+/** Retorna el nodo padre correcto: si due es un día diferente a hoy, usar ese día; si no, usar sessionId */
+function resolveParent(due: string | null | undefined, sessionId: string | null): string | null {
+  if (!due) return sessionId
+  const dueDate = new Date(due)
+  const today = new Date(); today.setHours(0,0,0,0)
+  const dueMidnight = new Date(dueDate); dueMidnight.setHours(0,0,0,0)
+  if (dueMidnight.getTime() !== today.getTime()) {
+    return ensureDayPath(dueDate).id
+  }
+  return sessionId
+}
 
 export async function executeChatAction(
   action: Record<string, unknown>,
@@ -58,11 +71,14 @@ function createTask(a: Record<string, unknown>, sessionId?: string): ExecutedAct
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
   const priority = a.priority as string | undefined
-  const parentId = (a.parent_id as string | undefined) || null
+  const explicitParent = (a.parent_id as string | undefined) || null
+
+  // Si tiene due en otro día: crear bajo el nodo diario de ese día (la fecha = posición en el árbol)
+  const parentId = explicitParent ?? resolveParent(due, sessionId ?? null) ?? null
 
   const created = store.createNode({
     text,
-    parentId: parentId ?? sessionId ?? null,
+    parentId,
     isTask: true,
     types: [...tags, 'tarea'],
     extraData: { _atomic: '1', _inline: '1' },
@@ -82,10 +98,14 @@ function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAc
   if (!due) return result('create_event', false, "Falta 'due' (ISO 8601).")
   const dueEnd = parseDate(a.due_end)
   const location = a.location as string | undefined
+  const explicitParent = (a.parent_id as string | undefined) || null
+
+  // Los eventos siempre van bajo el nodo diario de su fecha
+  const parentId = explicitParent ?? resolveParent(due, sessionId ?? null) ?? null
 
   const created = store.createNode({
     text,
-    parentId: sessionId ?? null,
+    parentId,
     types: [...tags, 'evento'],
   })
   const updates: Record<string, unknown> = { isEvent: true, due }

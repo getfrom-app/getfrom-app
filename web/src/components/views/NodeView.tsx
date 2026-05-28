@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
@@ -50,6 +51,7 @@ export default function NodeView() {
   const navigate = useNavigate()
   const s = useStore()
   const node = id ? s.getNode(id) : undefined
+  const [globalFilter] = useFilterStore()
 
   // ── Nodos atajo: al cargar, aplicar filtro y volver al árbol ─────────────
   // Un atajo no tiene contenido propio — es un filtro guardado.
@@ -2232,7 +2234,7 @@ export default function NodeView() {
                     parentId={node.id}
                     autoFocusEmpty
                     placeholder="Añade contenido…"
-                    filterText={inDocSearch || undefined}
+                    filterText={inDocSearch || globalFilter || undefined}
                     temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
                   />
                 </div>

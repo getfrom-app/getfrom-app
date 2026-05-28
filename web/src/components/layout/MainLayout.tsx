@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useFilterStore } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
@@ -103,7 +104,7 @@ export default function MainLayout() {
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
-  const [filterText, setFilterText] = useState('')
+  const [filterText, setFilterText] = useFilterStore()
 
   // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
   useEffect(() => {
