@@ -104,6 +104,9 @@ export default function PlannerPanel({ onClose }: Props) {
   const [gcalEvents,  setGcalEvents]  = useState<CalendarEvent[]>([])
   const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
+  // Bloque inline en creación: posición + texto en progreso
+  const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string}|null>(null)
+  const newBlockRef                   = useRef<HTMLInputElement>(null)
 
   // ── Ancho con resize ──────────────────────────────────────────────────────
   const [panelW, setPanelW] = useState(() => {
@@ -235,12 +238,25 @@ export default function PlannerPanel({ onClose }: Props) {
   }
 
   function handleSlotClick(e: React.MouseEvent, day: Date, colEl: HTMLElement) {
-    if ((e.target as HTMLElement).closest('.pp-block')) return
-    const start = pxToTime(e.clientY - colEl.getBoundingClientRect().top, day)
+    if ((e.target as HTMLElement).closest('.pp-block') || (e.target as HTMLElement).closest('.pp-new-block')) return
+    const rawY  = e.clientY - colEl.getBoundingClientRect().top
+    const start = pxToTime(rawY, day)
     if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
-    const text = prompt('Nombre del time block:') ?? ''
-    if (!text.trim()) return
-    store.createNode({ text, parentId: ensureDayPath(day).id, due: start.toISOString(), extraData: { _timeBlock:'1' } })
+    setNewBlock({ day, start, top: snapPx(rawY), text: '' })
+    setTimeout(() => newBlockRef.current?.focus(), 20)
+  }
+
+  function commitNewBlock() {
+    if (!newBlock) return
+    if (newBlock.text.trim()) {
+      store.createNode({
+        text:      newBlock.text.trim(),
+        parentId:  ensureDayPath(newBlock.day).id,
+        due:       newBlock.start.toISOString(),
+        extraData: { _timeBlock: '1' },
+      })
+    }
+    setNewBlock(null)
   }
 
   // ── Drag bloque ───────────────────────────────────────────────────────────
@@ -326,6 +342,28 @@ export default function PlannerPanel({ onClose }: Props) {
           ))}
           {isToday && nowTop >= 0 && nowTop < TOTAL_HOURS*HOUR_H && <div className="pp-now" style={{top:nowTop}} />}
           {getBlocks(day, gcalEvents).map(renderBlock)}
+
+          {/* Bloque inline en creación */}
+          {newBlock && sameDay(newBlock.day, day) && (
+            <div
+              className="pp-new-block"
+              style={{ top: newBlock.top, left: 2, right: 2 }}
+            >
+              <div className="pp-block-time">{fmtHH(newBlock.start)}</div>
+              <input
+                ref={newBlockRef}
+                className="pp-new-block-input"
+                value={newBlock.text}
+                placeholder="Nombre…"
+                onChange={e => setNewBlock(b => b ? {...b, text: e.target.value} : null)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitNewBlock() }
+                  if (e.key === 'Escape') setNewBlock(null)
+                }}
+                onBlur={commitNewBlock}
+              />
+            </div>
+          )}
         </div>
       </div>
     )

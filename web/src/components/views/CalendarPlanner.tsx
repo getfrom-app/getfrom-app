@@ -179,6 +179,8 @@ export default function CalendarPlanner() {
 
   // ctx menu
   const [ctxMenu, setCtxMenu] = useState<{x:number;y:number;block:TimeBlock}|null>(null)
+  const [newBlock, setNewBlock] = useState<{day:Date;start:Date;top:number;text:string}|null>(null)
+  const newBlockRef = useRef<HTMLInputElement>(null)
 
   // resize ref
   const resizeRef      = useRef<{id:string}|null>(null)
@@ -303,19 +305,26 @@ export default function CalendarPlanner() {
 
   // ── Clic en slot vacío → time block standalone ────────────────────────────
   function handleSlotClick(e: React.MouseEvent, day: Date, colEl: HTMLElement) {
-    if ((e.target as HTMLElement).closest('.cp-block')) return
+    if ((e.target as HTMLElement).closest('.cp-block') || (e.target as HTMLElement).closest('.cp-new-block')) return
     const rect  = colEl.getBoundingClientRect()
-    const start = pxToTime(e.clientY - rect.top, day)
+    const rawY  = e.clientY - rect.top
+    const start = pxToTime(rawY, day)
     if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
-    const text = prompt('Nombre del time block:') ?? ''
-    if (!text.trim()) return
-    const diaryNode = ensureDayPath(day)
-    store.createNode({
-      text,
-      parentId: diaryNode.id,
-      due: start.toISOString(),
-      extraData: { _timeBlock: '1' },
-    })
+    setNewBlock({ day, start, top: snapPx(rawY), text: '' })
+    setTimeout(() => newBlockRef.current?.focus(), 20)
+  }
+
+  function commitNewBlock() {
+    if (!newBlock) return
+    if (newBlock.text.trim()) {
+      store.createNode({
+        text:      newBlock.text.trim(),
+        parentId:  ensureDayPath(newBlock.day).id,
+        due:       newBlock.start.toISOString(),
+        extraData: { _timeBlock: '1' },
+      })
+    }
+    setNewBlock(null)
   }
 
   // ── Drag bloque en el grid ────────────────────────────────────────────────
@@ -428,6 +437,25 @@ export default function CalendarPlanner() {
             <div className="cp-now" style={{ top: nowTop }} />
           )}
           {blocks.map(renderBlock)}
+
+          {/* Bloque inline en creación */}
+          {newBlock && sameDay(newBlock.day, day) && (
+            <div className="cp-new-block" style={{ top: newBlock.top, left: 2, right: 2 }}>
+              <div className="cp-block-time" style={{ fontSize: 9, color: 'rgba(255,255,255,.85)' }}>{(() => { const h=newBlock.start.getHours(); const m=newBlock.start.getMinutes(); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}` })()}</div>
+              <input
+                ref={newBlockRef}
+                className="pp-new-block-input"
+                value={newBlock.text}
+                placeholder="Nombre…"
+                onChange={e => setNewBlock(b => b ? {...b, text: e.target.value} : null)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitNewBlock() }
+                  if (e.key === 'Escape') setNewBlock(null)
+                }}
+                onBlur={commitNewBlock}
+              />
+            </div>
+          )}
         </div>
       </div>
     )

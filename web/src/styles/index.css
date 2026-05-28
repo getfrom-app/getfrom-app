@@ -12044,3 +12044,35 @@ a:focus-visible {
 .planner-open .outliner-node:hover > .outliner-grip { opacity: 0.5; }
 .planner-open .outliner-grip:hover { opacity: 1 !important; color: var(--accent); background: var(--bg-hover); }
 .outliner-grip:active { cursor: grabbing; }
+
+/* ── PlannerPanel — bloque inline en creación ────────────────────────────── */
+.pp-new-block {
+  position: absolute;
+  border-radius: 4px;
+  padding: 3px 5px;
+  background: var(--accent);
+  min-height: 40px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 2px 12px rgba(74,144,217,0.35);
+}
+.pp-new-block-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  width: 100%;
+  padding: 0;
+  line-height: 1.3;
+}
+.pp-new-block-input::placeholder { color: rgba(255,255,255,0.6); }
+.cp-new-block {
+  position: absolute; border-radius: 4px; padding: 3px 5px;
+  background: var(--accent); min-height: 40px; z-index: 8;
+  display: flex; flex-direction: column; gap: 2px;
+  box-shadow: 0 2px 12px rgba(74,144,217,0.35);
+}
