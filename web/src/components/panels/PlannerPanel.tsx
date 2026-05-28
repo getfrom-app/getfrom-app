@@ -13,7 +13,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
-import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
+import { getCalendarEventsRange, updateCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 
@@ -265,7 +265,7 @@ export default function PlannerPanel({ onClose }: Props) {
   // ── Refs para drag/resize de bloques ─────────────────────────────────────
   const justResized = useRef(false)
   const justDragged = useRef(false)
-  const resizeRef   = useRef<{id:string}|null>(null)
+  const resizeRef   = useRef<{id:string; startMs:number; gcalEvent?:CalendarEvent}|null>(null)
 
   // ── Drop en columna ───────────────────────────────────────────────────────
   function handleDrop(e: React.DragEvent, day: Date, colEl: HTMLElement) {
@@ -309,6 +309,24 @@ export default function PlannerPanel({ onClose }: Props) {
       const dur = n.dueEnd ? new Date(n.dueEnd).getTime() - new Date(n.due).getTime() : 3600000
       store.updateNode(blockId, { due: start.toISOString(), dueEnd: new Date(start.getTime()+dur).toISOString(),
         parentId: ensureDayPath(day).id })
+    } else {
+      // ── Evento GCal arrastrado ────────────────────────────────────────────
+      const gcalId = e.dataTransfer.getData('plannerGcalId')
+      if (!gcalId) return
+      const offsetY = parseFloat(e.dataTransfer.getData('plannerBlockOffsetY') || '0')
+      const newStart = pxToTime(e.clientY - rect.top - offsetY, day)
+      if (newStart.getHours() < HOUR_START || newStart.getHours() >= HOUR_END) return
+      const ev = gcalEvents.find(x => x.id === gcalId)
+      if (!ev) return
+      const dur = new Date(ev.end).getTime() - new Date(ev.start).getTime()
+      const newEnd = new Date(newStart.getTime() + dur)
+      // Optimistic update inmediato
+      const optimistic: CalendarEvent = { ...ev, start: newStart.toISOString(), end: newEnd.toISOString() }
+      setGcalEvents(p => p.map(x => x.id === gcalId ? optimistic : x))
+      // Sync GCal en background, revertir si falla
+      updateCalendarEvent(gcalId, { start: newStart.toISOString(), end: newEnd.toISOString() })
+        .then(updated => setGcalEvents(p => p.map(x => x.id === updated.id ? updated : x)))
+        .catch(() => setGcalEvents(p => p.map(x => x.id === gcalId ? ev : x)))
     }
   }
 
@@ -336,10 +354,14 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Drag bloque ───────────────────────────────────────────────────────────
   function handleBlockDragStart(e: React.DragEvent, b: Block) {
-    if (b.kind === 'gcal') { e.preventDefault(); return }
     const el = e.currentTarget as HTMLElement
-    e.dataTransfer.setData('plannerBlockId', b.id)
-    e.dataTransfer.setData('plannerBlockOffsetY', String(Math.round(e.clientY - el.getBoundingClientRect().top)))
+    const offsetY = String(Math.round(e.clientY - el.getBoundingClientRect().top))
+    if (b.kind === 'gcal') {
+      e.dataTransfer.setData('plannerGcalId', b.id)
+    } else {
+      e.dataTransfer.setData('plannerBlockId', b.id)
+    }
+    e.dataTransfer.setData('plannerBlockOffsetY', offsetY)
     e.dataTransfer.effectAllowed = 'move'
     justDragged.current = false
     const onEnd = () => { justDragged.current = true; setTimeout(()=>{justDragged.current=false},200); el.removeEventListener('dragend',onEnd) }
@@ -347,28 +369,37 @@ export default function PlannerPanel({ onClose }: Props) {
   }
 
   // ── Resize bloque ─────────────────────────────────────────────────────────
-  function handleBlockResize(e: React.MouseEvent, blockId: string) {
+  function handleBlockResize(e: React.MouseEvent, b: Block) {
     e.stopPropagation(); e.preventDefault()
-    resizeRef.current = { id: blockId }
+    const startMs = b.start.getTime()
+    resizeRef.current = { id: b.id, startMs, gcalEvent: b.kind === 'gcal' ? b.gcalEvent : undefined }
     function onMove(ev: MouseEvent) {
       if (!resizeRef.current) return
       const el = document.querySelector(`[data-pp-block="${resizeRef.current.id}"]`) as HTMLElement
       const col = el?.closest('.pp-col') as HTMLElement
       if (!el || !col) return
-      const n = store.getNode(resizeRef.current.id)
-      if (!n?.due) return
-      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
+      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(resizeRef.current.startMs)))
       el.style.height = h + 'px'
     }
     function onUp(ev: MouseEvent) {
       window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
       if (!resizeRef.current) return
-      const { id } = resizeRef.current; resizeRef.current = null
-      const n = store.getNode(id); if (!n?.due) return
+      const { id, startMs: sMs, gcalEvent } = resizeRef.current; resizeRef.current = null
       const col = document.querySelector(`[data-pp-block="${id}"]`)?.closest('.pp-col') as HTMLElement
       if (!col) return
-      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
-      store.updateNode(id, { dueEnd: new Date(new Date(n.due).getTime() + h/pxPerMin*60000).toISOString() })
+      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(sMs)))
+      const newEnd = new Date(sMs + h / pxPerMin * 60000)
+      if (gcalEvent) {
+        // Optimistic update inmediato + sync GCal en background
+        const optimistic = { ...gcalEvent, end: newEnd.toISOString() }
+        setGcalEvents(p => p.map(x => x.id === id ? optimistic : x))
+        updateCalendarEvent(id, { end: newEnd.toISOString() })
+          .then(updated => setGcalEvents(p => p.map(x => x.id === updated.id ? updated : x)))
+          .catch(() => setGcalEvents(p => p.map(x => x.id === id ? gcalEvent : x)))
+      } else {
+        const n = store.getNode(id); if (!n?.due) return
+        store.updateNode(id, { dueEnd: newEnd.toISOString() })
+      }
       justResized.current = true; setTimeout(()=>{justResized.current=false}, 200)
     }
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
@@ -376,26 +407,25 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Render bloque ─────────────────────────────────────────────────────────
   function renderBlock(b: Block) {
-    const canDrag = b.kind !== 'gcal'
     return (
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}`}
         style={{ top: topPx(b.start), height: heightPx(b.start.getTime(), b.end.getTime()),
           background: b.color, left: 2, right: 2 }}
-        draggable={canDrag}
+        draggable
         onDragStart={e => handleBlockDragStart(e, b)}
         onClick={e => {
           e.stopPropagation()
           if (justResized.current || justDragged.current) return
           if (b.kind === 'gcal' && b.gcalEvent) setEditingGcal(b.gcalEvent)
-          else if (b.linkedId) navigate(`/node/${b.linkedId}`)  // cualquier nodo vinculado
+          else if (b.linkedId) navigate(`/node/${b.linkedId}`)
         }}
         onContextMenu={e => { e.preventDefault(); setCtxMenu({x:e.clientX,y:e.clientY,b}) }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
         <div className="pp-block-time">{fmtHH(b.start)}</div>
         <div className="pp-block-text">{b.text || 'Sin título'}</div>
-        {canDrag && <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b.id)} />}
+        <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />
       </div>
     )
   }

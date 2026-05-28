@@ -436,8 +436,8 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }:
       />
       <div className="gcal-editor-row">
         <span className="gcal-editor-label">Inicio</span>
-        <input type="date" className="nqp-date-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} placeholder="HH:MM" />
+        <input type="date" className="nqp-date-input" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save() }} />
+        <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} placeholder="HH:MM" onKeyDown={e => { if (e.key === 'Enter') save() }} />
         {startTime && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
             onClick={() => setStartTime('')} title="Quitar hora">✕h</button>
@@ -445,8 +445,8 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }:
       </div>
       <div className="gcal-editor-row">
         <span className="gcal-editor-label">Fin</span>
-        <input type="date" className="nqp-date-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} placeholder="HH:MM" />
+        <input type="date" className="nqp-date-input" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save() }} />
+        <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} placeholder="HH:MM" onKeyDown={e => { if (e.key === 'Enter') save() }} />
         {endTime && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
             onClick={() => setEndTime('')} title="Quitar hora">✕h</button>
