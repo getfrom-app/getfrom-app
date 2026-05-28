@@ -235,7 +235,9 @@ export default function CalendarPlanner() {
   const [ctxMenu, setCtxMenu] = useState<{x:number;y:number;block:TimeBlock}|null>(null)
 
   // resize ref
-  const resizeRef = useRef<{id:string}|null>(null)
+  const resizeRef      = useRef<{id:string}|null>(null)
+  const justResized    = useRef(false)   // bloquea onClick tras soltar resize
+  const justDragged    = useRef(false)   // bloquea onClick tras soltar drag de bloque
 
   // ── Calcular colW dinámicamente ──────────────────────────────────────────
   useEffect(() => {
@@ -364,6 +366,14 @@ export default function CalendarPlanner() {
     e.dataTransfer.setData('plannerBlockId', block.id)
     e.dataTransfer.setData('plannerBlockOffsetY', String(Math.round(offsetY)))
     e.dataTransfer.effectAllowed = 'move'
+    // Marcar como drag activo para bloquear onClick al soltar
+    justDragged.current = false
+    const onDragEnd = () => {
+      justDragged.current = true
+      setTimeout(() => { justDragged.current = false }, 200)
+      blockEl.removeEventListener('dragend', onDragEnd)
+    }
+    blockEl.addEventListener('dragend', onDragEnd)
   }
 
   // ── Resize ────────────────────────────────────────────────────────────────
@@ -395,6 +405,9 @@ export default function CalendarPlanner() {
       const h = Math.max(SNAP_PX, snapPx(ev.clientY - rect.top) - topPx(new Date(n.due)))
       store.updateNode(id, { dueEnd: new Date(new Date(n.due).getTime() + (h / PX_PER_MIN) * 60000).toISOString() })
       resizeRef.current = null
+      // Bloquear el click que el navegador dispara tras soltar el mouse
+      justResized.current = true
+      setTimeout(() => { justResized.current = false }, 200)
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -414,6 +427,8 @@ export default function CalendarPlanner() {
         onDragStart={e => handleBlockDragStart(e, block)}
         onClick={e => {
           e.stopPropagation()
+          // Ignorar clicks que son consecuencia de soltar un resize o un drag
+          if (justResized.current || justDragged.current) return
           if (block.kind === 'gcal' && block.gcalEvent) setEditingGcal(block.gcalEvent)
           else if (block.kind === 'task' && block.linkedId) navigate(`/node/${block.linkedId}`)
         }}
