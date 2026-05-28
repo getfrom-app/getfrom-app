@@ -270,7 +270,11 @@ export default function PlannerPanel({ onClose }: Props) {
   // ── Drop en columna ───────────────────────────────────────────────────────
   function handleDrop(e: React.DragEvent, day: Date, colEl: HTMLElement) {
     e.preventDefault()
-    const taskId  = e.dataTransfer.getData('plannerTaskId') || e.dataTransfer.getData('nodeId')
+    // Acepta: drag desde CalendarPlanner (plannerTaskId), drag desde planner column (nodeId),
+    // y drag desde el handle ⋮⋮ del outliner (text/plain con el nodeId)
+    const taskId  = e.dataTransfer.getData('plannerTaskId')
+                 || e.dataTransfer.getData('nodeId')
+                 || e.dataTransfer.getData('text/plain')
     const blockId = e.dataTransfer.getData('plannerBlockId')
     const rect    = colEl.getBoundingClientRect()
 

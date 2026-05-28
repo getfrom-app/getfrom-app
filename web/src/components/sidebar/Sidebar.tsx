@@ -275,6 +275,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   // ── Atajos unificados WF (tree-based, desde nodeStore) ─────────────────────
   // Collapsed state para nodos de atajos con hijos (carpetas)
   const [atajosCollapsed, setAtajosCollapsed] = useState<Record<string, boolean>>({})
+  // Estado de renombrado inline para atajos
+  const [renamingAtajoId, setRenamingAtajoId] = useState<string | null>(null)
+  const [renamingAtajoText, setRenamingAtajoText] = useState('')
 
   function toggleAtajosCollapsed(nodeId: string) {
     setAtajosCollapsed(prev => ({ ...prev, [nodeId]: !prev[nodeId] }))
@@ -329,6 +332,13 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
       }
     }
 
+    function commitRename() {
+      if (renamingAtajoId === nodeId && renamingAtajoText.trim()) {
+        store.updateNode(nodeId, { text: renamingAtajoText.trim() })
+      }
+      setRenamingAtajoId(null)
+    }
+
     return (
       <div key={nodeId}>
         <div
@@ -336,9 +346,34 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           style={{ paddingLeft: `${12 + depth * 14}px` }}
           onClick={handleClick}
           title={scData?.query !== undefined ? `Filtrar: ${scData.query}` : node.text || ''}
+          onContextMenu={e => {
+            e.preventDefault()
+            setRenamingAtajoId(nodeId)
+            setRenamingAtajoText(node.text || '')
+            // Pequeño timeout para que el input aparezca y pueda hacer focus
+            setTimeout(() => {
+              const input = document.querySelector(`[data-rename-atajo="${nodeId}"]`) as HTMLInputElement
+              if (input) { input.select(); input.focus() }
+            }, 20)
+          }}
         >
           <span className="wf-qa-item-icon">{icon}</span>
-          <span className="wf-qa-item-name">{node.text || 'Sin título'}</span>
+          {renamingAtajoId === nodeId ? (
+            <input
+              data-rename-atajo={nodeId}
+              className="wf-qa-item-rename-input"
+              value={renamingAtajoText}
+              onChange={e => setRenamingAtajoText(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); commitRename() }
+                if (e.key === 'Escape') setRenamingAtajoId(null)
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <span className="wf-qa-item-name">{node.text || 'Sin título'}</span>
+          )}
           <button
             className="wf-qa-item-del"
             onClick={e => handleDeleteAtajoNode(nodeId, e)}
