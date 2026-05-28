@@ -10327,7 +10327,12 @@ a:focus-visible {
 
 /* ── Tauri Mac — ajustes para titlebar overlay ──────────────────────────────
    titleBarStyle: Overlay coloca los traffic lights encima del contenido.
-   Añadimos padding-top al sidebar-header para que no queden tapados.     */
+   Los traffic lights ocupan ~72px de ancho y ~28px de alto en la esquina
+   superior izquierda. Ajustes necesarios:
+   1. sidebar-header: padding-top para que el contenido quede bajo los botones
+   2. wf-topbar: altura extra + padding-top para que el breadcrumb no solape
+   3. Toda la topbar es draggable; los botones interactivos se marcan no-drag  */
+
 .tauri-mac .sidebar-header {
   padding-top: 36px;
   min-height: 72px;
@@ -10341,5 +10346,25 @@ a:focus-visible {
 .tauri-mac .sidebar-header button,
 .tauri-mac .sidebar-header a,
 .tauri-mac .sidebar-header [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
+/* WFTopBar en Mac: el área de los traffic lights (≈28px) queda encima
+   del topbar, así que añadimos padding-top para no solapar el breadcrumb.
+   La topbar es draggable en su totalidad; los controles se marcan no-drag. */
+.tauri-mac .wf-topbar {
+  padding-top: 28px;
+  height: 68px; /* 40px original + 28px para traffic lights */
+  -webkit-app-region: drag;
+}
+.tauri-mac .wf-topbar button,
+.tauri-mac .wf-topbar input,
+.tauri-mac .wf-topbar a,
+.tauri-mac .wf-topbar [role="button"],
+.tauri-mac .wf-topbar .wf-topbar-filter,
+.tauri-mac .wf-topbar .wf-topbar-filter-wrap,
+.tauri-mac .wf-topbar .wf-topbar-breadcrumb,
+.tauri-mac .wf-topbar .wf-topbar-nav,
+.tauri-mac .wf-topbar .wf-topbar-menu-wrap {
   -webkit-app-region: no-drag;
 }

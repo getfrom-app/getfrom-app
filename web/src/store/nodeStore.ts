@@ -1164,7 +1164,15 @@ export class NodeStore {
       return
     }
 
-    if (this.isSyncing && !force) return
+    if (this.isSyncing && !force) {
+      // Hay un sync en curso — reprogramar para no perder nodos dirty pendientes.
+      // Sin esto, si el debounce expira durante un sync largo (initialLoad),
+      // los nodos creados localmente quedan sin enviarse al servidor.
+      if (this.dirtyIds.size > 0) {
+        this.scheduleSyncDebounced()
+      }
+      return
+    }
     this.isSyncing = true
     this.notify()
 
