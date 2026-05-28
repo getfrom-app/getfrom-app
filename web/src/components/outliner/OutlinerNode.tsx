@@ -16,7 +16,7 @@ import NodeKanbanView from '../views/NodeKanbanView'
 import NodeCalendarView from '../views/NodeCalendarView'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
-import { aiInlineStream } from '../../api/client'
+import { aiInlineStream, TokensError } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
@@ -1312,7 +1312,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             sel?.addRange(range)
           }
         }
-      }).catch(console.error).finally(() => setIsAiStreaming(false))
+      }).catch((e) => { if (e instanceof TokensError) { window.dispatchEvent(new CustomEvent("from:paywall", { detail: { reason: "ai_limit" } })) } else { console.error(e) } }).finally(() => setIsAiStreaming(false))
       return
     }
 

@@ -105,6 +105,22 @@ export default function MainLayout() {
   const [showAIChat, setShowAIChat] = useState(false)
   const [filterText, setFilterText] = useState('')
 
+  // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
+  useEffect(() => {
+    function onOpenWithText(e: Event) {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text ?? ''
+      setShowAIChat(true)
+      if (text) {
+        // Pequeño delay para que MagicChat monte y registre el listener
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('magic-chat:prefill', { detail: { text } }))
+        }, 80)
+      }
+    }
+    window.addEventListener('magic-chat:open-with-text', onOpenWithText)
+    return () => window.removeEventListener('magic-chat:open-with-text', onOpenWithText)
+  }, [])
+
   // Limpiar / aplicar filtro desde cualquier componente
   useEffect(() => {
     function handleClearFilter() { setFilterText('') }
@@ -412,7 +428,10 @@ export default function MainLayout() {
     <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
 
       {/* ── Traffic lights row (solo Mac) ── */}
-      <div className="traffic-bar" />
+      <div
+        className="traffic-bar"
+        style={{ WebkitAppRegion: 'drag', userSelect: 'none' } as React.CSSProperties}
+      />
 
       {/* ── Cabecera unificada ── */}
       <div className="app-header">

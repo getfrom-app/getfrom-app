@@ -1,5 +1,11 @@
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useUserStore } from '../../store/userStore'
+
+// URLs de LemonSqueezy
+const LS_SUBSCRIPTION = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f'
+const LS_TOPUP        = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f' // mismo plan por ahora
+const LS_BILLING      = 'https://app.lemonsqueezy.com/billing'
 
 interface Props {
   reason: 'node_limit' | 'ai_limit'
@@ -8,32 +14,136 @@ interface Props {
 
 export default function PaywallModal({ reason, onClose }: Props) {
   const navigate = useNavigate()
+  const us = useUserStore()
+  const isPremium = us.isPremium
 
-  const title = reason === 'node_limit'
-    ? 'Has alcanzado el límite del plan gratuito'
-    : 'Sin tokens de IA disponibles'
+  // ── Contenido según el escenario ────────────────────────────────────────
+  let icon     = '✨'
+  let title    = ''
+  let subtitle = ''
+  let primaryLabel = ''
+  let primaryAction = () => {}
+  let secondaryLabel = 'Ahora no'
 
-  const description = reason === 'node_limit'
-    ? 'Has alcanzado los 1.000 nodos del plan gratuito. Actualiza a Pro para nodos ilimitados.'
-    : 'No tienes tokens de IA disponibles. Actualiza a Pro para usar la IA sin límites.'
+  if (reason === 'node_limit') {
+    // Límite de nodos — siempre free
+    icon          = '📦'
+    title         = 'Has alcanzado el límite del plan gratuito'
+    subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 nodos. Suscríbete para tener nodos ilimitados y acceso completo a la IA.'
+    primaryLabel  = 'Ver planes'
+    primaryAction = () => { onClose(); navigate('/pricing') }
 
-  function handleViewPlans() {
-    onClose()
-    navigate('/pricing')
+  } else if (isPremium) {
+    // Suscriptor sin tokens
+    icon          = '⚡'
+    title         = 'Te has quedado sin tokens de IA'
+    subtitle      = 'Has consumido todos tus tokens del mes. Puedes comprar tokens adicionales o esperar a la renovación de tu suscripción.'
+    primaryLabel  = 'Comprar más tokens'
+    primaryAction = () => { window.open(LS_TOPUP, '_blank'); onClose() }
+    secondaryLabel = 'Gestionar suscripción'
+
+  } else {
+    // Free sin IA
+    icon          = '✨'
+    title         = 'La IA de From requiere suscripción'
+    subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que From organice todo por ti.'
+    primaryLabel  = 'Suscribirme ahora'
+    primaryAction = () => { window.open(LS_SUBSCRIPTION, '_blank'); onClose() }
   }
 
   return createPortal(
-    <div className="paywall-overlay" onClick={onClose}>
-      <div className="paywall-card" onClick={e => e.stopPropagation()}>
-        <div className="paywall-icon">✨</div>
-        <h2 className="paywall-title">Límite del plan gratuito</h2>
-        <p className="paywall-description">{description}</p>
-        <div className="paywall-actions">
-          <button className="btn-primary paywall-btn-primary" onClick={handleViewPlans}>
-            Ver planes
+    <div
+      className="paywall-overlay"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.40)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        zIndex: 3000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <div
+        className="paywall-card"
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--bg-primary)',
+          borderRadius: 16,
+          boxShadow: '0 24px 60px rgba(0,0,0,0.35), 0 0 0 1px var(--border)',
+          padding: '32px 28px 24px',
+          maxWidth: 420,
+          width: '100%',
+          display: 'flex', flexDirection: 'column', gap: 16,
+          textAlign: 'center',
+        }}
+      >
+        {/* Icono */}
+        <div style={{ fontSize: 40, lineHeight: 1 }}>{icon}</div>
+
+        {/* Título */}
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+            {title}
+          </h2>
+          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+            {subtitle}
+          </p>
+        </div>
+
+        {/* Acciones */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          <button
+            onClick={primaryAction}
+            style={{
+              background: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 10,
+              padding: '12px 20px',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
+          >
+            {primaryLabel}
           </button>
-          <button className="paywall-btn-ghost" onClick={onClose}>
-            Tal vez más tarde
+
+          {/* Acción secundaria — solo en premium sin tokens */}
+          {isPremium && reason === 'ai_limit' && (
+            <button
+              onClick={() => { window.open(LS_BILLING, '_blank'); onClose() }}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                padding: '10px 20px',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              {secondaryLabel}
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              fontSize: 13,
+              cursor: 'pointer',
+              padding: '6px',
+            }}
+          >
+            Ahora no
           </button>
         </div>
       </div>

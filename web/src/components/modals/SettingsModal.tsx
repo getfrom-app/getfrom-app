@@ -26,7 +26,7 @@ function saveTemplates(ts: CustomTemplate[]) {
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
-type Tab = 'cuenta' | 'apariencia' | 'ia' | 'perfil-ia' | 'magic' | 'estadisticas'
+type Tab = 'cuenta' | 'apariencia' | 'ia' | 'magic' | 'estadisticas'
   | 'atajos' | 'plantillas' | 'google' | 'mcp'
   | 'tags' | 'estados' | 'voz' | 'agentes' | 'timeline' | 'prompts'
   | 'backups' | 'exportar' | 'importar'
@@ -50,7 +50,6 @@ const SECTIONS: { title?: string; items: Section[] }[] = [
     title: 'IA',
     items: [
       { id: 'ia', label: 'Inteligencia Artificial', icon: '✦' },
-      { id: 'perfil-ia', label: 'Perfil IA', icon: '🧠' },
       { id: 'magic', label: 'Magic', icon: '🪄' },
     ],
   },
@@ -1040,88 +1039,6 @@ interface Props {
 
 // ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
 
-// Límite efectivo que la IA lee íntegramente. Más allá → server trunca.
-// Mantener sincronizado con server/src/routes/ai.ts (PERFIL_CHAR_LIMIT).
-const PERFIL_IA_CHAR_LIMIT = 20_000
-
-function PerfilIAPane() {
-  // Paridad con Mac: el perfil vive en un nodo sincronizado (no localStorage).
-  // Se identifica por extraData._perfilIA = "1" y el contenido está en
-  // node.body. Cualquier cambio se propaga via sync a Mac y al servidor.
-  useStore() // re-render on store changes
-  const node = store.perfilIANode()
-  const [profile, setProfile] = useState<string>(node?.body ?? '')
-  const [saved, setSaved] = useState(false)
-  const [savingError, setSavingError] = useState<string | null>(null)
-
-  // Si el nodo aparece por primera vez (creado en otro dispositivo), hidratar.
-  useEffect(() => {
-    if (node && !profile) setProfile(node.body ?? '')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id])
-
-  async function save() {
-    setSavingError(null)
-    try {
-      const n = node ?? (await store.getOrCreatePerfilIA())
-      store.updateNode(n.id, { body: profile.trim() })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 1500)
-    } catch (e) {
-      setSavingError(e instanceof Error ? e.message : 'Error guardando perfil')
-    }
-  }
-
-  const charCount = profile.length
-  const over = charCount > PERFIL_IA_CHAR_LIMIT
-  const nearLimit = !over && charCount > PERFIL_IA_CHAR_LIMIT * 0.85
-  const counterColor = over ? '#c92a2a' : nearLimit ? '#d97706' : 'var(--text-secondary)'
-  const counterWeight = over ? 600 : 400
-
-  return (
-    <div className="st-pane">
-      <SectionTitle>Perfil para la IA</SectionTitle>
-      <Row label="Contexto sobre ti" hint="Información que la IA usa como contexto en todas tus interacciones. Se sincroniza con tus otros dispositivos (Mac/iOS). Ej: profesión, intereses, estilo de comunicación preferido." />
-      <textarea
-        value={profile}
-        onChange={e => setProfile(e.target.value)}
-        rows={12}
-        className="st-input"
-        placeholder="Soy fotógrafo freelance especializado en bodas. Me gusta el tono directo y profesional. Vivo en Madrid…"
-        style={{
-          width: '100%',
-          fontFamily: 'inherit',
-          resize: 'vertical',
-          borderColor: over ? '#c92a2a' : undefined,
-          outlineColor: over ? '#c92a2a' : undefined,
-        }}
-      />
-      {/* Contador + advertencia visual */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: counterColor, fontWeight: counterWeight }}>
-          {over ? '⚠ ' : nearLimit ? '⚠ ' : ''}
-          {charCount.toLocaleString()} / {PERFIL_IA_CHAR_LIMIT.toLocaleString()} caracteres
-        </span>
-        {over && (
-          <span style={{ fontSize: 11, color: '#c92a2a', fontWeight: 600 }}>
-            La IA solo leerá los primeros {PERFIL_IA_CHAR_LIMIT.toLocaleString()}. Resume el perfil.
-          </span>
-        )}
-        {nearLimit && (
-          <span style={{ fontSize: 11, color: '#d97706' }}>
-            Cerca del límite — considera resumir.
-          </span>
-        )}
-      </div>
-      <div className="st-actions" style={{ marginTop: 10 }}>
-        <button className="btn-primary" onClick={save}>{saved ? '✓ Guardado' : 'Guardar'}</button>
-        {node && <span style={{ marginLeft: 12, fontSize: 11, opacity: 0.55 }}>Sincronizado con Mac y iOS.</span>}
-      </div>
-      {savingError && <div style={{ color: '#c33', fontSize: 12, marginTop: 6 }}>{savingError}</div>}
-    </div>
-  )
-}
-
 function MagicPane() {
   const [autoTitles, setAutoTitles] = useState(() => localStorage.getItem('from_magic_autoTitles') === '1')
   const [autoTags, setAutoTags]     = useState(() => localStorage.getItem('from_magic_autoTags') === '1')
@@ -1369,7 +1286,6 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       case 'cuenta': return <CuentaPane />
       case 'apariencia': return <AparienciaPane />
       case 'ia': return <IAPane />
-      case 'perfil-ia': return <PerfilIAPane />
       case 'magic': return <MagicPane />
       case 'estadisticas': return <EstadisticasPane />
       case 'atajos': return <AtajosPane />

@@ -22,6 +22,7 @@ import { createNodeShortcut } from '../../utils/atajosHelper'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
+import { learningsStore, buildLearningText } from '../../store/learningsStore'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -75,6 +76,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     : (meta.color ?? null)      // color del nodo genérico
 
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showTeach, setShowTeach] = useState(false)
+  const [teachFreeText, setTeachFreeText] = useState('')
 
   const COLOR_SWATCHES = [
     '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
@@ -517,6 +520,155 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </>
         )
       })()}
+
+      {/* ── Enseñar a Magic ─────────────────────────────────────────────── */}
+      <div className="context-menu-separator" />
+      <div className="context-menu-section">
+        <button
+          className={`context-menu-item${showTeach ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowTeach(v => !v) }}
+          title="Corrige la interpretación de Magic para que aprenda"
+        >
+          <span className="context-menu-icon">✦</span>
+          Enseñar a Magic
+          <span className="context-menu-shortcut">{showTeach ? '▾' : '›'}</span>
+        </button>
+
+        {showTeach && (
+          <div className="context-menu-submenu-inline">
+            {/* Opciones según el estado del nodo */}
+            {isTask && (
+              <button className="context-menu-item context-menu-item--sub"
+                onClick={run(() => {
+                  const text = buildLearningText('not_task', node)
+                  const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  }}))
+                })}>
+                <span className="context-menu-icon">✕</span> Esto no es una tarea
+              </button>
+            )}
+            {isEvent && (
+              <button className="context-menu-item context-menu-item--sub"
+                onClick={run(() => {
+                  const text = buildLearningText('not_event', node)
+                  const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  }}))
+                })}>
+                <span className="context-menu-icon">✕</span> Esto no es un evento
+              </button>
+            )}
+            {!isTask && (
+              <button className="context-menu-item context-menu-item--sub"
+                onClick={run(() => {
+                  const text = buildLearningText('should_be_task', node)
+                  const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  }}))
+                })}>
+                <span className="context-menu-icon">○</span> Debería ser una tarea
+              </button>
+            )}
+            {!isEvent && (
+              <button className="context-menu-item context-menu-item--sub"
+                onClick={run(() => {
+                  const text = buildLearningText('should_be_event', node)
+                  const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  }}))
+                })}>
+                <span className="context-menu-icon">📅</span> Debería ser un evento
+              </button>
+            )}
+            {(node.types || []).length > 0 && (
+              <button className="context-menu-item context-menu-item--sub"
+                onClick={run(() => {
+                  const text = buildLearningText('wrong_context', node)
+                  const added = learningsStore.add({ text, category: 'context', nodeText: node.text || undefined, source: 'manual' })
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  }}))
+                })}>
+                <span className="context-menu-icon">⚡</span> El contexto no es correcto
+              </button>
+            )}
+
+            <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
+
+            {/* Refuerzo positivo */}
+            <button className="context-menu-item context-menu-item--sub"
+              onClick={run(() => {
+                const text = buildLearningText('correct', node)
+                const added = learningsStore.add({ text, category: 'positive', nodeText: node.text || undefined, source: 'manual' })
+                window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                  message: added ? '✦ Magic lo recordará' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                }}))
+              })}>
+              <span className="context-menu-icon">✓</span> Esta interpretación es correcta
+            </button>
+
+            {/* Corrección libre */}
+            <div style={{ padding: '4px 8px 6px' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>Corrección libre</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <input
+                  autoFocus
+                  type="text"
+                  value={teachFreeText}
+                  onChange={e => setTeachFreeText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && teachFreeText.trim()) {
+                      const added = learningsStore.add({
+                        text: teachFreeText.trim(),
+                        category: 'behavior',
+                        nodeText: node.text || undefined,
+                        source: 'manual',
+                      })
+                      window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                        message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                      }}))
+                      setTeachFreeText('')
+                      onClose()
+                    }
+                  }}
+                  placeholder="Magic, recuerda que..."
+                  style={{
+                    flex: 1, fontSize: 11, padding: '4px 6px',
+                    background: 'var(--bg-primary)', border: '1px solid var(--border)',
+                    borderRadius: 5, color: 'var(--text-primary)', outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (!teachFreeText.trim()) return
+                    const added = learningsStore.add({
+                      text: teachFreeText.trim(),
+                      category: 'behavior',
+                      nodeText: node.text || undefined,
+                      source: 'manual',
+                    })
+                    window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+                      message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    }}))
+                    setTeachFreeText('')
+                    onClose()
+                  }}
+                  style={{
+                    background: 'var(--accent)', color: 'white', border: 'none',
+                    borderRadius: 5, padding: '4px 8px', fontSize: 11, cursor: 'pointer',
+                    opacity: teachFreeText.trim() ? 1 : 0.4,
+                  }}
+                >✦</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Eliminar — siempre disponible, va a la papelera */}
       <div className="context-menu-separator" />

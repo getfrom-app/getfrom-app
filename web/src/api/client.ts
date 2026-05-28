@@ -2,6 +2,25 @@ const BASE = import.meta.env.DEV
   ? '/api'
   : 'https://from-server-production.up.railway.app'
 
+// ── Error de tokens agotados — se lanza en cualquier respuesta 402 de IA ──
+export class TokensError extends Error {
+  constructor(message = 'INSUFFICIENT_TOKENS') {
+    super(message)
+    this.name = 'TokensError'
+  }
+}
+
+/** Verifica una respuesta de IA: si es 402 lanza TokensError, si falla lanza Error genérico */
+export async function assertAIResponse(res: Response): Promise<void> {
+  if (res.ok) return
+  if (res.status === 402) {
+    // Intentar leer el body para más contexto
+    try { await res.json() } catch { /* ignore */ }
+    throw new TokensError()
+  }
+  throw new Error(`HTTP ${res.status}`)
+}
+
 let _accessToken: string | null = localStorage.getItem('from_access_token')
 let _refreshToken: string | null = localStorage.getItem('from_refresh_token')
 
@@ -249,7 +268,7 @@ export async function aiInlineStream(
       tagDefinitions: opts?.tagDefinitions,
     }),
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  await assertAIResponse(res)
 
   const reader = res.body?.getReader()
   if (!reader) throw new Error('No stream')
@@ -312,7 +331,7 @@ export async function aiChatStream(
     },
     body: JSON.stringify(payload),
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  await assertAIResponse(res)
   const reader = res.body?.getReader()
   if (!reader) throw new Error('No stream')
   let full = ''
@@ -335,6 +354,23 @@ export async function aiChatStream(
     }
   }
   return full
+}
+
+// ── Helper global: despacha 'from:paywall' en cualquier TokensError ──────
+// Envuelve cualquier llamada IA; si lanza TokensError emite el evento y
+// retorna null para que el caller no tenga que saber nada del error.
+export async function withTokenGuard<T>(
+  fn: () => Promise<T>
+): Promise<T | null> {
+  try {
+    return await fn()
+  } catch (e) {
+    if (e instanceof TokensError) {
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } }))
+      return null
+    }
+    throw e  // otros errores siguen propagándose
+  }
 }
 
 // ── Files (R2) ───────────────────────────────────────────────────────────

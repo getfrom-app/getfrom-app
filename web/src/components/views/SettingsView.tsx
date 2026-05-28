@@ -15,13 +15,14 @@ import { useTheme, type AccentColor } from '../../hooks/useTheme'
 import { useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
+import { useLearningsStore } from '../../store/learningsStore'
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
 type Tab =
   | 'cuenta' | 'google'
   | 'apariencia' | 'estadisticas'
-  | 'ia' | 'perfil-ia' | 'magic'
+  | 'ia' | 'magic'
   | 'atajos' | 'plantillas'
   | 'exportar' | 'importar' | 'backups'
   | 'claude'
@@ -48,7 +49,6 @@ const NAV: NavSection[] = [
     title: 'IA',
     items: [
       { id: 'ia', label: 'Inteligencia Artificial', icon: '✦' },
-      { id: 'perfil-ia', label: 'Perfil IA', icon: '🧠' },
       { id: 'magic', label: 'Magic', icon: '💫' },
     ],
   },
@@ -82,7 +82,6 @@ const SUBTITLES: Partial<Record<Tab, string>> = {
   apariencia: 'Tema, tipografía, interlineado y color de acento.',
   estadisticas: 'Resumen de notas, tareas y actividad en tu vault.',
   ia: 'Proveedor de IA, tokens e integración con Claude.',
-  'perfil-ia': 'Contexto e instrucciones personalizadas para la IA.',
   magic: 'Sugerencias automáticas y acciones inteligentes.',
   atajos: 'Atajos de teclado y expansión de texto.',
   plantillas: 'Plantillas personalizadas para crear notas rápido.',
@@ -90,58 +89,6 @@ const SUBTITLES: Partial<Record<Tab, string>> = {
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',
   claude: 'Conecta Claude Desktop con tu vault mediante MCP.',
-}
-
-// ── Extra panes ────────────────────────────────────────────────────────────────
-
-const PERFIL_IA_KEY = 'from_ai_profile'
-
-function PerfilIAPane() {
-  const [text, setText] = useState<string>(() => localStorage.getItem(PERFIL_IA_KEY) || '')
-  const [savedAt, setSavedAt] = useState<number | null>(null)
-
-  function handleSave() {
-    localStorage.setItem(PERFIL_IA_KEY, text)
-    setSavedAt(Date.now())
-    setTimeout(() => setSavedAt(null), 2500)
-  }
-
-  function handleClear() {
-    if (!confirm('¿Borrar todo el perfil IA?')) return
-    setText('')
-    localStorage.removeItem(PERFIL_IA_KEY)
-  }
-
-  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
-
-  return (
-    <div className="st-pane">
-      <div className="st-section-title">Perfil IA</div>
-      <div className="st-row" style={{ display: 'block' }}>
-        <div className="st-row-info" style={{ marginBottom: 10 }}>
-          <div className="st-row-label">Contexto para la IA</div>
-          <div className="st-row-hint">
-            Escribe quién eres, en qué trabajas y cómo prefieres que la IA te responda. Este contexto
-            se incluirá automáticamente en todas las conversaciones con la IA.
-          </div>
-        </div>
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Ej: Me llamo Alberto, soy presentador de radio y emprendedor. Trabajo en La Isla del Trading (academia de trading). Prefiero respuestas directas, sin rodeos, en español."
-          rows={12}
-          className="st-input"
-          style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
-        />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <button className="btn-primary" onClick={handleSave}>Guardar</button>
-          {text && <button className="btn-secondary btn-danger-outline" onClick={handleClear}>Borrar</button>}
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{wordCount} palabras</span>
-          {savedAt && <span style={{ fontSize: 12, color: '#22c55e' }}>✓ Guardado</span>}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ── Magic toggles ────────────────────────────────────────────────────────────
@@ -250,7 +197,132 @@ function MagicPane() {
           </div>
         </div>
       ))}
+
+      <MagicLearningsSection />
     </div>
+  )
+}
+
+function MagicLearningsSection() {
+  const ls = useLearningsStore()
+  const items = ls.getAll()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
+
+  const categoryLabel: Record<string, string> = {
+    type:     'Tipo',
+    context:  'Contexto',
+    behavior: 'Comportamiento',
+    positive: 'Refuerzo',
+  }
+  const categoryColor: Record<string, string> = {
+    type:     '#3b82f6',
+    context:  '#8b5cf6',
+    behavior: '#f59e0b',
+    positive: '#10b981',
+  }
+
+  return (
+    <>
+      <div className="st-section-title" style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>Lo que Magic ha aprendido de ti</span>
+        {items.length > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', borderRadius: 10, padding: '1px 6px' }}>
+            {items.length}
+          </span>
+        )}
+        {items.length > 0 && (
+          <button
+            style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onClick={() => { if (confirm('¿Borrar todos los aprendizajes?')) ls.clear() }}
+          >
+            Borrar todo
+          </button>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ padding: '16px 0', fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 22, marginBottom: 8 }}>✦</div>
+          Magic todavía no ha aprendido nada de ti.<br />
+          Usa <strong>botón derecho → Enseñar a Magic</strong> en cualquier nodo<br />
+          para corregir interpretaciones y ayudarle a entenderte mejor.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+          {items.map(item => (
+            <div key={item.id} style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '8px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                {/* Categoría badge */}
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+                  color: categoryColor[item.category] ?? 'var(--text-tertiary)',
+                  background: `${categoryColor[item.category] ?? '#999'}18`,
+                  borderRadius: 4, padding: '1px 5px', flexShrink: 0, marginTop: 1,
+                }}>
+                  {categoryLabel[item.category] ?? item.category}
+                </span>
+
+                {/* Texto editable */}
+                {editingId === item.id ? (
+                  <input
+                    autoFocus
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { ls.update(item.id, editText); setEditingId(null) }
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    style={{
+                      flex: 1, fontSize: 12, background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-focus)', borderRadius: 4,
+                      padding: '2px 6px', color: 'var(--text-primary)', outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                    {item.text}
+                  </span>
+                )}
+
+                {/* Acciones */}
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button
+                    onClick={() => {
+                      if (editingId === item.id) { ls.update(item.id, editText); setEditingId(null) }
+                      else { setEditingId(item.id); setEditText(item.text) }
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '1px 4px' }}
+                    title="Editar"
+                  >✎</button>
+                  <button
+                    onClick={() => ls.remove(item.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '1px 4px' }}
+                    title="Eliminar"
+                  >✕</button>
+                </div>
+              </div>
+
+              {/* Nodo origen y fecha */}
+              <div style={{ display: 'flex', gap: 8, fontSize: 10, color: 'var(--text-tertiary)' }}>
+                {item.nodeText && <span>en: "{item.nodeText.slice(0, 40)}"</span>}
+                <span style={{ marginLeft: 'auto' }}>
+                  {new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 
@@ -563,7 +635,6 @@ export default function SettingsView() {
       case 'apariencia':  return <AparienciaViewPane />
       case 'estadisticas': return <EstadísticasPane />
       case 'ia':          return <IAPane />
-      case 'perfil-ia':   return <PerfilIAPane />
       case 'magic':       return <MagicPane />
       case 'atajos':      return <AtajosPane />
       case 'plantillas':  return <PlantillasPane />

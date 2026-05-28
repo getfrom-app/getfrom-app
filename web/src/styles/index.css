@@ -977,6 +977,46 @@ a { color: inherit; text-decoration: none; }
 .rec-bar--active {
   background: rgba(239,68,68,0.06);
 }
+.rec-bar--idle {
+  gap: 6px;
+}
+.rec-bar--warning {
+  background: rgba(217,119,6,0.06);
+  gap: 8px;
+}
+
+/* Botones de acción IA tras grabación */
+.rec-bar-ai-btn {
+  flex: 1;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rec-bar-ai-btn:hover { background: var(--accent-hover); }
+.rec-bar-ai-btn--secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+}
+.rec-bar-ai-btn--secondary:hover { background: var(--bg-hover); }
+
+/* Punto animado durante el procesamiento IA */
+.rec-bar-processing-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: rec-processing-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rec-processing-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
 .rec-bar-sources {
   display: flex;
   gap: 3px;
@@ -10614,8 +10654,10 @@ a:focus-visible {
   height: 28px;
   flex-shrink: 0;
   -webkit-app-region: drag;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
   background: var(--bg-secondary);
-  /* Borde inferior suave para separar visualmente de la cabecera */
   border-bottom: 1px solid var(--border);
 }
 
@@ -10644,8 +10686,6 @@ a:focus-visible {
 
 .magic-chat-modal {
   width: 100%;
-  max-width: 640px;
-  max-height: calc(100vh - 80px);
   background: var(--bg-primary);
   border-radius: 16px;
   box-shadow: 0 32px 80px rgba(0,0,0,0.40), 0 0 0 1px var(--border);
@@ -10654,9 +10694,24 @@ a:focus-visible {
   overflow: hidden;
 }
 
-/* Modo compacto: sin historial — más pequeño y centrado en el input */
+/* Compacto: solo input, sin historial */
 .magic-chat-modal--compact {
-  max-width: 580px;
+  max-width: 520px;
+  /* altura determinada por el contenido */
+}
+
+/* Expandido: tamaño fijo desde el primer mensaje — nunca se readapta */
+.magic-chat-modal--expanded {
+  max-width: 640px;
+  height: 540px;
+  max-height: calc(100vh - 80px);
+  /* Transición suave solo al pasar de compacto a expandido */
+  animation: magic-expand 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes magic-expand {
+  from { opacity: 0.7; transform: scale(0.97); }
+  to   { opacity: 1;   transform: scale(1); }
 }
 
 /* ── Header ── */

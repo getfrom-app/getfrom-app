@@ -46,15 +46,23 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
   useEffect(() => { inputRef.current = input }, [input])
   useEffect(() => { isRecordingRef.current = isRecording }, [isRecording])
 
+  // hasExpanded: se activa con el primer mensaje y nunca se revierte
+  const [hasExpanded, setHasExpanded] = useState(() => chat.messages.length > 0)
+  useEffect(() => {
+    if (chat.messages.length > 0) setHasExpanded(true)
+  }, [chat.messages.length])
+
   // Focus al abrir
   useEffect(() => {
     setTimeout(() => taRef.current?.focus(), 150)
   }, [])
 
-  // Auto-scroll en mensajes nuevos
+  // Auto-scroll solo dentro del panel de mensajes (no redimensiona la ventana)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chat.messages.length, chat.messages[chat.messages.length - 1]?.content])
+    if (hasExpanded) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chat.messages.length, chat.messages[chat.messages.length - 1]?.content, hasExpanded])
 
   // Waveform draw loop
   function drawWaveform() {
@@ -137,14 +145,24 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
     // Eventos emitidos por MainLayout cuando el usuario mantiene / suelta R
     function onRecordStart() { if (!isRecordingRef.current) startRecording() }
     function onRecordStop()  { if (isRecordingRef.current) stopRecording(true) }
+    // Texto prellenado (ej. desde Grabadora → "Resumir con IA")
+    function onPrefill(e: Event) {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text ?? ''
+      if (text) {
+        setInput(text)
+        setTimeout(() => taRef.current?.focus(), 50)
+      }
+    }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('magic-chat:record-start', onRecordStart)
     window.addEventListener('magic-chat:record-stop',  onRecordStop)
+    window.addEventListener('magic-chat:prefill',      onPrefill)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('magic-chat:record-start', onRecordStart)
       window.removeEventListener('magic-chat:record-stop',  onRecordStop)
+      window.removeEventListener('magic-chat:prefill',      onPrefill)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose])
@@ -254,11 +272,14 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
   }
 
   const isEmpty = chat.messages.length === 0 && !chat.pendingActions
+  // La ventana es compacta hasta que se envía el primer mensaje.
+  // hasExpanded jamás vuelve a false → tamaño fijo, sin redimensionado por mensaje.
+  const isCompact = !hasExpanded && !isRecording
 
   return (
     <div className="magic-chat-backdrop" onClick={onClose}>
       <div
-        className={`magic-chat-modal ${isEmpty && !isRecording ? 'magic-chat-modal--compact' : ''}`}
+        className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* ── Header ── */}
@@ -266,8 +287,8 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
           <span className="magic-chat-logo">✨</span>
           <span className="magic-chat-title">From AI</span>
           <div style={{ flex: 1 }} />
-          {!isEmpty && (
-            <button className="magic-chat-icon-btn" onClick={() => chat.startNewSession()} title="Nueva conversación">
+          {hasExpanded && (
+            <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title="Nueva conversación">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M8 3v10M3 8h10" />
               </svg>
@@ -290,7 +311,7 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
         </div>
 
         {/* ── Estado vacío ── */}
-        {isEmpty && !isRecording && (
+        {isCompact && (
           <div className="magic-chat-empty">
             <div className="magic-chat-empty-glyph">✨</div>
             <div className="magic-chat-empty-title">¿En qué te ayudo?</div>
@@ -310,7 +331,7 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
         )}
 
         {/* ── Mensajes ── */}
-        {!isEmpty && (
+        {hasExpanded && (
           <div className="magic-chat-messages">
             {chat.messages.map(msg => (
               <MessageBubble key={msg.id} msg={msg} onOpenNode={id => { navigate(`/node/${id}`); onClose() }} />
@@ -356,12 +377,12 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
             placeholder={
               isRecording
                 ? 'Transcribiendo…'
-                : isEmpty
+                : isCompact
                   ? 'Escribe o mantén R para hablar…'
                   : 'Continúa la conversación…'
             }
             className="magic-chat-textarea"
-            rows={isEmpty && !isRecording ? 2 : 3}
+            rows={isCompact ? 2 : 3}
           />
           <div className="magic-chat-actions">
             {/* Micrófono: clic o mousedown para grabar */}

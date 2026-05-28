@@ -20,7 +20,7 @@ import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
 import { getCalendarEvents, createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
-import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
+import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
@@ -408,7 +408,7 @@ export default function NodeView() {
           resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
         )
       } catch (err) {
-        if (err instanceof Error && err.message !== 'AI_LIMIT') {
+        if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
           console.error('AI inline error', err)
         }
       } finally {
@@ -979,7 +979,7 @@ export default function NodeView() {
         resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
       )
     } catch (err) {
-      if (err instanceof Error && err.message !== 'AI_LIMIT') {
+      if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
         console.error('AI inline error', err)
       }
     } finally {

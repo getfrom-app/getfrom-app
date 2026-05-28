@@ -6,9 +6,10 @@
 
 import { store, type NodeStore } from './nodeStore'
 import type { Node } from '../types'
-import { aiChatStream, type ChatActionResult } from '../api/client'
+import { aiChatStream, type ChatActionResult, TokensError } from '../api/client'
 import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
+import { learningsStore } from './learningsStore'
 
 export interface ChatMessage {
   id: string
@@ -175,7 +176,7 @@ class AIChatStore {
         }
         store.updateNode(assistantMsgId, { text: cleanText || assistantText })
       } catch (e) {
-        this.lastError = e instanceof Error ? e.message : String(e)
+        this._handleAIError(e)
         this.isStreaming = false
         this.notify()
         return
@@ -275,7 +276,7 @@ class AIChatStore {
       )
       store.updateNode(summaryMsgId, { text: summaryText })
     } catch (e) {
-      this.lastError = e instanceof Error ? e.message : String(e)
+      this._handleAIError(e)
     }
 
     this.isStreaming = false
@@ -284,6 +285,17 @@ class AIChatStore {
   }
 
   /** El usuario canceló las acciones pendientes. */
+  /** Maneja errores de llamadas IA: TokensError → paywall, resto → lastError */
+  private _handleAIError(e: unknown) {
+    if (e instanceof TokensError) {
+      // Disparar el evento de paywall (MainLayout lo captura y muestra el modal)
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } }))
+      this.lastError = null  // no mostrar el error técnico en el chat
+    } else {
+      this.lastError = e instanceof Error ? e.message : String(e)
+    }
+  }
+
   cancelActions() {
     this.pendingActions = null
     this._pendingContext = null
@@ -530,9 +542,15 @@ class AIChatStore {
       }
     }
 
+    // ── Aprendizajes del usuario (sistema "Enseñar a Magic") ───────────────
+    const learningsBlock = learningsStore.buildPromptBlock()
+
+    // Combinar con el perfil de usuario
+    const combinedProfile = [profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+
     return {
       messages: compactedMessages,
-      userProfile: profile || undefined,
+      userProfile: combinedProfile,
       tagDefinitions: Object.keys(enrichedTagDefs).length > 0 ? enrichedTagDefs : undefined,
       recentNodes: recent.length > 0 ? recent : undefined,
       currentView,
