@@ -700,13 +700,7 @@ a { color: inherit; text-decoration: none; }
 .sidebar-resizing .sidebar { transition: none !important; }
 
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  height: 40px;          /* misma altura que .wf-topbar para alinearse visualmente */
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  display: none;  /* La cabecera del sidebar se mueve dentro del contenido del sidebar */
 }
 
 .sidebar-toggle {
@@ -9231,11 +9225,12 @@ a:focus-visible {
   gap: 4px;
   padding: 0 8px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);  /* blanco en light, ligeramente distinto del sidebar */
+  background: var(--bg-secondary);
   flex-shrink: 0;
   position: relative;
   z-index: 50;
   user-select: none;
+  -webkit-app-region: drag;  /* arrastrable para mover la ventana en Mac */
 }
 
 .wf-topbar-nav {
@@ -10512,4 +10507,28 @@ a:focus-visible {
   /* segunda fila, ancho completo */
   flex-basis: 100%;
   order: 99;
+}
+
+/* ── Topbar draggable / no-drag en Mac ───────────────────────────────────── */
+.wf-topbar button,
+.wf-topbar input,
+.wf-topbar a,
+.wf-topbar [role="button"],
+.wf-topbar select,
+.wf-topbar .wf-filter-container {
+  -webkit-app-region: no-drag;
+}
+
+/* ── Sidebar: cabecera interna más abajo (dentro del scroll, no al nivel del topbar) */
+.sidebar-brand-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+/* Tauri Mac: dar espacio a los traffic lights en la parte superior del sidebar */
+.tauri-mac .sidebar {
+  padding-top: 28px;
 }

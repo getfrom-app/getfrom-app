@@ -711,38 +711,31 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
 
   return (
     <aside className={`sidebar ${open ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
-        <button className="sidebar-toggle" onClick={onToggle} title="Toggle sidebar">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-            <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-            <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-          </svg>
-        </button>
-        {open && (
-          <button
-            className="sidebar-brand"
-            onClick={() => navigate('/')}
-            title="Ir al diario de hoy"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
-              <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
-            </svg>
-            <div className="sidebar-brand-text">
-              <span className="sidebar-brand-name">From</span>
-              {s.workspaces[0]?.name && s.workspaces[0].name !== 'Mi espacio' && (
-                <span className="sidebar-workspace-name">{s.workspaces[0].name}</span>
-              )}
-            </div>
-          </button>
-        )}
-        {open && isSyncing && <div className="sync-dot" title="Sincronizando..." />}
-      </div>
-
       {open ? (
         <>
+          {/* Cabecera del sidebar — dentro del contenido, no al nivel del topbar */}
+          <div className="sidebar-brand-section">
+            <button className="sidebar-toggle" onClick={onToggle} title="Colapsar sidebar">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+                <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+                <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              title="Inicio"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
+                <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
+              </svg>
+              <span className="sidebar-brand-name">From</span>
+            </button>
+            {isSyncing && <div className="sync-dot" title="Sincronizando..." />}
+          </div>
+
           {/* Atajos unificados WF */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {renderShortcuts()}
@@ -754,8 +747,17 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           {/* Footer global — movido al nivel raíz de MainLayout */}
         </>
       ) : (
-        /* Collapsed sidebar: minimal icons */
+        /* Collapsed sidebar: toggle + minimal icons */
         <>
+          {/* Toggle visible en sidebar colapsado */}
+          <button className="sidebar-toggle" onClick={onToggle} title="Expandir sidebar"
+            style={{ margin: '8px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
           <nav className="sidebar-nav">
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
