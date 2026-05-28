@@ -4,6 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
 import WebRecordingBar from './WebRecordingBar'
+import StatusBar from '../layout/StatusBar'
 import {
   getShortcuts, saveShortcuts, removeShortcut,
   type WFShortcut,
@@ -54,6 +55,7 @@ interface Props {
   onToggle: () => void
   onLogout: () => void
   isSyncing: boolean
+  showSaved?: boolean
   isGuest?: boolean
   onOpenSettings?: () => void
 }
@@ -87,7 +89,7 @@ function savePanels(panels: Panel[]) {
 
 type SidebarTab = 'tags' | 'favorites' | 'panels'
 
-export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, onOpenSettings }: Props) {
+export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved, isGuest, onOpenSettings }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const s = useStore()
@@ -748,6 +750,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, isGuest, 
 
           {/* Recording bar */}
           <WebRecordingBar />
+
+          {/* Footer: email + estado sync + versión */}
+          <StatusBar isSyncing={isSyncing} showSaved={showSaved} />
         </>
       ) : (
         /* Collapsed sidebar: just nav icons */

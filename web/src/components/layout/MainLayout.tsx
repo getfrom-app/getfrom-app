@@ -45,7 +45,6 @@ import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import QuickCapturePanel from '../modals/QuickCapturePanel'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
 import WFTopBar from './WFTopBar'
-import StatusBar from './StatusBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
@@ -383,6 +382,7 @@ export default function MainLayout() {
         onToggle={() => setSidebarOpen(o => !o)}
         onLogout={handleLogout}
         isSyncing={s.isSyncing}
+        showSaved={showSaved}
         isGuest={false}
         onOpenSettings={() => navigate('/settings')}
       />
@@ -475,7 +475,6 @@ export default function MainLayout() {
           } />
         </Routes>
         </Suspense>
-        <StatusBar isSyncing={s.isSyncing} />
       </main>
       </div>{/* .main-body */}
       {paywallReason && (

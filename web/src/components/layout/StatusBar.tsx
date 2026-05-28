@@ -7,9 +7,10 @@ export const WEB_VERSION = 'v9.1'
 
 interface StatusBarProps {
   isSyncing: boolean
+  showSaved?: boolean
 }
 
-export default function StatusBar({ isSyncing }: StatusBarProps) {
+export default function StatusBar({ isSyncing, showSaved }: StatusBarProps) {
   const s = useStore()
   const us = useUserStore()
   const location = useLocation()
@@ -52,7 +53,7 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
         </span>
       )}
       <span className="status-bar-sync">
-        {isSyncing ? '↻ Sincronizando...' : '✓ Guardado'}
+        {isSyncing ? '↻ Sincronizando...' : (showSaved ? '✓ Guardado' : '')}
       </span>
       <span className="status-bar-version" title="Versión">
         {WEB_VERSION}
