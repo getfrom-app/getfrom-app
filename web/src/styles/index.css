@@ -205,15 +205,15 @@ a { color: inherit; text-decoration: none; }
 
 .main-layout {
   display: flex;
-  flex-direction: row;   /* sidebar a la izquierda, contenido a la derecha */
+  flex-direction: column;  /* cabecera arriba, cuerpo abajo */
   height: 100vh;
   overflow: hidden;
 }
 
-/* main-body: panel derecho (topbar + contenido) */
+/* main-body: sidebar izquierda + contenido derecha */
 .main-body {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   overflow: hidden;
   min-width: 0;
@@ -690,8 +690,9 @@ a { color: inherit; text-decoration: none; }
   transition: width 0.2s ease;
   overflow: hidden;
   flex-shrink: 0;
-  align-self: stretch;  /* always full height of the row */
-  height: 100vh;        /* fallback */
+  /* El sidebar ocupa la altura del main-body, no de la ventana completa */
+  height: 100%;
+  border-right: 1px solid var(--border);
 }
 
 .sidebar.open   { width: var(--sw, var(--sidebar-width)); }
@@ -699,12 +700,7 @@ a { color: inherit; text-decoration: none; }
 .sidebar-resizing .sidebar { transition: none !important; }
 
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 10px;
-  border-bottom: 1px solid var(--border);
-  min-height: 48px;
+  display: none;  /* eliminado: la cabecera ahora es la WFTopBar unificada */
 }
 
 .sidebar-toggle {
