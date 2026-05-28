@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import DiaryTimeline from './DiaryTimeline'
 
 interface Props { parentId: string }
 
@@ -28,6 +29,12 @@ export default function NodeCalendarView({ parentId }: Props) {
   useStore()  // suscripción
   const navigate = useNavigate()
   const [viewDate, setViewDate] = useState(new Date())
+
+  // Si el nodo padre es un diary entry, mostramos el DiaryTimeline
+  const parentNode = store.getNode(parentId)
+  if (parentNode?.isDiaryEntry) {
+    return <DiaryTimeline diaryNode={parentNode} />
+  }
   const [quickCreate, setQuickCreate] = useState<{ day: number; text: string } | null>(null)
 
   const allChildren = store.children(parentId).filter(n => !n.deletedAt && !isTemporalNode(n.text || ''))

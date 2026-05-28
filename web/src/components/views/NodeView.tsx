@@ -13,14 +13,13 @@ import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
 import NodeChatPanel from '../panels/NodeChatPanel'
-import TimelinePanel from '../panels/TimelinePanel'
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { recordRecentNode } from '../CommandPalette'
 import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
 import { createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
-import { syncGcalEventsToNodes, syncNodeMoveToGcal, getGcalColor } from '../../utils/gcalNodesSync'
+import { getGcalColor } from '../../utils/gcalNodesSync'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
@@ -111,7 +110,6 @@ export default function NodeView() {
 
   // Chat panel state
   const [showChat, setShowChat] = useState(false)
-  const [showTimeline, setShowTimeline] = useState(false)
 
   // GCal events state (para notas diarias)
   const us = useUserStore()
@@ -253,37 +251,14 @@ export default function NodeView() {
   // Sincronizar eventos de Google Calendar como nodos hijos de la nota diaria
   useEffect(() => {
     if (!node?.isDiaryEntry || !node.diaryDate) { setGcalEvents([]); return }
-    if (!us.googleConnected) { setGcalEvents([]); return }
-    // Sync GCal → nodos (crea/actualiza/elimina nodos gcal bajo esta nota)
-    syncGcalEventsToNodes(node).catch(() => {})
-    setGcalEvents([])  // ya no usamos el bloque especial, los eventos son nodos normales
+    // GCal events ahora solo se muestran en el DiaryTimeline (vista Calendario)
+    // No se crean nodos en el outliner
+    setGcalEvents([])
   }, [node?.id, node?.isDiaryEntry, node?.diaryDate, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detectar cuando un nodo GCal se mueve a otra nota → actualizar fecha en GCal
-  useEffect(() => {
-    if (!us.googleConnected) return
-    return store.subscribe(() => {
-      // Buscar nodos GCal cuyo parentId cambió hacia una nota diaria diferente
-      for (const n of store.nodes.values()) {
-        if (n.deletedAt) continue
-        try {
-          const ed = JSON.parse(n.extraData || '{}')
-          if (!ed._gcalEventId || !ed._gcalSynced) continue
-          // Si el nodo está en una nota diaria diferente a la que le corresponde por fecha
-          const parent = n.parentId ? store.getNode(n.parentId) : null
-          if (!parent?.isDiaryEntry || !parent.diaryDate) continue
-          // Comprobar si la fecha del evento coincide con la de la nota
-          if (!n.due) continue
-          const dueDate = new Date(n.due).toDateString()
-          const parentDate = new Date(parent.diaryDate).toDateString()
-          if (dueDate !== parentDate) {
-            // El evento fue movido — actualizar GCal
-            syncNodeMoveToGcal(n.id, parent.id).catch(() => {})
-          }
-        } catch { /* ignore */ }
-      }
-    })
-  }, [us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+  // GCal node-move sync eliminado: los eventos GCal ya no son nodos en el outliner.
+  // Ahora viven solo como time blocks en DiaryTimeline (vista Calendario).
 
   // Auto-sync From eventos → GCal cuando el nodo es isEvent y tiene fecha
   useEffect(() => {
@@ -1264,7 +1239,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${showTimeline ? 'node-view--with-timeline' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -1703,20 +1678,6 @@ export default function NodeView() {
               </button>
                 )
               })()}
-
-              {/* ── Timeline (solo diary entries) ── */}
-              {node.isDiaryEntry && (
-                <button
-                  className={`tl-toggle-btn ${showTimeline ? 'tl-toggle-btn--active' : ''}`}
-                  onClick={() => setShowTimeline(v => !v)}
-                  title="Abrir planificador de día / semana"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  Planificar
-                </button>
-              )}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
@@ -2282,12 +2243,6 @@ export default function NodeView() {
         />
       )}
 
-      {showTimeline && node.isDiaryEntry && (
-        <TimelinePanel
-          diaryNode={node}
-          onClose={() => setShowTimeline(false)}
-        />
-      )}
 
       {/* Modal: editar evento de Google Calendar */}
       {editingGCalEvent && (

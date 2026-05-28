@@ -11407,3 +11407,230 @@ a:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DIARY TIMELINE — Timeline continuo de días
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.dtl-root {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Sidebar de tareas ─────────────────────────────────────────────────────── */
+.dtl-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+}
+.dtl-sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  padding: 12px 12px 8px;
+  flex-shrink: 0;
+}
+.dtl-task-group { padding: 0 8px 10px; }
+.dtl-task-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  padding: 4px 4px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.dtl-task-group-label--od { color: var(--red); }
+.dtl-task-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: grab;
+  border: 1px solid transparent;
+  transition: border-color 0.1s, background 0.1s;
+  margin-bottom: 2px;
+}
+.dtl-task-item:hover { border-color: var(--accent); background: rgba(74,144,217,0.05); }
+.dtl-task-item:active { cursor: grabbing; }
+.dtl-task-item--od .dtl-task-dot { background: var(--red) !important; }
+.dtl-task-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.dtl-task-text {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dtl-empty {
+  padding: 16px 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* ── Grid wrapper ──────────────────────────────────────────────────────────── */
+.dtl-grid-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeceras de días sticky */
+.dtl-heads-row {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.dtl-day-head {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 7px 4px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.dtl-day-head--center {
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(74,144,217,0.06);
+}
+.dtl-day-head--today { color: var(--accent); }
+
+/* Scroll horizontal */
+.dtl-scroll-h {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: visible;
+  flex: 1;
+  scroll-behavior: smooth;
+}
+.dtl-scroll-h::-webkit-scrollbar { height: 5px; }
+.dtl-scroll-h::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Eje de horas */
+.dtl-axis {
+  position: relative;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-primary);
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+.dtl-axis-label {
+  position: absolute;
+  right: 5px;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Columna de día */
+.dtl-col {
+  border-right: 1px solid var(--border);
+  cursor: crosshair;
+}
+.dtl-col:last-child { border-right: none; }
+
+/* Slots de fondo */
+.dtl-slot {
+  position: absolute; left: 0; right: 0; height: 40px; pointer-events: none;
+}
+.dtl-slot--hr   { border-top: 1px solid var(--border); }
+.dtl-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }
+
+/* Línea de ahora */
+.dtl-now {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--red); z-index: 5; pointer-events: none;
+}
+.dtl-now::before {
+  content: '';
+  position: absolute; left: -3px; top: -3px;
+  width: 8px; height: 8px;
+  background: var(--red); border-radius: 50%;
+}
+
+/* Bloques */
+.dtl-block {
+  position: absolute;
+  left: 2px; right: 2px;
+  border-radius: 4px;
+  padding: 3px 5px;
+  z-index: 4;
+  overflow: hidden;
+  opacity: 0.9;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  transition: opacity 0.1s, box-shadow 0.1s;
+}
+.dtl-block:hover { opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 6; }
+.dtl-block--task     { cursor: grab; }
+.dtl-block--standalone { cursor: grab; }
+.dtl-block--gcal     { cursor: pointer; }
+.dtl-block-time {
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,0.85); line-height: 1; flex-shrink: 0;
+}
+.dtl-block-text {
+  font-size: 11px; font-weight: 500; color: #fff;
+  overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+.dtl-block-resize {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+  cursor: ns-resize;
+  background: rgba(255,255,255,0.15); border-radius: 0 0 4px 4px;
+}
+.dtl-block-resize:hover { background: rgba(255,255,255,0.35); }
+
+/* Context menu */
+.dtl-ctx {
+  position: fixed;
+  z-index: 999;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 4px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dtl-ctx button {
+  padding: 7px 12px;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: left;
+  width: 100%;
+}
+.dtl-ctx button:hover { background: var(--bg-hover); }
+.dtl-ctx-danger { color: var(--red) !important; }
