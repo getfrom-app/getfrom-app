@@ -40,7 +40,6 @@
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
             <a href="changelog.html">Novedades</a>
             <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
-            <a href="/blog">Blog</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
             <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
@@ -67,21 +66,6 @@
     <p class="hero-footnote">Web · Mac · iPhone · Gratis para empezar · Sin tarjeta de crédito</p>
 </section>
 
-<!-- Screenshot gallery -->
-<div class="screenshots-gallery">
-    <div class="screenshots-tabs">
-        <button class="tab-btn active" onclick="showTab(0)">Diario de hoy</button>
-        <button class="tab-btn" onclick="showTab(1)">Notas con IA</button>
-        <button class="tab-btn" onclick="showTab(2)">Búsqueda ⌘K</button>
-        <button class="tab-btn" onclick="showTab(3)">Chat IA</button>
-    </div>
-    <div class="screenshots-viewer">
-        <img class="screenshot-img active" src="img/screenshots/screen-1-diary.png" alt="Diario de hoy en From" />
-        <img class="screenshot-img" src="img/screenshots/screen-2-note.png" alt="Nota con bullets y tags en From" />
-        <img class="screenshot-img" src="img/screenshots/screen-3-search.png" alt="Búsqueda ⌘K en From" />
-        <img class="screenshot-img" src="img/screenshots/screen-4-ai.png" alt="Chat IA en From" />
-    </div>
-</div>
 
 <!-- Philosophy -->
 <section class="section" id="how-it-works">
