@@ -701,7 +701,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .sidebar.open   { width: var(--sw, var(--sidebar-width)); }
-.sidebar.closed { width: var(--sidebar-collapsed); }
+.sidebar.closed { width: 0; overflow: hidden; }  /* toggle está en WFTopBar */
 .sidebar-resizing .sidebar { transition: none !important; }
 
 .sidebar-header {

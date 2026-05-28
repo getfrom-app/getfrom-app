@@ -156,6 +156,22 @@ export default function WFTopBar({
   return (
     <div className="wf-topbar">
 
+      {/* ── Sidebar toggle — visible cuando el sidebar está cerrado ── */}
+      {!sidebarOpen && (
+        <button
+          className="wf-topbar-btn"
+          onClick={onToggleSidebar}
+          title="Abrir sidebar (⌘⇧S)"
+          style={{ marginRight: 2 }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+          </svg>
+        </button>
+      )}
+
       {/* ── Nav: back + forward ── */}
       <div className="wf-topbar-nav">
         <button className="wf-topbar-btn" onClick={() => window.history.back()} title="Atrás (⌘[)">

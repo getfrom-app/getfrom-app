@@ -747,43 +747,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           {/* Footer global — movido al nivel raíz de MainLayout */}
         </>
       ) : (
-        /* Collapsed sidebar: toggle + minimal icons */
-        <>
-          {/* Toggle visible en sidebar colapsado */}
-          <button className="sidebar-toggle" onClick={onToggle} title="Expandir sidebar"
-            style={{ margin: '8px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-              <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-              <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-            </svg>
-          </button>
-          <nav className="sidebar-nav">
-            <button
-              className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
-              onClick={() => navigate('/')}
-              title="Inicio"
-            >
-              <span className="nav-icon">🏠</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
-              onClick={() => navigate('/trash')}
-              title="Papelera"
-            >
-              <span className="nav-icon">🗑</span>
-            </button>
-          </nav>
-          <div className="sidebar-footer">
-            <button
-              className={`nav-item ${isActive('/settings') ? 'active' : ''}`}
-              onClick={() => navigate('/settings')}
-              title="Ajustes"
-            >
-              <span className="nav-icon">⚙</span>
-            </button>
-          </div>
-        </>
+        /* Collapsed sidebar: solo línea visual, el toggle está en el WFTopBar */
+        null
       )}
       {/* Left-edge collapse zone: click the outer-left edge to collapse */}
       {open && (
