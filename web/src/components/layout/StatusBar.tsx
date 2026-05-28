@@ -4,7 +4,7 @@ import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.1'
+export const WEB_VERSION = 'v9.0.10'
 
 interface Props {
   isSyncing: boolean

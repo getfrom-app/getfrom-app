@@ -10428,8 +10428,12 @@ a:focus-visible {
   border-top: 1px solid var(--border);
   flex-shrink: 0;
   background: var(--bg-secondary);
-  /* Ancho completo: está fuera del flex-row sidebar+main-body */
-  width: 100%;
+  /* Footer fijo en la parte inferior, de extremo a extremo */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
   box-sizing: border-box;
 }
 
@@ -10525,3 +10529,4 @@ a:focus-visible {
 .tauri-mac .sidebar {
   padding-top: 28px;
 }
+.main-content { padding-bottom: 28px; }
