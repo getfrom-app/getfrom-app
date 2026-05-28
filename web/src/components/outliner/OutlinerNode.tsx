@@ -287,6 +287,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [isAiStreaming, setIsAiStreaming] = useState(false)
   const [aiPendingText, setAiPendingText] = useState<string | null>(null)
   const aiOriginalText = useRef<string>('')
+  const [showAiToolbar, setShowAiToolbar] = useState(false)
   // IA inline: estado del prompt previo al stream
   const [isAiPrompting, setIsAiPrompting] = useState(false)
   const [aiPromptText, setAiPromptText] = useState('')
@@ -1322,6 +1323,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const fullText = (currentText + aiText).replace(/ /g, ' ')
         // Fase 2: modo ghost — NO guardar en store todavía
         setAiPendingText(fullText)
+        setShowAiToolbar(true)
         if (contentRef.current) {
           contentRef.current.textContent = fullText
           contentRef.current.classList.add('node-text--ai-pending')
