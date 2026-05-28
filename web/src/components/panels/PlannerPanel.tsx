@@ -526,7 +526,12 @@ export default function PlannerPanel({ onClose }: Props) {
         <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
         <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>Hoy</button>
         <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
-          title={`Restablecer zoom — ahora: ${visibleDayCnt} días`}>⊙</button>
+          title={`Restablecer zoom — ahora: ${visibleDayCnt} días`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+        </button>
         <button className="pp-close-btn" onClick={onClose} title="Cerrar">×</button>
       </div>
 
