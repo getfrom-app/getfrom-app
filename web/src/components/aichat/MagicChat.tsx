@@ -13,6 +13,7 @@ import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiC
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
+import { ensureDayPath } from '../../utils/agendaHelper'
 
 interface Props {
   onClose: () => void
@@ -260,20 +261,29 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
   // Palabras que indican intención de filtrar/mostrar/buscar nodos
   const FILTER_INTENT = /\b(muéstrame|enseñame|filtra|muestra|encuentra|busca|ver|show|find|filter|quiero ver|dame|lista|dime)\b/i
 
+  // Intención de navegar al diario de hoy
+  const NAV_TODAY_INTENT = /\b(ir al diario|abre el diario|abrir el diario|diario de hoy|nota de hoy|ir a hoy|ir al día de hoy|muéstrame hoy|enseñame hoy|ábreme el diario|open diary|go to today|today's note|show today)\b/i
+
   async function handleSend(text?: string) {
     const t = (text ?? inputRef.current).trim()
     if (!t || chat.isStreaming) return
     setInput('')
     const final = t.startsWith('__') ? expandSpecialPrompt(t) : t
 
-    // Detectar intención de filtro: si el mensaje tiene palabras de "mostrar/buscar"
-    // Y el texto (sin esas palabras) parece lenguaje natural filtrable
+    // ── Navegación directa: diario de hoy ──────────────────────────────────
+    if (NAV_TODAY_INTENT.test(final)) {
+      const dayNode = ensureDayPath(new Date())
+      navigate(`/node/${dayNode.id}`)
+      onClose()
+      return
+    }
+
+    // ── Detectar intención de filtro ────────────────────────────────────────
     if (FILTER_INTENT.test(final)) {
       const cleanedForFilter = final.replace(FILTER_INTENT, '').trim()
       if (needsInterpretation(cleanedForFilter) || cleanedForFilter.length > 3) {
         const query = await interpretFilterQuery(final)
         if (query) {
-          // Aplicar el filtro y cerrar Magic
           window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query } }))
           window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Filtro aplicado: ${query}`, type: 'success' } }))
           return
