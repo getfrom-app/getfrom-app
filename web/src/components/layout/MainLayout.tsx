@@ -426,7 +426,7 @@ export default function MainLayout() {
 
   return (
     <ToastProvider>
-    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'} ${plannerOpen ? 'planner-open' : ''}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
 
       {/* ── Traffic lights row (solo Mac) ── */}
       <div
