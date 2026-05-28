@@ -105,6 +105,9 @@ export default function MainLayout() {
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
   const [filterText, setFilterText] = useFilterStore()
+  const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
+  const [slugInput, setSlugInput] = useState('')
+  const slugModalInputRef = useRef<HTMLInputElement>(null)
 
   // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
   useEffect(() => {
@@ -400,6 +403,18 @@ export default function MainLayout() {
     }
   }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture])
 
+  // Listener del modal de URL corta (slug) — disparado desde NodeContextMenu vía CustomEvent
+  useEffect(() => {
+    function handleOpenSlugModal(e: Event) {
+      const detail = (e as CustomEvent).detail as { nodeId: string; currentSlug: string }
+      setSlugInput(detail.currentSlug)
+      setSlugModal({ nodeId: detail.nodeId, currentSlug: detail.currentSlug })
+      setTimeout(() => slugModalInputRef.current?.focus(), 50)
+    }
+    window.addEventListener('from:open-slug-modal', handleOpenSlugModal)
+    return () => window.removeEventListener('from:open-slug-modal', handleOpenSlugModal)
+  }, [])
+
   // Polling automático: sync cada 15s para recoger cambios de Mac/iOS sin refrescar
   useEffect(() => {
     const id = setInterval(() => {
@@ -602,6 +617,79 @@ export default function MainLayout() {
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       {showQuickCapture && <QuickCapturePanel onClose={() => setShowQuickCapture(false)} />}
+      {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}
+      {slugModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onMouseDown={() => setSlugModal(null)}
+        >
+          <div
+            style={{ background: 'var(--bg-primary)', borderRadius: 14, padding: '28px 28px 24px', width: 420, maxWidth: '90vw', boxShadow: '0 24px 80px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column', gap: 16 }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>✂️ URL corta</span>
+              <button onClick={() => setSlugModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Establece una URL corta para este nodo. Estará disponible en:<br />
+              <code style={{ background: 'var(--bg-secondary)', borderRadius: 4, padding: '2px 6px', fontSize: 12, color: 'var(--accent)' }}>
+                {window.location.origin}/app/node/<strong>{slugInput || 'tu-slug'}</strong>
+              </code>
+            </p>
+            <input
+              ref={slugModalInputRef}
+              type="text"
+              value={slugInput}
+              onChange={e => setSlugInput(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
+              placeholder="mi-proyecto"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const clean = slugInput.trim()
+                  if (clean) {
+                    store.updateNode(slugModal.nodeId, { publicSlug: clean })
+                    const url = `${window.location.origin}/app/node/${clean}`
+                    navigator.clipboard.writeText(url).catch(() => {})
+                    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL copiada: /node/${clean}`, type: 'success' } }))
+                  } else {
+                    store.updateNode(slugModal.nodeId, { publicSlug: null })
+                  }
+                  setSlugModal(null)
+                }
+                if (e.key === 'Escape') setSlugModal(null)
+              }}
+              style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 14, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+              autoFocus
+            />
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Solo letras minúsculas, números y guiones. Déjalo vacío para eliminar la URL corta.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setSlugModal(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const clean = slugInput.trim()
+                  if (clean) {
+                    store.updateNode(slugModal.nodeId, { publicSlug: clean })
+                    const url = `${window.location.origin}/app/node/${clean}`
+                    navigator.clipboard.writeText(url).catch(() => {})
+                    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL copiada: /node/${clean}`, type: 'success' } }))
+                  } else {
+                    store.updateNode(slugModal.nodeId, { publicSlug: null })
+                  }
+                  setSlugModal(null)
+                }}
+                style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
+              >
+                Guardar y copiar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <button
         className="mobile-fab"
         onClick={() => setShowCommandPalette(true)}
