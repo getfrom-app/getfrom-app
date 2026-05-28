@@ -28,11 +28,11 @@ function QuickReplyChips({ chips, onSelect, disabled }: {
           onClick={() => onSelect(chip)}
           style={{
             background: 'var(--bg-primary)',
-            border: '1px solid var(--accent)',
+            border: '1px solid var(--border)',
             borderRadius: 20,
             padding: '4px 12px',
             fontSize: 12,
-            color: 'var(--accent)',
+            color: 'var(--text-secondary)',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
             transition: 'all 0.12s',
@@ -269,20 +269,22 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={onTextareaKey}
-            placeholder={isRecording ? 'Grabando…' : 'Habla con From AI…'}
-            rows={1}
+            placeholder={isRecording ? 'Grabando…' : 'Escribe aquí… (⇧↵ para nueva línea, ↵ para enviar)'}
+            rows={4}
             style={{
               flex: 1,
               resize: 'none',
-              background: 'transparent',
+              background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '8px 10px',
-              fontSize: 13,
+              borderRadius: 10,
+              padding: '12px 14px',
+              fontSize: 14,
               fontFamily: 'inherit',
               color: 'var(--text-primary)',
-              maxHeight: 120,
+              minHeight: 100,
+              maxHeight: 200,
               outline: 'none',
+              lineHeight: 1.5,
             }}
           />
           <button
@@ -301,12 +303,12 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             onClick={() => handleSend()}
             disabled={!input.trim() || chat.isStreaming}
             style={{
-              background: input.trim() && !chat.isStreaming ? 'var(--accent)' : 'var(--bg-secondary)',
-              color: 'white',
+              background: input.trim() && !chat.isStreaming ? 'var(--accent)' : 'var(--bg-hover)',
+              color: input.trim() && !chat.isStreaming ? 'white' : 'var(--text-tertiary)',
               border: 'none',
               borderRadius: '50%',
               width: 36, height: 36,
-              cursor: input.trim() && !chat.isStreaming ? 'pointer' : 'not-allowed',
+              cursor: input.trim() && !chat.isStreaming ? 'pointer' : 'default',
               fontSize: 16,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -439,7 +441,7 @@ function EmptyState() {
       <div style={{ fontSize: 18, fontWeight: 600 }}>From AI</div>
       <div style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 400, lineHeight: 1.5 }}>
         Escribe lo que necesites. Yo decido qué hacer: crear notas, tareas, eventos, modificar contenido…
-        con tu perfil y tus tags como contexto.
+        con tu perfil y tus contextos como referencia.
       </div>
     </div>
   )
