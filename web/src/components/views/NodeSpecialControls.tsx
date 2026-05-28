@@ -5,17 +5,21 @@
 // Mismo estilo visual que los controles de Agenda (diary-nav-btn).
 //
 // Nodos soportados:
-//   · Agente (_agentDef="1") — toggle, ejecutar, schedule, último run
-//   · 🤖 Agentes (raíz)     — estadísticas + nuevo agente
-//   · 📌 Atajos (raíz)      — contador + añadir
-//   · 📋 Plantillas (raíz)  — contador + nueva
-//   · 🧠 Contexto (raíz)    — estado del perfil
+//   · Agente (_agentDef="1")    — toggle, ejecutar, schedule, último run
+//   · Atajo  (_shortcutQuery)   — descripción del filtro + botón Aplicar
+//   · 🧠 Contexto (raíz)       — estado del perfil
+//   · 🗑 Papelera (raíz)       — contador + vaciar
+//
+// NO tienen controles especiales (se crean/gestionan como nodos normales):
+//   · 🤖 Agentes (raíz)   — crea nuevo agente con Enter como cualquier nodo
+//   · 📋 Plantillas (raíz) — crea nueva plantilla con Enter
+//   · 📌 Atajos (raíz)     — los hijos son atajos individuales con sus propios controles
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { getAgentData, setAgentEnabled, getAgentesNode } from '../../utils/agentesHelper'
+import { getAgentData, setAgentEnabled } from '../../utils/agentesHelper'
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { emptyTrash } from '../../utils/papeleraHelper'
@@ -155,87 +159,56 @@ function AgentControls({ node }: Props) {
   )
 }
 
-// ── Raíz: 🤖 Agentes ─────────────────────────────────────────────────────────
+// ── Atajo individual (_shortcutQuery) ─────────────────────────────────────────
+// Un atajo es un filtro guardado. Al abrirlo, muestra qué filtro es
+// y un botón para aplicarlo al árbol (igual que clicking en el sidebar).
 
-function AgentesRootControls({ node }: Props) {
-  const s = useStore()
-  const children = s.children(node.id).filter(n => !n.deletedAt)
-  const activeCount = children.filter(n => {
-    try { return JSON.parse(n.extraData || '{}')._agentEnabled !== 'false' } catch { return true }
-  }).length
+function AtajoControls({ node }: Props) {
+  let query = ''
+  let view  = ''
+  let targetNodeId = ''
+  try {
+    const ed = JSON.parse(node.extraData || '{}')
+    query        = ed._shortcutQuery  || ''
+    view         = ed._shortcutView   || 'lista'
+    targetNodeId = ed._shortcutNodeId || ''
+  } catch { return null }
 
-  function handleNewAgent() {
-    const newNode = store.createNode({
-      text:     '🤖 Nuevo agente',
-      parentId: node.id,
-    })
-    store.updateNode(newNode.id, {
-      extraData: JSON.stringify({
-        _agentDef:          '1',
-        _agentId:           `custom-${Date.now()}`,
-        _agentIcon:         '🤖',
-        _agentSystemPrompt: 'Eres un asistente útil que responde en español.',
-        _agentUserMessage:  'Ayúdame con esta tarea.',
-        _agentEnabled:      'true',
-        _agentSchedule:     '',
-      }),
-    })
-    // Nodos hijos editables
-    store.createNode({ text: 'Prompt: Eres un asistente útil que responde en español.', parentId: newNode.id })
-    store.createNode({ text: 'Mensaje: Ayúdame con esta tarea.', parentId: newNode.id })
+  if (!query && !targetNodeId) return null
+
+  function applyFilter() {
+    if (targetNodeId) {
+      // Atajo a un nodo específico → navegar
+      window.location.href = `/app/node/${targetNodeId}`
+    } else {
+      // Atajo a un filtro → aplicar en árbol
+      window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query } }))
+      // Volver a root para ver el árbol filtrado
+      if (window.location.pathname !== '/app/' && window.location.pathname !== '/app') {
+        window.location.href = '/app/'
+      }
+    }
   }
+
+  const label = targetNodeId
+    ? 'Navegar al nodo'
+    : `Filtrar: ${query}`
 
   return (
     <div className="node-special-bar">
-      <span className="node-special-meta">
-        {activeCount} activo{activeCount !== 1 ? 's' : ''} · {children.length} en total
+      <span className="node-special-meta" style={{ fontFamily: 'monospace', fontSize: 11 }}>
+        {targetNodeId ? `→ nodo` : `🔍 ${query}`}
       </span>
       <button
         className="node-special-pill node-special-pill--action"
-        onClick={handleNewAgent}
-        title="Crear nuevo agente"
+        onClick={applyFilter}
+        title={label}
       >
-        + Nuevo agente
+        ▶ Aplicar filtro
       </button>
-    </div>
-  )
-}
-
-// ── Raíz: 📌 Atajos ──────────────────────────────────────────────────────────
-
-function AtajosRootControls({ node }: Props) {
-  const s = useStore()
-  const count = s.children(node.id).filter(n => !n.deletedAt).length
-
-  return (
-    <div className="node-special-bar">
-      <span className="node-special-meta">{count} atajo{count !== 1 ? 's'  : ''}</span>
-      <span className="node-special-meta" style={{ opacity: 0.5 }}>
-        Usa ⭐ en cualquier nota o 🔖 en un filtro para añadir atajos
+      <span className="node-special-meta" style={{ opacity: 0.4, fontSize: 10 }}>
+        Este nodo es un filtro guardado. El resultado se muestra en el árbol.
       </span>
-    </div>
-  )
-}
-
-// ── Raíz: 📋 Plantillas ───────────────────────────────────────────────────────
-
-function PlantillasRootControls({ node }: Props) {
-  const s = useStore()
-  const count = s.children(node.id).filter(n => !n.deletedAt).length
-
-  function handleNew() {
-    store.createNode({ text: 'Nueva plantilla', parentId: node.id })
-  }
-
-  return (
-    <div className="node-special-bar">
-      <span className="node-special-meta">{count} plantilla{count !== 1 ? 's' : ''}</span>
-      <button
-        className="node-special-pill node-special-pill--action"
-        onClick={handleNew}
-      >
-        + Nueva plantilla
-      </button>
     </div>
   )
 }
@@ -310,17 +283,21 @@ function PapeleraRootControls({ node }: Props) {
 // ── Router: detecta qué tipo de nodo es ──────────────────────────────────────
 
 export default function NodeSpecialControls({ node }: Props) {
-  // Agente individual
   try {
     const ed = JSON.parse(node.extraData || '{}')
+
+    // Agente individual (_agentDef="1")
     if (ed._agentDef === '1') return <AgentControls node={node} />
+
+    // Atajo individual (_shortcutQuery o _shortcutNodeId)
+    if (ed._shortcutQuery !== undefined || ed._shortcutNodeId) {
+      return <AtajoControls node={node} />
+    }
   } catch { /* ignore */ }
 
   // Nodos raíz especiales por nombre/emoji
+  // (solo los que realmente necesitan controles; el resto se gestiona como nodos normales)
   const text = node.text || ''
-  if (text === '🤖 Agentes')   return <AgentesRootControls node={node} />
-  if (text === '📌 Atajos')    return <AtajosRootControls node={node} />
-  if (text === '📋 Plantillas') return <PlantillasRootControls node={node} />
   if (text === '🧠 Contexto')  return <ContextoRootControls node={node} />
   if (text === '🗑 Papelera')  return <PapeleraRootControls node={node} />
 
