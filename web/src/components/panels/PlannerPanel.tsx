@@ -225,6 +225,36 @@ export default function PlannerPanel({ onClose }: Props) {
     scrollVRef.current.scrollTop = Math.max(0, topPx(new Date()) - 100)
   }, [viewMode])
 
+  // ── Función centrar en hoy ────────────────────────────────────────────────
+  function centerNow() {
+    if (!scrollHRef.current) return
+    const pos = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    scrollHRef.current.scrollTo({ left: pos, behavior: 'smooth' })
+    if (scrollVRef.current) {
+      scrollVRef.current.scrollTo({ top: Math.max(0, topPx(new Date()) - 120), behavior: 'smooth' })
+    }
+  }
+
+  function isAlreadyCentered(): boolean {
+    if (!scrollHRef.current) return true
+    const expected = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    return Math.abs(scrollHRef.current.scrollLeft - expected) < colW * 0.4
+  }
+
+  // ── Escape: centrar si no está centrado, si ya lo está → propagar ─────────
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape' || viewMode !== 'day') return
+      if (!isAlreadyCentered()) {
+        e.stopPropagation()
+        centerNow()
+      }
+      // Si ya está centrado, dejar propagar → comportamiento normal de Escape
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [viewMode, colW, slotH]) // eslint-disable-line
+
   // ── Refs para drag/resize de bloques ─────────────────────────────────────
   const justResized = useRef(false)
   const justDragged = useRef(false)
@@ -488,7 +518,28 @@ export default function PlannerPanel({ onClose }: Props) {
       </div>
 
       {/* Timeline */}
-      <div className="pp-timeline" ref={scrollVRef}>
+      <div className="pp-timeline" ref={el => {
+        (scrollVRef as any).current = el
+        // Wheel nativo (no pasivo) para poder preventDefault y manejar zoom
+        if (el && !(el as any)._wheelBound) {
+          (el as any)._wheelBound = true
+          el.addEventListener('wheel', (ev: WheelEvent) => {
+            if (viewMode !== 'day') return
+            ev.preventDefault()
+            const dir = ev.deltaY > 0 ? 1 : -1
+            if (ev.shiftKey) {
+              setSlotH(prev => {
+                const frac = el.scrollTop / (TOTAL_HOURS * prev * 2)
+                const next = Math.max(MIN_SLOT_H, Math.min(MAX_SLOT_H, prev - dir * 4))
+                setTimeout(() => { el.scrollTop = frac * TOTAL_HOURS * next * 2 }, 0)
+                return next
+              })
+            } else {
+              setVisibleDayCnt(prev => Math.max(MIN_DAY_CNT, Math.min(MAX_DAY_CNT, prev + dir)))
+            }
+          }, { passive: false })
+        }
+      }}>
         {viewMode === 'year' ? renderYear() : (
           <>
             {/* Cabeceras sync */}
