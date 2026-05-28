@@ -1803,7 +1803,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   /** Mueve el nodo a un día destino, creando referencia en origen si tiene contexto significativo */
   function moveNodeToDay(
     targetDate: Date,
-    opts: { label: string; isEvent?: boolean; timeStr?: string; recurrence?: RecurrenceConfig; makeTask?: boolean }
+    opts: { label: string; isEvent?: boolean; timeStr?: string; recurrence?: RecurrenceConfig; makeTask?: boolean; cleanText?: string }
   ) {
     const dayNode = ensureDayPath(targetDate)
     const isSameDay = node.parentId === dayNode.id
@@ -1866,8 +1866,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         updates.siblingOrder = mirrorLastOrder + 1
 
         // 2. Espejo de la tarea (⬡) en el origen — guarda el label de destino
+        // Usar cleanText si está disponible (texto sin instrucción de fecha)
         const taskMirror = store.createNode({
-          text: node.text,
+          text: opts.cleanText ?? node.text,
           parentId: node.parentId,
           siblingOrder: node.siblingOrder,
         })
@@ -1880,6 +1881,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }, 30)
       }
 
+      // Asegurar que el texto del nodo movido no contiene la instrucción de fecha
+      if (opts.cleanText) updates.text = opts.cleanText
       store.updateNode(node.id, updates)
       if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
@@ -1916,7 +1919,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (contentRef.current) contentRef.current.textContent = cleanText
     const targetDate = new Date(parsed.date); targetDate.setHours(0,0,0,0)
     const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
-    moveNodeToDay(targetDate, { label, isEvent: !!isEvent, timeStr, recurrence: parsed.recurrence, makeTask: true })
+    moveNodeToDay(targetDate, { label, isEvent: !!isEvent, timeStr, recurrence: parsed.recurrence, makeTask: true, cleanText })
   }
 
   function acceptCtxCompletion() {
