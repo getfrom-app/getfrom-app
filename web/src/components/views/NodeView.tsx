@@ -64,9 +64,13 @@ export default function NodeView() {
         return
       }
       if (ed._shortcutQuery !== undefined) {
-        // Atajo de filtro → aplicar y volver al árbol raíz
-        window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: ed._shortcutQuery || '' } }))
+        // Atajo de filtro:
+        // 1. Navegar primero a raíz para que WFHomeView esté montado
+        // 2. Disparar el filtro en el siguiente tick (handleSetFilter en MainLayout lo recoge)
         navigate('/', { replace: true })
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: ed._shortcutQuery || '' } }))
+        }, 30)
         return
       }
     } catch { /* nodo normal, continuar */ }
