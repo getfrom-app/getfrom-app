@@ -30,6 +30,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
+import Outliner from '../outliner/Outliner'
 
 // ── Geometría ──────────────────────────────────────────────────────────────
 const HOUR_START  = 6
@@ -39,7 +40,7 @@ const SLOT_H      = 40          // px / 30 min
 const HOUR_H      = SLOT_H * 2  // px / hora
 const PX_PER_MIN  = SLOT_H / 30
 const AXIS_W      = 44          // px eje horas
-const TASK_COL_W  = 300         // px columna tareas
+const TASK_COL_W  = 600         // px columna tareas (outliner de from)
 const VISIBLE_DAY_COLS = 5      // columnas visibles simultáneamente en day view
 const PRE_DAYS_EACH   = 7       // días extra pre-renderizados a cada lado (scroll)
 
@@ -106,19 +107,6 @@ function dayColLabel(d: Date): string {
 type ViewMode = 'day' | 'week' | 'month'
 type TaskFilter = 'all' | 'overdue' | 'today' | 'future'
 
-interface TaskEntry {
-  task: Node
-  contextLabel: string | null  // nombre del nodo contenedor inmediato (si no es diary)
-  diaryDate: Date
-  status: 'overdue' | 'today' | 'future' | 'done'
-}
-
-interface DayGroup {
-  date: Date
-  diaryNode: Node
-  tasks: TaskEntry[]
-}
-
 interface TimeBlock {
   kind: 'task' | 'standalone' | 'gcal'
   id: string
@@ -128,48 +116,6 @@ interface TimeBlock {
   color: string
   linkedId?: string
   gcalEvent?: CalendarEvent
-}
-
-// ── Leer todas las tareas agrupadas por diary day ─────────────────────────
-function buildDayGroups(s: ReturnType<typeof store.allActive> extends infer T ? any : any): DayGroup[] {
-  const today = startOfDay(new Date())
-  const allNodes = s.allActive()
-
-  // 1. Encontrar todos los diary nodes
-  const diaryNodes = (allNodes as Node[])
-    .filter((n: Node) => n.isDiaryEntry && n.diaryDate)
-    .sort((a: Node, b: Node) => new Date(a.diaryDate!).getTime() - new Date(b.diaryDate!).getTime())
-
-  // 2. Para cada diary, recoger tareas con su contexto
-  function getTasksUnder(nodeId: string, contextLabel: string | null, diary: Date, acc: TaskEntry[]) {
-    for (const child of store.children(nodeId)) {
-      if (child.deletedAt) continue
-      try {
-        const ed = JSON.parse(child.extraData || '{}')
-        if (ed._timeBlock === '1') continue
-      } catch {}
-
-      if (child.status !== null) {
-        // Es una tarea
-        const diaryDay = startOfDay(diary)
-        const status: TaskEntry['status'] =
-          child.status === 'done' ? 'done' :
-          diaryDay < today ? 'overdue' :
-          sameDay(diaryDay, today) ? 'today' : 'future'
-        acc.push({ task: child, contextLabel, diaryDate: diary, status })
-      } else {
-        // Es un contenedor — las tareas dentro heredan su nombre como contexto
-        getTasksUnder(child.id, child.text || null, diary, acc)
-      }
-    }
-  }
-
-  return diaryNodes.map((dn: Node) => {
-    const date = new Date(dn.diaryDate!)
-    const tasks: TaskEntry[] = []
-    getTasksUnder(dn.id, null, date, tasks)
-    return { date, diaryNode: dn, tasks }
-  }).filter((g: DayGroup) => g.tasks.length > 0)
 }
 
 // ── Leer time blocks de un día ────────────────────────────────────────────
@@ -261,28 +207,44 @@ export default function CalendarPlanner() {
     getCalendarEventsRange(start, end).then(setGcalEvents).catch(() => {})
   }, [us.googleConnected, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Grupos de tareas ─────────────────────────────────────────────────────
-  const dayGroups = useMemo(() => buildDayGroups(s), [s])
+  // ── filterMatchIds para el Outliner de tareas ────────────────────────────
+  // Calcula qué nodos task mostrar según el filtro activo.
+  // Igual que WFHomeView: matchIds = tareas que cumplen el filtro,
+  // ancestorIds = todos sus ancestros para mostrar la jerarquía completa.
+  const { filterMatchIds, filterAncestorIds } = useMemo(() => {
+    const todayStart = startOfDay(new Date())
+    const matchIds   = new Set<string>()
 
-  const filteredGroups = useMemo(() => {
-    if (taskFilter === 'all') return dayGroups
-    return dayGroups.map(g => ({
-      ...g,
-      tasks: g.tasks.filter(t => {
-        if (taskFilter === 'overdue') return t.status === 'overdue'
-        if (taskFilter === 'today')   return t.status === 'today'
-        if (taskFilter === 'future')  return t.status === 'future'
-        return true
-      })
-    })).filter(g => g.tasks.length > 0)
-  }, [dayGroups, taskFilter])
+    for (const n of s.allActive()) {
+      if (n.status === null || n.deletedAt) continue
+      try {
+        if (JSON.parse(n.extraData || '{}')._timeBlock === '1') continue
+      } catch {}
 
-  // ── Drag task desde columna ───────────────────────────────────────────────
-  function handleTaskDragStart(e: React.DragEvent, entry: TaskEntry) {
-    e.dataTransfer.setData('plannerTaskId', entry.task.id)
-    e.dataTransfer.setData('plannerTaskDiaryDate', entry.diaryDate.toISOString())
-    e.dataTransfer.effectAllowed = 'move'
-  }
+      if (taskFilter !== 'all') {
+        // Para overdue/today/future necesitamos saber en qué diary day vive la tarea
+        let diaryDate: Date | null = null
+        let cur = n.parentId ? store.getNode(n.parentId) : null
+        while (cur) {
+          if (cur.isDiaryEntry && cur.diaryDate) { diaryDate = new Date(cur.diaryDate); break }
+          cur = cur.parentId ? store.getNode(cur.parentId) : null
+        }
+        if (taskFilter === 'overdue' && !(diaryDate && startOfDay(diaryDate) < todayStart)) continue
+        if (taskFilter === 'today'   && !(diaryDate && sameDay(diaryDate, todayStart))) continue
+        if (taskFilter === 'future'  && !(diaryDate && startOfDay(diaryDate) > todayStart)) continue
+      }
+      matchIds.add(n.id)
+    }
+
+    // Ancestros de todos los nodos que coinciden
+    const ancestorIds = new Set<string>()
+    for (const id of matchIds) {
+      let cur = store.getNode(id)?.parentId
+      while (cur) { ancestorIds.add(cur); cur = store.getNode(cur)?.parentId }
+    }
+
+    return { filterMatchIds: matchIds, filterAncestorIds: ancestorIds }
+  }, [s, taskFilter])
 
   // ── Drop en columna de día ────────────────────────────────────────────────
   function handleDrop(e: React.DragEvent, targetDay: Date, colEl: HTMLElement) {
@@ -553,11 +515,21 @@ export default function CalendarPlanner() {
     for (let i = 0; i < firstDow; i++) cells.push(null)
     for (let d = 1; d <= totalDays; d++) cells.push(new Date(centerDate.getFullYear(), centerDate.getMonth(), d))
 
-    // Contar tareas por día
+    // Contar tareas por día usando filterMatchIds y sus ancestros diarios
     const taskCountByDay = new Map<string, number>()
-    for (const g of dayGroups) {
-      const key = g.date.toISOString().split('T')[0]!
-      taskCountByDay.set(key, (taskCountByDay.get(key) ?? 0) + g.tasks.length)
+    for (const id of filterMatchIds) {
+      const n = store.getNode(id)
+      if (!n) continue
+      // Buscar el diary ancestor
+      let cur = n.parentId ? store.getNode(n.parentId) : null
+      while (cur) {
+        if (cur.isDiaryEntry && cur.diaryDate) {
+          const key = cur.diaryDate.split('T')[0]!
+          taskCountByDay.set(key, (taskCountByDay.get(key) ?? 0) + 1)
+          break
+        }
+        cur = cur.parentId ? store.getNode(cur.parentId) : null
+      }
     }
 
     return (
@@ -621,7 +593,7 @@ export default function CalendarPlanner() {
       {/* ── Body ── */}
       <div className="cp-body">
 
-        {/* Columna de tareas */}
+        {/* Columna de tareas — Outliner filtrado igual que el árbol central */}
         <div className="cp-task-col">
           {/* Filtros */}
           <div className="cp-task-filters">
@@ -634,56 +606,17 @@ export default function CalendarPlanner() {
             ))}
           </div>
 
-          {/* Lista de días con tareas */}
-          <div className="cp-task-list">
-            {filteredGroups.length === 0 && (
-              <div className="cp-task-empty">Sin tareas{taskFilter !== 'all' ? ' en este filtro' : ''}</div>
-            )}
-            {filteredGroups.map(g => {
-              const isToday = sameDay(g.date, today)
-              const isPast  = g.date < today
-              return (
-                <div key={g.diaryNode.id} className="cp-task-group">
-                  {/* Cabecera del día */}
-                  <div
-                    className={`cp-task-day-head ${isToday?'cp-task-day-head--today':''} ${isPast?'cp-task-day-head--past':''}`}
-                    onClick={() => { setCenterDate(startOfDay(g.date)); setViewMode('day') }}
-                    title="Ver este día en el timeline"
-                  >
-                    <span>{fmt(g.date, { weekday:'short', day:'numeric', month:'short' })}</span>
-                    {isToday && <span className="cp-task-today-badge">HOY</span>}
-                  </div>
-
-                  {/* Tareas agrupadas por contenedor */}
-                  {(() => {
-                    // Agrupar por contextLabel
-                    const groups = new Map<string|null, TaskEntry[]>()
-                    for (const t of g.tasks) {
-                      const key = t.contextLabel
-                      if (!groups.has(key)) groups.set(key, [])
-                      groups.get(key)!.push(t)
-                    }
-                    return Array.from(groups.entries()).map(([label, tasks]) => (
-                      <div key={label ?? '__root'}>
-                        {label && <div className="cp-task-ctx-label">{label}</div>}
-                        {tasks.map(t => (
-                          <div
-                            key={t.task.id}
-                            className={`cp-task-row cp-task-row--${t.status}`}
-                            draggable
-                            onDragStart={e => handleTaskDragStart(e, t)}
-                            onClick={() => navigate(`/node/${t.task.id}`)}
-                          >
-                            <span className={`cp-task-check cp-task-check--${t.status}`} />
-                            <span className="cp-task-text">{t.task.text || 'Sin título'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))
-                  })()}
-                </div>
-              )
-            })}
+          {/* Árbol filtrado — mismos bullets, chevrons y zoom que el árbol central */}
+          <div className="cp-task-outliner">
+            {filterMatchIds.size === 0
+              ? <div className="cp-task-empty">Sin tareas{taskFilter !== 'all' ? ' en este filtro' : ''}</div>
+              : <Outliner
+                  parentId={null}
+                  filterMatchIds={filterMatchIds}
+                  filterAncestorIds={filterAncestorIds}
+                  placeholder=""
+                />
+            }
           </div>
         </div>
 
