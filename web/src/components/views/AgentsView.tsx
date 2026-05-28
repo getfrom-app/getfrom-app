@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiRequest, getToken } from '../../api/client'
-import { store } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
+import { getAgentesNode, getAgentData } from '../../utils/agentesHelper'
 
 interface AgentRun {
   id: string
@@ -139,6 +141,8 @@ function renderAgentOutput(text: string): string {
 }
 
 export default function AgentsView() {
+  const navigate = useNavigate()
+  const s = useStore()
   const [runs, setRuns] = useState<AgentRun[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewAgent, setShowNewAgent] = useState(false)
@@ -149,6 +153,16 @@ export default function AgentsView() {
   const [runResult, setRunResult] = useState<string | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
   const isGuest = !getToken()
+
+  // Agentes desde el árbol de nodos
+  const agentNodes = (() => {
+    const parent = getAgentesNode()
+    if (!parent) return []
+    return s.children(parent.id)
+      .filter(n => !n.deletedAt)
+      .map(n => ({ node: n, data: getAgentData(n.id) }))
+      .filter(x => x.data !== null)
+  })()
 
   useEffect(() => {
     if (isGuest) { setLoading(false); return }
@@ -189,12 +203,11 @@ export default function AgentsView() {
     }
   }
 
-  function applyShortcut(s: typeof SHORTCUTS[0]) {
-    setSystemPrompt(s.systemPrompt)
-    setUserMessage(s.userMessage)
-    setAgentTitle(s.label)
+  function applyShortcut(label: string, sp: string, um: string) {
+    setSystemPrompt(sp)
+    setUserMessage(um)
+    setAgentTitle(label)
     setShowNewAgent(true)
-    // Scroll to the new agent panel after a tick
     setTimeout(() => {
       document.querySelector('.agents-new-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, 50)
@@ -229,21 +242,35 @@ export default function AgentsView() {
           </div>
         ) : (
           <>
-            {/* Herramientas rápidas */}
+            {/* Agentes desde el árbol de nodos */}
             <div className="agents-shortcuts-section">
-              <div className="agents-shortcuts-label">Herramientas rápidas</div>
-              <div className="agents-shortcuts">
-                {SHORTCUTS.map(s => (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="agents-shortcuts-label">Agentes</div>
+                {getAgentesNode() && (
                   <button
-                    key={s.label}
-                    className="agent-shortcut-btn"
-                    onClick={() => applyShortcut(s)}
-                    title={s.label}
+                    style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    onClick={() => { const n = getAgentesNode(); if (n) navigate(`/node/${n.id}`) }}
+                    title="Ver y editar agentes en el árbol"
                   >
-                    <span className="agent-shortcut-icon">{s.icon}</span>
-                    <span className="agent-shortcut-text">{s.label}</span>
+                    Ver en árbol →
+                  </button>
+                )}
+              </div>
+              <div className="agents-shortcuts">
+                {agentNodes.map(({ node, data }) => data && (
+                  <button
+                    key={node.id}
+                    className={`agent-shortcut-btn ${data.enabled ? '' : 'agent-shortcut-btn--disabled'}`}
+                    onClick={() => applyShortcut(node.text, data.systemPrompt, data.userMessage)}
+                    title={data.enabled ? node.text : `${node.text} (desactivado)`}
+                  >
+                    <span className="agent-shortcut-icon">{data.icon}</span>
+                    <span className="agent-shortcut-text">{node.text.replace(/^[^\s]+\s/, '')}</span>
                   </button>
                 ))}
+                {agentNodes.length === 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Cargando agentes…</span>
+                )}
               </div>
             </div>
 

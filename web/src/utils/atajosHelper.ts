@@ -8,9 +8,19 @@ export function getAtajosNode() {
 
 export function ensureAtajosNode() {
   const existing = getAtajosNode()
-  if (existing) return existing
+  if (existing) {
+    // Migración: quitar _system si lo tenía (ahora es visible en el árbol)
+    try {
+      const ed = JSON.parse(existing.extraData || '{}')
+      if (ed._system) {
+        delete ed._system
+        store.updateNode(existing.id, { extraData: JSON.stringify(ed) })
+      }
+    } catch { /* ignore */ }
+    return existing
+  }
   const node = store.createNode({ text: ATAJOS_NAME, parentId: null, siblingOrder: 9998 })
-  store.updateNode(node.id, { extraData: JSON.stringify({ _system: true }) })
+  // Sin _system — visible en el árbol como el resto de nodos de sistema
   return store.getNode(node.id)!
 }
 
