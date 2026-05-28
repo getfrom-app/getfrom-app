@@ -755,22 +755,15 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           <StatusBar isSyncing={isSyncing} showSaved={showSaved} />
         </>
       ) : (
-        /* Collapsed sidebar: just nav icons */
+        /* Collapsed sidebar: minimal icons */
         <>
           <nav className="sidebar-nav">
             <button
               className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
               onClick={() => navigate('/')}
-              title="Hoy"
+              title="Inicio"
             >
-              <span className="nav-icon">📓</span>
-            </button>
-            <button
-              className={`nav-item ${isActive('/calendar') ? 'active' : ''}`}
-              onClick={() => navigate('/calendar')}
-              title="Planificador"
-            >
-              <span className="nav-icon">📅</span>
+              <span className="nav-icon">🏠</span>
             </button>
             <button
               className={`nav-item ${isActive('/trash') ? 'active' : ''}`}
@@ -787,9 +780,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
               title="Ajustes"
             >
               <span className="nav-icon">⚙</span>
-            </button>
-            <button className="nav-item" onClick={onLogout} title="Cerrar sesión">
-              <span className="nav-icon">↩</span>
             </button>
           </div>
         </>
