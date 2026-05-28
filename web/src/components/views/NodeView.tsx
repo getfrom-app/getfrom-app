@@ -51,6 +51,27 @@ export default function NodeView() {
   const s = useStore()
   const node = id ? s.getNode(id) : undefined
 
+  // ── Nodos atajo: al cargar, aplicar filtro y volver al árbol ─────────────
+  // Un atajo no tiene contenido propio — es un filtro guardado.
+  // Al "entrar" en él, se activa el filtro en lugar de mostrar el nodo.
+  useEffect(() => {
+    if (!node) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._shortcutNodeId) {
+        // Atajo a nodo específico → navegar al nodo destino
+        navigate(`/node/${ed._shortcutNodeId}`, { replace: true })
+        return
+      }
+      if (ed._shortcutQuery !== undefined) {
+        // Atajo de filtro → aplicar y volver al árbol raíz
+        window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: ed._shortcutQuery || '' } }))
+        navigate('/', { replace: true })
+        return
+      }
+    } catch { /* nodo normal, continuar */ }
+  }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [bodyEditing, setBodyEditing] = useState(false)
   const [bodyValue, setBodyValue] = useState('')
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
