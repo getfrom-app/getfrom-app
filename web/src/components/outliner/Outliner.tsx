@@ -512,6 +512,17 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // ── Teclado sobre multi-selección ─────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // ⌘A — seleccionar todos los nodos visibles (independiente de si hay selección activa)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          e.stopPropagation()
+          gSetSelected(new Set(flatVisibleIds()))
+          return
+        }
+      }
       if (selectedIds.size === 0) return
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault()
@@ -606,16 +617,32 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
   }
 
-  // Shift+click adds/removes from multi-selection set
+  // Shift+click: range-select desde el último nodo seleccionado/enfocado hasta el clickeado.
+  // Si no hay selección previa, simplemente añade/quita el nodo.
   const handleShiftSelect = useCallback((id: string) => {
-    const next = new Set(_gSelectedIds)
-    if (next.has(id)) {
-      next.delete(id)
-    } else {
-      next.add(id)
+    const flat = flatVisibleIds()
+    const clickedIdx = flat.indexOf(id)
+    if (clickedIdx === -1) return
+
+    // Si hay exactamente un nodo ya seleccionado o hay un selectedId,
+    // hacer range-select entre ese ancla y el clickeado.
+    const anchor = selectedId ?? (_gSelectedIds.size === 1 ? [..._gSelectedIds][0] : null)
+    if (anchor && anchor !== id) {
+      const anchorIdx = flat.indexOf(anchor)
+      if (anchorIdx !== -1) {
+        const lo = Math.min(anchorIdx, clickedIdx)
+        const hi = Math.max(anchorIdx, clickedIdx)
+        gSetSelected(new Set(flat.slice(lo, hi + 1)))
+        return
+      }
     }
+
+    // Sin ancla clara: toggle individual
+    const next = new Set(_gSelectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
     gSetSelected(next)
-  }, [])
+  }, [selectedId, flatVisibleIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Multi-select: borrar seleccionados (también usado por teclado)
   function handleDeleteSelected() {

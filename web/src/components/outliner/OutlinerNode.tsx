@@ -417,11 +417,31 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         })
     : false
 
-  // Sync DOM text with node.text when not editing
-  // Setear contenido via innerHTML cuando NO editando — evita poner hijos React
-  // dentro de contentEditable (causa bug removeChild en reconciler de React)
+  // Sync DOM text with node.text when not editing.
+  // Si estamos editando (isEditing=true) pero el store cambió externamente
+  // (undo/redo), también actualizamos el DOM para que ⌘Z funcione en texto.
   useEffect(() => {
-    if (isEditing || !contentRef.current) return
+    if (!contentRef.current) return
+
+    if (isEditing) {
+      // Sólo sincronizar si undo/redo cambió el texto externamente —
+      // es decir, el DOM ya no coincide con el store.
+      const domText = (contentRef.current.textContent || '').replace(/ /g, ' ')
+      if (domText === displayNode.text) return
+      // Texto cambiado externamente (undo/redo): actualizar DOM y cursor al final
+      contentRef.current.textContent = displayNode.text
+      nodeTextRef.current = displayNode.text
+      const sel = window.getSelection()
+      if (sel && contentRef.current) {
+        const range = document.createRange()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      }
+      return
+    }
+
     const forced = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
       ? extraBlock as 'bullet' | 'h1' | 'h2' | 'h3'
       : undefined
