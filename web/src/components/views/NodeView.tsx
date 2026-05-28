@@ -374,13 +374,14 @@ export default function NodeView() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
 
-  // Filtro inteligente: cuando el globalFilter es una smart query (pendiente, hoy, tarea…)
-  // computar matchIds para el Outliner en lugar de hacer text search.
+  // Filtro inteligente: cuando el filtro activo (global o in-doc) es una smart query
+  // (pendiente, hoy, tarea…), computar matchIds para el Outliner en lugar de text search.
+  const activeFilterQuery = inDocSearch || globalFilter || ''
   const smartFilterResult = useMemo(() => {
-    if (!globalFilter?.trim() || inDocSearch) return null
-    if (!isSmartQuery(globalFilter)) return null
-    return applyWFFilter(s.nodes, globalFilter)
-  }, [globalFilter, inDocSearch, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!activeFilterQuery.trim()) return null
+    if (!isSmartQuery(activeFilterQuery)) return null
+    return applyWFFilter(s.nodes, activeFilterQuery)
+  }, [activeFilterQuery, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cerrar title tag picker al hacer click fuera
   useEffect(() => {
@@ -2265,7 +2266,7 @@ export default function NodeView() {
                     parentId={node.id}
                     autoFocusEmpty
                     placeholder="Añade contenido…"
-                    filterText={inDocSearch || (globalFilter && !smartFilterResult ? globalFilter : undefined)}
+                    filterText={smartFilterResult ? undefined : (activeFilterQuery || undefined)}
                     filterMatchIds={smartFilterResult?.matchIds}
                     filterAncestorIds={smartFilterResult?.ancestorIds}
                     temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
