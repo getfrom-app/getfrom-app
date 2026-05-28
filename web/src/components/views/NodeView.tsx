@@ -2174,8 +2174,12 @@ export default function NodeView() {
                 {isWFTemporal && (
                   <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
                 )}
-                {isWFMode && node.isDiaryEntry && (
+                {/* Diary entry en WF mode: temporal view por defecto, DiaryTimeline en vista calendario */}
+                {isWFMode && node.isDiaryEntry && viewKind !== 'calendar' && (
                   <WFTemporalView node={node} temporalType="diary" />
+                )}
+                {isWFMode && node.isDiaryEntry && viewKind === 'calendar' && (
+                  <NodeCalendarView parentId={node.id} />
                 )}
 
                 {/* ── Modo normal (no WF): bloques originales ── */}
@@ -2217,8 +2221,10 @@ export default function NodeView() {
                 {/* GCal events son ahora nodos normales del outliner — no hay bloque especial */}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario ── */}
+                {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
                 <div className={`outliner-section${
-                  viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal)
+                  (viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal))
+                  || (node.isDiaryEntry && viewKind === 'calendar')
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
