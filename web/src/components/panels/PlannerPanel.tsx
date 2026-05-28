@@ -525,6 +525,8 @@ export default function PlannerPanel({ onClose }: Props) {
         <span className="pp-nav-title">{navTitle}</span>
         <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
         <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>Hoy</button>
+        <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
+          title={`Restablecer zoom — ahora: ${visibleDayCnt} días`}>⊙</button>
         <button className="pp-close-btn" onClick={onClose} title="Cerrar">×</button>
       </div>
 
@@ -554,12 +556,8 @@ export default function PlannerPanel({ onClose }: Props) {
             {/* Cabeceras sync */}
             <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
               title="Arrastra izq/der para ver más/menos días (2–7)">
-              {/* Esquina reset — clic restablece zoom por defecto */}
-              <div className="pp-zoom-reset" style={{width: AXIS_W, flexShrink:0}}
-                onClick={e => { e.stopPropagation(); resetZoom() }}
-                title={`Reset zoom — ${visibleDayCnt} días · ${Math.round(slotH)}px/30min`}>
-                ⊙
-              </div>
+              {/* Espacio para alinear con el eje de horas */}
+              <div style={{width: AXIS_W, flexShrink:0}} />
               {visibleDays.map(d => (
                 <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
                   style={{width:colW, flexShrink:0}}>
