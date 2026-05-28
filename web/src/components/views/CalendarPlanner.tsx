@@ -38,9 +38,10 @@ const TOTAL_HOURS = HOUR_END - HOUR_START
 const SLOT_H      = 40          // px / 30 min
 const HOUR_H      = SLOT_H * 2  // px / hora
 const PX_PER_MIN  = SLOT_H / 30
-const COL_W       = 180         // px / columna día
 const AXIS_W      = 44          // px eje horas
 const TASK_COL_W  = 300         // px columna tareas
+const VISIBLE_DAY_COLS = 5      // columnas visibles simultáneamente en day view
+const PRE_DAYS_EACH   = 7       // días extra pre-renderizados a cada lado (scroll)
 
 // ── Helpers tiempo ────────────────────────────────────────────────────────
 function sameDay(a: Date, b: Date) {
@@ -224,12 +225,29 @@ export default function CalendarPlanner() {
   const [centerDate, setCenterDate] = useState(today)
   const [gcalEvents, setGcalEvents] = useState<CalendarEvent[]>([])
   const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
+  // Ancho dinámico de cada columna: (ancho del panel timeline - eje) / 5
+  const [colW, setColW] = useState(180)
+  const timelineRef = useRef<HTMLDivElement>(null)
 
   // ctx menu
   const [ctxMenu, setCtxMenu] = useState<{x:number;y:number;block:TimeBlock}|null>(null)
 
   // resize ref
   const resizeRef = useRef<{id:string}|null>(null)
+
+  // ── Calcular colW dinámicamente ──────────────────────────────────────────
+  useEffect(() => {
+    function update() {
+      if (!timelineRef.current) return
+      const available = timelineRef.current.clientWidth - AXIS_W - 2
+      const cols = viewMode === 'week' ? 7 : VISIBLE_DAY_COLS
+      setColW(Math.max(100, Math.floor(available / cols)))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    if (timelineRef.current) ro.observe(timelineRef.current)
+    return () => ro.disconnect()
+  }, [viewMode])
 
   // ── GCal events ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -403,7 +421,7 @@ export default function CalendarPlanner() {
     const nowTop    = topPx(new Date())
 
     return (
-      <div key={day.toISOString()} className="cp-day-col-wrap" style={{ width: COL_W, flexShrink: 0 }}>
+      <div key={day.toISOString()} className="cp-day-col-wrap" style={{ width: colW, flexShrink: 0 }}>
         <div className="cp-day-col"
           style={{ height: TOTAL_HOURS * HOUR_H, position: 'relative' }}
           onDragOver={e => e.preventDefault()}
@@ -437,11 +455,13 @@ export default function CalendarPlanner() {
   // Centrar en la columna del día actual al montar o cambiar centerDate
   useLayoutEffect(() => {
     if (viewMode !== 'day' || !scrollRef.current) return
-    // 5 columnas: center-2, center-1, center, center+1, center+2
-    // centerDate es siempre la columna 2 (índice 2, 0-based)
-    const scroll = 2 * COL_W - (scrollRef.current.clientWidth - AXIS_W) / 2 + COL_W / 2
+    // Centrar el día actual: PRE_DAYS_EACH columnas antes del centro
+    // El centro queda en el medio del viewport visible (2 a izquierda, 2 a derecha)
+    const centerColLeft = PRE_DAYS_EACH * colW
+    const viewportW = scrollRef.current.clientWidth - AXIS_W
+    const scroll = centerColLeft - Math.floor((viewportW - colW) / 2)
     scrollRef.current.scrollLeft = Math.max(0, scroll)
-  }, [viewMode, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll vertical al "ahora" al montar
   const gridScrollRef = useRef<HTMLDivElement>(null)
@@ -453,13 +473,15 @@ export default function CalendarPlanner() {
   // ── Días de la vista actual ───────────────────────────────────────────────
   const visibleDays = useMemo(() => {
     if (viewMode === 'day') {
-      return [addDays(centerDate,-2), addDays(centerDate,-1), centerDate, addDays(centerDate,1), addDays(centerDate,2)]
+      // Pre-renderizamos PRE_DAYS_EACH días a cada lado para scroll continuo
+      return Array.from({ length: PRE_DAYS_EACH * 2 + 1 }, (_, i) =>
+        addDays(centerDate, i - PRE_DAYS_EACH)
+      )
     }
     if (viewMode === 'week') {
       const mon = startOfWeek(centerDate)
       return Array.from({length:7}, (_,i) => addDays(mon,i))
     }
-    // month: solo para la grid, no para columns
     return []
   }, [viewMode, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -621,7 +643,7 @@ export default function CalendarPlanner() {
         </div>
 
         {/* ── Timeline area ── */}
-        <div className="cp-timeline" ref={gridScrollRef}>
+        <div className="cp-timeline" ref={el => { (gridScrollRef as any).current = el; (timelineRef as any).current = el }}>
 
           {viewMode === 'month' && renderMonthView()}
 
@@ -637,7 +659,7 @@ export default function CalendarPlanner() {
                     <div
                       key={d.toISOString()}
                       className={`cp-col-head ${isToday?'cp-col-head--today':''} ${isCenter?'cp-col-head--center':''}`}
-                      style={{ width: COL_W, flexShrink: 0 }}
+                      style={{ width: colW, flexShrink: 0 }}
                     >
                       {dayColLabel(d)}
                     </div>
