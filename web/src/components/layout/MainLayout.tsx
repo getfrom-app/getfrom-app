@@ -376,19 +376,7 @@ export default function MainLayout() {
   return (
     <ToastProvider>
     <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
-      {/* ── Cabecera unificada: de izquierda a derecha ── */}
-      <WFTopBar
-        onFilter={setFilterText}
-        filterText={filterText}
-        onCommandPalette={() => setShowCommandPalette(v => !v)}
-        onLogout={handleLogout}
-        onOpenSettings={() => navigate('/settings')}
-        onToggleSidebar={() => setSidebarOpen(v => !v)}
-        sidebarOpen={sidebarOpen}
-      />
-      {/* ── Cuerpo: sidebar + contenido ── */}
-      <div className="main-body">
-      {/* Sidebar */}
+      {/* ── Sidebar (altura completa, con su propia cabecera) ── */}
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -405,6 +393,17 @@ export default function MainLayout() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+      {/* ── Columna derecha: topbar + contenido ── */}
+      <div className="main-body">
+        <WFTopBar
+          onFilter={setFilterText}
+          filterText={filterText}
+          onCommandPalette={() => setShowCommandPalette(v => !v)}
+          onLogout={handleLogout}
+          onOpenSettings={() => navigate('/settings')}
+          onToggleSidebar={() => setSidebarOpen(v => !v)}
+          sidebarOpen={sidebarOpen}
+        />
       <main className="main-content">
         <TrialBanner />
         {/* Mobile hamburger */}
