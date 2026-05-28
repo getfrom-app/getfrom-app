@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
@@ -376,18 +376,8 @@ export default function MainLayout() {
 
   return (
     <ToastProvider>
-    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-      {/* WFTopBar — minimal, estilo Workflowy */}
-      <WFTopBar
-        onFilter={setFilterText}
-        filterText={filterText}
-        onCommandPalette={() => setShowCommandPalette(v => !v)}
-        onLogout={handleLogout}
-        onOpenSettings={() => navigate('/settings')}
-        onToggleSidebar={() => setSidebarOpen(v => !v)}
-        sidebarOpen={sidebarOpen}
-      />
-      <div className="main-body" style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+      {/* Sidebar — altura completa, a la izquierda del layout */}
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -416,6 +406,18 @@ export default function MainLayout() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+      {/* Panel derecho: TopBar + contenido */}
+      <div className="main-body">
+      {/* WFTopBar — solo sobre el área de contenido */}
+      <WFTopBar
+        onFilter={setFilterText}
+        filterText={filterText}
+        onCommandPalette={() => setShowCommandPalette(v => !v)}
+        onLogout={handleLogout}
+        onOpenSettings={() => navigate('/settings')}
+        onToggleSidebar={() => setSidebarOpen(v => !v)}
+        sidebarOpen={sidebarOpen}
+      />
       <main className="main-content">
         <TrialBanner />
         {/* Mobile hamburger */}

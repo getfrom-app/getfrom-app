@@ -24,16 +24,16 @@ interface Props {
 type FilterCategory = 'tags' | 'dates' | 'tasks' | null
 
 const DATE_CHIPS = [
-  { label: 'Hoy',        query: 'hoy' },
-  { label: 'Mañana',     query: 'mañana' },
-  { label: 'Esta semana',query: 'semana' },
-  { label: 'Vencido',    query: 'vencido' },
+  { label: 'Hoy',         query: 'hoy' },
+  { label: 'Mañana',      query: 'mañana' },
+  { label: 'Esta semana', query: 'semana' },
+  { label: 'Vencido',     query: 'vencido' },
 ]
 const TASK_CHIPS = [
-  { label: 'Pendientes', query: 'pendiente' },
-  { label: 'Hechos',     query: 'hecho' },
-  { label: 'Tareas hoy', query: 'hoy tarea' },
-  { label: 'Eventos',    query: 'evento' },
+  { label: 'Pendiente',  query: 'pendiente' },
+  { label: 'Hecho',      query: 'hecho' },
+  { label: 'Tarea',      query: 'tarea' },
+  { label: 'Evento',     query: 'evento' },
 ]
 
 export default function WFTopBar({
@@ -126,22 +126,27 @@ export default function WFTopBar({
     return () => window.removeEventListener('keydown', handleKey)
   }, [filterOpen, onFilter])
 
-  // ── Apply chip filter ─────────────────────────────────────────────────────
-  function applyChip(query: string) {
-    // Toggle: if already active, remove it; otherwise set it
-    if (filterText === query) {
-      onFilter('')
+  // ── Apply chip filter — combina tokens en lugar de reemplazar ────────────
+  function applyChip(token: string) {
+    const tokens = filterText.trim().split(/\s+/).filter(Boolean)
+    const idx = tokens.indexOf(token)
+    if (idx !== -1) {
+      // Toggle off: quitar el token
+      tokens.splice(idx, 1)
     } else {
-      onFilter(query)
+      tokens.push(token)
     }
-    filterRef.current?.blur()
-    setFilterOpen(false)
-    setFilterCategory(null)
+    onFilter(tokens.join(' '))
   }
 
   function applyContextFilter(nodeText: string) {
     const slug = nodeText.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
     applyChip(`@${slug}`)
+  }
+
+  // Comprueba si un token está activo (en el filtro actual)
+  function isChipActive(token: string) {
+    return filterText.trim().split(/\s+/).includes(token)
   }
 
   function goHome() { navigate('/') }
@@ -287,11 +292,11 @@ export default function WFTopBar({
                 )}
                 {contextoNodes.map(n => {
                   const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-                  const query = `@${slug}`
+                  const token = `@${slug}`
                   return (
                     <button
                       key={n.id}
-                      className={`wf-filter-chip ${filterText === query ? 'active' : ''}`}
+                      className={`wf-filter-chip ${isChipActive(token) ? 'active' : ''}`}
                       onMouseDown={e => { e.preventDefault(); applyContextFilter(n.text || '') }}
                     >
                       @{n.text}
@@ -306,7 +311,7 @@ export default function WFTopBar({
                 {DATE_CHIPS.map(c => (
                   <button
                     key={c.query}
-                    className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                    className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
                     onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}
                   >
                     {c.label}
@@ -320,7 +325,7 @@ export default function WFTopBar({
                 {TASK_CHIPS.map(c => (
                   <button
                     key={c.query}
-                    className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                    className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
                     onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}
                   >
                     {c.label}
@@ -329,28 +334,27 @@ export default function WFTopBar({
               </div>
             )}
 
-            {/* Sin categoría seleccionada: mostrar todos los tags del usuario */}
+            {/* Sin categoría seleccionada: chips rápidos combinables */}
             {!filterCategory && (
               <div className="wf-filter-chips">
-                {DATE_CHIPS.slice(0,2).map(c => (
-                  <button key={c.query} className={`wf-filter-chip ${filterText === c.query ? 'active' : ''}`}
+                {DATE_CHIPS.map(c => (
+                  <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
                     onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}>
                     {c.label}
                   </button>
                 ))}
-                <button className={`wf-filter-chip ${filterText === 'tarea' ? 'active' : ''}`}
-                  onMouseDown={e => { e.preventDefault(); applyChip('tarea') }}>
-                  Tareas
-                </button>
-                <button className={`wf-filter-chip ${filterText === 'pendiente' ? 'active' : ''}`}
-                  onMouseDown={e => { e.preventDefault(); applyChip('pendiente') }}>
-                  Pendientes
-                </button>
-                {contextoNodes.slice(0, 5).map(n => {
+                {TASK_CHIPS.map(c => (
+                  <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyChip(c.query) }}>
+                    {c.label}
+                  </button>
+                ))}
+                {contextoNodes.slice(0, 6).map(n => {
                   const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+                  const token = `@${slug}`
                   return (
                     <button key={n.id}
-                      className={`wf-filter-chip wf-filter-chip--tag ${filterText === `@${slug}` ? 'active' : ''}`}
+                      className={`wf-filter-chip wf-filter-chip--tag ${isChipActive(token) ? 'active' : ''}`}
                       onMouseDown={e => { e.preventDefault(); applyContextFilter(n.text || '') }}>
                       @{n.text}
                     </button>

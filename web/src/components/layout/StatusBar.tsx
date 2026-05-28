@@ -1,5 +1,6 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
+import { useUserStore } from '../../store/userStore'
 
 // Versión del build web — incrementar en cada deploy significativo
 export const WEB_VERSION = 'v9.1'
@@ -10,7 +11,7 @@ interface StatusBarProps {
 
 export default function StatusBar({ isSyncing }: StatusBarProps) {
   const s = useStore()
-  const navigate = useNavigate()
+  const us = useUserStore()
   const location = useLocation()
 
   // Context-specific extra info
@@ -40,9 +41,16 @@ export default function StatusBar({ isSyncing }: StatusBarProps) {
     return null
   }
 
+  const email = us.user?.email
+
   return (
     <div className="status-bar">
       {getContextInfo()}
+      {email && (
+        <span style={{ opacity: 0.45, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }} title={email}>
+          {email}
+        </span>
+      )}
       <span className="status-bar-sync">
         {isSyncing ? '↻ Sincronizando...' : '✓ Guardado'}
       </span>

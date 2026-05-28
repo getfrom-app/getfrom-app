@@ -1385,8 +1385,10 @@ export default function NodeView() {
                 }
               } catch {}
               if (node.isDiaryEntry) return null
-              // Sin ningún icono (ni en texto ni en extra) → mostrar el 📄 por defecto
-              // Con icono → siempre mostrar el botón para poder cambiarlo
+              // Si el icono viene del texto (iconSource === 'text'), no mostrar botón de icono
+              // porque el emoji ya aparece en el h1 y duplicaría la visualización.
+              // Solo mostrar el botón cuando el icono es de extraData o no hay ninguno.
+              if (iconSource === 'text') return null
               return (
                 <div className="node-icon-wrapper">
                   <button
@@ -1394,8 +1396,8 @@ export default function NodeView() {
                     onClick={() => setShowEmojiPicker(v => !v)}
                     title="Cambiar icono"
                   >
-                    {/* Solo mostrar si hay icono explícito en extraData */}
-                    {nodeIcon || '📄'}
+                    {/* Mostrar icono de extraData, o 📄 si no hay ninguno */}
+                    {iconSource === 'extra' ? nodeIcon : '📄'}
                   </button>
                   {showEmojiPicker && (
                     <EmojiPicker
