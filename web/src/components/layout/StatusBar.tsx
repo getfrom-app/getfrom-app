@@ -1,63 +1,99 @@
-import { useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
+import { listBackups, formatBackupAge } from '../../api/backups'
 
 // Versión del build web — incrementar en cada deploy significativo
 export const WEB_VERSION = 'v9.1'
 
-interface StatusBarProps {
+interface Props {
   isSyncing: boolean
   showSaved?: boolean
 }
 
-export default function StatusBar({ isSyncing, showSaved }: StatusBarProps) {
+export default function StatusBar({ isSyncing, showSaved }: Props) {
   const s = useStore()
   const us = useUserStore()
-  const location = useLocation()
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [lastBackup, setLastBackup] = useState<string | null>(null)
+  const [loadingBackup, setLoadingBackup] = useState(true)
 
-  // Context-specific extra info
-  const allActive = s.allActive()
-  const path = location.pathname.replace(/^\/app/, '') || '/'
+  // Online / offline listener
+  useEffect(() => {
+    const on = () => setIsOnline(true)
+    const off = () => setIsOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
 
-  const getContextInfo = () => {
-    if (path.startsWith('/node/')) {
-      const nodeId = path.split('/node/')[1]
-      const node = s.getNode(nodeId)
-      if (node?.body) {
-        const words = node.body.trim().split(/\s+/).length
-        const readTime = Math.max(1, Math.round(words / 200))
-        return <span style={{ opacity: 0.5 }}>{words} palabras · {readTime} min lectura</span>
+  // Último backup — carga una vez y se refresca cada 5 min
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const snaps = await listBackups()
+        if (!cancelled && snaps.length > 0) {
+          setLastBackup(snaps[0].createdAt)
+        }
+      } catch { /* silencioso */ } finally {
+        if (!cancelled) setLoadingBackup(false)
       }
     }
-    if (path === '/tasks') {
-      const total = allActive.filter(n => n.status !== null).length
-      const done = allActive.filter(n => n.status === 'done').length
-      const pct = total > 0 ? Math.round((done / total) * 100) : 0
-      return <span style={{ opacity: 0.5 }}>{done}/{total} tareas · {pct}%</span>
-    }
-    if (path === '/search') {
-      const usedTags = s.allUsedTags()
-      return <span style={{ opacity: 0.5 }}>{usedTags.length} tags activos</span>
-    }
-    return null
-  }
+    load()
+    const interval = setInterval(load, 5 * 60 * 1000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
 
   const email = us.user?.email
+  const nodeCount = s.allActive().length
 
   return (
-    <div className="status-bar">
-      {getContextInfo()}
+    <div className="app-footer">
+      {/* Badge conexión */}
+      <span className={`footer-badge ${isOnline ? 'footer-badge--online' : 'footer-badge--offline'}`}>
+        <span className="footer-badge-dot" />
+        {isOnline ? 'Conectado' : 'Sin conexión'}
+      </span>
+
+      <span className="footer-sep" />
+
+      {/* Último backup */}
+      <span className="footer-item" title="Último backup automático">
+        💾 {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : 'Sin backup'}
+      </span>
+
+      <span className="footer-sep" />
+
+      {/* Nodos activos */}
+      <span className="footer-item" title="Nodos en tu árbol">
+        {nodeCount.toLocaleString()} nodos
+      </span>
+
+      {/* Spacer */}
+      <span style={{ flex: 1 }} />
+
+      {/* Email */}
       {email && (
-        <span style={{ opacity: 0.45, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }} title={email}>
-          {email}
-        </span>
+        <>
+          <span className="footer-item footer-email" title={email}>{email}</span>
+          <span className="footer-sep" />
+        </>
       )}
-      <span className="status-bar-sync">
-        {isSyncing ? '↻ Sincronizando...' : (showSaved ? '✓ Guardado' : '')}
+
+      {/* Sync */}
+      <span className="footer-item footer-sync">
+        {isSyncing
+          ? <><span className="footer-spinner" /> Sincronizando</>
+          : showSaved
+            ? '✓ Guardado'
+            : ''}
       </span>
-      <span className="status-bar-version" title="Versión">
-        {WEB_VERSION}
-      </span>
+
+      <span className="footer-sep" />
+
+      {/* Versión */}
+      <span className="footer-version">{WEB_VERSION}</span>
     </div>
   )
 }

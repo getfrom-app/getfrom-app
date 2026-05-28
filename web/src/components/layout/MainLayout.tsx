@@ -4,6 +4,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import Sidebar from '../sidebar/Sidebar'
+import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
 
 import WFHomeView from '../views/WFHomeView'
@@ -464,6 +465,8 @@ export default function MainLayout() {
         </Suspense>
       </main>
       </div>{/* .main-body */}
+      {/* ── Footer global: de extremo a extremo ── */}
+      <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
       )}

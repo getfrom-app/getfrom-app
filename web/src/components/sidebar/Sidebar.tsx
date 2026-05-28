@@ -751,8 +751,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           {/* Recording bar */}
           <WebRecordingBar />
 
-          {/* Footer: email + estado sync + versión */}
-          <StatusBar isSyncing={isSyncing} showSaved={showSaved} />
+          {/* Footer global — movido al nivel raíz de MainLayout */}
         </>
       ) : (
         /* Collapsed sidebar: minimal icons */
