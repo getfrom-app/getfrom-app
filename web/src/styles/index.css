@@ -10335,10 +10335,7 @@ a:focus-visible {
    2. wf-topbar: altura extra + padding-top para que el breadcrumb no solape
    3. Toda la topbar es draggable; los botones interactivos se marcan no-drag  */
 
-.tauri-mac .sidebar-header {
-  padding-top: 36px;
-  min-height: 72px;
-}
+/* .tauri-mac .sidebar-header padding removed — sidebar-header is now display:none */
 
 /* Área draggable para mover la ventana (encima del sidebar-header) */
 .tauri-mac .sidebar-header {
@@ -10354,11 +10351,7 @@ a:focus-visible {
 /* WFTopBar en Mac: el área de los traffic lights (≈28px) queda encima
    del topbar, así que añadimos padding-top para no solapar el breadcrumb.
    La topbar es draggable en su totalidad; los controles se marcan no-drag. */
-.tauri-mac .wf-topbar {
-  padding-top: 28px;
-  height: 68px; /* 40px original + 28px para traffic lights */
-  -webkit-app-region: drag;
-}
+/* .tauri-mac .wf-topbar padding removed — traffic lights handled by sidebar padding-top */
 .tauri-mac .wf-topbar button,
 .tauri-mac .wf-topbar input,
 .tauri-mac .wf-topbar a,
