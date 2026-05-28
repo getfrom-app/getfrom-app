@@ -1,54 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
 import WebRecordingBar from './WebRecordingBar'
-import StatusBar from '../layout/StatusBar'
-import {
-  getShortcuts, saveShortcuts, removeShortcut,
-  type WFShortcut,
-} from '../../store/shortcutsStore'
 import { getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
 // (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
-
-// ── Tag hierarchy helpers ───────────────────────────────────────────────────
-
-interface TagTreeNode {
-  name: string          // full tag name e.g. "la-isla/alumnos"
-  segment: string       // last segment e.g. "alumnos"
-  count: number         // node count for this exact tag
-  children: TagTreeNode[]
-}
-
-function buildTagTree(
-  tagNames: string[],
-  counts: (name: string) => number
-): TagTreeNode[] {
-  const roots: TagTreeNode[] = []
-  for (const full of tagNames) {
-    const parts = full.split('/').filter(Boolean)
-    if (parts.length === 0) continue
-    let siblings = roots
-    let cumulative = ''
-    parts.forEach((seg, i) => {
-      cumulative = i === 0 ? seg : `${cumulative}/${seg}`
-      let node = siblings.find(s => s.segment === seg)
-      if (!node) {
-        node = { name: cumulative, segment: seg, count: 0, children: [] }
-        siblings.push(node)
-      }
-      if (i === parts.length - 1) node.count = counts(full)
-      siblings = node.children
-    })
-  }
-  function sortRec(nodes: TagTreeNode[]) {
-    nodes.sort((a, b) => a.segment.localeCompare(b.segment))
-    nodes.forEach(n => sortRec(n.children))
-  }
-  sortRec(roots)
-  return roots
-}
 
 interface Props {
   open: boolean
@@ -87,7 +44,7 @@ function savePanels(panels: Panel[]) {
   localStorage.setItem('from_panels', JSON.stringify(panels))
 }
 
-type SidebarTab = 'tags' | 'favorites' | 'panels'
+type SidebarTab = 'favorites' | 'panels'
 
 export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved, isGuest, onOpenSettings }: Props) {
   const navigate = useNavigate()
@@ -95,48 +52,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   const s = useStore()
   const us = useUserStore()
 
-  // En modo WF, el tab de tags no existe — empezar en 'panels'
-  const isWFMode = document.body.closest('.wf-layout') !== null ||
-    document.querySelector('.wf-layout') !== null
-  const [activeTab, setActiveTab] = useState<SidebarTab>(isWFMode ? 'panels' : 'tags')
+  const [activeTab, setActiveTab] = useState<SidebarTab>('panels')
   const [panels, setPanels] = useState<Panel[]>(getPanels)
-
-  // ── Menú contextual de tags ─────────────────────────────────────────────
-  const [tagMenu, setTagMenu] = useState<{ x: number; y: number; tagName: string } | null>(null)
-  const [tagRenaming, setTagRenaming] = useState<{ tagName: string; value: string } | null>(null)
-  const [tagColorPicker, setTagColorPicker] = useState<string | null>(null) // tagName
-
-  const TAG_COLOR_OPTIONS = [
-    '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
-    '#ef4444', '#ec4899', '#06b6d4', '#84cc16',
-    '#f97316', '#64748b',
-  ]
-
-  function openTagMenu(e: React.MouseEvent, tagName: string) {
-    e.preventDefault()
-    e.stopPropagation()
-    setTagMenu({ x: e.clientX, y: e.clientY, tagName })
-    setTagRenaming(null)
-    setTagColorPicker(null)
-  }
-
-  function closeTagMenu() { setTagMenu(null); setTagRenaming(null); setTagColorPicker(null) }
-
-  function handleTagDelete(tagName: string) {
-    if (!confirm(`¿Eliminar el tag #${tagName} de todos los nodos?`)) return
-    store.deleteTag(tagName)
-    closeTagMenu()
-  }
-
-  function handleTagRename(oldName: string, newName: string) {
-    store.renameTag(oldName, newName.trim())
-    closeTagMenu()
-  }
-
-  function handleTagColor(tagName: string, color: string | null) {
-    store.setTagColor(tagName, color)
-    closeTagMenu()
-  }
 
   // Refresca paneles cuando CommandPalette crea uno nuevo
   useEffect(() => {
@@ -144,48 +61,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     window.addEventListener('panels-updated', onPanelsUpdated)
     return () => window.removeEventListener('panels-updated', onPanelsUpdated)
   }, [])
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem('from_sidebar_collapsed') || '{}') } catch { return {} }
-  })
-  const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem('from_tags_collapsed') || '{}') } catch { return {} }
-  })
 
-  function toggleSection(key: string) {
-    const next = { ...collapsedSections, [key]: !collapsedSections[key] }
-    setCollapsedSections(next)
-    localStorage.setItem('from_sidebar_collapsed', JSON.stringify(next))
-  }
-
-  const tags = s.tagDefinitions()
-  const usedTags = s.allUsedTags()
-  const pendingCount = s.pendingTasks().length
   const showUpgrade = isGuest || !us.isPremium
-
-  const todayTasksCount = useMemo(() => {
-    return s.pendingTasks().filter(n => {
-      if (!n.due) return false
-      const d = new Date(n.due)
-      const today = new Date()
-      return d.toDateString() === today.toDateString()
-    }).length
-  }, [s])
-
-  const activeBuclesCount = useMemo(() => {
-    return s.allActive().filter(n =>
-      (n.types || []).includes('bucle') && n.status !== 'done' && !n.deletedAt
-    ).length
-  }, [s])
 
   // Favorites tab: all nodes with isFavorite === true
   const allFavorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt)
 
   function isActive(path: string) {
     return location.pathname === path || location.pathname.startsWith(path + '/')
-  }
-
-  function tagName(node: Node) {
-    return s.tagName(node) || node.text
   }
 
   function handleDeletePanel(id: string) {
@@ -195,155 +78,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   }
 
   // ── Tab content ────────────────────────────────────────────────────────
-
-  // Tag collapse state (persisted)
-  function getCollapsedTags(): Record<string, boolean> {
-    try { return JSON.parse(localStorage.getItem('from_tags_collapsed') || '{}') } catch { return {} }
-  }
-  function toggleTagCollapsed(name: string) {
-    const next = { ...collapsedTags, [name]: !collapsedTags[name] }
-    setCollapsedTags(next)
-    localStorage.setItem('from_tags_collapsed', JSON.stringify(next))
-  }
-
-  function renderTagTreeNode(node: TagTreeNode, depth: number) {
-    const color = s.tagColor(node.name)
-    const hasChildren = node.children.length > 0
-    const isCollapsed = !!collapsedTags[node.name]
-    const defNode = s.getTagDefNode(node.name)
-    const isActiveTag = defNode
-      ? location.pathname === `/node/${defNode.id}`
-      : location.pathname === `/tag/${node.name}`
-    return (
-      <div key={node.name}>
-        <div
-          className={`sidebar-tag-item ${isActiveTag ? 'active' : ''}`}
-          style={{ paddingLeft: 8 + depth * 14 }}
-          onClick={() => {
-            // Navegar al nodo de definición del tag (con body/contexto)
-            const defNode = s.getTagDefNode(node.name)
-            if (defNode) {
-              navigate(`/node/${defNode.id}`)
-            } else {
-              // Crear nodo de definición y navegar
-              const newNode = store.createNode({ text: node.name, parentId: null })
-              store.updateNode(newNode.id, { extraData: JSON.stringify({ _tagDefinition: node.name }) })
-              navigate(`/node/${newNode.id}`)
-            }
-          }}
-          onContextMenu={e => openTagMenu(e, node.name)}
-          title={`#${node.name} · ${node.count} nodos`}
-        >
-          {hasChildren ? (
-            <button
-              className="sidebar-tag-chevron"
-              onClick={e => { e.stopPropagation(); toggleTagCollapsed(node.name) }}
-              tabIndex={-1}
-              aria-label={isCollapsed ? 'Expandir' : 'Colapsar'}
-            >
-              <svg width="9" height="9" viewBox="0 0 10 10"
-                style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
-                <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              </svg>
-            </button>
-          ) : (
-            <span className="sidebar-tag-chevron" style={{ visibility: 'hidden' }} />
-          )}
-          <span style={{ color, fontSize: 12, fontWeight: 700, marginRight: 2 }}>#</span>
-          <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)' }}>{node.segment}</span>
-          {/* count eliminado: era ruidoso visualmente */}
-        </div>
-        {hasChildren && !isCollapsed && node.children.map(c => renderTagTreeNode(c, depth + 1))}
-      </div>
-    )
-  }
-
-  function renderTagsTab() {
-    const allTagNames = Array.from(new Set([
-      ...tags.map(t => tagName(t)).filter(Boolean) as string[],
-      ...usedTags,
-    ])).sort()
-    const tree = buildTagTree(allTagNames, name => s.tagNodeCount(name))
-
-    return (
-      <div className="sidebar-tab-content">
-        {/* Perfil IA — primera opción, siempre visible */}
-        {(() => {
-          const profile = s.perfilIANode()
-          const hasContent = !!(profile?.body?.trim())
-          const dot = hasContent ? '#22c55e' : '#f97316'
-          const hint = hasContent ? undefined : 'Cuéntale a la IA quién eres: proyectos, preferencias, forma de trabajar.'
-          return (
-            <div style={{ marginBottom: 6 }}>
-              <button
-                className="tree-item"
-                onClick={async () => {
-                  const p = await store.getOrCreatePerfilIA()
-                  navigate(`/node/${p.id}`)
-                }}
-                style={{ paddingLeft: 10, gap: 7 }}
-                title="Perfil de IA — contexto personal para el asistente"
-              >
-                <span style={{
-                  display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
-                  background: dot, flexShrink: 0,
-                }} />
-                <span className="tree-item-name" style={{ fontWeight: 500 }}>Perfil de IA</span>
-                {!hasContent && (
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 'auto' }}>configurar →</span>
-                )}
-              </button>
-              {hint && (
-                <div style={{ padding: '2px 14px 4px 26px', fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
-                  {hint}
-                </div>
-              )}
-            </div>
-          )
-        })()}
-
-        {/* Proyectos activos - antes de tags */}
-        {(() => {
-          const projects = s.allActive()
-            .filter(n => !n.deletedAt && (n.types || []).includes('proyecto') && n.status !== 'done')
-            .slice(0, 5)
-          if (projects.length === 0) return null
-          return (
-            <div style={{ marginBottom: 8 }}>
-              <div className="nav-section-label nav-section-label--clickable" onClick={() => navigate(`/search?q=tag:proyecto`)}>
-                <span>Proyectos</span>
-                <span className="tree-item-count">{projects.length}</span>
-              </div>
-              <div className="tree-section">
-                {projects.map(p => (
-                  <button key={p.id} className="tree-item" onClick={() => navigate(`/node/${p.id}`)}>
-                    <span className="tree-item-icon">🚀</span>
-                    <span className="tree-item-name">{p.text || 'Sin título'}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* Tags section — hierarchical */}
-        {allTagNames.length > 0 ? (
-          <div style={{ marginBottom: 8 }}>
-            <div className="nav-section-label nav-section-label--clickable" onClick={() => toggleSection('tags')}>
-              <span className="nav-section-chevron">{collapsedSections['tags'] ? '▸' : '▾'}</span>
-              <span>Tags</span>
-            </div>
-            {!collapsedSections['tags'] && tree.map(t => renderTagTreeNode(t, 0))}
-          </div>
-        ) : (
-          <div className="tree-empty" style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Sin tags aún. Escribe #tag en cualquier nota.
-          </div>
-        )}
-
-      </div>
-    )
-  }
 
   const handleRemoveFavorite = useCallback((id: string, e: React.MouseEvent) => {
     e.preventDefault()
@@ -573,12 +307,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     }
 
     // Is active?
-    let isActive = false
+    let isActiveNode = false
     if (scData?.query !== undefined) {
-      isActive = (location.pathname === '/' || location.pathname === '') &&
+      isActiveNode = (location.pathname === '/' || location.pathname === '') &&
         (window as any).__wfFilterText === (scData.query || '')
     } else if (scData?.nodeId) {
-      isActive = location.pathname === `/node/${scData.nodeId}`
+      isActiveNode = location.pathname === `/node/${scData.nodeId}`
     }
 
     function handleClick() {
@@ -598,7 +332,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     return (
       <div key={nodeId}>
         <div
-          className={`wf-qa-item${isActive ? ' active' : ''}`}
+          className={`wf-qa-item${isActiveNode ? ' active' : ''}`}
           style={{ paddingLeft: `${12 + depth * 14}px` }}
           onClick={handleClick}
           title={scData?.query !== undefined ? `Filtrar: ${scData.query}` : node.text || ''}
@@ -734,72 +468,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           onClick={onToggle}
           title="Colapsar sidebar"
         />
-      )}
-
-      {/* Menú contextual de tags */}
-      {tagMenu && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-            onClick={closeTagMenu}
-            onContextMenu={e => { e.preventDefault(); closeTagMenu() }}
-          />
-          <div
-            className="tag-context-menu"
-            style={{ position: 'fixed', left: tagMenu.x, top: tagMenu.y, zIndex: 9999 }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="tag-context-menu-header">#{tagMenu.tagName}</div>
-
-            {/* Renombrar */}
-            {tagRenaming?.tagName === tagMenu.tagName ? (
-              <div className="tag-context-menu-rename">
-                <input
-                  autoFocus
-                  className="tag-context-menu-input"
-                  value={tagRenaming.value}
-                  onChange={e => setTagRenaming({ tagName: tagMenu.tagName, value: e.target.value })}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleTagRename(tagMenu.tagName, tagRenaming.value)
-                    if (e.key === 'Escape') setTagRenaming(null)
-                  }}
-                  placeholder="Nuevo nombre..."
-                />
-                <button className="tag-context-menu-confirm" onClick={() => handleTagRename(tagMenu.tagName, tagRenaming.value)}>✓</button>
-              </div>
-            ) : (
-              <button className="tag-context-menu-item" onClick={() => setTagRenaming({ tagName: tagMenu.tagName, value: tagMenu.tagName })}>
-                ✏️ Renombrar
-              </button>
-            )}
-
-            {/* Color */}
-            {tagColorPicker === tagMenu.tagName ? (
-              <div className="tag-context-menu-colors">
-                {TAG_COLOR_OPTIONS.map(c => (
-                  <button
-                    key={c}
-                    className="tag-color-swatch"
-                    style={{ background: c, outline: s.tagColor(tagMenu.tagName) === c ? '2px solid var(--text-primary)' : 'none' }}
-                    onClick={() => handleTagColor(tagMenu.tagName, c)}
-                    title={c}
-                  />
-                ))}
-                <button className="tag-color-swatch tag-color-swatch--reset" onClick={() => handleTagColor(tagMenu.tagName, null)} title="Restablecer">↺</button>
-              </div>
-            ) : (
-              <button className="tag-context-menu-item" onClick={() => setTagColorPicker(tagMenu.tagName)}>
-                <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: s.tagColor(tagMenu.tagName), marginRight: 6 }} />
-                Color
-              </button>
-            )}
-
-            <div className="tag-context-menu-divider" />
-            <button className="tag-context-menu-item tag-context-menu-item--danger" onClick={() => handleTagDelete(tagMenu.tagName)}>
-              🗑 Eliminar tag
-            </button>
-          </div>
-        </>
       )}
     </aside>
   )

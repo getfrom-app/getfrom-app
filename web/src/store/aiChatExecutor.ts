@@ -8,13 +8,13 @@ import type { ExecutedAction } from './aiChatStore'
 
 export async function executeChatAction(
   action: Record<string, unknown>,
-  _sessionId: string
+  sessionId: string
 ): Promise<ExecutedAction> {
   const name = (action.action as string) || ''
   switch (name) {
-    case 'create_note':    return createNote(action)
-    case 'create_task':    return createTask(action)
-    case 'create_event':   return createEvent(action)
+    case 'create_note':    return createNote(action, sessionId)
+    case 'create_task':    return createTask(action, sessionId)
+    case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
     case 'find_nodes':     return findNodes(action)
@@ -29,26 +29,31 @@ export async function executeChatAction(
   }
 }
 
-function createNote(a: Record<string, unknown>): ExecutedAction {
+function createNote(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
   const text = (a.text as string) || 'Nota sin título'
   const body = a.body as string | undefined
   const tags = (a.tags as string[]) || []
   const parentId = (a.parent_id as string | undefined) || null
 
-  // Si no hay parent_id explícito, crear bajo la nota diaria de hoy
-  // (paridad con createTask y Mac — mejor UX que soltar en raíz).
+  // Si no hay parent_id explícito, crear bajo el nodo de sesión (que está en el diario de hoy)
   const created = store.createNode({
     text,
-    parentId: parentId ?? store.todayDiary()?.id ?? null,
+    parentId: parentId ?? sessionId ?? null,
     types: tags,
     extraData: {},
   })
-  if (body) store.updateNode(created.id, { body })
+  // Si hay body, crear nodos hijos en lugar de usar el editor de body
+  if (body) {
+    const lines = body.split('\n').map((l: string) => l.trim()).filter(Boolean)
+    for (const line of lines) {
+      store.createNode({ text: line, parentId: created.id })
+    }
+  }
   const tagPart = tags.length > 0 ? ` con tags #${tags.join(' #')}` : ''
   return result('create_note', true, `Nota «${text}» creada${tagPart}.`, [created.id])
 }
 
-function createTask(a: Record<string, unknown>): ExecutedAction {
+function createTask(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
   const text = (a.text as string) || 'Tarea'
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
@@ -57,7 +62,7 @@ function createTask(a: Record<string, unknown>): ExecutedAction {
 
   const created = store.createNode({
     text,
-    parentId: parentId ?? store.todayDiary()?.id ?? null,
+    parentId: parentId ?? sessionId ?? null,
     isTask: true,
     types: [...tags, 'tarea'],
     extraData: { _atomic: '1', _inline: '1' },
@@ -70,7 +75,7 @@ function createTask(a: Record<string, unknown>): ExecutedAction {
   return result('create_task', true, `Tarea «${text}»${datePart} creada.`, [created.id])
 }
 
-function createEvent(a: Record<string, unknown>): ExecutedAction {
+function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
   const text = (a.text as string) || 'Evento'
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
@@ -80,7 +85,7 @@ function createEvent(a: Record<string, unknown>): ExecutedAction {
 
   const created = store.createNode({
     text,
-    parentId: null,
+    parentId: sessionId ?? null,
     types: [...tags, 'evento'],
   })
   const updates: Record<string, unknown> = { isEvent: true, due }

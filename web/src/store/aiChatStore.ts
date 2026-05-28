@@ -1,8 +1,16 @@
 // MARK: - AIChatStore
 //
 // Store del chat From AI en web. Multi-turno con tool-use (paridad Mac).
-// Las sesiones se guardan como nodos (extraData._aiSession="1") con hijos
-// por mensaje (extraData._aiRole="user"|"assistant").
+//
+// Estructura de nodos por sesión:
+//   📅 Diario de hoy
+//     └── ✦ [Título de la conversación]    extraData._aiSession="1", colapsado
+//           ├── 💬 Conversación             extraData._aiTranscript="1", colapsado
+//           │     body = transcripción completa (usuario + Magic)
+//           └── [nodos creados por Magic: tareas, notas, eventos…]
+//
+// Si la conversación se retoma (loadSession), se AÑADE al transcript y se
+// crean los nuevos nodos bajo el mismo nodo de sesión, sin tocar el contenido anterior.
 
 import { store, type NodeStore } from './nodeStore'
 import type { Node } from '../types'
@@ -10,6 +18,7 @@ import { aiChatStream, type ChatActionResult, TokensError } from '../api/client'
 import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
+import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 
 export interface ChatMessage {
   id: string
@@ -107,19 +116,37 @@ class AIChatStore {
       const ed = JSON.parse(node.extraData || '{}')
       if (ed._aiSession !== '1') return
     } catch { return }
+
     this.sessionId = nodeId
-    this.messages = store.children(nodeId).map(child => {
-      let role: 'user' | 'assistant' = 'assistant'
-      let actions: ExecutedAction[] = []
-      try {
-        const ed = JSON.parse(child.extraData || '{}')
-        if (ed._aiRole === 'user') role = 'user'
-        if (ed._aiActions) {
-          actions = JSON.parse(ed._aiActions) as ExecutedAction[]
-        }
-      } catch { /* ignore */ }
-      return { id: child.id, role, content: child.text, actions }
+    this.messages = []  // UI limpia — el historial está en el nodo 💬 Conversación
+
+    // Si la sesión tiene mensajes individuales legacy (_aiRole), los migramos al transcript
+    // y los eliminamos para no duplicar contenido
+    const legacyMessages = store.children(nodeId).filter(c => {
+      try { const ed = JSON.parse(c.extraData || '{}'); return !!ed._aiRole } catch { return false }
     })
+    if (legacyMessages.length > 0) {
+      const transcriptNode = store.children(nodeId).find(c => {
+        try { return JSON.parse(c.extraData || '{}')._aiTranscript === '1' } catch { return false }
+      })
+      if (!transcriptNode) {
+        // Crear transcript y migrar mensajes legacy como nodos hijos
+        const t = store.createNode({ text: '💬 Conversación', parentId: nodeId, extraData: { _aiTranscript: '1' } })
+        store.updateNode(t.id, { isCollapsed: true })
+        for (const m of legacyMessages) {
+          const ed = JSON.parse(m.extraData || '{}')
+          const label = ed._aiRole === 'user' ? 'Tú' : 'Magic'
+          const fullText = `${label}: ${m.text}`
+          store.createNode({
+            text:     fullText.length > 300 ? fullText.slice(0, 300) + '…' : fullText,
+            parentId: t.id,
+            extraData: { _aiMsgRole: ed._aiRole },
+          })
+        }
+      }
+      legacyMessages.forEach(m => store.updateNode(m.id, { deletedAt: new Date().toISOString() }))
+    }
+
     this.notify()
   }
 
@@ -136,6 +163,7 @@ class AIChatStore {
     const sid = this.sessionId
 
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
+    this.appendToTranscript(sid, 'user', trimmed)          // persistir al transcript
     this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [] })
     this.notify()
 
@@ -174,7 +202,8 @@ class AIChatStore {
             this.notify()
           }
         }
-        store.updateNode(assistantMsgId, { text: cleanText || assistantText })
+        // Persistir mensaje del asistente en el transcript (no hay nodo individual)
+        this.appendToTranscript(sid, 'assistant', cleanText || assistantText)
       } catch (e) {
         this._handleAIError(e)
         this.isStreaming = false
@@ -274,7 +303,7 @@ class AIChatStore {
           }
         }
       )
-      store.updateNode(summaryMsgId, { text: summaryText })
+      this.appendToTranscript(ctx.sessionId, 'assistant', summaryText)
     } catch (e) {
       this._handleAIError(e)
     }
@@ -306,11 +335,17 @@ class AIChatStore {
     if (!this.sessionId) return
     const node = store.nodes.get(this.sessionId)
     if (!node) return
+
+    // Solo renombrar si es título automático (_aiAutoTitle) y hay suficientes mensajes
+    let ed: Record<string, string> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+    if (!ed._aiAutoTitle) return
+
     const userCount = this.messages.filter(m => m.role === 'user').length
-    if (userCount < 3) return
-    if (!node.text.startsWith('Chat IA —')) return
+    if (userCount < 2) return  // con 2 turnos ya tenemos contexto suficiente
+
     const seeds = this.messages.filter(m => m.role === 'user').slice(0, 3).map(m => m.content)
-    const prompt = 'Genera un título corto (2-6 palabras, sin comillas) que resuma esta conversación:\n\n' +
+    const prompt = 'Genera un título muy corto (2-5 palabras, sin comillas ni puntuación final) que resuma esta conversación:\n\n' +
       seeds.map((s, i) => `${i + 1}. ${s}`).join('\n')
     let title = ''
     try {
@@ -319,13 +354,34 @@ class AIChatStore {
         (chunk) => { title += chunk }
       )
     } catch { return }
+
     const cleaned = title.replace(/"/g, '').replace(/^Título:\s*/i, '').trim().split('\n')[0] ?? ''
-    if (cleaned) store.updateNode(this.sessionId, { text: cleaned })
+    if (!cleaned) return
+
+    // Poner ✦ como prefijo y marcar que ya no es auto-título genérico
+    store.updateNode(this.sessionId, { text: `✦ ${cleaned}` })
+    delete ed._aiAutoTitle
+    store.updateNode(this.sessionId, { extraData: JSON.stringify(ed) })
   }
 
   private buildPayload(currentNodeId: string | undefined, actionResults: ChatActionResult[]) {
     const perfil = store.perfilIANode()
-    const profile = perfil?.body?.trim()
+    // Leer body + nodos hijos (el usuario puede usar el outliner o el editor de body)
+    let profile = perfil?.body?.trim() ?? ''
+    if (perfil) {
+      function readChildren(nodeId: string, depth: number): string {
+        return store.children(nodeId)
+          .filter(n => !n.deletedAt && n.text?.trim())
+          .map(n => {
+            const indent = '  '.repeat(depth)
+            const sub = readChildren(n.id, depth + 1)
+            return `${indent}${n.text}${sub ? '\n' + sub : ''}`
+          })
+          .join('\n')
+      }
+      const childrenText = readChildren(perfil.id, 0)
+      if (childrenText) profile = [profile, childrenText].filter(Boolean).join('\n\n')
+    }
 
     // Tag defs: del nodo actual + top 8 tags usados con definición
     const tagDefs: Record<string, string> = {}
@@ -561,32 +617,54 @@ class AIChatStore {
     }
   }
 
+  /** Crea el nodo de sesión en el diario de hoy, colapsado, con ✦ y su transcript hijo. */
   private createSessionNode(seed: string): string {
-    const node = store.createNode({
-      text: `Chat IA — ${formatDate(new Date())}`,
-      parentId: null,
-      extraData: { _aiSession: '1', _aiSessionSeed: seed.slice(0, 80) },
+    const today = getTodayDiaryUnderAgenda()
+    const sessionNode = store.createNode({
+      text: `✦ ${seed.slice(0, 60)}`,
+      parentId: today.id,
+      extraData: { _aiSession: '1', _aiSessionSeed: seed.slice(0, 80), _aiAutoTitle: '1' },
     })
-    return node.id
+    store.updateNode(sessionNode.id, { isCollapsed: true })
+
+    // Nodo contenedor del transcript — sus hijos son los mensajes individuales
+    const transcript = store.createNode({
+      text: '💬 Conversación',
+      parentId: sessionNode.id,
+      extraData: { _aiTranscript: '1' },
+    })
+    store.updateNode(transcript.id, { isCollapsed: true })
+
+    return sessionNode.id
   }
 
-  private appendMessageNode(sessionId: string, role: 'user' | 'assistant', text: string): string {
-    const node = store.createNode({
-      text,
-      parentId: sessionId,
-      extraData: { _aiRole: role },
-    })
-    return node.id
+  /** Devuelve un ID sintético (no crea nodo). Los mensajes se persisten via appendToTranscript. */
+  private appendMessageNode(_sessionId: string, role: 'user' | 'assistant', _text: string): string {
+    // ID sintético solo para el array in-memory this.messages; no crea nodo individual.
+    return `_msg_${role}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
   }
 
-  private persistActionsOnNode(nodeId: string, actions: ExecutedAction[]) {
-    const node = store.nodes.get(nodeId)
-    if (!node) return
-    let ed: Record<string, string> = {}
-    try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
-    ed._aiActions = JSON.stringify(actions)
-    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  /** Añade un mensaje como nodo hijo del transcript. Nunca usa .body — todo en nodos. */
+  private appendToTranscript(sessionId: string, role: 'user' | 'assistant', text: string) {
+    if (!text.trim()) return
+    const transcriptNode = store.children(sessionId).find(c => {
+      try { return JSON.parse(c.extraData || '{}')._aiTranscript === '1' } catch { return false }
+    })
+    if (!transcriptNode) return
+    const label = role === 'user' ? 'Tú' : 'Magic'
+    // Cada mensaje = un nodo hijo. Texto largo se trunca a 300 chars para el title
+    // (el contenido completo va en el primer nodo sin truncar si cabe en un nodo)
+    const fullText = `${label}: ${text}`
+    store.createNode({
+      text:     fullText.length > 300 ? fullText.slice(0, 300) + '…' : fullText,
+      parentId: transcriptNode.id,
+      extraData: { _aiMsgRole: role },
+    })
   }
+
+  /** No-op: con el nuevo diseño no hay nodos individuales de mensaje. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private persistActionsOnNode(_nodeId: string, _actions: ExecutedAction[]) { /* no-op */ }
 }
 
 function formatDate(d: Date): string {

@@ -22,11 +22,13 @@ export default function VoiceCaptureModal({ onClose }: Props) {
     const text = (r.finalText || r.transcript).trim()
     if (!text) return
     const diary = store.todayDiary()
-    const lines = text.split(/[.!?]\s+/).filter(l => l.trim())
-    const title = lines[0]?.slice(0, 60) || text.slice(0, 60)
-    const body = lines.slice(1).join('. ').trim() || undefined
+    // Primera oración → título, resto → nodos hijos (nunca .body)
+    const sentences = text.split(/(?<=[.!?])\s+/).filter(l => l.trim())
+    const title = (sentences[0] || text).slice(0, 80)
     const node = store.createNode({ text: title, parentId: diary?.id || null })
-    if (body) store.updateNode(node.id, { body })
+    for (const sentence of sentences.slice(1)) {
+      if (sentence.trim()) store.createNode({ text: sentence.trim(), parentId: node.id })
+    }
     r.resetRecording()
     navigate(`/node/${node.id}`)
     onClose()

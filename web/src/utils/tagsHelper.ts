@@ -224,16 +224,107 @@ export function migrateTagsToContexto(): void {
   }
 }
 
+// Plantilla de onboarding para el perfil IA — se pre-rellena al crearlo.
+// El usuario edita y borra las instrucciones que no necesite.
+const PERFIL_IA_ONBOARDING = `Cuéntale a From quién eres para que te entienda sin que tengas que explicarlo cada vez.
+
+## Quién soy
+Nombre:
+Ubicación:
+Profesión / actividad principal:
+
+## Mis proyectos
+(Describe brevemente cada proyecto o área de tu vida. From usará esto para asignar contexto automáticamente.)
+
+## Cómo quiero que me responda
+- Directo, sin rodeos, en español
+(Añade tus preferencias)
+
+## Contexto adicional
+(Cualquier cosa que From deba saber siempre: familia, rutinas, herramientas habituales…)`
+
 /**
- * ensurePerfilInsideContexto — mueve el nodo Perfil IA dentro de 🧠 Contexto
- * si aún está en la raíz. El Perfil IA tiene extraData._perfilIA="1".
+ * ensurePerfilInsideContexto — garantiza que el nodo Perfil IA existe
+ * y está dentro de 🧠 Contexto. Se llama en cada arranque de la app.
+ *
+ * Casos que maneja:
+ *   · No existe → lo crea dentro de Contexto con plantilla de onboarding
+ *   · Existe en root (parentId=null) → lo mueve dentro de Contexto
+ *   · Existe con padre → no hace nada
  */
 export function ensurePerfilInsideContexto(): void {
-  const perfil = store.perfilIANode?.() ?? null
-  if (!perfil || perfil.parentId !== null) return  // ya tiene padre o no existe
+  // Obtener o crear el nodo raíz 🧠 Contexto
   const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
     ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null })
-  store.updateNode(perfil.id, { parentId: contextoRoot.id })
+
+  const perfil = store.perfilIANode?.() ?? null
+
+  if (!perfil) {
+    // Primera vez: crear dentro de Contexto como nodos hijos (no body editor)
+    const newPerfil = store.createNode({
+      text: '🧠 Perfil de IA',
+      parentId: contextoRoot.id,
+      extraData: { _perfilIA: '1' },
+    })
+    // Las secciones como nodos hijos — el usuario rellena en el outliner normal
+    const sections = [
+      { title: 'Quién soy', children: ['Nombre:', 'Ubicación:', 'Profesión / actividad principal:'] },
+      { title: 'Mis proyectos', children: ['Describe aquí tus proyectos. From los usará para asignar contexto automáticamente.'] },
+      { title: 'Cómo quiero que me responda', children: ['Directo, sin rodeos, en español', '(Añade tus preferencias)'] },
+      { title: 'Contexto adicional', children: ['(Familia, rutinas, herramientas habituales, lo que From deba saber siempre)'] },
+    ]
+    for (const section of sections) {
+      const sNode = store.createNode({ text: section.title, parentId: newPerfil.id })
+      store.updateNode(sNode.id, { isCollapsed: false })
+      for (const child of section.children) {
+        store.createNode({ text: child, parentId: sNode.id })
+      }
+    }
+    return
+  }
+
+  // Ya existe pero está en root → moverlo dentro de Contexto
+  if (perfil.parentId === null) {
+    store.updateNode(perfil.id, { parentId: contextoRoot.id })
+  }
+
+  // ── Migración: si tiene .body pero no nodos hijos, convertir a nodos ──────
+  // Esto arregla nodos creados antes de la actualización que usaban el editor
+  // de body (markdown editor) en lugar del outliner nativo de From.
+  const hasBody = !!(perfil.body?.trim())
+  const hasChildren = store.children(perfil.id).filter(n => !n.deletedAt).length > 0
+
+  if (hasBody && !hasChildren) {
+    // El body puede ser: el template antiguo con secciones ## o texto libre del usuario
+    const bodyText = perfil.body!.trim()
+    const sections = bodyText.split(/\n{2,}/).map(s => s.trim()).filter(Boolean)
+
+    if (sections.length > 0) {
+      for (const section of sections) {
+        const lines = section.split('\n').map(l => l.trim()).filter(Boolean)
+        if (lines.length === 0) continue
+
+        // Primera línea es el título del nodo (si empieza con ## la limpiamos)
+        const title = lines[0].replace(/^#+\s*/, '').trim()
+        const sNode = store.createNode({ text: title, parentId: perfil.id })
+        store.updateNode(sNode.id, { isCollapsed: false })
+
+        // Resto de líneas → nodos hijos
+        for (const line of lines.slice(1)) {
+          const clean = line.replace(/^[-*]\s*/, '').trim()
+          if (clean) store.createNode({ text: clean, parentId: sNode.id })
+        }
+      }
+    } else {
+      // Texto simple → un nodo por línea
+      for (const line of bodyText.split('\n').map(l => l.trim()).filter(Boolean)) {
+        store.createNode({ text: line, parentId: perfil.id })
+      }
+    }
+
+    // Limpiar el body ahora que el contenido está en nodos
+    store.updateNode(perfil.id, { body: null })
+  }
 }
 
 /**

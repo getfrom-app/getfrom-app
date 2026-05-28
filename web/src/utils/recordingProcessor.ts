@@ -77,6 +77,37 @@ ${transcript}`
   }
 }
 
+// ── Helpers para crear contenido como nodos hijos (nunca .body) ─────────────
+
+/** Divide texto en fragmentos de ~N palabras respetando oraciones */
+function splitIntoChunks(text: string, wordsPerChunk = 40): string[] {
+  if (!text.trim()) return []
+  // Separar por frases (punto, interrogación, exclamación)
+  const sentences = text.match(/[^.!?…]+[.!?…]*\s*/g) ?? [text]
+  const chunks: string[] = []
+  let current = ''
+  let words = 0
+
+  for (const sentence of sentences) {
+    const sw = sentence.trim().split(/\s+/).length
+    if (words + sw > wordsPerChunk && current) {
+      chunks.push(current.trim())
+      current = sentence
+      words = sw
+    } else {
+      current += (current ? ' ' : '') + sentence.trim()
+      words += sw
+    }
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks
+}
+
+/** Divide un texto estructurado en líneas no vacías */
+function splitLines(text: string): string[] {
+  return text.split('\n').map(l => l.trim()).filter(Boolean)
+}
+
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
 export async function processRecording(
   transcript: string,
@@ -91,13 +122,7 @@ export async function processRecording(
     analysis = await analyzeTranscript(transcript, durationSec)
   } catch (e) {
     if (e instanceof Error && e.message === 'TOKENS') throw e
-    // Si la IA falla, crear nodo con datos básicos sin resumen
-    analysis = {
-      title:   `Grabación ${timeStr}`,
-      summary: '',
-      tasks:   [],
-      context: null,
-    }
+    analysis = { title: `Grabación ${timeStr}`, summary: '', tasks: [], context: null }
   }
 
   // ── Nodo padre ──────────────────────────────────────────────────────────
@@ -110,29 +135,37 @@ export async function processRecording(
     types,
   })
 
-  // ── Transcripción completa (colapsada) ─────────────────────────────────
+  // ── Transcripción completa — nodos hijos, colapsada ─────────────────────
   const transcriptNode = store.createNode({
     text:     'Transcripción completa',
     parentId: parent.id,
   })
-  store.updateNode(transcriptNode.id, {
-    body:        transcript,
-    isCollapsed: true,
-  })
+  store.updateNode(transcriptNode.id, { isCollapsed: true })
 
-  // ── Resumen (colapsado) ────────────────────────────────────────────────
+  // Cada fragmento de ~40 palabras → un nodo hijo
+  const chunks = splitIntoChunks(transcript, 40)
+  if (chunks.length === 0) {
+    store.createNode({ text: transcript.trim(), parentId: transcriptNode.id })
+  } else {
+    for (const chunk of chunks) {
+      store.createNode({ text: chunk, parentId: transcriptNode.id })
+    }
+  }
+
+  // ── Resumen — nodos hijos por párrafo/línea, colapsado ──────────────────
   if (analysis.summary) {
     const summaryNode = store.createNode({
       text:     durationSec >= 180 ? 'Resumen ejecutivo' : 'Resumen',
       parentId: parent.id,
     })
-    store.updateNode(summaryNode.id, {
-      body:        analysis.summary,
-      isCollapsed: true,
-    })
+    store.updateNode(summaryNode.id, { isCollapsed: true })
+
+    for (const line of splitLines(analysis.summary)) {
+      store.createNode({ text: line, parentId: summaryNode.id })
+    }
   }
 
-  // ── Tareas propuestas (si las hay, colapsadas) ─────────────────────────
+  // ── Tareas (colapsadas) ─────────────────────────────────────────────────
   if (analysis.tasks.length > 0) {
     const tasksContainer = store.createNode({
       text:     '📋 Tareas identificadas',
@@ -141,15 +174,10 @@ export async function processRecording(
     store.updateNode(tasksContainer.id, { isCollapsed: true })
 
     for (const taskText of analysis.tasks) {
-      store.createNode({
-        text:     taskText,
-        parentId: tasksContainer.id,
-        isTask:   true,
-      })
+      store.createNode({ text: taskText, parentId: tasksContainer.id, isTask: true })
     }
   }
 
-  // Forzar sync inmediato para que no se pierda
   store.sync(true).catch(() => {})
 
   return {

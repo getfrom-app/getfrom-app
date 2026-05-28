@@ -14,6 +14,97 @@ function getNodeIdFromEl(el: Element | null): string | null {
 // debe gestionar la selección. Las demás deben ignorar los eventos.
 // Este ref a nivel de módulo garantiza que solo UNA instancia esté activa.
 let _activeDragContainer: HTMLElement | null = null
+// Root outliner del drag activo — usado para scopear las queries DOM
+// y evitar mezclar nodos de paneles distintos (sidebar, content, etc.)
+let _activeDragRoot: HTMLElement | null = null
+
+// ── Selección global compartida entre instancias ──────────────────────────────
+// Permite que el drag-to-select funcione entre niveles distintos del árbol.
+let _gSelectedIds: Set<string> = new Set()
+const _gSelectionListeners = new Set<() => void>()
+
+function gSetSelected(ids: Set<string>) {
+  _gSelectedIds = ids
+  _gSelectionListeners.forEach(fn => fn())
+}
+
+function gClearSelected() {
+  gSetSelected(new Set())
+}
+
+function useGlobalSelection(): Set<string> {
+  const [ids, setIds] = useState<Set<string>>(_gSelectedIds)
+  useEffect(() => {
+    const cb = () => setIds(new Set(_gSelectedIds))
+    _gSelectionListeners.add(cb)
+    return () => { _gSelectionListeners.delete(cb) }
+  }, [])
+  return ids
+}
+
+// Sube por el DOM hasta encontrar el outliner-container más alto.
+// Esto acota las queries al contexto visual activo (evita mezclar con
+// otros paneles que puedan renderizar los mismos data-node-id).
+function findRootOutlinerContainer(el: HTMLElement): HTMLElement {
+  let root: HTMLElement = el
+  let cur: HTMLElement | null = el.parentElement
+  while (cur) {
+    if (cur.classList.contains('outliner-container')) root = cur
+    cur = cur.parentElement
+  }
+  return root
+}
+
+// Devuelve el rect de la fila propia del nodo (no incluye hijos expandidos).
+// Busca solo dentro del scope dado para no confundir con otros paneles.
+function getOwnRowRect(nodeId: string, scope: HTMLElement): DOMRect | null {
+  // Buscamos el elemento cuyo data-node-id coincide Y está dentro del scope
+  const candidates = scope.querySelectorAll(`[data-node-id="${nodeId}"]`)
+  for (const el of candidates) {
+    const rowEl = el.querySelector(':scope > .node-row') as HTMLElement | null
+             ?? el.querySelector('.node-row') as HTMLElement | null
+    const rect = (rowEl ?? el as HTMLElement).getBoundingClientRect()
+    if (rect.height > 0) return rect  // visible → es el que queremos
+  }
+  return null
+}
+
+// Calcula la selección usando el DOM real, restringido al root outliner
+// del drag activo para no mezclar nodos de paneles distintos.
+function computeGlobalSelection(
+  anchorId: string,
+  anchorMidY: number,  // midY de la fila del nodo ancla
+  currentY: number     // Y actual del cursor
+): Set<string> {
+  // Usar el root outliner activo, o el documento completo como fallback
+  const scope = _activeDragRoot ?? document.body
+
+  const rows: { id: string; midY: number }[] = []
+  const seen = new Set<string>()  // evitar duplicados si el mismo ID aparece varias veces
+
+  scope.querySelectorAll('[data-node-id]').forEach(el => {
+    const id = (el as HTMLElement).dataset.nodeId
+    if (!id || seen.has(id)) return
+    const rowEl = (el.querySelector(':scope > .node-row') ??
+                   el.querySelector('.node-row')) as HTMLElement | null
+    const rect = (rowEl ?? el as HTMLElement).getBoundingClientRect()
+    if (rect.height === 0) return  // invisible (nodo colapsado, fuera del viewport, etc.)
+    seen.add(id)
+    rows.push({ id, midY: rect.top + rect.height / 2 })
+  })
+
+  rows.sort((a, b) => a.midY - b.midY)
+
+  // La selección abarca desde anchorMidY hasta currentY (inclusive midpoints)
+  const minY = Math.min(anchorMidY, currentY)
+  const maxY = Math.max(anchorMidY, currentY)
+
+  const result = new Set<string>([anchorId])  // ancla siempre incluida
+  for (const { id, midY } of rows) {
+    if (midY >= minY && midY <= maxY) result.add(id)
+  }
+  return result
+}
 
 // Devuelve true SOLO si el target ES el propio elemento de texto/input
 // (no si es un padre que contiene un contenteditable).
@@ -80,7 +171,7 @@ function getDayNumber(node: Node): number {
 export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const selectedIds = useGlobalSelection()
   // Drag-to-select state
   // isDragSelectingRef es el valor síncrono (evita stale closure en onMove).
   // isDragSelecting es el state para React (CSS, renders).
@@ -90,6 +181,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   function startDragSelect() { isDragSelectingRef.current = true; didDragSelectRef.current = true; setIsDragSelecting(true) }
   function stopDragSelect()  { isDragSelectingRef.current = false; setIsDragSelecting(false) }
   const dragAnchorId = useRef<string | null>(null)
+  const dragAnchorMidY = useRef<number>(0)  // midY del nodo ancla para computeGlobalSelection
   const containerRef = useRef<HTMLDivElement>(null)
   const [localFilterOpen, setLocalFilterOpen] = useState(false)
   const [localFilterText, setLocalFilterText] = useState('')
@@ -268,39 +360,6 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const lastMouseY   = useRef<number>(0)    // Y más reciente del cursor
   const dragFromText = useRef(false)        // ¿el drag empezó en un contenteditable?
 
-  // Devuelve el rect de la FILA del nodo (div.node-row), no del contenedor
-  // completo (div.outliner-node) que incluye hijos expandidos.
-  function getNodeRowRect(id: string): DOMRect | null {
-    const nodeEl = containerRef.current?.querySelector(`[data-node-id="${id}"]`)
-    if (!nodeEl) return null
-    const rowEl = nodeEl.querySelector('.node-row') as HTMLElement | null
-    return (rowEl ?? nodeEl as HTMLElement).getBoundingClientRect()
-  }
-
-  // Heurística del 50%: incluye el nodo ancla siempre, y nodos adicionales
-  // cuando el cursor ha cruzado su punto medio vertical.
-  function computeSelectedWithMidpoint(anchorId: string, cursorY: number): Set<string> {
-    const flat = flatVisibleIds()
-    const ai = flat.indexOf(anchorId)
-    if (ai === -1) return new Set([anchorId])
-    const goingDown = cursorY > dragAnchorPos.current
-    const result = new Set<string>([anchorId])
-    if (goingDown) {
-      for (let i = ai + 1; i < flat.length; i++) {
-        const rect = getNodeRowRect(flat[i])
-        if (!rect) continue
-        if (cursorY >= rect.top + rect.height / 2) result.add(flat[i]); else break
-      }
-    } else {
-      for (let i = ai - 1; i >= 0; i--) {
-        const rect = getNodeRowRect(flat[i])
-        if (!rect) continue
-        if (cursorY <= rect.top + rect.height / 2) result.add(flat[i]); else break
-      }
-    }
-    return result
-  }
-
   // React onMouseDown — previene text-selection cuando el drag no empieza en texto
   function handleContainerMouseDown(e: React.MouseEvent) {
     if (isControlEl(e.target)) return
@@ -329,11 +388,24 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       // Reclamar este drag para esta instancia
       _activeDragContainer = myContainer.current
+      // Establecer el root outliner (para scopear las queries DOM)
+      _activeDragRoot = myContainer.current ? findRootOutlinerContainer(myContainer.current) : null
 
       dragAnchorPos.current = e.clientY
       lastMouseY.current = e.clientY
       dragFromText.current = isDirectTextEl(target)
       dragAnchorId.current = id ?? (nodes.length > 0 ? '__empty__' : null)
+
+      if (id) {
+        // Calcular el midY del nodo ancla usando el scope correcto
+        // (evita coger el elemento de otro panel con el mismo data-node-id)
+        const scope = _activeDragRoot ?? myContainer.current ?? document.body
+        const anchorRect = getOwnRowRect(id, scope as HTMLElement)
+        dragAnchorMidY.current = anchorRect
+          ? anchorRect.top + anchorRect.height / 2
+          : e.clientY
+      }
+
       if (id && !dragFromText.current) e.preventDefault()
     }
 
@@ -354,7 +426,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         dragAnchorId.current = anchorId
         dragFromText.current = false
         startDragSelect(); setSelectedId(null)
-        setSelectedIds(new Set([anchorId]))
+        gSetSelected(new Set([anchorId]))
         return
       }
 
@@ -362,14 +434,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       // ── Drag desde texto: bounding rect de .node-row ───────────────────
       if (dragFromText.current && !isDragSelectingRef.current) {
-        const nodeEl = myContainer.current?.querySelector(`[data-node-id="${anchorId}"]`)
-        const rowEl  = nodeEl?.querySelector('.node-row') as HTMLElement | null
-        const rect   = (rowEl ?? nodeEl as HTMLElement | null)?.getBoundingClientRect()
+        const scope = _activeDragRoot ?? myContainer.current ?? document.body
+        const rect = getOwnRowRect(anchorId, scope as HTMLElement)
         if (rect && (e.clientY < rect.top || e.clientY > rect.bottom)) {
           window.getSelection()?.removeAllRanges()
           startDragSelect(); setSelectedId(null)
           dragFromText.current = false
-          setSelectedIds(computeSelectedWithMidpoint(anchorId, e.clientY))
+          gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
         }
         return
       }
@@ -379,9 +450,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
         if (!isDragSelectingRef.current) {
           startDragSelect(); setSelectedId(null)
-          setSelectedIds(new Set([anchorId]))
+          gSetSelected(new Set([anchorId]))
         }
-        setSelectedIds(computeSelectedWithMidpoint(anchorId, e.clientY))
+        gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
       }
     }
 
@@ -405,6 +476,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       if (_activeDragContainer === myContainer.current) {
         _activeDragContainer = null
+        _activeDragRoot = null
       }
       dragAnchorId.current = null
       dragFromText.current = false
@@ -413,7 +485,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       // Clic simple (sin drag) → limpiar selección múltiple
       // igual que en cualquier editor: clic = mover cursor y deseleccionar
       if (!wasDrag) {
-        setSelectedIds(new Set())
+        gClearSelected()
       }
     }
 
@@ -422,7 +494,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     document.addEventListener('dragstart', onDragStart)
     document.addEventListener('mouseup',   onUp)
     return () => {
-      if (_activeDragContainer === myContainer.current) _activeDragContainer = null
+      if (_activeDragContainer === myContainer.current) {
+        _activeDragContainer = null
+        _activeDragRoot = null
+      }
       document.removeEventListener('mousedown', onDown, { capture: true })
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('dragstart', onDragStart)
@@ -438,7 +513,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         e.preventDefault()
         e.stopPropagation()
         for (const id of selectedIds) store.deleteNode(id)
-        setSelectedIds(new Set())
+        gClearSelected()
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         const flat = flatVisibleIds()
@@ -482,9 +557,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             store.updateNode(id, { parentId: prev.id, siblingOrder: newOrder })
           }
         }
+        gClearSelected()
       }
       if (e.key === 'Escape') {
-        setSelectedIds(new Set())
+        gClearSelected()
       }
     }
     window.addEventListener('keydown', onKey, { capture: true })
@@ -528,21 +604,19 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Shift+click adds/removes from multi-selection set
   const handleShiftSelect = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
+    const next = new Set(_gSelectedIds)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    gSetSelected(next)
   }, [])
 
   // Multi-select: borrar seleccionados (también usado por teclado)
   function handleDeleteSelected() {
     for (const id of selectedIds) store.deleteNode(id)
-    setSelectedIds(new Set())
+    gClearSelected()
   }
 
   return (

@@ -235,16 +235,21 @@ export class NodeStore {
   }
 
   /// Crea (si no existe) o devuelve el nodo perfil IA.
+  /// Lo crea dentro de 🧠 Contexto si existe, o en root como fallback.
   async getOrCreatePerfilIA(): Promise<Node> {
     const existing = this.perfilIANode()
     if (existing) return existing
+
+    // Intentar colocarlo dentro de 🧠 Contexto
+    const CONTEXTO_NAME = '🧠 Contexto'
+    const contexto = this.children(null).find(n => !n.deletedAt && n.text === CONTEXTO_NAME) ?? null
+
     const created = this.createNode({
-      text: 'Perfil para la IA',
-      parentId: null,
+      text: '🧠 Perfil de IA',
+      parentId: contexto?.id ?? null,
       extraData: { _perfilIA: '1' },
     })
-    // Plantilla de ayuda para el usuario
-    this.updateNode(created.id, { body: PERFIL_IA_TEMPLATE })
+    // No usar .body — el contenido va en nodos hijos (ensurePerfilInsideContexto los crea)
     return created
   }
 

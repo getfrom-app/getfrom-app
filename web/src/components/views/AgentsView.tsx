@@ -311,9 +311,17 @@ export default function AgentsView() {
                         onClick={() => {
                           const diary = store.todayDiary()
                           if (!diary) return
-                          const current = diary.body || ''
-                          const sep = current.trim() ? '\n\n' : ''
-                          store.updateNode(diary.id, { body: current + sep + `## ${agentTitle || 'Resultado IA'}\n\n${runResult}` })
+                          // Crear nodo hijo en el diario (nunca usar .body)
+                          const resultNode = store.createNode({
+                            text: agentTitle || 'Resultado IA',
+                            parentId: diary.id,
+                          })
+                          store.updateNode(resultNode.id, { isCollapsed: false })
+                          // Cada línea no vacía → un nodo hijo
+                          const lines = runResult.split('\n').map((l: string) => l.trim()).filter(Boolean)
+                          for (const line of lines) {
+                            store.createNode({ text: line, parentId: resultNode.id })
+                          }
                         }}
                         title="Insertar en diario de hoy"
                       >↓ Al diario</button>
