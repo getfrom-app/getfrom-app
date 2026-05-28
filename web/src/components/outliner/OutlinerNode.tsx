@@ -261,10 +261,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
   const nodeTextRef = useRef(node.text)
   nodeTextRef.current = node.text
-  // mirrorOfId calculado temprano para determinar la fuente de hijos
-  const mirrorOfId_early = (() => { try { return JSON.parse(node.extraData || '{}')._mirrorOf as string | undefined } catch { return undefined } })()
-  // Los espejos de nodo padre muestran los hijos del original, no los suyos propios
-  const children = store.children(mirrorOfId_early ?? node.id)
+  const children = store.children(node.id)
   // Colapsado — cuando hay filtro activo y este nodo tiene descendientes que coinciden,
   // forzamos la expansión para que el usuario vea los resultados aunque estuviera colapsado.
   const isCollapsed = ((node.isCollapsed !== false) && children.length > 0)
@@ -1830,28 +1827,30 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       try { ed = JSON.parse(node.extraData || '{}') } catch {}
       if (opts.recurrence) ed._recurrence = opts.recurrence
 
-      // Actualizaciones comunes: due, isEvent/status, text limpio, extraData
-      const commonUpdates: Record<string, unknown> = {
-        extraData: JSON.stringify(ed),
-      }
-      if (opts.isEvent) commonUpdates.isEvent = true
-      else if (opts.makeTask || node.status === null) commonUpdates.status = 'pending'
+      // Updates base del nodo: tipo, hora, texto limpio
+      const updates: Record<string, unknown> = { extraData: JSON.stringify(ed) }
+      if (opts.isEvent) updates.isEvent = true
+      else if (opts.makeTask || node.status === null) updates.status = 'pending'
       if (opts.timeStr) {
         const h = parseInt(opts.timeStr.split(':')[0]), m = parseInt(opts.timeStr.split(':')[1])
-        commonUpdates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
+        updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
       }
-      if (opts.cleanText) commonUpdates.text = opts.cleanText
+      if (opts.cleanText) updates.text = opts.cleanText
 
       if (originParent) {
-        // ── Con contexto padre ──────────────────────────────────────────────
-        // La tarea NO se mueve físicamente: solo actualiza due/isEvent/etc. en su sitio.
-        // El espejo del padre en destino renderiza TODOS los hijos del original automáticamente.
+        // ── Con contexto padre significativo ─────────────────────────────────
+        // El nodo se mueve físicamente al destino, bajo un espejo del padre.
+        // En origen: espejo del nodo movido (para mantener el contexto).
+        // En destino: espejo del padre + nodo movido + espejos de todos sus hermanos.
 
-        // 1. Crear espejo del padre en destino si no existe
+        // 1. Espejo del padre en destino — reutilizar si ya existe
         const existingParentMirror = store.children(dayNode.id).find(n => {
           try { return JSON.parse(n.extraData || '{}')._mirrorOf === originParent.id } catch { return false }
         })
-        if (!existingParentMirror) {
+        let parentMirrorId: string
+        if (existingParentMirror) {
+          parentMirrorId = existingParentMirror.id
+        } else {
           const parentMirror = store.createNode({
             text: originParent.text,
             parentId: dayNode.id,
@@ -1860,36 +1859,54 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           store.updateNode(parentMirror.id, {
             extraData: JSON.stringify({ _mirrorOf: originParent.id })
           })
+          parentMirrorId = parentMirror.id
         }
 
-        // 2. Actualizar la tarea en su posición original (due, isEvent, texto limpio)
-        store.updateNode(node.id, commonUpdates)
+        // 2. Mover el nodo bajo el espejo del padre
+        const mirrorSibs = store.children(parentMirrorId)
+        const mirrorLastOrder = mirrorSibs.length > 0 ? Math.max(...mirrorSibs.map(x => x.siblingOrder)) : 0
+        updates.parentId = parentMirrorId
+        updates.siblingOrder = mirrorLastOrder + 1
+        store.updateNode(node.id, updates)
 
-        // Foco en el nodo siguiente del origen para seguir trabajando
+        // 3. Espejos de todos los hermanos (hijos del padre original, excepto el nodo movido)
+        //    que no estén ya reflejados bajo el espejo del padre en destino
+        const originalSiblings = store.children(node.parentId || '').filter(s => !s.deletedAt && s.id !== node.id)
+        let sibOrder = mirrorLastOrder + 2
+        for (const sib of originalSiblings) {
+          const alreadyMirrored = store.children(parentMirrorId).some(c => {
+            try { return JSON.parse(c.extraData || '{}')._mirrorOf === sib.id } catch { return false }
+          })
+          if (!alreadyMirrored) {
+            const sibMirror = store.createNode({ text: sib.text, parentId: parentMirrorId, siblingOrder: sibOrder++ })
+            store.updateNode(sibMirror.id, { extraData: JSON.stringify({ _mirrorOf: sib.id }) })
+          }
+        }
+
+        // 4. Espejo del nodo movido en el origen (para que el padre original siga mostrándolo)
+        const taskMirror = store.createNode({
+          text: opts.cleanText ?? node.text,
+          parentId: node.parentId,
+          siblingOrder: node.siblingOrder,
+        })
+        store.updateNode(taskMirror.id, {
+          extraData: JSON.stringify({ _mirrorOf: node.id, _mirrorDestLabel: opts.label })
+        })
+        // Foco en el espejo del origen para seguir escribiendo
         setTimeout(() => {
-          const siblingsAfter = store.children(node.parentId || '').filter(s => s.siblingOrder > node.siblingOrder && !s.deletedAt)
-          const focusTarget = siblingsAfter[0]?.id ?? node.id
-          window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: focusTarget } }))
+          window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: taskMirror.id } }))
         }, 30)
 
       } else {
         // ── Sin contexto padre: mover al día directamente ────────────────────
-        const updates: Record<string, unknown> = {
-          ...commonUpdates,
-          parentId: dayNode.id,
-          siblingOrder: lastOrder + 1,
-        }
+        updates.parentId = dayNode.id
+        updates.siblingOrder = lastOrder + 1
         store.updateNode(node.id, updates)
 
-        // Crear hermano vacío en origen para seguir escribiendo
         const siblingsAfter = store.children(node.parentId || '').filter(s => s.siblingOrder > node.siblingOrder && !s.deletedAt)
         const nextIsEmpty = siblingsAfter.length > 0 && !(store.getNode(siblingsAfter[0].id)?.text)
         if (!nextIsEmpty) {
-          const newSibling = store.createNode({
-            text: '',
-            parentId: node.parentId,
-            siblingOrder: node.siblingOrder + 0.5,
-          })
+          const newSibling = store.createNode({ text: '', parentId: node.parentId, siblingOrder: node.siblingOrder + 0.5 })
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: newSibling.id } }))
           }, 30)
