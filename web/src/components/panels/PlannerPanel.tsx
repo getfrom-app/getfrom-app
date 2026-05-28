@@ -112,6 +112,8 @@ export default function PlannerPanel({ onClose }: Props) {
   // Bloque inline en creación: posición + texto en progreso
   const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string}|null>(null)
   const newBlockRef                   = useRef<HTMLInputElement>(null)
+  // Indicador snap durante drag-over: {dayKey, top}
+  const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
 
   // ── Ancho con resize ──────────────────────────────────────────────────────
   const [panelW, setPanelW] = useState(() => {
@@ -280,8 +282,13 @@ export default function PlannerPanel({ onClose }: Props) {
 
     if (taskId) {
       const rawY = e.clientY - rect.top
-      const start = pxToTime(rawY, day)
-      if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
+      // Clamp al rango visible en lugar de descartar el drop
+      const rawStart = pxToTime(rawY, day)
+      const clampedHour = Math.max(HOUR_START, Math.min(HOUR_END - 1, rawStart.getHours()))
+      const start = new Date(rawStart)
+      if (rawStart.getHours() < HOUR_START || rawStart.getHours() >= HOUR_END) {
+        start.setHours(clampedHour, rawStart.getHours() < HOUR_START ? 0 : 45, 0, 0)
+      }
       const node = store.getNode(taskId)
       if (!node) return
       const diaryNode = ensureDayPath(day)
@@ -438,14 +445,22 @@ export default function PlannerPanel({ onClose }: Props) {
     return (
       <div key={day.toISOString()} className="pp-col-wrap" style={{ width: colW, flexShrink: 0 }}>
         <div className="pp-col" style={{ height: TOTAL_HOURS * hourH }}
-          onDragOver={e=>e.preventDefault()}
-          onDrop={e=>handleDrop(e, day, e.currentTarget)}
+          onDragOver={e=>{ e.preventDefault(); e.currentTarget.classList.add('pp-col--drag-over')
+            const rawY = e.clientY - e.currentTarget.getBoundingClientRect().top
+            setSnapLine({ dayKey: day.toISOString(), top: snapPx(rawY) })
+          }}
+          onDragLeave={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null) }}
+          onDrop={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null); handleDrop(e, day, e.currentTarget) }}
           onClick={e=>handleSlotClick(e, day, e.currentTarget)}
         >
           {Array.from({length: TOTAL_HOURS*4}, (_,i) => (
             <div key={i} className={`pp-slot ${i%4===0?'pp-slot--hr':i%2===0?'pp-slot--half':'pp-slot--qtr'}`} style={{top: i*(slotH/2)}} />
           ))}
           {isToday && nowTop >= 0 && nowTop < TOTAL_HOURS*hourH && <div className="pp-now" style={{top:nowTop}} />}
+          {/* Indicador de snap durante drag-over */}
+          {snapLine?.dayKey === day.toISOString() && (
+            <div className="pp-snap-line" style={{ top: snapLine.top }} />
+          )}
           {getBlocks(day, gcalEvents).map(renderBlock)}
 
           {/* Bloque inline en creación */}

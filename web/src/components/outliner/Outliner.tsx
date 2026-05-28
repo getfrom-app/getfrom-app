@@ -364,14 +364,17 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const lastMouseY   = useRef<number>(0)    // Y más reciente del cursor
   const dragFromText = useRef(false)        // ¿el drag empezó en un contenteditable?
 
-  // React onMouseDown — SIEMPRE preventDefault para tener control total del drag.
-  // El cursor se restaura manualmente en mouseup si no hubo drag (ver onUp).
+  // React onMouseDown — preventDefault salvo en drag handles.
+  // Si el click viene del handle ⋮⋮ (node-drag-handle), NO prevenimos
+  // para que HTML5 drag-and-drop pueda iniciarse (arrastrar al planificador).
   function handleContainerMouseDown(e: React.MouseEvent) {
     if (isControlEl(e.target)) return
     const id = getNodeIdFromEl(e.target as Element)
     if (!id) return
-    // Siempre prevenir para que el browser no inicie su selección de texto nativa.
-    // En mouseup (si no hubo drag) colocaremos el cursor manualmente.
+    // No prevenir si es el handle de drag (⋮⋮) — necesario para outliner→planner
+    const target = e.target as HTMLElement
+    if (target.closest('.node-drag-handle')) return
+    // Para todo lo demás: prevenir selección nativa. Cursor se coloca en mouseup.
     e.preventDefault()
   }
 
