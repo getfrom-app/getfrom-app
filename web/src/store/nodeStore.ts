@@ -166,6 +166,23 @@ export class NodeStore {
     this.historyIndex = this.history.length - 1
   }
 
+  /** Limpia completamente el store al cambiar de cuenta. Llamar siempre en logout. */
+  reset() {
+    if (this.syncTimer) clearTimeout(this.syncTimer)
+    this.nodes = new Map()
+    this.workspaces = []
+    this.lastSyncAt = null
+    this.isSyncing = false
+    this.isLoaded = false
+    this.isGuest = false
+    this.dirtyIds.clear()
+    this.history = []
+    this.historyIndex = -1
+    this.batchDepth = 0
+    this.lastTextSnapshotTime = 0
+    this.notify()
+  }
+
   beginBatch() { this.batchDepth++ }
   endBatch() {
     if (this.batchDepth > 0) this.batchDepth--

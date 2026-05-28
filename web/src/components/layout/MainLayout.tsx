@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
-import { useFilterStore } from '../../store/filterStore'
+import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
@@ -200,10 +200,11 @@ export default function MainLayout() {
     return store.subscribe(() => invalidatePredictionCache())
   }, [])
 
-  // Sesión expirada durante el uso → redirigir al login
+  // Sesión expirada durante el uso → limpiar store y redirigir al login
   useEffect(() => {
     const handler = () => {
       clearTokens()
+      store.reset()  // limpiar nodos para evitar mezcla al relogin
       navigate('/login', { replace: true })
     }
     window.addEventListener('from:unauthorized', handler)
@@ -423,6 +424,8 @@ export default function MainLayout() {
 
   function handleLogout() {
     clearTokens()
+    store.reset()          // limpiar nodos — evita mezcla entre cuentas
+    setActiveFilter('')    // limpiar filtro activo
     userStore.reset()
     navigate('/login', { replace: true })
   }
