@@ -17,18 +17,21 @@ import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCale
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 
-// ── Geometría ──────────────────────────────────────────────────────────────
-const HOUR_START  = 6
-const HOUR_END    = 24
-const TOTAL_HOURS = HOUR_END - HOUR_START
-const SLOT_H      = 40
-const HOUR_H      = SLOT_H * 2
-const PX_PER_MIN  = SLOT_H / 30
-const SNAP_PX     = SLOT_H / 2   // 15 min
-const AXIS_W      = 40
-const DEFAULT_W   = 420
-const MIN_W       = 280
-const MAX_W       = 900
+// ── Geometría fija ────────────────────────────────────────────────────────
+const HOUR_START    = 6
+const HOUR_END      = 24
+const TOTAL_HOURS   = HOUR_END - HOUR_START
+const AXIS_W        = 40
+const DEFAULT_W     = 420
+const MIN_W         = 280
+const MAX_W         = 900
+const DEFAULT_SLOT_H  = 40   // px por 30 min (zoom por defecto)
+const DEFAULT_DAY_CNT = 5    // columnas de día visibles por defecto
+const MIN_SLOT_H    = 14     // zoom out máximo (18h en pantalla pequeña)
+const MAX_SLOT_H    = 110    // zoom in máximo (~3h visibles)
+const MIN_DAY_CNT   = 2
+const MAX_DAY_CNT   = 7
+const PRE_DAYS      = 10     // días pre-renderizados a cada lado
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function sameDay(a: Date, b: Date) {
@@ -36,28 +39,16 @@ function sameDay(a: Date, b: Date) {
 }
 function addDays(d: Date, n: number): Date { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 function startOfDay(d: Date): Date { const r = new Date(d); r.setHours(0,0,0,0); return r }
-function startOfWeek(d: Date): Date {
-  const r = startOfDay(d); const dow = r.getDay()
-  r.setDate(r.getDate() - (dow === 0 ? 6 : dow - 1)); return r
-}
 function startOfMonth(d: Date): Date { return new Date(d.getFullYear(), d.getMonth(), 1) }
 function daysInMonth(d: Date): number { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() }
-function topPx(d: Date): number { return Math.max(0, (d.getHours()*60+d.getMinutes()-HOUR_START*60)*PX_PER_MIN) }
-function snapPx(y: number): number { return Math.round(y / SNAP_PX) * SNAP_PX }
-function heightPx(s: number, e: number): number { return Math.max(SNAP_PX, (e-s)/60000*PX_PER_MIN) }
-function pxToTime(px: number, day: Date): Date {
-  const mins = snapPx(Math.max(0, px)) / PX_PER_MIN + HOUR_START * 60
-  const d = new Date(day); d.setHours(Math.floor(mins/60), Math.min(59, mins%60), 0, 0); return d
-}
 function fmtHH(d: Date) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 
-const DAYS_S  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+const DAYS_S   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 const MONTHS_S = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
 const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-
 function dayLabel(d: Date) { return `${DAYS_S[d.getDay()]} ${d.getDate()} ${MONTHS_S[d.getMonth()]}` }
 
-type ViewMode = 'day' | 'week' | 'year'
+type ViewMode = 'day' | 'year'
 interface Block { kind:'task'|'standalone'|'gcal'; id:string; text:string; start:Date; end:Date; color:string; linkedId?:string; gcalEvent?:CalendarEvent }
 
 // ── Leer time blocks ───────────────────────────────────────────────────────
@@ -99,8 +90,22 @@ export default function PlannerPanel({ onClose }: Props) {
   const navigate = useNavigate()
 
   const today = startOfDay(new Date())
-  const [viewMode,    setViewMode]    = useState<ViewMode>('day')
-  const [centerDate,  setCenterDate]  = useState(today)
+  const [viewMode,       setViewMode]       = useState<ViewMode>('day')
+  const [centerDate,     setCenterDate]     = useState(today)
+  // Zoom vertical (altura de slot 30 min) y horizontal (días visibles)
+  const [slotH,          setSlotH]          = useState(DEFAULT_SLOT_H)
+  const [visibleDayCnt,  setVisibleDayCnt]  = useState(DEFAULT_DAY_CNT)
+
+  // Geometría derivada del zoom actual
+  const hourH    = slotH * 2
+  const pxPerMin = slotH / 30
+  const snapPx   = (y: number) => Math.round(y / (slotH / 2)) * (slotH / 2)
+  const topPx    = (d: Date)   => Math.max(0, (d.getHours()*60 + d.getMinutes() - HOUR_START*60) * pxPerMin)
+  const heightPx = (s: number, e: number) => Math.max(slotH/2, (e-s)/60000 * pxPerMin)
+  const pxToTime = (px: number, day: Date) => {
+    const mins = snapPx(Math.max(0, px)) / pxPerMin + HOUR_START * 60
+    const d = new Date(day); d.setHours(Math.floor(mins/60), Math.min(59, mins%60), 0, 0); return d
+  }
   const [gcalEvents,  setGcalEvents]  = useState<CalendarEvent[]>([])
   const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
@@ -150,22 +155,51 @@ export default function PlannerPanel({ onClose }: Props) {
     function update() {
       if (!timelineRef.current) return
       const avail = timelineRef.current.clientWidth - AXIS_W - 2
-      const cols  = viewMode === 'week' ? 7 : 5
-      setColW(Math.max(80, Math.floor(avail / cols)))
+      setColW(Math.max(60, Math.floor(avail / visibleDayCnt)))
     }
     update()
     const ro = new ResizeObserver(update)
     if (timelineRef.current) ro.observe(timelineRef.current)
     return () => ro.disconnect()
-  }, [viewMode, panelW])
+  }, [panelW, visibleDayCnt])
 
-  // ── Días visibles ─────────────────────────────────────────────────────────
-  const PRE = 7
-  const visibleDays = useMemo(() => {
-    if (viewMode === 'day') return Array.from({length: PRE*2+1}, (_,i) => addDays(centerDate, i-PRE))
-    if (viewMode === 'week') { const m = startOfWeek(centerDate); return Array.from({length:7},(_,i)=>addDays(m,i)) }
-    return []
-  }, [viewMode, centerDate.toDateString()]) // eslint-disable-line
+  // ── Drag eje vertical → zoom Y ────────────────────────────────────────────
+  function handleAxisDrag(e: React.MouseEvent) {
+    e.preventDefault()
+    const startY     = e.clientY
+    const startSlotH = slotH
+    const scrollEl   = scrollVRef.current
+    const scrollFrac = scrollEl ? scrollEl.scrollTop / (TOTAL_HOURS * startSlotH * 2) : 0
+    function onMove(ev: MouseEvent) {
+      const delta   = startY - ev.clientY   // arriba = zoom in
+      const newSlot = Math.max(MIN_SLOT_H, Math.min(MAX_SLOT_H, startSlotH + delta * 0.5))
+      setSlotH(newSlot)
+      if (scrollEl) scrollEl.scrollTop = scrollFrac * TOTAL_HOURS * newSlot * 2
+    }
+    function onUp() { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }
+
+  // ── Drag cabecera → zoom X ────────────────────────────────────────────────
+  function handleHeadersDrag(e: React.MouseEvent) {
+    if ((e.target as HTMLElement).closest('.pp-col-head')) return
+    e.preventDefault()
+    const startX   = e.clientX
+    const startCnt = visibleDayCnt
+    function onMove(ev: MouseEvent) {
+      const steps = Math.round((ev.clientX - startX) / 40)  // derecha = menos días
+      setVisibleDayCnt(Math.max(MIN_DAY_CNT, Math.min(MAX_DAY_CNT, startCnt + steps)))
+    }
+    function onUp() { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }
+
+  function resetZoom() { setSlotH(DEFAULT_SLOT_H); setVisibleDayCnt(DEFAULT_DAY_CNT) }
+
+  // ── Días visibles — pre-renderizamos PRE_DAYS a cada lado ────────────────
+  const visibleDays = useMemo(() =>
+    Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
+  , [centerDate.toDateString()]) // eslint-disable-line
 
   // ── Scroll ────────────────────────────────────────────────────────────────
   const scrollHRef = useRef<HTMLDivElement>(null)
@@ -174,7 +208,7 @@ export default function PlannerPanel({ onClose }: Props) {
 
   useLayoutEffect(() => {
     if (viewMode !== 'day' || !scrollHRef.current) return
-    const pos = Math.max(0, PRE * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    const pos = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
     scrollHRef.current.scrollLeft = pos
     if (headRef.current) headRef.current.scrollLeft = pos
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
@@ -282,7 +316,7 @@ export default function PlannerPanel({ onClose }: Props) {
       if (!el || !col) return
       const n = store.getNode(resizeRef.current.id)
       if (!n?.due) return
-      const h = Math.max(SNAP_PX, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
+      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
       el.style.height = h + 'px'
     }
     function onUp(ev: MouseEvent) {
@@ -292,8 +326,8 @@ export default function PlannerPanel({ onClose }: Props) {
       const n = store.getNode(id); if (!n?.due) return
       const col = document.querySelector(`[data-pp-block="${id}"]`)?.closest('.pp-col') as HTMLElement
       if (!col) return
-      const h = Math.max(SNAP_PX, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
-      store.updateNode(id, { dueEnd: new Date(new Date(n.due).getTime() + h/PX_PER_MIN*60000).toISOString() })
+      const h = Math.max(slotH/2, snapPx(ev.clientY - col.getBoundingClientRect().top) - topPx(new Date(n.due)))
+      store.updateNode(id, { dueEnd: new Date(new Date(n.due).getTime() + h/pxPerMin*60000).toISOString() })
       justResized.current = true; setTimeout(()=>{justResized.current=false}, 200)
     }
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
@@ -332,15 +366,15 @@ export default function PlannerPanel({ onClose }: Props) {
     const nowTop   = topPx(new Date())
     return (
       <div key={day.toISOString()} className="pp-col-wrap" style={{ width: colW, flexShrink: 0 }}>
-        <div className="pp-col" style={{ height: TOTAL_HOURS*HOUR_H }}
+        <div className="pp-col" style={{ height: TOTAL_HOURS * hourH }}
           onDragOver={e=>e.preventDefault()}
           onDrop={e=>handleDrop(e, day, e.currentTarget)}
           onClick={e=>handleSlotClick(e, day, e.currentTarget)}
         >
           {Array.from({length: TOTAL_HOURS*4}, (_,i) => (
-            <div key={i} className={`pp-slot ${i%4===0?'pp-slot--hr':i%2===0?'pp-slot--half':'pp-slot--qtr'}`} style={{top: i*SNAP_PX}} />
+            <div key={i} className={`pp-slot ${i%4===0?'pp-slot--hr':i%2===0?'pp-slot--half':'pp-slot--qtr'}`} style={{top: i*(slotH/2)}} />
           ))}
-          {isToday && nowTop >= 0 && nowTop < TOTAL_HOURS*HOUR_H && <div className="pp-now" style={{top:nowTop}} />}
+          {isToday && nowTop >= 0 && nowTop < TOTAL_HOURS*hourH && <div className="pp-now" style={{top:nowTop}} />}
           {getBlocks(day, gcalEvents).map(renderBlock)}
 
           {/* Bloque inline en creación */}
@@ -420,20 +454,14 @@ export default function PlannerPanel({ onClose }: Props) {
   }
 
   // ── Nav title ─────────────────────────────────────────────────────────────
-  const navTitle = (() => {
-    if (viewMode === 'day') return centerDate.toLocaleDateString('es-ES', {weekday:'short', day:'numeric', month:'short'})
-    if (viewMode === 'week') {
-      const m = startOfWeek(centerDate); const s = addDays(m,6)
-      return `${m.getDate()} – ${s.getDate()} ${MONTHS_S[m.getMonth()]} ${m.getFullYear()}`
-    }
-    return `${centerDate.getFullYear()}`
-  })()
+    const navTitle = viewMode === 'day'
+    ? centerDate.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
+    : `${centerDate.getFullYear()}`
 
   function navDelta(d: number) {
-    setCenterDate(prev =>
-      viewMode === 'day'  ? addDays(prev, d) :
-      viewMode === 'week' ? addDays(prev, d * 7) :
-      new Date(prev.getFullYear() + d, prev.getMonth(), 1)
+    setCenterDate(prev => viewMode === 'day'
+      ? addDays(prev, d)
+      : new Date(prev.getFullYear() + d, prev.getMonth(), 1)
     )
   }
 
@@ -446,9 +474,9 @@ export default function PlannerPanel({ onClose }: Props) {
       {/* Header */}
       <div className="pp-header">
         <div className="pp-view-tabs">
-          {(['day','week','year'] as ViewMode[]).map(m => (
+          {(['day','year'] as ViewMode[]).map(m => (
             <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?'Día':m==='week'?'Semana':'Año'}
+              {m==='day'?'Día':'Año'}
             </button>
           ))}
         </div>
@@ -464,8 +492,14 @@ export default function PlannerPanel({ onClose }: Props) {
         {viewMode === 'year' ? renderYear() : (
           <>
             {/* Cabeceras sync */}
-            <div className="pp-heads" ref={headRef}>
-              <div style={{width: AXIS_W, flexShrink:0}} />
+            <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
+              title="Arrastra izq/der para ver más/menos días (2–7)">
+              {/* Esquina reset — clic restablece zoom por defecto */}
+              <div className="pp-zoom-reset" style={{width: AXIS_W, flexShrink:0}}
+                onClick={e => { e.stopPropagation(); resetZoom() }}
+                title={`Reset zoom — ${visibleDayCnt} días · ${Math.round(slotH)}px/30min`}>
+                ⊙
+              </div>
               {visibleDays.map(d => (
                 <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
                   style={{width:colW, flexShrink:0}}>
@@ -475,9 +509,10 @@ export default function PlannerPanel({ onClose }: Props) {
             </div>
             {/* Grid horizontal */}
             <div className={`pp-grid ${viewMode==='day'?'pp-grid--scroll':''}`} ref={el => { (scrollHRef as any).current = el; (timelineRef as any).current = el }}>
-              <div className="pp-axis" style={{width:AXIS_W, height: TOTAL_HOURS*HOUR_H}}>
+              <div className="pp-axis" style={{width:AXIS_W, height: TOTAL_HOURS*hourH}}
+                onMouseDown={handleAxisDrag} title="Arrastra arriba/abajo para hacer zoom">
                 {Array.from({length:TOTAL_HOURS+1},(_,i) => (
-                  <div key={i} className="pp-axis-label" style={{top: i*HOUR_H-8}}>
+                  <div key={i} className="pp-axis-label" style={{top: i*hourH-8}}>
                     {String(HOUR_START+i).padStart(2,'0')}:00
                   </div>
                 ))}
