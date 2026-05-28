@@ -12076,3 +12076,83 @@ a:focus-visible {
   display: flex; flex-direction: column; gap: 2px;
   box-shadow: 0 2px 12px rgba(74,144,217,0.35);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   VISTA AÑO — cuadrícula 3×4 de meses compactos
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* PlannerPanel */
+.pp-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 12px;
+  overflow-y: auto;
+}
+.pp-year-month { display: flex; flex-direction: column; gap: 3px; }
+.pp-year-month-name {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+.pp-year-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+.pp-year-dow {
+  font-size: 8px; font-weight: 600; color: var(--text-tertiary);
+  text-align: center; padding: 1px 0;
+}
+.pp-year-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.pp-year-day {
+  font-size: 9px; text-align: center; padding: 2px 0;
+  cursor: pointer; border-radius: 3px; color: var(--text-primary);
+  position: relative; line-height: 1.4;
+  transition: background 0.1s;
+}
+.pp-year-day:hover { background: var(--bg-hover); color: var(--accent); }
+.pp-year-day--empty { pointer-events: none; }
+.pp-year-day--today {
+  background: var(--accent); color: #fff; font-weight: 700; border-radius: 50%;
+}
+.pp-year-day--today:hover { background: var(--accent); opacity: 0.85; }
+.pp-year-day-dot {
+  position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 3px; border-radius: 50%;
+  background: currentColor; opacity: 0.5;
+}
+
+/* CalendarPlanner */
+.cp-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.cp-year-month { display: flex; flex-direction: column; gap: 4px; }
+.cp-year-month-name {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 3px;
+}
+.cp-year-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cp-year-dow {
+  font-size: 9px; font-weight: 600; color: var(--text-tertiary);
+  text-align: center; padding: 2px 0;
+}
+.cp-year-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.cp-year-day {
+  font-size: 10px; text-align: center; padding: 3px 0;
+  cursor: pointer; border-radius: 3px; color: var(--text-primary);
+  position: relative; line-height: 1.4;
+  transition: background 0.1s;
+}
+.cp-year-day:hover { background: var(--bg-hover); color: var(--accent); }
+.cp-year-day--empty { pointer-events: none; }
+.cp-year-day--today {
+  background: var(--accent); color: #fff; font-weight: 700; border-radius: 50%;
+}
+.cp-year-day--today:hover { opacity: 0.85; }
+.cp-year-day-dot {
+  position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--accent); opacity: 0.6;
+}

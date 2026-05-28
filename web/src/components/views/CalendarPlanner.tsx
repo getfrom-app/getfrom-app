@@ -104,7 +104,7 @@ function dayColLabel(d: Date): string {
 }
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
-type ViewMode = 'day' | 'week' | 'month'
+type ViewMode = 'day' | 'week' | 'year'
 type TaskFilter = 'all' | 'overdue' | 'today' | 'future'
 
 interface TimeBlock {
@@ -466,7 +466,7 @@ export default function CalendarPlanner() {
     setCenterDate(prev => {
       if (viewMode === 'day')   return addDays(prev, delta)
       if (viewMode === 'week')  return addDays(prev, delta * 7)
-      return new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
+      return new Date(prev.getFullYear() + delta, prev.getMonth(), 1)
     })
   }
 
@@ -530,59 +530,44 @@ export default function CalendarPlanner() {
       const sun = addDays(mon, 6)
       return `${mon.getDate()} – ${sun.getDate()} ${MONTHS_ES_LONG[mon.getMonth()]} ${mon.getFullYear()}`
     }
-    return `${MONTHS_ES_LONG[centerDate.getMonth()]} ${centerDate.getFullYear()}`
+    return `${centerDate.getFullYear()}`
   }, [viewMode, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Vista MES — grid mensual ──────────────────────────────────────────────
-  function renderMonthView() {
-    const firstDay = startOfMonth(centerDate)
-    const totalDays = daysInMonth(centerDate)
-    // Día de la semana del primer día (0=Dom, convertir a lunes=0)
-    const firstDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
-    const cells: (Date | null)[] = []
-    for (let i = 0; i < firstDow; i++) cells.push(null)
-    for (let d = 1; d <= totalDays; d++) cells.push(new Date(centerDate.getFullYear(), centerDate.getMonth(), d))
-
-    // Contar tareas por día usando filterMatchIds y sus ancestros diarios
-    const taskCountByDay = new Map<string, number>()
-    for (const id of filterMatchIds) {
-      const n = store.getNode(id)
-      if (!n) continue
-      // Buscar el diary ancestor
-      let cur = n.parentId ? store.getNode(n.parentId) : null
-      while (cur) {
-        if (cur.isDiaryEntry && cur.diaryDate) {
-          const key = cur.diaryDate.split('T')[0]!
-          taskCountByDay.set(key, (taskCountByDay.get(key) ?? 0) + 1)
-          break
-        }
-        cur = cur.parentId ? store.getNode(cur.parentId) : null
-      }
-    }
-
+  function renderYearView() {
+    const year = centerDate.getFullYear()
     return (
-      <div className="cp-month-grid">
-        {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => (
-          <div key={d} className="cp-month-dow">{d}</div>
-        ))}
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e-${i}`} className="cp-month-cell cp-month-cell--empty" />
-          const key = day.toISOString().split('T')[0]!
-          const count = taskCountByDay.get(key) ?? 0
-          const isToday = sameDay(day, today)
-          const isCenter = sameDay(day, centerDate)
+      <div className="cp-year-grid">
+        {Array.from({ length: 12 }, (_, monthIdx) => {
+          const firstOfMonth = new Date(year, monthIdx, 1)
+          const totalDays    = daysInMonth(firstOfMonth)
+          const firstDow     = firstOfMonth.getDay() === 0 ? 6 : firstOfMonth.getDay() - 1
+          const cells: (number | null)[] = []
+          for (let i = 0; i < firstDow; i++) cells.push(null)
+          for (let d = 1; d <= totalDays; d++) cells.push(d)
           return (
-            <div
-              key={key}
-              className={`cp-month-cell ${isToday?'cp-month-cell--today':''} ${isCenter?'cp-month-cell--center':''}`}
-              onClick={() => { setCenterDate(startOfDay(day)); setViewMode('day') }}
-            >
-              <div className="cp-month-day-num">{day.getDate()}</div>
-              {count > 0 && <div className="cp-month-task-dot" title={`${count} tareas`}>{count}</div>}
-              {/* Puntos de GCal events */}
-              {gcalEvents.filter(ev => !ev.allDay && sameDay(new Date(ev.start), day)).slice(0,3).map(ev => (
-                <div key={ev.id} className="cp-month-gcal-dot" style={{ background: ev.backgroundColor || '#4a90d9' }} />
-              ))}
+            <div key={monthIdx} className="cp-year-month">
+              <div className="cp-year-month-name">{MONTHS_ES_LONG[monthIdx]}</div>
+              <div className="cp-year-dow-row">
+                {['L','M','X','J','V','S','D'].map(d => <div key={d} className="cp-year-dow">{d}</div>)}
+              </div>
+              <div className="cp-year-days">
+                {cells.map((d, i) => {
+                  if (!d) return <div key={`e-${i}`} className="cp-year-day cp-year-day--empty" />
+                  const date    = new Date(year, monthIdx, d)
+                  const isTod   = sameDay(date, today)
+                  const hasGcal = gcalEvents.some(ev => !ev.allDay && sameDay(new Date(ev.start), date))
+                  return (
+                    <div key={d} className={`cp-year-day ${isTod?'cp-year-day--today':''}`}
+                      onClick={() => { setCenterDate(startOfDay(date)); setViewMode('day') }}
+                      title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
+                    >
+                      {d}
+                      {hasGcal && <div className="cp-year-day-dot" />}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )
         })}
@@ -605,9 +590,9 @@ export default function CalendarPlanner() {
         </button>
 
         <div className="cp-view-tabs">
-          {(['day','week','month'] as ViewMode[]).map(m => (
+          {(['day','week','year'] as ViewMode[]).map(m => (
             <button key={m} className={`cp-view-tab ${viewMode===m?'cp-view-tab--active':''}`} onClick={() => setViewMode(m)}>
-              {m === 'day' ? 'Día' : m === 'week' ? 'Semana' : 'Mes'}
+              {m === 'day' ? 'Día' : m === 'week' ? 'Semana' : 'Año'}
             </button>
           ))}
         </div>
@@ -651,9 +636,9 @@ export default function CalendarPlanner() {
         {/* ── Timeline area ── */}
         <div className="cp-timeline" ref={el => { (gridScrollRef as any).current = el; (timelineRef as any).current = el }}>
 
-          {viewMode === 'month' && renderMonthView()}
+          {viewMode === 'year' && renderYearView()}
 
-          {viewMode !== 'month' && (
+          {viewMode !== 'year' && (
             <>
               {/* Encabezados de días */}
               <div className="cp-col-heads" ref={headersRef}>

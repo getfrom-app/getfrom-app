@@ -57,7 +57,7 @@ const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agos
 
 function dayLabel(d: Date) { return `${DAYS_S[d.getDay()]} ${d.getDate()} ${MONTHS_S[d.getMonth()]}` }
 
-type ViewMode = 'day' | 'week' | 'month'
+type ViewMode = 'day' | 'week' | 'year'
 interface Block { kind:'task'|'standalone'|'gcal'; id:string; text:string; start:Date; end:Date; color:string; linkedId?:string; gcalEvent?:CalendarEvent }
 
 // ── Leer time blocks ───────────────────────────────────────────────────────
@@ -369,28 +369,48 @@ export default function PlannerPanel({ onClose }: Props) {
     )
   }
 
-  // ── Mes ───────────────────────────────────────────────────────────────────
-  function renderMonth() {
-    const first  = startOfMonth(centerDate)
-    const total  = daysInMonth(centerDate)
-    const firstD = first.getDay() === 0 ? 6 : first.getDay() - 1
-    const cells: (Date|null)[] = []
-    for (let i=0;i<firstD;i++) cells.push(null)
-    for (let d=1;d<=total;d++) cells.push(new Date(centerDate.getFullYear(), centerDate.getMonth(), d))
+  // ── Año — cuadrícula 3×4 con los 12 meses ────────────────────────────────
+  function renderYear() {
+    const year = centerDate.getFullYear()
     return (
-      <div className="pp-month">
-        {['L','M','X','J','V','S','D'].map(d => <div key={d} className="pp-month-dow">{d}</div>)}
-        {cells.map((day,i) => {
-          if (!day) return <div key={`e-${i}`} className="pp-month-cell pp-month-cell--empty"/>
-          const isToday  = sameDay(day, today)
-          const isCenter = sameDay(day, centerDate)
-          const gcal = gcalEvents.filter(ev => !ev.allDay && sameDay(new Date(ev.start), day))
+      <div className="pp-year-grid">
+        {Array.from({ length: 12 }, (_, monthIdx) => {
+          const firstOfMonth = new Date(year, monthIdx, 1)
+          const totalDays    = daysInMonth(firstOfMonth)
+          const firstDow     = firstOfMonth.getDay() === 0 ? 6 : firstOfMonth.getDay() - 1
+          const cells: (number | null)[] = []
+          for (let i = 0; i < firstDow; i++) cells.push(null)
+          for (let d = 1; d <= totalDays; d++) cells.push(d)
+
           return (
-            <div key={day.toISOString()} className={`pp-month-cell ${isToday?'pp-month-cell--today':''} ${isCenter?'pp-month-cell--center':''}`}
-              onClick={() => { setCenterDate(startOfDay(day)); setViewMode('day') }}>
-              <span className="pp-month-num">{day.getDate()}</span>
-              <div className="pp-month-dots">
-                {gcal.slice(0,3).map(ev => <div key={ev.id} className="pp-month-dot" style={{background: ev.backgroundColor||'#4a90d9'}} />)}
+            <div key={monthIdx} className="pp-year-month">
+              {/* Nombre del mes */}
+              <div className="pp-year-month-name">{MONTHS_L[monthIdx]}</div>
+              {/* Cabecera días de la semana */}
+              <div className="pp-year-dow-row">
+                {['L','M','X','J','V','S','D'].map(d => (
+                  <div key={d} className="pp-year-dow">{d}</div>
+                ))}
+              </div>
+              {/* Días */}
+              <div className="pp-year-days">
+                {cells.map((d, i) => {
+                  if (!d) return <div key={`e-${i}`} className="pp-year-day pp-year-day--empty" />
+                  const date    = new Date(year, monthIdx, d)
+                  const isTod   = sameDay(date, today)
+                  const hasGcal = gcalEvents.some(ev => !ev.allDay && sameDay(new Date(ev.start), date))
+                  return (
+                    <div
+                      key={d}
+                      className={`pp-year-day ${isTod ? 'pp-year-day--today' : ''}`}
+                      onClick={() => { setCenterDate(startOfDay(date)); setViewMode('day') }}
+                      title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
+                    >
+                      {d}
+                      {hasGcal && <div className="pp-year-day-dot" />}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )
@@ -406,11 +426,15 @@ export default function PlannerPanel({ onClose }: Props) {
       const m = startOfWeek(centerDate); const s = addDays(m,6)
       return `${m.getDate()} – ${s.getDate()} ${MONTHS_S[m.getMonth()]} ${m.getFullYear()}`
     }
-    return `${MONTHS_L[centerDate.getMonth()]} ${centerDate.getFullYear()}`
+    return `${centerDate.getFullYear()}`
   })()
 
   function navDelta(d: number) {
-    setCenterDate(prev => viewMode==='day' ? addDays(prev,d) : viewMode==='week' ? addDays(prev,d*7) : new Date(prev.getFullYear(), prev.getMonth()+d, 1))
+    setCenterDate(prev =>
+      viewMode === 'day'  ? addDays(prev, d) :
+      viewMode === 'week' ? addDays(prev, d * 7) :
+      new Date(prev.getFullYear() + d, prev.getMonth(), 1)
+    )
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -422,9 +446,9 @@ export default function PlannerPanel({ onClose }: Props) {
       {/* Header */}
       <div className="pp-header">
         <div className="pp-view-tabs">
-          {(['day','week','month'] as ViewMode[]).map(m => (
+          {(['day','week','year'] as ViewMode[]).map(m => (
             <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?'Día':m==='week'?'Semana':'Mes'}
+              {m==='day'?'Día':m==='week'?'Semana':'Año'}
             </button>
           ))}
         </div>
@@ -437,7 +461,7 @@ export default function PlannerPanel({ onClose }: Props) {
 
       {/* Timeline */}
       <div className="pp-timeline" ref={scrollVRef}>
-        {viewMode === 'month' ? renderMonth() : (
+        {viewMode === 'year' ? renderYear() : (
           <>
             {/* Cabeceras sync */}
             <div className="pp-heads" ref={headRef}>
