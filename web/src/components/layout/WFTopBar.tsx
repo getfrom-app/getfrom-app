@@ -251,7 +251,7 @@ export default function WFTopBar({
           <input
             ref={filterRef}
             className="wf-topbar-filter-input"
-            placeholder="Filtrar o describir en lenguaje natural… (⌘F)"
+            placeholder="¿Qué quieres ver? (⌘F)"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
             onFocus={() => setFilterOpen(true)}
