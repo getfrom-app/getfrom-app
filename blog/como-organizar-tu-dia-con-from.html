@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cómo organizar tu día con From: el diario inteligente que recuerda todo por ti</title>
+  <meta name="description" content="Descubre cómo From te ayuda a organizar tu jornada con un diario diario automático, tareas con IA y filtros inteligentes. Sin fricción, sin configuración.">
+  <meta name="keywords" content="organizar el día, app de productividad, diario digital, gestión de tareas con IA, From app, segunda mente digital">
+  <meta property="og:title" content="Cómo organizar tu día con From">
+  <meta property="og:description" content="Un diario diario automático, tareas con IA y filtros inteligentes. Así es como From transforma tu jornada.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/organizar-dia/01-diario-hoy.png">
+  <meta property="og:url" content="https://getfrom.app/blog/como-organizar-tu-dia-con-from">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/como-organizar-tu-dia-con-from">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    .cta-box a:hover { opacity: .92; }
+
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    nav.blog-nav .back:hover { color: #7c3aed; }
+
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Cómo organizar tu día con From: el diario inteligente que recuerda todo por ti",
+    "description": "Descubre cómo From te ayuda a organizar tu jornada con un diario diario automático, tareas con IA y filtros inteligentes.",
+    "image": "https://getfrom.app/img/blog/organizar-dia/01-diario-hoy.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/como-organizar-tu-dia-con-from" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Productividad</span>
+  <h1>Cómo organizar tu día con From: el diario inteligente que recuerda todo por ti</h1>
+  <p class="subtitle">Tareas, notas y reuniones en un único lugar. Sin apps separadas. Sin configuración compleja. Tu día, ordenado en segundos.</p>
+  <div class="blog-meta">
+    <span>📅 28 de mayo de 2026</span>
+    <span>⏱ 5 min de lectura</span>
+    <span>🏷 Productividad · IA · Gestión del tiempo</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>En este artículo</h4>
+    <ol>
+      <li><a href="#problema">El problema de las apps separadas</a></li>
+      <li><a href="#diario">Tu diario del día, siempre listo</a></li>
+      <li><a href="#tareas">Crear tareas sin interrumpir el flujo</a></li>
+      <li><a href="#ia">From AI: pide lo que necesites en voz o texto</a></li>
+      <li><a href="#filtros">Filtros inteligentes: encuentra todo al instante</a></li>
+      <li><a href="#empieza">Cómo empezar hoy</a></li>
+    </ol>
+  </div>
+
+  <h2 id="problema">El problema de las apps separadas</h2>
+  <p>La mayoría de personas usan entre 4 y 6 apps distintas para gestionar su día: una para tareas, otra para notas, el calendario del móvil, el correo, algún bloc de notas rápido… El resultado es siempre el mismo: información dispersa, contexto perdido y la sensación constante de que algo se te escapa.</p>
+  <p><strong>From resuelve esto con un enfoque radical: todo en un único árbol.</strong> Tus tareas, tus notas, tus reuniones y tus ideas viven en el mismo lugar, organizadas por fecha y jerarquía, accesibles en web, Mac e iPhone.</p>
+
+  <h2 id="diario">Tu diario del día, siempre listo</h2>
+  <p>Cada día, From crea automáticamente una nota con la fecha de hoy. Sin que tengas que hacer nada. Pulsa <kbd>H</kbd> desde cualquier lugar de la app y llegas directamente a tu nota del día.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/organizar-dia/01-diario-hoy.png" alt="Nota diaria en From con tareas del día y notas de reunión" loading="lazy" width="1480" height="810">
+    <figcaption>La nota del día en From: tareas pendientes, notas de reunión y contexto, todo junto y organizado automáticamente.</figcaption>
+  </figure>
+
+  <p>Aquí puedes escribir libremente — una tarea, una idea, un recordatorio, las notas de una reunión. From entiende lo que escribes y te lo muestra con el formato adecuado: si escribes una acción, aparece como tarea con checkbox; si es una nota, como texto jerárquico.</p>
+
+  <div class="callout">
+    <p>💡 <strong>Atajo del día:</strong> Pulsa <kbd>H</kbd> para ir a la nota de hoy, <kbd>N</kbd> para crear un nodo nuevo directamente en ella. Nunca más empiezas el día con la hoja en blanco.</p>
+  </div>
+
+  <h2 id="tareas">Crear tareas sin interrumpir el flujo</h2>
+  <p>En From, crear una tarea es tan natural como escribir. Escribe lo que necesitas hacer y pulsa <kbd>Cmd+Enter</kbd> para convertirlo en tarea. El checkbox aparece, la tarea queda registrada y puedes seguir escribiendo.</p>
+
+  <p>Cuando terminas algo, un clic en el checkbox lo marca como hecho. El texto se tacha con una línea verde y la tarea desaparece de tu lista de pendientes — sin borrarse, por si necesitas consultarla más tarde.</p>
+
+  <ul>
+    <li><strong>Cmd+Enter</strong> — convierte cualquier línea en tarea</li>
+    <li><strong>Clic en el checkbox</strong> — marca como hecha / deshace</li>
+    <li><strong>Tab</strong> — convierte la tarea en subtarea de la anterior</li>
+    <li><strong>Shift+Tab</strong> — sube un nivel</li>
+  </ul>
+
+  <h2 id="ia">From AI: pide lo que necesites en voz o texto</h2>
+  <p>La parte que más sorprende a los nuevos usuarios es la IA integrada. Pulsa <kbd>Espacio</kbd> desde cualquier lugar y se abre From AI — un asistente que conoce todo tu contenido y puede actuar sobre él.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/organizar-dia/02-magic-chat-vacio.png" alt="From AI abierto con el campo de texto listo para recibir instrucciones" loading="lazy" width="1480" height="810">
+    <figcaption>From AI se abre con Espacio. Puedes escribir o mantener pulsado R para hablar directamente.</figcaption>
+  </figure>
+
+  <p>No es un chatbot genérico. Sabe qué tienes en tu árbol, cuáles son tus proyectos y qué tienes pendiente. Puedes pedirle cosas como:</p>
+
+  <ul>
+    <li>"Crea una nota 'Proyecto web Q3' con las tareas: diseño, desarrollo y lanzamiento"</li>
+    <li>"Añade una tarea para mañana: revisar métricas de ventas"</li>
+    <li>"Muéstrame todo lo que tengo pendiente esta semana"</li>
+    <li>"Resume las notas de la reunión de hoy"</li>
+  </ul>
+
+  <figure class="screenshot">
+    <img src="/img/blog/organizar-dia/03-magic-chat-escribiendo.png" alt="Escribiendo una instrucción en From AI para crear una tarea" loading="lazy" width="1100" height="750">
+    <figcaption>Escribe en lenguaje natural. From AI entiende el contexto y actúa sobre tu información real.</figcaption>
+  </figure>
+
+  <p>La IA te muestra lo que va a hacer antes de ejecutarlo — una tarjeta de confirmación con cada elemento que creará. Confirmas con un clic y en décimas de segundo tu árbol se actualiza.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/organizar-dia/04-magic-chat-respuesta.png" alt="From AI mostrando la tarjeta de confirmación antes de crear los nodos" loading="lazy" width="1100" height="750">
+    <figcaption>Antes de actuar, From AI muestra exactamente qué va a crear. Tú confirmas o cancelas.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <p>🎙 <strong>Modo voz:</strong> Mantén pulsada la tecla <kbd>R</kbd> y habla. Suelta para enviar. From AI transcribe y ejecuta tu instrucción sin que toques el teclado.</p>
+  </div>
+
+  <h2 id="filtros">Filtros inteligentes: encuentra todo al instante</h2>
+  <p>Con el tiempo, tu árbol crece. Proyectos, notas, tareas de distintos días. Encontrar algo concreto podría volverse difícil — pero From incluye un sistema de filtros que entiende lenguaje natural.</p>
+
+  <p>Pulsa <kbd>Cmd+F</kbd> y escribe lo que quieres ver. No hace falta aprenderse operadores técnicos: puedes escribir directamente "tareas de hoy pendientes" y From lo traduce automáticamente al filtro correcto.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/organizar-dia/05-filtro-ia.png" alt="Barra de filtro de From con lenguaje natural" loading="lazy" width="1480" height="180">
+    <figcaption>El filtro acepta lenguaje natural. Escribe lo que quieres ver y From lo interpreta automáticamente.</figcaption>
+  </figure>
+
+  <p>También puedes usar operadores directos para filtros precisos:</p>
+  <ul>
+    <li><code>pendiente</code> — solo tareas pendientes</li>
+    <li><code>hoy</code> — todo lo que está bajo la nota de hoy</li>
+    <li><code>pendiente y hoy</code> — tareas pendientes de hoy</li>
+    <li><code>vencido</code> — todo lo que debería estar hecho</li>
+    <li><code>pendiente o mañana</code> — pendientes de hoy y de mañana</li>
+  </ul>
+
+  <p>Los filtros que usas más se pueden guardar como <strong>atajos en la barra lateral</strong> — un clic y los ves al instante. De serie From incluye "Pendientes" y "Esta semana".</p>
+
+  <h2 id="empieza">Cómo empezar hoy</h2>
+  <p>No hace falta configurar nada. Abre From, pulsa <kbd>H</kbd> para ir a tu nota del día y empieza a escribir lo que tienes que hacer. En menos de cinco minutos tendrás tu jornada organizada.</p>
+
+  <ol>
+    <li><strong>Descarga From</strong> para Mac, iPhone o accede desde el navegador en <a href="https://getfrom.app">getfrom.app</a></li>
+    <li><strong>Crea una cuenta gratuita</strong> — no necesitas tarjeta</li>
+    <li><strong>Pulsa H</strong> para abrir tu nota del día</li>
+    <li><strong>Escribe tu primera tarea</strong> y conviértela con Cmd+Enter</li>
+    <li><strong>Pulsa Espacio</strong> para conocer From AI</li>
+  </ol>
+
+  <p>From está disponible en web, Mac y iPhone. Tu información sincroniza en tiempo real entre todos los dispositivos — sin pasos manuales, sin exportaciones.</p>
+
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Sin tarjeta de crédito. Disponible en web, Mac e iPhone.</p>
+    <a href="https://getfrom.app">Empezar ahora →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacidad</a> · <a href="/terms.html" style="color:#aaa">Términos</a></p>
+</footer>
+
+</body>
+</html>
