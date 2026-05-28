@@ -155,7 +155,24 @@ function AgentControls({ node }: Props) {
       {/* Toggle activo/pausado */}
       <button
         className={`node-special-pill ${data.enabled ? 'node-special-pill--on' : 'node-special-pill--off'}`}
-        onClick={() => setAgentEnabled(node.id, !data.enabled)}
+        onClick={() => {
+          setAgentEnabled(node.id, !data.enabled)
+          // Sync enabled state al servidor si hay schedule
+          if (data.schedule && isLoggedIn) {
+            apiRequest('/agents/schedule', {
+              method: 'POST',
+              body: JSON.stringify({
+                nodeId:       node.id,
+                agentId:      data.agentId,
+                agentTitle:   node.text,
+                systemPrompt: data.systemPrompt,
+                userMessage:  data.userMessage,
+                schedule:     data.schedule,
+                enabled:      !data.enabled,
+              }),
+            }).catch(() => { /* silencioso */ })
+          }
+        }}
         title={data.enabled ? 'Activo — clic para pausar' : 'Pausado — clic para activar'}
       >
         <span className="node-special-pill-dot" />
