@@ -1602,8 +1602,8 @@ export default function NodeView() {
               document.body
             )}
             <div className="node-title-actions">
-              {/* View mode switcher legacy — siempre visible si NO hay multi-vista configurada */}
-              {!node.isDiaryEntry && (() => {
+              {/* View mode switcher — visible en todos los nodos incluidas notas diarias y mensuales */}
+              {(() => {
                 const hasMultiViews = store.getViews(node.id).length > 0
                 if (hasMultiViews) return null  // los tabs abajo se encargan
                 const modes = [
