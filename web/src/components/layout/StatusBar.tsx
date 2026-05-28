@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
-import { clearTokens } from '../../api/client'
+import { clearTokens, apiRequest, getToken } from '../../api/client'
+import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
 export const WEB_VERSION = 'v9.1.2'
@@ -20,6 +21,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
+  const [nextRunLabel, setNextRunLabel] = useState<string | null>(null)
 
   // Online / offline listener
   useEffect(() => {
@@ -58,6 +60,23 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
+  // Schedules activos — carga si hay sesión, refresca cada 10 min
+  useEffect(() => {
+    if (!getToken()) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await apiRequest<{ schedules: Array<{ schedule: string; agentTitle: string | null; enabled: boolean }> }>('/agents/schedules')
+        if (!cancelled) {
+          setNextRunLabel(nextScheduledRunLabel(res.schedules ?? []))
+        }
+      } catch { /* silencioso */ }
+    }
+    load()
+    const interval = setInterval(load, 10 * 60 * 1000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
   const nodeCount = s.allActive().length
 
   // Etiqueta de sync
@@ -93,6 +112,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       <span className="footer-item" title="Último backup automático">
         Último backup {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
       </span>
+
+      {/* Próxima ejecución de agente programado */}
+      {nextRunLabel && (
+        <>
+          <span className="footer-sep" />
+          <span className="footer-item" title="Próxima ejecución automática de agente">
+            ⏰ {nextRunLabel}
+          </span>
+        </>
+      )}
 
       <span className="footer-sep" />
 

@@ -23,6 +23,7 @@ import { getAgentData, setAgentEnabled } from '../../utils/agentesHelper'
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { emptyTrash } from '../../utils/papeleraHelper'
+import { scheduleNextLabel } from '../../utils/scheduleHelper'
 
 interface Props {
   node: Node
@@ -201,7 +202,7 @@ function AgentControls({ node }: Props) {
         <span className="node-special-meta">{lastRunText}</span>
       )}
 
-      {/* Schedule — selector compacto */}
+      {/* Schedule — selector compacto + próxima ejecución */}
       <div style={{ position: 'relative' }}>
         <button
           className="node-special-pill node-special-pill--action"
@@ -244,6 +245,16 @@ function AgentControls({ node }: Props) {
           </>
         )}
       </div>
+
+      {/* Próxima ejecución */}
+      {data.schedule && (() => {
+        const lbl = scheduleNextLabel(data.schedule)
+        return lbl ? (
+          <span className="node-special-meta" style={{ opacity: 0.55, fontSize: 10 }}>
+            {lbl}
+          </span>
+        ) : null
+      })()}
 
       {/* Error inline */}
       {error && (
