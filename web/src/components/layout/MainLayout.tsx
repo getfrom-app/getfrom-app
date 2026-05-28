@@ -36,8 +36,8 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
+import MagicChat from '../aichat/MagicChat'
 import AIChatFloatingButton from '../aichat/AIChatFloatingButton'
-import AIChatModal from '../aichat/AIChatModal'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
@@ -65,6 +65,9 @@ export default function MainLayout() {
   })()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
+
+  // R global hold-to-record
+  const isRKeyDownRef = useRef(false)
 
   // Sidebar resize state
   const sidebarWidthRef = useRef(parseInt(localStorage.getItem('from_sidebar_width') || '220'))
@@ -220,10 +223,30 @@ export default function MainLayout() {
           }, 150)
         }
       }
-      // Cmd+J → From AI chat
+      // Cmd+J o Espacio (sin input activo) → Magic Chat (solo abre)
       if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowAIChat(v => !v)
+      }
+      if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          setShowAIChat(true)
+        }
+      }
+      // R (mantener, sin input activo) → abre Magic Chat + empieza a grabar
+      if (e.code === 'KeyR' && !e.repeat && !isRKeyDownRef.current && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          isRKeyDownRef.current = true
+          setShowAIChat(true)
+          // Pequeño delay para que MagicChat monte y registre el listener
+          setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start')), 40)
+        }
       }
       // Cmd+Shift+S → toggle sidebar
       if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
@@ -335,8 +358,18 @@ export default function MainLayout() {
         // Si ya estamos en root '/' no hacemos nada
       }
     }
+    function handleKeyUp(e: KeyboardEvent) {
+      if (e.code === 'KeyR' && isRKeyDownRef.current) {
+        isRKeyDownRef.current = false
+        window.dispatchEvent(new Event('magic-chat:record-stop'))
+      }
+    }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
   }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture])
 
   // Polling automático: sync cada 15s para recoger cambios de Mac/iOS sin refrescar
@@ -377,6 +410,9 @@ export default function MainLayout() {
   return (
     <ToastProvider>
     <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+
+      {/* ── Traffic lights row (solo Mac) ── */}
+      <div className="traffic-bar" />
 
       {/* ── Cabecera unificada ── */}
       <div className="app-header">
@@ -513,8 +549,7 @@ export default function MainLayout() {
       )}
       <AIChatFloatingButton onClick={() => setShowAIChat(true)} isOpen={showAIChat} />
       {showAIChat && (
-        <AIChatModal onClose={() => setShowAIChat(false)}
-                     currentNodeId={currentNodeIdFromRoute} />
+        <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       )}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
+import { clearTokens } from '../../api/client'
 
 // Versión del build web — incrementar en cada deploy significativo
 export const WEB_VERSION = 'v9.0.10'
@@ -14,6 +16,7 @@ interface Props {
 export default function StatusBar({ isSyncing, showSaved }: Props) {
   const s = useStore()
   const us = useUserStore()
+  const navigate = useNavigate()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
@@ -26,6 +29,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
     window.addEventListener('offline', off)
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
+
+  // Sesión expirada → redirigir al login
+  useEffect(() => {
+    const handler = () => {
+      clearTokens()
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('from:unauthorized', handler)
+    return () => window.removeEventListener('from:unauthorized', handler)
+  }, [navigate])
 
   // Último backup — carga una vez y se refresca cada 5 min
   useEffect(() => {
@@ -45,22 +58,40 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
-  const email = us.user?.email
   const nodeCount = s.allActive().length
+
+  // Etiqueta de sync
+  const syncLabel = isSyncing
+    ? <><span className="footer-spinner" /> Sincronizando</>
+    : showSaved
+      ? '✓ Guardado'
+      : null
 
   return (
     <div className="app-footer">
-      {/* Badge conexión */}
-      <span className={`footer-badge ${isOnline ? 'footer-badge--online' : 'footer-badge--offline'}`}>
-        <span className="footer-badge-dot" />
-        {isOnline ? 'Conectado' : 'Sin conexión'}
-      </span>
+
+      {/* Conexión */}
+      {isOnline ? (
+        <span className="footer-badge footer-badge--online">
+          <span className="footer-badge-dot" />
+          Conectado
+        </span>
+      ) : (
+        <button
+          className="footer-badge footer-badge--offline footer-badge--btn"
+          onClick={() => window.location.reload()}
+          title="Sin conexión — clic para reconectar"
+        >
+          <span className="footer-badge-dot" />
+          Sin conexión · Reconectar
+        </button>
+      )}
 
       <span className="footer-sep" />
 
       {/* Último backup */}
       <span className="footer-item" title="Último backup automático">
-        💾 {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : 'Sin backup'}
+        Último backup {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
       </span>
 
       <span className="footer-sep" />
@@ -70,27 +101,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
         {nodeCount.toLocaleString()} nodos
       </span>
 
-      {/* Spacer */}
-      <span style={{ flex: 1 }} />
-
-      {/* Email */}
-      {email && (
+      {/* Sync — al lado de los nodos, solo cuando hay algo que mostrar */}
+      {syncLabel && (
         <>
-          <span className="footer-item footer-email" title={email}>{email}</span>
           <span className="footer-sep" />
+          <span className="footer-item footer-sync">{syncLabel}</span>
         </>
       )}
 
-      {/* Sync */}
-      <span className="footer-item footer-sync">
-        {isSyncing
-          ? <><span className="footer-spinner" /> Sincronizando</>
-          : showSaved
-            ? '✓ Guardado'
-            : ''}
-      </span>
-
-      <span className="footer-sep" />
+      {/* Spacer */}
+      <span style={{ flex: 1 }} />
 
       {/* Versión */}
       <span className="footer-version">{WEB_VERSION}</span>

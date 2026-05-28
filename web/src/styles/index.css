@@ -773,6 +773,8 @@ a { color: inherit; text-decoration: none; }
   /* El sidebar ocupa la altura del main-body, no de la ventana completa */
   height: 100%;
   border-right: 1px solid var(--border);
+  /* Espacio para el footer fijo (28px) */
+  padding-bottom: 28px;
 }
 
 .sidebar.open   { width: var(--sw, var(--sidebar-width)); }
@@ -10533,6 +10535,17 @@ a:focus-visible {
 .footer-badge--offline .footer-badge-dot { background: #ef4444; }
 .footer-badge--online  { color: var(--text-secondary); }
 .footer-badge--offline { color: #ef4444; }
+/* Offline badge como botón clickable */
+.footer-badge--btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: underline dotted;
+}
 
 .footer-sep {
   width: 1px; height: 14px;
@@ -10591,8 +10604,323 @@ a:focus-visible {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-/* Tauri Mac: padding-left para traffic lights en el header-sidebar */
+/* ── Traffic bar: fila exclusiva para los semáforos de Mac ── */
+/* Por defecto invisible (web/iOS). Solo aparece en Tauri Mac. */
+.traffic-bar {
+  display: none;
+}
+.tauri-mac .traffic-bar {
+  display: flex;
+  height: 28px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  background: var(--bg-secondary);
+  /* Borde inferior suave para separar visualmente de la cabecera */
+  border-bottom: 1px solid var(--border);
+}
+
+/* En Mac, el header-sidebar ya NO necesita padding para los semáforos
+   porque el traffic-bar los absorbe en su propia fila */
 .tauri-mac .header-sidebar {
-  padding-left: 78px;
+  padding-left: 10px;
 }
 .main-content { padding-bottom: 28px; }
+
+/* ── Magic Chat ──────────────────────────────────────────────────────────────
+   Overlay de IA con push-to-talk, waveform animado y conversación.        */
+
+.magic-chat-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.30);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.magic-chat-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 80px);
+  background: var(--bg-primary);
+  border-radius: 16px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.40), 0 0 0 1px var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Modo compacto: sin historial — más pequeño y centrado en el input */
+.magic-chat-modal--compact {
+  max-width: 580px;
+}
+
+/* ── Header ── */
+.magic-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.magic-chat-logo {
+  font-size: 15px;
+}
+
+.magic-chat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.magic-chat-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  transition: background 0.1s, color 0.1s;
+}
+.magic-chat-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Waveform ── */
+.magic-chat-waveform {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 20px 8px;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.magic-chat-waveform--active {
+  display: flex;
+}
+
+.magic-chat-recording-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ef4444;
+  letter-spacing: 0.01em;
+}
+
+.magic-chat-recording-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: magic-pulse 1s ease-in-out infinite;
+}
+
+@keyframes magic-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Estado vacío ── */
+.magic-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 24px 20px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.magic-chat-empty-glyph {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.magic-chat-empty-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.magic-chat-empty-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+/* ── Mensajes ── */
+.magic-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0 4px;
+  min-height: 0;
+}
+
+.magic-chat-bubble {
+  display: flex;
+  gap: 10px;
+  padding: 6px 16px;
+  align-items: flex-start;
+}
+
+.magic-chat-bubble-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.magic-chat-bubble-body { flex: 1; min-width: 0; }
+
+.magic-chat-bubble-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.magic-chat-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 16px 8px;
+}
+
+.magic-chat-chip {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.magic-chat-chip:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.magic-chat-status {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.magic-chat-error {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #c33;
+}
+
+/* ── Input ── */
+.magic-chat-input-wrap {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.magic-chat-textarea {
+  width: 100%;
+  resize: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-primary);
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.magic-chat-textarea:focus {
+  border-color: var(--border-focus);
+}
+
+.magic-chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Botón micrófono */
+.magic-chat-mic {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.12s;
+  user-select: none;
+}
+.magic-chat-mic:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.magic-chat-mic--on {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+}
+.magic-chat-mic--on:hover {
+  background: rgba(239,68,68,0.18);
+  color: #ef4444;
+}
+
+/* Botón enviar */
+.magic-chat-send {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: white;
+  transition: all 0.12s;
+}
+.magic-chat-send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.magic-chat-send:disabled {
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+/* Hint teclado */
+.magic-chat-kbd-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  padding: 0 2px;
+}
+.magic-chat-kbd-sep { opacity: 0.4; }

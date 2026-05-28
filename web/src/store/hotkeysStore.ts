@@ -31,7 +31,9 @@ export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   { id: 'go-today',         category: 'Captura',      label: 'Ir a hoy',                description: 'Navegar a la nota del día de hoy',                defaultKey: 'h',          configurable: true },
   { id: 'new-today',        category: 'Captura',      label: 'Nuevo nodo hoy',          description: 'Ir al diario de hoy y crear nodo vacío',          defaultKey: 'n',          configurable: true },
   { id: 'command-palette',  category: 'Navegación',   label: 'Paleta de comandos',       description: 'Búsqueda rápida, comandos, contextos',             defaultKey: 'k',          modifiers: ['meta'], configurable: true },
-  { id: 'ai-chat',          category: 'IA',           label: 'Chat IA',                  description: 'Abrir / cerrar el chat con From AI',              defaultKey: 'j',          modifiers: ['meta'], configurable: false },
+  { id: 'magic-chat-open',  category: 'IA',           label: 'Abrir Magic Chat',         description: 'Espacio (sin input) o ⌘J abren el asistente IA', defaultKey: 'Space',      configurable: false },
+  { id: 'magic-chat-voice', category: 'IA',           label: 'Grabar y enviar (mantener)', description: 'Mantén R para grabar voz. Suelta para enviar.',    defaultKey: 'r',          configurable: false },
+  { id: 'ai-chat',          category: 'IA',           label: 'Chat IA (alt)',             description: 'Atajo alternativo para abrir From AI',            defaultKey: 'j',          modifiers: ['meta'], configurable: false },
   { id: 'toggle-sidebar',   category: 'Navegación',   label: 'Toggle sidebar',           description: 'Mostrar / ocultar la barra lateral',              defaultKey: 's',          modifiers: ['meta', 'shift'], configurable: false },
   { id: 'go-back',          category: 'Navegación',   label: 'Página anterior',          description: 'Navegar atrás en el historial',                   defaultKey: '[',          modifiers: ['meta'], configurable: false },
   { id: 'go-forward',       category: 'Navegación',   label: 'Página siguiente',         description: 'Navegar adelante en el historial',                defaultKey: ']',          modifiers: ['meta'], configurable: false },
@@ -118,7 +120,7 @@ export function formatHotkeyDisplay(def: HotkeyDef & { currentKey?: string }): s
   if (mods.includes('ctrl'))  parts.push('⌃')
   if (mods.includes('shift')) parts.push('⇧')
   if (mods.includes('alt'))   parts.push('⌥')
-  const displayKey = key === 'Enter' ? '↵' : key === 'Tab' ? '⇥' : key === 'Escape' ? 'Esc' : key === 'Backspace' ? '⌫' : key.toUpperCase()
+  const displayKey = key === 'Enter' ? '↵' : key === 'Tab' ? '⇥' : key === 'Escape' ? 'Esc' : key === 'Backspace' ? '⌫' : key === 'Space' ? '␣ Espacio' : key.toUpperCase()
   parts.push(displayKey)
   return parts.join('')
 }
