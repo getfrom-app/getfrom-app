@@ -3,13 +3,13 @@
   <channel>
     <title>From Updates</title>
     <item>
-      <title>From 9.1.1</title>
-      <pubDate>Thu, 28 May 2026 14:57:28 +0200</pubDate>
-      <sparkle:version>9.1.1</sparkle:version>
-      <sparkle:shortVersionString>9.1.1</sparkle:shortVersionString>
+      <title>From 9.1.2</title>
+      <pubDate>Thu, 28 May 2026 15:10:10 +0200</pubDate>
+      <sparkle:version>9.1.2</sparkle:version>
+      <sparkle:shortVersionString>9.1.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
-      <description><![CDATA[<ul><li>Fix atajos: aplican filtro al hacer clic desde el árbol</li><li>Nodos especiales simplificados</li></ul>]]></description>
-      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.1.1/From_9.1.1_aarch64.dmg" sparkle:edSignature="" length="5597654" type="application/octet-stream"/>
+      <description><![CDATA[<ul><li>Schedule en agentes (Sin programar/Diario/Semanal)</li><li>IA gratuita: auto-títulos sin consumir tokens</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.1.2/From_9.1.2_aarch64.dmg" sparkle:edSignature="" length="5598055" type="application/octet-stream"/>
     </item>
   </channel>
 </rss>
