@@ -22,9 +22,9 @@ const HOUR_START    = 6
 const HOUR_END      = 24
 const TOTAL_HOURS   = HOUR_END - HOUR_START
 const AXIS_W        = 40
-const DEFAULT_W     = 420
+const DEFAULT_W     = 840
 const MIN_W         = 280
-const MAX_W         = 900
+const MAX_W         = 1400
 const DEFAULT_SLOT_H  = 40   // px por 30 min (zoom por defecto)
 const DEFAULT_DAY_CNT = 5    // columnas de día visibles por defecto
 const MIN_SLOT_H    = 14     // zoom out máximo (18h en pantalla pequeña)
@@ -116,7 +116,12 @@ export default function PlannerPanel({ onClose }: Props) {
   // ── Ancho con resize ──────────────────────────────────────────────────────
   const [panelW, setPanelW] = useState(() => {
     const saved = localStorage.getItem('planner-panel-w')
-    return saved ? Math.max(MIN_W, Math.min(MAX_W, parseInt(saved))) : DEFAULT_W
+    // Si el valor guardado es el antiguo default (420) o menor, usar el nuevo (840)
+    if (saved) {
+      const n = parseInt(saved)
+      if (n >= 500) return Math.max(MIN_W, Math.min(MAX_W, n))
+    }
+    return DEFAULT_W
   })
   const resizingW = useRef(false)
 

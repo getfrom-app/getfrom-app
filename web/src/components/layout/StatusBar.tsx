@@ -7,7 +7,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.2.5'
+export const WEB_VERSION = 'v9.2.6'
 
 interface Props {
   isSyncing: boolean
