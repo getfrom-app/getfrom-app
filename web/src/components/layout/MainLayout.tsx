@@ -496,18 +496,7 @@ export default function MainLayout() {
         +
       </button>
       <OnboardingTooltip />
-      {(s.isSyncing || showSaved) && (
-        <div className="sync-indicator">
-          {s.isSyncing ? (
-            <>
-              <div className="sync-spinner" />
-              <span>Sincronizando...</span>
-            </>
-          ) : (
-            <span>✓ Guardado</span>
-          )}
-        </div>
-      )}
+      {/* sync-indicator eliminado — el footer ya muestra el estado de sync */}
     </div>
     </ToastProvider>
   )
