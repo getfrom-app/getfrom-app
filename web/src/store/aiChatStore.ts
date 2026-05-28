@@ -303,7 +303,16 @@ class AIChatStore {
           }
         }
       )
-      this.appendToTranscript(ctx.sessionId, 'assistant', summaryText)
+      // Parsear y aplicar chips del mensaje de resumen
+      const { cleanText: summaryClean, chips: summaryChips } = parseChips(summaryText)
+      if (summaryChips.length > 0) {
+        const idx2 = this.messages.findIndex(m => m.id === summaryMsgId)
+        if (idx2 >= 0) {
+          this.messages[idx2] = { ...this.messages[idx2], content: summaryClean, chips: summaryChips }
+          this.notify()
+        }
+      }
+      this.appendToTranscript(ctx.sessionId, 'assistant', summaryClean || summaryText)
     } catch (e) {
       this._handleAIError(e)
     }

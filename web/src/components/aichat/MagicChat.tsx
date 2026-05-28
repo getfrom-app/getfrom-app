@@ -526,7 +526,10 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
 
 function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id: string) => void }) {
   const isUser = msg.role === 'user'
-  const cleaned = msg.content.replace(/```from-action[\s\S]*?```/g, '').trim()
+  const cleaned = msg.content
+    .replace(/```from-action[\s\S]*?```/g, '')
+    .replace(/\{\{chips:[\s\S]*?\}\}\s*$/g, '')
+    .trim()
 
   return (
     <div className={`magic-chat-bubble ${isUser ? 'magic-chat-bubble--user' : 'magic-chat-bubble--ai'}`}>

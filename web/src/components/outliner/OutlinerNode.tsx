@@ -2001,6 +2001,40 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }
 
+  /** Alterna solo entre pending y done sin eliminar el tipo tarea (para click en el checkbox) */
+  function toggleCheckbox() {
+    if (node.status === 'done') {
+      store.updateNode(node.id, { status: 'pending' })
+    } else {
+      // pending o null → done (con gestión de recurrencia igual que toggleTask)
+      store.updateNode(node.id, { status: 'done' })
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        const rec = ed._recurrence as RecurrenceConfig | undefined
+        if (rec) {
+          const parent = store.getNode(node.parentId || '')
+          const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
+          baseDate.setHours(0, 0, 0, 0)
+          const nextDate = nextRecurrence(baseDate, rec)
+          const dayNode = ensureDayPath(nextDate)
+          const sibs = store.children(dayNode.id)
+          const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+          const newNode = store.createNode({
+            text: node.text,
+            parentId: dayNode.id,
+            siblingOrder: lastOrder + 1,
+            isTask: true,
+            types: node.types,
+          })
+          store.updateNode(newNode.id, {
+            status: 'pending',
+            extraData: JSON.stringify({ ...ed, _recurrence: rec }),
+          })
+        }
+      } catch { /* ignorar errores de recurrencia */ }
+    }
+  }
+
   function openNode() {
     navigate(`/node/${node.id}`)
   }
@@ -2558,7 +2592,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
                 <button
                   className={`bullet-btn task ${taskCheckClass}`}
-                  onClick={toggleTask}
+                  onClick={toggleCheckbox}
                   tabIndex={-1}
                   aria-label="Toggle tarea"
                   title="Marcar hecha/pendiente"

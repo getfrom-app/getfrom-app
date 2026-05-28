@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
+import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
@@ -372,6 +373,14 @@ export default function NodeView() {
     window.addEventListener('keydown', handleGlobalKeyDown)
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
+
+  // Filtro inteligente: cuando el globalFilter es una smart query (pendiente, hoy, tarea…)
+  // computar matchIds para el Outliner en lugar de hacer text search.
+  const smartFilterResult = useMemo(() => {
+    if (!globalFilter?.trim() || inDocSearch) return null
+    if (!isSmartQuery(globalFilter)) return null
+    return applyWFFilter(s.nodes, globalFilter)
+  }, [globalFilter, inDocSearch, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cerrar title tag picker al hacer click fuera
   useEffect(() => {
@@ -2256,8 +2265,11 @@ export default function NodeView() {
                     parentId={node.id}
                     autoFocusEmpty
                     placeholder="Añade contenido…"
-                    filterText={inDocSearch || globalFilter || undefined}
+                    filterText={inDocSearch || (globalFilter && !smartFilterResult ? globalFilter : undefined)}
+                    filterMatchIds={smartFilterResult?.matchIds}
+                    filterAncestorIds={smartFilterResult?.ancestorIds}
                     temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
+                    disableLocalFilter
                   />
                 </div>
               </>

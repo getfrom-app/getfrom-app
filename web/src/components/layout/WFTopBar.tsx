@@ -116,6 +116,10 @@ export default function WFTopBar({
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        // En NodeView, el Cmd+F lo gestiona el nodo (búsqueda en el nodo).
+        // Solo abrir el filtro global si NO estamos en /node/
+        const path = window.location.pathname.replace(/^\/app/, '') || '/'
+        if (path.startsWith('/node/')) return
         e.preventDefault()
         filterRef.current?.focus()
         filterRef.current?.select()

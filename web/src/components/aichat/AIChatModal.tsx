@@ -449,8 +449,11 @@ function EmptyState() {
 
 function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id: string) => void }) {
   const isUser = msg.role === 'user'
-  // Limpia bloques from-action del texto visible
-  const cleaned = msg.content.replace(/```from-action[\s\S]*?```/g, '').trim()
+  // Limpia bloques from-action y chips del texto visible
+  const cleaned = msg.content
+    .replace(/```from-action[\s\S]*?```/g, '')
+    .replace(/\{\{chips:[\s\S]*?\}\}\s*$/g, '')
+    .trim()
   return (
     <div style={{ display: 'flex', gap: 8, padding: '6px 16px', alignItems: 'flex-start' }}>
       <div style={{

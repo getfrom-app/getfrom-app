@@ -142,6 +142,8 @@ interface Props {
   /** Si true, oculta nodos isDiaryEntry de la lista (usados en WFHomeView para que
    *  los diarios no aparezcan en root — viven bajo 📅 Agenda) */
   excludeDiaryEntries?: boolean
+  /** Si true, deshabilita el filtro local (Cmd+F) — el padre gestiona el filtro globalmente */
+  disableLocalFilter?: boolean
 }
 
 type SortMode = 'none' | 'alpha' | 'due' | 'priority' | 'status'
@@ -169,7 +171,7 @@ function getDayNumber(node: Node): number {
   return m ? parseInt(m[1]) : 999
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries, disableLocalFilter }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selectedIds = useGlobalSelection()
@@ -260,9 +262,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // Effective filter: prefer external prop, fall back to local
   const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
 
-  // Cmd+F opens local filter when no external filterText prop is provided
+  // Cmd+F opens local filter when no external filterText prop is provided and local filter is not disabled
   useEffect(() => {
     if (filterText !== undefined) return // external filter manages this
+    if (disableLocalFilter) return // parent manages filtering globally (e.g. WFTopBar)
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault()
@@ -276,7 +279,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [filterText, localFilterOpen])
+  }, [filterText, localFilterOpen, disableLocalFilter])
 
   // Auto-focus or create first node
   useEffect(() => {
@@ -622,7 +625,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   return (
     <>
-      {localFilterOpen && filterText === undefined && (
+      {localFilterOpen && filterText === undefined && !disableLocalFilter && (
         <div className="outliner-filter-bar">
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>🔍</span>
           <input
