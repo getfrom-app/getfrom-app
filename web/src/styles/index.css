@@ -11085,3 +11085,325 @@ a:focus-visible {
   padding: 0 2px;
 }
 .magic-chat-kbd-sep { opacity: 0.4; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TIMELINE PANEL — Time-blocking colapsable
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Panel contenedor */
+.tl-panel {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Semana necesita más ancho */
+.tl-panel--week {
+  width: 680px;
+}
+
+/* Clase del NodeView cuando el panel está abierto */
+.node-view--with-timeline .node-view-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.tl-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tl-header-left { flex: 1; min-width: 0; }
+.tl-header-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tl-header-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-secondary);
+  padding: 2px;
+  border-radius: 6px;
+}
+.tl-tab {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.tl-tab--active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.tl-close {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tl-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* Body scrollable */
+.tl-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Encabezados de días (semana) */
+.tl-day-headers {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tl-day-header {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 6px 4px;
+  flex-shrink: 0;
+}
+.tl-day-header--today {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Grid principal */
+.tl-grid {
+  display: flex;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Eje de horas */
+.tl-axis {
+  position: relative;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.tl-axis-label {
+  position: absolute;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Columnas de días */
+.tl-cols {
+  display: flex;
+  position: relative;
+}
+.tl-day-col {
+  position: relative;
+  cursor: crosshair;
+  border-right: 1px solid var(--border);
+}
+.tl-day-col:last-child { border-right: none; }
+
+/* Slots de fondo */
+.tl-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.tl-slot--hour   { border-top: 1px solid var(--border); }
+.tl-slot--half   { border-top: 1px dashed color-mix(in srgb, var(--border) 50%, transparent); }
+
+/* Línea "ahora" */
+.tl-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 5;
+  pointer-events: none;
+}
+.tl-now-line::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+/* Bloque de tarea */
+.tl-block {
+  position: absolute;
+  border-radius: 4px;
+  padding: 3px 5px;
+  cursor: grab;
+  z-index: 4;
+  overflow: hidden;
+  opacity: 0.88;
+  transition: opacity 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.tl-block:hover { opacity: 1; z-index: 6; }
+.tl-block:active { cursor: grabbing; }
+
+.tl-block-time {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tl-block-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+}
+
+/* Resize handle (borde inferior) */
+.tl-block-resize {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: rgba(255,255,255,0.2);
+  border-radius: 0 0 4px 4px;
+}
+.tl-block-resize:hover { background: rgba(255,255,255,0.4); }
+
+/* Botón toggle en NodeView header */
+.tl-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.tl-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+.tl-toggle-btn--active {
+  background: rgba(74,144,217,0.1);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Mobile: ocultar timeline en pantallas pequeñas */
+@media (max-width: 768px) {
+  .tl-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 100% !important;
+    z-index: 100;
+  }
+}
+
+/* ── Timeline — tareas sin hora ───────────────────────────────────────────── */
+.tl-unscheduled {
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  max-height: 130px;
+  overflow-y: auto;
+}
+.tl-unscheduled-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 10px 4px;
+}
+.tl-unscheduled-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 6px 6px;
+}
+.tl-unscheduled-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text-primary);
+  cursor: grab;
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  transition: border-color 0.1s, background 0.1s;
+}
+.tl-unscheduled-item:hover {
+  border-color: var(--accent);
+  background: rgba(74,144,217,0.06);
+}
+.tl-unscheduled-item:active { cursor: grabbing; }
+.tl-unscheduled-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.tl-unscheduled-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -13,6 +13,7 @@ import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
 import NodeChatPanel from '../panels/NodeChatPanel'
+import TimelinePanel from '../panels/TimelinePanel'
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { recordRecentNode } from '../CommandPalette'
 import NodeContextMenu from '../outliner/NodeContextMenu'
@@ -110,6 +111,7 @@ export default function NodeView() {
 
   // Chat panel state
   const [showChat, setShowChat] = useState(false)
+  const [showTimeline, setShowTimeline] = useState(false)
 
   // GCal events state (para notas diarias)
   const us = useUserStore()
@@ -1262,7 +1264,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${showTimeline ? 'node-view--with-timeline' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -1701,6 +1703,20 @@ export default function NodeView() {
               </button>
                 )
               })()}
+
+              {/* ── Timeline (solo diary entries) ── */}
+              {node.isDiaryEntry && (
+                <button
+                  className={`tl-toggle-btn ${showTimeline ? 'tl-toggle-btn--active' : ''}`}
+                  onClick={() => setShowTimeline(v => !v)}
+                  title="Abrir planificador de día / semana"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Planificar
+                </button>
+              )}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
@@ -2263,6 +2279,13 @@ export default function NodeView() {
         <NodeChatPanel
           node={node}
           onClose={() => setShowChat(false)}
+        />
+      )}
+
+      {showTimeline && node.isDiaryEntry && (
+        <TimelinePanel
+          diaryNode={node}
+          onClose={() => setShowTimeline(false)}
         />
       )}
 
