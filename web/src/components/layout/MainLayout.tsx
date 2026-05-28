@@ -377,7 +377,9 @@ export default function MainLayout() {
   return (
     <ToastProvider>
     <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
-      {/* ── Sidebar (altura completa, con su propia cabecera) ── */}
+      {/* ── main-row: sidebar + contenido (flex: 1, ocupa todo el espacio disponible) ── */}
+      <div className="main-row">
+      {/* Sidebar con su propia cabecera */}
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -465,7 +467,8 @@ export default function MainLayout() {
         </Suspense>
       </main>
       </div>{/* .main-body */}
-      {/* ── Footer global: de extremo a extremo ── */}
+      </div>{/* .main-row */}
+      {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
       <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
