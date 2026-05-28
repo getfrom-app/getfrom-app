@@ -207,7 +207,14 @@ export class NodeStore {
       const arr = idx.get(node.parentId)
       if (arr) arr.push(node); else idx.set(node.parentId, [node])
     }
-    for (const arr of idx.values()) arr.sort((a, b) => a.siblingOrder - b.siblingOrder)
+    for (const arr of idx.values()) arr.sort((a, b) => {
+      // Nodos diary: ordenar siempre por fecha (diaryDate) para garantizar orden cronológico
+      // aunque siblingOrder sea incorrecto por haber sido creado con Date.now()
+      if (a.isDiaryEntry && b.isDiaryEntry && a.diaryDate && b.diaryDate) {
+        return new Date(a.diaryDate).getTime() - new Date(b.diaryDate).getTime()
+      }
+      return a.siblingOrder - b.siblingOrder
+    })
     return idx
   }
 

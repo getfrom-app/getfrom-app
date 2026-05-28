@@ -52,6 +52,7 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     parentId: monthId,
     isDiaryEntry: true,
     diaryDate: dayDate.toISOString(),
+    siblingOrder: d,   // día del mes (1-31) como orden → siempre cronológico
   })
 }
 
