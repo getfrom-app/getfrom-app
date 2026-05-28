@@ -20,18 +20,13 @@ function DiaryRedirect() {
   }, [diary?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   return <div className="view-loading">Cargando diario...</div>
 }
-const TasksView = lazy(() => import('../views/TasksView'))
+// Eliminadas en v9.1: TasksView, ChatView, KanbanView, TagView, FilesView, InboxView, TrashView
+// (reemplazadas por nodos del árbol o eliminadas sin sustituto)
+// AgentsView eliminada en v9.1 — los agentes son nodos del árbol (🤖 Agentes)
+// TrashView eliminada en v9.1 — reemplazada por nodo 🗑 Papelera en el árbol
+// SearchView MANTIENE — es la vista de resultados de filtros/atajos (⌘F, Pendientes, etc.)
 const SearchView = lazy(() => import('../views/SearchView'))
 const AccountView = lazy(() => import('../views/AccountView'))
-// CalendarView (Planificador) eliminado en v9.0
-const AgentsView = lazy(() => import('../views/AgentsView'))
-const ChatView = lazy(() => import('../views/ChatView'))
-const KanbanView = lazy(() => import('../views/KanbanView'))
-const TagView = lazy(() => import('../views/TagView'))
-// FollowupView eliminado en v8.20 (bucle ya no es concepto). El route apunta a DiaryRedirect.
-const FilesView = lazy(() => import('../views/FilesView'))
-const InboxView = lazy(() => import('../views/InboxView'))
-const TrashView = lazy(() => import('../views/TrashView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import PaywallModal from '../paywall/PaywallModal'
@@ -52,6 +47,7 @@ import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { ensureAgentesNode } from '../../utils/agentesHelper'
+import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -162,6 +158,7 @@ export default function MainLayout() {
         ensureAtajosNode()
         migrateLocalStorageShortcuts()
         ensureAgentesNode()
+        ensurePapeleraNode()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
         cleanupSpuriousTags()
@@ -319,9 +316,8 @@ export default function MainLayout() {
       // Ctrl+1-9 → cambiar de vista (SIN Cmd, para no interferir con el sistema)
       if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         const viewMap: Record<string, string> = {
-          '1': '/', '2': '/tasks',
-          '3': '/search', '4': '/kanban',
-          '5': '/agents', '6': '/chat',
+          '1': '/',
+          '3': '/search',
         }
         if (viewMap[e.key]) {
           const active = document.activeElement
@@ -521,22 +517,23 @@ export default function MainLayout() {
         <Suspense fallback={<div className="view-loading">Cargando...</div>}>
         <Routes>
           <Route index element={<WFHomeView filterText={filterText} />} />
-          <Route path="tasks" element={<TasksView />} />
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />
+          {/* SearchView: resultados de filtros y atajos (⌘F, shortcuts) — MANTENER */}
           <Route path="search" element={<SearchView />} />
-          {/* /calendar (Planificador) eliminado en v9.0 — redirige a inicio */}
+          {/* Rutas eliminadas en v9.0-v9.1 → redirigen a inicio */}
           <Route path="calendar" element={<Navigate to="/" replace />} />
+          <Route path="tasks"    element={<Navigate to="/" replace />} />
+          <Route path="kanban"   element={<Navigate to="/" replace />} />
+          <Route path="chat"     element={<Navigate to="/" replace />} />
+          <Route path="tag/:name" element={<Navigate to="/" replace />} />
+          <Route path="files"    element={<Navigate to="/" replace />} />
+          <Route path="inbox"    element={<Navigate to="/" replace />} />
+          <Route path="trash"    element={<Navigate to="/" replace />} />
+          {/* agents route eliminado — los agentes viven como nodos en 🤖 Agentes */}
           <Route path="resources" element={<ResourcesView />} />
-          <Route path="kanban" element={<KanbanView />} />
-          <Route path="agents" element={<AgentsView />} />
-          <Route path="chat" element={<ChatView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
-          <Route path="tag/:name" element={<TagView />} />
-          <Route path="files" element={<FilesView />} />
-          <Route path="inbox" element={<InboxView />} />
-          <Route path="trash" element={<TrashView />} />
           <Route path="settings" element={<SettingsView />} />
           <Route path="*" element={
             <div className="view">

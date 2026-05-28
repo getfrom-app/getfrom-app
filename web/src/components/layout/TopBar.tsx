@@ -16,7 +16,7 @@ const VIEW_LABELS: Record<string, string> = {
   '/search': 'Buscar',
   '/calendar': 'Calendario',
   '/kanban': 'Kanban',
-  '/agents': 'Agentes',
+  // agents eliminado en v9.1
   '/account': 'Cuenta',
   '/chat': 'Chat IA',
   '/followup': 'Bucles',

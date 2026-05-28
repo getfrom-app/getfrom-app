@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import OutlinerNode from './OutlinerNode'
 import type { Node } from '../../types'
+import { trashNode } from '../../utils/papeleraHelper'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -512,7 +513,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault()
         e.stopPropagation()
-        for (const id of selectedIds) store.deleteNode(id)
+        for (const id of selectedIds) trashNode(id)
         gClearSelected()
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
@@ -615,7 +616,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Multi-select: borrar seleccionados (también usado por teclado)
   function handleDeleteSelected() {
-    for (const id of selectedIds) store.deleteNode(id)
+    for (const id of selectedIds) trashNode(id)
     gClearSelected()
   }
 

@@ -1,4 +1,4 @@
-# From — Manual de usuario v9.0
+# From — Manual de usuario v9.1
 
 > Web · Mac · iPhone · getfrom.app
 
@@ -48,7 +48,7 @@ Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](
 
 Cuando entras en From por primera vez encuentras:
 
-- **El árbol principal** en el centro: tu espacio de trabajo. Al principio está vacío salvo por los nodos raíz del sistema (Agenda, Contexto, Plantillas, Atajos).
+- **El árbol principal** en el centro: tu espacio de trabajo. Al principio incluye los nodos raíz del sistema: 📅 Agenda, 🧠 Contexto, 📋 Plantillas, 📌 Atajos, 🤖 Agentes y 🗑 Papelera.
 - **El sidebar izquierdo**: accesos rápidos, navegación y ajustes.
 - **El panel derecho**: propiedades y contenido del nodo seleccionado.
 - **La barra superior**: breadcrumb de navegación y controles de filtro y vista.
@@ -410,6 +410,24 @@ Para usar una plantilla: slash menu → `/Plantilla` en cualquier nodo. From cre
 
 Contiene los atajos que has fijado. Desde aquí puedes reorganizarlos, renombrarlos o eliminarlos. También puedes hacer clic derecho en cualquier atajo del sidebar para gestionarlo directamente.
 
+### 🤖 Agentes
+
+Contiene los agentes de IA predefinidos y los que crees tú. Un agente es una instrucción que le das a Magic para que ejecute una tarea automáticamente.
+
+Al abrir un nodo agente, aparece la **barra de controles**:
+- **Toggle Activo/Pausado** — activa o desactiva el agente
+- **▶ Ejecutar** — lanza el agente ahora. El resultado aparece como nodo en el diario de hoy
+
+Puedes crear agentes personalizados directamente en el árbol desde el nodo raíz 🤖 Agentes.
+
+### 🗑 Papelera
+
+Cuando eliminas un nodo va a la Papelera (no se borra permanentemente). La **jerarquía se preserva**: si borras A y luego B (padre de A), la Papelera muestra B→A como estaban.
+
+- **Botón derecho → Restaurar** — devuelve el nodo a su ubicación original
+- **Botón derecho → Eliminar permanentemente** — lo borra definitivamente
+- **Vaciar papelera** — aparece como control al abrir el nodo Papelera
+
 ### ⚙️ Ajustes
 
 Accesible también desde el sidebar. Contiene:
@@ -540,13 +558,45 @@ Puedes crear múltiples vistas para el mismo nodo (como las vistas de Notion). P
 
 ---
 
-## 13. IA integrada
+## 13. IA integrada — Magic
 
-### Chat IA (⌘J)
+### Magic Chat — asistente de voz y texto
 
-El chat de IA vive en un panel lateral. La IA no es un chatbot genérico: conoce tu árbol, el nodo que tienes abierto, tus tareas del día y tu perfil.
+Magic es el asistente de IA de From. No es un chatbot genérico: conoce tu árbol, tus tareas, tus contextos y tu perfil personal.
 
-**Abrir el chat:** ⌘J o el icono de chat en la barra lateral.
+**Abrir Magic:**
+- **Espacio** (sin input activo) — abre Magic para escribir
+- **Mantén R** — abre Magic y empieza a grabar inmediatamente. Suelta R para transcribir y enviar
+- **⌘J** — atajo alternativo
+- **Botón ✨** (esquina inferior derecha)
+
+**Grabar con voz:** mantén R mientras hablas. Al soltar, Magic transcribe tu voz y lo envía como mensaje. El waveform animado muestra que está escuchando.
+
+**Lo que crea Magic queda en tu árbol:** cada conversación genera un nodo `✦ Título` en el diario de hoy. Dentro: transcripción completa + nodos creados (tareas, notas, eventos). Si reanudan la conversación, se añade al mismo nodo sin perder lo anterior.
+
+**Qué puede hacer:**
+- Crear tareas, notas y eventos en tu árbol
+- Resumir el contenido de cualquier nodo
+- Buscar información en tus notas
+- Organizar, reescribir, priorizar
+- Ejecutar acciones en masa
+
+### Enseñar a Magic — aprendizaje continuo
+
+Magic aprende de tus correcciones y se adapta a ti progresivamente. El objetivo: que From entienda quién eres y qué necesitas sin que tengas que explicarlo cada vez.
+
+**Cómo enseñar:** botón derecho en cualquier nodo → **Enseñar a Magic**. Opciones según el nodo:
+- "Esto no es una tarea / evento"
+- "Debería ser una tarea / evento"
+- "El contexto no es correcto"
+- "Esta interpretación es correcta ✓"
+- Campo libre: "Magic, recuerda que..."
+
+**Ver lo aprendido:** Ajustes → Magic → sección "Lo que Magic ha aprendido de ti". Edita o borra cualquier elemento individualmente.
+
+### Chat IA (versión texto)
+
+**Abrir el chat:** ⌘J o Espacio.
 
 **Qué puede hacer:**
 

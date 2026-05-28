@@ -6,7 +6,7 @@ import { listBackups, formatBackupAge } from '../../api/backups'
 import { clearTokens } from '../../api/client'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.0.10'
+export const WEB_VERSION = 'v9.1.0'
 
 interface Props {
   isSyncing: boolean

@@ -30,7 +30,7 @@ export interface AgentDef {
   userMessage: string | (() => string)
 }
 
-// Agentes predefinidos — sincronizados con AgentsView.tsx
+// Agentes predefinidos — fuente de verdad de agentes predefinidos
 export const PREDEFINED_AGENTS: AgentDef[] = [
   {
     id: 'resumir-dia',

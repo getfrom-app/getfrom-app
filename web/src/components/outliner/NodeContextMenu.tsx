@@ -18,6 +18,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
+import { trashNode, isInPapelera, restoreNode } from '../../utils/papeleraHelper'
 import { createNodeShortcut } from '../../utils/atajosHelper'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
@@ -240,30 +241,35 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }
 
   function deleteNode() {
-    const now = new Date().toISOString()
-    // Borrar espejos (_mirrorOf) que apuntan a este nodo
-    store.allActive().forEach(n => {
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: now })
-      } catch {}
-    })
-    // Si está bajo un espejo de padre y queda vacío, borrarlo
-    if (node.parentId) {
-      const parent = store.getNode(node.parentId)
-      if (parent) {
+    const inPapelera = isInPapelera(node.id)
+
+    if (inPapelera) {
+      // Ya está en Papelera → eliminar permanentemente
+      if (!confirm(`¿Eliminar permanentemente "${(node.text || 'Nodo').slice(0, 30)}"? Esta acción no se puede deshacer.`)) return
+      store.updateNode(node.id, { deletedAt: new Date().toISOString() })
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado permanentemente`, type: 'info' }
+      }))
+    } else {
+      // Mover a Papelera (jerarquía preservada)
+      // Borrar espejos que apuntan a este nodo
+      store.allActive().forEach(n => {
         try {
-          const ed = JSON.parse(parent.extraData || '{}')
-          if (ed._mirrorOf) {
-            const remaining = store.children(parent.id).filter(c => !c.deletedAt && c.id !== node.id)
-            if (remaining.length === 0) store.updateNode(parent.id, { deletedAt: now })
-          }
+          const ed = JSON.parse(n.extraData || '{}')
+          if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: new Date().toISOString() })
         } catch {}
-      }
+      })
+      trashNode(node.id)
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" movido a Papelera`, type: 'info' }
+      }))
     }
-    store.updateNode(node.id, { deletedAt: now })
+  }
+
+  function restoreNodeFromTrash() {
+    restoreNode(node.id)
     window.dispatchEvent(new CustomEvent('from:toast', {
-      detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" enviado a la papelera`, type: 'info' }
+      detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" restaurado`, type: 'success' }
     }))
   }
 
@@ -670,12 +676,23 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         )}
       </div>
 
-      {/* Eliminar — siempre disponible, va a la papelera */}
+      {/* Eliminar / Restaurar */}
       <div className="context-menu-separator" />
       <div className="context-menu-section">
-        <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
-          <span className="context-menu-icon">🗑</span> Eliminar
-        </button>
+        {isInPapelera(node.id) ? (
+          <>
+            <button className="context-menu-item" onClick={run(restoreNodeFromTrash)}>
+              <span className="context-menu-icon">↩</span> Restaurar
+            </button>
+            <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
+              <span className="context-menu-icon">✕</span> Eliminar permanentemente
+            </button>
+          </>
+        ) : (
+          <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
+            <span className="context-menu-icon">🗑</span> Mover a Papelera
+          </button>
+        )}
       </div>
     </div>,
     document.body

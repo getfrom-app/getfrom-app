@@ -11,13 +11,15 @@ import NodeCalendarView from './NodeCalendarView'
 import WFTemporalView from './WFTemporalView'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
+import NodeSpecialControls from './NodeSpecialControls'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { recordRecentNode } from '../CommandPalette'
 import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
-import { getCalendarEvents, createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
+import { createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
+import { syncGcalEventsToNodes, syncNodeMoveToGcal, getGcalColor } from '../../utils/gcalNodesSync'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
@@ -221,16 +223,40 @@ export default function NodeView() {
     }
   }, [node?.text, node?.diaryDate, node?.isDiaryEntry, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cargar eventos de Google Calendar cuando se abre una nota diaria
+  // Sincronizar eventos de Google Calendar como nodos hijos de la nota diaria
   useEffect(() => {
     if (!node?.isDiaryEntry || !node.diaryDate) { setGcalEvents([]); return }
     if (!us.googleConnected) { setGcalEvents([]); return }
-    let cancelled = false
-    getCalendarEvents(new Date(node.diaryDate))
-      .then(events => { if (!cancelled) setGcalEvents(Array.isArray(events) ? events : []) })
-      .catch(() => { if (!cancelled) setGcalEvents([]) })
-    return () => { cancelled = true }
+    // Sync GCal → nodos (crea/actualiza/elimina nodos gcal bajo esta nota)
+    syncGcalEventsToNodes(node).catch(() => {})
+    setGcalEvents([])  // ya no usamos el bloque especial, los eventos son nodos normales
   }, [node?.id, node?.isDiaryEntry, node?.diaryDate, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Detectar cuando un nodo GCal se mueve a otra nota → actualizar fecha en GCal
+  useEffect(() => {
+    if (!us.googleConnected) return
+    return store.subscribe(() => {
+      // Buscar nodos GCal cuyo parentId cambió hacia una nota diaria diferente
+      for (const n of store.nodes.values()) {
+        if (n.deletedAt) continue
+        try {
+          const ed = JSON.parse(n.extraData || '{}')
+          if (!ed._gcalEventId || !ed._gcalSynced) continue
+          // Si el nodo está en una nota diaria diferente a la que le corresponde por fecha
+          const parent = n.parentId ? store.getNode(n.parentId) : null
+          if (!parent?.isDiaryEntry || !parent.diaryDate) continue
+          // Comprobar si la fecha del evento coincide con la de la nota
+          if (!n.due) continue
+          const dueDate = new Date(n.due).toDateString()
+          const parentDate = new Date(parent.diaryDate).toDateString()
+          if (dueDate !== parentDate) {
+            // El evento fue movido — actualizar GCal
+            syncNodeMoveToGcal(n.id, parent.id).catch(() => {})
+          }
+        } catch { /* ignore */ }
+      }
+    })
+  }, [us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-sync From eventos → GCal cuando el nodo es isEvent y tiene fecha
   useEffect(() => {
@@ -2130,6 +2156,10 @@ export default function NodeView() {
             </div>
           )}
 
+          {/* ── Controles de nodos especiales (agentes, atajos, plantillas…) ── */}
+          {/* Se muestran entre el título y los hijos, mismo estilo que Agenda */}
+          <NodeSpecialControls node={node} />
+
           {/* En WF mode, nodos temporales usan WFTemporalView + outliner libre.
               En modo normal, usan los bloques originales de From. */}
           {(() => {
@@ -2182,34 +2212,7 @@ export default function NodeView() {
                 )}
 
                 {/* ── Eventos de Google Calendar (solo en notas diarias con GCal conectado) ── */}
-                {node.isDiaryEntry && gcalEvents.length > 0 && (
-                  <div className="gcal-diary-events">
-                    <div className="gcal-diary-events-header">
-                      <span className="gcal-diary-events-title">📅 Google Calendar</span>
-                    </div>
-                    {gcalEvents.map(ev => {
-                      const startTime = ev.allDay ? 'Todo el día' : (() => {
-                        const d = new Date(ev.start)
-                        const endD = ev.end ? new Date(ev.end) : null
-                        const fmt = (dt: Date) => dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                        return endD ? `${fmt(d)} – ${fmt(endD)}` : fmt(d)
-                      })()
-                      const color = ev.backgroundColor || '#cfd9ec'
-                      return (
-                        <div
-                          key={ev.id}
-                          className="gcal-diary-event-row"
-                          style={{ borderLeftColor: color }}
-                          onClick={() => setEditingGCalEvent(ev)}
-                          title="Clic para editar"
-                        >
-                          <span className="gcal-diary-event-time">{startTime}</span>
-                          <span className="gcal-diary-event-name">{ev.title}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                {/* GCal events son ahora nodos normales del outliner — no hay bloque especial */}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario ── */}
                 <div className={`outliner-section${

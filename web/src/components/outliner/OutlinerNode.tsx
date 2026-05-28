@@ -382,6 +382,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const nodeIcon = meta.icon ?? null
   // Color: deriva del primer tag que tenga color asignado (sin contar tags built-in)
   const nodeColor = (() => {
+    // Color de eventos GCal (borde izquierdo con el color del calendario)
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._gcalColor) return ed._gcalColor
+    } catch { /* ignore */ }
+    // Color de tag del usuario
     const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTags = (node.types || []).filter(t => !builtinTags.has(t))
     for (const tag of userTags) {

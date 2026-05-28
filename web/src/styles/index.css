@@ -1289,6 +1289,112 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.5;
 }
 
+/* ── Nodos especiales — barra de controles ───────────────────────────────────
+   Aparece entre el título y los hijos. Mismo estilo que Agenda (diary-nav-btn).
+   Todos los nodos especiales (Agentes, Atajos, Plantillas…) usan estas clases. */
+
+.node-special-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+/* Pill — estado o acción */
+.node-special-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: default;
+  transition: all 0.12s;
+  user-select: none;
+}
+
+/* Activo */
+.node-special-pill--on {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.30);
+  color: #16a34a;
+  cursor: pointer;
+}
+.node-special-pill--on:hover {
+  background: rgba(34, 197, 94, 0.18);
+}
+[data-theme="dark"] .node-special-pill--on { color: #4ade80; }
+
+/* Pausado */
+.node-special-pill--off {
+  background: rgba(156, 163, 175, 0.10);
+  border-color: var(--border);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.node-special-pill--off:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+/* Acción (botón clickable) */
+.node-special-pill--action {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.node-special-pill--action:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.node-special-pill--action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Estado cargando */
+.node-special-pill--loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Punto de estado dentro de pill */
+.node-special-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Spinner de carga */
+.node-special-spinner {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: node-special-spin 0.6s linear infinite;
+}
+@keyframes node-special-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Texto informativo (no clickable) */
+.node-special-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
 .node-title {
   font-size: 26px;
   font-weight: 700;
