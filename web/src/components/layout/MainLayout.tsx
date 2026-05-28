@@ -29,6 +29,7 @@ const SearchView = lazy(() => import('../views/SearchView'))
 const AccountView = lazy(() => import('../views/AccountView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
+const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import MagicChat from '../aichat/MagicChat'
@@ -531,6 +532,7 @@ export default function MainLayout() {
           <Route path="inbox"    element={<Navigate to="/" replace />} />
           <Route path="trash"    element={<Navigate to="/" replace />} />
           {/* agents route eliminado — los agentes viven como nodos en 🤖 Agentes */}
+          <Route path="planner"   element={<CalendarPlanner />} />
           <Route path="resources" element={<ResourcesView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
