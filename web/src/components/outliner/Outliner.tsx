@@ -364,11 +364,15 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const lastMouseY   = useRef<number>(0)    // Y más reciente del cursor
   const dragFromText = useRef(false)        // ¿el drag empezó en un contenteditable?
 
-  // React onMouseDown — previene text-selection cuando el drag no empieza en texto
+  // React onMouseDown — SIEMPRE preventDefault para tener control total del drag.
+  // El cursor se restaura manualmente en mouseup si no hubo drag (ver onUp).
   function handleContainerMouseDown(e: React.MouseEvent) {
     if (isControlEl(e.target)) return
     const id = getNodeIdFromEl(e.target as Element)
-    if (id && !isDirectTextEl(e.target)) e.preventDefault()
+    if (!id) return
+    // Siempre prevenir para que el browser no inicie su selección de texto nativa.
+    // En mouseup (si no hubo drag) colocaremos el cursor manualmente.
+    e.preventDefault()
   }
 
   useEffect(() => {
@@ -410,7 +414,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           : e.clientY
       }
 
-      if (id && !dragFromText.current) e.preventDefault()
+      // Siempre preventDefault: control total. El cursor se coloca en mouseup si no hay drag.
+      if (id) e.preventDefault()
       // Si había una drag-select activa de antes, limpiar al iniciar nuevo click
       if (_gSelectedIds.size > 0) gClearSelected()
     }
@@ -438,30 +443,14 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       const anchorId = dragAnchorId.current!
 
-      // ── Drag desde texto: activar con umbral mínimo de movimiento vertical ─
-      // Al superar 5px cancelamos la selección nativa y tratamos igual que
-      // un drag desde zona no-texto (comportamiento estilo Notion).
-      if (dragFromText.current) {
-        const deltaY = Math.abs(e.clientY - dragAnchorPos.current)
-        if (deltaY < 5) return  // movimiento mínimo — puede ser un clic, no drag
-        // Umbral superado → cancelar selección nativa y activar selección de nodos
-        window.getSelection()?.removeAllRanges()
-        // Aplicar user-select:none INMEDIATAMENTE al DOM (sin esperar al re-render de React)
-        // para que el browser no siga extendiendo la selección de texto
-        document.body.style.userSelect = 'none'
-        ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
-        dragFromText.current = false  // tratar desde aquí igual que no-texto
-      }
-
-      // ── Drag desde zona no-texto (o texto que superó el umbral) ───────────
+      // ── Drag unificado (texto y no-texto) ──────────────────────────────────
+      // Ya no hay distinción: siempre hicimos preventDefault en mousedown,
+      // así que el browser nunca inicia selección de texto nativa.
+      // Umbral de 5px para distinguir clic de drag.
       if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
       if (!isDragSelectingRef.current) {
         startDragSelect(); setSelectedId(null)
         gSetSelected(new Set([anchorId]))
-      }
-      // Cancelar cualquier selección de texto nativa que el browser pueda crear
-      if (isDragSelectingRef.current && window.getSelection()?.type === 'Range') {
-        window.getSelection()?.removeAllRanges()
       }
       gSetSelected(computeGlobalSelection(anchorId, dragAnchorMidY.current, e.clientY))
     }
@@ -480,11 +469,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
 
     // ── mouseup ───────────────────────────────────────────────────────────
-    function onUp() {
+    function onUp(e: MouseEvent) {
       const wasDrag = didDragSelectRef.current
       didDragSelectRef.current = false
 
-      // Restaurar user-select (lo pusimos en 'none' al inicio del drag desde texto)
+      // Restaurar user-select
       document.body.style.userSelect = ''
       ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = ''
 
@@ -496,10 +485,24 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       dragFromText.current = false
       stopDragSelect()
 
-      // Clic simple (sin drag) → limpiar selección múltiple
-      // igual que en cualquier editor: clic = mover cursor y deseleccionar
       if (!wasDrag) {
         gClearSelected()
+        // Clic simple: colocar cursor en el contenteditable clickado
+        // (necesario porque hicimos preventDefault en mousedown)
+        const target = document.elementFromPoint(e.clientX, e.clientY)
+        const ce = target?.closest('[contenteditable="true"]') as HTMLElement | null
+        if (ce) {
+          ce.focus()
+          // caretRangeFromPoint coloca el cursor en la posición exacta del clic
+          const range = document.caretRangeFromPoint
+            ? document.caretRangeFromPoint(e.clientX, e.clientY)
+            : null
+          if (range) {
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+        }
       }
     }
 
