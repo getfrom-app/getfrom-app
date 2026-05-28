@@ -377,9 +377,53 @@ export default function MainLayout() {
   return (
     <ToastProvider>
     <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
-      {/* ── main-row: sidebar + contenido (flex: 1, ocupa todo el espacio disponible) ── */}
+
+      {/* ── Cabecera unificada ── */}
+      <div className="app-header">
+        {/* Parte izquierda: toggle + branding (misma anchura que sidebar) */}
+        <div className={`header-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(v => !v)}
+            title="Toggle sidebar (⌘⇧S)"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
+          {sidebarOpen && (
+            <button
+              onClick={() => navigate('/')}
+              className="header-brand"
+              title="Inicio"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
+                <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
+              </svg>
+              <span>From</span>
+            </button>
+          )}
+        </div>
+        {/* Parte derecha: WFTopBar */}
+        <WFTopBar
+          onFilter={setFilterText}
+          filterText={filterText}
+          onCommandPalette={() => setShowCommandPalette(v => !v)}
+          onLogout={handleLogout}
+          onOpenSettings={() => navigate('/settings')}
+          onToggleSidebar={() => setSidebarOpen(v => !v)}
+          sidebarOpen={sidebarOpen}
+        />
+      </div>
+
+      {/* ── main-row: sidebar + contenido ── */}
       <div className="main-row">
-      {/* Sidebar con su propia cabecera */}
+      {/* Sidebar (sin sidebar-brand-section) */}
       <Sidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(o => !o)}
@@ -396,17 +440,8 @@ export default function MainLayout() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      {/* ── Columna derecha: topbar + contenido ── */}
+      {/* ── Columna derecha: contenido ── */}
       <div className="main-body">
-        <WFTopBar
-          onFilter={setFilterText}
-          filterText={filterText}
-          onCommandPalette={() => setShowCommandPalette(v => !v)}
-          onLogout={handleLogout}
-          onOpenSettings={() => navigate('/settings')}
-          onToggleSidebar={() => setSidebarOpen(v => !v)}
-          sidebarOpen={sidebarOpen}
-        />
       <main className="main-content">
         <TrialBanner />
         {/* Mobile hamburger */}

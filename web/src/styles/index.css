@@ -205,17 +205,92 @@ a { color: inherit; text-decoration: none; }
 
 .main-layout {
   display: flex;
-  flex-direction: row;   /* sidebar (izquierda) | main-body (derecha) */
+  flex-direction: column;  /* header arriba | main-row abajo */
   height: 100vh;
   overflow: hidden;
 }
 
-/* main-row: wrapper transparente (display:contents) */
-.main-row {
-  display: contents;
+/* ── App Header (cabecera unificada) ──────────────────── */
+.app-header {
+  display: flex;
+  flex-direction: row;
+  height: 40px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  -webkit-app-region: drag;  /* toda la cabecera es draggable */
+  z-index: 50;
+  user-select: none;
 }
 
-/* main-body: columna derecha — topbar arriba, contenido abajo */
+.header-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  width: var(--sw, 220px);  /* misma anchura que sidebar */
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  transition: width 0.2s ease;
+}
+
+.header-sidebar.closed {
+  width: 52px;  /* colapsado: solo el icono */
+  border-right: none;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.header-brand {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 0;
+  -webkit-app-region: no-drag;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* El WFTopBar dentro del header: quitar su border-bottom propio */
+.app-header .wf-topbar {
+  border-bottom: none;
+  flex: 1;
+  height: 100%;
+}
+
+/* main-row: sidebar + main-body en fila */
+.main-row {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* main-body: columna derecha */
 .main-body {
   display: flex;
   flex-direction: column;
@@ -10495,21 +10570,7 @@ a:focus-visible {
   letter-spacing: 0.03em;
 }
 
-/* main-layout con footer global — flex-column wrapping */
-.main-layout {
-  flex-wrap: wrap;  /* footer cae a la siguiente fila */
-}
-.main-layout > .sidebar,
-.main-layout > .sidebar-divider,
-.main-layout > .main-body {
-  /* ocupan la primera fila */
-  flex-shrink: 0;
-}
-.main-layout > .app-footer {
-  /* segunda fila, ancho completo */
-  flex-basis: 100%;
-  order: 99;
-}
+/* main-layout con footer global — el footer es position:fixed, no necesita flex-wrap */
 
 /* ── Topbar draggable / no-drag en Mac ───────────────────────────────────── */
 .wf-topbar button,
@@ -10521,7 +10582,7 @@ a:focus-visible {
   -webkit-app-region: no-drag;
 }
 
-/* ── Sidebar: cabecera interna más abajo (dentro del scroll, no al nivel del topbar) */
+/* ── Sidebar: cabecera interna (legacy, ya no se usa con el nuevo app-header) */
 .sidebar-brand-section {
   display: flex;
   align-items: center;
@@ -10530,8 +10591,8 @@ a:focus-visible {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-/* Tauri Mac: dar espacio a los traffic lights en la parte superior del sidebar */
-.tauri-mac .sidebar {
-  padding-top: 28px;
+/* Tauri Mac: padding-left para traffic lights en el header-sidebar */
+.tauri-mac .header-sidebar {
+  padding-left: 78px;
 }
 .main-content { padding-bottom: 28px; }
