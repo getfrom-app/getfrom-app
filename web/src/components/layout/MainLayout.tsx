@@ -409,6 +409,47 @@ export default function MainLayout() {
     prevIsSyncing.current = s.isSyncing
   }, [s.isSyncing])
 
+  // ── Cuando el planner está abierto: nodos del árbol draggables al timeline ──
+  useEffect(() => {
+    if (!plannerOpen) {
+      // Quitar draggable de todos los nodos del árbol
+      document.querySelectorAll('[data-node-id][draggable="true"]').forEach(el =>
+        el.removeAttribute('draggable')
+      )
+      return
+    }
+
+    // Hacer draggables todos los [data-node-id] actuales y futuros
+    function enableDraggable() {
+      document.querySelectorAll('[data-node-id]').forEach(el => {
+        if (!el.getAttribute('draggable')) el.setAttribute('draggable', 'true')
+      })
+    }
+    enableDraggable()
+    const mo = new MutationObserver(enableDraggable)
+    mo.observe(document.body, { childList: true, subtree: true })
+
+    // Capturar dragstart de cualquier nodo y poner nodeId en dataTransfer
+    function onDragStart(e: DragEvent) {
+      const nodeEl = (e.target as HTMLElement)?.closest('[data-node-id]') as HTMLElement | null
+      if (!nodeEl) return
+      const nodeId = nodeEl.getAttribute('data-node-id')
+      if (nodeId) {
+        e.dataTransfer?.setData('nodeId', nodeId)
+        e.dataTransfer && (e.dataTransfer.effectAllowed = 'copy')
+      }
+    }
+    document.addEventListener('dragstart', onDragStart)
+
+    return () => {
+      mo.disconnect()
+      document.removeEventListener('dragstart', onDragStart)
+      document.querySelectorAll('[data-node-id][draggable="true"]').forEach(el =>
+        el.removeAttribute('draggable')
+      )
+    }
+  }, [plannerOpen])
+
   function handleLogout() {
     clearTokens()
     userStore.reset()

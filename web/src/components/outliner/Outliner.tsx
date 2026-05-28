@@ -460,6 +460,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     // ── dragstart ─────────────────────────────────────────────────────────
     function onDragStart(e: Event) {
       if (_activeDragContainer !== myContainer.current) return
+      // Si el planner está abierto y ya tiene nodeId seteado → dejar pasar (drag al planner)
+      const de = e as DragEvent
+      if (document.querySelector('.planner-open') && de.dataTransfer?.getData('nodeId')) {
+        _activeDragContainer = null
+        return
+      }
       if (dragFromText.current || isDragSelectingRef.current) {
         e.preventDefault()
       } else {
