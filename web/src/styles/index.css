@@ -10373,3 +10373,55 @@ a:focus-visible {
 .tauri-mac .wf-topbar .wf-topbar-menu-wrap {
   -webkit-app-region: no-drag;
 }
+
+/* ── GCal events in diary notes ─────────────────────────────────── */
+.gcal-diary-events {
+  margin: 0 0 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+.gcal-diary-events-header {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+.gcal-diary-events-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.gcal-diary-event-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-left: 3px solid #cfd9ec;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.gcal-diary-event-row:last-child {
+  border-bottom: none;
+}
+.gcal-diary-event-row:hover {
+  background: var(--bg-hover, rgba(0,0,0,0.04));
+}
+.gcal-diary-event-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  min-width: 80px;
+  font-variant-numeric: tabular-nums;
+}
+.gcal-diary-event-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

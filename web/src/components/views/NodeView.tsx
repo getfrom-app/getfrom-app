@@ -11,14 +11,15 @@ import NodeCalendarView from './NodeCalendarView'
 import WFTemporalView from './WFTemporalView'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
-import NodeRightPanel from '../panels/NodeRightPanel'
-import DiaryRightPanel from '../panels/DiaryRightPanel'
-import TagNodesPanel from '../panels/TagNodesPanel'
 import NodeChatPanel from '../panels/NodeChatPanel'
+import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { recordRecentNode } from '../CommandPalette'
 import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
+import { getCalendarEvents, createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
+import { useUserStore } from '../../store/userStore'
+import { nodeMeta } from '../../store/nodeStore'
 import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -55,8 +56,6 @@ export default function NodeView() {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [titleContextMenu, setTitleContextMenu] = useState<{ x: number; y: number } | null>(null)
-  const [rightCollapsed, setRightCollapsed] = useState(false)
-  const [timelineOpen, setTimelineOpen] = useState(false)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -84,6 +83,11 @@ export default function NodeView() {
 
   // Chat panel state
   const [showChat, setShowChat] = useState(false)
+
+  // GCal events state (para notas diarias)
+  const us = useUserStore()
+  const [gcalEvents, setGcalEvents] = useState<CalendarEvent[]>([])
+  const [editingGCalEvent, setEditingGCalEvent] = useState<CalendarEvent | null>(null)
 
   // Focus mode word goal state
   const [wordGoal, setWordGoal] = useState<number | null>(null)
@@ -216,6 +220,56 @@ export default function NodeView() {
       }
     }
   }, [node?.text, node?.diaryDate, node?.isDiaryEntry, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cargar eventos de Google Calendar cuando se abre una nota diaria
+  useEffect(() => {
+    if (!node?.isDiaryEntry || !node.diaryDate) { setGcalEvents([]); return }
+    if (!us.googleConnected) { setGcalEvents([]); return }
+    let cancelled = false
+    getCalendarEvents(new Date(node.diaryDate))
+      .then(events => { if (!cancelled) setGcalEvents(Array.isArray(events) ? events : []) })
+      .catch(() => { if (!cancelled) setGcalEvents([]) })
+    return () => { cancelled = true }
+  }, [node?.id, node?.isDiaryEntry, node?.diaryDate, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-sync From eventos → GCal cuando el nodo es isEvent y tiene fecha
+  useEffect(() => {
+    if (!node?.isEvent || !node.due) return
+    if (!us.googleConnected) return
+    const gcalId = nodeMeta(node).gcalEventId ?? null
+    const timer = setTimeout(async () => {
+      const end = node.dueEnd || new Date(new Date(node.due!).getTime() + 3600000).toISOString()
+      let loc = ''
+      try { loc = JSON.parse(node.extraData || '{}').location || '' } catch {}
+      try {
+        const rrule = fromRecToRRule(node.recurrence)
+        if (gcalId) {
+          await updateCalendarEvent(gcalId, {
+            title: node.text || 'Evento',
+            start: node.due!,
+            end,
+            description: node.body || undefined,
+            location: loc || undefined,
+            recurrence: rrule,
+          })
+        } else {
+          const result = await createCalendarEvent({
+            title: node.text || 'Evento',
+            start: node.due!,
+            end,
+            description: node.body || undefined,
+            location: loc || undefined,
+            recurrence: rrule,
+          })
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
+          ed.gcalEventId = result.id
+          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+        }
+      } catch { /* sin conexión GCal — silencioso */ }
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [node?.isEvent, node?.text, node?.due, node?.dueEnd, node?.body, node?.extraData, node?.recurrence, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attachments on mount / node change
   useEffect(() => {
@@ -1576,21 +1630,6 @@ export default function NodeView() {
                   </>
                 )
               })()}
-              {/* ── Timeline toggle (sólo en notas diarias) ── */}
-              {node.isDiaryEntry && (
-                <button
-                  className={`node-action-icon-btn ${timelineOpen ? 'active' : ''}`}
-                  onClick={() => setTimelineOpen(v => !v)}
-                  title={timelineOpen ? 'Cerrar timeline del día' : 'Abrir timeline del día'}
-                  style={{ color: timelineOpen ? 'var(--accent)' : undefined }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                </button>
-              )}
-
               {/* ── Pin (Atajo) — añade/quita de 📌 Atajos ── */}
               {(() => {
                 const atajosNode = getAtajosNode()
@@ -2142,6 +2181,36 @@ export default function NodeView() {
                   </>
                 )}
 
+                {/* ── Eventos de Google Calendar (solo en notas diarias con GCal conectado) ── */}
+                {node.isDiaryEntry && gcalEvents.length > 0 && (
+                  <div className="gcal-diary-events">
+                    <div className="gcal-diary-events-header">
+                      <span className="gcal-diary-events-title">📅 Google Calendar</span>
+                    </div>
+                    {gcalEvents.map(ev => {
+                      const startTime = ev.allDay ? 'Todo el día' : (() => {
+                        const d = new Date(ev.start)
+                        const endD = ev.end ? new Date(ev.end) : null
+                        const fmt = (dt: Date) => dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                        return endD ? `${fmt(d)} – ${fmt(endD)}` : fmt(d)
+                      })()
+                      const color = ev.backgroundColor || '#cfd9ec'
+                      return (
+                        <div
+                          key={ev.id}
+                          className="gcal-diary-event-row"
+                          style={{ borderLeftColor: color }}
+                          onClick={() => setEditingGCalEvent(ev)}
+                          title="Clic para editar"
+                        >
+                          <span className="gcal-diary-event-time">{startTime}</span>
+                          <span className="gcal-diary-event-name">{ev.title}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario ── */}
                 <div className={`outliner-section${
                   viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal)
@@ -2169,46 +2238,22 @@ export default function NodeView() {
         />
       )}
 
-      {/* Timeline opcional para diary entries — columna toggleable. Sin
-          header (el icono reloj de la barra ya indica que está abierto). */}
-      {node.isDiaryEntry && timelineOpen && (
-        <aside className="diary-timeline-aside">
-          <DiaryRightPanel
-            diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()}
-            timelineMode
-          />
-        </aside>
+      {/* Modal: editar evento de Google Calendar */}
+      {editingGCalEvent && (
+        <GCalEventEditor
+          event={editingGCalEvent}
+          modal
+          onClose={() => setEditingGCalEvent(null)}
+          onUpdated={updated => {
+            setGcalEvents(prev => prev.map(x => x.id === updated.id ? updated : x))
+            setEditingGCalEvent(null)
+          }}
+          onDeleted={id => {
+            setGcalEvents(prev => prev.filter(x => x.id !== id))
+            setEditingGCalEvent(null)
+          }}
+        />
       )}
-
-      <div className={`right-panel-area${rightCollapsed ? ' right-panel-area--collapsed' : ''}`}>
-        <button
-          className="right-panel-toggle"
-          onClick={() => setRightCollapsed(v => !v)}
-          title={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
-          aria-label={rightCollapsed ? 'Expandir panel' : 'Colapsar panel'}
-        >
-          {rightCollapsed ? '‹' : '›'}
-        </button>
-        <div className="right-panel-content">
-          {node.isDiaryEntry ? (
-            <DiaryRightPanel diaryDate={node.diaryDate ? new Date(node.diaryDate) : new Date()} />
-          ) : (() => {
-            // ¿Es un nodo de definición de tag?
-            try {
-              const ed = JSON.parse(node.extraData || '{}')
-              if (ed._tagDefinition) return <TagNodesPanel tagName={ed._tagDefinition} />
-            } catch {}
-            return <NodeRightPanel node={node} />
-          })()}
-        </div>
-        {!rightCollapsed && (
-          <div
-            className="right-panel-outer-edge"
-            onClick={() => setRightCollapsed(true)}
-            title="Colapsar panel"
-          />
-        )}
-      </div>
 
       {/* Modal: Mover a… */}
       {showMoveModal && (
