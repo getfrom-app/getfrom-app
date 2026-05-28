@@ -4,6 +4,43 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.3.17 · iOS 2.1 — Mayo 2026 · Undo/redo, slugs, YouTube IA, iOS paridad
+
+### Undo/Redo corregido (Web · Mac)
+- `Cmd+Z` restaura el estado correcto — bug crítico donde saltaba estados resuelto
+- Escribir no crea un snapshot por letra: undo agrupa 1.5s de escritura en un paso
+- Operaciones complejas (mover nodo, crear espejos) = un único paso de undo
+- `Cmd+Y` / `Cmd+Shift+Z` para rehacer
+
+### URLs cortas para nodos (Web · Mac)
+- Menú contextual → "Establecer URL corta"
+- Comparte `/node/mi-proyecto` en lugar de `/node/uuid`
+- El slug se sincroniza con todos los dispositivos
+
+### YouTube en la IA inline (Web · Mac · servidor)
+- La IA ya puede analizar vídeos de YouTube en todos los usuarios
+- Antes requería tier de pago de Gemini; ahora usa transcript scraping
+- Funciona con vídeos en español e inglés
+
+### Filtro persistente (Web · Mac)
+- El filtro activo sobrevive la navegación entre nodos y recargas de página
+- Se aplica tanto en la vista raíz como al entrar en un nodo concreto
+
+### Magic — eventos y fechas (Web · Mac)
+- Cuando dices una hora específica ("a las 12:00"), Magic crea un evento, no una tarea
+- Las tareas/eventos creados con fecha futura se colocan directamente bajo ese día en el árbol
+- Eliminados duplicados al mover nodos con fecha
+
+### iOS 2.1 — Paridad completa con Web
+- **Filtro lenguaje natural**: escribe "tareas pendientes de hoy" → filtro aplicado automáticamente
+- **Magic → filtro**: "muéstrame mis eventos de esta semana" aplica el filtro directamente
+- **Sistema de espejos**: mover un nodo a otro día crea el contexto completo en ambos sitios
+- **Mirror display**: espejos muted con badge "→ lunes 1 jun" al final del texto
+- **Planificador GCal**: arrastra eventos de Google Calendar a otra hora o día
+- Resize de duración en eventos GCal
+
+---
+
 ## v9.3.14 — Mayo 2026 · GCal drag/resize en el planificador
 
 ### Planificador — arrastrar y redimensionar eventos GCal
