@@ -249,6 +249,9 @@ export async function aiInlineStream(
     userProfile?: string
     /** Definiciones de los tags de la nota actual { tagName: descriptionBody } */
     tagDefinitions?: Record<string, string>
+    /** Micro-op gratuita: usa Haiku con presupuesto de sistema, no consume tokens del usuario.
+     *  Usar para auto-títulos, renombrado de sesiones y operaciones secundarias. */
+    systemBudget?: boolean
   }
 ): Promise<string> {
   const token = getToken()
@@ -261,11 +264,12 @@ export async function aiInlineStream(
     body: JSON.stringify({
       prompt,
       context,
-      maxTokens: 800,
+      maxTokens: opts?.systemBudget ? 200 : 800,
       resourceUrl: opts?.resourceUrl,
       resourceKind: opts?.resourceKind,
       userProfile: opts?.userProfile,
       tagDefinitions: opts?.tagDefinitions,
+      systemBudget: opts?.systemBudget,
     }),
   })
   await assertAIResponse(res)

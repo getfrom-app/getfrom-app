@@ -30,6 +30,32 @@ interface Props {
 
 // ── Agente individual ─────────────────────────────────────────────────────────
 
+const SCHEDULE_OPTIONS = [
+  { value: '',              label: 'Sin programar' },
+  { value: 'daily:08:00',  label: 'Diario 08:00' },
+  { value: 'daily:09:00',  label: 'Diario 09:00' },
+  { value: 'daily:12:00',  label: 'Diario 12:00' },
+  { value: 'daily:18:00',  label: 'Diario 18:00' },
+  { value: 'daily:21:00',  label: 'Diario 21:00' },
+  { value: 'weekly:1:09:00', label: 'Semanal — lunes 09:00' },
+  { value: 'weekly:5:09:00', label: 'Semanal — viernes 09:00' },
+  { value: 'weekly:0:09:00', label: 'Semanal — domingo 21:00' },
+]
+
+function setAgentSchedule(nodeId: string, schedule: string) {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    ed._agentSchedule = schedule
+    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  } catch { /* ignore */ }
+}
+
+function scheduleLabel(value: string): string {
+  return SCHEDULE_OPTIONS.find(o => o.value === value)?.label ?? 'Sin programar'
+}
+
 function AgentControls({ node }: Props) {
   const s = useStore()
   const navigate = useNavigate()
@@ -37,6 +63,7 @@ function AgentControls({ node }: Props) {
   const [running, setRunning] = useState(false)
   const [lastResult, setLastResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showSchedule, setShowSchedule] = useState(false)
   const isLoggedIn = !!getToken()
 
   if (!data) return null
@@ -141,10 +168,49 @@ function AgentControls({ node }: Props) {
         <span className="node-special-meta">{lastRunText}</span>
       )}
 
-      {/* Schedule (futuro) */}
-      <span className="node-special-meta" style={{ opacity: 0.4 }} title="Programación automática — próximamente">
-        ⏰ Sin programar
-      </span>
+      {/* Schedule — selector compacto */}
+      <div style={{ position: 'relative' }}>
+        <button
+          className="node-special-pill node-special-pill--action"
+          onClick={() => setShowSchedule(v => !v)}
+          title="Programar ejecución automática"
+          style={{ fontSize: 11 }}
+        >
+          ⏰ {scheduleLabel(data.schedule)}
+        </button>
+        {showSchedule && (
+          <>
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+              onClick={() => setShowSchedule(false)}
+            />
+            <div style={{
+              position: 'absolute', top: '110%', left: 0, zIndex: 1000,
+              background: 'var(--bg-primary)', border: '1px solid var(--border)',
+              borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              minWidth: 200, overflow: 'hidden',
+            }}>
+              {SCHEDULE_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setAgentSchedule(node.id, opt.value); setShowSchedule(false) }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '8px 12px', fontSize: 12, border: 'none',
+                    background: data.schedule === opt.value ? 'var(--accent-soft)' : 'none',
+                    color: data.schedule === opt.value ? 'var(--accent)' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { if (data.schedule !== opt.value) (e.target as HTMLElement).style.background = 'var(--bg-hover)' }}
+                  onMouseLeave={e => { if (data.schedule !== opt.value) (e.target as HTMLElement).style.background = 'none' }}
+                >
+                  {data.schedule === opt.value ? '✓ ' : ''}{opt.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Error inline */}
       {error && (

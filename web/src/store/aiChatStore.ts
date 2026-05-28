@@ -14,7 +14,7 @@
 
 import { store, type NodeStore } from './nodeStore'
 import type { Node } from '../types'
-import { aiChatStream, type ChatActionResult, TokensError } from '../api/client'
+import { aiChatStream, aiInlineStream, type ChatActionResult, TokensError } from '../api/client'
 import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
@@ -349,10 +349,8 @@ class AIChatStore {
       seeds.map((s, i) => `${i + 1}. ${s}`).join('\n')
     let title = ''
     try {
-      await aiChatStream(
-        { messages: [{ role: 'user', content: prompt }] },
-        (chunk) => { title += chunk }
-      )
+      // Micro-op: usa systemBudget (Haiku gratis, no consume tokens del usuario)
+      await aiInlineStream(prompt, undefined, (chunk) => { title += chunk }, { systemBudget: true })
     } catch { return }
 
     const cleaned = title.replace(/"/g, '').replace(/^Título:\s*/i, '').trim().split('\n')[0] ?? ''

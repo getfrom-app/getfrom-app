@@ -51,6 +51,7 @@ ${transcript}`
 
   let raw = ''
   try {
+    // No es micro-op (puede ser análisis largo) → usa tokens normales del usuario
     await aiInlineStream(prompt, undefined, (chunk) => { raw += chunk })
   } catch (e) {
     if (e instanceof TokensError) {

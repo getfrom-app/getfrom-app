@@ -4,6 +4,25 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.1.2 — Mayo 2026 · Propiedades de agentes + IA gratuita
+
+### Propiedades de agentes
+- Selector de programación en cada nodo agente: Sin programar · Diario · Semanal
+- El horario elegido se guarda en el nodo y se mostrará en la barra de controles
+- La ejecución automática según horario se implementará en próxima iteración
+
+### IA gratuita para micro-operaciones
+- Todos los usuarios (gratis y Pro) tienen acceso a Haiku para micro-ops
+- Auto-renombrado de conversaciones de Magic Chat: ya no consume tokens del usuario
+- Presupuesto de sistema separado: 50 llamadas/hora, 200 tokens máx por llamada
+- Sin coste adicional para el usuario, sin afectar al plan contratado
+
+### iOS v2.0
+- Subido a App Store Connect (Delivery UUID: bf0f72a0-968f-4c6c-b5b3-28209a9bf687)
+- Pendiente revisión de Apple (normalmente 24-48h)
+
+---
+
 ## v9.1.1 — Mayo 2026 · Fixes atajos y nodos especiales
 
 ### Fixes
