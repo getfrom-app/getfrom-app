@@ -56,6 +56,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const [showConvert, setShowConvert] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showPrediction, setShowPrediction] = useState(false)
+  const [showSlugModal, setShowSlugModal] = useState(false)
+  const [slugInput, setSlugInput] = useState('')
+  const slugInputRef = useRef<HTMLInputElement>(null)
   // Texto seleccionado en el momento de abrir el menú
   const selectedText = window.getSelection()?.toString().trim() || ''
   const [publishing, setPublishing] = useState(false)
@@ -458,14 +461,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           const suggested = (node.text || '')
             .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
             .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 50)
-          const slug = window.prompt('URL corta para este nodo\n(aparecerá como /node/tu-slug)', currentSlug || suggested)
-          if (slug === null) return
-          const clean = slug.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-          if (!clean) { store.updateNode(node.id, { publicSlug: null }); return }
-          store.updateNode(node.id, { publicSlug: clean })
-          const url = `${window.location.origin}/app/node/${clean}`
-          navigator.clipboard.writeText(url).catch(() => {})
-          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL: /node/${clean}`, type: 'success' } }))
+          setSlugInput(currentSlug || suggested)
+          setShowSlugModal(true)
+          setTimeout(() => slugInputRef.current?.select(), 50)
         })}>
           <span className="context-menu-icon">✂️</span>
           {node.publicSlug ? `URL: /node/${node.publicSlug}` : 'Establecer URL corta'}
@@ -723,6 +721,92 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           node={node}
           onClose={() => { setShowMove(false); onClose() }}
         />
+      )}
+
+      {/* ── Modal URL corta ─────────────────────────────────────────────── */}
+      {showSlugModal && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onMouseDown={() => setShowSlugModal(false)}
+        >
+          <div
+            style={{ background: 'var(--bg-primary)', borderRadius: 14, padding: '28px 28px 24px', width: 420, maxWidth: '90vw', boxShadow: '0 24px 80px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column', gap: 16 }}
+            onMouseDown={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>✂️ URL corta</span>
+              <button onClick={() => setShowSlugModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Descripción */}
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Establece una URL corta para este nodo. Estará disponible en:<br />
+              <code style={{ background: 'var(--bg-secondary)', borderRadius: 4, padding: '2px 6px', fontSize: 12, color: 'var(--accent)' }}>
+                {window.location.origin}/app/node/<strong>{slugInput || 'tu-slug'}</strong>
+              </code>
+            </p>
+
+            {/* Input */}
+            <input
+              ref={slugInputRef}
+              type="text"
+              value={slugInput}
+              onChange={e => setSlugInput(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
+              placeholder="mi-proyecto"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const clean = slugInput.trim()
+                  if (!clean) { store.updateNode(node.id, { publicSlug: null }); setShowSlugModal(false); return }
+                  store.updateNode(node.id, { publicSlug: clean })
+                  const url = `${window.location.origin}/app/node/${clean}`
+                  navigator.clipboard.writeText(url).catch(() => {})
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL copiada: /node/${clean}`, type: 'success' } }))
+                  setShowSlugModal(false)
+                }
+                if (e.key === 'Escape') setShowSlugModal(false)
+              }}
+              style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 14, background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+              autoFocus
+            />
+
+            {/* Nota */}
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Solo letras minúsculas, números y guiones. Déjalo vacío para eliminar la URL corta.
+            </p>
+
+            {/* Botones */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              {node.publicSlug && (
+                <button
+                  onClick={() => { store.updateNode(node.id, { publicSlug: null }); setShowSlugModal(false); window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'URL corta eliminada', type: 'success' } })) }}
+                  style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}
+                >
+                  Eliminar
+                </button>
+              )}
+              <button onClick={() => setShowSlugModal(false)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const clean = slugInput.trim()
+                  if (!clean) { store.updateNode(node.id, { publicSlug: null }); setShowSlugModal(false); return }
+                  store.updateNode(node.id, { publicSlug: clean })
+                  const url = `${window.location.origin}/app/node/${clean}`
+                  navigator.clipboard.writeText(url).catch(() => {})
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL copiada: /node/${clean}`, type: 'success' } }))
+                  setShowSlugModal(false)
+                }}
+                style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
+              >
+                Guardar y copiar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   )
