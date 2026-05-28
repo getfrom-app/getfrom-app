@@ -177,7 +177,9 @@ export default function PlannerPanel({ onClose }: Props) {
     const scrollFrac = scrollEl ? scrollEl.scrollTop / (TOTAL_HOURS * startSlotH * 2) : 0
     function onMove(ev: MouseEvent) {
       const delta   = startY - ev.clientY   // arriba = zoom in
-      const newSlot = Math.max(MIN_SLOT_H, Math.min(MAX_SLOT_H, startSlotH + delta * 0.5))
+      // Mínimo dinámico: que las 18h quepan exactamente en el contenedor
+      const minSlot = scrollEl ? Math.max(8, Math.floor(scrollEl.clientHeight / (TOTAL_HOURS * 2))) : 8
+      const newSlot = Math.max(minSlot, Math.min(MAX_SLOT_H, startSlotH + delta * 0.5))
       setSlotH(newSlot)
       if (scrollEl) scrollEl.scrollTop = scrollFrac * TOTAL_HOURS * newSlot * 2
     }
@@ -525,23 +527,21 @@ export default function PlannerPanel({ onClose }: Props) {
       {/* Timeline */}
       <div className="pp-timeline" ref={el => {
         (scrollVRef as any).current = el
-        // Wheel nativo (no pasivo) para poder preventDefault y manejar zoom
+        // Shift+wheel → zoom Y. Rueda normal → scroll vertical estándar (no interceptar)
         if (el && !(el as any)._wheelBound) {
           (el as any)._wheelBound = true
           el.addEventListener('wheel', (ev: WheelEvent) => {
-            if (viewMode !== 'day') return
+            if (!ev.shiftKey || viewMode !== 'day') return   // solo Shift+rueda
             ev.preventDefault()
-            const dir = ev.deltaY > 0 ? 1 : -1
-            if (ev.shiftKey) {
-              setSlotH(prev => {
-                const frac = el.scrollTop / (TOTAL_HOURS * prev * 2)
-                const next = Math.max(MIN_SLOT_H, Math.min(MAX_SLOT_H, prev - dir * 4))
-                setTimeout(() => { el.scrollTop = frac * TOTAL_HOURS * next * 2 }, 0)
-                return next
-              })
-            } else {
-              setVisibleDayCnt(prev => Math.max(MIN_DAY_CNT, Math.min(MAX_DAY_CNT, prev + dir)))
-            }
+            const dir = ev.deltaY > 0 ? 1 : -1  // abajo = zoom out
+            setSlotH(prev => {
+              // Mínimo dinámico: que el día completo quepa en el contenedor
+              const minSlot = Math.max(8, Math.floor(el.clientHeight / (TOTAL_HOURS * 2)))
+              const frac    = el.scrollTop / (TOTAL_HOURS * prev * 2)
+              const next    = Math.max(minSlot, Math.min(MAX_SLOT_H, prev - dir * 4))
+              setTimeout(() => { el.scrollTop = frac * TOTAL_HOURS * next * 2 }, 0)
+              return next
+            })
           }, { passive: false })
         }
       }}>
