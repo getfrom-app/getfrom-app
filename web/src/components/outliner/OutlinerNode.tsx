@@ -2412,6 +2412,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     isAncestorContext ? 'wf-filter-ancestor' : '',
     ctxRef ? 'node-row--ctx-ref' : '',
     taskConverting ? 'node-row--task-converting' : '',
+    mirrorOfId ? 'node-row--mirror' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)
@@ -2522,12 +2523,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         {!isDivider && !isHeading && (
           <>
             {effectiveNode.isEvent ? (
-              // Evento: nav-dot (o ⬡ si es espejo) + icono calendario
+              // Evento: nav-dot + icono calendario (igual para espejos, el muted viene del CSS del row)
               <>
-                {mirrorOfId
-                  ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
-                  : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Abrir evento" />
-                }
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Abrir evento'} />
                 <button
                   className="bullet-btn bullet-btn--event"
                   onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
@@ -2541,12 +2539,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 </button>
               </>
             ) : effectiveNode.status !== null ? (
-              // Tarea: nav-dot (o ⬡ si es espejo) + checkbox coloreado
+              // Tarea: nav-dot + checkbox (igual para espejos, el muted viene del CSS del row)
               <>
-                {mirrorOfId
-                  ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
-                  : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
-                }
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
                 <button
                   className={`bullet-btn task ${taskCheckClass}`}
                   onClick={toggleTask}
@@ -2612,10 +2607,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 title="Zoom in →"
               />
             ) : (
-              // Texto normal: dot navegador (o ⬡ si es espejo)
-              mirrorOfId
-                ? <button className="mirror-indicator-btn" onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Espejo → ver original">⬡</button>
-                : <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
+              // Texto normal: dot navegador (igual para espejos)
+              <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
             )}
           </>
         )}
@@ -2634,10 +2627,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
             }}
           >
-            {/* Badge de destino para espejos de tarea movida (→ Vie 30 may) */}
-            {mirrorDestLabel && (
-              <span className="node-mirror-dest-badge">→ {mirrorDestLabel}</span>
-            )}
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Lista: dash visual "–" decorativo */}
@@ -2894,6 +2883,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               onSelect(lastId)
             }}
           />
+            )}
+
+            {/* Badge de destino para espejos de tarea movida (→ Vie 30 may) — después del texto */}
+            {mirrorDestLabel && (
+              <span className="node-mirror-dest-badge">→ {mirrorDestLabel}</span>
             )}
 
             {/* Body indicator dot */}

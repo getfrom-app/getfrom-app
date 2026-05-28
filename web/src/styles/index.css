@@ -518,35 +518,26 @@ a { color: inherit; text-decoration: none; }
 /* No mostrar hover del row */
 .node-row--moved-ref:hover { background: transparent !important; }
 
-/* ⬡ indicador de espejo — clase propia sin heredar bullet-nav-dot */
-.mirror-indicator-btn {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  opacity: 0.5;
-  transition: opacity 0.12s, color 0.12s;
-  border-radius: 4px;
-}
-.mirror-indicator-btn:hover { opacity: 1; color: var(--accent); }
 
-/* Badge de destino en espejo de tarea movida (→ Vie 30 may) */
+/* Espejo de nodo movido — mismo icono/estilo que el original, ligeramente muted */
+.node-row--mirror {
+  opacity: 0.62;
+  filter: saturate(0.6);
+}
+.node-row--mirror:hover {
+  opacity: 0.85;
+  filter: saturate(0.85);
+}
+
+/* Badge de destino en espejo de tarea movida — después del texto (→ Vie 30 may) */
 .node-mirror-dest-badge {
   font-size: 11px;
-  color: var(--accent);
-  opacity: 0.65;
-  margin-left: 4px;
+  color: var(--text-tertiary);
+  opacity: 0.8;
+  margin-left: 6px;
   flex-shrink: 0;
   white-space: nowrap;
+  font-style: normal;
 }
 
 /* ── Ctx-ref: padre gris/cursiva en día destino ──────────────────────── */
