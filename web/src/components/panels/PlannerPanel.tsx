@@ -532,7 +532,6 @@ export default function PlannerPanel({ onClose }: Props) {
             <path d="M3 3v5h5"/>
           </svg>
         </button>
-        <button className="pp-close-btn" onClick={onClose} title="Cerrar">×</button>
       </div>
 
       {/* Timeline */}
