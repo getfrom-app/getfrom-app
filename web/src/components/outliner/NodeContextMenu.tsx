@@ -453,6 +453,23 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
             <span className="context-menu-icon">🔒</span> Despublicar
           </button>
         )}
+        <button className="context-menu-item" onClick={run(() => {
+          const currentSlug = node.publicSlug || ''
+          const suggested = (node.text || '')
+            .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 50)
+          const slug = window.prompt('URL corta para este nodo\n(aparecerá como /node/tu-slug)', currentSlug || suggested)
+          if (slug === null) return
+          const clean = slug.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+          if (!clean) { store.updateNode(node.id, { publicSlug: null }); return }
+          store.updateNode(node.id, { publicSlug: clean })
+          const url = `${window.location.origin}/app/node/${clean}`
+          navigator.clipboard.writeText(url).catch(() => {})
+          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `URL: /node/${clean}`, type: 'success' } }))
+        })}>
+          <span className="context-menu-icon">✂️</span>
+          {node.publicSlug ? `URL: /node/${node.publicSlug}` : 'Establecer URL corta'}
+        </button>
       </div>
 
       {/* Plantillas */}

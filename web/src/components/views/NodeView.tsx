@@ -46,12 +46,34 @@ interface Attachment {
   url: string
 }
 
+// UUID regex — si el id es un UUID, es directo; si no, puede ser un slug
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default function NodeView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const s = useStore()
-  const node = id ? s.getNode(id) : undefined
   const [globalFilter] = useFilterStore()
+
+  // ── Resolución de slug → UUID ──────────────────────────────────────────────
+  // Si el :id no es un UUID, lo tratamos como slug y lo resolvemos via API
+  const [resolvedId, setResolvedId] = useState<string | null>(id && UUID_RE.test(id) ? id : null)
+  useEffect(() => {
+    if (!id) return
+    if (UUID_RE.test(id)) { setResolvedId(id); return }
+    // Buscar primero en el store local por publicSlug
+    const local = [...s.nodes.values()].find(n => !n.deletedAt && n.publicSlug === id)
+    if (local) { setResolvedId(local.id); return }
+    // Llamar al servidor
+    import('../../api/client').then(({ apiRequest }) =>
+      apiRequest<{ id: string }>(`/sync/resolve-slug/${encodeURIComponent(id)}`)
+        .then(r => navigate(`/node/${r.id}`, { replace: true }))
+        .catch(() => setResolvedId(null))
+    )
+  }, [id]) // eslint-disable-line
+
+  const effectiveId = resolvedId ?? id
+  const node = effectiveId ? s.getNode(effectiveId) : undefined
 
   // ── Nodos atajo: al cargar, aplicar filtro y volver al árbol ─────────────
   // Un atajo no tiene contenido propio — es un filtro guardado.
