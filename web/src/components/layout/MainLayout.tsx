@@ -266,6 +266,15 @@ export default function MainLayout() {
           setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start')), 40)
         }
       }
+      // P (sin modificador) → toggle planificador
+      if (e.key === 'p' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) {
+          e.preventDefault()
+          setPlannerOpen(v => !v)
+        }
+      }
       // Cmd+Shift+S → toggle sidebar
       if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault()

@@ -30,6 +30,7 @@ export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   // Navegación global
   { id: 'go-today',         category: 'Captura',      label: 'Ir a hoy',                description: 'Navegar a la nota del día de hoy',                defaultKey: 'h',          configurable: true },
   { id: 'new-today',        category: 'Captura',      label: 'Nuevo nodo hoy',          description: 'Ir al diario de hoy y crear nodo vacío',          defaultKey: 'n',          configurable: true },
+  { id: 'toggle-planner',   category: 'Captura',      label: 'Planificador',             description: 'Abrir / cerrar el planificador lateral',          defaultKey: 'p',          configurable: true },
   { id: 'command-palette',  category: 'Navegación',   label: 'Paleta de comandos',       description: 'Búsqueda rápida, comandos, contextos',             defaultKey: 'k',          modifiers: ['meta'], configurable: true },
   { id: 'magic-chat-open',  category: 'IA',           label: 'Abrir Magic Chat',         description: 'Espacio (sin input) o ⌘J abren el asistente IA', defaultKey: 'Space',      configurable: false },
   { id: 'magic-chat-voice', category: 'IA',           label: 'Grabar y enviar (mantener)', description: 'Mantén R para grabar voz. Suelta para enviar.',    defaultKey: 'r',          configurable: false },
