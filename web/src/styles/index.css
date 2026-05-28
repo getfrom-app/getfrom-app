@@ -11936,3 +11936,4 @@ a:focus-visible {
 }
 .wf-topbar-planner-btn:hover { background: var(--bg-hover); color: var(--accent); }
 .wf-topbar-planner-btn.active { color: var(--accent); background: rgba(74,144,217,0.1); }
+.cp-slot--qtr { border-top: 1px dotted color-mix(in srgb, var(--border) 25%, transparent); }

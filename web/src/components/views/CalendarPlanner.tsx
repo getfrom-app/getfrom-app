@@ -72,10 +72,12 @@ function topPx(date: Date): number {
   return Math.max(0, mins * PX_PER_MIN)
 }
 function heightPx(startMs: number, endMs: number): number {
-  return Math.max(SLOT_H, (endMs - startMs) / 60000 * PX_PER_MIN)
+  return Math.max(SNAP_PX, (endMs - startMs) / 60000 * PX_PER_MIN)
 }
+const SNAP_PX = SLOT_H / 2  // snap a 15 min (SLOT_H = 30 min = 2 × SNAP_PX)
+
 function snapPx(y: number): number {
-  return Math.round(y / SLOT_H) * SLOT_H
+  return Math.round(y / SNAP_PX) * SNAP_PX
 }
 function pxToTime(px: number, day: Date): Date {
   const mins = snapPx(Math.max(0, px)) / PX_PER_MIN + HOUR_START * 60
@@ -286,43 +288,50 @@ export default function CalendarPlanner() {
     const taskId   = e.dataTransfer.getData('plannerTaskId')
     const blockId  = e.dataTransfer.getData('plannerBlockId')
     const rect     = colEl.getBoundingClientRect()
-    const rawY     = e.clientY - rect.top
-    const start    = pxToTime(rawY, targetDay)
-    const end      = new Date(start.getTime() + 3600000)
-    if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
 
     if (taskId) {
+      // Drag desde columna de tareas: el drop es donde empieza el bloque
+      const rawY  = e.clientY - rect.top
+      const start = pxToTime(rawY, targetDay)
+      if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
+
       const task = store.getNode(taskId)
       if (!task) return
-      const taskDiaryIso = e.dataTransfer.getData('plannerTaskDiaryDate')
-      const taskDiaryDate = taskDiaryIso ? new Date(taskDiaryIso) : null
 
-      // Crear diary node del día destino
+      const taskDiaryIso  = e.dataTransfer.getData('plannerTaskDiaryDate')
+      const taskDiaryDate = taskDiaryIso ? new Date(taskDiaryIso) : null
       const targetDiaryNode = ensureDayPath(targetDay)
 
-      // Si es un día distinto → mover la tarea al nuevo diary day
+      // Mover tarea al nuevo día solo si es distinto
       if (taskDiaryDate && !sameDay(taskDiaryDate, targetDay)) {
         store.updateNode(taskId, { parentId: targetDiaryNode.id })
       }
 
-      // Crear time block vinculado
+      // Crear time block con el texto de la tarea (no vacío, para evitar auto-delete)
+      const end = new Date(start.getTime() + 3600000)
       store.createNode({
-        text: '',
-        parentId: targetDiaryNode.id,
-        due: start.toISOString(),
+        text:      task.text || 'Time block',
+        parentId:  targetDiaryNode.id,
+        due:       start.toISOString(),
         extraData: { _timeBlock: '1', _linkedTaskId: taskId },
       })
     } else if (blockId) {
-      // Mover time block existente
+      // Drag de bloque existente: restar offset del clic dentro del bloque
+      const offsetY = parseFloat(e.dataTransfer.getData('plannerBlockOffsetY') || '0')
+      const rawY    = e.clientY - rect.top - offsetY
+      const start   = pxToTime(rawY, targetDay)
+      if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
+
+      const n = store.getNode(blockId)
+      if (!n?.due) return
+      const duration = n.dueEnd
+        ? new Date(n.dueEnd).getTime() - new Date(n.due).getTime()
+        : 3600000
+
       const targetDiaryNode = ensureDayPath(targetDay)
-      const duration = (() => {
-        const n = store.getNode(blockId)
-        if (!n?.due || !n.dueEnd) return 3600000
-        return new Date(n.dueEnd).getTime() - new Date(n.due).getTime()
-      })()
       store.updateNode(blockId, {
-        due: start.toISOString(),
-        dueEnd: new Date(start.getTime() + duration).toISOString(),
+        due:      start.toISOString(),
+        dueEnd:   new Date(start.getTime() + duration).toISOString(),
         parentId: targetDiaryNode.id,
       })
     }
@@ -348,7 +357,12 @@ export default function CalendarPlanner() {
   // ── Drag bloque en el grid ────────────────────────────────────────────────
   function handleBlockDragStart(e: React.DragEvent, block: TimeBlock) {
     if (block.kind === 'gcal') { e.preventDefault(); return }
+    // Guardar el offset Y desde el top del bloque al cursor para drop preciso
+    const blockEl = e.currentTarget as HTMLElement
+    const blockRect = blockEl.getBoundingClientRect()
+    const offsetY = e.clientY - blockRect.top
     e.dataTransfer.setData('plannerBlockId', block.id)
+    e.dataTransfer.setData('plannerBlockOffsetY', String(Math.round(offsetY)))
     e.dataTransfer.effectAllowed = 'move'
   }
 
@@ -365,7 +379,7 @@ export default function CalendarPlanner() {
       const rect = col.getBoundingClientRect()
       const n = store.getNode(resizeRef.current.id)
       if (!n?.due) return
-      const h = Math.max(SLOT_H, snapPx(ev.clientY - rect.top) - topPx(new Date(n.due)))
+      const h = Math.max(SNAP_PX, snapPx(ev.clientY - rect.top) - topPx(new Date(n.due)))
       el.style.height = h + 'px'
     }
     function onUp(ev: MouseEvent) {
@@ -378,7 +392,7 @@ export default function CalendarPlanner() {
       const col = document.querySelector(`[data-cp-block="${id}"]`)?.closest('.cp-day-col') as HTMLElement
       if (!col) { resizeRef.current = null; return }
       const rect = col.getBoundingClientRect()
-      const h = Math.max(SLOT_H, snapPx(ev.clientY - rect.top) - topPx(new Date(n.due)))
+      const h = Math.max(SNAP_PX, snapPx(ev.clientY - rect.top) - topPx(new Date(n.due)))
       store.updateNode(id, { dueEnd: new Date(new Date(n.due).getTime() + (h / PX_PER_MIN) * 60000).toISOString() })
       resizeRef.current = null
     }
@@ -428,9 +442,11 @@ export default function CalendarPlanner() {
           onDrop={e => handleDrop(e, day, e.currentTarget)}
           onClick={e => handleSlotClick(e, day, e.currentTarget)}
         >
-          {Array.from({ length: TOTAL_HOURS * 2 }, (_, i) => (
-            <div key={i} className={`cp-slot ${i%2===0?'cp-slot--hr':'cp-slot--half'}`} style={{ top: i*SLOT_H }} />
-          ))}
+          {/* Slots cada 15 min: 4 por hora */}
+          {Array.from({ length: TOTAL_HOURS * 4 }, (_, i) => {
+            const cls = i%4===0 ? 'cp-slot--hr' : i%2===0 ? 'cp-slot--half' : 'cp-slot--qtr'
+            return <div key={i} className={`cp-slot ${cls}`} style={{ top: i * SNAP_PX }} />
+          })}
           {isToday && nowTop >= 0 && nowTop < TOTAL_HOURS * HOUR_H && (
             <div className="cp-now" style={{ top: nowTop }} />
           )}
