@@ -1,28 +1,46 @@
 /**
- * wfFilter — Motor de filtros estilo Workflowy para experiment/workflowy
- * Soporta operadores: hoy, mañana, semana, tarea, pendiente, hecho, evento, #tag
+ * wfFilter — Motor de filtros para From
+ *
+ * Soporta:
+ *   - Operadores booleanos: "y" (AND), "o" (OR)
+ *     Ejemplo: "tarea y vencido o hoy"
+ *     → (tarea AND vencido) OR hoy
+ *   - Operadores de fecha: hoy, mañana, semana, mes, pasado, futuro
+ *   - Operadores de estado: tarea, pendiente, hecho, vencido/overdue
+ *   - Operadores especiales: sin-fecha, con-fecha, favorito, diario, recurso, evento
+ *   - Tags: #tag, @contexto
+ *   - Wiki-links: [[nombre]]
+ *   - Texto libre (búsqueda por contenido)
+ *
+ * Precedencia: AND > OR  (igual que en lógica booleana estándar)
+ *   "a y b o c" → (a AND b) OR c
  */
+
 import type { Node } from '../types'
 import { normalizeText } from './normalize'
 
 interface FilterResult {
-  matchIds: Set<string>       // nodos que coinciden
-  ancestorIds: Set<string>   // ancestros de coincidencias (visibles pero atenuados)
+  matchIds: Set<string>
+  ancestorIds: Set<string>
   hasFilter: boolean
+}
+
+// ── Helpers de fecha ───────────────────────────────────────────────────────
+
+function todayMidnight(): Date {
+  const d = new Date(); d.setHours(0,0,0,0); return d
 }
 
 function isToday(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false
-  const d = new Date(dateStr)
-  const t = new Date()
+  const d = new Date(dateStr), t = todayMidnight()
   return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate()
 }
 
 function isTomorrow(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false
   const d = new Date(dateStr)
-  const t = new Date()
-  t.setDate(t.getDate() + 1)
+  const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(0,0,0,0)
   return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate()
 }
 
@@ -30,101 +48,83 @@ function isThisWeek(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false
   const d = new Date(dateStr)
   const now = new Date()
-  const start = new Date(now)
-  start.setDate(now.getDate() - now.getDay())
-  start.setHours(0,0,0,0)
-  const end = new Date(start)
-  end.setDate(start.getDate() + 7)
+  const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0)
+  const end = new Date(start); end.setDate(start.getDate() + 7)
   return d >= start && d < end
+}
+
+function isThisMonth(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return false
+  const d = new Date(dateStr), now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
 }
 
 function isOverdue(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false
   const d = new Date(dateStr)
-  const t = new Date()
-  t.setHours(0,0,0,0)
-  return d < t
+  return d < todayMidnight()
 }
 
-export function applyWFFilter(
-  nodes: Map<string, Node>,
-  filterText: string
-): FilterResult {
-  const text = normalizeText(filterText.trim())
+/** Ayer y antes — due o diaryDate estrictamente antes de hoy */
+function isPast(node: Node): boolean {
+  const ref = node.due || node.diaryDate
+  if (!ref) return false
+  const d = new Date(ref)
+  return d < todayMidnight()
+}
 
-  if (!text) return { matchIds: new Set(), ancestorIds: new Set(), hasFilter: false }
+/** Mañana en adelante — due o diaryDate estrictamente después de hoy */
+function isFuture(node: Node): boolean {
+  const ref = node.due || node.diaryDate
+  if (!ref) return false
+  const d = new Date(ref)
+  const tomorrow = todayMidnight(); tomorrow.setDate(tomorrow.getDate() + 1)
+  return d >= tomorrow
+}
 
-  // Parse tokens — respetar [[wiki-link]] como token único
-  const rawTokens: string[] = []
-  const tokenRegex = /\[\[[^\]]+\]\]|@[\wÀ-ɏ\/\-]+|#[\wÀ-ɏ\/\-]+|\S+/g
-  let m: RegExpExecArray | null
-  while ((m = tokenRegex.exec(filterText.trim())) !== null) rawTokens.push(m[0])
-  const tokens = rawTokens.map(t => normalizeText(t)).filter(Boolean)
+// ── Matching de un token contra un nodo ───────────────────────────────────
 
-  const matchIds = new Set<string>()
+function matchesToken(token: string, node: Node, nodes: Map<string, Node>): boolean {
+  switch (token) {
+    // Fecha
+    case 'hoy':      return isToday(node.due) || isToday(node.diaryDate)
+    case 'manana':
+    case 'mañana':   return isTomorrow(node.due)
+    case 'semana':   return isThisWeek(node.due)
+    case 'mes':      return isThisMonth(node.due) || isThisMonth(node.diaryDate)
+    case 'pasado':   return isPast(node)
+    case 'futuro':   return isFuture(node)
+    case 'con-fecha':
+    case 'con fecha':
+    case 'confecha': return !!node.due
 
-  for (const node of nodes.values()) {
-    if (node.deletedAt) continue
+    // Estado de tarea
+    case 'tarea':
+    case 'tipo:tarea':  return node.status !== null && node.status !== undefined
+    case 'pendiente':   return node.status === 'pending'
+    case 'hecho':       return node.status === 'done'
+    case 'futuro-tarea':
+    case 'programada':  return node.status === 'future'
+    case 'vencido':
+    case 'overdue':     return node.status === 'pending' && isOverdue(node.due)
+    case 'sin-fecha':
+    case 'sinfecha':    return node.status === 'pending' && !node.due
 
-    let matches = true
-    for (const token of tokens) {
-      let tokenMatch = false
+    // Tipo de nodo
+    case 'evento':
+    case 'tipo:evento': return !!node.isEvent
+    case 'favorito':    return !!node.isFavorite
+    case 'diario':      return !!node.isDiaryEntry
+    case 'recurso':     return !!node.isResource
+    case 'activo':      return !!node.isActive
 
-      if (token === 'hoy') {
-        tokenMatch = isToday(node.due) || isToday(node.diaryDate)
-      } else if (token === 'mañana') {
-        tokenMatch = isTomorrow(node.due)
-      } else if (token === 'semana') {
-        tokenMatch = isThisWeek(node.due)
-      } else if (token === 'tarea' || token === 'tipo:tarea') {
-        tokenMatch = node.status !== null && node.status !== undefined
-      } else if (token === 'evento' || token === 'tipo:evento') {
-        tokenMatch = !!node.isEvent
-      } else if (token === 'pendiente') {
-        tokenMatch = node.status === 'pending'
-      } else if (token === 'hecho') {
-        tokenMatch = node.status === 'done'
-      } else if (token === 'overdue' || token === 'vencido') {
-        tokenMatch = node.status === 'pending' && isOverdue(node.due)
-      } else if (token.startsWith('node:')) {
-        const targetNodeId = token.slice(5)
-        // Exclude the target node itself (it's the container)
-        if (node.id === targetNodeId) {
-          tokenMatch = false
-        } else {
-          // Check if current node is a descendant of targetNodeId
-          const isDescendant = (() => {
-            let cur = nodes.get(node.id)
-            const vis = new Set<string>()
-            while (cur?.parentId && !vis.has(cur.id)) {
-              vis.add(cur.id)
-              if (cur.parentId === targetNodeId) return true
-              cur = nodes.get(cur.parentId)
-            }
-            return false
-          })()
-
-          // Check if node has the target node's slug in its types or text
-          const targetNode = nodes.get(targetNodeId)
-          const targetSlug = targetNode
-            ? (targetNode.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-            : ''
-          const hasSlug = !!targetSlug && (
-            (node.types || []).some(t => t === targetSlug || t.endsWith('/' + targetSlug)) ||
-            normalizeText(node.text || '').includes(`@${targetSlug}`)
-          )
-
-          tokenMatch = isDescendant || hasSlug
-        }
-      } else if (token.startsWith('@') || token.startsWith('#')) {
+    default:
+      // @tag o #tag
+      if (token.startsWith('@') || token.startsWith('#')) {
         const tagName = token.slice(1)
-        // Direct type match
         const hasType = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
                         normalizeText(node.text || '').includes(token)
-
-        // Structural: is this node a descendant of the context node with this slug?
         const isStructuralChild = (() => {
-          // Find a context node whose slug matches tagName
           let contextNode: Node | null = null
           for (const [, n] of nodes) {
             if (n.deletedAt) continue
@@ -142,27 +142,101 @@ export function applyWFFilter(
           }
           return false
         })()
-
-        tokenMatch = hasType || isStructuralChild
-      } else if (token.startsWith('[[') && token.endsWith(']]')) {
-        // [[wiki-link]]: encuentra nodos que mencionan esa nota
-        const refName = normalizeText(token.slice(2, -2))
-        tokenMatch = normalizeText(node.text || '').includes(`[[${refName}`) ||
-                     normalizeText(node.body || '').includes(`[[${refName}`)
-      } else {
-        // Plain text search — sin tildes ni mayúsculas
-        tokenMatch = normalizeText(node.text || '').includes(token) ||
-                     normalizeText(node.body || '').includes(token)
+        return hasType || isStructuralChild
       }
 
-      if (!tokenMatch) { matches = false; break }
-    }
+      // [[wiki-link]]
+      if (token.startsWith('[[') && token.endsWith(']]')) {
+        const refName = normalizeText(token.slice(2, -2))
+        return normalizeText(node.text || '').includes(`[[${refName}`) ||
+               normalizeText(node.body || '').includes(`[[${refName}`)
+      }
+
+      // node:id
+      if (token.startsWith('node:')) {
+        const targetNodeId = token.slice(5)
+        if (node.id === targetNodeId) return false
+        const isDescendant = (() => {
+          let cur = nodes.get(node.id)
+          const vis = new Set<string>()
+          while (cur?.parentId && !vis.has(cur.id)) {
+            vis.add(cur.id)
+            if (cur.parentId === targetNodeId) return true
+            cur = nodes.get(cur.parentId)
+          }
+          return false
+        })()
+        const targetNode = nodes.get(targetNodeId)
+        const targetSlug = targetNode
+          ? (targetNode.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+          : ''
+        const hasSlug = !!targetSlug && (
+          (node.types || []).some(t => t === targetSlug || t.endsWith('/' + targetSlug)) ||
+          normalizeText(node.text || '').includes(`@${targetSlug}`)
+        )
+        return isDescendant || hasSlug
+      }
+
+      // Texto libre
+      return normalizeText(node.text || '').includes(token) ||
+             normalizeText(node.body || '').includes(token)
+  }
+}
+
+// ── Parser de consulta con booleanos ──────────────────────────────────────
+//
+// La consulta se divide por " o " (OR) en grupos.
+// Cada grupo se divide por " y " y por espacios (AND implícito).
+// Las palabras de conexión "y" y "o" se eliminan de los tokens.
+//
+// "tarea y vencido o hoy" → [[tarea, vencido], [hoy]]
+// "pendiente vencido o hoy mañana" → [[pendiente, vencido], [hoy, mañana]]
+
+function parseOrGroups(filterText: string): string[][] {
+  // Dividir por " o " como separador OR (con espacios para no romper "@o" o "octubre")
+  const orParts = filterText.split(/\s+o\s+/i)
+  return orParts.map(part => {
+    // Tokenizar cada parte (respetar [[wiki]], @tag, #tag)
+    const rawTokens: string[] = []
+    const tokenRegex = /\[\[[^\]]+\]\]|@[\wÀ-ɏ\/\-]+|#[\wÀ-ɏ\/\-]+|\S+/g
+    let m: RegExpExecArray | null
+    while ((m = tokenRegex.exec(part)) !== null) rawTokens.push(m[0])
+    // Normalizar y filtrar la palabra "y" (AND explícito — ya es el comportamiento por defecto)
+    return rawTokens
+      .map(t => normalizeText(t))
+      .filter(t => t && t !== 'y' && t !== 'and')
+  }).filter(g => g.length > 0)
+}
+
+// ── Función principal ──────────────────────────────────────────────────────
+
+export function applyWFFilter(
+  nodes: Map<string, Node>,
+  filterText: string
+): FilterResult {
+  const text = filterText.trim()
+  if (!text) return { matchIds: new Set(), ancestorIds: new Set(), hasFilter: false }
+
+  const orGroups = parseOrGroups(text)
+  if (orGroups.length === 0 || orGroups.every(g => g.length === 0)) {
+    return { matchIds: new Set(), ancestorIds: new Set(), hasFilter: false }
+  }
+
+  const matchIds = new Set<string>()
+
+  for (const node of nodes.values()) {
+    if (node.deletedAt) continue
+
+    // Un nodo coincide si CUALQUIER grupo OR coincide (OR entre grupos)
+    // Un grupo coincide si TODOS sus tokens coinciden (AND dentro de grupo)
+    const matches = orGroups.some(andTokens =>
+      andTokens.every(token => matchesToken(token, node, nodes))
+    )
 
     if (matches) matchIds.add(node.id)
   }
 
-  // Build ancestor set — con detección de ciclos para evitar bucle infinito
-  // si existe alguna referencia circular de padres en el árbol.
+  // Construir ancestros
   const ancestorIds = new Set<string>()
   for (const id of matchIds) {
     let node = nodes.get(id)
@@ -177,20 +251,43 @@ export function applyWFFilter(
   return { matchIds, ancestorIds, hasFilter: true }
 }
 
-/** Operadores que activan el motor de filtros inteligente */
-const SMART_OPERATORS = ['hoy', 'mañana', 'semana', 'tarea', 'pendiente', 'hecho', 'vencido', 'overdue', 'evento', 'tipo:']
+// ── Detección de consulta inteligente ─────────────────────────────────────
+
+const SMART_OPERATORS = [
+  'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
+  'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
+  'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
+  'favorito', 'diario', 'recurso', 'activo', 'evento', 'tipo:',
+]
 
 export function isSmartQuery(text: string): boolean {
   const lower = text.toLowerCase()
-  return SMART_OPERATORS.some(op => lower.includes(op)) || lower.includes('#') || lower.includes('@') || lower.includes('[[') || lower.startsWith('node:')
+  return SMART_OPERATORS.some(op => lower.includes(op)) ||
+    lower.includes('#') || lower.includes('@') || lower.includes('[[') || lower.startsWith('node:')
 }
 
-/** Suggestion chips to show below filter input */
+// ── Sugerencias de chips del filtro ───────────────────────────────────────
+
 export const FILTER_SUGGESTIONS = [
-  { label: 'Hoy', query: 'hoy' },
-  { label: 'Tareas', query: 'tarea' },
-  { label: 'Pendientes', query: 'pendiente' },
+  { label: 'Hoy',         query: 'hoy' },
+  { label: 'Tareas',      query: 'tarea' },
+  { label: 'Pendientes',  query: 'pendiente' },
+  { label: 'Vencidas',    query: 'vencido' },
   { label: 'Esta semana', query: 'semana' },
-  { label: 'Vencidas', query: 'vencido' },
-  { label: 'Eventos', query: 'evento' },
+  { label: 'Este mes',    query: 'mes' },
+  { label: 'Pasado',      query: 'pasado' },
+  { label: 'Futuro',      query: 'futuro' },
+  { label: 'Sin fecha',   query: 'sin-fecha' },
+  { label: 'Favoritos',   query: 'favorito' },
+  { label: 'Eventos',     query: 'evento' },
 ]
+
+// ── Ejemplos de consultas booleanas (para el placeholder/ayuda) ────────────
+//
+//   tarea y vencido          → tareas pendientes con fecha pasada
+//   pendiente y sin-fecha    → tareas sin fecha asignada
+//   hoy o mañana             → nodos de hoy o de mañana
+//   tarea y hoy o tarea y mañana  → tareas de hoy o de mañana
+//   favorito y pendiente     → tareas favoritas pendientes
+//   pasado y pendiente       → todas las tareas no hechas de días anteriores
+//   futuro y tarea           → tareas programadas para el futuro
