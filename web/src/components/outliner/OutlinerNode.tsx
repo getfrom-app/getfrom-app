@@ -808,16 +808,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const ctxNodes: { slug: string; displayName: string }[] = []
         const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
         if (tagsRoot) {
-          const collectCtx = (parentId: string, prefix: string) => {
-            for (const child of store.children(parentId)) {
-              if (child.deletedAt || !child.text) continue
-              const slug = (prefix ? prefix + '/' : '') +
-                child.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-              ctxNodes.push({ slug, displayName: child.text })
-              collectCtx(child.id, slug)
-            }
+          // Solo hijos directos del nodo Contexto — los nombres de contexto reales.
+          // NO recursivo: los nodos hijo de cada contexto son descripciones/notas,
+          // no nombres de contexto, y añadirlos causa sugerencias erróneas.
+          for (const child of store.children(tagsRoot.id)) {
+            if (child.deletedAt || !child.text) continue
+            const slug = child.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+            ctxNodes.push({ slug, displayName: child.text })
           }
-          collectCtx(tagsRoot.id, '')
         }
 
         const normStr = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
