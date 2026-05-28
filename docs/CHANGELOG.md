@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.1.1 — Mayo 2026 · Fixes atajos y nodos especiales
+
+### Fixes
+- Atajos del árbol: al hacer clic ahora aplican correctamente el filtro al árbol (race condition resuelto)
+- Nodos especiales simplificados: solo Agente individual, Atajo, Contexto y Papelera tienen controles especiales
+- Los nodos raíz de Agentes y Plantillas se gestionan como nodos normales (Enter para crear nuevo)
+- Atajo de filtro navega a raíz antes de disparar el filtro para evitar conflictos de montado
+
+---
+
 ## v9.1 — Mayo 2026 · Magic, nodos especiales y árbol completo
 
 ### Magic Chat — asistente de voz integrado
