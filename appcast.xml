@@ -3,28 +3,13 @@
   <channel>
     <title>From Updates</title>
     <item>
-      <title>From 9.1.0</title>
-      <pubDate>Thu, 28 May 2026 12:19:34 +0200</pubDate>
-      <sparkle:version>9.1.0</sparkle:version>
-      <sparkle:shortVersionString>9.1.0</sparkle:shortVersionString>
+      <title>From 9.1.1</title>
+      <pubDate>Thu, 28 May 2026 14:57:28 +0200</pubDate>
+      <sparkle:version>9.1.1</sparkle:version>
+      <sparkle:shortVersionString>9.1.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
-      <description><![CDATA[
-        <h3>From 9.1.0</h3>
-        <ul>
-          <li>Magic Chat: mantén R para grabar y enviar al instante</li>
-          <li>Enseñar a Magic: correcciones persistentes que aprende</li>
-          <li>🗑 Papelera con jerarquía preservada en el árbol</li>
-          <li>🤖 Agentes ejecutables desde nodos del árbol</li>
-          <li>Google Calendar como nodos en el diario</li>
-          <li>Nodos especiales con barra de controles</li>
-        </ul>
-      ]]></description>
-      <enclosure
-        url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.1.0/From_9.1.0_aarch64.dmg"
-        sparkle:edSignature=""
-        length="5597614"
-        type="application/octet-stream"
-      />
+      <description><![CDATA[<ul><li>Fix atajos: aplican filtro al hacer clic desde el árbol</li><li>Nodos especiales simplificados</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.1.1/From_9.1.1_aarch64.dmg" sparkle:edSignature="" length="5597654" type="application/octet-stream"/>
     </item>
   </channel>
 </rss>
