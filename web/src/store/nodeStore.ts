@@ -155,18 +155,28 @@ export class NodeStore {
   private history: Array<{ nodes: Map<string, Node> }> = []
   private historyIndex = -1
   private readonly MAX_HISTORY = 50
+  private batchDepth = 0
+  private lastTextSnapshotTime = 0
 
   private snapshot() {
+    if (this.batchDepth > 0) return
     this.history = this.history.slice(0, this.historyIndex + 1)
     this.history.push({ nodes: new Map(this.nodes) })
     if (this.history.length > this.MAX_HISTORY) this.history.shift()
     this.historyIndex = this.history.length - 1
   }
 
+  beginBatch() { this.batchDepth++ }
+  endBatch() {
+    if (this.batchDepth > 0) this.batchDepth--
+    if (this.batchDepth === 0) this.snapshot()
+  }
+
   undo() {
     if (this.historyIndex <= 0) return
     this.historyIndex--
     this.nodes = new Map(this.history[this.historyIndex].nodes)
+    this.invalidateChildrenCache()
     this.notify()
     this.scheduleSyncDebounced()
   }
@@ -175,6 +185,7 @@ export class NodeStore {
     if (this.historyIndex >= this.history.length - 1) return
     this.historyIndex++
     this.nodes = new Map(this.history[this.historyIndex].nodes)
+    this.invalidateChildrenCache()
     this.notify()
     this.scheduleSyncDebounced()
   }
@@ -663,7 +674,7 @@ export class NodeStore {
 
   /** Borrar un tag de todos los nodos y eliminar su definición */
   deleteTag(tagName: string) {
-    this.snapshot()
+    this.beginBatch()
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
       const types = (n.types || [])
@@ -676,12 +687,13 @@ export class NodeStore {
         if (ed._tagDefinition === tagName) this.updateNode(n.id, { deletedAt: new Date().toISOString() })
       } catch {}
     }
+    this.endBatch()
   }
 
   /** Renombrar un tag en todos los nodos y en su definición */
   renameTag(oldName: string, newName: string) {
     if (!newName.trim() || newName === oldName) return
-    this.snapshot()
+    this.beginBatch()
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
       const types = (n.types || [])
@@ -696,6 +708,7 @@ export class NodeStore {
         }
       } catch {}
     }
+    this.endBatch()
   }
 
   /** Establecer o quitar color personalizado para un tag */
@@ -861,7 +874,6 @@ export class NodeStore {
     extraData?: Record<string, string>
     isAtomic?: boolean
   }): Node {
-    this.snapshot()
     const workspaceId = this.workspaces[0]?.id || '00000000-0000-0000-0000-000000000001'
     const now = new Date().toISOString()
     const id = generateId()
@@ -898,6 +910,7 @@ export class NodeStore {
     this.nodes.set(id, node)
     this.invalidateChildrenCache()
     this.dirtyIds.add(id)
+    this.snapshot()
     this.notify()
     this.scheduleSyncDebounced()
     return node
@@ -906,7 +919,6 @@ export class NodeStore {
   updateNode(id: string, changes: Partial<Node>): void {
     const node = this.nodes.get(id)
     if (!node) return
-    this.snapshot()
 
     // Lógica de recurrencia: cuando se marca done y tiene recurrencia,
     // calcular la siguiente fecha y dejarla como pending
@@ -924,6 +936,19 @@ export class NodeStore {
     // creamos un objeto nuevo — el cache quedaría apuntando al objeto viejo.
     this.invalidateChildrenCache()
     this.dirtyIds.add(id)
+
+    // Snapshot: debounce para cambios solo de texto (tipeo)
+    const isTextOnly = Object.keys(changes).length === 1 && 'text' in changes
+    if (isTextOnly) {
+      const now = Date.now()
+      if (now - this.lastTextSnapshotTime > 1500) {
+        this.snapshot()
+      }
+      this.lastTextSnapshotTime = now
+    } else {
+      this.snapshot()
+    }
+
     this.notify()
     this.scheduleSyncDebounced()
   }
@@ -1165,6 +1190,9 @@ export class NodeStore {
     if (!this.todayDiary()) {
       await this.createTodayDiary()
     }
+    // Reiniciar historia: el estado cargado es el punto de partida para undo
+    this.history = [{ nodes: new Map(this.nodes) }]
+    this.historyIndex = 0
     this.notify()
   }
 
@@ -1454,6 +1482,10 @@ export class NodeStore {
     if (!this.todayDiary()) {
       await this.createTodayDiary()
     }
+
+    // Reiniciar historia: el estado inicial cargado es el punto de partida para undo
+    this.history = [{ nodes: new Map(this.nodes) }]
+    this.historyIndex = 0
 
     // Nota: isLoaded se establece externamente (en MainLayout tras cleanup)
     // para garantizar que WFHomeView no renderiza hasta que el árbol esté limpio.
