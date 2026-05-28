@@ -466,9 +466,21 @@ export default function CalendarPlanner() {
   }
 
   // ── Vista DÍA — 5 columnas con scroll horizontal ──────────────────────────
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollRef  = useRef<HTMLDivElement>(null)
+  const headersRef = useRef<HTMLDivElement>(null)
 
   // Centrar en la columna del día actual al montar o cambiar centerDate
+  // ── Sync cabecera con scroll horizontal del grid ─────────────────────────
+  useEffect(() => {
+    const grid = scrollRef.current
+    if (!grid) return
+    function onScroll() {
+      if (headersRef.current) headersRef.current.scrollLeft = grid!.scrollLeft
+    }
+    grid.addEventListener('scroll', onScroll, { passive: true })
+    return () => grid.removeEventListener('scroll', onScroll)
+  }, [viewMode])
+
   useLayoutEffect(() => {
     if (viewMode !== 'day' || !scrollRef.current) return
     // Centrar el día actual: PRE_DAYS_EACH columnas antes del centro
@@ -476,7 +488,9 @@ export default function CalendarPlanner() {
     const centerColLeft = PRE_DAYS_EACH * colW
     const viewportW = scrollRef.current.clientWidth - AXIS_W
     const scroll = centerColLeft - Math.floor((viewportW - colW) / 2)
-    scrollRef.current.scrollLeft = Math.max(0, scroll)
+    const pos = Math.max(0, scroll)
+    scrollRef.current.scrollLeft = pos
+    if (headersRef.current) headersRef.current.scrollLeft = pos
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll vertical al "ahora" al montar
@@ -666,7 +680,7 @@ export default function CalendarPlanner() {
           {viewMode !== 'month' && (
             <>
               {/* Encabezados de días */}
-              <div className="cp-col-heads">
+              <div className="cp-col-heads" ref={headersRef}>
                 <div style={{ width: AXIS_W, flexShrink: 0 }} />
                 {visibleDays.map(d => {
                   const isToday  = sameDay(d, today)
