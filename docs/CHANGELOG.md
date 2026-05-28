@@ -4,6 +4,56 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.3.14 — Mayo 2026 · GCal drag/resize en el planificador
+
+### Planificador — arrastrar y redimensionar eventos GCal
+- Arrastra un evento de Google Calendar a otra hora o día directamente desde el planificador
+- Redimensiona la duración de un evento GCal tirando del borde inferior
+- Optimistic update: el evento se mueve visualmente al instante sin esperar al servidor
+- Sync en background con Google Calendar; revert automático si la operación falla
+- Enter en los inputs de hora y fecha del editor guarda el cambio sin necesidad de hacer clic
+
+---
+
+## v9.3.13 — Mayo 2026 · Sistema de espejos mejorado
+
+### Mover un nodo a otro día
+- Al mover un nodo a otro día: el nodo se traslada físicamente al destino
+- Se crea un espejo del padre en el destino junto con espejos de todos los hermanos
+- En el origen queda un espejo del nodo movido con referencia al día destino
+- Los espejos muestran el mismo icono que el original (checkbox, evento…) con opacidad reducida en lugar del icono genérico ⬡
+- El badge "→ destino" aparece después del texto del nodo, no antes
+
+---
+
+## v9.3.12 — Mayo 2026 · Tecla P para el planificador
+
+### Atajo de teclado
+- `P` (sin ningún input activo) abre y cierra el planificador lateral al instante
+- El atajo aparece en **Ajustes → Atajos** como configurable
+
+---
+
+## v9.3.10 — Mayo 2026 · Magic Chat — navegación directa
+
+### Navegación sin pasar por IA
+- Frases como "ir al diario", "nota de hoy", "abre hoy"... navegan al nodo del día sin invocar al modelo de IA
+- La respuesta es instantánea: cero latencia, sin tokens consumidos
+
+---
+
+## v9.3.7 — Mayo 2026 · Filtro IA en lenguaje natural
+
+### Filtro con lenguaje natural (⌘F)
+- La caja de filtro ahora acepta lenguaje natural: "tareas de hoy y pasadas", "recursos sin fecha", "todo lo de esta semana"…
+- From traduce la consulta a la query técnica equivalente usando Haiku (gratuito, sin coste para el usuario)
+- Nuevos operadores disponibles: `pasado`, `futuro`, `mes`, `sin-fecha`, `favorito`, `diario`, `recurso`
+- Soporte para `y` (AND) y `o` (OR) combinando condiciones
+- Magic Chat detecta cuando quieres filtrar y aplica el filtro directamente sin abrir el campo manualmente
+- El placeholder de la caja de búsqueda ahora dice "¿Qué quieres ver? (⌘F)" para invitar al lenguaje natural
+
+---
+
 ## v9.1.2 — Mayo 2026 · Propiedades de agentes + IA gratuita
 
 ### Propiedades de agentes

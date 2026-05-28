@@ -448,6 +448,17 @@ Los filtros te permiten ver exactamente lo que necesitas en cada momento, sin re
 
 **Activar:** ⌘F o clic en la barra de filtro superior.
 
+### Lenguaje natural
+
+Puedes escribir directamente en lenguaje natural y From traduce tu consulta a los operadores técnicos automáticamente:
+
+- "tareas de hoy y pasadas" → `tarea hoy o vencido`
+- "recursos sin fecha" → `recurso sin-fecha`
+- "todo lo de esta semana" → `semana`
+- "favoritos pendientes" → `favorito pendiente`
+
+From usa IA (Haiku, gratuita para todos los usuarios) para interpretar la consulta. No consume tokens de tu plan.
+
 ### Operadores disponibles
 
 | Operador | Muestra |
@@ -455,24 +466,36 @@ Los filtros te permiten ver exactamente lo que necesitas en cada momento, sin re
 | `hoy` | Nodos con fecha de hoy o nota de diario de hoy |
 | `mañana` | Nodos con fecha de mañana |
 | `semana` | Nodos con fecha en la semana actual |
+| `mes` | Nodos con fecha en el mes actual |
+| `pasado` | Nodos con fecha anterior a hoy |
+| `futuro` | Nodos con fecha posterior a hoy |
+| `sin-fecha` | Nodos sin fecha de vencimiento asignada |
 | `tarea` | Todos los nodos que son tareas |
 | `pendiente` | Tareas pendientes (no completadas) |
 | `hecho` | Tareas completadas |
 | `vencido` | Tareas cuya fecha ya pasó y no están hechas |
 | `evento` | Todos los eventos |
+| `recurso` | Todos los recursos |
+| `diario` | Nodos de tipo diario (notas de día) |
+| `favorito` | Nodos marcados como favorito |
 | `@contexto` | Nodos con ese contexto asignado |
 | `#tag` | Nodos que contienen ese tag en el texto |
 | `[[nombre]]` | Nodos que referencian ese nodo por nombre (wiki-link) |
 | `node:ID` | Nodo concreto y todos sus descendientes o referencias |
 
-Los filtros son combinables. Escribe varios seguidos separados por espacio:
+Los filtros son combinables. Escribe varios seguidos separados por espacio, o usa `y` (AND) y `o` (OR) en lenguaje natural:
 
 - `hoy pendiente` → tareas pendientes con fecha de hoy.
 - `@trabajo pendiente` → tareas pendientes del contexto trabajo.
 - `hoy pendiente @trabajo` → tareas pendientes de hoy en el contexto trabajo.
 - `vencido @personal` → tareas vencidas del contexto personal.
+- "tareas de hoy o mañana" → `tarea hoy o tarea mañana`.
 
 La búsqueda ignora tildes y mayúsculas. `trabajo` encuentra también `Trabajo` y `trabájo`.
+
+### Filtrar desde Magic Chat
+
+Si abres Magic Chat y describes lo que quieres ver ("muéstrame las tareas vencidas", "filtra por recursos de esta semana"), Magic detecta la intención y aplica el filtro directamente sin que tengas que abrir ⌘F ni escribir operadores.
 
 ### Chips de sugerencia
 
@@ -678,14 +701,22 @@ Los agentes se configuran en su panel de propiedades:
 
 ## 14. El Planificador
 
-El Planificador es la vista de calendario de From. Accede desde el sidebar (icono de calendario) o desde la barra lateral.
+El Planificador es la vista de calendario de From. Accede desde el sidebar (icono de calendario), desde la barra lateral, o pulsa `P` (sin ningún input activo) para abrirlo y cerrarlo al instante.
 
 - Vista **mensual** por defecto, con las tareas y eventos del mes distribuidos en sus días.
 - Las tareas con fecha aparecen en el día correspondiente.
 - Los eventos de Google Calendar aparecen con su color de calendario.
 - Haz clic en cualquier **día** para ir a ese día en la Agenda.
-- Haz clic en un **evento** para editarlo: cambiar título, hora, o eliminarlo.
+- Haz clic en un **evento** para editarlo: cambiar título, hora, o eliminarlo. Pulsa Enter en los campos de hora o fecha para guardar sin necesidad de hacer clic.
 - El rango de horas del planificador se configura en Ajustes → Apariencia → Calendario y Timeline (por defecto 7:00-23:00).
+
+### Mover y redimensionar eventos de Google Calendar
+
+Si tienes Google Calendar conectado, puedes gestionar los eventos directamente en el planificador sin salir de From:
+
+- **Arrastra un evento** a otra hora o día: el evento se mueve visualmente al instante y se sincroniza con Google Calendar en segundo plano.
+- **Redimensiona la duración**: arrastra el borde inferior del evento para alargar o acortar su duración.
+- Si la operación falla (sin conexión, error de la API), el evento vuelve automáticamente a su posición original.
 
 ---
 
@@ -728,7 +759,11 @@ Hay varias formas de mover un nodo a otro lugar:
 
 - `⌘↑` / `⌘↓` → mueve el nodo arriba o abajo entre sus hermanos.
 
-Al mover un nodo a otro día o lugar, el nodo original deja un **espejo automático ⬡** en su posición. Así no pierdes el rastro de dónde estaba.
+Al mover un nodo a otro día, el nodo se traslada físicamente al destino y el sistema crea espejos automáticamente para que no pierdas el rastro:
+
+- En el **origen** queda un espejo del nodo movido, con una referencia visual al día destino ("→ 30 mayo").
+- En el **destino** se crean espejos del padre y de los nodos hermanos del contexto original, para que el nodo llegue con su contexto preservado.
+- Los espejos muestran el mismo icono que el nodo original (checkbox si es tarea, icono de evento si es evento) con opacidad reducida para distinguirlos.
 
 ---
 
@@ -771,6 +806,7 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 | Mover nodo abajo entre hermanos | `⌘↓` |
 | Colapsar/expandir nodo | Clic en ▶ |
 | Filtro inteligente inline | `⌘F` |
+| Abrir/cerrar planificador | `P` |
 | Chat IA | `⌘J` |
 | Slash menu | `/` |
 | Paleta de comandos (búsqueda global) | `⌘K` |
