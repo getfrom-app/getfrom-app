@@ -2430,6 +2430,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       aria-level={depth + 1}
       aria-selected={isSelected}
     >
+      {/* Grip handle — arrastrar al PlannerPanel. Aparece en hover, no interfiere con el drag del outliner */}
+      <div
+        className="outliner-grip"
+        draggable={true}
+        onDragStart={e => {
+          e.stopPropagation()
+          e.dataTransfer.setData('nodeId', node.id)
+          e.dataTransfer.effectAllowed = 'copy'
+        }}
+        title="Arrastrar al timeline"
+      >
+        <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+          <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+          <circle cx="2" cy="6" r="1.5"/><circle cx="6" cy="6" r="1.5"/>
+          <circle cx="2" cy="10" r="1.5"/><circle cx="6" cy="10" r="1.5"/>
+        </svg>
+      </div>
+
       <div
         className={nodeRowClass}
         draggable={false}

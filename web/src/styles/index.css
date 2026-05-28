@@ -12025,3 +12025,21 @@ a:focus-visible {
 
 /* MainLayout con planner abierto */
 .wf-layout.planner-open .right-panel-area { display: none; }
+
+/* ── Outliner grip handle — arrastrar nodo al PlannerPanel ─────────────────── */
+.outliner-grip {
+  position: absolute;
+  left: -16px;
+  top: 50%; transform: translateY(-50%);
+  width: 14px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  cursor: grab;
+  color: var(--text-tertiary);
+  border-radius: 3px;
+  transition: opacity 0.1s;
+  z-index: 1;
+}
+.outliner-node:hover > .outliner-grip { opacity: 0.5; }
+.outliner-grip:hover { opacity: 1 !important; color: var(--accent); background: var(--bg-hover); }
+.outliner-grip:active { cursor: grabbing; }

@@ -392,7 +392,7 @@ export default function CalendarPlanner() {
           // Ignorar clicks que son consecuencia de soltar un resize o un drag
           if (justResized.current || justDragged.current) return
           if (block.kind === 'gcal' && block.gcalEvent) setEditingGcal(block.gcalEvent)
-          else if (block.kind === 'task' && block.linkedId) navigate(`/node/${block.linkedId}`)
+          else if (block.linkedId) navigate(`/node/${block.linkedId}`)
         }}
         onContextMenu={e => { e.preventDefault(); setCtxMenu({x:e.clientX,y:e.clientY,block}) }}
         title={`${block.text}\n${fmtHH(block.start)} – ${fmtHH(block.end)}`}

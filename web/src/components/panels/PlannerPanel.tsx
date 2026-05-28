@@ -204,19 +204,23 @@ export default function PlannerPanel({ onClose }: Props) {
       const rawY = e.clientY - rect.top
       const start = pxToTime(rawY, day)
       if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
-      const task = store.getNode(taskId)
-      if (!task) return
+      const node = store.getNode(taskId)
+      if (!node) return
       const diaryNode = ensureDayPath(day)
-      // Mover tarea si está bajo otra nota diaria distinta
-      let curParent = task.parentId ? store.getNode(task.parentId) : null
-      while (curParent) {
-        if (curParent.isDiaryEntry) {
-          if (!sameDay(new Date(curParent.diaryDate!), day)) store.updateNode(taskId, { parentId: diaryNode.id })
-          break
+
+      // Solo mover al nuevo día si es una TAREA (status !== null) bajo otro diary day
+      if (node.status !== null) {
+        let curParent = node.parentId ? store.getNode(node.parentId) : null
+        while (curParent) {
+          if (curParent.isDiaryEntry) {
+            if (!sameDay(new Date(curParent.diaryDate!), day)) store.updateNode(taskId, { parentId: diaryNode.id })
+            break
+          }
+          curParent = curParent.parentId ? store.getNode(curParent.parentId) : null
         }
-        curParent = curParent.parentId ? store.getNode(curParent.parentId) : null
       }
-      store.createNode({ text: task.text || 'Time block', parentId: diaryNode.id,
+      // Para cualquier nodo (tarea, proyecto, nota…): crear time block vinculado
+      store.createNode({ text: node.text || 'Time block', parentId: diaryNode.id,
         due: start.toISOString(), extraData: { _timeBlock:'1', _linkedTaskId: taskId } })
     } else if (blockId) {
       const offsetY = parseFloat(e.dataTransfer.getData('plannerBlockOffsetY') || '0')
@@ -293,7 +297,7 @@ export default function PlannerPanel({ onClose }: Props) {
           e.stopPropagation()
           if (justResized.current || justDragged.current) return
           if (b.kind === 'gcal' && b.gcalEvent) setEditingGcal(b.gcalEvent)
-          else if (b.kind === 'task' && b.linkedId) navigate(`/node/${b.linkedId}`)
+          else if (b.linkedId) navigate(`/node/${b.linkedId}`)  // cualquier nodo vinculado
         }}
         onContextMenu={e => { e.preventDefault(); setCtxMenu({x:e.clientX,y:e.clientY,b}) }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
