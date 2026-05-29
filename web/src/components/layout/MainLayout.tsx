@@ -650,17 +650,14 @@ export default function MainLayout() {
         <PlannerPanel onClose={() => setPlannerOpen(false)} />
       )}
 
-      {/* ── MagicChat panel (node route only) ── */}
-      {currentNodeIdFromRoute && (
-        <div
-          className={`magic-panel-wrap ${showAIChat ? 'magic-panel-wrap--open' : ''}`}
-          style={{ width: showAIChat ? magicPanelW : 0 }}
-        >
-          {/* Resize bar — borde izquierdo arrastrable */}
-          <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
-          <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
-        </div>
-      )}
+      {/* ── MagicChat panel — todas las páginas ── */}
+      <div
+        className={`magic-panel-wrap ${showAIChat ? 'magic-panel-wrap--open' : ''}`}
+        style={{ width: showAIChat ? magicPanelW : 0 }}
+      >
+        <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
+        <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
+      </div>
 
       </div>{/* .main-body */}
 
@@ -685,9 +682,6 @@ export default function MainLayout() {
       )}
       {/* Botón ✦ siempre en su posición fija, encima del panel */}
       <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
-      {showAIChat && !currentNodeIdFromRoute && (
-        <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
-      )}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
