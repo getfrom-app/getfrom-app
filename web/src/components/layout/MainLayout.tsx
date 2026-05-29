@@ -104,8 +104,22 @@ export default function MainLayout() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
-  const [showAIChat, setShowAIChat] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
+  // panelMode: único estado → sin frames intermedios con ambos panels abiertos
+  const [panelMode, setPanelMode] = useState<null | 'magic' | 'search'>(null)
+  const showAIChat = panelMode === 'magic'
+  const showSearch = panelMode === 'search'
+  const setShowAIChat = (v: boolean | ((prev: boolean) => boolean)) => {
+    setPanelMode(prev => {
+      const next = typeof v === 'function' ? v(prev === 'magic') : v
+      return next ? 'magic' : (prev === 'magic' ? null : prev)
+    })
+  }
+  const setShowSearch = (v: boolean | ((prev: boolean) => boolean)) => {
+    setPanelMode(prev => {
+      const next = typeof v === 'function' ? v(prev === 'search') : v
+      return next ? 'search' : (prev === 'search' ? null : prev)
+    })
+  }
   const [magicPanelW, setMagicPanelW] = useState(() => {
     const saved = localStorage.getItem('magic-panel-w')
     return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 500
@@ -117,10 +131,8 @@ export default function MainLayout() {
   useEffect(() => {
     if (showAIChat) {
       window.dispatchEvent(new Event('from:magic-opened'))
-      // Cerrar panel de búsqueda si estaba abierto — no son compatibles
-      if (showSearch) setShowSearch(false)
     }
-  }, [showAIChat]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showAIChat])
 
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
   useEffect(() => {
@@ -565,12 +577,7 @@ export default function MainLayout() {
           sidebarOpen={sidebarOpen}
           onTogglePlanner={() => setPlannerOpen(v => !v)}
           plannerOpen={plannerOpen}
-          onToggleSearch={() => {
-            setShowSearch(v => {
-              if (!v && showAIChat) setShowAIChat(false)
-              return !v
-            })
-          }}
+          onToggleSearch={() => setPanelMode(p => p === 'search' ? null : 'search')}
         />
       </div>
 
@@ -699,7 +706,7 @@ export default function MainLayout() {
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
       {/* Botón ✦ siempre en su posición fija, encima del panel */}
-      <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
+      <AIChatFloatingButton onClick={() => setPanelMode(p => p === 'magic' ? null : 'magic')} isOpen={showAIChat} />
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
