@@ -527,7 +527,7 @@ function Step5({ onClose }: { onClose: () => void }) {
           padding: '10px 14px', fontSize: 12, color: '#555',
           fontStyle: 'italic', marginBottom: 16, lineHeight: 1.5,
         }}>
-          "Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From"
+          Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From
         </div>
         <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
           Esperando que confirmes las acciones…

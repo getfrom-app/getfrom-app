@@ -430,7 +430,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
                     : 'Continúa la conversación…'
               }
               className="magic-chat-textarea magic-chat-textarea--bare"
-              rows={1}
+              rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
             />
           </div>
           <div className="magic-chat-actions">
