@@ -39,6 +39,7 @@ export async function executeChatAction(
     case 'create_resource':return createResource(action)
     case 'run_prompt':     return runPrompt(action)
     case 'navigate_to':    return navigateTo(action)
+    case 'set_filter':     return setFilter(action)
     default:
       return result(name || 'unknown', false, `Acción desconocida: ${name}`)
   }
@@ -53,6 +54,17 @@ function navigateTo(a: Record<string, unknown>): ExecutedAction {
     return result('navigate_to', true, `Navegando.`)
   }
   return result('navigate_to', false, 'Destino no especificado.')
+}
+
+function setFilter(a: Record<string, unknown>): ExecutedAction {
+  const query = ((a.query as string | undefined) || '').trim()
+  // Navegar a raíz para que el filtro sea visible en todo el árbol
+  window.dispatchEvent(new CustomEvent('from:navigate', { detail: { path: '/' } }))
+  // Aplicar el filtro (pequeño delay para que la navegación ocurra primero)
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query } }))
+  }, 80)
+  return result('set_filter', true, query ? `Filtrando: ${query}` : 'Filtro limpio.')
 }
 
 function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
