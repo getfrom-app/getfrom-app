@@ -145,8 +145,8 @@ export default function OnboardingWidget() {
     <div
       style={{
         position: 'fixed',
-        bottom: 56,
-        right: 16,
+        bottom: 80,
+        left: 16,
         width: 340,
         zIndex: 9999,
         background: '#ffffff',
