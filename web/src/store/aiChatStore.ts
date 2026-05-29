@@ -617,6 +617,7 @@ class AIChatStore {
       if (node) {
         const parts: string[] = []
         parts.push(`Título: ${node.text || 'Sin título'}`)
+        parts.push(`ID: ${currentNodeId}`)  // el AI debe usar este ID como parent_id para hijos
         if ((node.types || []).length > 0) parts.push(`Tags: #${node.types!.join(' #')}`)
         if (node.body?.trim()) {
           const snippet = node.body.length > 3000 ? node.body.slice(0, 3000) + '…' : node.body
