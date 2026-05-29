@@ -39,45 +39,40 @@ export default function OnboardingWidget() {
 
   const SYSTEM_NAMES = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
 
-  // Snapshot of existing node IDs when onboarding first shows — used to detect NEW nodes
-  const existingNodeIdsRef = useRef<Set<string> | null>(null)
+  // Timestamp when onboarding starts — used to detect RECENTLY UPDATED tasks
+  const onboardingStartRef = useRef<number>(0)
 
-  // ── Step 0: auto-detect new node ─────────────────────────────────────────
+  // ── Step 0: auto-detect task created/updated since onboarding appeared ────
   useEffect(() => {
     if (step !== 0 || !visible) return
 
-    // Snapshot existing nodes once when step 0 becomes visible
-    if (!existingNodeIdsRef.current) {
-      existingNodeIdsRef.current = new Set(store.allActive().map(n => n.id))
+    // Record when onboarding became visible (once)
+    if (!onboardingStartRef.current) {
+      onboardingStartRef.current = Date.now()
     }
 
     const interval = setInterval(() => {
+      const since = onboardingStartRef.current - 2000 // 2s of margin
       const candidates = store.allActive().filter(n =>
         !n.isDiaryEntry &&
         !n.deletedAt &&
         n.text?.trim() &&
+        n.status !== null &&                          // must be a task
         !SYSTEM_NAMES.has(n.text || '') &&
         (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry) &&
-        !existingNodeIdsRef.current!.has(n.id)   // only NEW nodes
+        new Date(n.updatedAt ?? 0).getTime() >= since // updated since onboarding started
       )
       if (candidates.length === 0) return
-      // Pick the most recently updated new node
+
+      // Pick the most recently updated candidate
       const recent = candidates.sort((a, b) =>
         new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
       )[0]
 
-      // Only advance when the user has left the bullet (Enter → focus moves to sibling,
-      // or click elsewhere). If the contenteditable of this node is still focused, wait.
+      // Wait until user has left the bullet (Enter or click elsewhere)
       const nodeEl = document.querySelector(`[data-node-id="${recent.id}"] [contenteditable]`)
       const isStillEditing = nodeEl && (document.activeElement === nodeEl || nodeEl.contains(document.activeElement as Node))
-      if (isStillEditing) return   // user still typing — keep polling
-
-      // Only advance if the node was converted to a task (status !== null).
-      // If user exited without confirming the task ghost, show a "try again" hint.
-      if (recent.status === null) {
-        setStep0TryAgain(true)
-        return  // keep polling — user might try again in a new bullet
-      }
+      if (isStillEditing) return
 
       clearInterval(interval)
       setStep0TryAgain(false)
@@ -86,6 +81,26 @@ export default function OnboardingWidget() {
     }, 200)
 
     return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, visible])
+
+  // ── Step 0: detectar blur en bullet sin tarea → tryAgain ─────────────────
+  useEffect(() => {
+    if (step !== 0 || !visible) return
+    function handleBlur(e: FocusEvent) {
+      const el = e.target as HTMLElement
+      if (!el.isContentEditable) return
+      const nodeWrapper = el.closest('[data-node-id]')
+      if (!nodeWrapper) return
+      const nodeId = nodeWrapper.getAttribute('data-node-id')
+      if (!nodeId) return
+      const node = store.getNode(nodeId)
+      if (!node || !node.text?.trim()) return
+      if (SYSTEM_NAMES.has(node.text || '')) return
+      if (node.status === null) setStep0TryAgain(true)
+    }
+    document.addEventListener('blur', handleBlur, true)
+    return () => document.removeEventListener('blur', handleBlur, true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, visible])
 
