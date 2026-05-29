@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
 import { getToken, changePlanLifetime } from '../../api/client'
 
@@ -24,6 +25,7 @@ interface Plan {
 
 export default function PricingView() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const us = useUserStore()
   const isGuest = !getToken()
 
@@ -48,38 +50,38 @@ export default function PricingView() {
   const plans: Plan[] = [
     {
       id: 'free',
-      name: 'Gratis',
+      name: t('pricing.free'),
       price: '€0',
       features: [
-        { text: 'Outliner + diario', included: true },
-        { text: 'Búsqueda avanzada', included: true },
-        { text: 'Sync entre dispositivos', included: true },
-        { text: 'Mac + iOS + Web', included: true },
-        { text: 'IA y agentes', included: false },
-        { text: 'Vistas avanzadas', included: false },
-        { text: 'Sin límite de nodos', included: false },
+        { text: t('pricing.featureOutliner'), included: true },
+        { text: t('pricing.featureAdvancedSearch'), included: true },
+        { text: t('pricing.featureSync'), included: true },
+        { text: t('pricing.featurePlatforms'), included: true },
+        { text: t('pricing.featureAI'), included: false },
+        { text: t('pricing.featureAdvancedViews'), included: false },
+        { text: t('pricing.featureNodeLimit'), included: false },
       ],
-      ctaLabel: isFree && !isGuest ? 'Continuar gratis →' : 'Crear cuenta gratis',
+      ctaLabel: isFree && !isGuest ? t('pricing.ctaContinueFree') : t('pricing.ctaCreateFree'),
       isCurrent: false, // nunca marcado como "actual" en el onboarding
       onCta: isGuest ? () => navigate('/register') : () => navigate('/'),
     },
     {
       id: 'lifetime',
-      name: 'Pro · Lifetime',
-      price: '€49',
-      priceDetail: 'pago único · acceso de por vida',
-      badge: 'Mejor valor',
+      name: t('pricing.lifetime'),
+      price: t('pricing.lifetimePrice'),
+      priceDetail: t('pricing.planLifetimePriceDetail'),
+      badge: t('pricing.planLifetimeBadge'),
       isPopular: true,
       features: [
-        { text: 'Outliner + diario', included: true },
-        { text: 'Búsqueda avanzada', included: true },
-        { text: 'Sync completo entre dispositivos', included: true },
-        { text: 'Mac + iOS + Web', included: true },
-        { text: 'IA y agentes incluidos', included: true },
-        { text: 'Vistas avanzadas', included: true },
-        { text: 'Nodos ilimitados', included: true },
+        { text: t('pricing.featureOutliner'), included: true },
+        { text: t('pricing.featureAdvancedSearch'), included: true },
+        { text: t('pricing.featureSyncFull'), included: true },
+        { text: t('pricing.featurePlatforms'), included: true },
+        { text: t('pricing.featureAIIncluded'), included: true },
+        { text: t('pricing.featureAdvancedViews'), included: true },
+        { text: t('pricing.featureNodeLimit'), included: true },
       ],
-      ctaLabel: isLifetime ? 'Tu plan actual' : 'Comprar ahora',
+      ctaLabel: isLifetime ? t('pricing.ctaCurrentPlan') : t('pricing.ctaBuyNow'),
       isCurrent: isLifetime,
       onCta: isLifetime ? () => {} : handleLifetime,
     },
@@ -88,7 +90,7 @@ export default function PricingView() {
   return (
     <div className="pricing-view">
       <div className="pricing-header">
-        <h1 className="pricing-title">{isGuest ? 'Elige tu plan' : '¡Cuenta creada! Elige cómo continuar'}</h1>
+        <h1 className="pricing-title">{isGuest ? t('pricing.title') : t('pricing.titleAfterRegister')}</h1>
         <p className="pricing-subtitle">
           {isGuest
             ? 'Empieza gratis · Paga una vez y usa From para siempre'

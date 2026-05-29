@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
@@ -49,6 +50,7 @@ type SidebarTab = 'favorites' | 'panels'
 export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved, isGuest, onOpenSettings }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const s = useStore()
   const us = useUserStore()
 
@@ -140,7 +142,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
         <div className="fav-controls-bar">
           <button
             className={`fav-ctrl-btn ${favSort !== 'manual' ? 'active' : ''}`}
-            title="Ordenar"
+            title={t('sidebar.sortLabel')}
             onClick={() => setShowFavControls(v => !v)}
           >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -149,7 +151,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           </button>
           <button
             className={`fav-ctrl-btn ${favGroup !== 'none' ? 'active' : ''}`}
-            title="Agrupar"
+            title={t('sidebar.groupLabel')}
             onClick={() => setShowFavControls(v => !v)}
           >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -161,14 +163,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
         {showFavControls && (
           <div className="fav-controls-panel">
             <div className="fav-ctrl-section">
-              <span className="fav-ctrl-label">Ordenar</span>
-              {([['manual', 'Manual'], ['alpha', 'A–Z'], ['date', 'Recientes']] as [typeof favSort, string][]).map(([v, l]) => (
+              <span className="fav-ctrl-label">{t('sidebar.sortLabel')}</span>
+              {([['manual', t('sidebar.sortManual')], ['alpha', t('sidebar.sortAlpha')], ['date', t('sidebar.sortRecent')]] as [typeof favSort, string][]).map(([v, l]) => (
                 <button key={v} className={`fav-ctrl-opt ${favSort === v ? 'active' : ''}`} onClick={() => setFavSortP(v)}>{l}</button>
               ))}
             </div>
             <div className="fav-ctrl-section">
-              <span className="fav-ctrl-label">Agrupar</span>
-              {([['none', 'Ninguno'], ['tag', 'Tag'], ['type', 'Tipo']] as [typeof favGroup, string][]).map(([v, l]) => (
+              <span className="fav-ctrl-label">{t('sidebar.groupLabel')}</span>
+              {([['none', t('sidebar.groupNone')], ['tag', t('sidebar.groupTag')], ['type', t('sidebar.groupType')]] as [typeof favGroup, string][]).map(([v, l]) => (
                 <button key={v} className={`fav-ctrl-opt ${favGroup === v ? 'active' : ''}`} onClick={() => setFavGroupP(v)}>{l}</button>
               ))}
             </div>
@@ -205,15 +207,15 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
                   }}
                   onContextMenu={e => {
                     e.preventDefault()
-                    if (window.confirm(`¿Quitar "${node.text || 'Sin título'}" de favoritos?`)) {
+                    if (window.confirm(`¿Quitar "${node.text || t('common.noTitle')}" de favoritos?`)) {
                       handleRemoveFavorite(node.id, e)
                     }
                   }}
-                  title="Click derecho → Quitar de favoritos · Arrastra una tarea aquí para moverla dentro"
+                  title={t('sidebar.removeFavoriteHint')}
                 >
                   <span style={{ fontSize: 12, flexShrink: 0 }}>{getNodeIcon(node)}</span>
                   <span style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {node.text || 'Sin título'}
+                    {node.text || t('common.noTitle')}
                   </span>
                 </div>
               ))}
@@ -223,7 +225,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           </>
         ) : (
           <div className="tree-empty" style={{ padding: '12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Fija una nota con 📌 para verla aquí
+            {t('sidebar.emptyFavorites')}
           </div>
         )}
       </div>
@@ -242,8 +244,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     return (
       <div className="sidebar-tab-content">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 12px 8px' }}>
-          <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Paneles</span>
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title="Crea paneles desde ⌘K">⌘K</span>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('sidebar.panelsHeader')}</span>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }} title={t('sidebar.createPanelsFromCmd')}>⌘K</span>
         </div>
         {allPanels.map(panel => {
           const isDefault = panel.id === '__today_tasks__'
@@ -267,7 +269,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
                 <button
                   style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '0 4px', fontSize: 14 }}
                   onClick={e => { e.stopPropagation(); handleDeletePanel(panel.id) }}
-                  title="Eliminar panel"
+                  title={t('sidebar.deletePanel')}
                 >
                   ×
                 </button>
@@ -386,12 +388,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
               onClick={e => e.stopPropagation()}
             />
           ) : (
-            <span className="wf-qa-item-name">{node.text || 'Sin título'}</span>
+            <span className="wf-qa-item-name">{node.text || t('common.noTitle')}</span>
           )}
           <button
             className="wf-qa-item-del"
             onClick={e => handleDeleteAtajoNode(nodeId, e)}
-            title="Quitar atajo"
+            title={t('sidebar.removeShortcut')}
           >×</button>
         </div>
         {hasChildren && !isCollapsed && (
@@ -410,12 +412,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     return (
       <div className="sidebar-tab-content wf-quick-access">
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
-          <span className="wf-qa-section-label">Paneles</span>
+          <span className="wf-qa-section-label">{t('sidebar.panelsHeader')}</span>
           {atajosNode && (
             <button
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1, padding: '0 2px', opacity: 0.6 }}
               onClick={() => navigate(`/node/${atajosNode.id}`)}
-              title="Organizar paneles — abrir 📊 Paneles"
+              title={t('sidebar.organizeShortcuts')}
             >✎</button>
           )}
         </div>
@@ -455,37 +457,37 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
         <div className="sidebar-settings">
           {/* Mi cuenta — sin email ni header */}
           <div className="settings-section">
-            <SettingRow icon="👤" label="Mi cuenta" onClick={() => goSettings('cuenta')} />
+            <SettingRow icon="👤" label={t('sidebar.myAccount')} onClick={() => goSettings('cuenta')} />
             {showUpgrade && (
-              <SettingRow icon="✨" label="Actualizar a Pro" onClick={() => navigate('/pricing')} badge="Free" />
+              <SettingRow icon="✨" label={t('sidebar.upgradeToPro')} onClick={() => navigate('/pricing')} badge="Free" />
             )}
           </div>
 
           {/* Integraciones */}
           <div className="settings-section">
-            <div className="settings-section-title">Integraciones</div>
-            <SettingRow icon="🤖" label="Claude (MCP)" onClick={() => goSettings('claude')} />
-            <SettingRow icon="📅" label="Google Calendar" onClick={() => goSettings('google')} />
-            <SettingRow icon="📤" label="Exportar datos" onClick={() => goSettings('exportar')} />
-            <SettingRow icon="🗑" label="Papelera" onClick={() => navigate('/trash')} />
+            <div className="settings-section-title">{t('sidebar.integrations')}</div>
+            <SettingRow icon="🤖" label={t('sidebar.claudeMCP')} onClick={() => goSettings('claude')} />
+            <SettingRow icon="📅" label={t('sidebar.googleCalendar')} onClick={() => goSettings('google')} />
+            <SettingRow icon="📤" label={t('sidebar.exportData')} onClick={() => goSettings('exportar')} />
+            <SettingRow icon="🗑" label={t('sidebar.trash')} onClick={() => navigate('/trash')} />
           </div>
 
           {/* Ajustes */}
           <div className="settings-section">
-            <div className="settings-section-title">Ajustes</div>
-            <SettingRow icon="🎨" label="Apariencia" onClick={() => goSettings('apariencia')} />
-            <SettingRow icon="📊" label="Estadísticas" onClick={() => goSettings('estadisticas')} />
+            <div className="settings-section-title">{t('sidebar.settings')}</div>
+            <SettingRow icon="🎨" label={t('sidebar.appearance')} onClick={() => goSettings('apariencia')} />
+            <SettingRow icon="📊" label={t('sidebar.statistics')} onClick={() => goSettings('estadisticas')} />
           </div>
 
           {/* Ayuda */}
           <div className="settings-section">
             <div className="settings-section-title">Ayuda</div>
-            <SettingRow icon="📖" label="Manual de uso" onClick={() => window.open('https://getfrom.app/docs/', '_blank')} />
-            <SettingRow icon="⌨" label="Atajos de teclado" onClick={() => {
+            <SettingRow icon="📖" label={t('sidebar.userManual')} onClick={() => window.open('https://getfrom.app/docs/', '_blank')} />
+            <SettingRow icon="⌨" label={t('sidebar.keyboardShortcuts')} onClick={() => {
               const event = new KeyboardEvent('keydown', { key: '?', bubbles: true })
               window.dispatchEvent(event)
             }} />
-            <SettingRow icon="💬" label="Soporte" onClick={() => window.open('mailto:hola@getfrom.app', '_blank')} />
+            <SettingRow icon="💬" label={t('sidebar.support')} onClick={() => window.open('mailto:hola@getfrom.app', '_blank')} />
           </div>
         </div>
       </div>
@@ -515,7 +517,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
         <div
           className="sidebar-left-edge-zone"
           onClick={onToggle}
-          title="Colapsar sidebar"
+          title={t('sidebar.collapseSidebar')}
         />
       )}
     </aside>

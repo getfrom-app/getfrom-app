@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
 import { useStore } from '../../store/nodeStore'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   onNewNote: () => void
@@ -39,6 +40,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
   const navigate = useNavigate()
   const location = useLocation()
   const { theme, setTheme } = useTheme()
+  const { t } = useTranslation()
   const s = useStore()
   const totalNodes = s.allActive().filter(n => !n.isDiaryEntry && !n.deletedAt).length
   const pendingTasks = s.pendingTasks().length
@@ -65,7 +67,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
       <button
         className="top-bar-home-pill"
         onClick={goHome}
-        title="Ir a hoy (Esc)"
+        title={t('topbar.goToToday')}
       >
         <span className="top-bar-home-icon">{getHourIcon()}</span>
         <span className="top-bar-shortcut">ESC</span>
@@ -104,7 +106,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={onCommandPalette}
-          title="Buscar y capturar (⌘K)"
+          title={t('topbar.searchAndCapture')}
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
@@ -115,7 +117,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={onNewNote}
-          title="Nueva nota"
+          title={t('topbar.newNote')}
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -125,7 +127,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={onNewTask}
-          title="Nueva tarea"
+          title={t('topbar.newTask')}
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -135,7 +137,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={onNewEvent}
-          title="Nuevo evento"
+          title={t('topbar.newEvent')}
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
@@ -146,7 +148,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
           <button
             className="top-bar-action"
             onClick={onVoiceCapture}
-            title="Captura de voz"
+            title={t('topbar.voiceCapture')}
           >
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
@@ -158,7 +160,7 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
         <button
           className="top-bar-action"
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Cambiar a modo claro (⌘⇧S para sidebar)' : 'Cambiar a modo oscuro (⌘⇧S para sidebar)'}
+          title={theme === 'dark' ? t('topbar.switchToLight') : t('topbar.switchToDark')}
         >
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>

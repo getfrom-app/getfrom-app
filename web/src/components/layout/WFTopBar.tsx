@@ -7,6 +7,7 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   onFilter: (text: string) => void
@@ -37,6 +38,7 @@ export default function WFTopBar({
   const location = useLocation()
   const s = useStore()
   const { theme, setTheme } = useTheme()
+  const { t } = useTranslation()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -54,7 +56,7 @@ export default function WFTopBar({
     const visited = new Set<string>()
     while (cur && !visited.has(cur.id)) {
       visited.add(cur.id)
-      fullPath.unshift({ label: cur.text || 'Sin título', id: cur.id })
+      fullPath.unshift({ label: cur.text || t('common.noTitle'), id: cur.id })
       if (!cur.parentId) break
       cur = s.getNode(cur.parentId) ?? undefined
     }
@@ -151,7 +153,7 @@ export default function WFTopBar({
       <div className="wf-topbar-spacer" />
 
       {/* ── Buscar — abre panel lateral ── */}
-      <button className="wf-topbar-btn" onClick={onToggleSearch} title="Buscar (⌘F)">
+      <button className="wf-topbar-btn" onClick={onToggleSearch} title={`${t('common.search')} (⌘F)`}>
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
         </svg>
@@ -160,7 +162,7 @@ export default function WFTopBar({
       {/* Hoy */}
       <button
         className="wf-topbar-btn"
-        title="Ir a la nota de hoy"
+        title={t('topbar.goToToday')}
         onClick={() => {
           const dayNode = ensureDayPath(new Date())
           navigate(`/node/${dayNode.id}`)
@@ -197,7 +199,7 @@ export default function WFTopBar({
       {/* Modo claro/oscuro */}
       <button
         className="wf-topbar-btn"
-        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        title={theme === 'dark' ? t('topbar.switchToLight') : t('topbar.switchToDark')}
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         style={{ fontSize: 13 }}
       >
@@ -218,10 +220,10 @@ export default function WFTopBar({
         {menuOpen && (
           <div className="wf-topbar-dropdown">
             <button className="wf-topbar-dropdown-item" onClick={() => { navigate('/trash'); setMenuOpen(false) }}>
-              <span>🗑</span> Papelera
+              <span>🗑</span> {t('sidebar.trash')}
             </button>
             <button className="wf-topbar-dropdown-item" onClick={() => { onOpenSettings(); setMenuOpen(false) }}>
-              <span>⚙️</span> Ajustes
+              <span>⚙️</span> {t('sidebar.settings')}
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>

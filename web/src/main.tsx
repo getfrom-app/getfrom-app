@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './styles/index.css'
 import { getStoredTheme, applyTheme, getStoredDensity, applyDensity, getStoredAccent, applyAccent } from './hooks/useTheme'
+import './i18n/config'
 
 // Apply all preferences immediately to avoid FOUC
 applyTheme(getStoredTheme())

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
@@ -18,6 +19,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const s = useStore()
   const us = useUserStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
@@ -81,9 +83,9 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
 
   // Etiqueta de sync
   const syncLabel = isSyncing
-    ? <><span className="footer-spinner" /> Sincronizando</>
+    ? <><span className="footer-spinner" /> {t('statusbar.syncing')}</>
     : showSaved
-      ? '✓ Guardado'
+      ? `✓ ${t('statusbar.saved')}`
       : null
 
   return (
@@ -93,16 +95,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       {isOnline ? (
         <span className="footer-badge footer-badge--online">
           <span className="footer-badge-dot" />
-          Conectado
+          {t('statusbar.connected')}
         </span>
       ) : (
         <button
           className="footer-badge footer-badge--offline footer-badge--btn"
           onClick={() => window.location.reload()}
-          title="Sin conexión — clic para reconectar"
+          title={t('statusbar.disconnected')}
         >
           <span className="footer-badge-dot" />
-          Sin conexión · Reconectar
+          {t('statusbar.disconnected')}
         </button>
       )}
 
@@ -127,7 +129,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
 
       {/* Nodos activos */}
       <span className="footer-item" title="Nodos en tu árbol">
-        {nodeCount.toLocaleString()} nodos
+        {nodeCount.toLocaleString()} {t('statusbar.nodeCountHint')}
       </span>
 
       {/* Sync — al lado de los nodos, solo cuando hay algo que mostrar */}

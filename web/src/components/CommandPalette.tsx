@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
 import { normalizeText } from '../utils/normalize'
@@ -153,6 +154,7 @@ function parseQuery(raw: string): ParsedQuery {
 export default function CommandPalette({ onClose }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const { showToast } = useToast()
   // Nodo actual si estamos en /node/:id
   const currentNodeId = (() => {
@@ -199,7 +201,7 @@ export default function CommandPalette({ onClose }: Props) {
       return [
         {
           id: 'quick-today',
-          label: 'Hoy',
+          label: t('common.today'),
           sublabel: todayLabel,
           type: 'wf-action',
           taskStatus: null,
@@ -208,7 +210,7 @@ export default function CommandPalette({ onClose }: Props) {
         },
         {
           id: 'quick-tomorrow',
-          label: 'Mañana',
+          label: t('common.tomorrow'),
           sublabel: tomorrowLabel,
           type: 'wf-action',
           taskStatus: null,
@@ -248,7 +250,7 @@ export default function CommandPalette({ onClose }: Props) {
       const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
       return [{
         id: 'quick-today',
-        label: 'Hoy — nota del día',
+        label: t('cmdpalette.todayNote'),
         sublabel: todayLabel,
         type: 'wf-action',
         taskStatus: null,
@@ -261,7 +263,7 @@ export default function CommandPalette({ onClose }: Props) {
       const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
       return [{
         id: 'quick-tomorrow',
-        label: 'Mañana — nota del día',
+        label: t('cmdpalette.tomorrowNote'),
         sublabel: label,
         type: 'wf-action',
         taskStatus: null,
@@ -364,7 +366,7 @@ export default function CommandPalette({ onClose }: Props) {
             const scData = getShortcutData(n.id)
             results.push({
               id: `atajo-${n.id}`,
-              label: n.text || 'Sin título',
+              label: n.text || t('common.noTitle'),
               sublabel: scData?.query !== undefined ? `Filtro: ${scData.query}` : scData?.nodeId ? 'Ir al nodo' : 'Atajo',
               type: 'wf-action' as const,
               taskStatus: null,
@@ -395,7 +397,7 @@ export default function CommandPalette({ onClose }: Props) {
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
       results.push({
         id: `note-${n.id}`,
-        label: n.text || 'Sin título',
+        label: n.text || t('common.noTitle'),
         sublabel: parentText,
         type: 'note' as const,
         taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
@@ -413,7 +415,7 @@ export default function CommandPalette({ onClose }: Props) {
     if (collapseTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
       results.unshift({
         id: 'wf-collapse-all',
-        label: 'Colapsar todo',
+        label: t('cmdpalette.collapseAll'),
         sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz',
         type: 'wf-action',
         taskStatus: null,
@@ -428,7 +430,7 @@ export default function CommandPalette({ onClose }: Props) {
     if (expandTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
       results.unshift({
         id: 'wf-expand-all',
-        label: 'Expandir todo',
+        label: t('cmdpalette.expandAll'),
         sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz',
         type: 'wf-action',
         taskStatus: null,
@@ -458,7 +460,7 @@ export default function CommandPalette({ onClose }: Props) {
     // "Guardar como panel" siempre al final cuando hay query
     results.push({
       id: 'panel-save',
-      label: `Guardar como panel`,
+      label: t('cmdpalette.saveAsPanel'),
       sublabel: `"${q}"`,
       type: 'panel-save',
       taskStatus: null,
@@ -471,7 +473,7 @@ export default function CommandPalette({ onClose }: Props) {
     })
 
     return results
-  }, [query, parsed, doCreate, navigate, onClose])
+  }, [query, parsed, doCreate, navigate, onClose, t])
 
   const items = buildItems()
 
@@ -507,11 +509,11 @@ export default function CommandPalette({ onClose }: Props) {
         {/* Modo: crear panel */}
         {creatingPanel ? (
           <div className="cmdpalette-panel-create">
-            <span className="cmdpalette-panel-create-label">Nombre del panel</span>
+            <span className="cmdpalette-panel-create-label">{t('cmdpalette.saveAsPanel')}</span>
             <input
               ref={panelNameRef}
               className="cmdpalette-panel-create-input"
-              placeholder={`Panel para "${query}"`}
+              placeholder={`${t('cmdpalette.panelNameLabel')} "${query}"`}
               value={panelName}
               onChange={e => setPanelName(e.target.value)}
               onKeyDown={e => {
@@ -520,8 +522,8 @@ export default function CommandPalette({ onClose }: Props) {
               }}
             />
             <div className="cmdpalette-panel-create-actions">
-              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>Guardar panel</button>
-              <button className="cmdpalette-panel-create-cancel" onClick={() => { setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }}>Cancelar</button>
+              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>{t('cmdpalette.savePanelButton')}</button>
+              <button className="cmdpalette-panel-create-cancel" onClick={() => { setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }}>{t('common.cancel')}</button>
             </div>
           </div>
         ) : (
@@ -533,7 +535,7 @@ export default function CommandPalette({ onClose }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder="Buscar... (# para tags, -t tarea, -e evento, -a bucle)"
+            placeholder={t('cmdpalette.searchPlaceholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -543,9 +545,9 @@ export default function CommandPalette({ onClose }: Props) {
 
         {showChips && (
           <div className="cmdpalette-chips">
-            {parsed.isTask && <span className="cmdpalette-chip">○ Tarea</span>}
-            {parsed.isEvent && <span className="cmdpalette-chip">📅 Evento</span>}
-                        {parsed.isFavorite && <span className="cmdpalette-chip">★ Favorito</span>}
+            {parsed.isTask && <span className="cmdpalette-chip">{t('cmdpalette.chipTask')}</span>}
+            {parsed.isEvent && <span className="cmdpalette-chip">{t('cmdpalette.chipEvent')}</span>}
+                        {parsed.isFavorite && <span className="cmdpalette-chip">{t('cmdpalette.chipFavorite')}</span>}
             {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>}
           </div>
         )}
@@ -554,7 +556,7 @@ export default function CommandPalette({ onClose }: Props) {
           <div ref={listRef} className="cmdpalette-results">
             {/* Sección label para tags */}
             {query.startsWith('#') && items[0]?.type === 'tag' && (
-              <div className="cmdpalette-section-label">Tags</div>
+              <div className="cmdpalette-section-label">{t('cmdpalette.tagsSectionLabel')}</div>
             )}
             {items.map((item, idx) => {
               const isPanelSave = item.type === 'panel-save'

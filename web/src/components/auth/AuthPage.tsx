@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { login, register, apiRequest, setTokens } from '../../api/client'
 
 // Google / Apple client IDs (web)
@@ -65,6 +66,7 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const locationState = location.state as { message?: string } | null
@@ -100,7 +102,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       setTokens(data.accessToken, data.refreshToken)
       navigate(mode === 'register' ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error con Google')
+      setError(err instanceof Error ? err.message : t('auth.errorGoogleUnavailable'))
     } finally {
       setGoogleLoading(false)
     }
@@ -130,7 +132,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       return
     }
     if (!GOOGLE_WEB_CLIENT_ID || !window.google?.accounts?.id) {
-      setError('Google Sign-In no está disponible')
+      setError(t('auth.errorGoogleUnavailable'))
       return
     }
     window.google.accounts.id.prompt()
@@ -162,7 +164,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       return
     }
     if (!APPLE_WEB_SERVICE_ID || !window.AppleID?.auth) {
-      setError('Apple Sign-In no está disponible')
+      setError(t('auth.errorAppleUnavailable'))
       return
     }
     setAppleLoading(true)
@@ -186,7 +188,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         // User cancelled Apple sign-in — no mostrar error
         return
       }
-      setError(err instanceof Error ? err.message : 'Error con Apple')
+      setError(err instanceof Error ? err.message : t('auth.errorAppleUnavailable'))
     } finally {
       setAppleLoading(false)
     }
@@ -209,8 +211,8 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       }
       navigate('/', { replace: true })
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido'
-      setError(msg === 'UNAUTHORIZED' ? 'Email o contraseña incorrectos' : msg)
+      const msg = err instanceof Error ? err.message : t('auth.errorUnknown')
+      setError(msg === 'UNAUTHORIZED' ? t('auth.errorInvalidCredentials') : msg)
     } finally {
       setLoading(false)
     }
@@ -230,11 +232,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
           <span>From</span>
         </div>
 
-        <h1>{mode === 'login' ? 'Bienvenido' : 'Crear cuenta gratis'}</h1>
+        <h1>{mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}</h1>
         <p className="auth-subtitle">
           {mode === 'login'
-            ? 'Inicia sesión para continuar'
-            : 'Sin tarjeta de crédito · Listo en 30 segundos'}
+            ? t('auth.loginSubtitle')
+            : t('auth.registerSubtitle')}
         </p>
 
         {locationState?.message && (
@@ -258,7 +260,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                   <path fill="none" d="M0 0h48v48H0z"/>
                 </svg>
-                {googleLoading ? 'Conectando...' : 'Continuar con Google'}
+                {googleLoading ? t('auth.connecting') : t('auth.continueWithGoogle')}
               </button>
             )}
 
@@ -272,13 +274,13 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 <svg width="17" height="20" viewBox="0 0 814 1000" fill="currentColor">
                   <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.1-49 190.5-49 30.1 0 108.2 2.6 168.1 80.1zm-191.5-57.8c-3.9-19.4-11.6-51.9-33.2-81.3-21.1-27.9-53.2-48.3-86.4-48.3-.6 0-1.3 0-1.9.1 2.4 23.5 11.9 56 33.8 85.1 22.6 30.6 57.8 52.1 87.7 44.4z"/>
                 </svg>
-                {appleLoading ? 'Conectando...' : 'Continuar con Apple'}
+                {appleLoading ? t('auth.connecting') : t('auth.continueWithApple')}
               </button>
             )}
 
             {(showGoogle || showApple) && (
               <div className="social-divider">
-                <span>o continúa con email</span>
+                <span>{t('auth.orContinueWithEmail')}</span>
               </div>
             )}
           </div>
@@ -287,20 +289,20 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         {/* ── Email/password form ── */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('auth.emailLabel')}</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="tu@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               autoComplete="email"
               required
             />
           </div>
 
           <div className="form-field">
-            <label htmlFor="password">Contraseña</label>
+            <label htmlFor="password">{t('auth.passwordLabel')}</label>
             <input
               id="password"
               type="password"
@@ -315,7 +317,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
           {error && <div className="auth-error">{error}</div>}
 
           <button type="submit" className="btn-primary" disabled={loading || googleLoading || appleLoading}>
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+            {loading ? t('auth.loading') : mode === 'login' ? t('auth.loginButton') : t('auth.registerButton')}
           </button>
 
           {mode === 'login' && (
@@ -325,21 +327,21 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 className="link-btn"
                 onClick={() => navigate('/forgot-password')}
               >
-                ¿Olvidaste tu contraseña?
+                {t('auth.forgotPasswordLink')}
               </button>
             </p>
           )}
         </form>
 
         <p className="auth-toggle">
-          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.alreadyAccount')}
           {' '}
           <button
             type="button"
             className="link-btn"
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
           >
-            {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
+            {mode === 'login' ? t('auth.signUpLink') : t('auth.signInLink')}
           </button>
         </p>
       </div>
