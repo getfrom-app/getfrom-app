@@ -581,12 +581,22 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
           </div>
         )}
         {msg.undoBundle && (msg.undoBundle.createdIds.length > 0 || msg.undoBundle.restoredNodes.length > 0) && (
-          <button
-            className="magic-undo-btn"
-            onClick={() => aiChatStore.undoAction(msg.id)}
-          >
-            ↩ Deshacer
-          </button>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button
+              className="magic-undo-btn"
+              onClick={() => aiChatStore.undoAction(msg.id)}
+            >
+              ↩ Deshacer
+            </button>
+            {msg.undoBundle.userMsgContent && (
+              <button
+                className="magic-undo-btn"
+                onClick={() => aiChatStore.retryAction(msg.id)}
+              >
+                ↻ Hazlo de nuevo
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

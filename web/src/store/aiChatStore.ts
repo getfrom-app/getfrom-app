@@ -30,6 +30,8 @@ export interface UndoBundle {
     prevTypes: string[]
     prevExtraData: string
   }>
+  userMsgContent?: string     // mensaje del usuario para "Hazlo de nuevo"
+  currentNodeId?: string      // contexto del nodo para reenviar
 }
 
 export interface ChatMessage {
@@ -260,7 +262,14 @@ class AIChatStore {
       // Escrituras → ejecutar inmediatamente y registrar bundle de undo.
       if (writeActions.length > 0) {
         const writeResults: ExecutedAction[] = []
-        const undoBundle: UndoBundle = { createdIds: [], restoredNodes: [] }
+        // Guardar el mensaje del usuario para "Hazlo de nuevo"
+        const lastUserMsg = [...this.messages].reverse().find(m => m.role === 'user')
+        const undoBundle: UndoBundle = {
+          createdIds: [],
+          restoredNodes: [],
+          userMsgContent: lastUserMsg?.content,
+          currentNodeId,
+        }
         for (const a of writeActions) {
           // Snapshot antes de update_node (para poder deshacer)
           if (a.action === 'update_node' && a.id) {
@@ -420,6 +429,35 @@ class AIChatStore {
     const idx = this.messages.findIndex(m => m.id === msgId)
     if (idx >= 0) this.messages[idx] = { ...this.messages[idx], undoBundle: undefined }
     this.notify()
+  }
+
+  /** Deshace las acciones del turno y reenvía el mismo mensaje del usuario */
+  async retryAction(msgId: string) {
+    const msg = this.messages.find(m => m.id === msgId)
+    if (!msg?.undoBundle) return
+    const { userMsgContent, currentNodeId } = msg.undoBundle
+
+    // 1. Deshacer las acciones
+    this.undoAction(msgId)
+
+    // 2. Eliminar el mensaje del asistente (y el del usuario si es el último)
+    const msgIdx = this.messages.findIndex(m => m.id === msgId)
+    if (msgIdx >= 0) {
+      const prevIdx = msgIdx - 1
+      // Eliminar asistente
+      this.messages.splice(msgIdx, 1)
+      // Eliminar el usuario previo si corresponde al mismo turno
+      if (prevIdx >= 0 && this.messages[prevIdx]?.role === 'user' &&
+          this.messages[prevIdx]?.content === userMsgContent) {
+        this.messages.splice(prevIdx, 1)
+      }
+    }
+    this.notify()
+
+    // 3. Reenviar el mensaje del usuario para un nuevo intento
+    if (userMsgContent) {
+      await this.send(userMsgContent, currentNodeId)
+    }
   }
 
   private async maybeAutoRenameSession() {
