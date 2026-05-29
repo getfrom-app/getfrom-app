@@ -332,11 +332,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
         onClick={mode === 'modal' ? (e => e.stopPropagation()) : undefined}
       >
-        {/* ── Header ── */}
-        <div className="magic-chat-header">
-          <span className="magic-chat-logo">✨</span>
-          <span className="magic-chat-title">From AI</span>
-          <div style={{ flex: 1 }} />
+        {/* ── Header mínimo: solo acciones (sin logo ni título) ── */}
+        <div className="magic-chat-header" style={{ justifyContent: 'flex-end', minHeight: 36, padding: '6px 10px' }}>
           {hasExpanded && (
             <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title="Nueva conversación">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -360,11 +357,10 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           </div>
         </div>
 
-        {/* ── Estado vacío ── */}
+        {/* ── Estado vacío: título grande centrado ── */}
         {isCompact && (
           <div className="magic-chat-empty">
-            <div className="magic-chat-empty-glyph">✨</div>
-            <div className="magic-chat-empty-title">¿En qué te ayudo?</div>
+            <div className="magic-chat-empty-title" style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, marginBottom: 10 }}>¿En qué te ayudo?</div>
             <div className="magic-chat-empty-desc">
               Cuéntame qué necesitas. Creo notas, busco tareas, organizo tu agenda... lo que me pidas.
             </div>
@@ -417,25 +413,27 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           </div>
         )}
 
-        {/* ── Input ── */}
+        {/* ── Input minimalista estilo cursor de nodo ── */}
         <div className="magic-chat-input-wrap">
-          <textarea
-            ref={taRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={onTextareaKey}
-            placeholder={
-              isRecording
-                ? 'Transcribiendo…'
-                : isCompact
-                  ? 'Escríbeme o mantén R para hablar…'
-                  : 'Continúa la conversación…'
-            }
-            className="magic-chat-textarea"
-            rows={isCompact ? 2 : 3}
-          />
+          <div className="magic-chat-node-input">
+            <span className="magic-chat-node-cursor">›</span>
+            <textarea
+              ref={taRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={onTextareaKey}
+              placeholder={
+                isRecording
+                  ? 'Transcribiendo…'
+                  : isCompact
+                    ? 'Escríbeme o mantén R para hablar…'
+                    : 'Continúa la conversación…'
+              }
+              className="magic-chat-textarea magic-chat-textarea--bare"
+              rows={1}
+            />
+          </div>
           <div className="magic-chat-actions">
-            {/* Micrófono: clic o mousedown para grabar */}
             <button
               className={`magic-chat-mic ${isRecording ? 'magic-chat-mic--on' : ''}`}
               onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
@@ -452,8 +450,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
                   </svg>
               }
             </button>
-
-            {/* Enviar */}
             <button
               className="magic-chat-send"
               onClick={() => handleSend(input)}
@@ -465,8 +461,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
               </svg>
             </button>
           </div>
-
-          {/* Hint de teclado */}
           <div className="magic-chat-kbd-hint">
             <span>R grabar</span>
             <span className="magic-chat-kbd-sep">·</span>

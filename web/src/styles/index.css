@@ -11195,6 +11195,41 @@ a:focus-visible {
   border-color: var(--border-focus);
 }
 
+/* Input minimalista estilo cursor de nodo */
+.magic-chat-node-input {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 2px 0 6px;
+}
+.magic-chat-node-cursor {
+  font-size: 18px;
+  color: var(--accent);
+  line-height: 1.4;
+  flex-shrink: 0;
+  margin-top: 1px;
+  user-select: none;
+}
+.magic-chat-textarea--bare {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  flex: 1;
+  min-height: 22px;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.5;
+  caret-color: var(--accent);
+}
+.magic-chat-textarea--bare::placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
 .magic-chat-actions {
   display: flex;
   justify-content: flex-end;

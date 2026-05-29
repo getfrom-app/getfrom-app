@@ -150,10 +150,9 @@ export default function MainLayout() {
     window.addEventListener('mouseup', onUp)
   }
 
-  // Hover en la franja derecha → abrir Magic con delay
+  // Hover en la franja derecha → toggle Magic con delay
   function handleEdgeEnter() {
-    if (showAIChat) return
-    magicHoverTimerRef.current = setTimeout(() => setShowAIChat(true), 180)
+    magicHoverTimerRef.current = setTimeout(() => setShowAIChat(v => !v), 200)
   }
   function handleEdgeLeave() {
     if (magicHoverTimerRef.current) clearTimeout(magicHoverTimerRef.current)
@@ -685,7 +684,10 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
-      <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
+      {/* Botón ✦ siempre visible, encima del panel */}
+      <div style={{ position: 'fixed', bottom: 48, right: showAIChat && currentNodeIdFromRoute ? magicPanelW + 12 : 16, zIndex: 3000, transition: 'right 0.28s cubic-bezier(0.4,0,0.2,1)' }}>
+        <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
+      </div>
       {showAIChat && !currentNodeIdFromRoute && (
         <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       )}
