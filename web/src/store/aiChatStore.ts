@@ -259,6 +259,11 @@ class AIChatStore {
 
     this.isStreaming = false
     this.notify()
+    // Si no quedaron acciones pendientes, las escrituras se ejecutaron directamente
+    // → notificar al onboarding que Magic completó su acción
+    if (!this.pendingActions) {
+      window.dispatchEvent(new CustomEvent('from:onboarding-magic-confirmed'))
+    }
     await this.maybeAutoRenameSession()
   }
 

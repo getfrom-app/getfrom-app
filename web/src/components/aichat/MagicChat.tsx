@@ -172,6 +172,12 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       sendBtn.classList.add('onboarding-pulse-send')
       setTimeout(() => sendBtn.classList.remove('onboarding-pulse-send'), 3000)
     }
+    // Onboarding: resetear sesión de Magic para evitar respuestas de sesiones previas
+    function onOnboardingResetMagic() {
+      chat.startNewSession()
+      setHasExpanded(false)
+      setInput('')
+    }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('magic-chat:record-start', onRecordStart)
@@ -179,6 +185,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     window.addEventListener('magic-chat:prefill',      onPrefill)
     window.addEventListener('from:onboarding-prefill',         onOnboardingPrefill)
     window.addEventListener('from:onboarding-highlight-send',  onOnboardingHighlightSend)
+    window.addEventListener('from:onboarding-reset-magic',     onOnboardingResetMagic)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('magic-chat:record-start', onRecordStart)
@@ -186,6 +193,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       window.removeEventListener('magic-chat:prefill',      onPrefill)
       window.removeEventListener('from:onboarding-prefill',        onOnboardingPrefill)
       window.removeEventListener('from:onboarding-highlight-send', onOnboardingHighlightSend)
+      window.removeEventListener('from:onboarding-reset-magic',    onOnboardingResetMagic)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose])

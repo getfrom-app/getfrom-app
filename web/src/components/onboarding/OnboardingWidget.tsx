@@ -192,16 +192,20 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // ── Step 5: prefill MagicChat and highlight send ──────────────────────────
+  // ── Step 5: resetear sesión de Magic + prefill ────────────────────────────
   useEffect(() => {
     if (step !== 5) return
     const timer = setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('from:onboarding-prefill', {
-        detail: { text: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From' },
-      }))
+      // Resetear la sesión para evitar respuestas de sesiones anteriores
+      window.dispatchEvent(new Event('from:onboarding-reset-magic'))
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('from:onboarding-highlight-send', {}))
-      }, 200)
+        window.dispatchEvent(new CustomEvent('from:onboarding-prefill', {
+          detail: { text: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From' },
+        }))
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('from:onboarding-highlight-send', {}))
+        }, 200)
+      }, 100)
     }, 600)
     return () => clearTimeout(timer)
   }, [step])
