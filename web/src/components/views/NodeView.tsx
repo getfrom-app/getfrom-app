@@ -223,6 +223,11 @@ export default function NodeView() {
     if (id) recordRecentNode(id)
   }, [id])
 
+  // Al entrar a un nodo concreto, limpiar el filtro global — igual que Workflowy
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('wf:clear-filter'))
+  }, [id])
+
   // Sync bodyValue when node changes (e.g. external update)
   useEffect(() => {
     if (node && !bodyEditing) {
