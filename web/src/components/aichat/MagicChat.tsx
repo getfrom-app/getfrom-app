@@ -26,6 +26,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [isRecording, setIsRecording] = useState(false)
+  // nodeId override desde el onboarding — prevalece sobre currentNodeId del prop
+  const onboardingNodeIdRef = useRef<string | undefined>(undefined)
 
   // Refs para evitar closures stale
   const inputRef        = useRef('')
@@ -158,10 +160,12 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     }
     // Onboarding prefill (from:onboarding-prefill)
     function onOnboardingPrefill(e: Event) {
-      const text = (e as CustomEvent<{ text: string }>).detail?.text
+      const detail = (e as CustomEvent<{ text: string; nodeId?: string }>).detail
+      const text = detail?.text
       if (text && taRef.current) {
         setInput(text)
         setHasExpanded(false) // keep compact so user sees the textarea
+        onboardingNodeIdRef.current = detail?.nodeId  // guardar nodeId override
         setTimeout(() => taRef.current?.focus(), 50)
       }
     }
@@ -320,7 +324,10 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       }
     }
 
-    chat.send(final, currentNodeId)
+    // Usar nodeId del onboarding si está disponible (prevalece sobre el prop del router)
+    const effectiveNodeId = onboardingNodeIdRef.current ?? currentNodeId
+    onboardingNodeIdRef.current = undefined  // consumir el override tras el envío
+    chat.send(final, effectiveNodeId)
   }
 
   function onTextareaKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
