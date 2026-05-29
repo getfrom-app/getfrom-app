@@ -6043,6 +6043,30 @@ mark.inline-highlight {
 }
 .emoji-btn:hover { background: var(--bg-hover); transform: scale(1.15); }
 
+/* Botón enlace inline del nodo */
+.node-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+  vertical-align: middle;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.node-row:hover .node-link-btn,
+.node-row:focus-within .node-link-btn {
+  opacity: 1;
+}
+.node-link-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .node-inline-icon {
   font-size: 14px;
   flex-shrink: 0;

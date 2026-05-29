@@ -2425,10 +2425,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     try {
       const ed = JSON.parse(node.extraData || '{}')
       if (!ed._resource) return null
-      return { status: (ed._resourceStatus || 'pending') as string }
+      return { status: (ed._resourceStatus || 'pending') as string, url: ed._resourceUrl as string | undefined }
     } catch { return null }
   })()
   const isResourcePending = !!resourceData && resourceData.status === 'pending'
+  // URL navegable del nodo (recurso o campo resourceUrl)
+  const nodeUrl = resourceData?.url || node.resourceUrl || null
 
   // Auto-detect URL en texto del nodo inline → marca como recurso + unfurl
   useEffect(() => {
@@ -3174,6 +3176,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             )}
 
             {/* Estrella eliminada — usar /atajo, menú ··· o clic derecho */}
+
+            {/* Botón ↗ para abrir el enlace guardado en el nodo */}
+            {nodeUrl && !isEditing && (
+              <a
+                href={nodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="node-link-btn"
+                onClick={e => e.stopPropagation()}
+                title={nodeUrl}
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/>
+                  <path d="M10 2h4v4"/>
+                  <path d="M14 2L8 8"/>
+                </svg>
+              </a>
+            )}
           </div>
         )}
 
