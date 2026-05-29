@@ -274,3 +274,10 @@ Esta versión es una reescritura completa del producto. Nuevo modelo de datos, n
 
 Archivadas. Arquitectura diferente, no compatible con v9.0.
 Soporte: [getfrom.app/support](https://getfrom.app/support)
+
+### set_filter — Magic filtra el árbol sin texto (Web · Servidor)
+- Magic reconoce peticiones de filtrado: "tareas de hoy", "archivos", "pendientes"...
+- Aplica el filtro visual en el árbol en lugar de responder con texto
+- Navega a raíz automáticamente para que el resultado sea visible
+- Queries: tarea/nota/evento/archivo/enlace + pendiente/hecho + hoy/semana/mes/pasado/futuro
+
