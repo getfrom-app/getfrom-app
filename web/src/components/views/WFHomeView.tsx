@@ -102,6 +102,7 @@ export default function WFHomeView({ filterText }: Props) {
           filterMatchIds={filterResult?.matchIds}
           filterAncestorIds={filterResult?.ancestorIds}
           excludeDiaryEntries
+          disableLocalFilter
         />
       </div>
     </div>
