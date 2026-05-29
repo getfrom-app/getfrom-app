@@ -64,10 +64,17 @@ export default function OnboardingWidget() {
       const recent = candidates.sort((a, b) =>
         new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
       )[0]
+
+      // Only advance when the user has left the bullet (Enter → focus moves to sibling,
+      // or click elsewhere). If the contenteditable of this node is still focused, wait.
+      const nodeEl = document.querySelector(`[data-node-id="${recent.id}"] [contenteditable]`)
+      const isStillEditing = nodeEl && (document.activeElement === nodeEl || nodeEl.contains(document.activeElement as Node))
+      if (isStillEditing) return   // user still typing — keep polling
+
       clearInterval(interval)
       setDemoNodeId(recent.id)
       next()
-    }, 400)
+    }, 200)
 
     return () => clearInterval(interval)
   // eslint-disable-next-line react-hooks/exhaustive-deps
