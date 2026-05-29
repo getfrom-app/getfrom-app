@@ -214,6 +214,9 @@ export default function WFTopBar({
         setFilterOpen(false)
         setFilterExpanded(false)
         setFilterCategory(null)
+        onFilter('')
+        clearAllChips()
+        if (filterRef.current) filterRef.current.value = ''
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -250,10 +253,12 @@ export default function WFTopBar({
       }
       if (e.key === 'Escape' && (filterOpen || filterExpanded)) {
         onFilter('')
+        clearAllChips()
         setFilterOpen(false)
         setFilterExpanded(false)
         setFilterCategory(null)
         filterRef.current?.blur()
+        if (filterRef.current) filterRef.current.value = ''
       }
     }
     window.addEventListener('keydown', handleKey)
@@ -420,9 +425,11 @@ export default function WFTopBar({
                 onMouseDown={e => {
                   e.preventDefault()
                   onFilter('')
+                  clearAllChips()
                   setFilterExpanded(false)
                   setFilterOpen(false)
                   filterRef.current?.blur()
+                  if (filterRef.current) filterRef.current.value = ''
                 }}
               >×</button>
             </>
