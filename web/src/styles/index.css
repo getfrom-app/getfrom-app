@@ -11492,7 +11492,7 @@ textarea:focus-visible,
 }
 .search-panel-clear:hover { color: var(--text-primary); }
 .search-panel-chips {
-  padding: 20px 4px 12px; /* top 20px igual que magic-chat-empty; left 4px + chip padding 8px = 12px total */
+  padding: 32px 4px 12px; /* top 32px alineado con primer nodo del outliner; left 4px + chip 8px = 12px total */
   display: flex;
   flex-direction: column;
   gap: 2px;
