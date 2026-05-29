@@ -1292,14 +1292,38 @@ export default function NodeView() {
       e.dataTransfer.dropEffect = 'copy'
     }
   }
+  async function uploadFileToNode(file: File, targetNodeId: string) {
+    setUploading(true)
+    try {
+      const { uploadUrl, key, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
+      await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
+      setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
+      const resourceType = file.type.startsWith('image/') ? 'image' : file.type === 'application/pdf' ? 'pdf' : 'file'
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(store.getNode(targetNodeId)?.extraData || '{}') } catch {}
+      ed._resource = true; ed._resourceUrl = publicUrl; ed._resourceType = resourceType; ed._resourceKey = key
+      store.updateNode(targetNodeId, { extraData: JSON.stringify(ed), isResource: true })
+    } catch { setAttachmentsAvailable(false) }
+    finally { setUploading(false) }
+  }
+
   function handleViewDrop(e: React.DragEvent) {
-    if (!isLoggedIn) return
+    if (!isLoggedIn || !node) return
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files)
-    files.forEach(file => {
-      const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>
-      handleFileUpload(fakeEvent)
-    })
+    if (files.length === 0) return
+    if (files.length === 1) {
+      // Un solo archivo: va al nodo actual
+      uploadFileToNode(files[0], node.id)
+    } else {
+      // Varios archivos: crear un nodo hijo por cada uno
+      const siblings = store.children(node.id)
+      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
+      files.forEach(async (file, i) => {
+        const child = store.createNode({ text: file.name.replace(/\.[^.]+$/, ''), parentId: node!.id, siblingOrder: maxOrder + i + 1 })
+        await uploadFileToNode(file, child.id)
+      })
+    }
   }
 
   return (

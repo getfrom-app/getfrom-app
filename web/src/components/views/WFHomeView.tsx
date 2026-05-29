@@ -2,13 +2,14 @@
  * WFHomeView — Vista raíz estilo Workflowy
  * Sin filtro: árbol normal. Con filtro: vista árbol / lista plana / calendario.
  */
-import { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
+import { getPresignedUpload } from '../../api/client'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -62,10 +63,58 @@ export default function WFHomeView({ filterText }: Props) {
   const isFiltering = !!filterText?.trim()
   const matchCount = filterResult?.matchIds.size ?? 0
 
+  // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const uploadFileAsNode = useCallback(async (file: File, parentId: string | null = null) => {
+    // Crear nodo con el nombre del archivo
+    const siblings = store.children(parentId)
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
+    const newNode = store.createNode({
+      text: file.name.replace(/\.[^.]+$/, ''), // nombre sin extensión
+      parentId,
+      siblingOrder: maxOrder + 1,
+    })
+    try {
+      const { uploadUrl, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
+      await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
+      const resourceType = file.type.startsWith('image/') ? 'image'
+        : file.type === 'application/pdf' ? 'pdf' : 'file'
+      store.updateNode(newNode.id, {
+        isResource: true,
+        extraData: JSON.stringify({ _resource: true, _resourceUrl: publicUrl, _resourceType: resourceType }),
+      })
+    } catch (e) {
+      console.error('Upload failed', e)
+    }
+  }, [])
+
+  function handleDragOver(e: React.DragEvent) {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+      setIsDragOver(true)
+    }
+  }
+  function handleDragLeave() { setIsDragOver(false) }
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setIsDragOver(false)
+    if (!store.isLoaded) return
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+    files.forEach(file => uploadFileAsNode(file, null))
+  }
+
   if (!storeReady) return <div className="wf-home-view" />
 
   return (
-    <div className="wf-home-view">
+    <div
+      className={`wf-home-view${isDragOver ? ' wf-home-view--drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Barra de resultados con selector de vista */}
       {filterResult?.hasFilter && matchCount === 0 && (
         <div className="wf-filter-empty">

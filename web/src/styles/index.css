@@ -9925,6 +9925,13 @@ a:focus-visible {
   width: 100%;
   min-height: 100%;
   box-sizing: border-box;
+  transition: background 0.15s;
+}
+.wf-home-view--drag-over {
+  background: rgba(139, 92, 246, 0.04);
+  outline: 2px dashed rgba(139, 92, 246, 0.3);
+  outline-offset: -12px;
+  border-radius: 8px;
 }
 
 /* ── Ocultar panel derecho en WF ─────────────────────────────────────────── */
