@@ -224,8 +224,36 @@ export function applyWFFilter(
 
   const matchIds = new Set<string>()
 
+  // Detectar IDs de carpetas de sistema (Agentes, Plantillas) para excluirlas
+  // de resultados cuando el filtro es por estado/fecha (no texto libre)
+  const SYSTEM_FOLDER_TEXTS = new Set(['🤖 Agentes', '📋 Plantillas'])
+  const systemFolderIds = new Set<string>()
+  for (const n of nodes.values()) {
+    if (!n.deletedAt && !n.parentId && SYSTEM_FOLDER_TEXTS.has(n.text || '')) {
+      systemFolderIds.add(n.id)
+    }
+  }
+
+  // Precalcular si un nodo es descendiente de una carpeta de sistema
+  function isSystemDescendant(nodeId: string): boolean {
+    let cur = nodes.get(nodeId)
+    const visited = new Set<string>()
+    while (cur?.parentId && !visited.has(cur.parentId)) {
+      visited.add(cur.parentId)
+      if (systemFolderIds.has(cur.parentId)) return true
+      cur = nodes.get(cur.parentId)
+    }
+    return false
+  }
+
+  // Determinar si la query es semántica (usa operadores de estado/fecha)
+  // En ese caso excluir nodos de sistema
+  const isSemantic = isSmartQuery(text)
+
   for (const node of nodes.values()) {
     if (node.deletedAt) continue
+    // Excluir carpetas de sistema y sus descendientes en búsquedas semánticas
+    if (isSemantic && (systemFolderIds.has(node.id) || isSystemDescendant(node.id))) continue
 
     // Un nodo coincide si CUALQUIER grupo OR coincide (OR entre grupos)
     // Un grupo coincide si TODOS sus tokens coinciden (AND dentro de grupo)
