@@ -84,6 +84,77 @@ export default function WFTopBar({
   const [filterCategory, setFilterCategory] = useState<FilterCategory>(null)
   const [interpreting, setInterpreting] = useState(false)
   const filterRef = useRef<HTMLInputElement>(null)
+
+  // ── Selección estructurada de chips ──────────────────────────────────────
+  // Cada grupo usa OR internamente; entre grupos se usa AND.
+  // Ej: tipos=[tarea] tiempos=[hoy,pasado] estados=[pendiente]
+  //   → "(tarea y hoy y pendiente) o (tarea y pasado y pendiente)"
+  const [chipTypes,    setChipTypes]    = useState<Set<string>>(new Set())
+  const [chipTimes,    setChipTimes]    = useState<Set<string>>(new Set())
+  const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
+  const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
+
+  function toggleChip(query: string, group: 'type' | 'time' | 'status' | 'context') {
+    const setter = { type: setChipTypes, time: setChipTimes, status: setChipStatuses, context: setChipContexts }[group]
+    setter(prev => {
+      const next = new Set(prev)
+      next.has(query) ? next.delete(query) : next.add(query)
+      return next
+    })
+  }
+
+  // Recalcular filterText cuando cambian los chips
+  useEffect(() => {
+    const types    = [...chipTypes]
+    const times    = [...chipTimes]
+    const statuses = [...chipStatuses]
+    const contexts = [...chipContexts]
+
+    // Si no hay ningún chip activo, limpiar
+    if (!types.length && !times.length && !statuses.length && !contexts.length) {
+      // Solo limpiar si el texto actual venía de chips (no texto manual)
+      // Para simplificar: limpiar siempre cuando todos vacíos
+      onFilter('')
+      return
+    }
+
+    // Construir grupos: cada grupo es una lista de tokens en OR
+    // La combinación entre grupos es AND via producto cartesiano
+    const groups = [types, times, statuses, contexts].filter(g => g.length > 0)
+
+    // Producto cartesiano de los grupos → cada combinación es un AND
+    // Luego los combinamos con "o" (OR)
+    function cartesian(arrays: string[][]): string[][] {
+      return arrays.reduce<string[][]>(
+        (acc, arr) => acc.flatMap(combo => arr.map(item => [...combo, item])),
+        [[]]
+      )
+    }
+
+    const combos = cartesian(groups)
+    const query = combos.map(combo => combo.join(' y ')).join(' o ')
+    onFilter(query)
+    if (filterRef.current) filterRef.current.value = ''
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chipTypes, chipTimes, chipStatuses, chipContexts])
+
+  function clearAllChips() {
+    setChipTypes(new Set())
+    setChipTimes(new Set())
+    setChipStatuses(new Set())
+    setChipContexts(new Set())
+  }
+
+  function isChipSelectedInGroup(query: string) {
+    return chipTypes.has(query) || chipTimes.has(query) || chipStatuses.has(query) || chipContexts.has(query)
+  }
+
+  function getChipGroup(query: string): 'type' | 'time' | 'status' | 'context' {
+    if (TYPE_CHIPS.some(c => c.query === query)) return 'type'
+    if (TIME_CHIPS.some(c => c.query === query)) return 'time'
+    if (STATUS_CHIPS.some(c => c.query === query)) return 'status'
+    return 'context'
+  }
   const filterWrapRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -150,6 +221,7 @@ export default function WFTopBar({
       setFilterCategory(null)
       filterRef.current?.blur()
       if (filterRef.current) filterRef.current.value = ''
+      clearAllChips()
     }
     window.addEventListener('wf:clear-filter', handleClear)
     return () => window.removeEventListener('wf:clear-filter', handleClear)
@@ -349,36 +421,36 @@ export default function WFTopBar({
           )}
         </div>
 
-        {/* Chips flotantes bajo el buscador — agrupados */}
+        {/* Chips flotantes bajo el buscador — agrupados, multi-selección */}
         {isFilterExpanded && (
           <div className="wf-filter-chips-dropdown">
-            {/* Tipo */}
             {TYPE_CHIPS.map(c => (
-              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              <button key={c.query}
+                className={`wf-filter-chip ${isChipSelectedInGroup(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); toggleChip(c.query, 'type') }}
               >{c.label}</button>
             ))}
             <span className="wf-filter-chip-sep" />
-            {/* Tiempo */}
             {TIME_CHIPS.map(c => (
-              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              <button key={c.query}
+                className={`wf-filter-chip ${isChipSelectedInGroup(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); toggleChip(c.query, 'time') }}
               >{c.label}</button>
             ))}
             <span className="wf-filter-chip-sep" />
-            {/* Estado */}
             {STATUS_CHIPS.map(c => (
-              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              <button key={c.query}
+                className={`wf-filter-chip ${isChipSelectedInGroup(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); toggleChip(c.query, 'status') }}
               >{c.label}</button>
             ))}
-            {/* Contextos dinámicos */}
             {contextChips.length > 0 && (
               <>
                 <span className="wf-filter-chip-sep" />
                 {contextChips.map(c => (
-                  <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-                    onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+                  <button key={c.query}
+                    className={`wf-filter-chip ${isChipSelectedInGroup(c.query) ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); toggleChip(c.query, 'context') }}
                   >{c.label}</button>
                 ))}
               </>
