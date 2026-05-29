@@ -94,7 +94,6 @@ const TOKEN_SYNONYMS: Record<string, string> = {
   'task': 'tarea',
   'tasks': 'tarea',
   'acción': 'tarea',
-  'acciones': 'tarea',
   'accion': 'tarea',
   'acciones': 'tarea',
   'pendient': 'tarea',
