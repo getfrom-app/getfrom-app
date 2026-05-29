@@ -39,11 +39,14 @@ export default function OnboardingWidget() {
   // ── When user says "Lo escribí": find most recently created node ──────────
   function captureUserNode() {
     try {
-      // Find the most recently updated non-system, non-diary root-level node
+      // Find the most recently updated non-system, non-diary, non-empty root-level node.
+      // Exclude empty nodes — when user presses Enter to confirm a task, a blank sibling
+      // is created immediately after and would otherwise be picked as "most recent".
       const SYSTEM = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
       const candidates = store.allActive().filter(n =>
         !n.isDiaryEntry &&
         !n.deletedAt &&
+        n.text?.trim() &&            // ← excluir nodos vacíos
         !SYSTEM.has(n.text || '') &&
         (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry)
       )
@@ -59,9 +62,19 @@ export default function OnboardingWidget() {
     next()
   }
 
-  // ── Step 3: detect navigation into demo node ───────────────────────────────
+  // ── Step 3: detect navigation into demo node (react-router location + interval fallback) ──
   const step3IntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // React to router location changes first (faster than polling)
+  useEffect(() => {
+    if (step !== 3 || !demoNodeId) return
+    if (location.pathname.includes(demoNodeId)) {
+      advanceTo(4)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, step, demoNodeId])
+
+  // Fallback: interval poll for cases where location doesn't update
   useEffect(() => {
     if (step !== 3 || !demoNodeId) return
     step3IntervalRef.current = setInterval(() => {
