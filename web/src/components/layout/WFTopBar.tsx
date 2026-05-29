@@ -117,6 +117,20 @@ export default function WFTopBar({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // ── Limpiar filtro completo (texto + estado local) desde cualquier parte ──
+  useEffect(() => {
+    function handleClear() {
+      onFilter('')
+      setFilterOpen(false)
+      setFilterExpanded(false)
+      setFilterCategory(null)
+      filterRef.current?.blur()
+      if (filterRef.current) filterRef.current.value = ''
+    }
+    window.addEventListener('wf:clear-filter', handleClear)
+    return () => window.removeEventListener('wf:clear-filter', handleClear)
+  }, [onFilter])
+
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
