@@ -16,6 +16,7 @@ export default function OnboardingWidget() {
   const [animIn, setAnimIn]       = useState(false)
   const [step, setStep]           = useState(0)
   const [demoNodeId, setDemoNodeId] = useState<string | null>(null)
+  const [step0TryAgain, setStep0TryAgain] = useState(false)
   const location = useLocation()
 
   // ── Initial show logic ─────────────────────────────────────────────────────
@@ -71,7 +72,15 @@ export default function OnboardingWidget() {
       const isStillEditing = nodeEl && (document.activeElement === nodeEl || nodeEl.contains(document.activeElement as Node))
       if (isStillEditing) return   // user still typing — keep polling
 
+      // Only advance if the node was converted to a task (status !== null).
+      // If user exited without confirming the task ghost, show a "try again" hint.
+      if (recent.status === null) {
+        setStep0TryAgain(true)
+        return  // keep polling — user might try again in a new bullet
+      }
+
       clearInterval(interval)
+      setStep0TryAgain(false)
       setDemoNodeId(recent.id)
       next()
     }, 200)
@@ -201,7 +210,7 @@ export default function OnboardingWidget() {
         transition: 'opacity 0.3s ease, transform 0.3s ease',
       }}
     >
-      {step === 0 && <Step0 onClose={close} />}
+      {step === 0 && <Step0 tryAgain={step0TryAgain} onClose={close} />}
       {step === 1 && <Step1 onNext={next} onClose={close} />}
       {step === 2 && <Step2 onNext={next} onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
@@ -278,7 +287,7 @@ function AccentLine() {
 
 // ── Step 0 — Welcome ───────────────────────────────────────────────────────
 
-function Step0({ onClose }: { onClose: () => void }) {
+function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }) {
   return (
     <>
       <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -289,12 +298,14 @@ function Step0({ onClose }: { onClose: () => void }) {
       </div>
       <AccentLine />
       <div style={{ padding: '16px 20px 20px' }}>
-        <div style={{ fontSize: 28, marginBottom: 10 }}>✏️</div>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>{tryAgain ? '↩️' : '✏️'}</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Tu primer nodo
+          {tryAgain ? 'Inténtalo de nuevo' : 'Tu primer nodo'}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Pulsa en cualquier parte del outliner y escribe:
+          {tryAgain
+            ? 'Pulsa en un bullet vacío y escribe la frase completa:'
+            : 'Pulsa en cualquier parte del outliner y escribe:'}
         </div>
         <div style={{
           background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8,
@@ -305,12 +316,17 @@ function Step0({ onClose }: { onClose: () => void }) {
         </div>
         <div style={{
           display: 'flex', alignItems: 'flex-start', gap: 8,
-          background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 8,
+          background: tryAgain ? '#fff7ed' : '#fafafa',
+          border: `1px solid ${tryAgain ? '#fed7aa' : '#ebebeb'}`,
+          borderRadius: 8,
           padding: '8px 10px', marginBottom: 20,
         }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
-          <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-            Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.
+          <span style={{ fontSize: 14, flexShrink: 0 }}>{tryAgain ? '⚠️' : '💡'}</span>
+          <span style={{ fontSize: 12, color: tryAgain ? '#92400e' : '#666', lineHeight: 1.5 }}>
+            {tryAgain
+              ? <>Escribe la frase entera y pulsa <strong>Enter</strong> cuando aparezca la sugerencia de tarea.</>
+              : <>Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.</>
+            }
           </span>
         </div>
         {/* Indicador de espera — avanza automáticamente al detectar el nodo */}
@@ -318,7 +334,7 @@ function Step0({ onClose }: { onClose: () => void }) {
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
-          <span style={{ marginLeft: 4 }}>Esperando que lo escribas…</span>
+          <span style={{ marginLeft: 4 }}>{tryAgain ? 'Esperando el nuevo intento…' : 'Esperando que lo escribas…'}</span>
         </div>
         <ProgressDots active={0} />
       </div>
