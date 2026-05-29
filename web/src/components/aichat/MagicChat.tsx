@@ -440,7 +440,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           </div>
           <div className="magic-chat-messages">
             {chat.messages.map(msg => (
-              <MessageBubble key={msg.id} msg={msg} onOpenNode={id => { navigate(`/node/${id}`); onClose() }} />
+              <MessageBubble key={msg.id} msg={msg} currentNodeId={currentNodeId} onOpenNode={id => { navigate(`/node/${id}`); onClose() }} />
             ))}
             {(() => {
               const last = [...chat.messages].reverse().find(m => m.role === 'assistant')
@@ -546,12 +546,44 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
 
 // ── MessageBubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id: string) => void }) {
+function MessageBubble({ msg, currentNodeId, onOpenNode }: {
+  msg: ChatMessage
+  currentNodeId?: string
+  onOpenNode: (id: string) => void
+}) {
   const isUser = msg.role === 'user'
   const cleaned = msg.content
     .replace(/```from-action[\s\S]*?```/g, '')
     .replace(/\{\{chips:[\s\S]*?\}\}\s*$/g, '')
     .trim()
+
+  // Para el botón "Muévelo": detectar si los nodos creados están en la nota actual o en el diario
+  const moveLabel = (() => {
+    if (!msg.undoBundle?.createdIds?.length || !currentNodeId) return null
+    const firstId = msg.undoBundle.createdIds[0]
+    const node = store.getNode(firstId)
+    if (!node) return null
+    // Si el padre es la nota actual → "Muévelo a hoy"
+    if (node.parentId === currentNodeId) return 'hoy'
+    // Si tiene padre distinto → "Muévelo a esta nota"
+    return 'aquí'
+  })()
+
+  function handleMove() {
+    if (!msg.undoBundle?.createdIds?.length || !moveLabel) return
+    if (moveLabel === 'aquí' && currentNodeId) {
+      // Mover a la nota actual
+      for (const id of msg.undoBundle.createdIds) {
+        store.updateNode(id, { parentId: currentNodeId })
+      }
+    } else {
+      // Mover a hoy (diario)
+      const today = ensureDayPath(new Date())
+      for (const id of msg.undoBundle.createdIds) {
+        store.updateNode(id, { parentId: today.id })
+      }
+    }
+  }
 
   return (
     <div className={`magic-chat-bubble ${isUser ? 'magic-chat-bubble--user' : 'magic-chat-bubble--ai'}`}>
@@ -579,18 +611,17 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
           </div>
         )}
         {msg.undoBundle && (msg.undoBundle.createdIds.length > 0 || msg.undoBundle.restoredNodes.length > 0) && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-            <button
-              className="magic-undo-btn"
-              onClick={() => aiChatStore.undoAction(msg.id)}
-            >
+          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            <button className="magic-undo-btn" onClick={() => aiChatStore.undoAction(msg.id)}>
               ↩ Deshacer
             </button>
+            {moveLabel && (
+              <button className="magic-undo-btn" onClick={handleMove}>
+                {moveLabel === 'aquí' ? '↗ Muévelo a esta nota' : '↙ Muévelo a hoy'}
+              </button>
+            )}
             {msg.undoBundle.userMsgContent && (
-              <button
-                className="magic-undo-btn"
-                onClick={() => aiChatStore.retryAction(msg.id)}
-              >
+              <button className="magic-undo-btn" onClick={() => aiChatStore.retryAction(msg.id)}>
                 ↻ Hazlo de nuevo
               </button>
             )}

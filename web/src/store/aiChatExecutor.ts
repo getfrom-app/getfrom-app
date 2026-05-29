@@ -65,7 +65,7 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
 
   const created = store.createNode({
     text,
-    parentId: explicitParent ?? currentNodeId ?? sessionId ?? null,
+    parentId: explicitParent ?? sessionId ?? null,
     types: tags,
     extraData: {},
   })
@@ -89,9 +89,11 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const rawParent = (a.parent_id as string | undefined) || null
   const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
 
-  // Prioridad: explicitParent > due futuro (día distinto) > currentNodeId > sessionId (diario hoy)
-  const dueFutureNode = resolveParent(due, null) // null si hoy o sin due; dayNode si día futuro
-  const parentId = explicitParent ?? dueFutureNode ?? currentNodeId ?? sessionId ?? null
+  // Prioridad: explicitParent > due futuro (día distinto) > sessionId (diario hoy)
+  // currentNodeId NO se usa como fallback — los recordatorios genéricos van al diario.
+  // Solo se usa si el AI lo pasa explícitamente como parent_id.
+  const dueFutureNode = resolveParent(due, null)
+  const parentId = explicitParent ?? dueFutureNode ?? sessionId ?? null
 
   const created = store.createNode({
     text,
