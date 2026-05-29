@@ -20,6 +20,18 @@ import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 
+export interface UndoBundle {
+  createdIds: string[]        // node IDs to delete on undo
+  restoredNodes: Array<{      // nodes to restore to previous state
+    id: string
+    prevText: string
+    prevStatus: string | null
+    prevDue: string | null
+    prevTypes: string[]
+    prevExtraData: string
+  }>
+}
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
@@ -27,6 +39,8 @@ export interface ChatMessage {
   actions: ExecutedAction[]
   /** Chips de acción sugeridos por la IA al final del mensaje */
   chips?: string[]
+  /** Bundle para deshacer las acciones de escritura de este turno */
+  undoBundle?: UndoBundle
 }
 
 /** Parsea y elimina {{chips:[...]}} del texto. Devuelve texto limpio + chips. */
@@ -243,13 +257,46 @@ class AIChatStore {
         this.notify()
       }
 
-      // Escrituras → pause para confirmación.
+      // Escrituras → ejecutar inmediatamente y registrar bundle de undo.
       if (writeActions.length > 0) {
-        this.isStreaming = false
-        this.pendingActions = writeActions.map(makePendingAction)
-        this._pendingContext = { currentNodeId, sessionId: sid, readResults: accumulatedReadResults }
+        const writeResults: ExecutedAction[] = []
+        const undoBundle: UndoBundle = { createdIds: [], restoredNodes: [] }
+        for (const a of writeActions) {
+          // Snapshot antes de update_node (para poder deshacer)
+          if (a.action === 'update_node' && a.id) {
+            const existing = store.nodes.get(a.id as string)
+            if (existing) {
+              undoBundle.restoredNodes.push({
+                id: existing.id,
+                prevText: existing.text,
+                prevStatus: existing.status ?? null,
+                prevDue: existing.due ?? null,
+                prevTypes: [...(existing.types || [])],
+                prevExtraData: existing.extraData || '',
+              })
+            }
+          }
+          const result = await executeChatAction(a, sid)
+          writeResults.push(result)
+          // Recopilar IDs creados
+          if (result.createdIds) undoBundle.createdIds.push(...result.createdIds)
+        }
+        // Adjuntar undoBundle al mensaje del asistente
+        const hasUndo = undoBundle.createdIds.length > 0 || undoBundle.restoredNodes.length > 0
+        if (hasUndo) {
+          const idx = this.messages.findIndex(m => m.id === assistantMsgId)
+          if (idx >= 0) this.messages[idx] = { ...this.messages[idx], undoBundle }
+        }
+        // Actualizar acciones en el mensaje
+        const allWriteResults = writeResults
+        const idx2 = this.messages.findIndex(m => m.id === assistantMsgId)
+        if (idx2 >= 0) {
+          this.messages[idx2] = { ...this.messages[idx2], actions: allWriteResults }
+          this.persistActionsOnNode(assistantMsgId, allWriteResults)
+        }
         this.notify()
-        return
+        // Acumular resultados y continuar el loop
+        accumulatedReadResults = [...accumulatedReadResults, ...writeResults]
       }
 
       // Solo lecturas — continuar si hubo éxito.
@@ -350,6 +397,28 @@ class AIChatStore {
   cancelActions() {
     this.pendingActions = null
     this._pendingContext = null
+    this.notify()
+  }
+
+  undoAction(msgId: string) {
+    const msg = this.messages.find(m => m.id === msgId)
+    if (!msg?.undoBundle) return
+    const { createdIds, restoredNodes } = msg.undoBundle
+    // Eliminar nodos creados
+    createdIds.forEach(id => store.deleteNode(id))
+    // Restaurar nodos modificados
+    restoredNodes.forEach(n => {
+      store.updateNode(n.id, {
+        text: n.prevText,
+        status: n.prevStatus as Node['status'],
+        due: n.prevDue,
+        types: n.prevTypes,
+        extraData: n.prevExtraData,
+      })
+    })
+    // Quitar el undoBundle del mensaje (undo de una sola vez)
+    const idx = this.messages.findIndex(m => m.id === msgId)
+    if (idx >= 0) this.messages[idx] = { ...this.messages[idx], undoBundle: undefined }
     this.notify()
   }
 

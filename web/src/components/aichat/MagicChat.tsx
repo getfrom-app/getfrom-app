@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
+import { useAIChat, aiChatStore, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
@@ -580,17 +580,14 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
             ))}
           </div>
         )}
-        {(() => {
-          const creating = new Set(['create_note','create_task','create_event','create_resource','add_row','add_column'])
-          const ids = msg.actions.flatMap(a => creating.has(a.action) ? a.createdIds : [])
-          if (!ids.length) return null
-          return (
-            <button onClick={() => ids.forEach(id => { const n = store.nodes.get(id); if (n) store.deleteNode(id) })}
-              style={{ marginTop: 6, background: 'none', border: 'none', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px 0' }}>
-              ↶ Deshacer
-            </button>
-          )
-        })()}
+        {msg.undoBundle && (msg.undoBundle.createdIds.length > 0 || msg.undoBundle.restoredNodes.length > 0) && (
+          <button
+            className="magic-undo-btn"
+            onClick={() => aiChatStore.undoAction(msg.id)}
+          >
+            ↩ Deshacer
+          </button>
+        )}
       </div>
     </div>
   )
