@@ -665,15 +665,14 @@ export default function MainLayout() {
       </div>{/* .main-body */}
 
       {/* ── Trigger borde derecho: hover abre Magic, clic colapsa si está abierto ── */}
-      {currentNodeIdFromRoute && (
-        <div
-          className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
-          onMouseEnter={handleEdgeEnter}
-          onMouseLeave={handleEdgeLeave}
-          onClick={() => { if (showAIChat) setShowAIChat(false) }}
-          title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic (hover)'}
-        />
-      )}
+      {/* Trigger borde derecho en TODAS las páginas */}
+      <div
+        className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
+        onMouseEnter={handleEdgeEnter}
+        onMouseLeave={handleEdgeLeave}
+        onClick={() => { if (showAIChat) setShowAIChat(false) }}
+        title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic (hover)'}
+      />
 
       </div>{/* .main-row */}
       {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
