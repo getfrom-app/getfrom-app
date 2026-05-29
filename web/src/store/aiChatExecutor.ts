@@ -47,13 +47,13 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const text = (a.text as string) || 'Nota sin título'
   const body = a.body as string | undefined
   const tags = (a.tags as string[]) || []
-  const parentId = (a.parent_id as string | undefined) || null
+  // Validar parent_id: solo usarlo si es un UUID real que existe en el store
+  const rawParent = (a.parent_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
 
-  // Si no hay parent_id explícito, usar currentNodeId si está disponible (estamos dentro de un nodo),
-  // si no, crear bajo el nodo de sesión (diario de hoy)
   const created = store.createNode({
     text,
-    parentId: parentId ?? currentNodeId ?? sessionId ?? null,
+    parentId: explicitParent ?? currentNodeId ?? sessionId ?? null,
     types: tags,
     extraData: {},
   })
@@ -73,7 +73,9 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
   const priority = a.priority as string | undefined
-  const explicitParent = (a.parent_id as string | undefined) || null
+  // Validar parent_id: solo usarlo si es un UUID real que existe en el store
+  const rawParent = (a.parent_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
 
   // Prioridad: explicitParent > due futuro (día distinto) > currentNodeId > sessionId (diario hoy)
   const dueFutureNode = resolveParent(due, null) // null si hoy o sin due; dayNode si día futuro
