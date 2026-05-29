@@ -7271,15 +7271,16 @@ button.tree-item { display: flex; align-items: center; gap: 6px; width: 100%; ba
 [data-density="comfortable"] .task-item { min-height: 50px; }
 
 /* Better focus rings for keyboard navigation */
+/* Solo botones y links tienen outline de foco visible (accesibilidad teclado) */
+/* Inputs y textareas NO — el cursor parpadeante ya indica el foco */
 button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
 }
-/* contenteditable NO tiene outline de foco — el cursor ya indica la posición */
-[contenteditable]:focus-visible { outline: none !important; }
+input:focus-visible,
+textarea:focus-visible,
+[contenteditable]:focus-visible { outline: none !important; box-shadow: none !important; }
 /* Inputs dentro de modales y paneles especiales — sin borde de foco */
 .cmdpalette-input:focus-visible,
 .cmdpalette-input:focus { outline: none !important; border: none !important; box-shadow: none !important; }
