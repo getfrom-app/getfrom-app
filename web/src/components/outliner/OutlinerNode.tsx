@@ -2432,6 +2432,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // URL navegable del nodo (recurso o campo resourceUrl)
   const nodeUrl = resourceData?.url || node.resourceUrl || null
 
+  // Tipo de recurso para mostrar thumbnail
+  const nodeResourceType = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      return (ed._resourceType || node.resourceType || null) as string | null
+    } catch { return null }
+  })()
+  const isImageResource = nodeUrl && (nodeResourceType === 'image' || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(nodeUrl))
+
   // Auto-detect URL en texto del nodo inline → marca como recurso + unfurl
   useEffect(() => {
     const text = (node.text || '').trim()
@@ -3176,6 +3185,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             )}
 
             {/* Estrella eliminada — usar /atajo, menú ··· o clic derecho */}
+
+            {/* Thumbnail inline para nodos imagen */}
+            {isImageResource && !isEditing && (
+              <img
+                src={nodeUrl!}
+                alt={node.text || ''}
+                className="node-image-thumb"
+                onClick={e => { e.stopPropagation(); window.open(nodeUrl!, '_blank') }}
+              />
+            )}
 
             {/* Botón ↗ para abrir el enlace guardado en el nodo */}
             {nodeUrl && !isEditing && (

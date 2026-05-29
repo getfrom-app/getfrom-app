@@ -992,6 +992,19 @@ export default function NodeView() {
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
       })
       setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
+
+      // Guardar URL del archivo como contenido principal del nodo
+      // (imagen, PDF o cualquier archivo — el texto del nodo es el nombre)
+      const resourceType = file.type.startsWith('image/') ? 'image'
+        : file.type === 'application/pdf' ? 'pdf'
+        : 'file'
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+      ed._resource = true
+      ed._resourceUrl = publicUrl
+      ed._resourceType = resourceType
+      ed._resourceKey = key
+      store.updateNode(node.id, { extraData: JSON.stringify(ed), isResource: true })
     } catch (err) {
       console.error('Upload failed', err)
       setAttachmentsAvailable(false)
@@ -1057,6 +1070,18 @@ export default function NodeView() {
 
   const hasBody = (node.body && node.body.trim().length > 0) || bodyEditing
   const isLoggedIn = !store.isGuest
+
+  // Recurso principal del nodo (imagen, PDF, URL)
+  const nodeResourceMeta = (() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (!ed._resource && !ed._resourceUrl) return null
+      return {
+        url: (ed._resourceUrl || node.resourceUrl) as string | undefined,
+        type: (ed._resourceType || node.resourceType) as string | undefined,
+      }
+    } catch { return null }
+  })()
 
   // Word count for focus mode
   const wordCount = bodyValue.trim() ? bodyValue.trim().split(/\s+/).length : 0
@@ -1859,6 +1884,40 @@ export default function NodeView() {
         </div>
 
         <div className="view-body">
+          {/* ── Recurso principal (imagen / PDF / URL) ── */}
+          {nodeResourceMeta?.url && (
+            <div className="node-resource-preview">
+              {nodeResourceMeta.type === 'image' || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(nodeResourceMeta.url) ? (
+                <img
+                  src={nodeResourceMeta.url}
+                  alt={node.text || ''}
+                  className="node-resource-image"
+                  onClick={() => window.open(nodeResourceMeta.url, '_blank')}
+                />
+              ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
+                <iframe
+                  src={nodeResourceMeta.url}
+                  className="node-resource-pdf"
+                  title={node.text || 'PDF'}
+                />
+              ) : (
+                /* URL / enlace genérico */
+                <a
+                  href={nodeResourceMeta.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="node-resource-link"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/>
+                    <path d="M10 2h4v4"/><path d="M14 2L8 8"/>
+                  </svg>
+                  {nodeResourceMeta.url}
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Body editor — desactivado, en From todo va en nodos hijos */}
           {false && <div className="node-body-editor">
             {bodyEditing && !isLocked ? (
