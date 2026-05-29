@@ -401,7 +401,7 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
             {chat.pendingActions && chat.pendingActions.length > 0 && (
               <PendingConfirmationCard
                 actions={chat.pendingActions}
-                onConfirm={() => chat.confirmActions()}
+                onConfirm={() => { chat.confirmActions(); onClose() }}
                 onCancel={() => chat.cancelActions()}
                 disabled={chat.isStreaming}
               />
