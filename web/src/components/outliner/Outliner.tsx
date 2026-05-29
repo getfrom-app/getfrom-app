@@ -519,12 +519,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         // están restaurados antes de llamar a elementFromPoint.
         const x = e.clientX, y = e.clientY
         const target = document.elementFromPoint(x, y)
-        // Buscar contenteditable: puede ser el target mismo o un ancestro/descendiente
-        const ce = (target?.getAttribute('contenteditable') === 'true'
-          ? target
-          : target?.closest('[contenteditable="true"]')
-            ?? (target as HTMLElement | null)?.querySelector?.('[contenteditable="true"]')
-        ) as HTMLElement | null
+        const ce = target?.closest('[contenteditable="true"]') as HTMLElement | null
         if (ce) {
           ce.focus()
           const range = document.caretRangeFromPoint

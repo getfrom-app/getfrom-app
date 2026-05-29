@@ -1590,13 +1590,12 @@ mark.inline-highlight {
   cursor: default;
 }
 
-/* Durante drag-to-select: bloquear text-selection en contenteditables
-   Chrome inicia selección de texto ANTES de que preventDefault actúe.
-   pointer-events:none previene que Chrome intercepte los mousemove. */
+/* Durante drag-to-select: bloquear text-selection en contenteditables.
+   user-select:none impide que Chrome inicie text-selection nativa.
+   NO usamos pointer-events:none para no romper caretRangeFromPoint en clicks simples. */
 body.outliner-drag-active [contenteditable] {
   user-select: none !important;
   -webkit-user-select: none !important;
-  pointer-events: none;
 }
 body.outliner-drag-active {
   cursor: default !important;
