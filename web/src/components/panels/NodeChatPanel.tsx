@@ -126,11 +126,15 @@ export default function NodeChatPanel({ node, onClose }: Props) {
   }
 
   function insertIntoBody() {
+    // Crea nodos hijos con el contenido en lugar de escribir en body
     const last = [...messages].reverse().find(m => m.role === 'assistant')
     if (!last) return
-    const current = node.body || ''
-    const separator = current.trim() ? '\n\n' : ''
-    store.updateNode(node.id, { body: current + separator + last.content })
+    const lines = last.content.split('\n').map((l: string) => l.trim()).filter(Boolean)
+    const siblings = store.children(node.id)
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
+    lines.forEach((line: string, i: number) => {
+      store.createNode({ text: line, parentId: node.id, siblingOrder: maxOrder + i + 1 })
+    })
   }
 
   const hasAssistantMessages = messages.some(m => m.role === 'assistant')

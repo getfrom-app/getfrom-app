@@ -878,22 +878,17 @@ export default function NodeView() {
   }
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    const value = e.target.value
-    setBodyValue(value)
-    if (bodyDebounceRef.current) clearTimeout(bodyDebounceRef.current)
-    bodyDebounceRef.current = setTimeout(() => {
-      store.updateNode(node!.id, { body: value || null })
-    }, 500)
+    // body desactivado — en From todo va en nodos hijos
+    setBodyValue(e.target.value)
   }
 
   function handleBodyBlur() {
     setBodyEditing(false)
-    // Flush debounce
     if (bodyDebounceRef.current) {
       clearTimeout(bodyDebounceRef.current)
       bodyDebounceRef.current = null
     }
-    store.updateNode(node!.id, { body: bodyValue || null })
+    // body desactivado — no guardar
   }
 
   function toggleFavorite() {
@@ -1081,15 +1076,15 @@ export default function NodeView() {
   }
 
   function handleImportMarkdown() {
+    // body desactivado — importar como nodos hijos
     const md = prompt('Pega el texto markdown a importar:')
     if (md === null) return
-    const trimmed = md.trim()
-    if (!trimmed) return
-    const current = bodyValue
-    const separator = current.trim() ? '\n\n' : ''
-    const newVal = current + separator + trimmed
-    setBodyValue(newVal)
-    store.updateNode(node!.id, { body: newVal })
+    const lines = md.trim().split('\n').map(l => l.trim()).filter(Boolean)
+    const siblings = store.children(node!.id)
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
+    lines.forEach((line, i) => {
+      store.createNode({ text: line, parentId: node!.id, siblingOrder: maxOrder + i + 1 })
+    })
   }
 
   // Table of contents: children that are headings
@@ -1855,8 +1850,8 @@ export default function NodeView() {
         </div>
 
         <div className="view-body">
-          {/* Body editor — solo si el nodo tiene contenido real en body */}
-          <div className="node-body-editor" style={{ display: (node?.body && node.body.trim()) || bodyEditing ? 'block' : 'none' }}>
+          {/* Body editor — desactivado, en From todo va en nodos hijos */}
+          {false && <div className="node-body-editor">
             {bodyEditing && !isLocked ? (
               <>
                 <div className="node-body-toolbar">
@@ -1994,13 +1989,13 @@ export default function NodeView() {
                 className={`node-body-rendered ${!hasBody ? 'node-body-empty' : ''}`}
                 onDoubleClick={isLocked ? undefined : () => {
                   setBodyEditing(true)
-                  setBodyValue(node.body || '')
+                  setBodyValue(node?.body || '')
                 }}
               >
                 {hasBody ? (
                   // Render body — agrupar líneas en bloques para listas, checkboxes y tablas
                   (() => {
-                    const lines = (node.body || '').split('\n')
+                    const lines = (node?.body || '').split('\n')
                     const blocks: React.ReactNode[] = []
                     let i = 0
                     while (i < lines.length) {
@@ -2116,7 +2111,7 @@ export default function NodeView() {
                 ) : null}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Hidden file input */}
           {isLoggedIn && (
