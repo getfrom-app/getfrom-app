@@ -12,7 +12,6 @@ interface Props {
 
 export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
   const chat = useAIChat()
-  if (isOpen) return null
   const hasSession = chat.messages.length > 0
   return (
     <button
@@ -33,7 +32,7 @@ export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: '0 6px 16px rgba(0,0,0,0.25)',
-        zIndex: 999,
+        zIndex: 3000,
         fontSize: 20,
       }}
     >

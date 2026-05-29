@@ -683,10 +683,8 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
-      {/* Botón ✦ siempre visible, encima del panel */}
-      <div style={{ position: 'fixed', bottom: 48, right: showAIChat && currentNodeIdFromRoute ? magicPanelW + 12 : 16, zIndex: 3000, transition: 'right 0.28s cubic-bezier(0.4,0,0.2,1)' }}>
-        <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
-      </div>
+      {/* Botón ✦ siempre en su posición fija, encima del panel */}
+      <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
       {showAIChat && !currentNodeIdFromRoute && (
         <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       )}
