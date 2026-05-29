@@ -292,7 +292,7 @@ function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void })
         }}>
           <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
           <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-            Como empieza por un verbo, voy a proponerte convertirla en tarea. Pulsa <strong>Enter</strong> para confirmar.
+            Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.
           </span>
         </div>
         <PrimaryBtn label="Lo escribí →" onClick={onNext} />
@@ -317,7 +317,7 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
           ¡Ya tienes tu primera tarea!
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          La detecté porque empieza por un verbo. También puedes convertir cualquier nota en tarea con <strong>⌘+Enter</strong>:
+          Cuanto más me uses, mejores propuestas haré. También puedes convertir cualquier nota en tarea con <strong>⌘+Enter</strong>:
         </div>
         <div style={{ fontSize: 12, color: '#666', lineHeight: 1.6, marginBottom: 8,
           background: '#f9f9f9', borderRadius: 8, padding: '8px 10px' }}>
