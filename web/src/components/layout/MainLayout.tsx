@@ -104,6 +104,12 @@ export default function MainLayout() {
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
+  const [magicPanelW, setMagicPanelW] = useState(() => {
+    const saved = localStorage.getItem('magic-panel-w')
+    return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 500
+  })
+  const magicResizingRef = useRef(false)
+  const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Notificar cuando Magic se abre (para onboarding)
   useEffect(() => {
@@ -121,6 +127,37 @@ export default function MainLayout() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [showAIChat, currentNodeIdFromRoute])
+
+  // Resize del panel de Magic desde su borde izquierdo
+  function handleMagicResizeDown(e: React.MouseEvent) {
+    e.preventDefault()
+    magicResizingRef.current = true
+    const startX = e.clientX
+    const startW = magicPanelW
+    function onMove(ev: MouseEvent) {
+      if (!magicResizingRef.current) return
+      const delta = startX - ev.clientX
+      const newW = Math.max(320, Math.min(900, startW + delta))
+      setMagicPanelW(newW)
+    }
+    function onUp() {
+      magicResizingRef.current = false
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      localStorage.setItem('magic-panel-w', String(magicPanelW))
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
+  // Hover en la franja derecha → abrir Magic con delay
+  function handleEdgeEnter() {
+    if (showAIChat) return
+    magicHoverTimerRef.current = setTimeout(() => setShowAIChat(true), 180)
+  }
+  function handleEdgeLeave() {
+    if (magicHoverTimerRef.current) clearTimeout(magicHoverTimerRef.current)
+  }
   const [filterText, setFilterText] = useFilterStore()
   const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
   const [slugInput, setSlugInput] = useState('')
@@ -615,18 +652,27 @@ export default function MainLayout() {
       )}
 
       {/* ── MagicChat panel (node route only) ── */}
-      {showAIChat && currentNodeIdFromRoute && (
-        <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
+      {currentNodeIdFromRoute && (
+        <div
+          className={`magic-panel-wrap ${showAIChat ? 'magic-panel-wrap--open' : ''}`}
+          style={{ width: showAIChat ? magicPanelW : 0 }}
+        >
+          {/* Resize bar — borde izquierdo arrastrable */}
+          <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
+          <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
+        </div>
       )}
 
       </div>{/* .main-body */}
 
-      {/* ── Trigger borde derecho: clic abre/colapsa Magic en NodeView ── */}
+      {/* ── Trigger borde derecho: hover abre Magic, clic colapsa si está abierto ── */}
       {currentNodeIdFromRoute && (
         <div
           className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
-          onClick={() => setShowAIChat(v => !v)}
-          title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic'}
+          onMouseEnter={handleEdgeEnter}
+          onMouseLeave={handleEdgeLeave}
+          onClick={() => { if (showAIChat) setShowAIChat(false) }}
+          title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic (hover)'}
         />
       )}
 

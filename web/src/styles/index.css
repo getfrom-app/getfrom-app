@@ -10894,14 +10894,12 @@ a:focus-visible {
 }
 
 .magic-chat-panel {
-  width: 380px;
+  width: 100%;
+  height: 100%;
   flex-shrink: 0;
-  border-left: 1px solid var(--border);
-  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 100%;
 }
 
 .magic-chat-panel .magic-chat-modal {
@@ -10913,27 +10911,55 @@ a:focus-visible {
   box-shadow: none;
 }
 
-/* ── Trigger borde derecho para abrir/cerrar Magic ───────────────── */
+/* ── Wrapper animado del panel lateral de Magic ──────────────────── */
+.magic-panel-wrap {
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  border-left: 1px solid var(--border);
+  background: var(--bg-primary);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.magic-panel-wrap--open {
+  /* width se setea inline */
+}
+
+/* Resize bar — borde izquierdo arrastrable */
+.magic-panel-resize-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+}
+.magic-panel-resize-bar:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+/* ── Trigger borde derecho: hover abre Magic ─────────────────────── */
 .magic-edge-trigger {
   position: fixed;
   right: 0;
-  top: 48px; /* debajo del topbar */
-  bottom: 32px; /* encima del statusbar */
+  top: 48px;
+  bottom: 32px;
   width: 8px;
   cursor: pointer;
   z-index: 100;
-  transition: background 0.15s, width 0.15s;
   background: transparent;
+  transition: background 0.2s, width 0.2s;
 }
 .magic-edge-trigger:hover {
-  width: 12px;
-  background: rgba(139, 92, 246, 0.15);
+  width: 14px;
+  background: rgba(139, 92, 246, 0.18);
 }
 .magic-edge-trigger--open {
-  background: rgba(139, 92, 246, 0.08);
+  background: rgba(139, 92, 246, 0.06);
 }
 .magic-edge-trigger--open:hover {
-  background: rgba(139, 92, 246, 0.20);
+  background: rgba(139, 92, 246, 0.18);
 }
 
 .magic-chat-modal {
