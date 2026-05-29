@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useStore } from '../../store/nodeStore'
+import { store } from '../../store/nodeStore'
 
 const STORAGE_KEY = 'from_onboarding_done'
 const TOTAL_DOTS = 4 // progress dots shown on steps 0–3
@@ -17,7 +17,6 @@ export default function OnboardingWidget() {
   const [step, setStep]           = useState(0)
   const [demoNodeId, setDemoNodeId] = useState<string | null>(null)
   const location = useLocation()
-  const store    = useStore()
 
   // ── Initial show logic ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -269,9 +268,19 @@ function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void })
         <div style={{
           background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8,
           padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6',
-          marginBottom: 20, letterSpacing: 0.1,
+          marginBottom: 12, letterSpacing: 0.1,
         }}>
           Empezar a utilizar From
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+          background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 8,
+          padding: '8px 10px', marginBottom: 20,
+        }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+          <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
+            Como empieza por un verbo, voy a proponerte convertirla en tarea. Pulsa <strong>Enter</strong> para confirmar.
+          </span>
         </div>
         <PrimaryBtn label="Lo escribí →" onClick={onNext} />
         <ProgressDots active={0} />
@@ -292,10 +301,16 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Convierte una nota en tarea
+          ¡Ya tienes tu primera tarea!
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Pulsa <strong>⌘+Enter</strong> sobre cualquier nodo. Una vez → tarea pendiente. Otra vez → hecha. Otra vez → vuelve a ser nota.
+          La detecté porque empieza por un verbo. También puedes convertir cualquier nota en tarea con <strong>⌘+Enter</strong>:
+        </div>
+        <div style={{ fontSize: 12, color: '#666', lineHeight: 1.6, marginBottom: 8,
+          background: '#f9f9f9', borderRadius: 8, padding: '8px 10px' }}>
+          Una vez → ☐ pendiente<br />
+          Otra vez → ✓ hecha<br />
+          Otra vez → vuelve a nota
         </div>
         {/* Keyboard hint */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, alignItems: 'center' }}>
@@ -303,7 +318,7 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
           <span style={{ color: '#999', fontSize: 12 }}>+</span>
           <kbd style={kbdStyle}>↵</kbd>
         </div>
-        <PrimaryBtn label="Lo hice →" onClick={onNext} />
+        <PrimaryBtn label="Entendido →" onClick={onNext} />
         <ProgressDots active={1} />
       </div>
     </>
