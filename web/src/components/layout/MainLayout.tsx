@@ -32,6 +32,7 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import PlannerPanel from '../panels/PlannerPanel'
+import SearchPanel from '../panels/SearchPanel'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import MagicChat from '../aichat/MagicChat'
@@ -104,6 +105,7 @@ export default function MainLayout() {
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const [magicPanelW, setMagicPanelW] = useState(() => {
     const saved = localStorage.getItem('magic-panel-w')
     return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 500
@@ -115,17 +117,10 @@ export default function MainLayout() {
   useEffect(() => {
     if (showAIChat) {
       window.dispatchEvent(new Event('from:magic-opened'))
-      // Cerrar buscador si estaba abierto — no son compatibles
-      window.dispatchEvent(new Event('wf:clear-filter'))
+      // Cerrar panel de búsqueda si estaba abierto — no son compatibles
+      if (showSearch) setShowSearch(false)
     }
-  }, [showAIChat])
-
-  // Cerrar Magic cuando el buscador se abre
-  useEffect(() => {
-    function handleCloseMagic() { setShowAIChat(false) }
-    window.addEventListener('from:close-magic', handleCloseMagic)
-    return () => window.removeEventListener('from:close-magic', handleCloseMagic)
-  }, [])
+  }, [showAIChat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
   useEffect(() => {
@@ -570,7 +565,12 @@ export default function MainLayout() {
           sidebarOpen={sidebarOpen}
           onTogglePlanner={() => setPlannerOpen(v => !v)}
           plannerOpen={plannerOpen}
-          magicPanelW={magicPanelW}
+          onToggleSearch={() => {
+            setShowSearch(v => {
+              if (!v && showAIChat) setShowAIChat(false)
+              return !v
+            })
+          }}
         />
       </div>
 
@@ -670,6 +670,13 @@ export default function MainLayout() {
         <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
         <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       </div>
+
+      {/* ── SearchPanel — panel de búsqueda lateral ── */}
+      {showSearch && (
+        <div className="magic-panel-wrap magic-panel-wrap--open" style={{ width: magicPanelW }}>
+          <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setShowSearch(false)} />
+        </div>
+      )}
 
       </div>{/* .main-body */}
 
