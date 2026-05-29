@@ -565,14 +565,29 @@ class AIChatStore {
       if (n) currentView += ` | Nota abierta: ${n.text || 'Sin título'} (ID: ${currentNodeId})`
     }
 
+    // Prefijo de fecha — se inyecta en el último mensaje del usuario para que el AI
+    // no pueda ignorarlo aunque el sistema prompt del servidor tenga una fecha diferente.
+    const datePrefix = `[Fecha de hoy: ${todayIso}] `
+
     // Compactación: >20 mensajes → solo últimos 12 + nota de truncado.
+    const injectDate = (msgs: { role: 'user' | 'assistant'; content: string }[]) => {
+      // Inyectar la fecha en el último mensaje del usuario
+      const result = [...msgs]
+      for (let i = result.length - 1; i >= 0; i--) {
+        if (result[i].role === 'user') {
+          result[i] = { ...result[i], content: datePrefix + result[i].content }
+          break
+        }
+      }
+      return result
+    }
     const compactedMessages = (() => {
       if (this.messages.length <= 20) {
-        return this.messages.map(m => ({ role: m.role, content: m.content }))
+        return injectDate(this.messages.map(m => ({ role: m.role, content: m.content })))
       }
       const tail = this.messages.slice(-12)
       const omitted = this.messages.length - tail.length
-      return [
+      return injectDate([
         { role: 'user' as const, content: `[Conversación previa: ${omitted} mensajes anteriores omitidos por compactación.]` },
         ...tail.map(m => ({ role: m.role, content: m.content })),
       ]
