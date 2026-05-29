@@ -59,9 +59,9 @@ export default function PricingView() {
         { text: 'Vistas avanzadas', included: false },
         { text: 'Sin límite de nodos', included: false },
       ],
-      ctaLabel: isFree && !isGuest ? 'Tu plan actual' : 'Empezar gratis',
-      isCurrent: isFree && !isGuest,
-      onCta: isGuest ? () => navigate('/register') : () => {},
+      ctaLabel: isFree && !isGuest ? 'Continuar gratis →' : 'Crear cuenta gratis',
+      isCurrent: false, // nunca marcado como "actual" en el onboarding
+      onCta: isGuest ? () => navigate('/register') : () => navigate('/'),
     },
     {
       id: 'lifetime',
@@ -88,17 +88,13 @@ export default function PricingView() {
   return (
     <div className="pricing-view">
       <div className="pricing-header">
-        <h1 className="pricing-title">Elige tu plan</h1>
+        <h1 className="pricing-title">{isGuest ? 'Elige tu plan' : '¡Cuenta creada! Elige cómo continuar'}</h1>
         <p className="pricing-subtitle">
-          Empieza gratis · Paga una vez y usa From para siempre
+          {isGuest
+            ? 'Empieza gratis · Paga una vez y usa From para siempre'
+            : 'Puedes usar From gratis ahora mismo. Actualiza cuando quieras.'}
         </p>
       </div>
-
-      {isGuest && (
-        <p className="pricing-guest-note">
-          Al completar el pago recibirás un email para crear tu contraseña y acceder a From.
-        </p>
-      )}
 
       <div className="pricing-grid">
         {plans.map(plan => (
