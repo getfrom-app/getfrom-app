@@ -56,6 +56,7 @@ class UserStore {
   get isPremium(): boolean {
     return (
       this.user?.subscriptionStatus === 'active' ||
+      this.user?.subscriptionStatus === 'trialing' ||
       this.user?.licenseStatus === 'active'
     )
   }
@@ -63,6 +64,11 @@ class UserStore {
   get planLabel(): string {
     if (this.user?.licenseStatus === 'active') return 'Licencia perpetua'
     if (this.user?.subscriptionStatus === 'active') return 'Suscripción activa'
+    if (this.user?.subscriptionStatus === 'trialing') {
+      const ends = this.user.trialEndsAt ? new Date(this.user.trialEndsAt) : null
+      const days = ends ? Math.ceil((ends.getTime() - Date.now()) / 86400000) : 0
+      return days > 0 ? `Prueba gratuita — ${days}d restantes` : 'Prueba gratuita'
+    }
     return 'Plan gratuito'
   }
 

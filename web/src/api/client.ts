@@ -122,8 +122,9 @@ export async function logout() {
 export interface UserProfile {
   id: string
   email: string
-  subscriptionStatus: 'active' | 'expired' | 'cancelled' | null
+  subscriptionStatus: 'active' | 'trialing' | 'expired' | 'cancelled' | null
   subscriptionRenewsAt: string | null
+  trialEndsAt: string | null
   licenseStatus: 'active' | null
   tokensBalance: number
   /** AI API keys propias del usuario (solo lifetime / suscripción activa).

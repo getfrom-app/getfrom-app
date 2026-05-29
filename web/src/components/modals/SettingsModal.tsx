@@ -214,6 +214,7 @@ export function CuentaPane() {
   function getPlanBadge() {
     if (user?.licenseStatus === 'active') return <span className="plan-badge plan-badge--license">Licencia perpetua</span>
     if (user?.subscriptionStatus === 'active') return <span className="plan-badge plan-badge--active">Activa</span>
+    if (user?.subscriptionStatus === 'trialing') return <span className="plan-badge plan-badge--active">Prueba gratuita</span>
     if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') return <span className="plan-badge plan-badge--cancelled">Cancelada</span>
     return <span className="plan-badge plan-badge--free">Sin plan</span>
   }
@@ -542,7 +543,8 @@ export function IAPane() {
 
   const hasPaidPlan =
     us.user?.licenseStatus === 'active' ||
-    us.user?.subscriptionStatus === 'active'
+    us.user?.subscriptionStatus === 'active' ||
+    us.user?.subscriptionStatus === 'trialing'
 
   function setLanguage(v: string) {
     setLang(v)
