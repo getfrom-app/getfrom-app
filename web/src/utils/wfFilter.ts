@@ -117,9 +117,23 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'tipo:evento': return !!node.isEvent
     case 'favorito':    return !!node.isFavorite
     case 'diario':      return !!node.isDiaryEntry
-    case 'recurso':
-    case 'archivo':
-    case 'enlace':      return !!node.isResource
+    case 'recurso':     return !!node.isResource
+    case 'archivo': {
+      // Archivos subidos: tienen _resourceKey en extraData o _resourceType image/pdf/file
+      if (!node.isResource) return false
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        return !!(ed._resourceKey || ['image','pdf','file'].includes(ed._resourceType))
+      } catch { return false }
+    }
+    case 'enlace': {
+      // URLs pegadas: isResource pero sin _resourceKey (no subido)
+      if (!node.isResource) return false
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        return !ed._resourceKey && !['image','pdf','file'].includes(ed._resourceType)
+      } catch { return false }
+    }
     case 'activo':      return !!node.isActive
 
     default:

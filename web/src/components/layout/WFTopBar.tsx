@@ -30,7 +30,8 @@ const TYPE_CHIPS = [
   { label: 'Nota',    query: 'nota' },
   { label: 'Tarea',   query: 'tarea' },
   { label: 'Evento',  query: 'evento' },
-  { label: 'Recurso', query: 'recurso' },
+  { label: 'Archivo', query: 'archivo' },
+  { label: 'Enlace',  query: 'enlace' },
 ]
 const TIME_CHIPS = [
   { label: 'Hoy',         query: 'hoy' },
