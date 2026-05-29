@@ -461,7 +461,7 @@ function Step4Magic({ onClose }: { onClose: () => void }) {
           Ahora ábreme a mí
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
-          Pulsa <strong>Espacio</strong> en cualquier momento, o el botón <strong>✦</strong> abajo a la derecha.
+          Pulsa el botón <strong>✦</strong> que ves abajo a la derecha para abrir el chat completo.
         </div>
         <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
           Esperando que me abras…
