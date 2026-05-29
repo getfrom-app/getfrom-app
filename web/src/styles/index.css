@@ -275,10 +275,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* El WFTopBar dentro del header: quitar su border-bottom propio */
+.app-header .wf-topbar-root {
+  flex: 1;
+  min-width: 0;
+}
 .app-header .wf-topbar {
   border-bottom: none;
-  flex: 1;
-  height: 100%;
+  height: 40px;
 }
 
 /* main-row: sidebar + main-body en fila */
@@ -9655,28 +9658,48 @@ a:focus-visible {
 }
 .wf-topbar-filter.expanded {
   width: 220px;
-  border-color: var(--border);
-  background: var(--bg-secondary);
+  border-color: transparent;
+  background: var(--bg-hover);
 }
 .wf-topbar-filter.focused {
-  border-color: var(--border);
-  background: var(--bg-secondary);
+  border-color: transparent;
+  background: var(--bg-hover);
 }
 
 /* Fila secundaria de chips bajo el topbar */
 .wf-filter-chips-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 12px 5px;
+  gap: 2px;
+  padding: 3px 12px 4px;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   animation: chips-bar-in 0.18s ease both;
 }
 @keyframes chips-bar-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+/* Chips en la fila secundaria: solo texto, sin borde ni fondo */
+.wf-filter-chips-bar .wf-filter-chip {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.wf-filter-chips-bar .wf-filter-chip:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: none;
+}
+.wf-filter-chips-bar .wf-filter-chip.active {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  border: none;
 }
 .wf-topbar-filter-icon {
   color: var(--text-tertiary);
