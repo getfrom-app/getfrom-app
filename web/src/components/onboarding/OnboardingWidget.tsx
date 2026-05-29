@@ -197,7 +197,7 @@ export default function OnboardingWidget() {
     if (step !== 5) return
     const timer = setTimeout(() => {
       window.dispatchEvent(new CustomEvent('from:onboarding-prefill', {
-        detail: { text: 'Añade 3 tareas hijas a este nodo: "Explorar el outliner", "Probar el filtro" y "Configurar mi perfil en From"' },
+        detail: { text: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From' },
       }))
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('from:onboarding-highlight-send', {}))
