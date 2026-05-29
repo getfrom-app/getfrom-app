@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
+import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
@@ -379,8 +380,9 @@ export default function NodeView() {
   const activeFilterQuery = inDocSearch || globalFilter || ''
   const smartFilterResult = useMemo(() => {
     if (!activeFilterQuery.trim()) return null
-    if (!isSmartQuery(activeFilterQuery)) return null
-    return applyWFFilter(s.nodes, activeFilterQuery)
+    const effective = normalizeSynonyms(activeFilterQuery) ?? activeFilterQuery
+    if (!isSmartQuery(effective)) return null
+    return applyWFFilter(s.nodes, effective)
   }, [activeFilterQuery, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cerrar title tag picker al hacer click fuera

@@ -189,11 +189,14 @@ export default function WFTopBar({
     applyChip(`@${slug}`)
   }
 
-  // Comprueba si un token está activo — normaliza sinónimos para que
-  // "pendientes", "pending", etc. resalten el chip "pendiente"
+  // Comprueba si un token está activo — normaliza sinónimos internamente
+  // para que "pendientes", "tareas", etc. resalten el chip correcto
   function isChipActive(token: string) {
-    const normalizedFilter = normalizeSynonyms(filterText) ?? filterText
-    return normalizedFilter.trim().split(/\s+/).includes(token)
+    const tokens = filterText.trim().split(/\s+/)
+    return tokens.some(t => {
+      const norm = normalizeSynonyms(t) ?? t
+      return norm === token
+    })
   }
 
   function goHome() { navigate('/') }
@@ -265,13 +268,7 @@ export default function WFTopBar({
             className="wf-topbar-filter-input"
             placeholder="¿Qué quieres ver? (⌘F)"
             value={filterText}
-            onChange={e => {
-              const raw = e.target.value
-              const normalized = normalizeSynonyms(raw)
-              onFilter(normalized ?? raw)
-              // Si normalizamos, actualizar el input visualmente
-              if (normalized && filterRef.current) filterRef.current.value = normalized
-            }}
+            onChange={e => onFilter(e.target.value)}
             onFocus={() => { setFilterOpen(true); setFilterExpanded(true) }}
           />
           {/* Indicador IA con puntos pulsantes */}
