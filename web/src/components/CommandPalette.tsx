@@ -354,7 +354,7 @@ export default function CommandPalette({ onClose }: Props) {
 
     const results: PaletteItem[] = []
 
-    // ── Atajos (📌 Atajos) — buscar en hijos del nodo sistema ─────────────
+    // ── Paneles (📊 Paneles) — buscar en hijos del nodo sistema ─────────────
     const atajosRoot = getAtajosNode()
     if (atajosRoot) {
       const searchAtajosRecursive = (parentId: string) => {
@@ -578,7 +578,7 @@ export default function CommandPalette({ onClose }: Props) {
                     ) : item.type === 'create' ? (
                       <span className="cmdpalette-create-icon">+</span>
                     ) : item.type === 'wf-action' ? (
-                      <span className="cmdpalette-create-icon">{item.id.startsWith('atajo-') ? '📌' : '⌘'}</span>
+                      <span className="cmdpalette-create-icon">{item.id.startsWith('atajo-') ? '📊' : '⌘'}</span>
                     ) : null}
                     <div className="cmdpalette-item-info">
                       <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>

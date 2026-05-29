@@ -254,7 +254,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
               className={`sidebar-panel-item${isActivePath ? ' active' : ''}`}
               onClick={() => navigate(`/search?q=${encodeURIComponent(panel.query)}`)}
             >
-              <span style={{ fontSize: 13, flexShrink: 0 }}>{isDefault ? '📅' : '🔍'}</span>
+              {isDefault ? (
+                <span style={{ fontSize: 13, flexShrink: 0 }}>📅</span>
+              ) : (
+                <svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0, opacity:0.7}}>
+                  <rect x="0.75" y="0.75" width="11.5" height="9.5" rx="1.5"/>
+                  <line x1="0.75" y1="3.5" x2="12.25" y2="3.5"/>
+                </svg>
+              )}
               <span style={{ flex: 1, fontSize: 13 }}>{panel.name}</span>
               {!isDefault && (
                 <button
@@ -304,7 +311,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
       const targetNode = s.getNode(scData.nodeId)
       icon = targetNode ? getNodeIcon(targetNode) : '📄'
     } else if (scData?.query !== undefined) {
-      icon = '🔍'
+      icon = '__panel_svg__'
     } else if (hasChildren) {
       icon = isCollapsed ? '▸' : '▾'
     }
@@ -357,7 +364,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
             }, 20)
           }}
         >
-          <span className="wf-qa-item-icon">{icon}</span>
+          <span className="wf-qa-item-icon">
+            {icon === '__panel_svg__' ? (
+              <svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0, opacity:0.7}}>
+                <rect x="0.75" y="0.75" width="11.5" height="9.5" rx="1.5"/>
+                <line x1="0.75" y1="3.5" x2="12.25" y2="3.5"/>
+              </svg>
+            ) : icon}
+          </span>
           {renamingAtajoId === nodeId ? (
             <input
               data-rename-atajo={nodeId}
@@ -396,12 +410,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     return (
       <div className="sidebar-tab-content wf-quick-access">
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
-          <span className="wf-qa-section-label">Atajos</span>
+          <span className="wf-qa-section-label">Paneles</span>
           {atajosNode && (
             <button
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1, padding: '0 2px', opacity: 0.6 }}
               onClick={() => navigate(`/node/${atajosNode.id}`)}
-              title="Organizar atajos — abrir 📌 Atajos"
+              title="Organizar paneles — abrir 📊 Paneles"
             >✎</button>
           )}
         </div>

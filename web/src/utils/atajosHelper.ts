@@ -1,6 +1,6 @@
 import { store } from '../store/nodeStore'
 
-const ATAJOS_NAME = '📌 Atajos'
+const ATAJOS_NAME = '📊 Paneles'
 
 export function getAtajosNode() {
   return store.children(null).find(n => !n.deletedAt && n.text === ATAJOS_NAME)
@@ -34,7 +34,7 @@ export function isShortcutNode(nodeId: string): boolean {
   } catch { return false }
 }
 
-// Create a filter shortcut node under 📌 Atajos
+// Create a filter panel node under 📊 Paneles
 export function createFilterShortcut(name: string, query: string, view?: string): string {
   const parent = ensureAtajosNode()
   const siblings = store.children(parent.id)

@@ -5,7 +5,7 @@
  *  - Duplicar
  *  - Mover a...
  *  - Convertir en → (inline expandible)
- *  - Añadir a atajos / Quitar de atajos
+ *  - Añadir a paneles / Quitar de paneles
  *  - Propiedades de tarea (solo si es tarea)
  *  - Copiar texto
  *  - Copiar enlace interno / Copiar enlace público / Despublicar
@@ -355,11 +355,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
       <div className="context-menu-separator" />
 
-      {/* Atajos */}
+      {/* Paneles */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(toggleShortcut)}>
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
-          {isFav ? 'Quitar de atajos' : 'Añadir a atajos'}
+          {isFav ? 'Quitar de paneles' : 'Añadir a paneles'}
         </button>
       </div>
 

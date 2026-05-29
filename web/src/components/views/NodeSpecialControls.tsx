@@ -13,7 +13,7 @@
 // NO tienen controles especiales (se crean/gestionan como nodos normales):
 //   · 🤖 Agentes (raíz)   — crea nuevo agente con Enter como cualquier nodo
 //   · 📋 Plantillas (raíz) — crea nueva plantilla con Enter
-//   · 📌 Atajos (raíz)     — los hijos son atajos individuales con sus propios controles
+//   · 📊 Paneles (raíz)    — los hijos son paneles individuales con sus propios controles
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'

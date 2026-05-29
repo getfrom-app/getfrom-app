@@ -268,7 +268,7 @@ export default function WFTopBar({
             <>
               <button
                 className="wf-topbar-filter-save"
-                title="Guardar como atajo"
+                title="Guardar como panel"
                 onMouseDown={e => {
                   e.preventDefault()
                   const query = filterText.trim()
@@ -278,7 +278,7 @@ export default function WFTopBar({
                     ? query
                     : query.charAt(0).toUpperCase() + query.slice(1)
                   createFilterShortcut(name, query, 'list')
-                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo guardado: "${name}"`, type: 'success' } }))
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Panel guardado: "${name}"`, type: 'success' } }))
                   filterRef.current?.focus()
                 }}
               >
@@ -409,14 +409,14 @@ export default function WFTopBar({
         )}
       </div>
 
-      {/* ⭐ Guardar como atajo */}
+      {/* ⭐ Guardar como panel */}
       {filterText && (
         <button
           className={`wf-topbar-btn wf-topbar-star${alreadySaved ? ' starred' : ''}`}
-          title={alreadySaved ? 'Ya guardado' : 'Guardar filtro como atajo'}
+          title={alreadySaved ? 'Ya guardado' : 'Guardar filtro como panel'}
           onClick={() => {
             if (alreadySaved) return
-            const name = prompt('Nombre para este atajo:', filterText)
+            const name = prompt('Nombre para este panel:', filterText)
             if (!name) return
             createFilterShortcut(name, filterText, 'list')
           }}
