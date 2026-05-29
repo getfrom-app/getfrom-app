@@ -37,6 +37,7 @@
             <a href="#magic">Magic AI</a>
             <a href="#ios-sync" data-i18n="nav.sync">iOS + Sync</a>
             <a href="#ai" data-i18n="nav.ai">Agentes</a>
+            <a href="blog/index.html">Blog</a>
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
             <a href="changelog.html">Novedades</a>
             <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
@@ -491,6 +492,103 @@
     </div>
 </div>
 
+<!-- Planner screenshot -->
+<div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 48px;">
+    <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 12px; text-align: center;">Vista de tareas + planificador semanal integrado</p>
+    <div style="border-radius: 14px; overflow: hidden; box-shadow: 0 16px 56px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06);">
+        <img src="img/screenshots/planificador.png"
+             alt="Vista del planificador semanal de From con tareas organizadas por día y panel lateral de pendientes"
+             style="width: 100%; display: block;">
+    </div>
+</div>
+
+<!-- Light/Dark comparison slider -->
+<div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 64px;">
+    <div style="text-align: center; margin-bottom: 32px;">
+        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary);">Claro u oscuro, siempre elegante</span>
+        <h2 style="font-size: 28px; font-weight: 700; margin: 10px 0 8px; color: var(--text);">Diseñado para trabajar a cualquier hora</h2>
+        <p style="color: var(--text-secondary); font-size: 15px; max-width: 500px; margin: 0 auto;">Arrastra el divisor para comparar el modo claro y oscuro. El mismo diseño, siempre limpio.</p>
+    </div>
+    <div id="img-compare" style="position: relative; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 56px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.08); user-select: none; cursor: col-resize;">
+        <!-- Dark mode (bottom layer, full width) -->
+        <img src="img/screenshots/planificador-dark.png"
+             alt="Planificador en modo oscuro"
+             style="width: 100%; display: block;">
+        <!-- Light mode (top layer, clipped) -->
+        <div id="img-compare-clip" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; pointer-events: none;">
+            <img src="img/screenshots/planificador.png"
+                 alt="Planificador en modo claro"
+                 style="width: 100%; max-width: none; display: block; position: absolute; top: 0; left: 0;">
+        </div>
+        <!-- Divider line -->
+        <div id="img-compare-handle" style="position: absolute; top: 0; left: 50%; width: 3px; height: 100%; background: var(--accent, #4a90d9); transform: translateX(-50%); pointer-events: none;">
+            <!-- Handle circle -->
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; background: var(--accent, #4a90d9); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,.3);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M8 6l-4 6 4 6"/><path d="M16 6l4 6-4 6"/></svg>
+            </div>
+        </div>
+        <!-- Labels -->
+        <div style="position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.92); color: #1a1a2e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 10px; border-radius: 6px; pointer-events: none;">Modo claro</div>
+        <div style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 10px; border-radius: 6px; pointer-events: none;">Modo oscuro</div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var container = document.getElementById('img-compare');
+    var clip = document.getElementById('img-compare-clip');
+    var handle = document.getElementById('img-compare-handle');
+    if (!container) return;
+
+    function setPosition(clientX) {
+        var rect = container.getBoundingClientRect();
+        var x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        var pct = (x / rect.width * 100).toFixed(2);
+        clip.style.width = pct + '%';
+        handle.style.left = pct + '%';
+        // Fix light image width to always fill its clip container
+        var lightImg = clip.querySelector('img');
+        lightImg.style.width = (rect.width) + 'px';
+    }
+
+    var dragging = false;
+
+    container.addEventListener('mousedown', function(e) {
+        dragging = true;
+        setPosition(e.clientX);
+        e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        setPosition(e.clientX);
+    });
+    window.addEventListener('mouseup', function() { dragging = false; });
+
+    container.addEventListener('touchstart', function(e) {
+        dragging = true;
+        setPosition(e.touches[0].clientX);
+        e.preventDefault();
+    }, { passive: false });
+    window.addEventListener('touchmove', function(e) {
+        if (!dragging) return;
+        setPosition(e.touches[0].clientX);
+    }, { passive: true });
+    window.addEventListener('touchend', function() { dragging = false; });
+
+    // Fix image width on resize
+    window.addEventListener('resize', function() {
+        var lightImg = clip.querySelector('img');
+        if (lightImg) lightImg.style.width = container.getBoundingClientRect().width + 'px';
+    });
+
+    // Init light image width after load
+    window.addEventListener('load', function() {
+        var lightImg = clip.querySelector('img');
+        if (lightImg) lightImg.style.width = container.getBoundingClientRect().width + 'px';
+    });
+})();
+</script>
+
 <!-- Integrations -->
 <div class="section-alt" id="integrations">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
@@ -802,6 +900,7 @@
         </div>
         <div class="footer-col">
             <h4>Soporte</h4>
+            <a href="blog/index.html">Blog</a>
             <a href="docs/index.html">Manual</a>
             <a href="support.html">Centro de ayuda</a>
             <a href="mailto:hola@getfrom.app">Contacto</a>
