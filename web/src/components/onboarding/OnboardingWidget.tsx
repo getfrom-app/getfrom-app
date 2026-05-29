@@ -36,31 +36,42 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── When user says "Lo escribí": find most recently created node ──────────
-  function captureUserNode() {
-    try {
-      // Find the most recently updated non-system, non-diary, non-empty root-level node.
-      // Exclude empty nodes — when user presses Enter to confirm a task, a blank sibling
-      // is created immediately after and would otherwise be picked as "most recent".
-      const SYSTEM = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
+  const SYSTEM_NAMES = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
+
+  // Snapshot of existing node IDs when onboarding first shows — used to detect NEW nodes
+  const existingNodeIdsRef = useRef<Set<string> | null>(null)
+
+  // ── Step 0: auto-detect new node ─────────────────────────────────────────
+  useEffect(() => {
+    if (step !== 0 || !visible) return
+
+    // Snapshot existing nodes once when step 0 becomes visible
+    if (!existingNodeIdsRef.current) {
+      existingNodeIdsRef.current = new Set(store.allActive().map(n => n.id))
+    }
+
+    const interval = setInterval(() => {
       const candidates = store.allActive().filter(n =>
         !n.isDiaryEntry &&
         !n.deletedAt &&
-        n.text?.trim() &&            // ← excluir nodos vacíos
-        !SYSTEM.has(n.text || '') &&
-        (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry)
+        n.text?.trim() &&
+        !SYSTEM_NAMES.has(n.text || '') &&
+        (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry) &&
+        !existingNodeIdsRef.current!.has(n.id)   // only NEW nodes
       )
       if (candidates.length === 0) return
-      // Pick most recently updated
+      // Pick the most recently updated new node
       const recent = candidates.sort((a, b) =>
         new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
       )[0]
+      clearInterval(interval)
       setDemoNodeId(recent.id)
-    } catch (e) {
-      console.warn('[Onboarding] captureUserNode failed', e)
-    }
-    next()
-  }
+      next()
+    }, 400)
+
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, visible])
 
   // ── Step 3: detect navigation into demo node (react-router location + interval fallback) ──
   const step3IntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -295,7 +306,13 @@ function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void })
             Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.
           </span>
         </div>
-        <PrimaryBtn label="Lo escribí →" onClick={onNext} />
+        {/* Indicador de espera — avanza automáticamente al detectar el nodo */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, color: '#aaa', fontSize: 12 }}>
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span style={{ marginLeft: 4 }}>Esperando que lo escribas…</span>
+        </div>
         <ProgressDots active={0} />
       </div>
     </>
