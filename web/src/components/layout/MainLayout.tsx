@@ -117,6 +117,7 @@ export default function MainLayout() {
   const setShowSearch = (v: boolean | ((prev: boolean) => boolean)) => {
     setPanelMode(prev => {
       const next = typeof v === 'function' ? v(prev === 'search') : v
+      if (!next && prev === 'search') setFilterText('')  // siempre limpiar al cerrar
       return next ? 'search' : (prev === 'search' ? null : prev)
     })
   }
@@ -213,6 +214,15 @@ export default function MainLayout() {
       window.removeEventListener('wf:set-filter', handleSetFilter)
     }
   }, [navigate])
+
+  // Cerrar búsqueda + limpiar filtro al navegar dentro de un nodo
+  useEffect(() => {
+    if (showSearch) {
+      setPanelMode(null)
+      setFilterText('')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
   const prevIsSyncing = useRef(false)
 
   useTaskNotifications()
