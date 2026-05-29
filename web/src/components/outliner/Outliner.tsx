@@ -503,6 +503,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       document.body.classList.remove('outliner-drag-active')
       document.body.style.userSelect = ''
       ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = ''
+      // Forzar recálculo de estilos ANTES de caretRangeFromPoint —
+      // sin esto el browser puede devolver posición 0 porque aún ve user-select:none
+      void document.body.offsetWidth
 
       if (_activeDragContainer === myContainer.current) {
         _activeDragContainer = null
@@ -521,19 +524,15 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         const target = document.elementFromPoint(x, y)
         const ce = target?.closest('[contenteditable="true"]') as HTMLElement | null
         if (ce) {
-          // Calcular range ANTES de focus (geométrico, no requiere foco)
+          ce.focus()
+          // caretRangeFromPoint tras focus y tras el recálculo de estilos forzado arriba
           const range = document.caretRangeFromPoint
             ? document.caretRangeFromPoint(x, y)
             : null
-          ce.focus()
-          // setTimeout(0): esperar a que Chrome procese el evento de focus
-          // y su selectionchange por defecto, luego sobreescribir con la posición correcta
           if (range) {
-            setTimeout(() => {
-              const sel = window.getSelection()
-              sel?.removeAllRanges()
-              sel?.addRange(range)
-            }, 0)
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
           }
         }
       }
