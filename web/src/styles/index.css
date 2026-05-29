@@ -11454,17 +11454,20 @@ textarea:focus-visible,
 
 /* ── SearchPanel ─────────────────────────────────────────────────────────── */
 .search-panel {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100%;
   background: var(--bg-primary);
 }
 .search-panel-input-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 10px 12px 8px; /* igual que magic-chat-input-wrap → cursor coincide */
-  flex-shrink: 0;
+  background: var(--bg-primary);
 }
 .search-panel-input {
   flex: 1;
