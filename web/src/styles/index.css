@@ -9638,14 +9638,14 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--bg-secondary);
+  background: transparent;
   border: 1px solid transparent;
   border-radius: 7px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.15s, background 0.15s,
               box-shadow 0.2s;
-  width: 180px;
+  width: 120px;
   overflow: hidden;
 }
 .wf-topbar-filter.expanded {

@@ -273,14 +273,10 @@ export default function WFTopBar({
       {/* ── Filtro tipo Workflowy ── */}
       <div className="wf-topbar-filter-wrap" ref={filterWrapRef}>
         <div className={`wf-topbar-filter ${isFilterExpanded ? 'focused expanded' : ''}`}>
-          {/* Icono embudo */}
-          <svg className="wf-topbar-filter-icon" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 01.8 1.6L13 10.17V16a1 1 0 01-.553.894l-4 2A1 1 0 017 18v-7.83L3.2 4.6A1 1 0 013 4V3z" clipRule="evenodd" />
-          </svg>
           <input
             ref={filterRef}
             className="wf-topbar-filter-input"
-            placeholder="¿Qué quieres ver? (⌘F)"
+            placeholder="Buscar"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
             onFocus={() => { setFilterOpen(true); setFilterExpanded(true) }}
@@ -471,7 +467,7 @@ export default function WFTopBar({
         </button>
       )}
 
-      {/* Nota diaria de hoy */}
+      {/* Hoy */}
       <button
         className="wf-topbar-btn"
         title="Ir a la nota de hoy"
@@ -485,23 +481,12 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* Toggle tema claro/oscuro */}
+      {/* Planificador */}
       <button
-        className="wf-topbar-btn"
-        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        style={{ fontSize: 13 }}
-      >
-        {theme === 'dark' ? '☀️' : '🌙'}
-      </button>
-
-      {/* 📅 Planificador */}
-      <button
-        className={`wf-topbar-planner-btn ${plannerOpen ? 'active' : ''}`}
+        className={`wf-topbar-btn wf-topbar-planner-btn ${plannerOpen ? 'active' : ''}`}
         onClick={onTogglePlanner}
-        title="Planificador — timeline lateral (Día / Semana / Mes)"
+        title="Planificador"
       >
-        {/* Icono de timeline / bloques de tiempo — claramente distinto del calendario de hoy */}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/>
           <rect x="3" y="4" width="9" height="4" rx="1" fill="currentColor" stroke="none"/>
@@ -512,12 +497,21 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* ⌘K — Acciones rápidas (rayo, distinto del filtro embudo) */}
-      <button className="wf-topbar-btn wf-topbar-cmd-btn" onClick={onCommandPalette} title="Acciones rápidas — crear, buscar, colapsar… (⌘K)">
+      {/* ⌘K — solo rayo, sin texto */}
+      <button className="wf-topbar-btn" onClick={onCommandPalette} title="Acciones rápidas (⌘K)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
-        <span className="wf-topbar-shortcut-hint">⌘K</span>
+      </button>
+
+      {/* Modo claro/oscuro */}
+      <button
+        className="wf-topbar-btn"
+        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        style={{ fontSize: 13 }}
+      >
+        {theme === 'dark' ? '☀️' : '🌙'}
       </button>
 
       {/* ··· Menú general — solo Papelera, Ajustes, Cerrar sesión */}
