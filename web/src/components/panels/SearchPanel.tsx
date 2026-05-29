@@ -147,7 +147,15 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   }
 
   return (
-    <div className="search-panel">
+    <div
+      className="search-panel"
+      onClick={e => {
+        const target = e.target as HTMLElement
+        if (!target.closest('button') && !target.closest('a') && !target.closest('input')) {
+          inputRef.current?.focus()
+        }
+      }}
+    >
       {/* Input arriba — cursor visible */}
       <div className="search-panel-input-wrap">
         <input

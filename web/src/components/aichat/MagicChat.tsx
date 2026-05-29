@@ -351,13 +351,86 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // hasExpanded jamás vuelve a false → tamaño fijo, sin redimensionado por mensaje.
   const isCompact = !hasExpanded && !isRecording
 
+  // Bloque compartido: input + botones (usado tanto en compacto como en expandido)
+  const inputBlock = (
+    <div className="magic-chat-input-wrap">
+      <div className="magic-chat-node-input">
+        <textarea
+          ref={taRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={onTextareaKey}
+          placeholder={isRecording ? 'Transcribiendo…' : isCompact ? '¿Qué necesitas?' : ''}
+          className="magic-chat-textarea magic-chat-textarea--bare"
+          rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
+        />
+      </div>
+      <div className="magic-chat-actions">
+        <button
+          className={`magic-chat-action-key ${isRecording ? 'magic-chat-action-key--recording' : ''}`}
+          onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
+          onMouseUp={() => { if (isRecordingRef.current) stopRecording(true) }}
+          onMouseLeave={() => { if (isRecordingRef.current) stopRecording(true) }}
+          title="Mantén pulsado para hablar"
+        >
+          <span className="magic-action-dot" />
+          <span>R</span>
+        </button>
+        <button
+          className="magic-chat-action-key magic-chat-send"
+          onClick={() => handleSend(input)}
+          disabled={!input.trim() || chat.isStreaming}
+          title="Enviar"
+        >
+          ↵
+        </button>
+        <button className="magic-chat-action-key" onClick={onClose} title="Cerrar">
+          ESC
+        </button>
+      </div>
+    </div>
+  )
+
   const innerChat = (
-      <div
-        className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
-        onClick={mode === 'modal' ? (e => e.stopPropagation()) : undefined}
-      >
-        {/* ── Nueva conversación (solo cuando hay mensajes, sin cabecera fija) ── */}
-        {hasExpanded && (
+    <div
+      className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
+      onClick={e => {
+        if (mode === 'modal') e.stopPropagation()
+        const target = e.target as HTMLElement
+        if (!target.closest('button') && !target.closest('a') && !target.closest('textarea') && !target.closest('input')) {
+          taRef.current?.focus()
+        }
+      }}
+    >
+      {/* Waveform */}
+      <div className={`magic-chat-waveform ${isRecording ? 'magic-chat-waveform--active' : ''}`}>
+        <canvas ref={canvasRef} width={600} height={64} style={{ width: '100%', height: 64 }} />
+        <div className="magic-chat-recording-label">
+          <span className="magic-chat-recording-dot" />
+          Grabando · suelta R para enviar
+        </div>
+      </div>
+
+      {/* ── COMPACTO: input arriba (igual que Buscar) → chips debajo → spacer ── */}
+      {isCompact && (
+        <>
+          {inputBlock}
+          <ContextChips
+            nodeId={currentNodeId}
+            visible={true}
+            onSelect={(prompt) => {
+              if (chat.isStreaming) return
+              const final = prompt.startsWith('__') ? expandSpecialPrompt(prompt) : prompt
+              chat.send(final, currentNodeId)
+            }}
+          />
+          <div style={{ flex: 1 }} />
+        </>
+      )}
+
+      {/* ── EXPANDIDO: btn nueva sesión → mensajes → input ── */}
+      {hasExpanded && (
+        <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 10px 0', flexShrink: 0 }}>
             <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title="Nueva conversación">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -365,52 +438,17 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
               </svg>
             </button>
           </div>
-        )}
-
-        {/* ── Waveform (solo cuando graba) ── */}
-        <div className={`magic-chat-waveform ${isRecording ? 'magic-chat-waveform--active' : ''}`}>
-          <canvas ref={canvasRef} width={600} height={64} style={{ width: '100%', height: 64 }} />
-          <div className="magic-chat-recording-label">
-            <span className="magic-chat-recording-dot" />
-            Grabando · suelta R para enviar
-          </div>
-        </div>
-
-        {/* ── Estado vacío: burbuja de From + chips ── */}
-        {isCompact && (
-          <div className="magic-chat-empty">
-            {/* Saludo alineado con el cursor del input */}
-            <div className="magic-chat-greeting-text">¿Qué necesitas?</div>
-            <ContextChips
-              nodeId={currentNodeId}
-              visible={true}
-              onSelect={(prompt) => {
-                if (chat.isStreaming) return
-                const final = prompt.startsWith('__') ? expandSpecialPrompt(prompt) : prompt
-                chat.send(final, currentNodeId)
-              }}
-            />
-          </div>
-        )}
-
-        {/* ── Mensajes ── */}
-        {hasExpanded && (
           <div className="magic-chat-messages">
             {chat.messages.map(msg => (
               <MessageBubble key={msg.id} msg={msg} onOpenNode={id => { navigate(`/node/${id}`); onClose() }} />
             ))}
-
-            {/* Quick reply chips */}
             {(() => {
               const last = [...chat.messages].reverse().find(m => m.role === 'assistant')
               const chips = last?.chips ?? []
               return chips.length > 0 && !chat.isStreaming && !chat.pendingActions
-                ? <QuickReplyChips chips={chips} disabled={chat.isStreaming}
-                    onSelect={chip => { setInput(''); chat.send(chip, currentNodeId) }} />
+                ? <QuickReplyChips chips={chips} disabled={chat.isStreaming} onSelect={chip => { setInput(''); chat.send(chip, currentNodeId) }} />
                 : null
             })()}
-
-            {/* Confirmación de acciones pendientes */}
             {chat.pendingActions && chat.pendingActions.length > 0 && (
               <PendingConfirmationCard
                 actions={chat.pendingActions}
@@ -419,62 +457,14 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
                 disabled={chat.isStreaming}
               />
             )}
-
-            {chat.actionStatus && (
-              <div className="magic-chat-status">⚙ {chat.actionStatus}</div>
-            )}
-            {chat.lastError && (
-              <div className="magic-chat-error">{chat.lastError}</div>
-            )}
+            {chat.actionStatus && <div className="magic-chat-status">⚙ {chat.actionStatus}</div>}
+            {chat.lastError && <div className="magic-chat-error">{chat.lastError}</div>}
             <div ref={bottomRef} />
           </div>
-        )}
-
-        {/* ── Input minimalista estilo cursor de nodo ── */}
-        <div className="magic-chat-input-wrap">
-          <div className="magic-chat-node-input">
-            <textarea
-              ref={taRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={onTextareaKey}
-              placeholder={isRecording ? 'Transcribiendo…' : ''}
-              className="magic-chat-textarea magic-chat-textarea--bare"
-              rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
-            />
-          </div>
-          <div className="magic-chat-actions">
-            {/* Grabar: puntito rojo + R */}
-            <button
-              className={`magic-chat-action-key ${isRecording ? 'magic-chat-action-key--recording' : ''}`}
-              onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
-              onMouseUp={() => { if (isRecordingRef.current) stopRecording(true) }}
-              onMouseLeave={() => { if (isRecordingRef.current) stopRecording(true) }}
-              title="Mantén pulsado para hablar"
-            >
-              <span className="magic-action-dot" />
-              <span>R</span>
-            </button>
-            {/* Enviar: tecla ↵ */}
-            <button
-              className="magic-chat-action-key magic-chat-send"
-              onClick={() => handleSend(input)}
-              disabled={!input.trim() || chat.isStreaming}
-              title="Enviar"
-            >
-              ↵
-            </button>
-            {/* Cerrar: tecla ESC */}
-            <button
-              className="magic-chat-action-key"
-              onClick={onClose}
-              title="Cerrar"
-            >
-              ESC
-            </button>
-          </div>
-        </div>
-      </div>
+          {inputBlock}
+        </>
+      )}
+    </div>
   )
 
   if (mode === 'panel') {

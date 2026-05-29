@@ -11213,22 +11213,8 @@ textarea:focus-visible,
   50%       { opacity: 0.5; transform: scale(0.8); }
 }
 
-/* ── Estado vacío ── */
-.magic-chat-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 20px 12px 12px;
-  gap: 8px;
-  flex-shrink: 0;
-}
-/* Saludo alineado con el cursor del input */
-.magic-chat-greeting-text {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  user-select: none;
-}
+/* ── Estado vacío (ya no se usa; el input va arriba como en Buscar) ── */
+.magic-chat-empty { display: flex; flex-direction: column; align-items: flex-start; padding: 0; gap: 0; flex-shrink: 0; }
 
 .magic-chat-empty-glyph {
   font-size: 28px;
