@@ -21,6 +21,7 @@ interface Props {
   sidebarOpen: boolean
   onTogglePlanner?: () => void
   plannerOpen?: boolean
+  magicPanelW?: number   // ancho del panel Magic para alinear el buscador
 }
 
 // ── Categorías del filtro ──────────────────────────────────────────────────
@@ -59,6 +60,7 @@ export default function WFTopBar({
   sidebarOpen,
   onTogglePlanner,
   plannerOpen,
+  magicPanelW = 0,
 }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -382,14 +384,22 @@ export default function WFTopBar({
 
       {/* ── Filtro tipo Workflowy ── */}
       <div className="wf-topbar-filter-wrap" ref={filterWrapRef}>
-        <div className={`wf-topbar-filter ${isFilterExpanded ? 'focused expanded' : ''}`}>
+        <div
+          className={`wf-topbar-filter ${isFilterExpanded ? 'focused expanded' : ''}`}
+          style={isFilterExpanded && magicPanelW > 0 ? { width: magicPanelW - 16 } : undefined}
+        >
           <input
             ref={filterRef}
             className="wf-topbar-filter-input"
             placeholder="Buscar"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
-            onFocus={() => { setFilterOpen(true); setFilterExpanded(true) }}
+            onFocus={() => {
+              setFilterOpen(true)
+              setFilterExpanded(true)
+              // Cerrar panel Magic si está abierto — no son compatibles
+              window.dispatchEvent(new Event('from:close-magic'))
+            }}
           />
           {/* Indicador IA con puntos pulsantes */}
           {interpreting && (

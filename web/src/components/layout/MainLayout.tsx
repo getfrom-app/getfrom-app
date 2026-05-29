@@ -113,8 +113,19 @@ export default function MainLayout() {
 
   // Notificar cuando Magic se abre (para onboarding)
   useEffect(() => {
-    if (showAIChat) window.dispatchEvent(new Event('from:magic-opened'))
+    if (showAIChat) {
+      window.dispatchEvent(new Event('from:magic-opened'))
+      // Cerrar buscador si estaba abierto — no son compatibles
+      window.dispatchEvent(new Event('wf:clear-filter'))
+    }
   }, [showAIChat])
+
+  // Cerrar Magic cuando el buscador se abre
+  useEffect(() => {
+    function handleCloseMagic() { setShowAIChat(false) }
+    window.addEventListener('from:close-magic', handleCloseMagic)
+    return () => window.removeEventListener('from:close-magic', handleCloseMagic)
+  }, [])
 
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
   useEffect(() => {
@@ -559,6 +570,7 @@ export default function MainLayout() {
           sidebarOpen={sidebarOpen}
           onTogglePlanner={() => setPlannerOpen(v => !v)}
           plannerOpen={plannerOpen}
+          magicPanelW={magicPanelW}
         />
       </div>
 
