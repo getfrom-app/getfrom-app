@@ -357,12 +357,13 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           </div>
         </div>
 
-        {/* ── Estado vacío: título grande centrado ── */}
+        {/* ── Estado vacío: burbuja de From + chips ── */}
         {isCompact && (
           <div className="magic-chat-empty">
-            <div className="magic-chat-empty-title" style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, marginBottom: 10 }}>¿En qué te ayudo?</div>
-            <div className="magic-chat-empty-desc">
-              Cuéntame qué necesitas. Creo notas, busco tareas, organizo tu agenda... lo que me pidas.
+            {/* Burbuja de From igual que las respuestas */}
+            <div className="magic-chat-bubble magic-chat-bubble--assistant magic-chat-greeting-bubble">
+              <div className="magic-chat-bubble-avatar">✦</div>
+              <div className="magic-chat-bubble-content">¿Qué necesitas?</div>
             </div>
             <ContextChips
               nodeId={currentNodeId}
@@ -433,39 +434,34 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
             />
           </div>
           <div className="magic-chat-actions">
+            {/* Grabar: puntito rojo + R */}
             <button
-              className={`magic-chat-mic ${isRecording ? 'magic-chat-mic--on' : ''}`}
+              className={`magic-chat-action-key ${isRecording ? 'magic-chat-action-key--recording' : ''}`}
               onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
               onMouseUp={() => { if (isRecordingRef.current) stopRecording(true) }}
               onMouseLeave={() => { if (isRecordingRef.current) stopRecording(true) }}
-              title="Mantén pulsado para hablar · o usa R"
+              title="Mantén pulsado para hablar"
             >
-              {isRecording
-                ? <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
-                : <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
-                    <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
-                    <path d="M8 13v2"/>
-                  </svg>
-              }
+              <span className="magic-action-dot" />
+              <span>R</span>
             </button>
+            {/* Enviar: tecla ↵ */}
             <button
-              className="magic-chat-send"
+              className="magic-chat-action-key magic-chat-send"
               onClick={() => handleSend(input)}
               disabled={!input.trim() || chat.isStreaming}
-              title="Enviar (↵)"
+              title="Enviar"
             >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 13V3M4 7l4-4 4 4"/>
-              </svg>
+              ↵
             </button>
-          </div>
-          <div className="magic-chat-kbd-hint">
-            <span>R grabar</span>
-            <span className="magic-chat-kbd-sep">·</span>
-            <span>↵ enviar</span>
-            <span className="magic-chat-kbd-sep">·</span>
-            <span>Esc cerrar</span>
+            {/* Cerrar: tecla ESC */}
+            <button
+              className="magic-chat-action-key"
+              onClick={onClose}
+              title="Cerrar"
+            >
+              ESC
+            </button>
           </div>
         </div>
       </div>

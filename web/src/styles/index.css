@@ -11070,11 +11070,15 @@ a:focus-visible {
 .magic-chat-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 28px 24px 20px;
+  align-items: flex-start;
+  padding: 20px 16px 12px;
   gap: 6px;
   flex-shrink: 0;
+}
+/* Burbuja de saludo alineada a la izquierda como las respuestas */
+.magic-chat-greeting-bubble {
+  margin: 0 !important;
+  width: 100%;
 }
 
 .magic-chat-empty-glyph {
@@ -11238,49 +11242,61 @@ a:focus-visible {
   gap: 6px;
 }
 
-/* Botón micrófono */
-.magic-chat-mic {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
+/* Botones tipo tecla (R, ↵, ESC) */
+.magic-chat-action-key {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
   transition: all 0.12s;
   user-select: none;
+  height: 26px;
 }
-.magic-chat-mic:hover {
+.magic-chat-action-key:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+  border-color: var(--text-tertiary);
 }
-.magic-chat-mic--on {
-  background: rgba(239,68,68,0.12);
+.magic-chat-action-key--recording {
+  background: rgba(239,68,68,0.10);
+  border-color: rgba(239,68,68,0.3);
   color: #ef4444;
 }
-.magic-chat-mic--on:hover {
-  background: rgba(239,68,68,0.18);
-  color: #ef4444;
+/* Puntito rojo de grabación */
+.magic-action-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
 }
-
-/* Botón enviar */
-.magic-chat-send {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.magic-chat-action-key--recording .magic-action-dot {
+  animation: recording-blink 1s ease-in-out infinite;
+}
+@keyframes recording-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+/* Botón enviar con color cuando tiene contenido */
+.magic-chat-action-key.magic-chat-send:not(:disabled) {
   background: var(--accent);
   color: white;
-  transition: all 0.12s;
+  border-color: var(--accent);
 }
-.magic-chat-send:hover:not(:disabled) {
+.magic-chat-action-key.magic-chat-send:not(:disabled):hover {
   background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
-.magic-chat-send:disabled {
-  background: var(--bg-hover);
-  color: var(--text-tertiary);
+.magic-chat-action-key.magic-chat-send:disabled {
+  opacity: 0.45;
   cursor: default;
 }
 
