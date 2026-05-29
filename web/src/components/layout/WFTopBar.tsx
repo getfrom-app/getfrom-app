@@ -9,7 +9,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { getShortcuts } from '../../store/shortcutsStore'
 import { createFilterShortcut } from '../../utils/atajosHelper'
 import { ensureDayPath } from '../../utils/agendaHelper'
-import { interpretFilterQuery, needsInterpretation, cancelInterpretation } from '../../utils/filterInterpreter'
+import { interpretFilterQuery, needsInterpretation, cancelInterpretation, normalizeSynonyms } from '../../utils/filterInterpreter'
 
 interface Props {
   onFilter: (text: string) => void
@@ -189,9 +189,11 @@ export default function WFTopBar({
     applyChip(`@${slug}`)
   }
 
-  // Comprueba si un token está activo (en el filtro actual)
+  // Comprueba si un token está activo — normaliza sinónimos para que
+  // "pendientes", "pending", etc. resalten el chip "pendiente"
   function isChipActive(token: string) {
-    return filterText.trim().split(/\s+/).includes(token)
+    const normalizedFilter = normalizeSynonyms(filterText) ?? filterText
+    return normalizedFilter.trim().split(/\s+/).includes(token)
   }
 
   function goHome() { navigate('/') }
@@ -263,7 +265,13 @@ export default function WFTopBar({
             className="wf-topbar-filter-input"
             placeholder="¿Qué quieres ver? (⌘F)"
             value={filterText}
-            onChange={e => onFilter(e.target.value)}
+            onChange={e => {
+              const raw = e.target.value
+              const normalized = normalizeSynonyms(raw)
+              onFilter(normalized ?? raw)
+              // Si normalizamos, actualizar el input visualmente
+              if (normalized && filterRef.current) filterRef.current.value = normalized
+            }}
             onFocus={() => { setFilterOpen(true); setFilterExpanded(true) }}
           />
           {/* Indicador IA con puntos pulsantes */}

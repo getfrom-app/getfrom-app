@@ -33,6 +33,122 @@ todo de hoy o mañana → hoy o mañana
 tareas hechas → hecho
 notas del diario de este mes → diario y mes`
 
+// ── Tabla de sinónimos: frases y plurales → token canónico ────────────────
+// Se aplica de forma local, sin IA, antes de cualquier interpretación.
+
+// 1. Primero frases multi-palabra (orden importa: más largas primero)
+const PHRASE_SYNONYMS: [RegExp, string][] = [
+  [/\besta semana\b/gi, 'semana'],
+  [/\bla semana\b/gi, 'semana'],
+  [/\bsemana que viene\b/gi, 'semana'],
+  [/\bsemana actual\b/gi, 'semana'],
+  [/\bthis week\b/gi, 'semana'],
+  [/\beste mes\b/gi, 'mes'],
+  [/\bel mes\b/gi, 'mes'],
+  [/\bsin fecha\b/gi, 'sin-fecha'],
+  [/\bcon fecha\b/gi, 'con-fecha'],
+  [/\bpor hacer\b/gi, 'pendiente'],
+  [/\bsin hacer\b/gi, 'pendiente'],
+  [/\bsin completar\b/gi, 'pendiente'],
+  [/\bno hechas?\b/gi, 'pendiente'],
+  [/\btomorrow\b/gi, 'mañana'],
+  [/\btoday\b/gi, 'hoy'],
+]
+
+// 2. Tokens individuales (después de reemplazar frases)
+const TOKEN_SYNONYMS: Record<string, string> = {
+  // pendiente
+  'pendientes': 'pendiente',
+  'pending': 'pendiente',
+  // hecho
+  'hechas': 'hecho',
+  'hechos': 'hecho',
+  'done': 'hecho',
+  'completado': 'hecho',
+  'completados': 'hecho',
+  'completadas': 'hecho',
+  'terminado': 'hecho',
+  'terminados': 'hecho',
+  'terminada': 'hecho',
+  'terminadas': 'hecho',
+  'finished': 'hecho',
+  // vencido
+  'vencida': 'vencido',
+  'vencidas': 'vencido',
+  'vencidos': 'vencido',
+  'atrasado': 'vencido',
+  'atrasados': 'vencido',
+  'atrasada': 'vencido',
+  'atrasadas': 'vencido',
+  'expirado': 'vencido',
+  'pasado': 'vencido',
+  'pasada': 'vencido',
+  'pasados': 'vencido',
+  'pasadas': 'vencido',
+  'anteriores': 'vencido',
+  'anterior': 'vencido',
+  'overdue': 'vencido',
+  'expired': 'vencido',
+  // tarea
+  'tareas': 'tarea',
+  'task': 'tarea',
+  'tasks': 'tarea',
+  'acción': 'tarea',
+  'acciones': 'tarea',
+  'accion': 'tarea',
+  'acciones': 'tarea',
+  'pendient': 'tarea',
+  // evento
+  'eventos': 'evento',
+  'event': 'evento',
+  'events': 'evento',
+  'cita': 'evento',
+  'citas': 'evento',
+  'reunion': 'evento',
+  'reunión': 'evento',
+  'reuniones': 'evento',
+  'meeting': 'evento',
+  'meetings': 'evento',
+  // semana
+  'semanas': 'semana',
+  'week': 'semana',
+  'weekly': 'semana',
+  // favorito
+  'favoritos': 'favorito',
+  'favorita': 'favorito',
+  'favoritas': 'favorito',
+  'starred': 'favorito',
+  'favorite': 'favorito',
+  'favorites': 'favorito',
+  // diario
+  'diarios': 'diario',
+  'diary': 'diario',
+  'journal': 'diario',
+  // recurso
+  'recursos': 'recurso',
+  'resource': 'recurso',
+  'resources': 'recurso',
+  'enlace': 'recurso',
+  'link': 'recurso',
+}
+
+/**
+ * Normaliza sinónimos y plurales al token canónico del filtro.
+ * Opera localmente sin IA. Devuelve null si no hay cambios.
+ */
+export function normalizeSynonyms(text: string): string | null {
+  let t = text
+  // Fase 1: frases multi-palabra
+  for (const [regex, canonical] of PHRASE_SYNONYMS) {
+    t = t.replace(regex, canonical)
+  }
+  // Fase 2: tokens individuales
+  const tokens = t.trim().split(/\s+/)
+  const normalized = tokens.map(tok => TOKEN_SYNONYMS[tok.toLowerCase()] ?? tok)
+  const result = normalized.join(' ')
+  return result !== text.trim() ? result : null
+}
+
 /**
  * Determina si el texto parece lenguaje natural (no es una query técnica ya).
  */
@@ -41,6 +157,8 @@ export function needsInterpretation(text: string): boolean {
   if (t.length < 4) return false
   if (t.startsWith('#') || t.startsWith('@') || t.startsWith('[[')) return false
   if (isSmartQuery(t)) return false
+  // Si normalizeSynonyms lo resuelve localmente, no necesita IA
+  if (normalizeSynonyms(t) !== null) return false
   return true
 }
 
