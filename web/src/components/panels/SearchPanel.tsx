@@ -153,6 +153,9 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
         )}
       </div>
 
+      {/* Spacer — empuja el input hacia abajo como en Magic */}
+      <div style={{ flex: 1 }} />
+
       {/* Input abajo — como el textarea en Magic, cursor alineado */}
       <div className="search-panel-input-wrap">
         <input
