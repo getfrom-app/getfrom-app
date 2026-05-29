@@ -365,31 +365,45 @@
     </div>
 </section>
 
-<!-- Feature detail screenshots — 4×2 grid -->
+<!-- Feature detail screenshots -->
 <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px 64px;">
     <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; font-weight: 500; letter-spacing: 0.02em;">Así se ve From en acción</p>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-items: start;">
-        <!-- Filtro -->
+
+    <!-- Fila 1 — imágenes horizontales (altura fija, object-fit contain) -->
+    <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
+        <!-- Filtro — muy ancho y fino, ocupa 2fr -->
         <div>
             <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Filtro inteligente</p>
-            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
-                <img src="img/screenshots/detalle-filtro.png" alt="Filtro inteligente con chips de búsqueda" style="width: 100%; display: block;">
+            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06); background: var(--surface, #f7f7f7); display: flex; align-items: center; justify-content: center; height: 100px;">
+                <img src="img/screenshots/detalle-filtro.png" alt="Filtro inteligente con chips de búsqueda" style="width: 100%; height: 100%; object-fit: contain; display: block;">
             </div>
         </div>
-        <!-- Tareas -->
+        <!-- Outliner — horizontal -->
         <div>
-            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Gestión de tareas</p>
-            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
-                <img src="img/screenshots/detalle-tareas.png" alt="Panel de tareas con checkboxes y prioridades" style="width: 100%; display: block;">
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Outliner</p>
+            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06); background: var(--surface, #f7f7f7); display: flex; align-items: center; justify-content: center; height: 100px;">
+                <img src="img/screenshots/detalle-outliner.png" alt="Outliner con jerarquía anidada y formato" style="width: 100%; height: 100%; object-fit: contain; display: block;">
             </div>
         </div>
-        <!-- Paneles -->
+        <!-- Paneles — horizontal cuadrado -->
         <div>
-            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Paneles guardados</p>
-            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
-                <img src="img/screenshots/detalle-paneles.png" alt="Paneles guardados en el sidebar con vistas dinámicas" style="width: 100%; display: block;">
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Paneles</p>
+            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06); background: var(--surface, #f7f7f7); display: flex; align-items: center; justify-content: center; height: 100px;">
+                <img src="img/screenshots/detalle-paneles.png" alt="Paneles guardados en el sidebar" style="width: 100%; height: 100%; object-fit: contain; display: block;">
             </div>
         </div>
+    </div>
+
+    <!-- Fila 1b — tareas (sola, ancha) -->
+    <div style="margin-bottom: 20px;">
+        <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Gestión de tareas</p>
+        <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06); background: var(--surface, #f7f7f7); display: flex; align-items: center; justify-content: center; height: 110px;">
+            <img src="img/screenshots/detalle-tareas.png" alt="Panel de tareas con checkboxes y prioridades" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+        </div>
+    </div>
+
+    <!-- Fila 2 — imágenes cuadradas (height auto, se ven completas) -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start;">
         <!-- Magic -->
         <div>
             <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">✦ Magic AI</p>
@@ -404,13 +418,6 @@
                 <img src="img/screenshots/detalle-planificador.png" alt="Vista del planificador semanal con eventos de colores" style="width: 100%; display: block;">
             </div>
         </div>
-        <!-- Outliner -->
-        <div>
-            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Outliner</p>
-            <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
-                <img src="img/screenshots/detalle-outliner.png" alt="Outliner con jerarquía anidada y formato" style="width: 100%; display: block;">
-            </div>
-        </div>
         <!-- Menú contextual -->
         <div>
             <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Menú contextual</p>
@@ -420,7 +427,7 @@
         </div>
         <!-- Onboarding -->
         <div>
-            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Onboarding guiado</p>
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Onboarding</p>
             <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
                 <img src="img/screenshots/detalle-onboarding.png" alt="Guía de onboarding interactiva en un minuto" style="width: 100%; display: block;">
             </div>
