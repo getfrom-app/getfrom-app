@@ -4,6 +4,35 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.4 — Mayo 2026 · Onboarding, paneles rediseñados, drag-to-select, Magic más inteligente
+
+### Onboarding interactivo (Web)
+- 6 pasos guiados desde el primer nodo hasta crear contenido con IA
+- Detección automática de cada acción del usuario — no hay botones "siguiente"
+- Al terminar: pantalla de bienvenida, cierre limpio y vuelta a raíz
+
+### Paneles Magic y Buscar — mismo diseño (Web)
+- Ambos paneles tienen el input al mismo nivel (32px del top, alineado con el primer nodo)
+- Placeholder en cursiva: "¿Qué necesitas?" y "Buscar…"
+- Clic en espacio vacío del panel → foco automático en el input
+- Buscar: al cerrar o navegar, limpia el filtro automáticamente
+
+### Drag-to-select en el outliner (Web)
+- Arrastra el ratón sobre varios nodos para seleccionarlos (como Notion)
+- Funciona desde cualquier punto: texto, margen, espacio en blanco
+- Backspace / Delete borra los seleccionados · Escape anula · ⌘A selecciona todos
+
+### Magic más inteligente (Web · Servidor)
+- **Fecha correcta**: Magic ya conoce la fecha actual — "mañana" es realmente mañana
+- **Destino inteligente**: un recordatorio genérico va al diario; si estás en una nota de proyecto y pides añadir algo, va a esa nota
+- **navigate_to**: cuando pides "ver las tareas de mañana", Magic navega directamente — no responde con texto
+- **Muévelo**: botón junto a Deshacer para mover un nodo creado a la nota actual o al diario con un clic
+
+### Corrección de cursor (Web)
+- Clic en cualquier nodo coloca el cursor exactamente donde se hizo clic, incluso la primera vez
+
+---
+
 ## v9.3.17 · iOS 2.1 — Mayo 2026 · Undo/redo, slugs, YouTube IA, iOS paridad
 
 ### Undo/Redo corregido (Web · Mac)

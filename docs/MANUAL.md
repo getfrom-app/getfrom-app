@@ -99,9 +99,12 @@ Mientras arrastras, una línea de destino indica dónde caerá el nodo al soltar
 
 ### Selección multinodo
 
-Arrastra el cursor desde una zona vacía del árbol sobre varios nodos. Cuando el cursor sale del nodo inicial, se activa la selección por área: los nodos que cruzan el punto medio del cursor quedan seleccionados (marcados en azul). Con la selección activa puedes eliminarlos, moverlos o aplicar acciones en masa.
+Haz clic y arrastra el cursor sobre varios nodos para seleccionarlos (los nodos marcados quedan en azul). Puedes empezar el arrastre desde cualquier punto: el texto del nodo, el margen o el espacio en blanco entre nodos.
 
-También puedes arrastrar directamente desde el punto/bullet del nodo para iniciar la selección de inmediato.
+Con la selección activa:
+- **Backspace / Delete** — elimina los nodos seleccionados
+- **Escape** — cancela la selección
+- **⌘A** — selecciona todos los nodos visibles
 
 ### Zoom en un nodo
 
@@ -588,17 +591,24 @@ Puedes crear múltiples vistas para el mismo nodo (como las vistas de Notion). P
 Magic es el asistente de IA de From. No es un chatbot genérico: conoce tu árbol, tus tareas, tus contextos y tu perfil personal.
 
 **Abrir Magic:**
-- **Espacio** (sin input activo) — abre Magic para escribir
-- **Mantén R** — abre Magic y empieza a grabar inmediatamente. Suelta R para transcribir y enviar
-- **⌘J** — atajo alternativo
+- **Hover en el borde derecho** de la pantalla → la columna de Magic se abre
 - **Botón ✨** (esquina inferior derecha)
+- **Mantén R** — graba inmediatamente. Suelta R para transcribir y enviar
 
-**Grabar con voz:** mantén R mientras hablas. Al soltar, Magic transcribe tu voz y lo envía como mensaje. El waveform animado muestra que está escuchando.
+Escribe en el campo "¿Qué necesitas?" y pulsa Enter para enviar. Haz clic en cualquier parte de la columna para enfocar el campo automáticamente.
 
-**Lo que crea Magic queda en tu árbol:** cada conversación genera un nodo `✦ Título` en el diario de hoy. Dentro: transcripción completa + nodos creados (tareas, notas, eventos). Si reanudan la conversación, se añade al mismo nodo sin perder lo anterior.
+**Grabar con voz:** mantén R mientras hablas. Al soltar, Magic transcribe tu voz y lo envía. El waveform animado muestra que está escuchando.
+
+**Dónde crea Magic las cosas:**
+- Recordatorios y tareas genéricas → van al **diario de hoy**
+- Si estás en una nota de proyecto y pides añadir algo relacionado → va a **esa nota**
+- Si no es el destino correcto: botón **"Muévelo a esta nota"** o **"Muévelo a hoy"** junto a Deshacer
+
+**Navegar directamente:** di "ver las tareas de mañana" o "ábreme la nota de proyectos" — Magic navega directamente sin texto intermedio.
 
 **Qué puede hacer:**
 - Crear tareas, notas y eventos en tu árbol
+- Navegar directamente a cualquier nota o día del diario
 - Resumir el contenido de cualquier nodo
 - Buscar información en tus notas
 - Organizar, reescribir, priorizar
