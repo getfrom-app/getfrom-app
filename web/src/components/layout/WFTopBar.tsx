@@ -26,18 +26,27 @@ interface Props {
 // ── Categorías del filtro ──────────────────────────────────────────────────
 type FilterCategory = 'tags' | 'dates' | 'tasks' | null
 
-const DATE_CHIPS = [
+const TYPE_CHIPS = [
+  { label: 'Nota',    query: 'nota' },
+  { label: 'Tarea',   query: 'tarea' },
+  { label: 'Evento',  query: 'evento' },
+  { label: 'Recurso', query: 'recurso' },
+]
+const TIME_CHIPS = [
   { label: 'Hoy',         query: 'hoy' },
-  { label: 'Mañana',      query: 'mañana' },
   { label: 'Esta semana', query: 'semana' },
-  { label: 'Vencido',     query: 'vencido' },
+  { label: 'Este mes',    query: 'mes' },
+  { label: 'Pasado',      query: 'pasado' },
+  { label: 'Futuro',      query: 'futuro' },
 ]
-const TASK_CHIPS = [
-  { label: 'Pendiente',  query: 'pendiente' },
-  { label: 'Hecho',      query: 'hecho' },
-  { label: 'Tarea',      query: 'tarea' },
-  { label: 'Evento',     query: 'evento' },
+const STATUS_CHIPS = [
+  { label: 'Pendiente', query: 'pendiente' },
+  { label: 'Hecho',     query: 'hecho' },
 ]
+
+// Para isSmartQuery y compatibilidad con código antiguo
+const DATE_CHIPS = TIME_CHIPS
+const TASK_CHIPS = [...TYPE_CHIPS, ...STATUS_CHIPS]
 
 export default function WFTopBar({
   onFilter,
@@ -54,6 +63,20 @@ export default function WFTopBar({
   const location = useLocation()
   const s = useStore()
   const { theme, setTheme } = useTheme()
+
+  // Top 5 contextos del nodo 🧠 Contexto
+  const contextChips = useMemo(() => {
+    const root = s.allActive().find(n => n.text === '🧠 Contexto' && n.parentId === null)
+    if (!root) return []
+    return s.children(root.id)
+      .filter(n => !n.deletedAt && n.text?.trim())
+      .slice(0, 5)
+      .map(n => {
+        const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+        return { label: n.text, query: `@${slug}` }
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.nodes.size])
   const [menuOpen, setMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterExpanded, setFilterExpanded] = useState(false)
@@ -325,16 +348,40 @@ export default function WFTopBar({
           )}
         </div>
 
-        {/* Chips flotantes bajo el buscador */}
+        {/* Chips flotantes bajo el buscador — agrupados */}
         {isFilterExpanded && (
           <div className="wf-filter-chips-dropdown">
-            {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
-              <button
-                key={c.query}
-                className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+            {/* Tipo */}
+            {TYPE_CHIPS.map(c => (
+              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
                 onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
               >{c.label}</button>
             ))}
+            <span className="wf-filter-chip-sep" />
+            {/* Tiempo */}
+            {TIME_CHIPS.map(c => (
+              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              >{c.label}</button>
+            ))}
+            <span className="wf-filter-chip-sep" />
+            {/* Estado */}
+            {STATUS_CHIPS.map(c => (
+              <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              >{c.label}</button>
+            ))}
+            {/* Contextos dinámicos */}
+            {contextChips.length > 0 && (
+              <>
+                <span className="wf-filter-chip-sep" />
+                {contextChips.map(c => (
+                  <button key={c.query} className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+                  >{c.label}</button>
+                ))}
+              </>
+            )}
           </div>
         )}
 

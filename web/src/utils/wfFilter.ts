@@ -111,11 +111,15 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'sinfecha':    return node.status === 'pending' && !node.due
 
     // Tipo de nodo
+    case 'nota':
+    case 'tipo:nota':   return node.status === null && !node.isEvent && !node.isResource
     case 'evento':
     case 'tipo:evento': return !!node.isEvent
     case 'favorito':    return !!node.isFavorite
     case 'diario':      return !!node.isDiaryEntry
-    case 'recurso':     return !!node.isResource
+    case 'recurso':
+    case 'archivo':
+    case 'enlace':      return !!node.isResource
     case 'activo':      return !!node.isActive
 
     default:
@@ -285,7 +289,7 @@ const SMART_OPERATORS = [
   'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
-  'favorito', 'diario', 'recurso', 'activo', 'evento', 'tipo:',
+  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:',
 ]
 
 export function isSmartQuery(text: string): boolean {
