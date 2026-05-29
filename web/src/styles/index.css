@@ -11463,7 +11463,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 20px 12px 10px; /* alineado con magic-chat-empty: 20px top, 12px left */
+  padding: 10px 12px 8px; /* igual que magic-chat-input-wrap → cursor coincide */
   flex-shrink: 0;
 }
 .search-panel-input {
@@ -11491,7 +11491,7 @@ textarea:focus-visible,
 }
 .search-panel-clear:hover { color: var(--text-primary); }
 .search-panel-chips {
-  padding: 4px 12px 16px;
+  padding: 20px 4px 12px; /* top 20px igual que magic-chat-empty; left 4px + chip padding 8px = 12px total */
   display: flex;
   flex-direction: column;
   gap: 2px;
