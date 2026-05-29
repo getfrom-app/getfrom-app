@@ -133,8 +133,16 @@ export default function WFTopBar({
 
     const combos = cartesian(groups)
     const query = combos.map(combo => combo.join(' y ')).join(' o ')
-    onFilter(query)
-    if (filterRef.current) filterRef.current.value = ''
+    // Trailing space → el usuario puede escribir texto adicional sin pegar con el token
+    onFilter(query + ' ')
+    // Poner foco y cursor al final para que el usuario pueda escribir inmediatamente
+    setTimeout(() => {
+      if (filterRef.current) {
+        filterRef.current.focus()
+        const len = filterRef.current.value.length
+        filterRef.current.setSelectionRange(len, len)
+      }
+    }, 0)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chipTypes, chipTimes, chipStatuses, chipContexts])
 
