@@ -1586,8 +1586,14 @@ export default function NodeView() {
                   if (firstNodeText) {
                     firstNodeText.focus()
                   } else {
-                    setBodyEditing(true)
-                    setTimeout(() => textareaRef.current?.focus(), 50)
+                    // Crear primer hijo y enfocarlo — nunca abrir el body editor
+                    if (id) {
+                      const newChild = store.createNode({ text: '', parentId: id, siblingOrder: 1 })
+                      setTimeout(() => {
+                        const el = document.querySelector(`[data-node-id="${newChild.id}"] [contenteditable]`) as HTMLElement | null
+                        el?.focus()
+                      }, 50)
+                    }
                   }
                 }
                 if (e.key === 'Escape') {
@@ -1849,8 +1855,8 @@ export default function NodeView() {
         </div>
 
         <div className="view-body">
-          {/* Body editor */}
-          <div className="node-body-editor">
+          {/* Body editor — solo si el nodo tiene contenido real en body */}
+          <div className="node-body-editor" style={{ display: (node?.body && node.body.trim()) || bodyEditing ? 'block' : 'none' }}>
             {bodyEditing && !isLocked ? (
               <>
                 <div className="node-body-toolbar">
