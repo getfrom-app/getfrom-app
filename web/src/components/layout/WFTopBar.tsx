@@ -325,7 +325,18 @@ export default function WFTopBar({
           )}
         </div>
 
-        {/* Panel chips solo cuando hay categoría seleccionada (se mueve a fila secundaria) */}
+        {/* Chips flotantes bajo el buscador */}
+        {isFilterExpanded && (
+          <div className="wf-filter-chips-dropdown">
+            {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
+              <button
+                key={c.query}
+                className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              >{c.label}</button>
+            ))}
+          </div>
+        )}
 
         {/* Panel completo — categorías extra (@, fechas, tags) cuando hay categoría seleccionada */}
         {filterOpen && filterCategory && (
@@ -532,18 +543,6 @@ export default function WFTopBar({
       </div>
     </div>
 
-    {/* ── Fila secundaria de chips — debajo de toda la barra cuando el filtro está activo ── */}
-    {isFilterExpanded && (
-      <div className="wf-filter-chips-bar">
-        {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
-          <button
-            key={c.query}
-            className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-            onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
-          >{c.label}</button>
-        ))}
-      </div>
-    )}
     </div>
   )
 }

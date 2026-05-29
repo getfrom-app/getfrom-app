@@ -89,7 +89,7 @@ html, body, #root {
 }
 
 button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
-input, textarea { font: inherit; color: inherit; background: none; border: none; outline: none; }
+input, textarea { font: inherit; color: inherit; background: none; border: none; outline: none !important; box-shadow: none; }
 a { color: inherit; text-decoration: none; }
 
 /* ── Auth ─────────────────────────────────────────────────────────────────── */
@@ -9659,46 +9659,52 @@ a:focus-visible {
 .wf-topbar-filter.expanded {
   width: 220px;
   border-color: transparent;
-  background: var(--bg-hover);
+  background: transparent;
 }
 .wf-topbar-filter.focused {
   border-color: transparent;
-  background: var(--bg-hover);
+  background: transparent;
 }
 
-/* Fila secundaria de chips bajo el topbar */
-.wf-filter-chips-bar {
+/* Chips flotantes bajo el buscador */
+.wf-filter-chips-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 100%;
   display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px 12px 4px;
-  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
-  background: var(--bg-secondary);
-  animation: chips-bar-in 0.18s ease both;
+  gap: 0;
+  padding: 6px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  z-index: 200;
+  animation: chips-bar-in 0.15s ease both;
 }
 @keyframes chips-bar-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-/* Chips en la fila secundaria: solo texto, sin borde ni fondo */
-.wf-filter-chips-bar .wf-filter-chip {
+.wf-filter-chips-dropdown .wf-filter-chip {
   background: transparent;
   border: none;
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 3px 8px;
   font-size: 12px;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
-.wf-filter-chips-bar .wf-filter-chip:hover {
+.wf-filter-chips-dropdown .wf-filter-chip:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
   border: none;
 }
-.wf-filter-chips-bar .wf-filter-chip.active {
-  background: transparent;
+.wf-filter-chips-dropdown .wf-filter-chip.active {
   color: var(--accent);
   font-weight: 600;
+  background: transparent;
   border: none;
 }
 .wf-topbar-filter-icon {
