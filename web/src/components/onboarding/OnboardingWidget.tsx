@@ -299,14 +299,17 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
       <AccentLine />
       <div style={{ padding: '16px 20px 20px' }}>
         <div style={{ fontSize: 28, marginBottom: 10 }}>{tryAgain ? '↩️' : '✏️'}</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
           {tryAgain ? 'Inténtalo de nuevo' : 'Tu primer nodo'}
         </div>
+
+        {/* Subtítulo — distinto según estado */}
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           {tryAgain
-            ? 'Pulsa en un bullet vacío y escribe la frase completa:'
+            ? <>Ese nodo se quedó a medias. Escríbelo completo en un bullet nuevo y pulsa <strong>Enter</strong>.</>
             : 'Pulsa en cualquier parte del outliner y escribe:'}
         </div>
+
         <div style={{
           background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8,
           padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6',
@@ -314,21 +317,23 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
         }}>
           Empezar a utilizar From
         </div>
-        <div style={{
-          display: 'flex', alignItems: 'flex-start', gap: 8,
-          background: '#fafafa', border: '1px solid #ebebeb',
-          borderRadius: 8, padding: '8px 10px', marginBottom: 20,
-        }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
-          <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-            {tryAgain
-              ? <>Ese nodo se quedó a medias. Prueba a escribirlo completo en un bullet nuevo y pulsa <strong>Enter</strong>.</>
-              : <>Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.</>
-            }
-          </span>
-        </div>
-        {/* Indicador de espera — avanza automáticamente al detectar el nodo */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, color: '#aaa', fontSize: 12 }}>
+
+        {/* Hint solo en el estado inicial */}
+        {!tryAgain && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            background: '#fafafa', border: '1px solid #ebebeb',
+            borderRadius: 8, padding: '8px 10px', marginBottom: 12,
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+            <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
+              Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.
+            </span>
+          </div>
+        )}
+
+        {/* Indicador de espera */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, marginTop: tryAgain ? 8 : 0, color: '#aaa', fontSize: 12 }}>
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
