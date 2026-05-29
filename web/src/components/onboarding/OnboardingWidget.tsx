@@ -251,10 +251,9 @@ function AccentLine() {
 function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   return (
     <>
-      <TopBar />
-      <div style={{ padding: '12px 20px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 13, color: '#666', lineHeight: 1.4 }}>
-          Hola, soy Magic. Déjame enseñarte lo esencial.
+      <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#8b5cf6', lineHeight: 1.3 }}>
+          ✦ Te prometo que será UN MINUTO.
         </div>
         <CloseBtn onClose={onClose} />
       </div>
