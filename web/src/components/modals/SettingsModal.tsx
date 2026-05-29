@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSelector from '../settings/LanguageSelector'
 import {
   updateMe, deleteAccount, cancelSubscription, changePlan,
   clearTokens, exportNodes, getToken, getApiToken, generateApiToken,
@@ -29,63 +31,9 @@ function saveTemplates(ts: CustomTemplate[]) {
 type Tab = 'cuenta' | 'apariencia' | 'ia' | 'magic' | 'estadisticas'
   | 'atajos' | 'plantillas' | 'google' | 'mcp'
   | 'tags' | 'estados' | 'voz' | 'agentes' | 'timeline' | 'prompts'
-  | 'backups' | 'exportar' | 'importar'
+  | 'backups' | 'exportar' | 'importar' | 'idioma'
 
 interface Section { id: Tab; label: string; icon: string }
-const SECTIONS: { title?: string; items: Section[] }[] = [
-  {
-    items: [
-      { id: 'cuenta', label: 'Cuenta', icon: '👤' },
-      { id: 'google', label: 'Google', icon: '📅' },
-    ],
-  },
-  {
-    title: 'Apariencia',
-    items: [
-      { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
-      { id: 'estadisticas', label: 'Estadísticas', icon: '📊' },
-    ],
-  },
-  {
-    title: 'IA',
-    items: [
-      { id: 'ia', label: 'Inteligencia Artificial', icon: '✦' },
-      { id: 'magic', label: 'Magic', icon: '🪄' },
-    ],
-  },
-  {
-    title: 'Productividad',
-    items: [
-      { id: 'atajos', label: 'Atajos de texto', icon: '⌨' },
-      { id: 'plantillas', label: 'Plantillas', icon: '📋' },
-      { id: 'voz', label: 'Voz', icon: '🎤' },
-    ],
-  },
-  {
-    title: 'Integraciones',
-    items: [
-      { id: 'mcp', label: 'Claude (MCP)', icon: '🔌' },
-    ],
-  },
-  {
-    title: 'Avanzado',
-    items: [
-      { id: 'tags', label: 'Tags', icon: '🏷' },
-      { id: 'estados', label: 'Estados', icon: '✓' },
-      { id: 'agentes', label: 'Agentes', icon: '🤖' },
-      { id: 'timeline', label: 'Vista (Timeline)', icon: '⏱' },
-      { id: 'prompts', label: 'Prompts', icon: '⚡' },
-    ],
-  },
-  {
-    title: 'Datos',
-    items: [
-      { id: 'backups', label: 'Backups', icon: '💾' },
-      { id: 'exportar', label: 'Exportar', icon: '↗' },
-      { id: 'importar', label: 'Importar', icon: '↙' },
-    ],
-  },
-]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -108,6 +56,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 // ── Tab panes ─────────────────────────────────────────────────────────────────
 
 export function CuentaPane() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const us = useUserStore()
   const { user } = us
@@ -162,7 +111,7 @@ export function CuentaPane() {
     setPasswordLoading(true)
     try {
       await updateMe({ currentPassword, newPassword })
-      setPasswordSuccess('Contraseña actualizada')
+      setPasswordSuccess(t('account.passwordUpdated'))
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
       setShowPasswordForm(false)
     } catch (err: unknown) { setPasswordError(err instanceof Error ? err.message : 'Error') }
@@ -174,7 +123,7 @@ export function CuentaPane() {
     try {
       await updateMe({ newEmail, currentPassword: emailPassword })
       await userStore.fetchMe()
-      setEmailSuccess('Email actualizado'); setNewEmail(''); setEmailPassword(''); setShowEmailForm(false)
+      setEmailSuccess(t('account.emailUpdated')); setNewEmail(''); setEmailPassword(''); setShowEmailForm(false)
     } catch (err: unknown) { setEmailError(err instanceof Error ? err.message : 'Error') }
     finally { setEmailLoading(false) }
   }
@@ -212,74 +161,74 @@ export function CuentaPane() {
   }
 
   function getPlanBadge() {
-    if (user?.licenseStatus === 'active') return <span className="plan-badge plan-badge--license">Licencia perpetua</span>
-    if (user?.subscriptionStatus === 'active') return <span className="plan-badge plan-badge--active">Activa</span>
-    if (user?.subscriptionStatus === 'trialing') return <span className="plan-badge plan-badge--active">Prueba gratuita</span>
-    if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') return <span className="plan-badge plan-badge--cancelled">Cancelada</span>
-    return <span className="plan-badge plan-badge--free">Sin plan</span>
+    if (user?.licenseStatus === 'active') return <span className="plan-badge plan-badge--license">{t('account.planBadgeLicense')}</span>
+    if (user?.subscriptionStatus === 'active') return <span className="plan-badge plan-badge--active">{t('account.planBadgeActive')}</span>
+    if (user?.subscriptionStatus === 'trialing') return <span className="plan-badge plan-badge--active">{t('account.planBadgeTrial')}</span>
+    if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') return <span className="plan-badge plan-badge--cancelled">{t('account.planBadgeCancelled')}</span>
+    return <span className="plan-badge plan-badge--free">{t('account.planBadgeFree')}</span>
   }
 
   return (
     <div className="st-pane">
       {/* Stats */}
       <div className="st-stats">
-        <div className="st-stat"><span className="st-stat-n">{totalNotes}</span><span>Notas</span></div>
-        <div className="st-stat"><span className="st-stat-n">{totalTasks}</span><span>Tareas</span></div>
-        <div className="st-stat"><span className="st-stat-n">{doneTasks}</span><span>Completadas</span></div>
-        <div className="st-stat"><span className="st-stat-n">{completionRate}%</span><span>Tasa</span></div>
-        <div className="st-stat"><span className="st-stat-n">{diaryStreak}</span><span>Racha</span></div>
-        <div className="st-stat"><span className="st-stat-n">{totalWords.toLocaleString()}</span><span>Palabras</span></div>
+        <div className="st-stat"><span className="st-stat-n">{totalNotes}</span><span>{t('account.statNotes')}</span></div>
+        <div className="st-stat"><span className="st-stat-n">{totalTasks}</span><span>{t('account.statTasks')}</span></div>
+        <div className="st-stat"><span className="st-stat-n">{doneTasks}</span><span>{t('account.statCompleted')}</span></div>
+        <div className="st-stat"><span className="st-stat-n">{completionRate}%</span><span>{t('account.statCompletionRate')}</span></div>
+        <div className="st-stat"><span className="st-stat-n">{diaryStreak}</span><span>{t('account.statStreak')}</span></div>
+        <div className="st-stat"><span className="st-stat-n">{totalWords.toLocaleString()}</span><span>{t('account.statWords')}</span></div>
       </div>
 
-      <SectionTitle>Perfil</SectionTitle>
+      <SectionTitle>{t('account.sectionProfile')}</SectionTitle>
 
-      <Row label="Email" hint={user?.email ?? '—'}>
+      <Row label={t('account.emailRow')} hint={user?.email ?? '—'}>
         <button className="btn-secondary" onClick={() => { setShowEmailForm(v => !v); setEmailError(''); setEmailSuccess('') }}>
-          Cambiar
+          {t('account.changeButton')}
         </button>
       </Row>
       {showEmailForm && (
         <form className="st-form" onSubmit={handleChangeEmail}>
-          <div className="st-form-field"><label>Nuevo email</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="nuevo@email.com" required /></div>
-          <div className="st-form-field"><label>Contraseña actual</label><input type="password" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} placeholder="••••••••" required /></div>
+          <div className="st-form-field"><label>{t('account.newEmailLabel')}</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={t('account.newEmailPlaceholder')} required /></div>
+          <div className="st-form-field"><label>{t('account.currentPasswordLabel')}</label><input type="password" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} placeholder="••••••••" required /></div>
           {emailError && <div className="auth-error">{emailError}</div>}
           {emailSuccess && <div className="auth-success">{emailSuccess}</div>}
           <div className="st-form-actions">
-            <button type="submit" className="btn-primary" disabled={emailLoading}>{emailLoading ? 'Guardando...' : 'Guardar'}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowEmailForm(false)}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={emailLoading}>{emailLoading ? t('common.saving') : t('common.save')}</button>
+            <button type="button" className="btn-secondary" onClick={() => setShowEmailForm(false)}>{t('common.cancel')}</button>
           </div>
         </form>
       )}
 
-      <Row label="Contraseña" hint="••••••••">
+      <Row label={t('account.passwordRow')} hint="••••••••">
         <button className="btn-secondary" onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess('') }}>
-          Cambiar
+          {t('account.changeButton')}
         </button>
       </Row>
       {showPasswordForm && (
         <form className="st-form" onSubmit={handleChangePassword}>
-          <div className="st-form-field"><label>Contraseña actual</label><input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" required /></div>
-          <div className="st-form-field"><label>Nueva contraseña</label><input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" required minLength={8} /></div>
-          <div className="st-form-field"><label>Confirmar nueva contraseña</label><input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" required /></div>
+          <div className="st-form-field"><label>{t('account.currentPasswordLabel')}</label><input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" required /></div>
+          <div className="st-form-field"><label>{t('account.newPasswordLabel')}</label><input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" required minLength={8} /></div>
+          <div className="st-form-field"><label>{t('account.confirmNewPasswordLabel')}</label><input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" required /></div>
           {passwordError && <div className="auth-error">{passwordError}</div>}
           {passwordSuccess && <div className="auth-success">{passwordSuccess}</div>}
           <div className="st-form-actions">
-            <button type="submit" className="btn-primary" disabled={passwordLoading}>{passwordLoading ? 'Guardando...' : 'Guardar'}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowPasswordForm(false)}>Cancelar</button>
+            <button type="submit" className="btn-primary" disabled={passwordLoading}>{passwordLoading ? t('common.saving') : t('common.save')}</button>
+            <button type="button" className="btn-secondary" onClick={() => setShowPasswordForm(false)}>{t('common.cancel')}</button>
           </div>
         </form>
       )}
 
-      <SectionTitle>Suscripción</SectionTitle>
+      <SectionTitle>{t('account.sectionSubscription')}</SectionTitle>
 
-      <Row label="Estado">{getPlanBadge()}</Row>
+      <Row label={t('account.subscriptionStatus')}>{getPlanBadge()}</Row>
       {user?.subscriptionStatus === 'active' && user.subscriptionRenewsAt && (
-        <Row label="Próxima renovación">
+        <Row label={t('account.subscriptionRenewal')}>
           <span className="st-value">{new Date(user.subscriptionRenewsAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </Row>
       )}
       {user?.tokensBalance !== undefined && (
-        <Row label="Tokens IA">
+        <Row label={t('account.tokensBalance')}>
           <span className="st-value">{user.tokensBalance.toLocaleString()}</span>
         </Row>
       )}
@@ -287,39 +236,39 @@ export function CuentaPane() {
       <div className="st-actions">
         {user?.subscriptionStatus !== 'active' && user?.licenseStatus !== 'active' && (
           <button className="btn-primary" onClick={handleSubscribe} disabled={subLoading}>
-            {subLoading ? 'Cargando...' : 'Suscribirse'}
+            {subLoading ? t('common.loading') : t('account.subscribeButton')}
           </button>
         )}
         {user?.subscriptionStatus === 'active' && (
           <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
-            {subLoading ? 'Procesando...' : 'Cancelar suscripción'}
+            {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
           </button>
         )}
         <a href="https://app.lemonsqueezy.com/billing" target="_blank" rel="noopener noreferrer" className="btn-secondary">
-          Gestionar facturación ↗
+          {t('account.manageBillingButton')}
         </a>
       </div>
 
-      <SectionTitle>Privacidad</SectionTitle>
-      <Row label="Tus datos" hint="Tus notas se guardan localmente y en nuestros servidores para sincronización. Nunca compartimos datos con terceros ni los usamos para entrenar modelos de IA." />
-      <Row label="Política de privacidad">
-        <a href="https://getfrom.app/privacy" target="_blank" rel="noopener noreferrer" className="btn-secondary">Ver ↗</a>
+      <SectionTitle>{t('account.sectionPrivacy')}</SectionTitle>
+      <Row label={t('account.privacyDataLabel')} hint={t('account.privacyDataHint')} />
+      <Row label={t('account.privacyPolicyLabel')}>
+        <a href="https://getfrom.app/privacy" target="_blank" rel="noopener noreferrer" className="btn-secondary">{t('account.privacyPolicyViewButton')}</a>
       </Row>
 
-      <SectionTitle>Zona de peligro</SectionTitle>
-      <Row label="Eliminar cuenta" hint="Acción irreversible. Se borrarán todos tus datos permanentemente.">
-        <button className="btn-danger" onClick={() => setShowDeleteModal(true)}>Eliminar cuenta</button>
+      <SectionTitle>{t('account.sectionDangerZone')}</SectionTitle>
+      <Row label={t('account.deleteAccountLabel')} hint={t('account.deleteAccountHint')}>
+        <button className="btn-danger" onClick={() => setShowDeleteModal(true)}>{t('account.deleteAccountButton')}</button>
       </Row>
 
       {showDeleteModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <h2>¿Eliminar cuenta?</h2>
-            <p>Esta acción eliminará permanentemente tu cuenta y todos tus datos. No se puede deshacer.</p>
+            <h2>{t('account.deleteAccountConfirmTitle')}</h2>
+            <p>{t('account.deleteAccountConfirmText')}</p>
             {deleteError && <div className="auth-error" style={{ marginTop: 12 }}>{deleteError}</div>}
             <div className="modal-actions">
-              <button className="btn-danger" onClick={handleDeleteAccount} disabled={deleteLoading}>{deleteLoading ? 'Eliminando...' : 'Sí, eliminar'}</button>
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="btn-danger" onClick={handleDeleteAccount} disabled={deleteLoading}>{deleteLoading ? t('common.eliminating') : t('account.deleteAccountConfirmButton')}</button>
+              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('common.cancel')}</button>
             </div>
           </div>
         </div>,
@@ -330,6 +279,7 @@ export function CuentaPane() {
 }
 
 export function AparienciaPane() {
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
 
   // Franja horaria visible (calendario + timeline diario)
@@ -378,39 +328,39 @@ export function AparienciaPane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>Tema</SectionTitle>
-      <Row label="Modo de color" hint="Elige entre modo claro y oscuro.">
+      <SectionTitle>{t('appearance.sectionTheme')}</SectionTitle>
+      <Row label={t('appearance.colorModeLabel')} hint={t('appearance.colorModeHint')}>
         <div className="st-segmented">
-          <button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}>☀️ Claro</button>
-          <button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}>🌙 Oscuro</button>
+          <button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}>{t('appearance.themeLight')}</button>
+          <button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}>{t('appearance.themeDark')}</button>
         </div>
       </Row>
 
-      <SectionTitle>Tipografía</SectionTitle>
-      <Row label="Tamaño de fuente" hint="Ajusta el tamaño base del texto en la app.">
+      <SectionTitle>{t('appearance.sectionTypography')}</SectionTitle>
+      <Row label={t('appearance.fontSizeLabel')} hint={t('appearance.fontSizeHint')}>
         <div className="st-segmented">
-          <button className={fontSize === 'small' ? 'active' : ''} onClick={() => applyFontSize('small')}>Pequeño</button>
-          <button className={fontSize === 'normal' ? 'active' : ''} onClick={() => applyFontSize('normal')}>Normal</button>
-          <button className={fontSize === 'large' ? 'active' : ''} onClick={() => applyFontSize('large')}>Grande</button>
+          <button className={fontSize === 'small' ? 'active' : ''} onClick={() => applyFontSize('small')}>{t('appearance.fontSizeSmall')}</button>
+          <button className={fontSize === 'normal' ? 'active' : ''} onClick={() => applyFontSize('normal')}>{t('appearance.fontSizeNormal')}</button>
+          <button className={fontSize === 'large' ? 'active' : ''} onClick={() => applyFontSize('large')}>{t('appearance.fontSizeLarge')}</button>
         </div>
       </Row>
-      <Row label="Interlineado" hint="Espacio entre líneas de texto.">
+      <Row label={t('appearance.lineHeightLabel')} hint={t('appearance.lineHeightHint')}>
         <div className="st-segmented">
-          <button className={lineHeight === 'compact' ? 'active' : ''} onClick={() => applyLineHeight('compact')}>Compacto</button>
-          <button className={lineHeight === 'normal' ? 'active' : ''} onClick={() => applyLineHeight('normal')}>Normal</button>
-          <button className={lineHeight === 'relaxed' ? 'active' : ''} onClick={() => applyLineHeight('relaxed')}>Espacioso</button>
+          <button className={lineHeight === 'compact' ? 'active' : ''} onClick={() => applyLineHeight('compact')}>{t('appearance.lineHeightCompact')}</button>
+          <button className={lineHeight === 'normal' ? 'active' : ''} onClick={() => applyLineHeight('normal')}>{t('appearance.lineHeightNormal')}</button>
+          <button className={lineHeight === 'relaxed' ? 'active' : ''} onClick={() => applyLineHeight('relaxed')}>{t('appearance.lineHeightRelaxed')}</button>
         </div>
       </Row>
 
-      <SectionTitle>Calendario y Timeline</SectionTitle>
-      <Row label="Hora de inicio del día" hint="Las horas anteriores quedan ocultas en calendario semanal y timeline diario.">
+      <SectionTitle>{t('appearance.sectionCalendar')}</SectionTitle>
+      <Row label={t('appearance.dayStartLabel')} hint={t('appearance.dayStartHint')}>
         <select value={dayStart} onChange={e => applyDayStart(parseInt(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
           {Array.from({ length: 24 }, (_, h) => (
             <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
           ))}
         </select>
       </Row>
-      <Row label="Hora de fin del día" hint="Las horas posteriores quedan ocultas. Por defecto: 7:00 a 23:00.">
+      <Row label={t('appearance.dayEndLabel')} hint={t('appearance.dayEndHint')}>
         <select value={dayEnd} onChange={e => applyDayEnd(parseInt(e.target.value))} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
           {Array.from({ length: 24 }, (_, h) => h + 1).map(h => (
             <option key={h} value={h} disabled={h <= dayStart}>{String(h).padStart(2, '0')}:00</option>
@@ -447,6 +397,7 @@ const PROVIDERS: ProviderConfig[] = [
 
 // Editor por proveedor — extraído para evitar duplicar markup.
 function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig; hasPaidPlan: boolean }) {
+  const { t } = useTranslation()
   const us = useUserStore()
   const serverKey = (us.user?.aiApiKeys?.[provider.id] as string | undefined) ?? ''
   const [apiKey, setApiKey] = useState<string>(
@@ -468,7 +419,7 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
     const trimmed = apiKey.trim()
     setKeyError(null)
     if (!hasPaidPlan && trimmed.length > 0) {
-      setKeyError('Requiere plan lifetime o suscripción activa.')
+      setKeyError(t('ai.keyErrorPlan'))
       return
     }
     if (trimmed) localStorage.setItem(provider.lsKey, trimmed)
@@ -482,7 +433,7 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
       setKeySaved(true)
       setTimeout(() => setKeySaved(false), 2000)
     } catch (err) {
-      setKeyError(err instanceof Error ? err.message : 'Error guardando la clave')
+      setKeyError(err instanceof Error ? err.message : t('ai.keyErrorSaving'))
     }
   }
 
@@ -505,8 +456,8 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
         label={provider.label}
         hint={
           hasPaidPlan
-            ? `Tu clave de ${provider.label} se guarda cifrada en el servidor y se sincroniza entre dispositivos (Mac, web, iOS).`
-            : 'Requiere plan lifetime o suscripción activa.'
+            ? t('ai.apiKeyHintPaid', { provider: provider.label })
+            : t('ai.apiKeyHintFree')
         }
       />
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
@@ -514,20 +465,20 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
           type={showKey ? 'text' : 'password'}
           value={apiKey}
           onChange={e => setApiKey(e.target.value)}
-          placeholder={hasPaidPlan ? provider.placeholder : 'Disponible con plan activo'}
+          placeholder={hasPaidPlan ? provider.placeholder : t('ai.apiKeyUnavailablePlaceholder')}
           className="st-input"
           style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, opacity: hasPaidPlan ? 1 : 0.5 }}
           disabled={!hasPaidPlan}
         />
-        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? 'Ocultar' : 'Mostrar'} disabled={!hasPaidPlan}>
+        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? t('ai.hideKeyButton') : t('ai.showKeyButton')} disabled={!hasPaidPlan}>
           {showKey ? '🙈' : '👁'}
         </button>
       </div>
       <div className="st-actions">
-        <button className="btn-primary" onClick={save} disabled={!hasPaidPlan}>{keySaved ? '✓ Guardado' : 'Guardar'}</button>
-        {apiKey && <button className="btn-secondary btn-danger-outline" onClick={clear}>Borrar</button>}
+        <button className="btn-primary" onClick={save} disabled={!hasPaidPlan}>{keySaved ? t('ai.keySavedButton') : t('ai.saveKeyButton')}</button>
+        {apiKey && <button className="btn-secondary btn-danger-outline" onClick={clear}>{t('ai.clearKeyButton')}</button>}
         <a href={provider.getKeyUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
-          Obtener key ↗
+          {t('ai.getKeyButton')}
         </a>
       </div>
       {keyError && (
@@ -538,6 +489,7 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
 }
 
 export function IAPane() {
+  const { t } = useTranslation()
   const us = useUserStore()
   const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'es')
 
@@ -553,38 +505,38 @@ export function IAPane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>Proveedor de IA</SectionTitle>
+      <SectionTitle>{t('ai.sectionProvider')}</SectionTitle>
       <Row
-        label="Modelo por defecto"
-        hint="From usa Claude (Anthropic) por defecto. Si configuras tu propia API key abajo, From la usará y no consumirá tus tokens incluidos. Soporta Anthropic, OpenAI y Google (Gemini)."
+        label={t('ai.defaultModelLabel')}
+        hint={t('ai.defaultModelHint')}
       >
-        <span className="st-value">Claude (Anthropic)</span>
+        <span className="st-value">{t('ai.defaultModelValue')}</span>
       </Row>
 
-      <SectionTitle>API Keys propias</SectionTitle>
+      <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
       {PROVIDERS.map(p => (
         <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={hasPaidPlan} />
       ))}
 
-      <SectionTitle>Tokens incluidos</SectionTitle>
+      <SectionTitle>{t('ai.sectionIncludedTokens')}</SectionTitle>
       {us.user?.tokensBalance !== undefined ? (
-        <Row label="Balance de tokens">
+        <Row label={t('ai.tokensBalanceLabel')}>
           <span className="st-value">{us.user.tokensBalance.toLocaleString()}</span>
         </Row>
       ) : (
-        <Row label="Balance de tokens" hint="Inicia sesión para ver tu balance." />
+        <Row label={t('ai.tokensBalanceLabel')} hint={t('ai.tokensBalanceLoginHint')} />
       )}
-      <Row label="¿Qué son los tokens?" hint="Cada operación de IA consume tokens de tu saldo mensual. Con un plan activo recibes tokens cada mes. Puedes añadir tu propia API key arriba para no consumirlos." />
+      <Row label={t('ai.tokensExplanationLabel')} hint={t('ai.tokensExplanationHint')} />
 
-      <SectionTitle>Idioma</SectionTitle>
+      <SectionTitle>{t('ai.sectionLanguage')}</SectionTitle>
       <Row
-        label="Idioma de las respuestas IA"
-        hint="Idioma preferido para las respuestas generadas por la IA. La IA detecta también el idioma del contexto."
+        label={t('ai.languageLabel')}
+        hint={t('ai.languageHint')}
       >
         <div className="st-segmented">
-          <button className={lang === 'es' ? 'active' : ''} onClick={() => setLanguage('es')}>Español</button>
-          <button className={lang === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>English</button>
-          <button className={lang === 'auto' ? 'active' : ''} onClick={() => setLanguage('auto')}>Auto</button>
+          <button className={lang === 'es' ? 'active' : ''} onClick={() => setLanguage('es')}>{t('ai.languageSpanish')}</button>
+          <button className={lang === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>{t('ai.languageEnglish')}</button>
+          <button className={lang === 'auto' ? 'active' : ''} onClick={() => setLanguage('auto')}>{t('ai.languageAuto')}</button>
         </div>
       </Row>
     </div>
@@ -592,6 +544,7 @@ export function IAPane() {
 }
 
 export function ClaudeMcpPane() {
+  const { t } = useTranslation()
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
   const [generatingMcp, setGeneratingMcp] = useState(false)
@@ -616,15 +569,15 @@ export function ClaudeMcpPane() {
     setMcpCopied(true); setTimeout(() => setMcpCopied(false), 2000)
   }
   function copyPhrase() {
-    navigator.clipboard.writeText('Configura From').catch(() => {})
+    navigator.clipboard.writeText(t('mcp.configurePhrase')).catch(() => {})
     setPhraseCopied(true); setTimeout(() => setPhraseCopied(false), 2000)
   }
 
   return (
     <div className="st-pane">
-      <SectionTitle>1. Token de API</SectionTitle>
+      <SectionTitle>{t('mcp.section1Title')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Genera un token único para que Claude Desktop pueda conectarse a tu vault de From.
+        {t('mcp.section1Hint')}
       </div>
       {mcpLoaded ? (
         mcpToken ? (
@@ -634,47 +587,47 @@ export function ClaudeMcpPane() {
                 {mcpToken}
               </code>
               <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12 }}>
-                {mcpCopied ? '✓ Copiado' : 'Copiar'}
+                {mcpCopied ? t('mcp.tokenCopied') : t('mcp.copyTokenButton')}
               </button>
             </div>
             <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-              {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+              {generatingMcp ? t('mcp.regeneratingToken') : t('mcp.regenerateTokenButton')}
             </button>
           </div>
         ) : (
           <button className="btn-primary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-            {generatingMcp ? 'Generando...' : 'Generar token de API'}
+            {generatingMcp ? t('mcp.generatingToken') : t('mcp.generateTokenButton')}
           </button>
         )
-      ) : <div className="st-row-hint">Cargando...</div>}
+      ) : <div className="st-row-hint">{t('mcp.loadingToken')}</div>}
 
-      <SectionTitle>2. Descargar extensión</SectionTitle>
+      <SectionTitle>{t('mcp.section2Title')}</SectionTitle>
       <Row
-        label="Extensión Claude Desktop (.dxt)"
-        hint="Con Claude Desktop abierto, haz doble clic en el archivo descargado. Cuando Claude pida el token, pega el del paso 1."
+        label={t('mcp.extensionLabel')}
+        hint={t('mcp.extensionHint')}
       >
         <a href="https://getfrom.app/From.dxt" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12 }}>
-          Descargar From.dxt
+          {t('mcp.downloadButton')}
         </a>
       </Row>
 
-      <SectionTitle>3. Configurar From en Claude</SectionTitle>
+      <SectionTitle>{t('mcp.section3Title')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 8 }}>
-        Una vez instalado, escribe esta frase en Claude una sola vez:
+        {t('mcp.configureHint')}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <code style={{ flex: 1, padding: '8px 12px', background: 'rgba(139,92,246,0.08)', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.18)' }}>
-          Configura From
+          {t('mcp.configurePhrase')}
         </code>
         <button className="btn-secondary" onClick={copyPhrase} style={{ fontSize: 12 }}>
-          {phraseCopied ? '✓ Copiado' : 'Copiar'}
+          {phraseCopied ? t('mcp.phraseCopied') : t('mcp.copyPhraseButton')}
         </button>
       </div>
 
-      <SectionTitle>Más información</SectionTitle>
-      <Row label="Documentación completa">
+      <SectionTitle>{t('mcp.sectionMoreInfo')}</SectionTitle>
+      <Row label={t('mcp.docsLabel')}>
         <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12 }}>
-          Ver instrucciones ↗
+          {t('mcp.docsButton')}
         </a>
       </Row>
     </div>
@@ -695,6 +648,7 @@ export function AtajosPane() {
 }
 
 function AtajosPaneTextExpansion() {
+  const { t } = useTranslation()
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => getShortcuts())
   const [newTrigger, setNewTrigger] = useState('')
   const [newExpansion, setNewExpansion] = useState('')
@@ -715,15 +669,15 @@ function AtajosPaneTextExpansion() {
 
   return (
     <>
-      <SectionTitle>Expansión de texto</SectionTitle>
+      <SectionTitle>{t('shortcuts.sectionTextExpansion')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 12 }}>
-        Define atajos que se expanden automáticamente mientras escribes. Ej: <code>;firma</code> → <em>Un saludo, Alberto</em>
+        {t('shortcuts.textExpansionHint')} Ej: <code>;firma</code> → <em>Un saludo, Alberto</em>
       </div>
 
       {shortcuts.length > 0 && (
         <table className="st-table">
           <thead>
-            <tr><th>Trigger</th><th>Expansión</th><th /></tr>
+            <tr><th>{t('shortcuts.triggerColumn')}</th><th>{t('shortcuts.expansionColumn')}</th><th /></tr>
           </thead>
           <tbody>
             {shortcuts.map(sc => (
@@ -731,7 +685,7 @@ function AtajosPaneTextExpansion() {
                 <td><code className="st-code">{sc.trigger}</code></td>
                 <td style={{ color: 'var(--text-secondary)' }}>{sc.expansion}</td>
                 <td>
-                  <button onClick={() => handleDelete(sc.id)} className="st-delete-btn" title="Eliminar">×</button>
+                  <button onClick={() => handleDelete(sc.id)} className="st-delete-btn" title={t('shortcuts.deleteTitle')}>×</button>
                 </td>
               </tr>
             ))}
@@ -741,13 +695,13 @@ function AtajosPaneTextExpansion() {
 
       {showAdd ? (
         <div className="st-add-form">
-          <input type="text" placeholder="Trigger (;firma)" value={newTrigger} onChange={e => setNewTrigger(e.target.value)} className="st-input" style={{ width: 130 }} />
-          <input type="text" placeholder="Expansión" value={newExpansion} onChange={e => setNewExpansion(e.target.value)} className="st-input" style={{ flex: 1 }} onKeyDown={e => e.key === 'Enter' && handleAdd()} />
-          <button className="btn-primary" onClick={handleAdd} style={{ fontSize: 13 }}>Guardar</button>
-          <button className="btn-secondary" onClick={() => setShowAdd(false)} style={{ fontSize: 13 }}>Cancelar</button>
+          <input type="text" placeholder={t('shortcuts.triggerPlaceholder')} value={newTrigger} onChange={e => setNewTrigger(e.target.value)} className="st-input" style={{ width: 130 }} />
+          <input type="text" placeholder={t('shortcuts.expansionPlaceholder')} value={newExpansion} onChange={e => setNewExpansion(e.target.value)} className="st-input" style={{ flex: 1 }} onKeyDown={e => e.key === 'Enter' && handleAdd()} />
+          <button className="btn-primary" onClick={handleAdd} style={{ fontSize: 13 }}>{t('shortcuts.saveButton')}</button>
+          <button className="btn-secondary" onClick={() => setShowAdd(false)} style={{ fontSize: 13 }}>{t('common.cancel')}</button>
         </div>
       ) : (
-        <div className="st-actions"><button className="btn-secondary" onClick={() => setShowAdd(true)}>+ Añadir atajo</button></div>
+        <div className="st-actions"><button className="btn-secondary" onClick={() => setShowAdd(true)}>{t('shortcuts.addShortcutButton')}</button></div>
       )}
 
     </>
@@ -755,43 +709,44 @@ function AtajosPaneTextExpansion() {
 }
 
 export function PlantillasPane() {
+  const { t } = useTranslation()
   const [templates, setTemplates] = useState<CustomTemplate[]>(getTemplates)
   const [name, setName] = useState('')
   const [body, setBody] = useState('')
 
   function handleAdd() {
     if (!name.trim()) return
-    const t: CustomTemplate = { id: Date.now().toString(), name: name.trim(), body: body.trim() }
-    const updated = [...templates, t]
+    const templ: CustomTemplate = { id: Date.now().toString(), name: name.trim(), body: body.trim() }
+    const updated = [...templates, templ]
     saveTemplates(updated); setTemplates(updated)
     setName(''); setBody('')
   }
 
   function handleDelete(id: string) {
-    const updated = templates.filter(t => t.id !== id)
+    const updated = templates.filter(templ => templ.id !== id)
     saveTemplates(updated); setTemplates(updated)
   }
 
   return (
     <div className="st-pane">
-      <SectionTitle>Plantillas de nodo</SectionTitle>
+      <SectionTitle>{t('templates.sectionTitle')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 12 }}>
-        Define plantillas para crear notas con contenido predefinido. Aparecerán en el menú contextual de nodos.
+        {t('templates.hint')}
       </div>
 
       {templates.length > 0 && (
         <table className="st-table">
           <thead>
-            <tr><th>Nombre</th><th>Contenido</th><th /></tr>
+            <tr><th>{t('templates.nameColumn')}</th><th>{t('templates.contentColumn')}</th><th /></tr>
           </thead>
           <tbody>
-            {templates.map(t => (
-              <tr key={t.id}>
-                <td style={{ fontWeight: 500 }}>{t.name}</td>
+            {templates.map(templ => (
+              <tr key={templ.id}>
+                <td style={{ fontWeight: 500 }}>{templ.name}</td>
                 <td style={{ color: 'var(--text-tertiary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {t.body ? t.body.slice(0, 50) + (t.body.length > 50 ? '…' : '') : <em>Sin contenido</em>}
+                  {templ.body ? templ.body.slice(0, 50) + (templ.body.length > 50 ? '…' : '') : <em>{t('templates.noContent')}</em>}
                 </td>
-                <td><button onClick={() => handleDelete(t.id)} className="st-delete-btn" title="Eliminar">×</button></td>
+                <td><button onClick={() => handleDelete(templ.id)} className="st-delete-btn" title={t('templates.deleteTitle')}>×</button></td>
               </tr>
             ))}
           </tbody>
@@ -799,10 +754,10 @@ export function PlantillasPane() {
       )}
 
       <div className="st-template-form">
-        <input type="text" placeholder="Nombre de la plantilla" value={name} onChange={e => setName(e.target.value)} className="st-input" />
-        <textarea placeholder="Contenido markdown (opcional)..." value={body} onChange={e => setBody(e.target.value)} rows={4} className="st-input" style={{ resize: 'vertical' }} />
+        <input type="text" placeholder={t('templates.namePlaceholder')} value={name} onChange={e => setName(e.target.value)} className="st-input" />
+        <textarea placeholder={t('templates.contentPlaceholder')} value={body} onChange={e => setBody(e.target.value)} rows={4} className="st-input" style={{ resize: 'vertical' }} />
         <div className="st-actions">
-          <button className="btn-primary" onClick={handleAdd}>+ Añadir plantilla</button>
+          <button className="btn-primary" onClick={handleAdd}>{t('templates.addButton')}</button>
         </div>
       </div>
     </div>
@@ -810,6 +765,7 @@ export function PlantillasPane() {
 }
 
 export function GooglePane() {
+  const { t } = useTranslation()
   const us = useUserStore()
   const [disconnecting, setDisconnecting] = useState(false)
   const [error, setError] = useState('')
@@ -826,7 +782,7 @@ export function GooglePane() {
       await disconnectGoogle()
       await userStore.refreshGoogleStatus()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al desconectar')
+      setError(err instanceof Error ? err.message : t('google.disconnectError'))
     } finally {
       setDisconnecting(false)
     }
@@ -838,25 +794,25 @@ export function GooglePane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>Google</SectionTitle>
+      <SectionTitle>{t('google.sectionTitle')}</SectionTitle>
 
       <Row
-        label="Estado de la conexión"
-        hint="Conectar Google te da acceso a Google Calendar y Google Drive en una sola autorización."
+        label={t('google.connectionStatusLabel')}
+        hint={t('google.connectionStatusHint')}
       >
         {us.googleConnected ? (
           <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', color: '#22c55e', whiteSpace: 'nowrap' }}>
-            Conectado
+            {t('google.connected')}
           </span>
         ) : (
           <span style={{ fontSize: 12, padding: '3px 8px', borderRadius: 99, background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-            No conectado
+            {t('google.notConnected')}
           </span>
         )}
       </Row>
 
       {us.googleConnected && us.googleEmail && (
-        <Row label="Cuenta">
+        <Row label={t('google.accountLabel')}>
           <span className="st-value" style={{ fontSize: 12 }}>{us.googleEmail}</span>
         </Row>
       )}
@@ -866,31 +822,32 @@ export function GooglePane() {
       <div className="st-actions">
         {us.googleConnected ? (
           <button className="btn-secondary btn-danger-outline" onClick={handleDisconnect} disabled={disconnecting}>
-            {disconnecting ? 'Desconectando...' : 'Desconectar Google'}
+            {disconnecting ? t('google.disconnecting') : t('google.disconnectButton')}
           </button>
         ) : (
           <button className="btn-primary" onClick={handleConnect}>
-            Conectar Google
+            {t('google.connectButton')}
           </button>
         )}
       </div>
 
-      <SectionTitle>Google Calendar</SectionTitle>
+      <SectionTitle>{t('google.sectionCalendar')}</SectionTitle>
       <Row
-        label="Sincronización de eventos"
-        hint="Cuando Google está conectado, los eventos de tu calendario aparecen en el Timeline del Diario automáticamente."
+        label={t('google.calendarSyncLabel')}
+        hint={t('google.calendarSyncHint')}
       />
 
-      <SectionTitle>Google Drive</SectionTitle>
+      <SectionTitle>{t('google.sectionDrive')}</SectionTitle>
       <Row
-        label="Acceso a archivos"
-        hint="La misma autorización permite adjuntar archivos desde Google Drive en tus notas."
+        label={t('google.driveAccessLabel')}
+        hint={t('google.driveAccessHint')}
       />
     </div>
   )
 }
 
 export function ExportarPane() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -910,7 +867,7 @@ export function ExportarPane() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url; a.download = filename
       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Error al exportar') }
+    } catch (err: unknown) { setError(err instanceof Error ? err.message : t('export.exportError')) }
     finally { setLoading(false) }
   }
 
@@ -923,7 +880,7 @@ export function ExportarPane() {
       function renderNode(node: typeof nodes[0], depth: number): string[] {
         const indent = '  '.repeat(depth)
         const prefix = node.status === 'done' ? '[x] ' : node.status === 'pending' ? '[ ] ' : ''
-        const result = [`${indent}${prefix}${node.text || 'Sin título'}`]
+        const result = [`${indent}${prefix}${node.text || t('common.noTitle')}`]
         if (node.body) { result.push(''); node.body.split('\n').forEach(l => result.push(`${indent}  ${l}`)); result.push('') }
         nodes.filter(n => n.parentId === node.id).sort((a, b) => a.siblingOrder - b.siblingOrder).forEach(child => result.push(...renderNode(child, depth + 1)))
         return result
@@ -940,29 +897,30 @@ export function ExportarPane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>Exportar datos</SectionTitle>
-      <Row label="Backup del servidor" hint="Exporta una copia de tus datos almacenados en el servidor." />
+      <SectionTitle>{t('export.sectionTitle')}</SectionTitle>
+      <Row label={t('export.serverBackupLabel')} hint={t('export.serverBackupHint')} />
       {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
       <div className="st-actions">
         <button className="btn-secondary" onClick={() => handleExport('json')} disabled={loading}>
-          {loading ? 'Exportando...' : 'Backup JSON (servidor)'}
+          {loading ? t('common.exporting') : t('export.jsonServerButton')}
         </button>
         <button className="btn-secondary" onClick={() => handleExport('markdown')} disabled={loading}>
-          {loading ? 'Exportando...' : 'Backup Markdown (servidor)'}
+          {loading ? t('common.exporting') : t('export.markdownServerButton')}
         </button>
       </div>
 
-      <SectionTitle>Exportar local</SectionTitle>
-      <Row label="Datos locales" hint="Exporta los datos almacenados en este navegador." />
+      <SectionTitle>{t('export.sectionLocal')}</SectionTitle>
+      <Row label={t('export.localDataLabel')} hint={t('export.localDataHint')} />
       <div className="st-actions">
-        <button className="btn-secondary" onClick={() => handleExportLocal('json')}>Exportar JSON (local)</button>
-        <button className="btn-secondary" onClick={() => handleExportLocal('markdown')}>Exportar Markdown (local)</button>
+        <button className="btn-secondary" onClick={() => handleExportLocal('json')}>{t('export.jsonLocalButton')}</button>
+        <button className="btn-secondary" onClick={() => handleExportLocal('markdown')}>{t('export.markdownLocalButton')}</button>
       </div>
     </div>
   )
 }
 
 export function ImportarPane() {
+  const { t } = useTranslation()
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
@@ -978,7 +936,7 @@ export function ImportarPane() {
         const parsed = JSON.parse(text)
         nodes = Array.isArray(parsed) ? parsed : (parsed as Record<string, unknown>).nodes as unknown[] || []
       } else {
-        setImportError('Solo se admite formato JSON por ahora.')
+        setImportError(t('import.formatError'))
         setImporting(false); return
       }
       // Import each node via store
@@ -997,23 +955,23 @@ export function ImportarPane() {
           count++
         } catch { /* skip invalid */ }
       }
-      setImportResult(`${count} nodos importados correctamente.`)
+      setImportResult(t('import.importSuccess', { count }))
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : 'Error al importar')
+      setImportError(err instanceof Error ? err.message : t('import.importError'))
     } finally { setImporting(false) }
     e.target.value = ''
   }
 
   return (
     <div className="st-pane">
-      <SectionTitle>Importar datos</SectionTitle>
+      <SectionTitle>{t('import.sectionTitle')}</SectionTitle>
       <Row
-        label="Importar desde JSON"
-        hint="Sube un archivo JSON exportado desde From para importar tus notas y tareas."
+        label={t('import.jsonLabel')}
+        hint={t('import.jsonHint')}
       />
       <div className="st-actions">
         <label className="btn-secondary" style={{ cursor: 'pointer' }}>
-          {importing ? 'Importando...' : 'Seleccionar archivo JSON'}
+          {importing ? t('common.importing') : t('import.selectFileButton')}
           <input type="file" accept=".json" onChange={handleFile} style={{ display: 'none' }} disabled={importing} />
         </label>
       </div>
@@ -1021,11 +979,11 @@ export function ImportarPane() {
       {importError && <div className="auth-error" style={{ marginTop: 8 }}>{importError}</div>}
 
       <div className="st-info-box" style={{ marginTop: 16 }}>
-        <strong style={{ display: 'block', marginBottom: 6 }}>Notas sobre la importación</strong>
+        <strong style={{ display: 'block', marginBottom: 6 }}>{t('import.notesTitle')}</strong>
         <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-          <li>Los nodos existentes con el mismo ID se actualizarán.</li>
-          <li>Los nodos nuevos se añadirán a tu vault.</li>
-          <li>Se admiten archivos exportados desde From (JSON).</li>
+          <li>{t('import.noteExisting')}</li>
+          <li>{t('import.noteNew')}</li>
+          <li>{t('import.noteFormat')}</li>
         </ul>
       </div>
     </div>
@@ -1042,6 +1000,7 @@ interface Props {
 // ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
 
 function MagicPane() {
+  const { t } = useTranslation()
   const [autoTitles, setAutoTitles] = useState(() => localStorage.getItem('from_magic_autoTitles') === '1')
   const [autoTags, setAutoTags]     = useState(() => localStorage.getItem('from_magic_autoTags') === '1')
   const [autoUnfurl, setAutoUnfurl] = useState(() => localStorage.getItem('from_magic_autoUnfurl') !== '0')
@@ -1050,14 +1009,14 @@ function MagicPane() {
   }
   return (
     <div className="st-pane">
-      <SectionTitle>Magic — automatizaciones IA</SectionTitle>
-      <Row label="Títulos automáticos" hint="Sugiere un título cuando una nota llega a un párrafo de contenido.">
+      <SectionTitle>{t('magic.sectionTitle')}</SectionTitle>
+      <Row label={t('magic.autoTitlesLabel')} hint={t('magic.autoTitlesHint')}>
         <input type="checkbox" checked={autoTitles} onChange={e => toggle('from_magic_autoTitles', e.target.checked, setAutoTitles)} />
       </Row>
-      <Row label="Tags automáticos" hint="Detecta temas y sugiere hashtags en la nota cuando hay texto suficiente.">
+      <Row label={t('magic.autoTagsLabel')} hint={t('magic.autoTagsHint')}>
         <input type="checkbox" checked={autoTags} onChange={e => toggle('from_magic_autoTags', e.target.checked, setAutoTags)} />
       </Row>
-      <Row label="Unfurl de enlaces" hint="Cuando pegas un link, From extrae título, descripción e imagen automáticamente.">
+      <Row label={t('magic.autoUnfurlLabel')} hint={t('magic.autoUnfurlHint')}>
         <input type="checkbox" checked={autoUnfurl} onChange={e => toggle('from_magic_autoUnfurl', e.target.checked, setAutoUnfurl)} />
       </Row>
     </div>
@@ -1065,6 +1024,7 @@ function MagicPane() {
 }
 
 function EstadisticasPane() {
+  const { t } = useTranslation()
   const s = useStore()
   const all = s.allActive()
   const total = all.length
@@ -1075,13 +1035,13 @@ function EstadisticasPane() {
   const events = all.filter((n: Node) => n.isEvent).length
   return (
     <div className="st-pane">
-      <SectionTitle>Estadísticas</SectionTitle>
-      <Row label="Notas y tareas"><span className="st-value">{total} nodos activos</span></Row>
-      <Row label="Tareas pendientes"><span className="st-value">{pending}</span></Row>
-      <Row label="Tareas completadas"><span className="st-value">{done}</span></Row>
-      <Row label="Eventos"><span className="st-value">{events}</span></Row>
-      <Row label="Recursos"><span className="st-value">{resources}</span></Row>
-      <Row label="Tasa de completado" hint="Porcentaje de tareas hechas sobre el total con estado.">
+      <SectionTitle>{t('stats.sectionTitle')}</SectionTitle>
+      <Row label={t('stats.notesAndTasksLabel')}><span className="st-value">{total} nodos activos</span></Row>
+      <Row label={t('stats.pendingTasksLabel')}><span className="st-value">{pending}</span></Row>
+      <Row label={t('stats.completedTasksLabel')}><span className="st-value">{done}</span></Row>
+      <Row label={t('stats.eventsLabel')}><span className="st-value">{events}</span></Row>
+      <Row label={t('stats.resourcesLabel')}><span className="st-value">{resources}</span></Row>
+      <Row label={t('stats.completionRateLabel')} hint={t('stats.completionRateHint')}>
         <span className="st-value">{tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0}%</span>
       </Row>
     </div>
@@ -1089,15 +1049,16 @@ function EstadisticasPane() {
 }
 
 function TagsPane() {
+  const { t } = useTranslation()
   const s = useStore()
   const tags = (s.allUsedTags?.() ?? []) as string[]
   return (
     <div className="st-pane">
-      <SectionTitle>Tags en uso</SectionTitle>
-      <Row label={`${tags.length} tags`} hint="Tags detectados en tus nodos. Se crean automáticamente al escribir #tag en el texto." />
+      <SectionTitle>{t('tags.sectionTitle')}</SectionTitle>
+      <Row label={`${tags.length} tags`} hint={t('tags.hint')} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-        {tags.map((t: string) => (
-          <span key={t} style={{ padding: '4px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12 }}>#{t}</span>
+        {tags.map((tag: string) => (
+          <span key={tag} style={{ padding: '4px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12 }}>#{tag}</span>
         ))}
       </div>
     </div>
@@ -1105,19 +1066,21 @@ function TagsPane() {
 }
 
 function EstadosPane() {
+  const { t } = useTranslation()
   return (
     <div className="st-pane">
-      <SectionTitle>Estados de tarea</SectionTitle>
-      <Row label="pending" hint="Tarea pendiente (por defecto)." />
-      <Row label="done" hint="Tarea completada." />
-      <Row label="cancelled" hint="Tarea cancelada." />
-      <Row label="future" hint="Tarea programada para más adelante." />
-      <Row label="Personalización" hint="Editar estados custom estará disponible próximamente. Mac ya lo permite." />
+      <SectionTitle>{t('states.sectionTitle')}</SectionTitle>
+      <Row label="pending" hint={t('states.pendingHint')} />
+      <Row label="done" hint={t('states.doneHint')} />
+      <Row label="cancelled" hint={t('states.cancelledHint')} />
+      <Row label="future" hint={t('states.futureHint')} />
+      <Row label={t('states.customizationLabel')} hint={t('states.customizationHint')} />
     </div>
   )
 }
 
 function VozPane() {
+  const { t } = useTranslation()
   const [recording, setRecording] = useState(false)
   const [transcript, setTranscript] = useState('')
   const recognitionRef = useRef<any>(null)
@@ -1151,16 +1114,16 @@ function VozPane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>Voz — dictado de notas</SectionTitle>
+      <SectionTitle>{t('voice.sectionTitle')}</SectionTitle>
       {!supported ? (
-        <Row label="No disponible" hint="Tu navegador no soporta Web Speech API. Prueba Chrome o Safari." />
+        <Row label={t('voice.notAvailableLabel')} hint={t('voice.notAvailableHint')} />
       ) : (
         <>
-          <Row label="Idioma" hint="Se usa el idioma activo en Apariencia (es o en)." />
+          <Row label={t('voice.languageLabel')} hint={t('voice.languageHint')} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             {!recording
-              ? <button className="btn-primary" onClick={start}>🎤 Iniciar dictado</button>
-              : <button className="btn-secondary btn-danger-outline" onClick={stop}>⏹ Detener</button>
+              ? <button className="btn-primary" onClick={start}>{t('voice.startDictationButton')}</button>
+              : <button className="btn-secondary btn-danger-outline" onClick={stop}>{t('voice.stopButton')}</button>
             }
           </div>
           <textarea
@@ -1168,7 +1131,7 @@ function VozPane() {
             onChange={e => setTranscript(e.target.value)}
             rows={6}
             className="st-input"
-            placeholder="El dictado aparecerá aquí…"
+            placeholder={t('voice.transcriptPlaceholder')}
             style={{ width: '100%', marginTop: 10 }}
           />
         </>
@@ -1178,26 +1141,28 @@ function VozPane() {
 }
 
 function AgentesPane() {
+  const { t } = useTranslation()
   const s = useStore()
   const agents = s.allActive().filter((n: Node) => (n.types || []).includes('agente'))
   return (
     <div className="st-pane">
-      <SectionTitle>Agentes IA</SectionTitle>
-      <Row label={`${agents.length} agentes definidos`} hint="Los agentes se crean con /agente en el editor. Aquí los gestionas y ejecutas." />
+      <SectionTitle>{t('agents.sectionTitle')}</SectionTitle>
+      <Row label={`${agents.length} agentes definidos`} hint={t('agents.hint')} />
       <div style={{ marginTop: 12 }}>
         {agents.map(a => (
           <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-            <span>{a.text || 'Agente sin nombre'}</span>
-            <button className="btn-secondary" style={{ fontSize: 11 }}>Ejecutar</button>
+            <span>{a.text || t('agents.unnamedAgent')}</span>
+            <button className="btn-secondary" style={{ fontSize: 11 }}>{t('agents.runButton')}</button>
           </div>
         ))}
-        {agents.length === 0 && <Row label="Sin agentes" hint="Crea uno desde el editor escribiendo /agente." />}
+        {agents.length === 0 && <Row label={t('agents.noAgentsLabel')} hint={t('agents.noAgentsHint')} />}
       </div>
     </div>
   )
 }
 
 function TimelinePane() {
+  const { t } = useTranslation()
   const [startHour, setStartHour] = useState<number>(() => Number(localStorage.getItem('from_timelineStart') || '7'))
   const [endHour, setEndHour]     = useState<number>(() => Number(localStorage.getItem('from_timelineEnd')   || '22'))
   function update(s: number, e: number) {
@@ -1207,13 +1172,13 @@ function TimelinePane() {
   }
   return (
     <div className="st-pane">
-      <SectionTitle>Vista — Timeline del día</SectionTitle>
-      <Row label="Hora inicio" hint="Primera hora visible en el timeline diario.">
+      <SectionTitle>{t('timeline.sectionTitle')}</SectionTitle>
+      <Row label={t('timeline.startHourLabel')} hint={t('timeline.startHourHint')}>
         <select value={startHour} onChange={e => update(Number(e.target.value), endHour)}>
           {Array.from({ length: 13 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
         </select>
       </Row>
-      <Row label="Hora fin" hint="Última hora visible en el timeline diario.">
+      <Row label={t('timeline.endHourLabel')} hint={t('timeline.endHourHint')}>
         <select value={endHour} onChange={e => update(startHour, Number(e.target.value))}>
           {Array.from({ length: 24 }, (_, i) => i + 1).map(h => <option key={h} value={h} disabled={h <= startHour}>{String(h).padStart(2, '0')}:00</option>)}
         </select>
@@ -1223,6 +1188,7 @@ function TimelinePane() {
 }
 
 function PromptsPane() {
+  const { t } = useTranslation()
   const PROMPTS_LS = 'from_prompts_v1'
   const [prompts, setPrompts] = useState<{ id: string; name: string; body: string }[]>(() => {
     try { return JSON.parse(localStorage.getItem(PROMPTS_LS) || '[]') } catch { return [] }
@@ -1240,19 +1206,19 @@ function PromptsPane() {
   }
   return (
     <div className="st-pane">
-      <SectionTitle>Prompts guardados</SectionTitle>
-      <Row label={`${prompts.length} prompts`} hint="Plantillas reutilizables que se inyectan al lanzar la IA inline o un agente." />
+      <SectionTitle>{t('prompts.sectionTitle')}</SectionTitle>
+      <Row label={`${prompts.length} prompts`} hint={t('prompts.hint')} />
       <div style={{ marginTop: 10 }}>
-        <input className="st-input" placeholder="Nombre del prompt" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: '100%', marginBottom: 6 }} />
-        <textarea className="st-input" placeholder="Contenido del prompt…" value={newBody} onChange={e => setNewBody(e.target.value)} rows={4} style={{ width: '100%' }} />
-        <button className="btn-primary" onClick={add} style={{ marginTop: 8 }}>Añadir prompt</button>
+        <input className="st-input" placeholder={t('prompts.namePlaceholder')} value={newName} onChange={e => setNewName(e.target.value)} style={{ width: '100%', marginBottom: 6 }} />
+        <textarea className="st-input" placeholder={t('prompts.contentPlaceholder')} value={newBody} onChange={e => setNewBody(e.target.value)} rows={4} style={{ width: '100%' }} />
+        <button className="btn-primary" onClick={add} style={{ marginTop: 8 }}>{t('prompts.addButton')}</button>
       </div>
       <div style={{ marginTop: 14 }}>
         {prompts.map(p => (
           <div key={p.id} style={{ borderBottom: '1px solid var(--border)', padding: '8px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <strong>{p.name}</strong>
-              <button className="btn-secondary btn-danger-outline" style={{ fontSize: 11 }} onClick={() => save(prompts.filter(x => x.id !== p.id))}>Borrar</button>
+              <button className="btn-secondary btn-danger-outline" style={{ fontSize: 11 }} onClick={() => save(prompts.filter(x => x.id !== p.id))}>{t('prompts.deleteButton')}</button>
             </div>
             <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>{p.body.slice(0, 120)}{p.body.length > 120 ? '…' : ''}</div>
           </div>
@@ -1263,17 +1229,75 @@ function PromptsPane() {
 }
 
 function BackupsPane() {
+  const { t } = useTranslation()
   return (
     <div className="st-pane">
-      <SectionTitle>Backups cloud</SectionTitle>
-      <Row label="Snapshots automáticos" hint="El servidor crea un snapshot de todos tus nodos cada 2 horas si ha habido cambios. Retención: últimos 12." />
-      <Row label="Restaurar" hint="Próximamente: lista de snapshots con botón restaurar (Mac ya lo tiene)." />
+      <SectionTitle>{t('backups.sectionTitle')}</SectionTitle>
+      <Row label={t('backups.snapshotsLabel')} hint={t('backups.snapshotsHint')} />
+      <Row label={t('backups.restoreLabel')} hint={t('backups.restoreHint')} />
     </div>
   )
 }
 
 export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
+
+  const SECTIONS: { title?: string; items: Section[] }[] = [
+    {
+      items: [
+        { id: 'cuenta', label: t('settings.tabAccount'), icon: '👤' },
+        { id: 'google', label: t('settings.tabGoogle'), icon: '📅' },
+      ],
+    },
+    {
+      title: t('settings.groupAppearance'),
+      items: [
+        { id: 'apariencia', label: t('settings.tabAppearance'), icon: '🎨' },
+        { id: 'estadisticas', label: t('settings.tabStatistics'), icon: '📊' },
+      ],
+    },
+    {
+      title: t('settings.groupAI'),
+      items: [
+        { id: 'ia', label: t('settings.tabAI'), icon: '✦' },
+        { id: 'magic', label: t('settings.tabMagic'), icon: '🪄' },
+      ],
+    },
+    {
+      title: t('settings.groupProductivity'),
+      items: [
+        { id: 'atajos', label: t('settings.tabShortcuts'), icon: '⌨' },
+        { id: 'plantillas', label: t('settings.tabTemplates'), icon: '📋' },
+        { id: 'voz', label: t('settings.tabVoice'), icon: '🎤' },
+      ],
+    },
+    {
+      title: t('settings.groupIntegrations'),
+      items: [
+        { id: 'mcp', label: t('settings.tabMCP'), icon: '🔌' },
+      ],
+    },
+    {
+      title: t('settings.groupAdvanced'),
+      items: [
+        { id: 'tags', label: t('settings.tabTags'), icon: '🏷' },
+        { id: 'estados', label: t('settings.tabStates'), icon: '✓' },
+        { id: 'agentes', label: t('settings.tabAgents'), icon: '🤖' },
+        { id: 'timeline', label: t('settings.tabTimeline'), icon: '⏱' },
+        { id: 'prompts', label: t('settings.tabPrompts'), icon: '⚡' },
+      ],
+    },
+    {
+      title: t('settings.groupData'),
+      items: [
+        { id: 'backups', label: t('settings.tabBackups'), icon: '💾' },
+        { id: 'exportar', label: t('settings.tabExport'), icon: '↗' },
+        { id: 'importar', label: t('settings.tabImport'), icon: '↙' },
+        { id: 'idioma', label: t('settings.tabLanguage', 'Idioma'), icon: '🌐' },
+      ],
+    },
+  ]
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -1303,6 +1327,12 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       case 'backups': return <BackupsPane />
       case 'exportar': return <ExportarPane />
       case 'importar': return <ImportarPane />
+      case 'idioma': return (
+        <div className="settings-pane">
+          <p className="settings-pane-hint">{t('settings.language.hint', 'Selecciona el idioma de la interfaz. Se detecta automáticamente del navegador.')}</p>
+          <LanguageSelector />
+        </div>
+      )
     }
   }
 
@@ -1311,7 +1341,7 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       <div className="settings-window" onClick={e => e.stopPropagation()}>
         {/* Sidebar */}
         <div className="settings-sidebar">
-          <div className="settings-sidebar-header">Ajustes</div>
+          <div className="settings-sidebar-header">{t('settings.title')}</div>
           {SECTIONS.map((section, si) => (
             <div key={si} className="settings-sidebar-section">
               {section.title && <div className="settings-sidebar-section-title">{section.title}</div>}
@@ -1335,7 +1365,7 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
             <h2 className="settings-content-title">
               {SECTIONS.flatMap(s => s.items).find(i => i.id === activeTab)?.label}
             </h2>
-            <button className="settings-close-btn" onClick={onClose} title="Cerrar (Esc)">
+            <button className="settings-close-btn" onClick={onClose} title={t('settings.closeButton')}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>

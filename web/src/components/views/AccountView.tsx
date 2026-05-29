@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { updateMe, deleteAccount, cancelSubscription, changePlan, clearTokens, exportNodes, getToken, getApiToken, generateApiToken } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
@@ -7,6 +8,7 @@ import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 
 export default function AccountView() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const us = useUserStore()
   const { theme, setTheme } = useTheme()
@@ -59,8 +61,8 @@ export default function AccountView() {
 
   function handleAddTemplate() {
     if (!newTemplateName.trim()) return
-    const t: CustomTemplate = { id: Date.now().toString(), name: newTemplateName.trim(), body: newTemplateBody.trim() }
-    const updated = [...customTemplates, t]
+    const templ: CustomTemplate = { id: Date.now().toString(), name: newTemplateName.trim(), body: newTemplateBody.trim() }
+    const updated = [...customTemplates, templ]
     saveTemplates(updated)
     setCustomTemplates(updated)
     setNewTemplateName('')
@@ -68,7 +70,7 @@ export default function AccountView() {
   }
 
   function deleteTemplate(id: string) {
-    const updated = customTemplates.filter(t => t.id !== id)
+    const updated = customTemplates.filter(templ => templ.id !== id)
     saveTemplates(updated)
     setCustomTemplates(updated)
   }
@@ -119,13 +121,13 @@ export default function AccountView() {
     setPasswordLoading(true)
     try {
       await updateMe({ currentPassword, newPassword })
-      setPasswordSuccess('Contraseña actualizada correctamente')
+      setPasswordSuccess(t('account.passwordUpdatedSuccess'))
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setShowPasswordForm(false)
     } catch (err: unknown) {
-      setPasswordError(err instanceof Error ? err.message : 'Error desconocido')
+      setPasswordError(err instanceof Error ? err.message : t('auth.errorUnknown'))
     } finally {
       setPasswordLoading(false)
     }
@@ -139,12 +141,12 @@ export default function AccountView() {
     try {
       await updateMe({ newEmail, currentPassword: emailPassword })
       await userStore.fetchMe()
-      setEmailSuccess('Email actualizado correctamente')
+      setEmailSuccess(t('account.emailUpdatedSuccess'))
       setNewEmail('')
       setEmailPassword('')
       setShowEmailForm(false)
     } catch (err: unknown) {
-      setEmailError(err instanceof Error ? err.message : 'Error desconocido')
+      setEmailError(err instanceof Error ? err.message : t('auth.errorUnknown'))
     } finally {
       setEmailLoading(false)
     }
@@ -162,7 +164,7 @@ export default function AccountView() {
         window.open(url, '_blank')
       }
     } catch (err: unknown) {
-      setSubError(err instanceof Error ? err.message : 'Error desconocido')
+      setSubError(err instanceof Error ? err.message : t('auth.errorUnknown'))
     } finally {
       setSubLoading(false)
     }
@@ -179,7 +181,7 @@ export default function AccountView() {
         await userStore.fetchMe()
       }
     } catch (err: unknown) {
-      setSubError(err instanceof Error ? err.message : 'Error desconocido')
+      setSubError(err instanceof Error ? err.message : t('auth.errorUnknown'))
     } finally {
       setSubLoading(false)
     }
@@ -212,7 +214,7 @@ export default function AccountView() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err: unknown) {
-      setExportError(err instanceof Error ? err.message : 'Error al exportar')
+      setExportError(err instanceof Error ? err.message : t('export.exportError'))
     } finally {
       setExportLoading(false)
     }
@@ -233,7 +235,7 @@ export default function AccountView() {
       function renderNode(node: typeof nodes[0], depth: number): string[] {
         const indent = '  '.repeat(depth)
         const prefix = node.status === 'done' ? '[x] ' : node.status === 'pending' ? '[ ] ' : ''
-        const result = [`${indent}${prefix}${node.text || 'Sin título'}`]
+        const result = [`${indent}${prefix}${node.text || t('common.noTitle')}`]
         if (node.body) {
           result.push('')
           node.body.split('\n').forEach(l => result.push(`${indent}  ${l}`))
@@ -266,7 +268,7 @@ export default function AccountView() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err: unknown) {
-      setExportError(err instanceof Error ? err.message : 'Error al exportar')
+      setExportError(err instanceof Error ? err.message : t('export.exportError'))
     } finally {
       setExportLoading(false)
     }
@@ -294,7 +296,7 @@ export default function AccountView() {
       userStore.reset()
       navigate('/login', { replace: true })
     } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : 'Error desconocido')
+      setDeleteError(err instanceof Error ? err.message : t('auth.errorUnknown'))
       setDeleteLoading(false)
     }
   }
@@ -353,24 +355,24 @@ export default function AccountView() {
 
   function getPlanBadge() {
     if (user?.licenseStatus === 'active') {
-      return <span className="plan-badge plan-badge--license">Licencia perpetua</span>
+      return <span className="plan-badge plan-badge--license">{t('account.planBadgeLicense')}</span>
     }
     if (user?.subscriptionStatus === 'active') {
-      return <span className="plan-badge plan-badge--active">Activa</span>
+      return <span className="plan-badge plan-badge--active">{t('account.planBadgeActive')}</span>
     }
     if (user?.subscriptionStatus === 'trialing') {
-      return <span className="plan-badge plan-badge--active">Prueba gratuita</span>
+      return <span className="plan-badge plan-badge--active">{t('account.planBadgeTrial')}</span>
     }
     if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') {
-      return <span className="plan-badge plan-badge--cancelled">Cancelada</span>
+      return <span className="plan-badge plan-badge--cancelled">{t('account.planBadgeCancelled')}</span>
     }
-    return <span className="plan-badge plan-badge--free">Sin plan</span>
+    return <span className="plan-badge plan-badge--free">{t('account.planBadgeFree')}</span>
   }
 
   return (
     <div className="view account-view">
       <div className="view-header">
-        <h1 className="view-title">Ajustes de cuenta</h1>
+        <h1 className="view-title">{t('account.title')}</h1>
       </div>
 
       <div className="view-body account-body">
@@ -379,38 +381,38 @@ export default function AccountView() {
         <div className="account-stats-grid">
           <div className="account-stat-card">
             <span className="account-stat-number">{totalNotes}</span>
-            <span className="account-stat-label">Notas</span>
+            <span className="account-stat-label">{t('account.statNotes')}</span>
           </div>
           <div className="account-stat-card">
             <span className="account-stat-number">{totalTasks}</span>
-            <span className="account-stat-label">Tareas</span>
+            <span className="account-stat-label">{t('account.statTasks')}</span>
           </div>
           <div className="account-stat-card">
             <span className="account-stat-number">{doneTasks}</span>
-            <span className="account-stat-label">Completadas</span>
+            <span className="account-stat-label">{t('account.statCompleted')}</span>
           </div>
           <div className="account-stat-card">
             <span className="account-stat-number">{completionRate}%</span>
-            <span className="account-stat-label">Tasa completado</span>
+            <span className="account-stat-label">{t('account.statCompletionRateLong')}</span>
           </div>
           <div className="account-stat-card">
             <span className="account-stat-number">{diaryStreak}</span>
-            <span className="account-stat-label">Racha días</span>
+            <span className="account-stat-label">{t('account.statStreakDays')}</span>
           </div>
           <div className="account-stat-card">
             <span className="account-stat-number">{totalWords.toLocaleString()}</span>
-            <span className="account-stat-label">Palabras totales</span>
+            <span className="account-stat-label">{t('account.statTotalWords')}</span>
           </div>
         </div>
 
         {/* ── Exportar datos section ── */}
         {getToken() && (
           <section className="settings-section">
-            <h2 className="settings-section-title">Exportar datos</h2>
+            <h2 className="settings-section-title">{t('export.sectionTitle')}</h2>
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Exportar todas tus notas y tareas</div>
-                <div className="settings-row-hint">Descarga una copia de todos tus datos en el formato que prefieras.</div>
+                <div className="settings-row-label">{t('account.exportAllLabel')}</div>
+                <div className="settings-row-hint">{t('account.exportAllHint')}</div>
               </div>
             </div>
             {exportError && <div className="auth-error" style={{ marginTop: 8 }}>{exportError}</div>}
@@ -420,28 +422,28 @@ export default function AccountView() {
                 onClick={() => handleExport('json')}
                 disabled={exportLoading}
               >
-                {exportLoading ? 'Exportando...' : 'Backup completo (JSON)'}
+                {exportLoading ? t('common.exporting') : t('account.exportJsonButton')}
               </button>
               <button
                 className="btn-secondary"
                 onClick={() => handleExport('markdown')}
                 disabled={exportLoading}
               >
-                {exportLoading ? 'Exportando...' : 'Descarga Markdown'}
+                {exportLoading ? t('common.exporting') : t('account.exportMarkdownButton')}
               </button>
               <button
                 className="btn-secondary"
                 onClick={handleExportMarkdownLocal}
                 disabled={exportLoading}
               >
-                {exportLoading ? 'Exportando...' : 'Exportar Markdown (local)'}
+                {exportLoading ? t('common.exporting') : t('account.exportMarkdownLocalButton')}
               </button>
               <button
                 className="btn-secondary"
                 onClick={handleExportJsonLocal}
                 disabled={exportLoading}
               >
-                Exportar JSON (local)
+                {t('account.exportJsonLocalButton')}
               </button>
             </div>
           </section>
@@ -449,51 +451,51 @@ export default function AccountView() {
 
         {/* ── Apariencia section ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Apariencia</h2>
+          <h2 className="settings-section-title">{t('settings.groupAppearance')}</h2>
           <div className="settings-row">
-            <div className="settings-row-label">Tema</div>
+            <div className="settings-row-label">{t('account.themeLabel')}</div>
             <div className="theme-toggle">
               <button
                 className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
                 onClick={() => setTheme('light')}
-              >☀️ Claro</button>
+              >{t('account.themeLight')}</button>
               <button
                 className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
                 onClick={() => setTheme('dark')}
-              >🌙 Oscuro</button>
+              >{t('account.themeDark')}</button>
             </div>
           </div>
         </section>
 
         {/* ── Account section ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Cuenta</h2>
+          <h2 className="settings-section-title">{t('settings.tabAccount')}</h2>
 
           <div className="settings-row">
-            <div className="settings-row-label">Email</div>
+            <div className="settings-row-label">{t('account.emailRow')}</div>
             <div className="settings-row-value">{user?.email ?? '—'}</div>
             <button
               className="btn-secondary"
               onClick={() => { setShowEmailForm(v => !v); setEmailError(''); setEmailSuccess('') }}
             >
-              Cambiar email
+              {t('account.changeEmailButton')}
             </button>
           </div>
 
           {showEmailForm && (
             <form className="inline-form" onSubmit={handleChangeEmail}>
               <div className="form-field">
-                <label>Nuevo email</label>
+                <label>{t('account.newEmailLabel')}</label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  placeholder="nuevo@email.com"
+                  placeholder={t('account.newEmailPlaceholder')}
                   required
                 />
               </div>
               <div className="form-field">
-                <label>Contraseña actual</label>
+                <label>{t('account.currentPasswordLabel')}</label>
                 <input
                   type="password"
                   value={emailPassword}
@@ -506,30 +508,30 @@ export default function AccountView() {
               {emailSuccess && <div className="auth-success">{emailSuccess}</div>}
               <div className="inline-form-actions">
                 <button type="submit" className="btn-primary" disabled={emailLoading}>
-                  {emailLoading ? 'Guardando...' : 'Guardar email'}
+                  {emailLoading ? t('common.saving') : t('account.saveEmailButton')}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => setShowEmailForm(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
           )}
 
           <div className="settings-row">
-            <div className="settings-row-label">Contraseña</div>
+            <div className="settings-row-label">{t('account.passwordRow')}</div>
             <div className="settings-row-value">••••••••</div>
             <button
               className="btn-secondary"
               onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess('') }}
             >
-              Cambiar contraseña
+              {t('account.changePasswordButton')}
             </button>
           </div>
 
           {showPasswordForm && (
             <form className="inline-form" onSubmit={handleChangePassword}>
               <div className="form-field">
-                <label>Contraseña actual</label>
+                <label>{t('account.currentPasswordLabel')}</label>
                 <input
                   type="password"
                   value={currentPassword}
@@ -539,7 +541,7 @@ export default function AccountView() {
                 />
               </div>
               <div className="form-field">
-                <label>Nueva contraseña</label>
+                <label>{t('account.newPasswordLabel')}</label>
                 <input
                   type="password"
                   value={newPassword}
@@ -550,7 +552,7 @@ export default function AccountView() {
                 />
               </div>
               <div className="form-field">
-                <label>Confirmar nueva contraseña</label>
+                <label>{t('account.confirmNewPasswordLabel')}</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -563,10 +565,10 @@ export default function AccountView() {
               {passwordSuccess && <div className="auth-success">{passwordSuccess}</div>}
               <div className="inline-form-actions">
                 <button type="submit" className="btn-primary" disabled={passwordLoading}>
-                  {passwordLoading ? 'Guardando...' : 'Guardar contraseña'}
+                  {passwordLoading ? t('common.saving') : t('account.savePasswordButton')}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => setShowPasswordForm(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -575,22 +577,21 @@ export default function AccountView() {
 
         {/* ── Privacidad section ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Privacidad</h2>
+          <h2 className="settings-section-title">{t('account.sectionPrivacy')}</h2>
 
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">Datos almacenados</div>
+              <div className="settings-row-label">{t('account.privacyDataStoredLabel')}</div>
               <div className="settings-row-hint">
-                Tus notas y tareas se guardan localmente en tu dispositivo y, si tienes cuenta activa, también en nuestros servidores para sincronización.
-                Nunca compartimos tus datos con terceros ni los usamos para entrenar modelos de IA.
+                {t('account.privacyDataStoredHint')}
               </div>
             </div>
           </div>
 
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">Política de privacidad</div>
-              <div className="settings-row-hint">Consulta cómo tratamos y protegemos tus datos.</div>
+              <div className="settings-row-label">{t('account.privacyPolicyLabel')}</div>
+              <div className="settings-row-hint">{t('account.privacyPolicyHint')}</div>
             </div>
             <a
               href="https://getfrom.app/privacy"
@@ -598,15 +599,15 @@ export default function AccountView() {
               rel="noopener noreferrer"
               className="btn-secondary"
             >
-              Ver política ↗
+              {t('account.privacyPolicyButton')}
             </a>
           </div>
 
           {getToken() && (
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Exportar mis datos</div>
-                <div className="settings-row-hint">Descarga una copia completa de todos tus datos en formato JSON o Markdown.</div>
+                <div className="settings-row-label">{t('account.exportDataLabel')}</div>
+                <div className="settings-row-hint">{t('account.exportDataHint')}</div>
               </div>
             </div>
           )}
@@ -619,14 +620,14 @@ export default function AccountView() {
                   onClick={() => handleExport('json')}
                   disabled={exportLoading}
                 >
-                  {exportLoading ? 'Exportando...' : 'Backup completo (JSON)'}
+                  {exportLoading ? t('common.exporting') : t('account.exportJsonButton')}
                 </button>
                 <button
                   className="btn-secondary"
                   onClick={() => handleExport('markdown')}
                   disabled={exportLoading}
                 >
-                  {exportLoading ? 'Exportando...' : 'Descarga Markdown'}
+                  {exportLoading ? t('common.exporting') : t('account.exportMarkdownButton')}
                 </button>
               </div>
             </>
@@ -635,12 +636,12 @@ export default function AccountView() {
 
         {/* ── Atajos de texto ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Atajos de texto</h2>
+          <h2 className="settings-section-title">{t('settings.tabShortcuts')}</h2>
 
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">Expansión de texto</div>
-              <div className="settings-row-hint">Define atajos que se expanden automáticamente mientras escribes. Ej: <code>;firma</code> → <em>Un saludo, Alberto</em></div>
+              <div className="settings-row-label">{t('shortcuts.sectionTextExpansion')}</div>
+              <div className="settings-row-hint">{t('shortcuts.textExpansionHint')} Ej: <code>;firma</code> → <em>Un saludo, Alberto</em></div>
             </div>
           </div>
 
@@ -648,8 +649,8 @@ export default function AccountView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Trigger</th>
-                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Expansión</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{t('shortcuts.triggerColumn')}</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{t('shortcuts.expansionColumn')}</th>
                   <th style={{ width: 32 }} />
                 </tr>
               </thead>
@@ -664,7 +665,7 @@ export default function AccountView() {
                       <button
                         onClick={() => handleDeleteShortcut(sc.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: 0 }}
-                        title="Eliminar atajo"
+                        title={t('shortcuts.deleteTitle')}
                       >
                         ×
                       </button>
@@ -680,38 +681,38 @@ export default function AccountView() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input
                   type="text"
-                  placeholder="Trigger (ej: ;firma)"
+                  placeholder={t('shortcuts.triggerPlaceholderLong')}
                   value={newTrigger}
                   onChange={e => setNewTrigger(e.target.value)}
                   style={{ flex: '0 0 140px', padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
                 />
                 <input
                   type="text"
-                  placeholder="Expansión"
+                  placeholder={t('shortcuts.expansionPlaceholder')}
                   value={newExpansion}
                   onChange={e => setNewExpansion(e.target.value)}
                   style={{ flex: 1, minWidth: 160, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddShortcut() }}
                 />
-                <button className="btn-primary" onClick={handleAddShortcut} style={{ fontSize: 13, padding: '6px 14px' }}>Guardar</button>
-                <button className="btn-secondary" onClick={() => setShowAddShortcut(false)} style={{ fontSize: 13, padding: '6px 14px' }}>Cancelar</button>
+                <button className="btn-primary" onClick={handleAddShortcut} style={{ fontSize: 13, padding: '6px 14px' }}>{t('shortcuts.saveButton')}</button>
+                <button className="btn-secondary" onClick={() => setShowAddShortcut(false)} style={{ fontSize: 13, padding: '6px 14px' }}>{t('common.cancel')}</button>
               </div>
             </div>
           ) : (
             <div className="settings-actions">
-              <button className="btn-secondary" onClick={() => setShowAddShortcut(true)}>Añadir atajo</button>
+              <button className="btn-secondary" onClick={() => setShowAddShortcut(true)}>{t('shortcuts.addButton')}</button>
             </div>
           )}
         </section>
 
         {/* ── Plantillas personalizadas ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Plantillas de nodo</h2>
+          <h2 className="settings-section-title">{t('templates.sectionTitle')}</h2>
 
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">Mis plantillas</div>
-              <div className="settings-row-hint">Define plantillas para crear notas con contenido predefinido. Aparecerán en el modal de nueva nota.</div>
+              <div className="settings-row-label">{t('templates.myTemplates')}</div>
+              <div className="settings-row-hint">{t('templates.hintModal')}</div>
             </div>
           </div>
 
@@ -719,25 +720,25 @@ export default function AccountView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Nombre</th>
-                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>Body</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{t('templates.nameColumn')}</th>
+                  <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{t('templates.bodyColumn')}</th>
                   <th style={{ width: 32 }} />
                 </tr>
               </thead>
               <tbody>
-                {customTemplates.map(t => (
-                  <tr key={t.id} style={{ borderTop: '1px solid var(--border)' }}>
+                {customTemplates.map(templ => (
+                  <tr key={templ.id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '6px 8px' }}>
-                      <span style={{ fontWeight: 500 }}>{t.name}</span>
+                      <span style={{ fontWeight: 500 }}>{templ.name}</span>
                     </td>
                     <td style={{ padding: '6px 8px', color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t.body ? t.body.slice(0, 40) + (t.body.length > 40 ? '…' : '') : <em style={{ opacity: 0.5 }}>Sin body</em>}
+                      {templ.body ? templ.body.slice(0, 40) + (templ.body.length > 40 ? '…' : '') : <em style={{ opacity: 0.5 }}>{t('templates.noContent')}</em>}
                     </td>
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                       <button
-                        onClick={() => deleteTemplate(t.id)}
+                        onClick={() => deleteTemplate(templ.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: 0 }}
-                        title="Eliminar plantilla"
+                        title={t('templates.deleteTitle')}
                       >
                         ×
                       </button>
@@ -752,35 +753,35 @@ export default function AccountView() {
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <input
                 type="text"
-                placeholder="Nombre de la plantilla"
+                placeholder={t('templates.namePlaceholder')}
                 value={newTemplateName}
                 onChange={e => setNewTemplateName(e.target.value)}
                 style={{ flex: '0 0 180px', padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
               />
               <textarea
-                placeholder="Body markdown (opcional)..."
+                placeholder={t('templates.bodyPlaceholder')}
                 value={newTemplateBody}
                 onChange={e => setNewTemplateBody(e.target.value)}
                 rows={3}
                 style={{ flex: 1, minWidth: 200, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13, resize: 'vertical' }}
               />
-              <button className="btn-primary" onClick={handleAddTemplate} style={{ fontSize: 13, padding: '6px 14px', alignSelf: 'flex-end' }}>+ Añadir</button>
+              <button className="btn-primary" onClick={handleAddTemplate} style={{ fontSize: 13, padding: '6px 14px', alignSelf: 'flex-end' }}>{t('templates.addButtonShort')}</button>
             </div>
           </div>
         </section>
 
         {/* ── Subscription section ── */}
         <section className="settings-section">
-          <h2 className="settings-section-title">Suscripción</h2>
+          <h2 className="settings-section-title">{t('account.sectionSubscription')}</h2>
 
           <div className="settings-row">
-            <div className="settings-row-label">Estado</div>
+            <div className="settings-row-label">{t('account.subscriptionStatus')}</div>
             <div className="settings-row-value">{getPlanBadge()}</div>
           </div>
 
           {user?.subscriptionStatus === 'active' && user.subscriptionRenewsAt && (
             <div className="settings-row">
-              <div className="settings-row-label">Próxima renovación</div>
+              <div className="settings-row-label">{t('account.subscriptionRenewal')}</div>
               <div className="settings-row-value">
                 {new Date(user.subscriptionRenewsAt).toLocaleDateString('es-ES', {
                   day: 'numeric', month: 'long', year: 'numeric',
@@ -791,7 +792,7 @@ export default function AccountView() {
 
           {user?.subscriptionStatus === 'trialing' && user.trialEndsAt && (
             <div className="settings-row">
-              <div className="settings-row-label">Prueba termina</div>
+              <div className="settings-row-label">{t('account.subscriptionTrialEnds')}</div>
               <div className="settings-row-value">
                 {new Date(user.trialEndsAt).toLocaleDateString('es-ES', {
                   day: 'numeric', month: 'long', year: 'numeric',
@@ -802,7 +803,7 @@ export default function AccountView() {
 
           {user?.tokensBalance !== undefined && (
             <div className="settings-row">
-              <div className="settings-row-label">Tokens IA</div>
+              <div className="settings-row-label">{t('account.tokensBalance')}</div>
               <div className="settings-row-value">{user.tokensBalance.toLocaleString()}</div>
             </div>
           )}
@@ -812,13 +813,13 @@ export default function AccountView() {
           <div className="settings-actions">
             {user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trialing' && user?.licenseStatus !== 'active' && (
               <button className="btn-primary" onClick={handleSubscribe} disabled={subLoading}>
-                {subLoading ? 'Cargando...' : 'Suscribirse'}
+                {subLoading ? t('common.loading') : t('account.subscribeButton')}
               </button>
             )}
 
             {user?.subscriptionStatus === 'active' && (
               <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
-                {subLoading ? 'Procesando...' : 'Cancelar suscripción'}
+                {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
               </button>
             )}
 
@@ -828,7 +829,7 @@ export default function AccountView() {
               rel="noopener noreferrer"
               className="btn-secondary"
             >
-              Gestionar facturación ↗
+              {t('account.manageBillingButton')}
             </a>
           </div>
         </section>
@@ -836,14 +837,14 @@ export default function AccountView() {
         {/* ── Google Calendar ── */}
         {getToken() && (
           <section className="settings-section">
-            <h2 className="settings-section-title">Google Calendar</h2>
+            <h2 className="settings-section-title">{t('google.sectionCalendar')}</h2>
 
             {/* Estado de sincronización */}
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Estado de sincronización</div>
+                <div className="settings-row-label">{t('google.calendarSyncLabel')}</div>
                 <div className="settings-row-hint">
-                  Los eventos de Google Calendar aparecerán en el Calendario cuando inicies sesión con tu cuenta de Google.
+                  {t('google.calendarSyncHint')}
                 </div>
               </div>
               <span style={{
@@ -855,7 +856,7 @@ export default function AccountView() {
                 whiteSpace: 'nowrap',
                 alignSelf: 'flex-start',
               }}>
-                No conectado
+                {t('google.notConnected')}
               </span>
             </div>
 
@@ -864,7 +865,7 @@ export default function AccountView() {
               <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>Cómo sincronizar Google Calendar</strong>
               <ol style={{ margin: 0, paddingLeft: 18 }}>
                 <li>Cierra sesión en From.</li>
-                <li>Inicia sesión usando el botón <em>Continuar con Google</em>.</li>
+                <li>Inicia sesión usando el botón <em>{t('auth.continueWithGoogle')}</em>.</li>
                 <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
               </ol>
               <a
@@ -882,17 +883,17 @@ export default function AccountView() {
         {/* ── Integraciones ── */}
         {getToken() && (
           <section className="settings-section">
-            <h2 className="settings-section-title">Integraciones</h2>
+            <h2 className="settings-section-title">{t('settings.groupIntegrations')}</h2>
 
             {/* Claude Desktop MCP */}
             <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                 <div style={{ flex: 1 }}>
-                  <div className="settings-row-label">Claude Desktop (MCP)</div>
+                  <div className="settings-row-label">{t('sidebar.claudeMCP')}</div>
                   <div className="settings-row-hint">
                     Conecta Claude con tu vault de From para acceder a tus notas desde el asistente.{' '}
                     <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
-                      Ver instrucciones →
+                      {t('mcp.docsButton')}
                     </a>
                   </div>
                 </div>
@@ -903,13 +904,13 @@ export default function AccountView() {
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
                 >
-                  Descargar .dxt
+                  {t('mcp.downloadDxtButton')}
                 </a>
               </div>
 
               {/* Token MCP */}
               <div style={{ width: '100%' }}>
-                <div className="settings-row-label" style={{ marginBottom: 6, fontSize: 12, color: 'var(--text-secondary)' }}>Tu token de API</div>
+                <div className="settings-row-label" style={{ marginBottom: 6, fontSize: 12, color: 'var(--text-secondary)' }}>{t('mcp.apiTokenLabel')}</div>
                 {mcpLoaded && (
                   mcpToken ? (
                     <div>
@@ -918,17 +919,17 @@ export default function AccountView() {
                           {mcpToken}
                         </code>
                         <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
-                          {mcpCopied ? '✓ Copiado' : 'Copiar'}
+                          {mcpCopied ? t('mcp.tokenCopied') : t('mcp.copyTokenButton')}
                         </button>
                       </div>
                       <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-                        {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+                        {generatingMcp ? t('mcp.regeneratingToken') : t('mcp.regenerateTokenButton')}
                       </button>
                     </div>
                   ) : (
                     <div className="settings-actions">
                       <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-                        {generatingMcp ? 'Generando...' : 'Generar token de API'}
+                        {generatingMcp ? t('mcp.generatingToken') : t('mcp.generateTokenButton')}
                       </button>
                     </div>
                   )
@@ -941,11 +942,9 @@ export default function AccountView() {
 
             {/* API Key propia */}
             <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-              <div className="settings-row-label">API Key propia de Claude (opcional)</div>
+              <div className="settings-row-label">{t('mcp.accountApiKeyLabel')}</div>
               <div className="settings-row-hint">
-                Si quieres usar tu propia clave de Anthropic en lugar de los tokens incluidos en tu plan,
-                puedes añadirla en la app de escritorio en <strong>Ajustes → IA → API Key</strong>.
-                Esto te permite usar tu cuota directamente sin consumir los tokens de From.
+                {t('mcp.accountApiKeyHint')}
               </div>
             </div>
           </section>
@@ -953,18 +952,18 @@ export default function AccountView() {
 
         {/* ── Danger zone ── */}
         <section className="settings-section danger-zone">
-          <h2 className="settings-section-title danger-title">Zona de peligro</h2>
+          <h2 className="settings-section-title danger-title">{t('account.sectionDangerZone')}</h2>
 
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">Eliminar cuenta</div>
-              <div className="settings-row-hint">Esta acción es irreversible. Se borrarán todos tus datos.</div>
+              <div className="settings-row-label">{t('account.deleteAccountLabel')}</div>
+              <div className="settings-row-hint">{t('account.deleteAccountHintShort')}</div>
             </div>
             <button
               className="btn-danger"
               onClick={() => setShowDeleteModal(true)}
             >
-              Eliminar cuenta
+              {t('account.deleteAccountButton')}
             </button>
           </div>
         </section>
@@ -974,15 +973,15 @@ export default function AccountView() {
       {showDeleteModal && (
         <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <h2>¿Eliminar cuenta?</h2>
-            <p>Esta acción eliminará permanentemente tu cuenta y todos tus datos. No se puede deshacer.</p>
+            <h2>{t('account.deleteAccountConfirmTitle')}</h2>
+            <p>{t('account.deleteAccountConfirmText')}</p>
             {deleteError && <div className="auth-error" style={{ marginTop: 12 }}>{deleteError}</div>}
             <div className="modal-actions">
               <button className="btn-danger" onClick={handleDeleteAccount} disabled={deleteLoading}>
-                {deleteLoading ? 'Eliminando...' : 'Sí, eliminar'}
+                {deleteLoading ? t('common.eliminating') : t('account.deleteAccountConfirmButton')}
               </button>
               <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>
-                Cancelar
+                {t('common.cancel')}
               </button>
             </div>
           </div>

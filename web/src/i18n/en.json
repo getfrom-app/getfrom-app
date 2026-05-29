@@ -38,7 +38,6 @@
   "auth.passwordChanged": "Password changed, please sign in",
   "auth.errorPasswordsNoMatch": "Passwords do not match",
   "auth.errorInvalidResetLink": "Invalid recovery link",
-
   "common.cancel": "Cancel",
   "common.save": "Save",
   "common.saving": "Saving...",
@@ -70,7 +69,6 @@
   "common.exporting": "Exporting...",
   "common.importing": "Importing...",
   "common.eliminating": "Deleting...",
-
   "sidebar.panelsHeader": "Panels",
   "sidebar.sortLabel": "Sort",
   "sidebar.groupLabel": "Group",
@@ -108,7 +106,6 @@
   "sidebar.exportData": "Export data",
   "sidebar.googleCalendar": "Google Calendar",
   "sidebar.claudeMCP": "Claude (MCP)",
-
   "topbar.goToToday": "Go to today (Esc)",
   "topbar.notesCount": "{{count}} notes",
   "topbar.pendingTasksCount": "{{count}} pending tasks",
@@ -132,7 +129,6 @@
   "topbar.viewInbox": "Inbox",
   "topbar.viewTrash": "Trash",
   "topbar.viewSettings": "Settings",
-
   "wftopbar.backButton": "Back (⌘[)",
   "wftopbar.forwardButton": "Forward (⌘])",
   "wftopbar.searchButton": "Search (⌘F)",
@@ -145,7 +141,6 @@
   "wftopbar.menuTrash": "Trash",
   "wftopbar.menuSettings": "Settings",
   "wftopbar.menuLogout": "Sign out",
-
   "statusbar.connected": "Connected",
   "statusbar.disconnected": "Offline · Reconnect",
   "statusbar.disconnectedHint": "No connection — click to reconnect",
@@ -155,15 +150,12 @@
   "statusbar.nodeCountHint": "Nodes in your tree",
   "statusbar.syncing": "Syncing",
   "statusbar.saved": "✓ Saved",
-
   "guestBanner.message": "You're in guest mode. Your data will be lost when you close the browser.",
   "guestBanner.createAccount": "Create a free account",
   "guestBanner.signIn": "Sign in",
-
   "trialBanner.message": "✦ 7-day free trial · No credit card required",
   "trialBanner.cta": "Try Pro for free →",
   "trialBanner.dismiss": "Dismiss banner",
-
   "settings.title": "Settings",
   "settings.tabAccount": "Account",
   "settings.tabGoogle": "Google",
@@ -190,7 +182,6 @@
   "settings.groupIntegrations": "Integrations",
   "settings.groupAdvanced": "Advanced",
   "settings.groupData": "Data",
-
   "account.title": "Account settings",
   "account.statNotes": "Notes",
   "account.statTasks": "Tasks",
@@ -259,7 +250,6 @@
   "account.themeLabel": "Theme",
   "account.themeLight": "☀️ Light",
   "account.themeDark": "🌙 Dark",
-
   "appearance.sectionTheme": "Theme",
   "appearance.colorModeLabel": "Color mode",
   "appearance.colorModeHint": "Choose between light and dark mode.",
@@ -281,7 +271,6 @@
   "appearance.dayStartHint": "Earlier hours are hidden in the weekly calendar and daily timeline.",
   "appearance.dayEndLabel": "Day end time",
   "appearance.dayEndHint": "Later hours are hidden. Default: 7:00 to 23:00.",
-
   "ai.sectionProvider": "AI provider",
   "ai.defaultModelLabel": "Default model",
   "ai.defaultModelHint": "From uses Claude (Anthropic) by default. If you set your own API key below, From will use it and won't consume your included tokens. Supports Anthropic, OpenAI, and Google (Gemini).",
@@ -338,7 +327,6 @@
   "ai.openNodeButton": "Open",
   "ai.browserVoiceUnsupported": "Your browser does not support voice recognition. Try Chrome or Safari.",
   "ai.filterApplied": "Filter applied: {{query}}",
-
   "magic.sectionTitle": "Magic — AI automations",
   "magic.autoTitlesLabel": "Auto titles",
   "magic.autoTitlesHint": "Suggests a title when a note reaches a paragraph of content.",
@@ -346,7 +334,6 @@
   "magic.autoTagsHint": "Detects topics and suggests hashtags when there's enough text.",
   "magic.autoUnfurlLabel": "Link unfurling",
   "magic.autoUnfurlHint": "When you paste a link, From automatically extracts the title, description, and image.",
-
   "shortcuts.sectionTextExpansion": "Text expansion",
   "shortcuts.textExpansionHint": "Define shortcuts that expand automatically as you type.",
   "shortcuts.triggerColumn": "Trigger",
@@ -358,7 +345,6 @@
   "shortcuts.triggerPlaceholderLong": "Trigger (e.g. ;sig)",
   "shortcuts.deleteTitle": "Delete shortcut",
   "shortcuts.saveButton": "Save",
-
   "templates.sectionTitle": "Node templates",
   "templates.hint": "Define templates to create notes with preset content. They appear in the node context menu.",
   "templates.hintModal": "Define templates to create notes with preset content. They appear in the new note modal.",
@@ -373,7 +359,6 @@
   "templates.noContent": "No content",
   "templates.deleteTitle": "Delete template",
   "templates.myTemplates": "My templates",
-
   "google.sectionTitle": "Google",
   "google.connectionStatusLabel": "Connection status",
   "google.connectionStatusHint": "Connecting Google gives you access to Google Calendar and Google Drive in a single authorization.",
@@ -390,7 +375,6 @@
   "google.driveAccessLabel": "File access",
   "google.driveAccessHint": "The same authorization allows you to attach files from Google Drive to your notes.",
   "google.disconnectError": "Error disconnecting",
-
   "mcp.section1Title": "1. API token",
   "mcp.section1Hint": "Generate a unique token so Claude Desktop can connect to your From vault.",
   "mcp.generateTokenButton": "Generate API token",
@@ -416,7 +400,6 @@
   "mcp.downloadDxtButton": "Download .dxt",
   "mcp.accountApiKeyLabel": "Your own Claude API key (optional)",
   "mcp.accountApiKeyHint": "If you want to use your own Anthropic key instead of the tokens included in your plan, you can add it in the desktop app under Settings → AI → API Key. This lets you use your own quota without consuming From's tokens.",
-
   "export.sectionTitle": "Export data",
   "export.serverBackupLabel": "Server backup",
   "export.serverBackupHint": "Export a copy of your data stored on the server.",
@@ -429,7 +412,6 @@
   "export.markdownLocalButton": "Export Markdown (local)",
   "export.exportingButton": "Exporting...",
   "export.exportError": "Error exporting",
-
   "import.sectionTitle": "Import data",
   "import.jsonLabel": "Import from JSON",
   "import.jsonHint": "Upload a JSON file exported from From to import your notes and tasks.",
@@ -442,7 +424,6 @@
   "import.noteExisting": "Existing nodes with the same ID will be updated.",
   "import.noteNew": "New nodes will be added to your vault.",
   "import.noteFormat": "Files exported from From (JSON) are supported.",
-
   "stats.sectionTitle": "Statistics",
   "stats.notesAndTasksLabel": "Notes and tasks",
   "stats.pendingTasksLabel": "Pending tasks",
@@ -451,10 +432,8 @@
   "stats.resourcesLabel": "Resources",
   "stats.completionRateLabel": "Completion rate",
   "stats.completionRateHint": "Percentage of tasks done out of the total with a status.",
-
   "tags.sectionTitle": "Tags in use",
   "tags.hint": "Tags detected in your nodes. They are created automatically by writing #tag in the text.",
-
   "states.sectionTitle": "Task states",
   "states.pendingHint": "Pending task (default).",
   "states.doneHint": "Completed task.",
@@ -462,7 +441,6 @@
   "states.futureHint": "Task scheduled for later.",
   "states.customizationLabel": "Customization",
   "states.customizationHint": "Editing custom states will be available soon. Mac already supports it.",
-
   "voice.sectionTitle": "Voice — note dictation",
   "voice.notAvailableLabel": "Not available",
   "voice.notAvailableHint": "Your browser does not support Web Speech API. Try Chrome or Safari.",
@@ -471,33 +449,28 @@
   "voice.startDictationButton": "🎤 Start dictation",
   "voice.stopButton": "⏹ Stop",
   "voice.transcriptPlaceholder": "Dictation will appear here…",
-
   "agents.sectionTitle": "AI agents",
   "agents.hint": "Agents are created with /agent in the editor. Manage and run them here.",
   "agents.runButton": "Run",
   "agents.noAgentsLabel": "No agents",
   "agents.noAgentsHint": "Create one from the editor by typing /agent.",
   "agents.unnamedAgent": "Unnamed agent",
-
   "timeline.sectionTitle": "View — Daily timeline",
   "timeline.startHourLabel": "Start time",
   "timeline.startHourHint": "First visible hour in the daily timeline.",
   "timeline.endHourLabel": "End time",
   "timeline.endHourHint": "Last visible hour in the daily timeline.",
-
   "prompts.sectionTitle": "Saved prompts",
   "prompts.hint": "Reusable templates injected when launching inline AI or an agent.",
   "prompts.namePlaceholder": "Prompt name",
   "prompts.contentPlaceholder": "Prompt content…",
   "prompts.addButton": "Add prompt",
   "prompts.deleteButton": "Delete",
-
   "backups.sectionTitle": "Cloud backups",
   "backups.snapshotsLabel": "Automatic snapshots",
   "backups.snapshotsHint": "The server creates a snapshot of all your nodes every 2 hours if there have been changes. Retention: last 12.",
   "backups.restoreLabel": "Restore",
   "backups.restoreHint": "Coming soon: snapshot list with a restore button (already available on Mac).",
-
   "cmdpalette.searchPlaceholder": "Search... (# for tags, -t task, -e event, -a loop)",
   "cmdpalette.todayLabel": "Today",
   "cmdpalette.tomorrowLabel": "Tomorrow",
@@ -525,7 +498,6 @@
   "cmdpalette.toastCollapsed": "All collapsed",
   "cmdpalette.toastExpanded": "All expanded",
   "cmdpalette.panelSaved": "Panel \"{{name}}\" saved",
-
   "quickCapture.title": "✎ Quick capture",
   "quickCapture.taskToggle": "○ Task",
   "quickCapture.noteToggle": "○ Note",
@@ -535,7 +507,6 @@
   "quickCapture.cancelButton": "Cancel",
   "quickCapture.toastNoteSaved": "✓ Note saved",
   "quickCapture.toastTaskSaved": "✓ Task saved",
-
   "search.searchPlaceholder": "Search…",
   "search.chipNote": "Note",
   "search.chipTask": "Task",
@@ -549,7 +520,6 @@
   "search.chipFuture": "Future",
   "search.chipPending": "Pending",
   "search.chipDone": "Done",
-
   "pricing.title": "Choose your plan",
   "pricing.titleAfterRegister": "Account created! Choose how to continue",
   "pricing.subtitle": "Start free · Pay once and use From forever",
@@ -572,5 +542,7 @@
   "pricing.ctaContinueFree": "Continue for free →",
   "pricing.ctaCreateFree": "Create free account",
   "pricing.ctaBuyNow": "Buy now",
-  "pricing.ctaCurrentPlan": "Your current plan"
+  "pricing.ctaCurrentPlan": "Your current plan",
+  "settings.tabLanguage": "Language",
+  "settings.language.hint": "Select the interface language. Auto-detected from your browser."
 }

@@ -38,7 +38,6 @@
   "auth.passwordChanged": "Contraseña cambiada, inicia sesión",
   "auth.errorPasswordsNoMatch": "Las contraseñas no coinciden",
   "auth.errorInvalidResetLink": "Enlace de recuperación inválido",
-
   "common.cancel": "Cancelar",
   "common.save": "Guardar",
   "common.saving": "Guardando...",
@@ -70,7 +69,6 @@
   "common.exporting": "Exportando...",
   "common.importing": "Importando...",
   "common.eliminating": "Eliminando...",
-
   "sidebar.panelsHeader": "Paneles",
   "sidebar.sortLabel": "Ordenar",
   "sidebar.groupLabel": "Agrupar",
@@ -108,7 +106,6 @@
   "sidebar.exportData": "Exportar datos",
   "sidebar.googleCalendar": "Google Calendar",
   "sidebar.claudeMCP": "Claude (MCP)",
-
   "topbar.goToToday": "Ir a hoy (Esc)",
   "topbar.notesCount": "{{count}} notas",
   "topbar.pendingTasksCount": "{{count}} tareas pendientes",
@@ -132,7 +129,6 @@
   "topbar.viewInbox": "Inbox",
   "topbar.viewTrash": "Papelera",
   "topbar.viewSettings": "Ajustes",
-
   "wftopbar.backButton": "Atrás (⌘[)",
   "wftopbar.forwardButton": "Adelante (⌘])",
   "wftopbar.searchButton": "Buscar (⌘F)",
@@ -145,7 +141,6 @@
   "wftopbar.menuTrash": "Papelera",
   "wftopbar.menuSettings": "Ajustes",
   "wftopbar.menuLogout": "Cerrar sesión",
-
   "statusbar.connected": "Conectado",
   "statusbar.disconnected": "Sin conexión · Reconectar",
   "statusbar.disconnectedHint": "Sin conexión — clic para reconectar",
@@ -155,15 +150,12 @@
   "statusbar.nodeCountHint": "Nodos en tu árbol",
   "statusbar.syncing": "Sincronizando",
   "statusbar.saved": "✓ Guardado",
-
   "guestBanner.message": "Estás en modo invitado. Tus datos se perderán al cerrar el navegador.",
   "guestBanner.createAccount": "Crear cuenta gratis",
   "guestBanner.signIn": "Iniciar sesión",
-
   "trialBanner.message": "✦ 7 días de prueba gratis · Sin tarjeta de crédito",
   "trialBanner.cta": "Probar Pro gratis →",
   "trialBanner.dismiss": "Cerrar banner",
-
   "settings.title": "Ajustes",
   "settings.tabAccount": "Cuenta",
   "settings.tabGoogle": "Google",
@@ -190,7 +182,6 @@
   "settings.groupIntegrations": "Integraciones",
   "settings.groupAdvanced": "Avanzado",
   "settings.groupData": "Datos",
-
   "account.title": "Ajustes de cuenta",
   "account.statNotes": "Notas",
   "account.statTasks": "Tareas",
@@ -259,7 +250,6 @@
   "account.themeLabel": "Tema",
   "account.themeLight": "☀️ Claro",
   "account.themeDark": "🌙 Oscuro",
-
   "appearance.sectionTheme": "Tema",
   "appearance.colorModeLabel": "Modo de color",
   "appearance.colorModeHint": "Elige entre modo claro y oscuro.",
@@ -281,7 +271,6 @@
   "appearance.dayStartHint": "Las horas anteriores quedan ocultas en calendario semanal y timeline diario.",
   "appearance.dayEndLabel": "Hora de fin del día",
   "appearance.dayEndHint": "Las horas posteriores quedan ocultas. Por defecto: 7:00 a 23:00.",
-
   "ai.sectionProvider": "Proveedor de IA",
   "ai.defaultModelLabel": "Modelo por defecto",
   "ai.defaultModelHint": "From usa Claude (Anthropic) por defecto. Si configuras tu propia API key abajo, From la usará y no consumirá tus tokens incluidos. Soporta Anthropic, OpenAI y Google (Gemini).",
@@ -338,7 +327,6 @@
   "ai.openNodeButton": "Abrir",
   "ai.browserVoiceUnsupported": "Tu navegador no soporta reconocimiento de voz. Prueba Chrome o Safari.",
   "ai.filterApplied": "Filtro aplicado: {{query}}",
-
   "magic.sectionTitle": "Magic — automatizaciones IA",
   "magic.autoTitlesLabel": "Títulos automáticos",
   "magic.autoTitlesHint": "Sugiere un título cuando una nota llega a un párrafo de contenido.",
@@ -346,7 +334,6 @@
   "magic.autoTagsHint": "Detecta temas y sugiere hashtags en la nota cuando hay texto suficiente.",
   "magic.autoUnfurlLabel": "Unfurl de enlaces",
   "magic.autoUnfurlHint": "Cuando pegas un link, From extrae título, descripción e imagen automáticamente.",
-
   "shortcuts.sectionTextExpansion": "Expansión de texto",
   "shortcuts.textExpansionHint": "Define atajos que se expanden automáticamente mientras escribes.",
   "shortcuts.triggerColumn": "Trigger",
@@ -358,7 +345,6 @@
   "shortcuts.triggerPlaceholderLong": "Trigger (ej: ;firma)",
   "shortcuts.deleteTitle": "Eliminar atajo",
   "shortcuts.saveButton": "Guardar",
-
   "templates.sectionTitle": "Plantillas de nodo",
   "templates.hint": "Define plantillas para crear notas con contenido predefinido. Aparecerán en el menú contextual de nodos.",
   "templates.hintModal": "Define plantillas para crear notas con contenido predefinido. Aparecerán en el modal de nueva nota.",
@@ -373,7 +359,6 @@
   "templates.noContent": "Sin contenido",
   "templates.deleteTitle": "Eliminar plantilla",
   "templates.myTemplates": "Mis plantillas",
-
   "google.sectionTitle": "Google",
   "google.connectionStatusLabel": "Estado de la conexión",
   "google.connectionStatusHint": "Conectar Google te da acceso a Google Calendar y Google Drive en una sola autorización.",
@@ -390,7 +375,6 @@
   "google.driveAccessLabel": "Acceso a archivos",
   "google.driveAccessHint": "La misma autorización permite adjuntar archivos desde Google Drive en tus notas.",
   "google.disconnectError": "Error al desconectar",
-
   "mcp.section1Title": "1. Token de API",
   "mcp.section1Hint": "Genera un token único para que Claude Desktop pueda conectarse a tu vault de From.",
   "mcp.generateTokenButton": "Generar token de API",
@@ -416,7 +400,6 @@
   "mcp.downloadDxtButton": "Descargar .dxt",
   "mcp.accountApiKeyLabel": "API Key propia de Claude (opcional)",
   "mcp.accountApiKeyHint": "Si quieres usar tu propia clave de Anthropic en lugar de los tokens incluidos en tu plan, puedes añadirla en la app de escritorio en Ajustes → IA → API Key. Esto te permite usar tu cuota directamente sin consumir los tokens de From.",
-
   "export.sectionTitle": "Exportar datos",
   "export.serverBackupLabel": "Backup del servidor",
   "export.serverBackupHint": "Exporta una copia de tus datos almacenados en el servidor.",
@@ -429,7 +412,6 @@
   "export.markdownLocalButton": "Exportar Markdown (local)",
   "export.exportingButton": "Exportando...",
   "export.exportError": "Error al exportar",
-
   "import.sectionTitle": "Importar datos",
   "import.jsonLabel": "Importar desde JSON",
   "import.jsonHint": "Sube un archivo JSON exportado desde From para importar tus notas y tareas.",
@@ -442,7 +424,6 @@
   "import.noteExisting": "Los nodos existentes con el mismo ID se actualizarán.",
   "import.noteNew": "Los nodos nuevos se añadirán a tu vault.",
   "import.noteFormat": "Se admiten archivos exportados desde From (JSON).",
-
   "stats.sectionTitle": "Estadísticas",
   "stats.notesAndTasksLabel": "Notas y tareas",
   "stats.pendingTasksLabel": "Tareas pendientes",
@@ -451,10 +432,8 @@
   "stats.resourcesLabel": "Recursos",
   "stats.completionRateLabel": "Tasa de completado",
   "stats.completionRateHint": "Porcentaje de tareas hechas sobre el total con estado.",
-
   "tags.sectionTitle": "Tags en uso",
   "tags.hint": "Tags detectados en tus nodos. Se crean automáticamente al escribir #tag en el texto.",
-
   "states.sectionTitle": "Estados de tarea",
   "states.pendingHint": "Tarea pendiente (por defecto).",
   "states.doneHint": "Tarea completada.",
@@ -462,7 +441,6 @@
   "states.futureHint": "Tarea programada para más adelante.",
   "states.customizationLabel": "Personalización",
   "states.customizationHint": "Editar estados custom estará disponible próximamente. Mac ya lo permite.",
-
   "voice.sectionTitle": "Voz — dictado de notas",
   "voice.notAvailableLabel": "No disponible",
   "voice.notAvailableHint": "Tu navegador no soporta Web Speech API. Prueba Chrome o Safari.",
@@ -471,33 +449,28 @@
   "voice.startDictationButton": "🎤 Iniciar dictado",
   "voice.stopButton": "⏹ Detener",
   "voice.transcriptPlaceholder": "El dictado aparecerá aquí…",
-
   "agents.sectionTitle": "Agentes IA",
   "agents.hint": "Los agentes se crean con /agente en el editor. Aquí los gestionas y ejecutas.",
   "agents.runButton": "Ejecutar",
   "agents.noAgentsLabel": "Sin agentes",
   "agents.noAgentsHint": "Crea uno desde el editor escribiendo /agente.",
   "agents.unnamedAgent": "Agente sin nombre",
-
   "timeline.sectionTitle": "Vista — Timeline del día",
   "timeline.startHourLabel": "Hora inicio",
   "timeline.startHourHint": "Primera hora visible en el timeline diario.",
   "timeline.endHourLabel": "Hora fin",
   "timeline.endHourHint": "Última hora visible en el timeline diario.",
-
   "prompts.sectionTitle": "Prompts guardados",
   "prompts.hint": "Plantillas reutilizables que se inyectan al lanzar la IA inline o un agente.",
   "prompts.namePlaceholder": "Nombre del prompt",
   "prompts.contentPlaceholder": "Contenido del prompt…",
   "prompts.addButton": "Añadir prompt",
   "prompts.deleteButton": "Borrar",
-
   "backups.sectionTitle": "Backups cloud",
   "backups.snapshotsLabel": "Snapshots automáticos",
   "backups.snapshotsHint": "El servidor crea un snapshot de todos tus nodos cada 2 horas si ha habido cambios. Retención: últimos 12.",
   "backups.restoreLabel": "Restaurar",
   "backups.restoreHint": "Próximamente: lista de snapshots con botón restaurar (Mac ya lo tiene).",
-
   "cmdpalette.searchPlaceholder": "Buscar... (# para tags, -t tarea, -e evento, -a bucle)",
   "cmdpalette.todayLabel": "Hoy",
   "cmdpalette.tomorrowLabel": "Mañana",
@@ -525,7 +498,6 @@
   "cmdpalette.toastCollapsed": "Todo colapsado",
   "cmdpalette.toastExpanded": "Todo expandido",
   "cmdpalette.panelSaved": "Panel \"{{name}}\" guardado",
-
   "quickCapture.title": "✎ Captura rápida",
   "quickCapture.taskToggle": "○ Tarea",
   "quickCapture.noteToggle": "○ Nota",
@@ -535,7 +507,6 @@
   "quickCapture.cancelButton": "Cancelar",
   "quickCapture.toastNoteSaved": "✓ Nota guardada",
   "quickCapture.toastTaskSaved": "✓ Tarea guardada",
-
   "search.searchPlaceholder": "Buscar…",
   "search.chipNote": "Nota",
   "search.chipTask": "Tarea",
@@ -549,7 +520,6 @@
   "search.chipFuture": "Futuro",
   "search.chipPending": "Pendiente",
   "search.chipDone": "Hecho",
-
   "pricing.title": "Elige tu plan",
   "pricing.titleAfterRegister": "¡Cuenta creada! Elige cómo continuar",
   "pricing.subtitle": "Empieza gratis · Paga una vez y usa From para siempre",
@@ -572,5 +542,7 @@
   "pricing.ctaContinueFree": "Continuar gratis →",
   "pricing.ctaCreateFree": "Crear cuenta gratis",
   "pricing.ctaBuyNow": "Comprar ahora",
-  "pricing.ctaCurrentPlan": "Tu plan actual"
+  "pricing.ctaCurrentPlan": "Tu plan actual",
+  "settings.tabLanguage": "Idioma",
+  "settings.language.hint": "Selecciona el idioma de la interfaz. Se detecta automáticamente del navegador."
 }
