@@ -11246,8 +11246,11 @@ a:focus-visible {
 .magic-chat-action-key {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 3px 8px;
+  min-width: 42px;
+  height: 26px;
+  padding: 0 8px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-secondary);
@@ -11258,7 +11261,7 @@ a:focus-visible {
   cursor: pointer;
   transition: all 0.12s;
   user-select: none;
-  height: 26px;
+  white-space: nowrap;
 }
 .magic-chat-action-key:hover {
   background: var(--bg-hover);

@@ -55,9 +55,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     if (chat.messages.length > 0) setHasExpanded(true)
   }, [chat.messages.length])
 
-  // Focus al abrir
+  // Focus al abrir — inmediato para que el cursor parpadee desde el inicio
   useEffect(() => {
-    setTimeout(() => taRef.current?.focus(), 150)
+    setTimeout(() => taRef.current?.focus(), 50)
   }, [])
 
   // Auto-scroll solo dentro del panel de mensajes (no redimensiona la ventana)
@@ -422,13 +422,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={onTextareaKey}
-              placeholder={
-                isRecording
-                  ? 'Transcribiendo…'
-                  : isCompact
-                    ? 'Escríbeme o mantén R para hablar…'
-                    : 'Continúa la conversación…'
-              }
+              placeholder={isRecording ? 'Transcribiendo…' : ''}
               className="magic-chat-textarea magic-chat-textarea--bare"
               rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
             />
