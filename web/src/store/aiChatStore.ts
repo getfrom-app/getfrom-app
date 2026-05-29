@@ -590,7 +590,7 @@ class AIChatStore {
       return injectDate([
         { role: 'user' as const, content: `[Conversación previa: ${omitted} mensajes anteriores omitidos por compactación.]` },
         ...tail.map(m => ({ role: m.role, content: m.content })),
-      ]
+      ])
     })()
 
     // Enriquecer tagDefs con prompts hijos (_tagPrompt="1") de cada tag.
