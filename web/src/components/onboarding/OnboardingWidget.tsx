@@ -154,6 +154,20 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, demoNodeId])
 
+  // ── Step 2: auto-avanzar cuando el usuario escribe en el filtro ──────────
+  useEffect(() => {
+    if (step !== 2) return
+    const interval = setInterval(() => {
+      const filterInput = document.querySelector('.wf-topbar-filter-input') as HTMLInputElement | null
+      if (filterInput && filterInput.value.trim().length > 0) {
+        clearInterval(interval)
+        next()
+      }
+    }, 300)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
   // ── Step 4 (nuevo): esperar a que el usuario abra Magic ──────────────────
   useEffect(() => {
     if (step !== 4) return
@@ -221,7 +235,7 @@ export default function OnboardingWidget() {
     >
       {step === 0 && <Step0 tryAgain={step0TryAgain} onClose={close} />}
       {step === 1 && <Step1 onNext={next} onClose={close} />}
-      {step === 2 && <Step2 onNext={next} onClose={close} />}
+      {step === 2 && <Step2 onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
       {step === 4 && <Step4Magic onClose={close} />}
       {step === 5 && <Step5 onClose={close} />}
@@ -393,7 +407,7 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
 
 // ── Step 2 — Filter ────────────────────────────────────────────────────────
 
-function Step2({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
+function Step2({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -405,10 +419,15 @@ function Step2({ onNext, onClose }: { onNext: () => void; onClose: () => void })
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
           Encuentra cualquier cosa
         </div>
-        <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
           Pulsa <strong>⌘+F</strong> y escribe <code style={codeStyle}>utilizar</code>. Verás cómo From filtra los nodos al instante.
         </div>
-        <PrimaryBtn label="Lo probé →" onClick={onNext} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, color: '#aaa', fontSize: 12 }}>
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+          <span style={{ marginLeft: 4 }}>Esperando que uses el filtro…</span>
+        </div>
         <ProgressDots active={2} />
       </div>
     </>
