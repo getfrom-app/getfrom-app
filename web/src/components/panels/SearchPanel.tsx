@@ -143,17 +143,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
 
   return (
     <div className="search-panel">
-      {/* Chips arriba — como el saludo en Magic */}
-      <div className="search-panel-chips">
-        <div className="search-panel-row">{TYPE_CHIPS.map(c => renderChip(c, 'type'))}</div>
-        <div className="search-panel-row">{TIME_CHIPS.map(c => renderChip(c, 'time'))}</div>
-        <div className="search-panel-row">{STATUS_CHIPS.map(c => renderChip(c, 'status'))}</div>
-        {contextChips.length > 0 && (
-          <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
-        )}
-      </div>
-
-      {/* Input abajo anclado — como el textarea en Magic, cursor alineado */}
+      {/* Input arriba — cursor visible */}
       <div className="search-panel-input-wrap">
         <input
           ref={inputRef}
@@ -165,6 +155,16 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
         />
         {filterText && (
           <button className="search-panel-clear" onClick={() => { onFilter(''); clearAllChips() }}>×</button>
+        )}
+      </div>
+
+      {/* Chips debajo */}
+      <div className="search-panel-chips">
+        <div className="search-panel-row">{TYPE_CHIPS.map(c => renderChip(c, 'type'))}</div>
+        <div className="search-panel-row">{TIME_CHIPS.map(c => renderChip(c, 'time'))}</div>
+        <div className="search-panel-row">{STATUS_CHIPS.map(c => renderChip(c, 'status'))}</div>
+        {contextChips.length > 0 && (
+          <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
         )}
       </div>
     </div>
