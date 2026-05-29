@@ -65,7 +65,7 @@ function getBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
       const linked = ed._linkedTaskId ? store.getNode(ed._linkedTaskId) : null
       blocks.push({ kind: ed._linkedTaskId ? 'task' : 'standalone', id: n.id,
         text: linked ? linked.text : n.text, start, end,
-        color: ed._linkedTaskId ? 'var(--accent)' : '#8b5cf6', linkedId: ed._linkedTaskId })
+        color: n.color || (ed._linkedTaskId ? 'var(--accent)' : '#8b5cf6'), linkedId: ed._linkedTaskId })
     } catch {}
   }
   for (const ev of gcalEvents) {
@@ -640,7 +640,30 @@ export default function PlannerPanel({ onClose }: Props) {
             {ctxMenu.b.kind==='gcal' && <button onClick={()=>{ const d=ensureDayPath(ctxMenu.b.start); store.createNode({text:ctxMenu.b.text,parentId:d.id}); setCtxMenu(null) }}>📄 Crear nodo</button>}
             {ctxMenu.b.kind==='task' && ctxMenu.b.linkedId && <button onClick={()=>{navigate(`/node/${ctxMenu.b.linkedId!}`);setCtxMenu(null)}}>→ Ir a la tarea</button>}
             {ctxMenu.b.kind==='standalone' && <button onClick={()=>{ const d=ensureDayPath(ctxMenu.b.start); store.createNode({text:ctxMenu.b.text,parentId:d.id,isTask:true}); store.deleteNode(ctxMenu.b.id); setCtxMenu(null) }}>✓ Convertir a tarea</button>}
-            {ctxMenu.b.kind!=='gcal' && <button className="pp-ctx-danger" onClick={()=>{store.deleteNode(ctxMenu.b.id);setCtxMenu(null)}}>Eliminar time block</button>}
+            {/* Color picker — funciona para time blocks y GCal */}
+            <div style={{padding:'6px 8px 2px', borderTop:'1px solid var(--border)', marginTop:4}}>
+              <div style={{fontSize:10,color:'var(--text-secondary)',marginBottom:5,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>Color</div>
+              <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                {[
+                  {c:'#3b82f6',n:'Azul'},{c:'#10b981',n:'Verde'},{c:'#f59e0b',n:'Naranja'},
+                  {c:'#ef4444',n:'Rojo'},{c:'#8b5cf6',n:'Morado'},{c:'#ec4899',n:'Rosa'},
+                  {c:'#06b6d4',n:'Cian'},{c:'#64748b',n:'Gris'}
+                ].map(({c,n})=>(
+                  <div key={c} title={n}
+                    style={{width:20,height:20,borderRadius:'50%',background:c,cursor:'pointer',
+                      border: ctxMenu.b.color===c ? '2px solid var(--text)' : '2px solid transparent',
+                      boxSizing:'border-box'}}
+                    onClick={()=>{
+                      if (ctxMenu.b.kind!=='gcal') {
+                        store.updateNode(ctxMenu.b.id, {color: c})
+                      }
+                      setCtxMenu(null)
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            {ctxMenu.b.kind!=='gcal' && <button className="pp-ctx-danger" style={{marginTop:6}} onClick={()=>{store.deleteNode(ctxMenu.b.id);setCtxMenu(null)}}>Eliminar time block</button>}
           </div>
         </>
       )}
