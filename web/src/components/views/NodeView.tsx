@@ -673,6 +673,10 @@ export default function NodeView() {
   }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node || node.deletedAt) {
+    // Si el store aún no ha cargado, mostrar loading en lugar del error
+    if (!store.isLoaded) {
+      return <div className="view-loading">Cargando…</div>
+    }
     return (
       <div className="view-empty" style={{ flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 32 }}>🔍</div>
