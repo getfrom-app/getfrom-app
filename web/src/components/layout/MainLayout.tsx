@@ -104,6 +104,11 @@ export default function MainLayout() {
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
+
+  // Notificar cuando Magic se abre (para onboarding)
+  useEffect(() => {
+    if (showAIChat) window.dispatchEvent(new Event('from:magic-opened'))
+  }, [showAIChat])
   const [filterText, setFilterText] = useFilterStore()
   const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
   const [slugInput, setSlugInput] = useState('')

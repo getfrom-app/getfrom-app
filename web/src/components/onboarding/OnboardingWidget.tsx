@@ -154,9 +154,18 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, demoNodeId])
 
-  // ── Step 4: prefill MagicChat and highlight send ───────────────────────────
+  // ── Step 4 (nuevo): esperar a que el usuario abra Magic ──────────────────
   useEffect(() => {
     if (step !== 4) return
+    function handler() { advanceTo(5) }
+    window.addEventListener('from:magic-opened', handler)
+    return () => window.removeEventListener('from:magic-opened', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
+  // ── Step 5: prefill MagicChat and highlight send ──────────────────────────
+  useEffect(() => {
+    if (step !== 5) return
     const timer = setTimeout(() => {
       window.dispatchEvent(new CustomEvent('from:onboarding-prefill', {
         detail: { text: 'Desarrolla el nodo con una descripción breve y 3 tareas para empezar a usar From' },
@@ -168,10 +177,10 @@ export default function OnboardingWidget() {
     return () => clearTimeout(timer)
   }, [step])
 
-  // ── Step 4: listen for magic confirmed ────────────────────────────────────
+  // ── Step 5: listen for magic confirmed ────────────────────────────────────
   useEffect(() => {
-    if (step !== 4) return
-    function handler() { advanceTo(5) }
+    if (step !== 5) return
+    function handler() { advanceTo(6) }
     window.addEventListener('from:onboarding-magic-confirmed', handler)
     return () => window.removeEventListener('from:onboarding-magic-confirmed', handler)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -214,8 +223,9 @@ export default function OnboardingWidget() {
       {step === 1 && <Step1 onNext={next} onClose={close} />}
       {step === 2 && <Step2 onNext={next} onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
-      {step === 4 && <Step4 onClose={close} />}
+      {step === 4 && <Step4Magic onClose={close} />}
       {step === 5 && <Step5 onClose={close} />}
+      {step === 6 && <Step6 onClose={close} />}
     </div>
   )
 }
@@ -436,7 +446,34 @@ function Step3({ onClose }: { onClose: () => void }) {
 
 // ── Step 4 — Magic AI ──────────────────────────────────────────────────────
 
-function Step4({ onClose }: { onClose: () => void }) {
+// ── Step 4 — Abrir Magic ───────────────────────────────────────────────────
+
+function Step4Magic({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
+      <div style={{ padding: '16px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 28 }}>✦</div>
+        <CloseBtn onClose={onClose} />
+      </div>
+      <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
+          Ahora ábreme a mí
+        </div>
+        <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
+          Pulsa <strong>Espacio</strong> en cualquier momento, o el botón <strong>✦</strong> abajo a la derecha.
+        </div>
+        <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
+          Esperando que me abras…
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Step 5 — Magic prefill ─────────────────────────────────────────────────
+
+function Step5({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -466,9 +503,9 @@ function Step4({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Step 5 — Done ──────────────────────────────────────────────────────────
+// ── Step 6 — Done ──────────────────────────────────────────────────────────
 
-function Step5({ onClose }: { onClose: () => void }) {
+function Step6({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ padding: '24px 20px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
