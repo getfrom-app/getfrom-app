@@ -175,6 +175,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selectedIds = useGlobalSelection()
+  // Refs estables para drag-to-select (declaradas aquí antes de nodes/flatVisibleIds)
+  const ownNodeIdsRef      = useRef<Set<string>>(new Set())
+  const flatVisibleIdsRef  = useRef<() => string[]>(() => [])
   // Drag-to-select state
   // isDragSelectingRef es el valor síncrono (evita stale closure en onMove).
   // isDragSelecting es el state para React (CSS, renders).
@@ -261,6 +264,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Effective filter: prefer external prop, fall back to local
   const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
+
+  // Actualizar refs de drag en cada render (sin re-registrar listeners)
+  ownNodeIdsRef.current = new Set(nodes.map(n => n.id))
+  flatVisibleIdsRef.current = flatVisibleIds
 
   // Cmd+F opens local filter when no external filterText prop is provided and local filter is not disabled
   useEffect(() => {
@@ -364,6 +371,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const lastMouseY   = useRef<number>(0)    // Y más reciente del cursor
   const dragFromText = useRef(false)        // ¿el drag empezó en un contenteditable?
 
+
   // React onMouseDown — preventDefault salvo en drag handles.
   // Si el click viene del handle ⋮⋮ (node-drag-handle), NO prevenimos
   // para que HTML5 drag-and-drop pueda iniciarse (arrastrar al planificador).
@@ -378,10 +386,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     e.preventDefault()
   }
 
+  // ── useEffect con deps [] ─────────────────────────────────────────────────
+  // Los listeners se registran UNA SOLA VEZ al montar y se eliminan al desmontar.
+  // Las variables que cambian entre renders (ownNodeIds, flatVisibleIds) se leen
+  // desde refs estables (ownNodeIdsRef, flatVisibleIdsRef) para evitar stale closures.
+  // Esto es CRÍTICO: si el effect dependiera de [nodes], se re-ejecutaría en cada
+  // render (gSetSelected → re-render → nodes nuevo array → cleanup → _activeDragContainer=null).
   useEffect(() => {
-    // Conjunto de IDs que pertenecen a ESTE nivel del Outliner
-    const ownNodeIds = new Set(nodes.map(n => n.id))
-
     // ── mousedown nativo (capture) ────────────────────────────────────────
     // Cada instancia de Outliner (una por nivel) escucha todos los mousedowns,
     // pero SOLO actúa si el nodo clickado pertenece a su propio nivel.
@@ -395,7 +406,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if ((target as HTMLElement).closest('.node-drag-handle')) return
 
       const id = getNodeIdFromEl(target)
-      if (id && !ownNodeIds.has(id)) return  // nodo de otro nivel → ignorar
+      if (id && !ownNodeIdsRef.current.has(id)) return  // nodo de otro nivel → ignorar (usa ref)
 
       // Reclamar este drag para esta instancia
       _activeDragContainer = myContainer.current
@@ -405,7 +416,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       dragAnchorPos.current = e.clientY
       lastMouseY.current = e.clientY
       dragFromText.current = isDirectTextEl(target)
-      dragAnchorId.current = id ?? (nodes.length > 0 ? '__empty__' : null)
+      dragAnchorId.current = id ?? (ownNodeIdsRef.current.size > 0 ? '__empty__' : null)
 
       if (id) {
         // Calcular el midY del nodo ancla usando el scope correcto
@@ -440,7 +451,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if (dragAnchorId.current === '__empty__') {
         const hoveredId = getNodeIdFromEl(document.elementFromPoint(e.clientX, e.clientY))
         if (!hoveredId) return
-        const flat = flatVisibleIds()
+        const flat = flatVisibleIdsRef.current()
         const anchorId = e.clientY < dragAnchorPos.current ? flat[flat.length - 1] : flat[0]
         if (!anchorId) return
         dragAnchorId.current = anchorId
@@ -552,7 +563,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       document.removeEventListener('mouseup',     onUp)
       document.removeEventListener('selectstart', onSelectStart)
     }
-  }, [nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps — deps [] intencional: registrar una sola vez y leer valores dinámicos via refs
 
   // ── Teclado sobre multi-selección ─────────────────────────────────────────
   useEffect(() => {
@@ -564,21 +575,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         if (!isInputFocused) {
           e.preventDefault()
           e.stopPropagation()
-          gSetSelected(new Set(flatVisibleIds()))
+          gSetSelected(new Set(flatVisibleIdsRef.current()))
           return
         }
       }
-      if (selectedIds.size === 0) return
+      if (_gSelectedIds.size === 0) return
       if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') {
         e.preventDefault()
         e.stopPropagation()
-        for (const id of selectedIds) trashNode(id)
+        for (const id of _gSelectedIds) trashNode(id)
         gClearSelected()
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
-        const flat = flatVisibleIds()
+        const flat = flatVisibleIdsRef.current()
         const texts = flat
-          .filter(id => selectedIds.has(id))
+          .filter(id => _gSelectedIds.has(id))
           .map(id => store.getNode(id)?.text || '')
           .filter(Boolean)
           .join('\n')
@@ -587,8 +598,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if (e.key === 'Tab') {
         e.preventDefault()
         e.stopPropagation()
-        const flat = flatVisibleIds()
-        const selected = flat.filter(id => selectedIds.has(id))
+        const flat = flatVisibleIdsRef.current()
+        const selected = flat.filter(id => _gSelectedIds.has(id))
         if (e.shiftKey) {
           // Desindentar: mover al padre del padre actual
           for (const id of selected) {
@@ -625,7 +636,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
     window.addEventListener('keydown', onKey, { capture: true })
     return () => window.removeEventListener('keydown', onKey, { capture: true })
-  }, [selectedIds, nodes]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps — deps [] intencional: leer _gSelectedIds y flatVisibleIdsRef directamente
 
   const handleSelectNext = useCallback((id: string, dir: 'up' | 'down') => {
     const flat = flatVisible(nodes)
