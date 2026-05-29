@@ -580,11 +580,23 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         }
       }
       if (_gSelectedIds.size === 0) return
-      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault()
         e.stopPropagation()
         for (const id of _gSelectedIds) trashNode(id)
         gClearSelected()
+      }
+      // Enter: solo borrar si no hay foco en un campo de texto
+      // (evita interceptar Enter normal al escribir en un nodo)
+      if (e.key === 'Enter') {
+        const active = document.activeElement as HTMLElement | null
+        const isEditing = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isEditing) {
+          e.preventDefault()
+          e.stopPropagation()
+          for (const id of _gSelectedIds) trashNode(id)
+          gClearSelected()
+        }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         const flat = flatVisibleIdsRef.current()
