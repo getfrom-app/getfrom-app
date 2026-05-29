@@ -11314,6 +11314,10 @@ textarea:focus-visible,
   flex-direction: column;
   gap: 6px;
 }
+/* En estado compacto el input va arriba: alinear cursor con el primer nodo del outliner */
+.magic-chat-modal--compact .magic-chat-input-wrap {
+  padding-top: 32px;
+}
 
 .magic-chat-textarea {
   width: 100%;
