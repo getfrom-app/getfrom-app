@@ -215,10 +215,13 @@ class AIChatStore {
       if (allActions.length === 0) break
 
       const readActions  = allActions.filter(a => READ_ACTIONS.has(a.action as string))
+      const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_task','create_event','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
       const writeActions = allActions.filter(a => {
         if (READ_ACTIONS.has(a.action as string)) return false
         // Ignorar update_node que solo modifica body (body desactivado en From)
         if (a.action === 'update_node' && a.body && !a.text && !a.status && !a.due && !a.tags) return false
+        // Ignorar acciones desconocidas sin texto — solo generarían 'Sin título' en la UI
+        if (!KNOWN_WRITE_ACTIONS.has(a.action as string) && !a.text && !a.title) return false
         return true
       })
 
