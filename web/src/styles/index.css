@@ -11207,14 +11207,16 @@ textarea:focus-visible,
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 20px 16px 12px;
-  gap: 6px;
+  padding: 20px 12px 12px;
+  gap: 8px;
   flex-shrink: 0;
 }
-/* Burbuja de saludo alineada a la izquierda como las respuestas */
-.magic-chat-greeting-bubble {
-  margin: 0 !important;
-  width: 100%;
+/* Saludo alineado con el cursor del input */
+.magic-chat-greeting-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  user-select: none;
 }
 
 .magic-chat-empty-glyph {

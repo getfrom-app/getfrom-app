@@ -363,11 +363,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         {/* ── Estado vacío: burbuja de From + chips ── */}
         {isCompact && (
           <div className="magic-chat-empty">
-            {/* Burbuja de From igual que las respuestas */}
-            <div className="magic-chat-bubble magic-chat-bubble--assistant magic-chat-greeting-bubble">
-              <div className="magic-chat-bubble-avatar">✦</div>
-              <div className="magic-chat-bubble-content">¿Qué necesitas?</div>
-            </div>
+            {/* Saludo alineado con el cursor del input */}
+            <div className="magic-chat-greeting-text">¿Qué necesitas?</div>
             <ContextChips
               nodeId={currentNodeId}
               visible={true}
