@@ -552,7 +552,7 @@ class AIChatStore {
     let currentView: string | undefined
     if (currentNodeId) {
       const n = store.nodes.get(currentNodeId)
-      if (n) currentView = `Nota abierta: ${n.text || 'Sin título'}`
+      if (n) currentView = `Nota abierta: ${n.text || 'Sin título'} (ID: ${currentNodeId})`
     }
 
     // Compactación: >20 mensajes → solo últimos 12 + nota de truncado.
