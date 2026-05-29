@@ -370,7 +370,7 @@ function Step3({ onClose }: { onClose: () => void }) {
           background: 'rgba(139,92,246,0.07)', borderRadius: 8, padding: '10px 14px',
           fontSize: 12, color: '#7c3aed', marginBottom: 20, lineHeight: 1.5,
         }}>
-          ✦ Avanzará automáticamente cuando entres al nodo.
+          ✦ El punto aparece al pasar el ratón por encima del nodo.
         </div>
         <ProgressDots active={3} />
       </div>
