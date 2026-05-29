@@ -98,7 +98,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         body: JSON.stringify({ idToken: credential }),
       })
       setTokens(data.accessToken, data.refreshToken)
-      navigate('/', { replace: true })
+      navigate(mode === 'register' ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error con Google')
     } finally {
@@ -180,7 +180,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         }),
       })
       setTokens(data.accessToken, data.refreshToken)
-      navigate('/', { replace: true })
+      navigate(mode === 'register' ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'error' in err) {
         // User cancelled Apple sign-in — no mostrar error
@@ -203,6 +203,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         await login(email, password)
       } else {
         await register(email, password)
+        // Tras registro → elegir plan
+        navigate('/pricing', { replace: true })
+        return
       }
       navigate('/', { replace: true })
     } catch (err: unknown) {
@@ -227,11 +230,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
           <span>From</span>
         </div>
 
-        <h1>{mode === 'login' ? 'Bienvenido' : 'Crear cuenta'}</h1>
+        <h1>{mode === 'login' ? 'Bienvenido' : 'Crear cuenta gratis'}</h1>
         <p className="auth-subtitle">
           {mode === 'login'
             ? 'Inicia sesión para continuar'
-            : 'Crea tu cuenta para empezar'}
+            : 'Sin tarjeta de crédito · Listo en 30 segundos'}
         </p>
 
         {locationState?.message && (

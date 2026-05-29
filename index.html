@@ -43,7 +43,7 @@
             <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
-            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/register'">Acceder</a>
             <a href="#download" class="btn-nav" data-i18n="nav.download">Descargar gratis</a>
         </div>
     </div>
@@ -55,9 +55,9 @@
     <h1>Tu segundo cerebro.<br><span>Con voz propia.</span></h1>
     <p>Mantén <kbd>R</kbd> y habla. Magic AI escucha, entiende y crea nodos en tu diario al instante. Pide que organice tu semana, revise tus tareas o ejecute un agente automático — y lo hace. No es un chatbot encima de tus notas. Es una IA que conoce tu árbol y actúa sobre él.</p>
     <div class="hero-actions">
-        <a href="/app/" class="btn-primary">
+        <a href="/app/register" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Empieza gratis — en el navegador</span>
+            <span>Crear cuenta gratis</span>
         </a>
         <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-secondary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -231,7 +231,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Web — Usar ahora
         </a>
-        <a href="/app/pricing" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none;">
+        <a href="/app/register" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Precios
         </a>
@@ -297,7 +297,7 @@
                 <p>La revolución en notas inteligentes, en todos tus dispositivos. Entra desde el navegador, descarga el Mac o abre el iPhone: tu árbol ya está esperando.</p>
             </div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <a href="/app/" class="btn-primary">
+                <a href="/app/register" class="btn-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     Usar en el navegador — gratis
                 </a>
@@ -900,9 +900,9 @@
     <h2>Habla. Magic actúa. Tú avanzas.</h2>
     <p>Outliner ultrarrápido, Magic AI con voz, agentes que trabajan solos y sync real en Web, Mac e iPhone. Tus notas siempre contigo y tu privacidad siempre protegida. Gratis para empezar — sin tarjeta, sin trucos.</p>
     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
-        <a href="/app/" class="btn-primary">
+        <a href="/app/register" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Empieza gratis en el navegador</span>
+            <span>Crear cuenta gratis</span>
         </a>
         <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-secondary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
