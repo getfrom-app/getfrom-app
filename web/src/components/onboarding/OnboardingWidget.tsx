@@ -27,17 +27,6 @@ export default function OnboardingWidget() {
 
     if (!done || hasWelcome) {
       const timer = setTimeout(() => {
-        // Create the demo node
-        try {
-          const node = store.createNode({
-            text: 'Empezar a utilizar From',
-            parentId: null,
-            siblingOrder: 99999,
-          })
-          setDemoNodeId(node.id)
-        } catch (e) {
-          console.warn('[Onboarding] createNode failed', e)
-        }
         setVisible(true)
         requestAnimationFrame(() => {
           requestAnimationFrame(() => setAnimIn(true))
@@ -47,6 +36,29 @@ export default function OnboardingWidget() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── When user says "Lo escribí": find most recently created node ──────────
+  function captureUserNode() {
+    try {
+      // Find the most recently updated non-system, non-diary root-level node
+      const SYSTEM = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
+      const candidates = store.allActive().filter(n =>
+        !n.isDiaryEntry &&
+        !n.deletedAt &&
+        !SYSTEM.has(n.text || '') &&
+        (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry)
+      )
+      if (candidates.length === 0) return
+      // Pick most recently updated
+      const recent = candidates.sort((a, b) =>
+        new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
+      )[0]
+      setDemoNodeId(recent.id)
+    } catch (e) {
+      console.warn('[Onboarding] captureUserNode failed', e)
+    }
+    next()
+  }
 
   // ── Step 3: detect navigation into demo node ───────────────────────────────
   const step3IntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -159,7 +171,7 @@ export default function OnboardingWidget() {
         transition: 'opacity 0.3s ease, transform 0.3s ease',
       }}
     >
-      {step === 0 && <Step0 onNext={next} onClose={close} />}
+      {step === 0 && <Step0 onNext={captureUserNode} onClose={close} />}
       {step === 1 && <Step1 onNext={next} onClose={close} />}
       {step === 2 && <Step2 onNext={next} onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
@@ -250,12 +262,19 @@ function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void })
       <div style={{ padding: '16px 20px 20px' }}>
         <div style={{ fontSize: 28, marginBottom: 10 }}>✏️</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Escribe en cualquier parte
+          Tu primer nodo
         </div>
-        <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 20 }}>
-          Pulsa en cualquier lugar del outliner y escribe cualquier cosa. Todo se guarda al instante.
+        <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
+          Pulsa en cualquier parte del outliner y escribe:
         </div>
-        <PrimaryBtn label="¡Lo entiendo! →" onClick={onNext} />
+        <div style={{
+          background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8,
+          padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6',
+          marginBottom: 20, letterSpacing: 0.1,
+        }}>
+          Empezar a utilizar From
+        </div>
+        <PrimaryBtn label="Lo escribí →" onClick={onNext} />
         <ProgressDots active={0} />
       </div>
     </>
