@@ -565,9 +565,14 @@ class AIChatStore {
       if (n) currentView += ` | Nota abierta: ${n.text || 'Sin título'} (ID: ${currentNodeId})`
     }
 
-    // Prefijo de fecha — se inyecta en el último mensaje del usuario para que el AI
-    // no pueda ignorarlo aunque el sistema prompt del servidor tenga una fecha diferente.
-    const datePrefix = `[Fecha de hoy: ${todayIso}] `
+    // Prefijo de fecha — se inyecta en el último mensaje del usuario.
+    // Formato explícito con día de la semana y fecha de mañana para que el AI
+    // no use su fecha de entrenamiento (que puede ser incorrecta).
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowIso = tomorrow.toISOString().slice(0, 10)
+    const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    const tomorrowLabel = tomorrow.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    const datePrefix = `[SISTEMA: Hoy es ${todayLabel} (${todayIso}). Mañana es ${tomorrowLabel} (${tomorrowIso}). Usa estas fechas exactas para cualquier referencia temporal.]\n`
 
     // Compactación: >20 mensajes → solo últimos 12 + nota de truncado.
     const injectDate = (msgs: { role: 'user' | 'assistant'; content: string }[]) => {
