@@ -21,12 +21,13 @@ function resolveParent(due: string | null | undefined, sessionId: string | null)
 
 export async function executeChatAction(
   action: Record<string, unknown>,
-  sessionId: string
+  sessionId: string,
+  currentNodeId?: string   // fallback parent cuando el AI no especifica parent_id
 ): Promise<ExecutedAction> {
   const name = (action.action as string) || ''
   switch (name) {
-    case 'create_note':    return createNote(action, sessionId)
-    case 'create_task':    return createTask(action, sessionId)
+    case 'create_note':    return createNote(action, sessionId, currentNodeId)
+    case 'create_task':    return createTask(action, sessionId, currentNodeId)
     case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
@@ -42,16 +43,17 @@ export async function executeChatAction(
   }
 }
 
-function createNote(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
+function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
   const text = (a.text as string) || 'Nota sin título'
   const body = a.body as string | undefined
   const tags = (a.tags as string[]) || []
   const parentId = (a.parent_id as string | undefined) || null
 
-  // Si no hay parent_id explícito, crear bajo el nodo de sesión (que está en el diario de hoy)
+  // Si no hay parent_id explícito, usar currentNodeId si está disponible (estamos dentro de un nodo),
+  // si no, crear bajo el nodo de sesión (diario de hoy)
   const created = store.createNode({
     text,
-    parentId: parentId ?? sessionId ?? null,
+    parentId: parentId ?? currentNodeId ?? sessionId ?? null,
     types: tags,
     extraData: {},
   })
@@ -66,15 +68,16 @@ function createNote(a: Record<string, unknown>, sessionId?: string): ExecutedAct
   return result('create_note', true, `Nota «${text}» creada${tagPart}.`, [created.id])
 }
 
-function createTask(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
+function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
   const text = (a.text as string) || 'Tarea'
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
   const priority = a.priority as string | undefined
   const explicitParent = (a.parent_id as string | undefined) || null
 
-  // Si tiene due en otro día: crear bajo el nodo diario de ese día (la fecha = posición en el árbol)
-  const parentId = explicitParent ?? resolveParent(due, sessionId ?? null) ?? null
+  // Prioridad: explicitParent > due futuro (día distinto) > currentNodeId > sessionId (diario hoy)
+  const dueFutureNode = resolveParent(due, null) // null si hoy o sin due; dayNode si día futuro
+  const parentId = explicitParent ?? dueFutureNode ?? currentNodeId ?? sessionId ?? null
 
   const created = store.createNode({
     text,
