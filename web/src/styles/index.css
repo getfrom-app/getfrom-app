@@ -1590,6 +1590,18 @@ mark.inline-highlight {
   cursor: default;
 }
 
+/* Durante drag-to-select: bloquear text-selection en contenteditables
+   Chrome inicia selección de texto ANTES de que preventDefault actúe.
+   pointer-events:none previene que Chrome intercepte los mousemove. */
+body.outliner-drag-active [contenteditable] {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  pointer-events: none;
+}
+body.outliner-drag-active {
+  cursor: default !important;
+}
+
 .outliner-filter-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-bottom: 2px; }
 .outliner-filter-input { flex: 1; font-size: 12px; border: none; background: transparent; color: var(--text-primary); outline: none; font-family: inherit; }
 

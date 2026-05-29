@@ -419,7 +419,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       // Siempre preventDefault: control total. El cursor se coloca en mouseup si no hay drag.
       if (id) e.preventDefault()
-      // Bloquear selección nativa de texto desde el primer fotograma del drag
+      // Bloquear selección nativa de texto desde el primer fotograma.
+      // La clase desactiva user-select y pointer-events en todos los contenteditables
+      // para que Chrome no inicie text-selection internamente (ocurre ANTES de preventDefault).
+      document.body.classList.add('outliner-drag-active')
       document.body.style.userSelect = 'none'
       ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
       // Si había una drag-select activa de antes, limpiar al iniciar nuevo click
@@ -442,6 +445,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         if (!anchorId) return
         dragAnchorId.current = anchorId
         dragFromText.current = false
+        // Calcular midY del ancla para que computeGlobalSelection funcione correctamente
+        const scope = _activeDragRoot ?? myContainer.current ?? document.body
+        const anchorRect = getOwnRowRect(anchorId, scope as HTMLElement)
+        dragAnchorMidY.current = anchorRect
+          ? anchorRect.top + anchorRect.height / 2
+          : dragAnchorPos.current
         startDragSelect(); setSelectedId(null)
         gSetSelected(new Set([anchorId]))
         return
@@ -479,7 +488,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       const wasDrag = didDragSelectRef.current
       didDragSelectRef.current = false
 
-      // Restaurar user-select
+      // Restaurar user-select y clase de drag
+      document.body.classList.remove('outliner-drag-active')
       document.body.style.userSelect = ''
       ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = ''
 
@@ -493,15 +503,21 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       if (!wasDrag) {
         gClearSelected()
-        // Clic simple: colocar cursor en el contenteditable clickado
-        // (necesario porque hicimos preventDefault en mousedown)
-        const target = document.elementFromPoint(e.clientX, e.clientY)
-        const ce = target?.closest('[contenteditable="true"]') as HTMLElement | null
+        // Clic simple: colocar cursor en el contenteditable clickado.
+        // La clase outliner-drag-active ya fue eliminada, así que pointer-events
+        // están restaurados antes de llamar a elementFromPoint.
+        const x = e.clientX, y = e.clientY
+        const target = document.elementFromPoint(x, y)
+        // Buscar contenteditable: puede ser el target mismo o un ancestro/descendiente
+        const ce = (target?.getAttribute('contenteditable') === 'true'
+          ? target
+          : target?.closest('[contenteditable="true"]')
+            ?? (target as HTMLElement | null)?.querySelector?.('[contenteditable="true"]')
+        ) as HTMLElement | null
         if (ce) {
           ce.focus()
-          // caretRangeFromPoint coloca el cursor en la posición exacta del clic
           const range = document.caretRangeFromPoint
-            ? document.caretRangeFromPoint(e.clientX, e.clientY)
+            ? document.caretRangeFromPoint(x, y)
             : null
           if (range) {
             const sel = window.getSelection()
