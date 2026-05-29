@@ -182,6 +182,13 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       setHasExpanded(false)
       setInput('')
     }
+    // Onboarding: inyectar resultado directo (sin llamar al AI)
+    function onOnboardingInjectResult(e: Event) {
+      const { userMsg, assistantMsg } = (e as CustomEvent<{ userMsg: string; assistantMsg: string; createdIds: string[] }>).detail
+      setInput('')
+      setHasExpanded(true)
+      chat.injectMessages(userMsg, assistantMsg)
+    }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('magic-chat:record-start', onRecordStart)
@@ -190,6 +197,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     window.addEventListener('from:onboarding-prefill',         onOnboardingPrefill)
     window.addEventListener('from:onboarding-highlight-send',  onOnboardingHighlightSend)
     window.addEventListener('from:onboarding-reset-magic',     onOnboardingResetMagic)
+    window.addEventListener('from:onboarding-inject-result',   onOnboardingInjectResult)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('magic-chat:record-start', onRecordStart)
@@ -197,6 +205,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       window.removeEventListener('magic-chat:prefill',      onPrefill)
       window.removeEventListener('from:onboarding-prefill',        onOnboardingPrefill)
       window.removeEventListener('from:onboarding-highlight-send', onOnboardingHighlightSend)
+      window.removeEventListener('from:onboarding-inject-result',  onOnboardingInjectResult)
       window.removeEventListener('from:onboarding-reset-magic',    onOnboardingResetMagic)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

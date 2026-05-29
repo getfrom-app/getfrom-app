@@ -187,35 +187,48 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // ── Step 5: resetear sesión de Magic + prefill ────────────────────────────
+  // ── Step 5: crear las tareas directamente + mostrar en Magic ─────────────
   useEffect(() => {
     if (step !== 5) return
+    if (!demoNodeId) return
+
     const timer = setTimeout(() => {
-      // Resetear la sesión para evitar respuestas de sesiones anteriores
+      // 1. Crear las 3 tareas directamente en el store (100% fiable)
+      const tareas = [
+        'Explorar el outliner',
+        'Probar el filtro',
+        'Configurar mi perfil en From',
+      ]
+      const createdIds: string[] = []
+      for (const text of tareas) {
+        const n = store.createNode({
+          text,
+          parentId: demoNodeId,
+          isTask: true,
+          types: ['tarea'],
+          extraData: { _atomic: '1', _inline: '1' },
+        })
+        store.updateNode(n.id, { status: 'pending' })
+        createdIds.push(n.id)
+      }
+
+      // 2. Mostrar la acción en Magic como si la IA la hubiese ejecutado
       window.dispatchEvent(new Event('from:onboarding-reset-magic'))
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('from:onboarding-prefill', {
+        window.dispatchEvent(new CustomEvent('from:onboarding-inject-result', {
           detail: {
-            text: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From',
-            nodeId: demoNodeId ?? undefined,  // currentNodeId para que Magic use el nodo correcto
+            userMsg: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From',
+            assistantMsg: '¡Listo! 🎉 He añadido las 3 tareas hijas al nodo.',
+            createdIds,
           },
         }))
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('from:onboarding-highlight-send', {}))
-        }, 200)
-      }, 100)
+        // Avanzar al step final
+        setTimeout(() => advanceTo(6), 1200)
+      }, 400)
     }, 600)
     return () => clearTimeout(timer)
-  }, [step])
-
-  // ── Step 5: listen for magic confirmed ────────────────────────────────────
-  useEffect(() => {
-    if (step !== 5) return
-    function handler() { advanceTo(6) }
-    window.addEventListener('from:onboarding-magic-confirmed', handler)
-    return () => window.removeEventListener('from:onboarding-magic-confirmed', handler)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  }, [step, demoNodeId])
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function advanceTo(s: number) { setStep(s) }

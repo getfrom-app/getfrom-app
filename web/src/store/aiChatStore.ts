@@ -125,6 +125,15 @@ class AIChatStore {
     this.notify()
   }
 
+  /** Inyectar un par user+assistant directamente, sin llamar al AI. Para onboarding. */
+  injectMessages(userContent: string, assistantContent: string) {
+    const userId = crypto.randomUUID()
+    const assistantId = crypto.randomUUID()
+    this.messages.push({ id: userId, role: 'user', content: userContent, actions: [] })
+    this.messages.push({ id: assistantId, role: 'assistant', content: assistantContent, actions: [] })
+    this.notify()
+  }
+
   loadSession(nodeId: string) {
     const node = store.nodes.get(nodeId)
     if (!node) return
