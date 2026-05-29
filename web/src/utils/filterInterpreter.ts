@@ -158,6 +158,10 @@ export function needsInterpretation(text: string): boolean {
   if (isSmartQuery(t)) return false
   // Si normalizeSynonyms lo resuelve localmente, no necesita IA
   if (normalizeSynonyms(t) !== null) return false
+  // Una sola palabra sin espacios = búsqueda de texto libre, no query de filtro.
+  // Enviarla a la IA haría que verbos como "utilizar", "revisar", etc. se
+  // convirtieran en "tarea". Solo interpretamos frases de 2+ tokens.
+  if (!t.includes(' ')) return false
   return true
 }
 
