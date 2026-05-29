@@ -194,7 +194,7 @@ export default function OnboardingWidget() {
         transition: 'opacity 0.3s ease, transform 0.3s ease',
       }}
     >
-      {step === 0 && <Step0 onNext={captureUserNode} onClose={close} />}
+      {step === 0 && <Step0 onClose={close} />}
       {step === 1 && <Step1 onNext={next} onClose={close} />}
       {step === 2 && <Step2 onNext={next} onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
@@ -271,7 +271,7 @@ function AccentLine() {
 
 // ── Step 0 — Welcome ───────────────────────────────────────────────────────
 
-function Step0({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
+function Step0({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
