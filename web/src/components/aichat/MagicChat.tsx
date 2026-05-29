@@ -155,16 +155,36 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
         setTimeout(() => taRef.current?.focus(), 50)
       }
     }
+    // Onboarding prefill (from:onboarding-prefill)
+    function onOnboardingPrefill(e: Event) {
+      const text = (e as CustomEvent<{ text: string }>).detail?.text
+      if (text && taRef.current) {
+        setInput(text)
+        setHasExpanded(false) // keep compact so user sees the textarea
+        setTimeout(() => taRef.current?.focus(), 50)
+      }
+    }
+    // Onboarding: pulse the send button for 3s
+    function onOnboardingHighlightSend() {
+      const sendBtn = document.querySelector('.magic-chat-send') as HTMLElement | null
+      if (!sendBtn) return
+      sendBtn.classList.add('onboarding-pulse-send')
+      setTimeout(() => sendBtn.classList.remove('onboarding-pulse-send'), 3000)
+    }
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('magic-chat:record-start', onRecordStart)
     window.addEventListener('magic-chat:record-stop',  onRecordStop)
     window.addEventListener('magic-chat:prefill',      onPrefill)
+    window.addEventListener('from:onboarding-prefill',         onOnboardingPrefill)
+    window.addEventListener('from:onboarding-highlight-send',  onOnboardingHighlightSend)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('magic-chat:record-start', onRecordStart)
       window.removeEventListener('magic-chat:record-stop',  onRecordStop)
       window.removeEventListener('magic-chat:prefill',      onPrefill)
+      window.removeEventListener('from:onboarding-prefill',        onOnboardingPrefill)
+      window.removeEventListener('from:onboarding-highlight-send', onOnboardingHighlightSend)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose])
@@ -513,7 +533,7 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
           Cancelar
         </button>
         <div style={{ flex: 1 }} />
-        <button onClick={onConfirm} disabled={disabled}
+        <button onClick={() => { onConfirm(); window.dispatchEvent(new CustomEvent('from:onboarding-magic-confirmed')) }} disabled={disabled}
           style={{ background: disabled ? 'var(--bg-secondary)' : 'var(--accent)', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
           ✓ Crear todo
         </button>
