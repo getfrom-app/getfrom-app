@@ -11464,7 +11464,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 20px 12px 10px; /* cursor a 12px left, 20px from top */
+  padding: 32px 12px 10px; /* top 32px = misma posición que Magic compact y primer nodo del outliner */
   flex-shrink: 0;
 }
 .search-panel-input {
@@ -11480,7 +11480,7 @@ textarea:focus-visible,
 }
 .search-panel-input:focus { outline: none !important; box-shadow: none !important; }
 .search-panel-input:focus-visible { outline: none !important; box-shadow: none !important; }
-.search-panel-input::placeholder { color: var(--text-tertiary); }
+.search-panel-input::placeholder { color: var(--text-tertiary); font-style: italic; }
 .search-panel-clear {
   background: none;
   border: none;
@@ -11492,7 +11492,7 @@ textarea:focus-visible,
 }
 .search-panel-clear:hover { color: var(--text-primary); }
 .search-panel-chips {
-  padding: 32px 4px 12px; /* top 32px alineado con primer nodo del outliner; left 4px + chip 8px = 12px total */
+  padding: 8px 4px 12px; /* left 4px + chip 8px = 12px total */
   display: flex;
   flex-direction: column;
   gap: 2px;
