@@ -218,6 +218,7 @@ export default function WFTopBar({
   const alreadySaved = filterText ? getShortcuts().some(s => s.query === filterText) : false
 
   return (
+    <div className="wf-topbar-root">
     <div className="wf-topbar">
 
       {/* ── Nav: back + forward ── */}
@@ -324,18 +325,7 @@ export default function WFTopBar({
           )}
         </div>
 
-        {/* Chips rápidos — siempre visibles cuando el filtro está expandido */}
-        {isFilterExpanded && (
-          <div className="wf-filter-quick-chips">
-            {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
-              <button
-                key={c.query}
-                className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
-                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
-              >{c.label}</button>
-            ))}
-          </div>
-        )}
+        {/* Panel chips solo cuando hay categoría seleccionada (se mueve a fila secundaria) */}
 
         {/* Panel completo — categorías extra (@, fechas, tags) cuando hay categoría seleccionada */}
         {filterOpen && filterCategory && (
@@ -540,6 +530,20 @@ export default function WFTopBar({
           </div>
         )}
       </div>
+    </div>
+
+    {/* ── Fila secundaria de chips — debajo de toda la barra cuando el filtro está activo ── */}
+    {isFilterExpanded && (
+      <div className="wf-filter-chips-bar">
+        {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
+          <button
+            key={c.query}
+            className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+            onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+          >{c.label}</button>
+        ))}
+      </div>
+    )}
     </div>
   )
 }
