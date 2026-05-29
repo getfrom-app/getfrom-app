@@ -128,116 +128,46 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
     onFilter(e.target.value)
   }
 
-  return (
-    <div
-      className="search-panel"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--bg-primary)',
-        borderLeft: '1px solid var(--border)',
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 8px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Buscar</span>
-        <button
-          className="wf-topbar-btn"
-          onClick={handleClose}
-          title="Cerrar (Escape)"
-          style={{ marginRight: -4 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
-      </div>
+  // Chip renderer — texto puro, sin caja, igual que el dropdown flotante anterior
+  function renderChip(c: { label: string; query: string }, group: 'type' | 'time' | 'status' | 'context') {
+    return (
+      <button
+        key={c.query}
+        className={`search-panel-chip ${isChipSelected(c.query) ? 'active' : ''}`}
+        onClick={() => toggleChip(c.query, group)}
+      >
+        {c.label}
+      </button>
+    )
+  }
 
-      {/* Search input */}
-      <div style={{ padding: '12px 14px 8px', flexShrink: 0 }}>
+  return (
+    <div className="search-panel">
+      {/* Input minimalista — sin caja, igual al filtro antiguo del topbar */}
+      <div className="search-panel-input-wrap">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+        </svg>
         <input
           ref={inputRef}
           type="text"
-          className="wf-topbar-filter-input"
-          placeholder="Buscar..."
+          className="search-panel-input"
+          placeholder="Buscar…"
           value={filterText}
           onChange={handleInputChange}
-          style={{
-            width: '100%',
-            fontSize: 15,
-            padding: '8px 10px',
-            border: '1.5px solid var(--border)',
-            borderRadius: 8,
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
         />
+        {filterText && (
+          <button className="search-panel-clear" onClick={() => { onFilter(''); clearAllChips() }}>×</button>
+        )}
       </div>
 
-      {/* Chips */}
-      <div style={{ padding: '4px 14px 12px', overflowY: 'auto', flex: 1 }}>
-        {/* TYPE */}
-        <div style={{ marginBottom: 6 }}>
-          {TYPE_CHIPS.map(c => (
-            <button
-              key={c.query}
-              className={`wf-filter-chip ${isChipSelected(c.query) ? 'active' : ''}`}
-              onClick={() => toggleChip(c.query, 'type')}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        <span className="wf-filter-chip-sep" />
-
-        {/* TIME */}
-        <div style={{ marginBottom: 6 }}>
-          {TIME_CHIPS.map(c => (
-            <button
-              key={c.query}
-              className={`wf-filter-chip ${isChipSelected(c.query) ? 'active' : ''}`}
-              onClick={() => toggleChip(c.query, 'time')}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        <span className="wf-filter-chip-sep" />
-
-        {/* STATUS */}
-        <div style={{ marginBottom: 6 }}>
-          {STATUS_CHIPS.map(c => (
-            <button
-              key={c.query}
-              className={`wf-filter-chip ${isChipSelected(c.query) ? 'active' : ''}`}
-              onClick={() => toggleChip(c.query, 'status')}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        {/* CONTEXTS */}
+      {/* Chips en filas — solo texto, transparente */}
+      <div className="search-panel-chips">
+        <div className="search-panel-row">{TYPE_CHIPS.map(c => renderChip(c, 'type'))}</div>
+        <div className="search-panel-row">{TIME_CHIPS.map(c => renderChip(c, 'time'))}</div>
+        <div className="search-panel-row">{STATUS_CHIPS.map(c => renderChip(c, 'status'))}</div>
         {contextChips.length > 0 && (
-          <>
-            <span className="wf-filter-chip-sep" />
-            <div style={{ marginBottom: 6 }}>
-              {contextChips.map(c => (
-                <button
-                  key={c.query}
-                  className={`wf-filter-chip ${isChipSelected(c.query) ? 'active' : ''}`}
-                  onClick={() => toggleChip(c.query, 'context')}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
         )}
       </div>
     </div>

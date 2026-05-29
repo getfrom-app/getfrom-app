@@ -662,21 +662,20 @@ export default function MainLayout() {
         <PlannerPanel onClose={() => setPlannerOpen(false)} />
       )}
 
-      {/* ── MagicChat panel — todas las páginas ── */}
+      {/* ── Panel lateral derecho — Magic o Búsqueda comparten el mismo wrapper ── */}
+      {/* Al cambiar entre ellos no hay animación, solo cambia el contenido */}
       <div
-        className={`magic-panel-wrap ${showAIChat ? 'magic-panel-wrap--open' : ''}`}
-        style={{ width: showAIChat ? magicPanelW : 0 }}
+        className={`magic-panel-wrap ${(showAIChat || showSearch) ? 'magic-panel-wrap--open' : ''}`}
+        style={{ width: (showAIChat || showSearch) ? magicPanelW : 0 }}
       >
         <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
-        <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
-      </div>
-
-      {/* ── SearchPanel — panel de búsqueda lateral ── */}
-      {showSearch && (
-        <div className="magic-panel-wrap magic-panel-wrap--open" style={{ width: magicPanelW }}>
+        {showSearch && (
           <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setShowSearch(false)} />
-        </div>
-      )}
+        )}
+        {showAIChat && (
+          <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
+        )}
+      </div>
 
       </div>{/* .main-body */}
 
