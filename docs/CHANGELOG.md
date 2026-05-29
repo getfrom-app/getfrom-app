@@ -113,7 +113,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 ## v9.1.1 — Mayo 2026 · Fixes atajos y nodos especiales
 
 ### Fixes
-- Atajos del árbol: al hacer clic ahora aplican correctamente el filtro al árbol (race condition resuelto)
+- Paneles: al hacer clic ahora aplican correctamente el filtro al árbol (race condition resuelto)
 - Nodos especiales simplificados: solo Agente individual, Atajo, Contexto y Papelera tienen controles especiales
 - Los nodos raíz de Agentes y Plantillas se gestionan como nodos normales (Enter para crear nuevo)
 - Atajo de filtro navega a raíz antes de disparar el filtro para evitar conflictos de montado
@@ -151,7 +151,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ### Árbol completo — todos los nodos visibles
 - 🤖 Agentes ahora visible en el árbol (antes era vista separada)
-- 📌 Atajos visible en el árbol
+- 📊 Paneles visible en el árbol
 - Los 11 agentes predefinidos están como nodos editables
 - Crear nuevos agentes directamente en el árbol
 
@@ -206,7 +206,7 @@ Esta versión es una reescritura completa del producto. Nuevo modelo de datos, n
 - 📅 Agenda — jerarquía Año → Mes → Día. Diario integrado
 - 🧠 Contexto — define y gestiona tus contextos de trabajo
 - 📋 Plantillas — reutilizables con /plantilla
-- 📌 Atajos — accesos rápidos sincronizados entre dispositivos
+- 📊 Paneles — vistas dinámicas sincronizadas entre dispositivos
 - ⚙️ Ajustes — cuenta, IA, predicciones
 
 ### Filtros inteligentes

@@ -48,7 +48,7 @@ Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](
 
 Cuando entras en From por primera vez encuentras:
 
-- **El árbol principal** en el centro: tu espacio de trabajo. Al principio incluye los nodos raíz del sistema: 📅 Agenda, 🧠 Contexto, 📋 Plantillas, 📌 Atajos, 🤖 Agentes y 🗑 Papelera.
+- **El árbol principal** en el centro: tu espacio de trabajo. Al principio incluye los nodos raíz del sistema: 📅 Agenda, 🧠 Contexto, 📋 Plantillas, 📊 Paneles, 🤖 Agentes y 🗑 Papelera.
 - **El sidebar izquierdo**: accesos rápidos, navegación y ajustes.
 - **El panel derecho**: propiedades y contenido del nodo seleccionado.
 - **La barra superior**: breadcrumb de navegación y controles de filtro y vista.
@@ -316,7 +316,7 @@ Al mover un nodo a otro día, se deja un espejo ⬡ en la posición original par
 
 El sidebar es el panel izquierdo de navegación. Contiene:
 
-**📌 Atajos** — tus accesos rápidos personalizados, sincronizados entre dispositivos. Aparecen en la parte superior para que llegues de un clic a los nodos y filtros que usas más. Puedes reordenarlos arrastrándolos.
+**📊 Paneles** — tus vistas dinámicas personalizadas, sincronizadas entre dispositivos. Aparecen en la parte superior para que llegues de un clic a los nodos y filtros que usas más. Cada panel se actualiza automáticamente mostrando siempre el estado actual. Puedes reordenarlos arrastrándolos.
 
 **Hoy** — abre el nodo del día actual en la Agenda. Tu punto de partida cada mañana.
 
@@ -406,9 +406,9 @@ Guarda aquí cualquier nodo (con todos sus hijos) como plantilla reutilizable. U
 
 Para usar una plantilla: slash menu → `/Plantilla` en cualquier nodo. From crea una copia de la plantilla en la posición actual.
 
-### 📌 Atajos
+### 📊 Paneles
 
-Contiene los atajos que has fijado. Desde aquí puedes reorganizarlos, renombrarlos o eliminarlos. También puedes hacer clic derecho en cualquier atajo del sidebar para gestionarlo directamente.
+Contiene los paneles que has guardado. Desde aquí puedes reorganizarlos, renombrarlos o eliminarlos. También puedes hacer clic derecho en cualquier panel del sidebar para gestionarlo directamente.
 
 ### 🤖 Agentes
 
@@ -512,32 +512,32 @@ Los resultados pueden verse en cuatro modos. Cambia con los iconos de la barra:
 | **Kanban** | Tablero con columnas por estado o prioridad. Drag & drop entre columnas. |
 | **Calendario** | Vista mensual con nodos distribuidos por fecha de vencimiento. |
 
-### Guardar un filtro como atajo
+### Guardar un filtro como panel
 
-Cuando tienes un filtro útil, fíjalo en el sidebar con el botón 📌 de la barra de resultados. Aparece en tus atajos y lo tienes disponible con un clic desde cualquier vista.
+Cuando tienes un filtro útil, guárdalo en el sidebar con el botón 📊 de la barra de resultados. Aparece en tus paneles y lo tienes disponible con un clic desde cualquier vista.
 
 ---
 
-## 11. Atajos (📌)
+## 11. Paneles (📊)
 
-Los atajos son accesos directos fijos en la parte superior del sidebar. Hay dos tipos:
+Los paneles son vistas dinámicas fijas en la parte superior del sidebar. Se actualizan automáticamente siempre que los abres. Hay dos tipos:
 
-**Atajo de nodo**: muestra ese nodo y todos sus descendientes y referencias. Como hacer zoom en ese nodo pero accesible siempre desde el sidebar.
+**Panel de nodo**: muestra ese nodo y todos sus descendientes y referencias. Como hacer zoom en ese nodo pero accesible siempre desde el sidebar.
 
-**Atajo de filtro**: el resultado de un filtro guardado. Por ejemplo: "mis tareas de hoy", "@trabajo pendiente", "#lectura".
+**Panel de filtro**: el resultado de un filtro guardado. Por ejemplo: "mis tareas de hoy", "@trabajo pendiente", "#lectura". Cada vez que lo abres muestra el estado actual.
 
-### Cómo crear un atajo
+### Cómo crear un panel
 
-**Desde un filtro activo:** con el filtro en pantalla, pulsa el icono 📌 en la barra de resultados.
+**Desde un filtro activo:** con el filtro en pantalla, pulsa el icono 📊 en la barra de resultados.
 
-**Desde un nodo:** clic derecho sobre el nodo → "Fijar como atajo". El atajo muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo desde otras partes del árbol.
+**Desde un nodo:** clic derecho sobre el nodo → "Añadir a paneles". El panel muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo desde otras partes del árbol.
 
-### Gestionar atajos
+### Gestionar paneles
 
-- Los atajos tienen una vista asociada (lista/tabla/kanban/calendario) que se recuerda.
+- Los paneles tienen una vista asociada (lista/tabla/kanban/calendario) que se recuerda.
 - Se sincronizan entre todos tus dispositivos.
-- Para eliminar un atajo: clic derecho en el sidebar → "Eliminar". El nodo no se borra, solo el atajo.
-- Para reorganizar: arrastra los atajos en el sidebar o entra al nodo 📌 Atajos del árbol.
+- Para eliminar un panel: clic derecho en el sidebar → "Eliminar". El nodo no se borra, solo el panel.
+- Para reorganizar: arrastra los paneles en el sidebar o entra al nodo 📊 Paneles del árbol.
 
 ---
 
