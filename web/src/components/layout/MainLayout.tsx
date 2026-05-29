@@ -602,6 +602,11 @@ export default function MainLayout() {
         <PlannerPanel onClose={() => setPlannerOpen(false)} />
       )}
 
+      {/* ── MagicChat panel (node route only) ── */}
+      {showAIChat && currentNodeIdFromRoute && (
+        <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
+      )}
+
       </div>{/* .main-body */}
       </div>{/* .main-row */}
       {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
@@ -613,7 +618,7 @@ export default function MainLayout() {
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
       <AIChatFloatingButton onClick={() => setShowAIChat(true)} isOpen={showAIChat} />
-      {showAIChat && (
+      {showAIChat && !currentNodeIdFromRoute && (
         <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       )}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}

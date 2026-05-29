@@ -18,9 +18,10 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 interface Props {
   onClose: () => void
   currentNodeId?: string
+  mode?: 'modal' | 'panel'
 }
 
-export default function MagicChat({ onClose, currentNodeId }: Props) {
+export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Props) {
   const chat = useAIChat()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -326,11 +327,10 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
   // hasExpanded jamás vuelve a false → tamaño fijo, sin redimensionado por mensaje.
   const isCompact = !hasExpanded && !isRecording
 
-  return (
-    <div className="magic-chat-backdrop" onClick={onClose}>
+  const innerChat = (
       <div
         className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
-        onClick={e => e.stopPropagation()}
+        onClick={mode === 'modal' ? (e => e.stopPropagation()) : undefined}
       >
         {/* ── Header ── */}
         <div className="magic-chat-header">
@@ -476,6 +476,19 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
           </div>
         </div>
       </div>
+  )
+
+  if (mode === 'panel') {
+    return (
+      <div className="magic-chat-panel">
+        {innerChat}
+      </div>
+    )
+  }
+
+  return (
+    <div className="magic-chat-backdrop" onClick={onClose}>
+      {innerChat}
     </div>
   )
 }
