@@ -558,10 +558,11 @@ class AIChatStore {
       .slice(0, 15)
       .map(n => ({ id: n.id, title: n.text, tags: n.types || [] }))
 
-    let currentView: string | undefined
+    const todayIso = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    let currentView: string = `Fecha actual: ${todayIso}`
     if (currentNodeId) {
       const n = store.nodes.get(currentNodeId)
-      if (n) currentView = `Nota abierta: ${n.text || 'Sin título'} (ID: ${currentNodeId})`
+      if (n) currentView += ` | Nota abierta: ${n.text || 'Sin título'} (ID: ${currentNodeId})`
     }
 
     // Compactación: >20 mensajes → solo últimos 12 + nota de truncado.
@@ -738,8 +739,12 @@ class AIChatStore {
     // ── Aprendizajes del usuario (sistema "Enseñar a Magic") ───────────────
     const learningsBlock = learningsStore.buildPromptBlock()
 
+    // Fecha actual — crítico para interpretar "mañana", "hoy", fechas relativas
+    const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const dateBlock = `Fecha y hora actual: ${nowStr}`
+
     // Combinar con el perfil de usuario
-    const combinedProfile = [profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    const combinedProfile = [dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,

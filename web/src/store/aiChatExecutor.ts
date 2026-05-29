@@ -38,9 +38,21 @@ export async function executeChatAction(
     case 'change_view':    return changeView(action)
     case 'create_resource':return createResource(action)
     case 'run_prompt':     return runPrompt(action)
+    case 'navigate_to':    return navigateTo(action)
     default:
       return result(name || 'unknown', false, `Acción desconocida: ${name}`)
   }
+}
+
+function navigateTo(a: Record<string, unknown>): ExecutedAction {
+  const nodeId = (a.node_id as string | undefined) || null
+  const path   = (a.path   as string | undefined) || null
+  const dest = nodeId ? `/node/${nodeId}` : path
+  if (dest) {
+    window.dispatchEvent(new CustomEvent('from:navigate', { detail: { path: dest } }))
+    return result('navigate_to', true, `Navegando.`)
+  }
+  return result('navigate_to', false, 'Destino no especificado.')
 }
 
 function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
