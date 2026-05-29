@@ -17,7 +17,7 @@ export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
   return (
     <button
       onClick={onClick}
-      title="From AI (⌘J)"
+      title="Magic — dime qué necesitas (⌘J)"
       style={{
         position: 'fixed',
         right: 16,

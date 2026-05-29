@@ -346,7 +346,7 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
             <div className="magic-chat-empty-glyph">✨</div>
             <div className="magic-chat-empty-title">¿En qué te ayudo?</div>
             <div className="magic-chat-empty-desc">
-              Crea notas, tareas y eventos. Busca, modifica y organiza tu información.
+              Cuéntame qué necesitas. Creo notas, busco tareas, organizo tu agenda... lo que me pidas.
             </div>
             <ContextChips
               nodeId={currentNodeId}
@@ -408,7 +408,7 @@ export default function MagicChat({ onClose, currentNodeId }: Props) {
               isRecording
                 ? 'Transcribiendo…'
                 : isCompact
-                  ? 'Escribe o mantén R para hablar…'
+                  ? 'Escríbeme o mantén R para hablar…'
                   : 'Continúa la conversación…'
             }
             className="magic-chat-textarea"

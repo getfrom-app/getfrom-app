@@ -43,6 +43,7 @@ import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import QuickCapturePanel from '../modals/QuickCapturePanel'
 import OnboardingTooltip from '../onboarding/OnboardingTooltip'
+import OnboardingWidget from '../onboarding/OnboardingWidget'
 import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -699,6 +700,7 @@ export default function MainLayout() {
         +
       </button>
       <OnboardingTooltip />
+      <OnboardingWidget />
       {/* sync-indicator eliminado — el footer ya muestra el estado de sync */}
     </div>
     </ToastProvider>
