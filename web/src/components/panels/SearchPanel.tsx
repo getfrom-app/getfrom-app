@@ -96,6 +96,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
       next.has(query) ? next.delete(query) : next.add(query)
       return next
     })
+    window.dispatchEvent(new CustomEvent('from:filter-changed', { detail: { value: query } }))
   }
 
   function isChipSelected(query: string) {
@@ -125,7 +126,11 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   }, [chipTypes, chipTimes, chipStatuses, chipContexts])
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    onFilter(e.target.value)
+    const val = e.target.value
+    onFilter(val)
+    if (val.trim().length > 0) {
+      window.dispatchEvent(new CustomEvent('from:filter-changed', { detail: { value: val } }))
+    }
   }
 
   // Chip renderer — texto puro, sin caja, igual que el dropdown flotante anterior

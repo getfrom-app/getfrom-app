@@ -169,17 +169,12 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, demoNodeId])
 
-  // ── Step 2: auto-avanzar cuando el usuario escribe en el filtro ──────────
+  // ── Step 2: auto-avanzar cuando el usuario usa el filtro/búsqueda ────────
   useEffect(() => {
     if (step !== 2) return
-    const interval = setInterval(() => {
-      const filterInput = document.querySelector('.wf-topbar-filter-input') as HTMLInputElement | null
-      if (filterInput && filterInput.value.trim().length > 0) {
-        clearInterval(interval)
-        next()
-      }
-    }, 300)
-    return () => clearInterval(interval)
+    function handler() { next() }
+    window.addEventListener('from:filter-changed', handler)
+    return () => window.removeEventListener('from:filter-changed', handler)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
