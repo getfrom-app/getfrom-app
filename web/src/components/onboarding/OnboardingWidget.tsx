@@ -316,15 +316,13 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
         </div>
         <div style={{
           display: 'flex', alignItems: 'flex-start', gap: 8,
-          background: tryAgain ? '#fff7ed' : '#fafafa',
-          border: `1px solid ${tryAgain ? '#fed7aa' : '#ebebeb'}`,
-          borderRadius: 8,
-          padding: '8px 10px', marginBottom: 20,
+          background: '#fafafa', border: '1px solid #ebebeb',
+          borderRadius: 8, padding: '8px 10px', marginBottom: 20,
         }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>{tryAgain ? '⚠️' : '💡'}</span>
-          <span style={{ fontSize: 12, color: tryAgain ? '#92400e' : '#666', lineHeight: 1.5 }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
+          <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
             {tryAgain
-              ? <>Escribe la frase entera y pulsa <strong>Enter</strong> cuando aparezca la sugerencia de tarea.</>
+              ? <>Ese nodo se quedó a medias. Prueba a escribirlo completo en un bullet nuevo y pulsa <strong>Enter</strong>.</>
               : <>Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.</>
             }
           </span>
