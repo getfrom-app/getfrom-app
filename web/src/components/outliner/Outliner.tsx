@@ -521,14 +521,19 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         const target = document.elementFromPoint(x, y)
         const ce = target?.closest('[contenteditable="true"]') as HTMLElement | null
         if (ce) {
-          ce.focus()
+          // Calcular range ANTES de focus (geométrico, no requiere foco)
           const range = document.caretRangeFromPoint
             ? document.caretRangeFromPoint(x, y)
             : null
+          ce.focus()
+          // setTimeout(0): esperar a que Chrome procese el evento de focus
+          // y su selectionchange por defecto, luego sobreescribir con la posición correcta
           if (range) {
-            const sel = window.getSelection()
-            sel?.removeAllRanges()
-            sel?.addRange(range)
+            setTimeout(() => {
+              const sel = window.getSelection()
+              sel?.removeAllRanges()
+              sel?.addRange(range)
+            }, 0)
           }
         }
       }
