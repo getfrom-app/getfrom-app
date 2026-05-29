@@ -5,7 +5,7 @@
 // Shows when localStorage does NOT have 'from_onboarding_done' = '1'.
 
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 
 const STORAGE_KEY = 'from_onboarding_done'
@@ -18,6 +18,7 @@ export default function OnboardingWidget() {
   const [demoNodeId, setDemoNodeId] = useState<string | null>(null)
   const [step0TryAgain, setStep0TryAgain] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
 
   // ── Initial show logic ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -236,6 +237,11 @@ export default function OnboardingWidget() {
   function close() {
     localStorage.setItem(STORAGE_KEY, '1')
     setAnimIn(false)
+    // Resetear Magic y cerrar panel
+    window.dispatchEvent(new Event('from:onboarding-reset-magic'))
+    window.dispatchEvent(new CustomEvent('from:panelMode', { detail: { mode: null } }))
+    // Volver a la raíz
+    navigate('/', { replace: true })
     setTimeout(() => setVisible(false), 300)
   }
 

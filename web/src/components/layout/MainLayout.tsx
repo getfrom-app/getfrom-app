@@ -135,6 +135,17 @@ export default function MainLayout() {
     }
   }, [showAIChat])
 
+  // Cerrar panel desde eventos externos (ej. onboarding al terminar)
+  useEffect(() => {
+    function handler(e: Event) {
+      const mode = (e as CustomEvent<{ mode: null | 'magic' | 'search' }>).detail?.mode ?? null
+      setPanelMode(mode)
+      if (!mode) setFilterText('')
+    }
+    window.addEventListener('from:panelMode', handler)
+    return () => window.removeEventListener('from:panelMode', handler)
+  }, [])
+
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
   useEffect(() => {
     if (!showAIChat || !currentNodeIdFromRoute) return
