@@ -11463,7 +11463,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 28px 16px 10px; /* bajar para alinear con 'Qué necesitas' de Magic */
+  padding: 20px 12px 10px; /* alineado con magic-chat-empty: 20px top, 12px left */
   flex-shrink: 0;
 }
 .search-panel-input {
