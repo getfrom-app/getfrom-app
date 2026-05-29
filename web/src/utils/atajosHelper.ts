@@ -3,24 +3,31 @@ import { store } from '../store/nodeStore'
 const ATAJOS_NAME = '📊 Paneles'
 
 export function getAtajosNode() {
-  return store.children(null).find(n => !n.deletedAt && n.text === ATAJOS_NAME)
+  // Buscar en TODOS los nodos activos (no solo children de null)
+  // para evitar problemas si parentId no está indexado aún al inicio
+  return store.allActive().find(n => n.text === ATAJOS_NAME && n.parentId === null)
 }
 
 export function ensureAtajosNode() {
-  const existing = getAtajosNode()
-  if (existing) {
-    // Migración: quitar _system si lo tenía (ahora es visible en el árbol)
-    try {
-      const ed = JSON.parse(existing.extraData || '{}')
-      if (ed._system) {
-        delete ed._system
-        store.updateNode(existing.id, { extraData: JSON.stringify(ed) })
-      }
-    } catch { /* ignore */ }
-    return existing
+  // Buscar duplicados — si hay más de uno con este nombre, dejar solo el más antiguo
+  const all = store.allActive().filter(n => n.text === ATAJOS_NAME && n.parentId === null)
+  if (all.length > 1) {
+    // Ordenar por fecha de creación, mantener el más antiguo
+    all.sort((a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime())
+    for (let i = 1; i < all.length; i++) {
+      store.deleteNode(all[i].id)
+    }
   }
+  const existing = all[0]
+  if (existing) return existing
+
+  // Solo crear si el store tiene nodos cargados (evita crear en estado vacío)
+  if (store.allActive().length < 3) {
+    // Store no inicializado aún — devolver null silenciosamente
+    return null as unknown as ReturnType<typeof store.getNode> extends null ? never : NonNullable<ReturnType<typeof store.getNode>>
+  }
+
   const node = store.createNode({ text: ATAJOS_NAME, parentId: null, siblingOrder: 9998 })
-  // Sin _system — visible en el árbol como el resto de nodos de sistema
   return store.getNode(node.id)!
 }
 
