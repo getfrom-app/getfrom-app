@@ -419,6 +419,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
       // Siempre preventDefault: control total. El cursor se coloca en mouseup si no hay drag.
       if (id) e.preventDefault()
+      // Bloquear selección nativa de texto desde el primer fotograma del drag
+      document.body.style.userSelect = 'none'
+      ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
       // Si había una drag-select activa de antes, limpiar al iniciar nuevo click
       if (_gSelectedIds.size > 0) gClearSelected()
     }
@@ -510,20 +513,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
 
     // ── selectstart — prevenir selección de texto nativa durante node-drag ──
-    // El browser dispara selectstart antes de empezar la selección de texto.
-    // Lo bloqueamos si ya estamos en modo drag-select de nodos O si el drag
-    // viene de texto y ya superamos el umbral vertical (dragFromText=false pero
-    // aún en los primeros frames).
+    // Bloqueamos siempre que haya un ancla activa para evitar que el browser
+    // robe los eventos de mousemove para text-selection (especialmente desde
+    // contenteditable). No hay distinción texto/no-texto.
     function onSelectStart(e: Event) {
-      if (isDragSelectingRef.current) {
-        e.preventDefault()
-        return
-      }
-      // Bloquear también si hay un ancla activa y movimiento vertical suficiente
-      if (dragAnchorId.current && !dragFromText.current &&
-          Math.abs(lastMouseY.current - dragAnchorPos.current) >= 5) {
-        e.preventDefault()
-      }
+      if (dragAnchorId.current) e.preventDefault()
     }
 
     document.addEventListener('mousedown',   onDown, { capture: true })
@@ -559,7 +553,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         }
       }
       if (selectedIds.size === 0) return
-      if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') {
         e.preventDefault()
         e.stopPropagation()
         for (const id of selectedIds) trashNode(id)
