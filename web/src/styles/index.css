@@ -10913,6 +10913,29 @@ a:focus-visible {
   box-shadow: none;
 }
 
+/* ── Trigger borde derecho para abrir/cerrar Magic ───────────────── */
+.magic-edge-trigger {
+  position: fixed;
+  right: 0;
+  top: 48px; /* debajo del topbar */
+  bottom: 32px; /* encima del statusbar */
+  width: 8px;
+  cursor: pointer;
+  z-index: 100;
+  transition: background 0.15s, width 0.15s;
+  background: transparent;
+}
+.magic-edge-trigger:hover {
+  width: 12px;
+  background: rgba(139, 92, 246, 0.15);
+}
+.magic-edge-trigger--open {
+  background: rgba(139, 92, 246, 0.08);
+}
+.magic-edge-trigger--open:hover {
+  background: rgba(139, 92, 246, 0.20);
+}
+
 .magic-chat-modal {
   width: 100%;
   background: var(--bg-primary);

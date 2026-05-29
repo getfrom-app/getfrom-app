@@ -109,6 +109,18 @@ export default function MainLayout() {
   useEffect(() => {
     if (showAIChat) window.dispatchEvent(new Event('from:magic-opened'))
   }, [showAIChat])
+
+  // Cerrar Magic al hacer clic en cualquier nodo del outliner
+  useEffect(() => {
+    if (!showAIChat || !currentNodeIdFromRoute) return
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement
+      const isNodeClick = target.closest('[data-node-id]') || target.closest('.node-text') || target.closest('.bullet-nav-dot')
+      if (isNodeClick) setShowAIChat(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showAIChat, currentNodeIdFromRoute])
   const [filterText, setFilterText] = useFilterStore()
   const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
   const [slugInput, setSlugInput] = useState('')
@@ -608,6 +620,16 @@ export default function MainLayout() {
       )}
 
       </div>{/* .main-body */}
+
+      {/* ── Trigger borde derecho: clic abre/colapsa Magic en NodeView ── */}
+      {currentNodeIdFromRoute && (
+        <div
+          className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
+          onClick={() => setShowAIChat(v => !v)}
+          title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic'}
+        />
+      )}
+
       </div>{/* .main-row */}
       {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
       <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
@@ -617,7 +639,7 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
-      <AIChatFloatingButton onClick={() => setShowAIChat(true)} isOpen={showAIChat} />
+      <AIChatFloatingButton onClick={() => setShowAIChat(v => !v)} isOpen={showAIChat} />
       {showAIChat && !currentNodeIdFromRoute && (
         <MagicChat onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
       )}
