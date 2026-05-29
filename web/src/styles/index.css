@@ -11134,7 +11134,6 @@ a:focus-visible {
   align-items: center;
   gap: 8px;
   padding: 12px 16px 11px;
-  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -11309,7 +11308,6 @@ a:focus-visible {
 
 /* ── Input ── */
 .magic-chat-input-wrap {
-  border-top: 1px solid var(--border);
   padding: 10px 12px 8px;
   flex-shrink: 0;
   display: flex;
@@ -11357,7 +11355,8 @@ a:focus-visible {
   padding: 0 !important;
   font-size: 14px;
   resize: none;
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
   flex: 1;
   min-height: 22px;
   max-height: 160px;
@@ -11461,7 +11460,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 14px 16px 10px;
+  padding: 28px 16px 10px; /* bajar para alinear con 'Qué necesitas' de Magic */
   flex-shrink: 0;
 }
 .search-panel-input {
@@ -11469,10 +11468,14 @@ a:focus-visible {
   background: transparent;
   border: none;
   outline: none !important;
+  box-shadow: none !important;
   font-size: 14px;
   color: var(--text-primary);
   font-family: inherit;
+  caret-color: var(--accent);
 }
+.search-panel-input:focus { outline: none !important; box-shadow: none !important; }
+.search-panel-input:focus-visible { outline: none !important; box-shadow: none !important; }
 .search-panel-input::placeholder { color: var(--text-tertiary); }
 .search-panel-clear {
   background: none;

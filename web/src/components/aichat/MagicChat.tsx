@@ -340,21 +340,16 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         className={`magic-chat-modal ${isCompact ? 'magic-chat-modal--compact' : 'magic-chat-modal--expanded'}`}
         onClick={mode === 'modal' ? (e => e.stopPropagation()) : undefined}
       >
-        {/* ── Header mínimo: solo acciones (sin logo ni título) ── */}
-        <div className="magic-chat-header" style={{ justifyContent: 'flex-end', minHeight: 36, padding: '6px 10px' }}>
-          {hasExpanded && (
+        {/* ── Nueva conversación (solo cuando hay mensajes, sin cabecera fija) ── */}
+        {hasExpanded && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 10px 0', flexShrink: 0 }}>
             <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title="Nueva conversación">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M8 3v10M3 8h10" />
               </svg>
             </button>
-          )}
-          <button className="magic-chat-icon-btn" onClick={onClose} title="Cerrar (Esc)">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M4 4l8 8M12 4l-8 8" />
-            </svg>
-          </button>
-        </div>
+          </div>
+        )}
 
         {/* ── Waveform (solo cuando graba) ── */}
         <div className={`magic-chat-waveform ${isRecording ? 'magic-chat-waveform--active' : ''}`}>
