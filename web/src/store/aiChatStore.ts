@@ -215,7 +215,12 @@ class AIChatStore {
       if (allActions.length === 0) break
 
       const readActions  = allActions.filter(a => READ_ACTIONS.has(a.action as string))
-      const writeActions = allActions.filter(a => !READ_ACTIONS.has(a.action as string))
+      const writeActions = allActions.filter(a => {
+        if (READ_ACTIONS.has(a.action as string)) return false
+        // Ignorar update_node que solo modifica body (body desactivado en From)
+        if (a.action === 'update_node' && a.body && !a.text && !a.status && !a.due && !a.tags) return false
+        return true
+      })
 
       // Ejecutar lecturas inmediatamente.
       if (readActions.length > 0) {
