@@ -416,7 +416,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         {/* ── Input minimalista estilo cursor de nodo ── */}
         <div className="magic-chat-input-wrap">
           <div className="magic-chat-node-input">
-            <span className="magic-chat-node-cursor">›</span>
             <textarea
               ref={taRef}
               value={input}
