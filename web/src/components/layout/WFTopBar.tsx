@@ -56,11 +56,15 @@ export default function WFTopBar({
   const { theme, setTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [filterExpanded, setFilterExpanded] = useState(false)
   const [filterCategory, setFilterCategory] = useState<FilterCategory>(null)
   const [interpreting, setInterpreting] = useState(false)
   const filterRef = useRef<HTMLInputElement>(null)
   const filterWrapRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // El filtro se expande si está abierto O tiene texto
+  const isFilterExpanded = filterExpanded || !!filterText
 
   // ── Breadcrumb ────────────────────────────────────────────────────────────
   const path = location.pathname.replace(/^\/app/, '') || '/'
@@ -105,6 +109,7 @@ export default function WFTopBar({
         setMenuOpen(false)
       if (filterWrapRef.current && !filterWrapRef.current.contains(e.target as Node)) {
         setFilterOpen(false)
+        setFilterExpanded(false)
         setFilterCategory(null)
       }
     }
@@ -125,9 +130,10 @@ export default function WFTopBar({
         filterRef.current?.select()
         setFilterOpen(true)
       }
-      if (e.key === 'Escape' && filterOpen) {
+      if (e.key === 'Escape' && (filterOpen || filterExpanded)) {
         onFilter('')
         setFilterOpen(false)
+        setFilterExpanded(false)
         setFilterCategory(null)
         filterRef.current?.blur()
       }
@@ -247,8 +253,8 @@ export default function WFTopBar({
 
       {/* ── Filtro tipo Workflowy ── */}
       <div className="wf-topbar-filter-wrap" ref={filterWrapRef}>
-        <div className={`wf-topbar-filter ${filterOpen || filterText ? 'focused' : ''}`}>
-          {/* Icono embudo — distingue del buscador ⌘K */}
+        <div className={`wf-topbar-filter ${isFilterExpanded ? 'focused expanded' : ''}`}>
+          {/* Icono embudo */}
           <svg className="wf-topbar-filter-icon" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 01.8 1.6L13 10.17V16a1 1 0 01-.553.894l-4 2A1 1 0 017 18v-7.83L3.2 4.6A1 1 0 013 4V3z" clipRule="evenodd" />
           </svg>
@@ -258,11 +264,15 @@ export default function WFTopBar({
             placeholder="¿Qué quieres ver? (⌘F)"
             value={filterText}
             onChange={e => onFilter(e.target.value)}
-            onFocus={() => setFilterOpen(true)}
+            onFocus={() => { setFilterOpen(true); setFilterExpanded(true) }}
           />
-          {/* Indicador de interpretación IA en curso */}
+          {/* Indicador IA con puntos pulsantes */}
           {interpreting && (
-            <span className="wf-topbar-filter-ai-hint" title="From interpreta tu búsqueda…">✨</span>
+            <span className="wf-topbar-filter-ai-indicator" title="Interpretando con IA…">
+              <span className="wf-filter-ai-dot" />
+              <span className="wf-filter-ai-dot" />
+              <span className="wf-filter-ai-dot" />
+            </span>
           )}
           {filterText && (
             <>
@@ -273,7 +283,6 @@ export default function WFTopBar({
                   e.preventDefault()
                   const query = filterText.trim()
                   if (!query) return
-                  // Nombre legible: capitalizar y limpiar
                   const name = query.startsWith('@') || query.startsWith('#')
                     ? query
                     : query.charAt(0).toUpperCase() + query.slice(1)
@@ -282,21 +291,39 @@ export default function WFTopBar({
                   filterRef.current?.focus()
                 }}
               >
-                {/* Bookmark icon */}
                 <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13l-5-3-5 3V2z"/>
                 </svg>
               </button>
               <button
                 className="wf-topbar-filter-clear"
-                onMouseDown={e => { e.preventDefault(); onFilter(''); filterRef.current?.focus() }}
+                onMouseDown={e => {
+                  e.preventDefault()
+                  onFilter('')
+                  setFilterExpanded(false)
+                  setFilterOpen(false)
+                  filterRef.current?.blur()
+                }}
               >×</button>
             </>
           )}
         </div>
 
-        {/* Panel de filtro — se muestra al hacer focus */}
-        {filterOpen && (
+        {/* Chips rápidos — siempre visibles cuando el filtro está expandido */}
+        {isFilterExpanded && (
+          <div className="wf-filter-quick-chips">
+            {[...DATE_CHIPS, ...TASK_CHIPS].map(c => (
+              <button
+                key={c.query}
+                className={`wf-filter-chip ${isChipActive(c.query) ? 'active' : ''}`}
+                onMouseDown={e => { e.preventDefault(); applyChip(c.query); filterRef.current?.focus() }}
+              >{c.label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Panel completo — categorías extra (@, fechas, tags) cuando hay categoría seleccionada */}
+        {filterOpen && filterCategory && (
           <div className="wf-filter-panel">
             {/* Fila de categorías */}
             <div className="wf-filter-cats">

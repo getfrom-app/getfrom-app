@@ -9633,7 +9633,7 @@ a:focus-visible {
   align-items: center;
 }
 
-/* Filter input */
+/* Filter input — expand animation */
 .wf-topbar-filter {
   display: flex;
   align-items: center;
@@ -9642,9 +9642,17 @@ a:focus-visible {
   border: 1px solid transparent;
   border-radius: 7px;
   padding: 3px 8px;
-  transition: border-color 0.15s, background 0.15s;
-  min-width: 140px;
-  max-width: 220px;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s, background 0.15s,
+              box-shadow 0.2s;
+  width: 180px;
+  overflow: hidden;
+}
+.wf-topbar-filter.expanded {
+  width: min(520px, 42vw);
+  border-color: var(--border-focus);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10);
 }
 .wf-topbar-filter.focused {
   border-color: var(--border-focus);
@@ -9653,7 +9661,9 @@ a:focus-visible {
 .wf-topbar-filter-icon {
   color: var(--text-tertiary);
   flex-shrink: 0;
+  transition: color 0.15s;
 }
+.wf-topbar-filter.expanded .wf-topbar-filter-icon { color: var(--accent); }
 .wf-topbar-filter-input {
   border: none;
   background: transparent;
@@ -9661,9 +9671,45 @@ a:focus-visible {
   font-size: 13px;
   color: var(--text-primary);
   width: 100%;
+  transition: font-size 0.2s;
 }
-.wf-topbar-filter-input::placeholder {
-  color: var(--text-tertiary);
+.wf-topbar-filter.expanded .wf-topbar-filter-input { font-size: 14px; }
+.wf-topbar-filter-input::placeholder { color: var(--text-tertiary); }
+
+/* Quick chips row (visible when expanded) */
+.wf-filter-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 2px 2px;
+  animation: chips-slide-in 0.2s ease;
+}
+@keyframes chips-slide-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* AI interpretation dots indicator */
+.wf-topbar-filter-ai-indicator {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+.wf-filter-ai-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ai-dot-pulse 1.2s ease-in-out infinite;
+}
+.wf-filter-ai-dot:nth-child(2) { animation-delay: 0.2s; }
+.wf-filter-ai-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ai-dot-pulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40%           { opacity: 1;   transform: scale(1.2); }
 }
 
 /* Flash de confirmación al recibir filtro por fly-to-filter */
