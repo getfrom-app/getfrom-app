@@ -13,15 +13,20 @@ i18n
       es: { translation: es },
       en: { translation: en },
     },
-    fallbackLng: 'es',
+    // Cualquier idioma no-español → inglés. 'es' → español.
+    fallbackLng: 'en',
     supportedLngs: ['es', 'en'],
 
-    // Detección: 1) localStorage, 2) navegador, 3) fallback
+    // Detección: 1) localStorage, 2) navegador, 3) fallback (en)
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
       lookupLocalStorage: 'from-lang',
     },
+
+    // Normalizar: si el navegador dice 'fr', 'de', 'zh', etc. → usar 'en'
+    // Si dice 'es-MX', 'es-AR' etc. → 'es'
+    load: 'languageOnly',
 
     interpolation: {
       escapeValue: false, // React ya escapa
