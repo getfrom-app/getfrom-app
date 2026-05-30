@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Props) {
+  const { t } = useTranslation()
   const chat = useAIChat()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -219,7 +221,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
     if (!SR) {
-      alert('Tu navegador no soporta reconocimiento de voz. Prueba Chrome o Safari.')
+      alert(t('ai.browserVoiceUnsupported'))
       return
     }
 
@@ -307,10 +309,10 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const NAV_TODAY_INTENT = /\b(ir al diario|abre el diario|abrir el diario|diario de hoy|nota de hoy|ir a hoy|ir al día de hoy|muéstrame hoy|enseñame hoy|ábreme el diario|open diary|go to today|today's note|show today)\b/i
 
   async function handleSend(text?: string) {
-    const t = (text ?? inputRef.current).trim()
-    if (!t || chat.isStreaming) return
+    const raw = (text ?? inputRef.current).trim()
+    if (!raw || chat.isStreaming) return
     setInput('')
-    const final = t.startsWith('__') ? expandSpecialPrompt(t) : t
+    const final = raw.startsWith('__') ? expandSpecialPrompt(raw) : raw
 
     // ── Navegación directa: diario de hoy ──────────────────────────────────
     if (NAV_TODAY_INTENT.test(final)) {
@@ -327,7 +329,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         const query = await interpretFilterQuery(final)
         if (query) {
           window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query } }))
-          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Filtro aplicado: ${query}`, type: 'success' } }))
+          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('ai.filterApplied', { query }), type: 'success' } }))
           return
         }
       }
@@ -360,7 +362,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={onTextareaKey}
-          placeholder={isRecording ? 'Transcribiendo…' : isCompact ? '¿Qué necesitas?' : ''}
+          placeholder={isRecording ? t('ai.chatPlaceholderRecording') : isCompact ? t('ai.chatPlaceholderCompact') : ''}
           className="magic-chat-textarea magic-chat-textarea--bare"
           rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
         />
@@ -371,7 +373,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
           onMouseUp={() => { if (isRecordingRef.current) stopRecording(true) }}
           onMouseLeave={() => { if (isRecordingRef.current) stopRecording(true) }}
-          title="Mantén pulsado para hablar"
+          title={t('ai.holdToTalk')}
         >
           <span className="magic-action-dot" />
           <span>R</span>
@@ -380,11 +382,11 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           className="magic-chat-action-key magic-chat-send"
           onClick={() => handleSend(input)}
           disabled={!input.trim() || chat.isStreaming}
-          title="Enviar"
+          title={t('ai.sendButton')}
         >
           ↵
         </button>
-        <button className="magic-chat-action-key" onClick={onClose} title="Cerrar">
+        <button className="magic-chat-action-key" onClick={onClose} title={t('ai.closeButton')}>
           ESC
         </button>
       </div>
@@ -407,7 +409,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         <canvas ref={canvasRef} width={600} height={64} style={{ width: '100%', height: 64 }} />
         <div className="magic-chat-recording-label">
           <span className="magic-chat-recording-dot" />
-          Grabando · suelta R para enviar
+          {t('ai.recordingLabel')}
         </div>
       </div>
 
@@ -432,7 +434,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       {hasExpanded && (
         <>
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 10px 0', flexShrink: 0 }}>
-            <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title="Nueva conversación">
+            <button className="magic-chat-icon-btn" onClick={() => { chat.startNewSession(); setHasExpanded(false) }} title={t('ai.newConversation')}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M8 3v10M3 8h10" />
               </svg>
@@ -509,14 +511,19 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
   onCancel: () => void
   disabled: boolean
 }) {
-  const icon = (t: string) => ({ create_note: '📝', create_task: '✅', create_event: '📅', create_resource: '🔗', update_node: '✏️' }[t] ?? '⚡')
-  const label = (t: string) => ({ create_note: 'Nota', create_task: 'Tarea', create_event: 'Evento', create_resource: 'Recurso', update_node: 'Modificar' }[t] ?? t)
+  const { t } = useTranslation()
+  const icon = (type: string) => ({ create_note: '📝', create_task: '✅', create_event: '📅', create_resource: '🔗', update_node: '✏️' }[type] ?? '⚡')
+  const label = (type: string) => ({
+    create_note: t('ai.actionNoteCreated'), create_task: t('ai.actionTaskCreated'),
+    create_event: t('ai.actionEventCreated'), create_resource: t('ai.actionResourceCreated'),
+    update_node: t('ai.actionNodeModified'),
+  }[type] ?? type)
 
   return (
     <div style={{ margin: '8px 16px', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 10, background: 'rgba(249,115,22,0.05)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px 6px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
         <span style={{ color: '#f97316' }}>✋</span>
-        <span>Confirma antes de crear</span>
+        <span>{t('ai.confirmBeforeCreate')}</span>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>{actions.length} {actions.length === 1 ? 'elemento' : 'elementos'}</span>
       </div>
@@ -532,12 +539,12 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
       <div style={{ display: 'flex', gap: 8, padding: '8px 12px' }}>
         <button onClick={onCancel} disabled={disabled}
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--text-secondary)', cursor: disabled ? 'not-allowed' : 'pointer' }}>
-          Cancelar
+          {t('common.cancel')}
         </button>
         <div style={{ flex: 1 }} />
         <button onClick={() => { onConfirm(); window.dispatchEvent(new CustomEvent('from:onboarding-magic-confirmed')) }} disabled={disabled}
           style={{ background: disabled ? 'var(--bg-secondary)' : 'var(--accent)', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-          ✓ Crear todo
+          {t('ai.confirmCreateAll')}
         </button>
       </div>
     </div>
@@ -551,6 +558,7 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
   currentNodeId?: string
   onOpenNode: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const isUser = msg.role === 'user'
   const cleaned = msg.content
     .replace(/```from-action[\s\S]*?```/g, '')
@@ -599,11 +607,11 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
                 color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 4,
               }}>
                 <span>{a.ok ? '✓' : '⚠'}</span>
-                <span>{actionLabel(a.action)}</span>
+                <span>{ACTION_LABEL_MAP_MAGIC[a.action] ? t(ACTION_LABEL_MAP_MAGIC[a.action]) : a.action}</span>
                 {a.createdIds.length > 0 && (
                   <button onClick={() => onOpenNode(a.createdIds[0])}
                     style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 10, fontWeight: 500, cursor: 'pointer', padding: 0 }}>
-                    Abrir
+                    {t('ai.openNodeButton')}
                   </button>
                 )}
               </span>
@@ -613,16 +621,16 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
         {msg.undoBundle && (msg.undoBundle.createdIds.length > 0 || msg.undoBundle.restoredNodes.length > 0) && (
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <button className="magic-undo-btn" onClick={() => aiChatStore.undoAction(msg.id)}>
-              ↩ Deshacer
+              {t('ai.undoButton')}
             </button>
             {moveLabel && (
               <button className="magic-undo-btn" onClick={handleMove}>
-                {moveLabel === 'aquí' ? '↗ Muévelo a esta nota' : '↙ Muévelo a hoy'}
+                {moveLabel === 'aquí' ? t('ai.moveToNote') : t('ai.moveToToday')}
               </button>
             )}
             {msg.undoBundle.userMsgContent && (
               <button className="magic-undo-btn" onClick={() => aiChatStore.retryAction(msg.id)}>
-                ↻ Hazlo de nuevo
+                {t('ai.redoButton')}
               </button>
             )}
           </div>
@@ -632,12 +640,9 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
   )
 }
 
-function actionLabel(id: string): string {
-  const map: Record<string, string> = {
-    create_note: 'Nota creada', create_task: 'Tarea creada', create_event: 'Evento creado',
-    update_node: 'Nodo modificado', read_node: 'Nodo leído', find_nodes: 'Búsqueda',
-    add_column: 'Columna añadida', fill_column: 'Columna rellena', add_row: 'Fila añadida',
-    change_view: 'Vista cambiada', create_resource: 'Recurso creado', run_prompt: 'Prompt ejecutado',
-  }
-  return map[id] ?? id
+const ACTION_LABEL_MAP_MAGIC: Record<string, string> = {
+  create_note: 'ai.actionNoteCreated', create_task: 'ai.actionTaskCreated', create_event: 'ai.actionEventCreated',
+  update_node: 'ai.actionNodeModified', read_node: 'ai.actionNodeRead', find_nodes: 'ai.actionSearch',
+  add_column: 'ai.actionColumnAdded', fill_column: 'ai.actionColumnFilled', add_row: 'ai.actionRowAdded',
+  change_view: 'ai.actionViewChanged', create_resource: 'ai.actionResourceCreated', run_prompt: 'ai.actionPromptRun',
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -41,6 +42,7 @@ let _kanbanDragId: string | null = null
 export default function NodeKanbanView({ parentId }: Props) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [newCardCol, setNewCardCol] = useState<string | null>(null)
   const [newCardText, setNewCardText] = useState('')
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export default function NodeKanbanView({ parentId }: Props) {
   const columns: ColDef[] = useMemo(() => {
     if (groupBy === '__status') {
       return [
-        { key: '__null', label: 'Sin estado' },
+        { key: '__null', label: t('kanban.noStatus') },
         { key: 'pending', label: 'Pendiente', color: '#fcd34d' },
         { key: 'future',  label: 'Futuro',    color: '#93c5fd' },
         { key: 'done',    label: 'Hecho',     color: '#86efac' },
@@ -75,15 +77,15 @@ export default function NodeKanbanView({ parentId }: Props) {
     if (groupBy === '__due' || col?.type === 'date') {
       return [
         { key: 'overdue',  label: 'Vencidas',    color: '#fda4af' },
-        { key: 'today',    label: 'Hoy',         color: '#fcd34d' },
+        { key: 'today',    label: t('common.today'),         color: '#fcd34d' },
         { key: 'thisweek', label: 'Esta semana', color: '#86efac' },
         { key: 'later',    label: 'Más adelante', color: '#93c5fd' },
-        { key: '__null',   label: 'Sin fecha' },
+        { key: '__null',   label: t('panel.noDate') },
       ]
     }
     if (!col || col.type !== 'select') return []
     return [
-      { key: '__null', label: 'Sin valor' },
+      { key: '__null', label: t('table.noValue') },
       ...((col.options || []).map(o => ({ key: o.id, label: o.label, color: o.color }))),
     ]
   }, [groupBy, customCols])
@@ -201,14 +203,14 @@ export default function NodeKanbanView({ parentId }: Props) {
   return (
     <div className="node-kanban-wrapper">
       <div className="node-kanban-toolbar">
-        <label className="node-kanban-toolbar-label">Agrupar por:</label>
+        <label className="node-kanban-toolbar-label">{t('kanban.groupBy')}</label>
         <select className="node-kanban-toolbar-select" value={groupBy} onChange={e => {
           if (e.target.value === '__new__') { handleAddNewGroupProperty(); return }
           setGroupBy(e.target.value)
         }}>
-          <option value="__status">Estado</option>
-          <option value="__priority">Prioridad</option>
-          <option value="__due">Fecha (built-in)</option>
+          <option value="__status">{t('kanban.byStatus')}</option>
+          <option value="__priority">{t('kanban.byPriority')}</option>
+          <option value="__due">{t('kanban.byDate')}</option>
           {dateCols.length > 0 && (
             <optgroup label="Fechas custom">
               {dateCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -260,7 +262,7 @@ export default function NodeKanbanView({ parentId }: Props) {
                     onDragEnd={() => { _kanbanDragId = null }}
                     onClick={() => navigate(`/node/${node.id}`)}
                   >
-                    <span className="node-kanban-card-title">{node.text || 'Sin título'}</span>
+                    <span className="node-kanban-card-title">{node.text || t('common.noTitle')}</span>
                     {node.due && (
                       <span className="node-kanban-card-due">
                         📅 {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
@@ -278,7 +280,7 @@ export default function NodeKanbanView({ parentId }: Props) {
                       className="node-kanban-card-input"
                       value={newCardText}
                       onChange={e => setNewCardText(e.target.value)}
-                      placeholder="Título..."
+                      placeholder={t('kanban.title')}
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleAddCard(col.key)
                         if (e.key === 'Escape') { setNewCardCol(null); setNewCardText('') }
@@ -288,7 +290,7 @@ export default function NodeKanbanView({ parentId }: Props) {
                   </div>
                 ) : (
                   <button className="node-kanban-add-btn" onClick={() => setNewCardCol(col.key)}>
-                    + Añadir
+                    + {t('common.add')}
                   </button>
                 )}
               </div>

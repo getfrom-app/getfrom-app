@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useRecordingStore } from '../../store/recordingStore'
 import { store } from '../../store/nodeStore'
@@ -13,6 +14,7 @@ function formatTime(s: number) {
 }
 
 export default function VoiceCaptureModal({ onClose }: Props) {
+  const { t } = useTranslation()
   const r = useRecordingStore()
   const navigate = useNavigate()
 
@@ -39,14 +41,14 @@ export default function VoiceCaptureModal({ onClose }: Props) {
       <div className="modal-card voice-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-icon">🎙</span>
-          <h2>Grabación de voz</h2>
+          <h2>{t('voice.recordingTitle')}</h2>
           {/* Closing modal does NOT stop recording */}
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
 
         {!r.isSupported && (
           <div className="voice-unsupported">
-            La grabación de voz requiere Chrome o Edge.
+            {t('voice.browserNotSupported')}
           </div>
         )}
 
@@ -61,7 +63,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
                   <div className="voice-level-bar-fill" style={{ width: `${levelPercent}%` }} />
                 </div>
               ) : (
-                <span className="voice-recording-text">● Grabando...</span>
+                <span className="voice-recording-text">{t('voice.recording')}</span>
               )}
               <span className="voice-timer">{formatTime(r.elapsed)}</span>
             </div>
@@ -77,7 +79,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
           {r.transcript
             ? r.transcript
             : <span className="voice-hint">
-                {r.phase === 'recording' ? 'Habla ahora...' : r.phase === 'done' ? 'Transcripción vacía' : 'Pulsa para grabar'}
+                {r.phase === 'recording' ? t('ai.recordingLabel') : r.phase === 'done' ? t('voice.transcriptPlaceholder') : t('voice.startRecording')}
               </span>
           }
         </div>
@@ -86,26 +88,26 @@ export default function VoiceCaptureModal({ onClose }: Props) {
         <div className="modal-actions">
           {r.phase === 'idle' && (
             <button className="btn-primary btn-record" onClick={() => r.startRecording()} disabled={!r.isSupported}>
-              🎙 Empezar a grabar
+              {t('voice.startRecording')}
             </button>
           )}
           {r.phase === 'recording' && (
             <>
               <button className="btn-secondary" onClick={onClose}>
-                Minimizar
+                {t('common.close')}
               </button>
               <button className="btn-primary btn-stop" onClick={() => r.stopRecording()}>
-                ■ Parar
+                {t('voice.stopButton')}
               </button>
             </>
           )}
           {r.phase === 'done' && (
             <>
               <button className="btn-secondary" onClick={() => r.resetRecording()}>
-                Grabar de nuevo
+                {t('voice.startRecording')}
               </button>
               <button className="btn-primary" onClick={saveNote} disabled={!(r.transcript || r.finalText).trim()}>
-                Guardar como nota
+                {t('common.save')}
               </button>
             </>
           )}

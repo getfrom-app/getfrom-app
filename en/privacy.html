@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — From</title>
+    <meta name="description" content="From privacy policy. How we collect, use and protect your data.">
+    <link rel="alternate" hreflang="es" href="https://getfrom.app/privacy.html" />
+    <link rel="alternate" hreflang="en" href="https://getfrom.app/en/privacy.html" />
+    <link rel="icon" type="image/svg+xml" href="../icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../i18n.js"></script>
+</head>
+<body data-page="privacy">
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/support.html">Support</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en" selected>English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Sign in</a>
+            <a href="/en/#download" class="btn-nav">Download free</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="page-hero">
+    <h1>Privacy Policy</h1>
+    <p>Full transparency on how From handles your data.</p>
+</div>
+
+<!-- Legal content -->
+<div class="legal-body">
+    <p class="legal-updated">Last updated: May 22, 2026</p>
+
+    <h2>1. Who we are</h2>
+    <p>From is a productivity service available on Web, Mac and iPhone, developed and operated by Alberto Lezaun Pérez. Contact: <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>.</p>
+
+    <h2>2. What data we collect</h2>
+
+    <h3>2.1 Account data</h3>
+    <ul>
+        <li><strong>Email:</strong> To identify your account, sign in and communicate with you.</li>
+        <li><strong>Password:</strong> Stored as a bcrypt hash (never in plain text). If you use Google or Apple sign-in, no password is stored.</li>
+        <li><strong>Subscription and license status:</strong> Active plan, renewal dates.</li>
+        <li><strong>AI token balance:</strong> If you use managed AI, we record consumption for billing.</li>
+    </ul>
+
+    <h3>2.2 Synced content</h3>
+    <p>From syncs your notes, tasks, projects and journal between devices through our server. <strong>All your content is stored in our database</strong> (PostgreSQL on Railway, US East region) encrypted in transit via TLS. This is required for real-time sync between Web, Mac and iPhone to work.</p>
+
+    <h3>2.3 Payment data</h3>
+    <p>Payments are processed through <strong>LemonSqueezy</strong>. We do not store card details or financial information. LemonSqueezy acts as Merchant of Record and has its own privacy policy.</p>
+
+    <h3>2.4 AI data</h3>
+    <p>When you use AI features (chat, AI editor, agents):</p>
+    <ul>
+        <li>From selects relevant fragments from your notes and sends them along with your query to the chosen AI provider (Anthropic, OpenAI or Google).</li>
+        <li>We do not store queries or responses on our servers.</li>
+        <li>If you use your own API key, requests go directly from your device to the provider.</li>
+    </ul>
+
+    <h3>2.5 Google Calendar and Drive</h3>
+    <p>If you connect your Google account, Google Calendar and Google Drive data is processed through the Google API. We use OAuth 2.0 for authentication; we do not store your Google password. Access is strictly limited to the permissions you grant.</p>
+
+    <h3>2.6 Published notes</h3>
+    <p>If you choose to publish a note (optional feature), the content of that specific note is publicly accessible via a unique URL. You can unpublish it at any time, which removes it from public access.</p>
+
+    <h2>3. Data we do NOT collect</h2>
+    <ul>
+        <li><strong>Usage telemetry or analytics:</strong> We do not track which features you use, time in app, or browsing behavior.</li>
+        <li><strong>Device identifiers</strong>, MAC address, hardware or location.</li>
+        <li><strong>Tracking cookies</strong> on getfrom.app — we do not use Google Analytics, Facebook Pixel or similar.</li>
+    </ul>
+
+    <h2>4. How we use your data</h2>
+    <ul>
+        <li>To provide and maintain the sync service.</li>
+        <li>To manage your account, subscription and feature access.</li>
+        <li>To send service-related communications (no marketing without your consent).</li>
+        <li>To ensure the security and integrity of the service.</li>
+    </ul>
+
+    <h2>5. Legal basis for processing (GDPR)</h2>
+    <ul>
+        <li><strong>Contract performance (Art. 6.1.b):</strong> Account data and sync required to provide the service.</li>
+        <li><strong>Consent (Art. 6.1.a):</strong> Optional integrations such as Google Calendar/Drive.</li>
+        <li><strong>Legitimate interests (Art. 6.1.f):</strong> Service security and fraud prevention.</li>
+        <li><strong>Legal obligation (Art. 6.1.c):</strong> Billing data under applicable tax regulations.</li>
+    </ul>
+
+    <h2>6. Where data is stored</h2>
+    <ul>
+        <li><strong>Content and account data:</strong> PostgreSQL database on Railway, US East region (United States). Railway is SOC 2 Type II compliant.</li>
+        <li><strong>Attachments:</strong> Cloudflare R2 (global CDN with distributed storage).</li>
+        <li><strong>Payment data:</strong> Managed by LemonSqueezy (Merchant of Record).</li>
+    </ul>
+    <p>Data transfers outside the EEA are made under appropriate GDPR safeguards (Standard Contractual Clauses).</p>
+
+    <h2>7. Data retention</h2>
+    <ul>
+        <li><strong>Account data and content:</strong> Retained while your account is active. Deleted within 30 days of a deletion request.</li>
+        <li><strong>Billing data:</strong> Retained per legal obligations (minimum 4 years under Spanish law).</li>
+        <li><strong>Published notes:</strong> Deleted immediately upon unpublishing.</li>
+    </ul>
+
+    <h2>8. Your rights</h2>
+    <p>Under the GDPR, you have the right to:</p>
+    <ul>
+        <li><strong>Access:</strong> Request a copy of your data. You can export it from Settings → Export.</li>
+        <li><strong>Rectification:</strong> Correct inaccurate data.</li>
+        <li><strong>Erasure:</strong> Request deletion of your account and all associated data.</li>
+        <li><strong>Portability:</strong> Export your content in JSON or Markdown format.</li>
+        <li><strong>Objection and restriction:</strong> Object to or restrict certain processing.</li>
+        <li><strong>Withdraw consent</strong> for optional integrations at any time.</li>
+    </ul>
+    <p>To exercise these rights: <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>.<br>
+    You may also lodge a complaint with your local data protection authority.</p>
+
+    <h2>9. Security</h2>
+    <p>We apply appropriate technical and organizational measures: TLS encryption in transit, secure password hashing (bcrypt), short-lived JWT token authentication and restricted database access.</p>
+
+    <h2>10. Minors</h2>
+    <p>From is not directed at users under 16. If you believe a minor has created an account, contact us to have it removed.</p>
+
+    <h2>11. Changes to this policy</h2>
+    <p>We will publish changes on this page with the updated date. For significant changes, we will notify you by email.</p>
+
+    <h2>12. Contact</h2>
+    <p><a href="mailto:hola@getfrom.app">hola@getfrom.app</a></p>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>Your second brain. Web, Mac and iPhone.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Product</h4>
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/#download">Download</a>
+        </div>
+        <div class="footer-col">
+            <h4>Support</h4>
+            <a href="/en/support.html">Help Center</a>
+            <a href="mailto:hola@getfrom.app">Contact</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="/en/privacy.html">Privacy</a>
+            <a href="/en/terms.html">Terms</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun Pérez — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+    </div>
+</footer>
+
+</body>
+</html>

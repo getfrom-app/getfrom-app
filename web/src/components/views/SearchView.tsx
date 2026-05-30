@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { apiRequest, aiInlineStream, getToken } from '../../api/client'
@@ -246,6 +247,7 @@ const PRIORITY_CLASS: Record<string, string> = {
 export default function SearchView() {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -408,7 +410,7 @@ export default function SearchView() {
             ref={inputRef}
             type="text"
             className="search-input"
-            placeholder="Buscar… o usa estado:pendiente, fecha:hoy, prioridad:alta…"
+            placeholder={t('search.searchPlaceholder')}
             value={query}
             onChange={e => handleQueryChange(e.target.value)}
             onBlur={e => commitSearch(e.target.value)}
@@ -417,7 +419,7 @@ export default function SearchView() {
           <button
             className="search-help-btn"
             onClick={() => setShowHelp(v => !v)}
-            title="Ayuda con la sintaxis"
+            title={t('search.helpSyntax')}
           >?</button>
           {query && (
             <button className="search-clear" onClick={() => handleQueryChange('')}>×</button>
@@ -546,7 +548,7 @@ export default function SearchView() {
         {/* Empty state with suggestions */}
         {noResults && (
           <div className="search-empty-state">
-            <div className="view-empty">Sin resultados para "{query}"</div>
+            <div className="view-empty">{t('search.noResultsFor')} "{query}"</div>
 
             {hasActiveFilters && (
               <button className="search-free-text-btn" onClick={searchFreeText}>
@@ -605,7 +607,7 @@ export default function SearchView() {
         )}
 
         {!hasQuery && history.length === 0 && (
-          <div className="view-empty">Escribe para buscar o usa los filtros rápidos</div>
+          <div className="view-empty">{t('search.searchPlaceholder')}</div>
         )}
 
         {results.length > 0 && (() => {

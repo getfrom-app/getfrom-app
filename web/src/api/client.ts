@@ -326,6 +326,8 @@ export interface ChatPayload {
   dailyContext?: string
   /** Resumen de tareas pendientes: vencidas, hoy, próximas, sin fecha. */
   pendingTasks?: string
+  /** Idioma preferido del usuario — "es" | "en". Determina el idioma de la respuesta. */
+  locale?: string
 }
 
 /** Stream /ai/chat. Devuelve la respuesta completa concatenada al terminar. */

@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 
@@ -37,6 +38,7 @@ function nowTimeStr() {
 }
 
 export default function NewEventModal({ onClose }: Props) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState(todayDateStr())  // siempre YYYY-MM-DD
   const [startTime, setStartTime] = useState(nowTimeStr())    // HH:MM, solo si hasTime
@@ -112,7 +114,7 @@ export default function NewEventModal({ onClose }: Props) {
       <div className="modal-card new-event-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-icon">📅</span>
-          <h2>Nuevo evento</h2>
+          <h2>{t('modal.newEvent')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -123,7 +125,7 @@ export default function NewEventModal({ onClose }: Props) {
               ref={inputRef}
               type="text"
               className="modal-input"
-              placeholder="Título del evento..."
+              placeholder={t('node.titlePlaceholder')}
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
@@ -149,7 +151,7 @@ export default function NewEventModal({ onClose }: Props) {
           {/* Fecha */}
           <div className="modal-row">
             <div className={`modal-field ${hasTime ? 'modal-field--half' : ''}`}>
-              <label className="modal-label">Fecha</label>
+              <label className="modal-label">{t('modal.eventDate')}</label>
               <input
                 type="date"
                 className="modal-input"
@@ -161,7 +163,7 @@ export default function NewEventModal({ onClose }: Props) {
             {/* Hora — solo si hasTime */}
             {hasTime && (
               <div className="modal-field modal-field--half">
-                <label className="modal-label">Hora inicio</label>
+                <label className="modal-label">{t('modal.eventStartTime')}</label>
                 <input
                   type="time"
                   className="modal-input"
@@ -188,7 +190,7 @@ export default function NewEventModal({ onClose }: Props) {
             <>
               <div className="modal-row">
                 <div className="modal-field modal-field--half">
-                  <label className="modal-label">Duración</label>
+                  <label className="modal-label">{t('modal.eventDuration')}</label>
                   <select
                     className="modal-input"
                     value={duration}
@@ -218,10 +220,10 @@ export default function NewEventModal({ onClose }: Props) {
 
           {/* Description */}
           <div className="modal-field">
-            <label className="modal-label">Descripción</label>
+            <label className="modal-label">{t('modal.eventDescription')}</label>
             <textarea
               className="modal-input"
-              placeholder="Añade una descripción o notas..."
+              placeholder={t('modal.eventDescription')}
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -230,8 +232,8 @@ export default function NewEventModal({ onClose }: Props) {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={!title.trim()}>Crear evento</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
+            <button type="submit" className="btn-primary" disabled={!title.trim()}>{t('modal.newEvent')}</button>
           </div>
         </form>
       </div>

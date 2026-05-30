@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
@@ -55,6 +56,7 @@ function setResourceField(node: Node, fields: Record<string, unknown>) {
 interface Props { node: Node }
 
 export default function ResourcePanel({ node }: Props) {
+  const { t } = useTranslation()
   const { type, url, meta } = getResourceData(node)
   const [urlInput, setUrlInput] = useState(url)
   const [loadingMeta, setLoadingMeta] = useState(false)
@@ -127,7 +129,7 @@ export default function ResourcePanel({ node }: Props) {
     <div className="resource-panel">
       {/* Tipo de recurso (built-in + custom + añadir) */}
       <div className="resource-panel-section">
-        <div className="resource-panel-label">Tipo</div>
+        <div className="resource-panel-label">{t('panel.resourceType')}</div>
         <div className="resource-type-chips">
           {allTypes.map(t => {
             const isCustom = !BUILTIN_TYPES.some(b => b.key === t.key)
@@ -147,7 +149,7 @@ export default function ResourcePanel({ node }: Props) {
             <button
               className="resource-type-chip resource-type-chip--add"
               onClick={() => setAddingType(true)}
-              title="Añadir nuevo tipo"
+              title={t('panel.addType')}
             >＋</button>
           )}
         </div>
@@ -162,7 +164,7 @@ export default function ResourcePanel({ node }: Props) {
             />
             <input
               className="resource-type-label-input"
-              placeholder="Nombre del tipo..."
+              placeholder={t('panel.typePlaceholder')}
               value={newTypeLabel}
               autoFocus
               onChange={e => setNewTypeLabel(e.target.value)}
@@ -191,7 +193,7 @@ export default function ResourcePanel({ node }: Props) {
             className="resource-url-fetch-btn"
             onClick={handleFetchMeta}
             disabled={loadingMeta || !urlInput.trim()}
-            title="Obtener vista previa"
+            title={t('panel.preview')}
           >
             {loadingMeta ? '⏳' : '↗'}
           </button>
@@ -216,7 +218,7 @@ export default function ResourcePanel({ node }: Props) {
             {meta.description && <div className="resource-meta-desc">{meta.description.slice(0, 100)}{meta.description.length > 100 ? '…' : ''}</div>}
             {url && (
               <a href={url} target="_blank" rel="noopener noreferrer" className="resource-meta-link" onClick={e => e.stopPropagation()}>
-                Abrir →
+                {t('panel.openArrow')}
               </a>
             )}
           </div>

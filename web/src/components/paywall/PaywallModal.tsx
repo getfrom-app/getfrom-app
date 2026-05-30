@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
 
 // URLs de LemonSqueezy
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function PaywallModal({ reason, onClose }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const us = useUserStore()
   const isPremium = us.isPremium
@@ -23,7 +25,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
   let subtitle = ''
   let primaryLabel = ''
   let primaryAction = () => {}
-  let secondaryLabel = 'Ahora no'
+  let secondaryLabel = t('paywall.notNow')
 
   if (reason === 'node_limit') {
     // Límite de nodos — siempre free
@@ -143,7 +145,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
               padding: '6px',
             }}
           >
-            Ahora no
+            {t('paywall.notNow')}
           </button>
         </div>
       </div>

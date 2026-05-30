@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { aiInlineStream, getToken } from '../../api/client'
 
 interface Message {
@@ -30,6 +31,7 @@ function StreamingDots() {
 }
 
 export default function ChatView() {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
@@ -134,8 +136,8 @@ export default function ChatView() {
         <div className="chat-messages">
           <div className="chat-welcome">
             <div className="chat-welcome-icon">✦</div>
-            <div className="chat-welcome-title">Inicia sesión para usar el Chat IA</div>
-            <div className="chat-welcome-subtitle">Necesitas una cuenta para acceder al asistente.</div>
+            <div className="chat-welcome-title">{t('ai.loginForChat')}</div>
+            <div className="chat-welcome-subtitle">{t('ai.chatLoginHint')}</div>
           </div>
         </div>
       </div>
@@ -153,13 +155,13 @@ export default function ChatView() {
         </div>
         <div className="chat-view-actions">
           {lastAssistant?.content && (
-            <button className="chat-view-action-btn" onClick={handleCopyLast} title="Copiar última respuesta">
-              Copiar
+            <button className="chat-view-action-btn" onClick={handleCopyLast} title={t('ai.copyLastResponse')}>
+              {t('common.copy')}
             </button>
           )}
           {hasMessages && (
             <button className="chat-view-action-btn" onClick={handleClearHistory} title="Limpiar historial">
-              Limpiar
+              {t('ai.newConversation')}
             </button>
           )}
         </div>
@@ -220,7 +222,7 @@ export default function ChatView() {
             className="chat-send-btn"
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || streaming}
-            title="Enviar"
+            title={t('ai.sendButton')}
           >
             ↑
           </button>

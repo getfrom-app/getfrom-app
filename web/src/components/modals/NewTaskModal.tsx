@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function NewTaskModal({ onClose, parentId }: Props) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const [due, setDue] = useState(() => {
     const d = new Date()
@@ -46,7 +48,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
       <div className="modal-card new-task-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-icon">✓</span>
-          <h2>Nueva tarea</h2>
+          <h2>{t('modal.newTask')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -55,7 +57,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
               ref={inputRef}
               type="text"
               className="modal-input"
-              placeholder="Nombre de la tarea..."
+              placeholder={t('modal.newTaskPlaceholder')}
               value={text}
               onChange={e => setText(e.target.value)}
               required
@@ -63,7 +65,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
           </div>
           <div className="modal-row">
             <div className="modal-field modal-field--half">
-              <label className="modal-label">Fecha límite</label>
+              <label className="modal-label">{t('modal.dueDate')}</label>
               <input
                 type="datetime-local"
                 className="modal-input"
@@ -86,8 +88,8 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
             </div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={!text.trim()}>Crear tarea</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
+            <button type="submit" className="btn-primary" disabled={!text.trim()}>{t('modal.newTask')}</button>
           </div>
         </form>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 const STEPS = [
   {
@@ -30,6 +31,7 @@ const STEPS = [
 ]
 
 export default function OnboardingTooltip() {
+  const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [visible, setVisible] = useState(() => localStorage.getItem('from_onboarding_done') !== '1')
 
@@ -73,9 +75,9 @@ export default function OnboardingTooltip() {
             ))}
           </span>
           <div className="onboarding-actions">
-            <button className="onboarding-skip" onClick={dismiss}>Saltar</button>
+            <button className="onboarding-skip" onClick={dismiss}>{t('onboarding.skip')}</button>
             {step > 0 && (
-              <button className="onboarding-prev" onClick={prev}>← Anterior</button>
+              <button className="onboarding-prev" onClick={prev}>{t('onboarding.previous')}</button>
             )}
             <button className="onboarding-next" onClick={next}>
               {isLast ? 'Empezar' : 'Siguiente →'}

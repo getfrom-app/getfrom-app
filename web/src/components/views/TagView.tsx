@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 
 function formatDue(due: string): string {
@@ -23,6 +24,7 @@ type KindFilter = 'all' | 'tasks' | 'notes' | 'events'
 export default function TagView() {
   const { name } = useParams<{ name: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const s = useStore()
 
   const [sortBy, setSortBy] = useState<SortKey>('updated')
@@ -75,7 +77,7 @@ export default function TagView() {
   const notes = allTagged.filter(n => n.status === null && !n.isEvent).length
 
   if (!tagName) {
-    return <div className="view"><div className="view-empty">Tag no especificado</div></div>
+    return <div className="view"><div className="view-empty">{t('tag.unspecified')}</div></div>
   }
 
   return (
@@ -95,7 +97,7 @@ export default function TagView() {
           <input
             className="tag-view-search"
             type="text"
-            placeholder="Filtrar..."
+            placeholder={t('tag.filterPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -162,7 +164,7 @@ export default function TagView() {
 
               {/* Main content */}
               <div className="tag-result-main">
-                <span className="tag-result-text">{node.text || 'Sin título'}</span>
+                <span className="tag-result-text">{node.text || t('common.noTitle')}</span>
                 {node.body && (
                   <span className="tag-result-preview">{node.body.slice(0, 80)}{node.body.length > 80 ? '…' : ''}</span>
                 )}

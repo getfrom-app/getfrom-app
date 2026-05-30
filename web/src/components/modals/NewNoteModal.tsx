@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function NewNoteModal({ parentId, onClose }: Props) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
@@ -88,7 +90,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
       <div className="modal-card new-note-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-icon">✎</span>
-          <h2>Nueva nota</h2>
+          <h2>{t('modal.newNote')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
 
@@ -97,7 +99,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
             ref={inputRef}
             type="text"
             className="modal-input"
-            placeholder="Nombre de la nota..."
+            placeholder={t('modal.newNotePlaceholder')}
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') onClose() }}
@@ -108,7 +110,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         {duplicates.length > 0 && (
           <div className="modal-duplicates-warning">
             <span className="modal-dup-icon">⚠</span>
-            <span className="modal-dup-label">Notas similares:</span>
+            <span className="modal-dup-label">{t('modal.similarNotes')}</span>
             {duplicates.map(d => (
               <button
                 key={d.id}
@@ -149,8 +151,8 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         </div>
 
         <div className="modal-actions" style={{ marginTop: 16 }}>
-          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
-          <button className="btn-primary" onClick={handleCreate}>Crear nota</button>
+          <button className="btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
+          <button className="btn-primary" onClick={handleCreate}>{t('modal.newNote')}</button>
         </div>
       </div>
     </div>,

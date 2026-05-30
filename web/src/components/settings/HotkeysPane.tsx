@@ -2,9 +2,11 @@
  * HotkeysPane — Sección de Ajustes para editar atajos de teclado
  */
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getAllHotkeys, setHotkeyKey, resetAllHotkeys, formatHotkeyDisplay, DEFAULT_HOTKEYS } from '../../store/hotkeysStore'
 
 export default function HotkeysPane() {
+  const { t } = useTranslation()
   const [hotkeys, setHotkeys] = useState(getAllHotkeys)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [pendingKey, setPendingKey] = useState('')
@@ -60,9 +62,9 @@ export default function HotkeysPane() {
     <div className="hotkeys-pane">
       <div className="hotkeys-header">
         <div>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Atajos de teclado</h3>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{t('shortcuts.keyboardTitle')}</h3>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-            Los atajos marcados con ✎ son configurables. Haz clic en la tecla para cambiarla.
+            {t('shortcuts.configurable')}
           </p>
         </div>
         {hasCustom && (
@@ -70,7 +72,7 @@ export default function HotkeysPane() {
             className="hotkeys-reset-all"
             onClick={() => { resetAllHotkeys(); setHotkeys(getAllHotkeys()) }}
           >
-            Restaurar todo
+            {t('shortcuts.resetAll')}
           </button>
         )}
       </div>
@@ -96,13 +98,13 @@ export default function HotkeysPane() {
                     >
                       {pendingKey
                         ? formatHotkeyDisplay({ ...h, currentKey: pendingKey })
-                        : '· pulsa tecla ·'}
+                        : `· ${t('shortcuts.pressKey')} ·`}
                     </kbd>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <kbd
                         className={`shortcut-key shortcut-key--editable ${h.isCustom ? 'shortcut-key--custom' : ''}`}
-                        title="Clic para cambiar"
+                        title={t('shortcuts.clickToChange')}
                         onClick={() => startEdit(h.id, h.currentKey)}
                       >
                         {formatHotkeyDisplay(h)}
@@ -110,7 +112,7 @@ export default function HotkeysPane() {
                       {h.isCustom && (
                         <button
                           className="hotkeys-reset-btn"
-                          title="Restaurar por defecto"
+                          title={t('shortcuts.resetDefault')}
                           onClick={() => resetHotkey(h.id)}
                         >
                           ↺

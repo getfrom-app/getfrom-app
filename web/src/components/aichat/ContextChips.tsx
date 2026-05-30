@@ -8,6 +8,7 @@
  *  - Nodo tag o perfil IA → 3 chips especiales de mejora de contexto
  *  - Nodo normal con contenido → chips generados client-side por tipo de contenido
  */
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 
 export interface ContextChip {
@@ -176,6 +177,7 @@ interface ContextChipsProps {
 }
 
 export default function ContextChips({ nodeId, visible, onSelect }: ContextChipsProps) {
+  const { t } = useTranslation()
   if (!visible) return null
   const chips = generateContextChips(nodeId)
   if (!chips.length) return null
@@ -191,7 +193,7 @@ export default function ContextChips({ nodeId, visible, onSelect }: ContextChips
     }}>
       {isSpecial && (
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-          Contexto IA
+          {t('ai.aiContext')}
         </div>
       )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

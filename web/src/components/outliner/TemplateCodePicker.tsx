@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { TEMPLATE_CODES } from '../../utils/templateCodes'
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function TemplateCodePicker({ anchorEl, query, onSelect, onClose }: Props) {
+  const { t } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const [activeIdx, setActiveIdx] = useState(0)
@@ -77,7 +79,7 @@ export default function TemplateCodePicker({ anchorEl, query, onSelect, onClose 
     >
       <div className="slash-menu-group" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ opacity: 0.6, fontFamily: 'monospace' }}>{'{ }'}</span>
-        Variables de plantilla
+        {t('templates.sectionTitle')}
       </div>
       {filtered.map((c, idx) => (
         <button

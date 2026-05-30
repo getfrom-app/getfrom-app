@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -44,6 +45,7 @@ function formatDate(iso: string): string {
 export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [sort, setSort] = useState<SortKey>('updated')
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'done' | 'notes'>('all')
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null)
@@ -118,7 +120,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
     <div className="tag-nodes-panel">
       {/* Color del tag */}
       <div className="tag-nodes-color-section">
-        <span className="tag-nodes-color-label">Color</span>
+        <span className="tag-nodes-color-label">{t('panel.color')}</span>
         <div className="tag-nodes-color-grid">
           {TAG_COLORS.map(c => (
             <button
@@ -137,7 +139,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
           <button
             className="tag-nodes-color-swatch tag-nodes-color-reset"
             onClick={() => store.setTagColor(tagName, null)}
-            title="Restablecer color automático"
+            title={t('panel.resetColor')}
           >↺</button>
         </div>
       </div>
@@ -155,7 +157,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
           </span>
           <button
             onClick={addPrompt}
-            title="Añadir prompt de IA para este tag"
+            title={t('panel.addAIPrompt')}
             style={{
               background: 'none', border: '1px solid var(--border)',
               borderRadius: 5, padding: '1px 6px', fontSize: 11,
@@ -248,10 +250,10 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
               key={n.id}
               className={`tag-nodes-item${n.status === 'done' ? ' done' : ''}`}
               onClick={() => navigate(`/node/${n.id}`)}
-              title={n.text || 'Sin título'}
+              title={n.text || t('common.noTitle')}
             >
               <span className="tag-nodes-item-icon">{nodeIcon(n)}</span>
-              <span className="tag-nodes-item-text">{n.text || 'Sin título'}</span>
+              <span className="tag-nodes-item-text">{n.text || t('common.noTitle')}</span>
               <span className="tag-nodes-item-date">{formatDate(n.updatedAt)}</span>
             </button>
           ))

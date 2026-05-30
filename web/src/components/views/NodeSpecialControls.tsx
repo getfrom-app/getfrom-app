@@ -17,6 +17,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { getAgentData, setAgentEnabled } from '../../utils/agentesHelper'
@@ -76,6 +77,7 @@ function scheduleLabel(value: string): string {
 function AgentControls({ node }: Props) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const data = getAgentData(node.id)
   const [running, setRunning] = useState(false)
   const [lastResult, setLastResult] = useState<string | null>(null)
@@ -190,10 +192,10 @@ function AgentControls({ node }: Props) {
         {running ? (
           <>
             <span className="node-special-spinner" />
-            Ejecutando…
+            {t('ai.running')}
           </>
         ) : (
-          <>▶ Ejecutar</>
+          <>{t('ai.runAgent')}</>
         )}
       </button>
 
@@ -207,7 +209,7 @@ function AgentControls({ node }: Props) {
         <button
           className="node-special-pill node-special-pill--action"
           onClick={() => setShowSchedule(v => !v)}
-          title="Programar ejecución automática"
+          title={t('ai.scheduleRun')}
           style={{ fontSize: 11 }}
         >
           ⏰ {scheduleLabel(data.schedule)}
@@ -263,7 +265,7 @@ function AgentControls({ node }: Props) {
 
       {/* Resultado reciente */}
       {lastResult && (
-        <span className="node-special-meta" style={{ color: 'var(--success)' }}>✓ Resultado guardado en el diario</span>
+        <span className="node-special-meta" style={{ color: 'var(--success)' }}>{t('ai.resultSaved')}</span>
       )}
     </div>
   )

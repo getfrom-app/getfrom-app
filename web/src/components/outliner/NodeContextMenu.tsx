@@ -14,6 +14,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -52,6 +53,7 @@ interface Props {
 }
 
 export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSelect }: Props) {
+  const { t } = useTranslation()
   const [showMove, setShowMove] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
@@ -284,17 +286,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {/* Duplicar + Mover + Espejo */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(duplicate)}>
-          <span className="context-menu-icon">⧉</span> Duplicar
+          <span className="context-menu-icon">⧉</span> {t('context.duplicate')}
           <span className="context-menu-shortcut">⌘D</span>
         </button>
         <button className="context-menu-item" onClick={run(createMirror)}>
-          <span className="context-menu-icon">⬡</span> Crear espejo
+          <span className="context-menu-icon">⬡</span> {t('context.createMirror')}
         </button>
         <button className="context-menu-item" onClick={e => {
           e.preventDefault(); e.stopPropagation()
           setShowMove(true)
         }}>
-          <span className="context-menu-icon">→</span> Mover a...
+          <span className="context-menu-icon">→</span> {t('context.moveTo')}
         </button>
       </div>
 
@@ -306,7 +308,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           className={`context-menu-item${showConvert ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowConvert(v => !v) }}
         >
-          <span className="context-menu-icon">⇄</span> Convertir en
+          <span className="context-menu-icon">⇄</span> {t('context.convertTo')}
           <span className="context-menu-shortcut">{showConvert ? '▾' : '›'}</span>
         </button>
         {showConvert && (
@@ -327,7 +329,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                 <span className="context-menu-icon" style={{ fontWeight: 700, fontSize: 11 }}>
                   {level.toUpperCase()}
                 </span>
-                {level === 'h1' ? 'Título 1' : level === 'h2' ? 'Título 2' : 'Título 3'}
+                {level === 'h1' ? t('format.heading1') : level === 'h2' ? t('format.heading2') : t('format.heading3')}
                 {currentBlock === level && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
               </button>
             ))}
@@ -359,7 +361,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(toggleShortcut)}>
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
-          {isFav ? 'Quitar de paneles' : 'Añadir a paneles'}
+          {isFav ? t('context.removeFavorite') : t('context.addFavorite')}
         </button>
       </div>
 
@@ -375,7 +377,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
             className="context-menu-icon"
             style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: currentColor || 'var(--text-tertiary)', border: '1.5px solid var(--border)', verticalAlign: 'middle' }}
           />
-          {tagSlug ? 'Color del tag' : 'Color del nodo'}
+          {tagSlug ? t('panel.color') : t('panel.color')}
           <span className="context-menu-shortcut">{showColorPicker ? '▾' : '›'}</span>
         </button>
         {showColorPicker && (
@@ -415,19 +417,19 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <div className="context-menu-separator" />
           <div className="context-menu-section">
             <button className="context-menu-item" onClick={run(openTaskProps)}>
-              <span className="context-menu-icon">⚙</span> Propiedades de tarea
+              <span className="context-menu-icon">⚙</span> {t('panel.taskProperties')}
             </button>
             {node.status !== 'done' ? (
               <button className="context-menu-item" onClick={run(() =>
                 store.updateNode(node.id, { status: 'done' })
               )}>
-                <span className="context-menu-icon">✓</span> Marcar como hecha
+                <span className="context-menu-icon">✓</span> {t('inbox.markDone')}
               </button>
             ) : (
               <button className="context-menu-item" onClick={run(() =>
                 store.updateNode(node.id, { status: 'pending' })
               )}>
-                <span className="context-menu-icon">↺</span> Marcar pendiente
+                <span className="context-menu-icon">↺</span> {t('search.chipPending')}
               </button>
             )}
           </div>
@@ -439,10 +441,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {/* Copiar */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(copyText)}>
-          <span className="context-menu-icon">⎘</span> Copiar texto
+          <span className="context-menu-icon">⎘</span> {t('common.copy')}
         </button>
         <button className="context-menu-item" onClick={run(copyInternalLink)}>
-          <span className="context-menu-icon">🔗</span> Copiar enlace interno
+          <span className="context-menu-icon">🔗</span> {t('context.copyLink')}
         </button>
         <button className="context-menu-item" onClick={run(handlePublicLink)} disabled={publishing}>
           <span className="context-menu-icon">👁</span>
@@ -477,7 +479,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           className={`context-menu-item${showTemplates ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowTemplates(v => !v) }}
         >
-          <span className="context-menu-icon">📋</span> Aplicar plantilla
+          <span className="context-menu-icon">📋</span> {t('templates.myTemplates')}
           <span className="context-menu-shortcut">{showTemplates ? '▾' : '›'}</span>
         </button>
         {showTemplates && (
@@ -487,9 +489,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                 Crea un nodo raíz llamado<br />
                 <strong>"Plantillas"</strong> con hijos dentro
               </div>
-            ) : templates.map(t => (
-              <button key={t.id} className="context-menu-item context-menu-item--sub" onClick={run(() => applyTemplate(t))}>
-                <span className="context-menu-icon">📄</span> {t.text || 'Sin título'}
+            ) : templates.map(tmpl => (
+              <button key={tmpl.id} className="context-menu-item context-menu-item--sub" onClick={run(() => applyTemplate(tmpl))}>
+                <span className="context-menu-icon">📄</span> {tmpl.text || t('common.noTitle')}
               </button>
             ))}
           </div>
@@ -700,12 +702,12 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">↩</span> Restaurar
             </button>
             <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
-              <span className="context-menu-icon">✕</span> Eliminar permanentemente
+              <span className="context-menu-icon">✕</span> {t('context.delete')}
             </button>
           </>
         ) : (
           <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
-            <span className="context-menu-icon">🗑</span> Mover a Papelera
+            <span className="context-menu-icon">🗑</span> {t('sidebar.trash')}
           </button>
         )}
       </div>

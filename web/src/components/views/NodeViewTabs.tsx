@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 
 interface Props {
@@ -22,14 +23,15 @@ interface NewViewModalProps {
 }
 
 function NewViewModal({ onClose, onCreate }: NewViewModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [kind, setKind] = useState<ViewKind>('table')
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal modal--small" onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">Nueva vista</h3>
+        <h3 className="modal-title">{t('modal.newView')}</h3>
         <div className="modal-field">
-          <label>Nombre</label>
+          <label>{t('modal.viewName')}</label>
           <input
             autoFocus
             value={name}
@@ -39,7 +41,7 @@ function NewViewModal({ onClose, onCreate }: NewViewModalProps) {
           />
         </div>
         <div className="modal-field">
-          <label>Tipo</label>
+          <label>{t('modal.viewType')}</label>
           <div className="node-view-kind-grid">
             {(['list', 'table', 'kanban', 'calendar'] as ViewKind[]).map(k => (
               <button
@@ -54,8 +56,8 @@ function NewViewModal({ onClose, onCreate }: NewViewModalProps) {
           </div>
         </div>
         <div className="modal-actions">
-          <button onClick={onClose} className="btn-secondary">Cancelar</button>
-          <button onClick={() => onCreate((name.trim() || KIND_LABELS[kind]), kind)} className="btn-primary">Crear</button>
+          <button onClick={onClose} className="btn-secondary">{t('common.cancel')}</button>
+          <button onClick={() => onCreate((name.trim() || KIND_LABELS[kind]), kind)} className="btn-primary">{t('calendar.createBtn')}</button>
         </div>
       </div>
     </div>
@@ -64,6 +66,7 @@ function NewViewModal({ onClose, onCreate }: NewViewModalProps) {
 
 export default function NodeViewTabs({ parentId, activeViewId, onSelect }: Props) {
   useStore()  // re-render on store changes
+  const { t } = useTranslation()
   const views = store.getViews(parentId)
   const [newOpen, setNewOpen] = useState(false)
   const [tabMenu, setTabMenu] = useState<string | null>(null)
@@ -129,10 +132,10 @@ export default function NodeViewTabs({ parentId, activeViewId, onSelect }: Props
             </button>
             {tabMenu === v.id && (
               <div className="node-view-tab-menu" onClick={e => e.stopPropagation()}>
-                <button onClick={() => handleRename(v.id)}>Renombrar</button>
-                <button onClick={() => handleDuplicate(v.id)}>Duplicar</button>
-                <button onClick={() => handleDelete(v.id)} className="danger">Eliminar</button>
-                <button onClick={() => setTabMenu(null)}>Cerrar</button>
+                <button onClick={() => handleRename(v.id)}>{t('common.edit')}</button>
+                <button onClick={() => handleDuplicate(v.id)}>{t('context.duplicate')}</button>
+                <button onClick={() => handleDelete(v.id)} className="danger">{t('common.delete')}</button>
+                <button onClick={() => setTabMenu(null)}>{t('common.close')}</button>
               </div>
             )}
           </div>

@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 
 const STORAGE_KEY = 'from_onboarding_done'
@@ -283,6 +284,7 @@ export default function OnboardingWidget() {
 // ── Shared sub-components ──────────────────────────────────────────────────
 
 function CloseBtn({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <button
       onClick={onClose}
@@ -291,7 +293,7 @@ function CloseBtn({ onClose }: { onClose: () => void }) {
         color: '#999', fontSize: 18, lineHeight: 1,
         padding: '0 0 0 8px', flexShrink: 0,
       }}
-      title="Cerrar"
+      title={t('onboarding.closeLabel')}
     >×</button>
   )
 }
@@ -329,6 +331,7 @@ function PrimaryBtn({ label, onClick }: { label: string; onClick: () => void }) 
 }
 
 function TopBar() {
+  const { t } = useTranslation()
   return (
     <div style={{
       background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
@@ -336,7 +339,7 @@ function TopBar() {
       fontSize: 12, fontWeight: 700, color: '#fff',
       letterSpacing: 0.3,
     }}>
-      ✦ Te prometo que será UN MINUTO.
+      {t('onboarding.promise')}
     </div>
   )
 }

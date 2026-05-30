@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -33,6 +34,7 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
   onCreate: (label: string) => void
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -43,7 +45,7 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
       <input
         ref={inputRef}
         className="node-table-cell-editor"
-        placeholder="Buscar o crear opción..."
+        placeholder={t('table.searchOrCreate')}
         value={query}
         onChange={e => setQuery(e.target.value)}
         onKeyDown={e => {
@@ -56,7 +58,7 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
       />
       <div className="select-editor-list">
         {currentValueId && (
-          <button className="select-editor-item select-editor-item--clear" onClick={() => onPick('')}>— Sin valor</button>
+          <button className="select-editor-item select-editor-item--clear" onClick={() => onPick('')}>{t('table.noValue')}</button>
         )}
         {filtered.map(o => (
           <button key={o.id} className="select-editor-item" onClick={() => onPick(o.id)}>
@@ -497,6 +499,7 @@ function NewColumnModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
 export default function NodeTableView({ parentId }: Props) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [sortBy, setSortBy] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>(null)
   const [editingCell, setEditingCell] = useState<{ nodeId: string; colId: string } | null>(null)
@@ -602,14 +605,14 @@ export default function NodeTableView({ parentId }: Props) {
       <div className="node-table-toolbar">
         <input
           className="node-table-filter"
-          placeholder="Filtrar por título..."
+          placeholder={`${t('common.search')}…`}
           value={filterText}
           onChange={e => setFilterText(e.target.value)}
         />
         <div className="node-table-toolbar-spacer" />
-        <label className="node-table-toolbar-label">Agrupar:</label>
+        <label className="node-table-toolbar-label">{t('sidebar.groupLabel')}:</label>
         <select className="node-table-toolbar-select" value={groupBy || ''} onChange={e => setGroupBy(e.target.value || null)}>
-          <option value="">Sin agrupar</option>
+          <option value="">{t('sidebar.groupNone')}</option>
           {groupableCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         {sortBy && (
@@ -622,19 +625,19 @@ export default function NodeTableView({ parentId }: Props) {
         <thead>
           <tr>
             <th className="node-table-th node-table-th--title" onClick={() => toggleSort('__title')}>
-              Título{sortIcon('__title')}
+              {t('kanban.title')}{sortIcon('__title')}
             </th>
             {hasStatus && (
-              <th className="node-table-th" onClick={() => toggleSort('__status')}>Estado{sortIcon('__status')}</th>
+              <th className="node-table-th" onClick={() => toggleSort('__status')}>{t('kanban.byStatus')}{sortIcon('__status')}</th>
             )}
             {hasDue && (
-              <th className="node-table-th" onClick={() => toggleSort('__due')}>Fecha{sortIcon('__due')}</th>
+              <th className="node-table-th" onClick={() => toggleSort('__due')}>{t('modal.dueDate')}{sortIcon('__due')}</th>
             )}
             {hasPriority && (
-              <th className="node-table-th" onClick={() => toggleSort('__priority')}>Prioridad{sortIcon('__priority')}</th>
+              <th className="node-table-th" onClick={() => toggleSort('__priority')}>{t('kanban.byPriority')}{sortIcon('__priority')}</th>
             )}
             {hasTags && (
-              <th className="node-table-th">Tags</th>
+              <th className="node-table-th">{t('sidebar.groupTag')}s</th>
             )}
             {customCols.map(col => (
               <th
@@ -684,7 +687,7 @@ export default function NodeTableView({ parentId }: Props) {
                   style={{ cursor: 'pointer' }}
                   title="Abrir nota"
                 >
-                  <span className="node-table-title">{node.text || 'Sin título'}</span>
+                  <span className="node-table-title">{node.text || t('common.noTitle')}</span>
                   {grandchildren > 0 && <span className="node-table-children-badge">{grandchildren}</span>}
                 </td>
                 {hasStatus && (

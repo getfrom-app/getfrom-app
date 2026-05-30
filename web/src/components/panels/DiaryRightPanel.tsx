@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore, nodeMeta, type NodeStore } from '../../store/nodeStore'
 import PendingTaskRow from '../shared/PendingTaskRow'
 import CenteredModal from '../shared/CenteredModal'
@@ -71,6 +72,7 @@ export interface TaskPropsPopoverProps {
 export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
   const popNavigate = useNavigate()
+  const { t } = useTranslation()
   const [movePickerOpen, setMovePickerOpen] = useState(false)
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
@@ -130,9 +132,9 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             popNavigate(`/node/${node.id}`)
             onClose()
           }}
-          title="Abrir nota completa"
+          title={t('panel.openFullNote')}
         >
-          ↗ Abrir
+          {t('panel.openFull')}
         </button>
         {node.status !== null && (
           <button
@@ -143,7 +145,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
               onClose()
               if (result) popNavigate(`/node/${result.containerId}`)
             }}
-            title="Convertir en nota contenedora con esta tarea como primer paso"
+            title={t('panel.convertToContainer')}
           >
             ↑ Ampliar
           </button>
@@ -192,14 +194,14 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             const v = e.target.value
             if (v !== node.text) store.updateNode(node.id, { text: v })
           }}
-          placeholder="Sin título"
+          placeholder={t('common.noTitle')}
         />
       ) : (
-        <div className="tpp-title">{node.text || 'Sin título'}</div>
+        <div className="tpp-title">{node.text || t('common.noTitle')}</div>
       )}
 
       {/* Fechas rápidas */}
-      <div className="tpp-section-label">Fecha</div>
+      <div className="tpp-section-label">{t('modal.dueDate')}</div>
       <input
         type="text"
         className="tpp-natural-date-input"
@@ -245,7 +247,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       </div>
 
       {/* Prioridad */}
-      <div className="tpp-section-label">Prioridad</div>
+      <div className="tpp-section-label">{t('kanban.byPriority')}</div>
       <div className="nqp-chips-row">
         {priorityOpts.map(opt => (
           <button key={String(opt.v)}
@@ -280,7 +282,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       </div>
 
       {/* Estado */}
-      <div className="tpp-section-label">Estado</div>
+      <div className="tpp-section-label">{t('search.filterStatus')}</div>
       <div className="nqp-chips-row">
         {([
           { v: 'pending' as const, l: '○ Pendiente' },
@@ -296,7 +298,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       </div>
 
       {/* Color de acento de la nota — se usa de fondo en calendario y border en outliner */}
-      <div className="tpp-section-label">Color</div>
+      <div className="tpp-section-label">{t('panel.color')}</div>
       <div className="nqp-chips-row tpp-color-row">
         {(() => {
           const currentColor: string | null = (() => {
@@ -352,7 +354,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
               onClose()
               onDeleted?.()
             }}
-          >🗑 Eliminar</button>
+          >🗑 {t('common.delete')}</button>
         </>
       )}
 
@@ -548,6 +550,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const s = useStore()
   const us = useUserStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [panelTab, setPanelTab] = useState<DiaryPanelTab>('agenda')
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([])
   const [editingGCalEvent, setEditingGCalEvent] = useState<CalendarEvent | null>(null)
@@ -794,7 +797,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
                 onClick={() => navigate(`/node/${node.id}`)}
               >
                 <span className="diary-agenda-container-icon">📁</span>
-                <span className="diary-agenda-text">{node.text ? renderInline(node.text) : 'Sin título'}</span>
+                <span className="diary-agenda-text">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
                 <span className="diary-agenda-container-count">{childTasks.length}</span>
               </div>
               {childTasks.map(task => (
@@ -893,7 +896,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
         {/* Recursos pendientes / en progreso */}
         {pendingResources.length > 0 && (
           <div className="diary-agenda-resources-section">
-            <div className="diary-agenda-section-label">Recursos</div>
+            <div className="diary-agenda-section-label">{t('panel.resources')}</div>
             {pendingResources.map(node => {
               let ed: Record<string, unknown> = {}
               try { ed = JSON.parse(node.extraData || '{}') } catch {}
@@ -911,7 +914,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
                 >
                   <span className="diary-agenda-resource-icon">{typeIcon}</span>
                   <span className="diary-agenda-resource-title">
-                    {meta?.title || node.text || 'Sin título'}
+                    {meta?.title || node.text || t('common.noTitle')}
                   </span>
                   <span
                     className="diary-agenda-resource-status"

@@ -19,6 +19,7 @@
 
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCalendar'
@@ -121,6 +122,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
   const s         = useStore()
   const us        = useUserStore()
   const navigate  = useNavigate()
+  const { t }     = useTranslation()
 
   const baseDate  = diaryNode.diaryDate ? new Date(diaryNode.diaryDate) : new Date()
   baseDate.setHours(0, 0, 0, 0)
@@ -411,7 +413,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
         title={`${block.text}\n${formatHH(block.start)} – ${formatHH(block.end)}`}
       >
         <div className="dtl-block-time">{formatHH(block.start)}</div>
-        <div className="dtl-block-text">{block.text || 'Sin título'}</div>
+        <div className="dtl-block-text">{block.text || t('common.noTitle')}</div>
         {canDrag && (
           <div className="dtl-block-resize" onMouseDown={e => handleResizeStart(e, block.id)} />
         )}
@@ -462,7 +464,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
 
       {/* Sidebar de tareas */}
       <div className="dtl-sidebar">
-        <div className="dtl-sidebar-title">Tareas</div>
+        <div className="dtl-sidebar-title">{t('panel.tasks')}</div>
 
         {tasks.overdue.length > 0 && (
           <div className="dtl-task-group">
@@ -479,7 +481,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
 
         {tasks.today.length > 0 && (
           <div className="dtl-task-group">
-            <div className="dtl-task-group-label">Hoy</div>
+            <div className="dtl-task-group-label">{t('common.today')}</div>
             {tasks.today.map(t => (
               <div key={t.id} className="dtl-task-item"
                 draggable onDragStart={e => handleTaskDragStart(e, t)} onDragEnd={handleTaskDragEnd}>
@@ -492,7 +494,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
 
         {tasks.upcoming.length > 0 && (
           <div className="dtl-task-group">
-            <div className="dtl-task-group-label">Próximas</div>
+            <div className="dtl-task-group-label">{t('panel.upcoming')}</div>
             {tasks.upcoming.slice(0, 10).map(t => (
               <div key={t.id} className="dtl-task-item"
                 draggable onDragStart={e => handleTaskDragStart(e, t)} onDragEnd={handleTaskDragEnd}>
@@ -505,7 +507,7 @@ export default function DiaryTimeline({ diaryNode }: Props) {
 
         {tasks.noDate.length > 0 && (
           <div className="dtl-task-group">
-            <div className="dtl-task-group-label">Sin fecha</div>
+            <div className="dtl-task-group-label">{t('panel.noDate')}</div>
             {tasks.noDate.slice(0, 10).map(t => (
               <div key={t.id} className="dtl-task-item"
                 draggable onDragStart={e => handleTaskDragStart(e, t)} onDragEnd={handleTaskDragEnd}>

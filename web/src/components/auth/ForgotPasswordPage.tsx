@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { forgotPassword } from '../../api/client'
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -35,23 +37,23 @@ export default function ForgotPasswordPage() {
           <span>From</span>
         </div>
 
-        <h1>Recuperar contraseña</h1>
-        <p className="auth-subtitle">Te enviaremos un enlace para restablecer tu contraseña.</p>
+        <h1>{t('auth.forgotPasswordTitle')}</h1>
+        <p className="auth-subtitle">{t('auth.forgotPasswordSubtitle')}</p>
 
         {success ? (
           <div className="auth-success">
-            Revisa tu email para el enlace de recuperación.
+            {t('auth.forgotPasswordSuccess')}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t('auth.emailLabel')}</label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                placeholder={t('auth.emailPlaceholder')}
                 autoComplete="email"
                 required
               />
@@ -60,7 +62,7 @@ export default function ForgotPasswordPage() {
             {error && <div className="auth-error">{error}</div>}
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar enlace'}
+              {loading ? t('auth.sendingButton') : t('auth.sendLinkButton')}
             </button>
           </form>
         )}
@@ -71,7 +73,7 @@ export default function ForgotPasswordPage() {
             className="link-btn"
             onClick={() => navigate('/login')}
           >
-            Volver al inicio de sesión
+            {t('auth.backToLogin')}
           </button>
         </p>
       </div>

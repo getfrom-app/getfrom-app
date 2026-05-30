@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { apiRequest, getToken } from '../../api/client'
 import { store, useStore } from '../../store/nodeStore'
 import { getAgentesNode, getAgentData } from '../../utils/agentesHelper'
@@ -142,6 +143,7 @@ function renderAgentOutput(text: string): string {
 
 export default function AgentsView() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const s = useStore()
   const [runs, setRuns] = useState<AgentRun[]>([])
   const [loading, setLoading] = useState(true)
@@ -217,7 +219,7 @@ export default function AgentsView() {
     <div className="view agents-view">
       <div className="view-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 className="view-title">Agentes</h1>
+          <h1 className="view-title">{t('agents.title')}</h1>
           {!isGuest && !loading && (
             <span style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 100, padding: '2px 10px', fontSize: 12, color: 'var(--text-secondary)' }}>
               {runs.length}
@@ -238,7 +240,7 @@ export default function AgentsView() {
       <div className="view-body">
         {isGuest ? (
           <div className="view-empty" style={{ paddingTop: 60 }}>
-            Inicia sesión para usar agentes
+            {t('ai.loginForAgents')}
           </div>
         ) : (
           <>
@@ -250,9 +252,9 @@ export default function AgentsView() {
                   <button
                     style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
                     onClick={() => { const n = getAgentesNode(); if (n) navigate(`/node/${n.id}`) }}
-                    title="Ver y editar agentes en el árbol"
+                    title={t('agents.viewInTree')}
                   >
-                    Ver en árbol →
+                    {t('agents.viewInTree')}
                   </button>
                 )}
               </div>
@@ -317,7 +319,7 @@ export default function AgentsView() {
                       disabled={running || !systemPrompt.trim() || !userMessage.trim()}
                       style={{ fontSize: 13 }}
                     >
-                      {running ? 'Ejecutando...' : 'Ejecutar'}
+                      {running ? t('ai.running') : t('agents.runButton')}
                     </button>
                     {running && (
                       <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Usando {MODEL_LABEL}...</span>
@@ -369,7 +371,7 @@ export default function AgentsView() {
 
             {/* Runs table */}
             {loading ? (
-              <div className="view-empty">Cargando...</div>
+              <div className="view-empty">{t('common.loading')}</div>
             ) : runs.length === 0 ? (
               <div className="view-empty">No hay ejecuciones todavía. Usa una herramienta rápida o crea tu primer agente.</div>
             ) : (

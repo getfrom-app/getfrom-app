@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
@@ -54,6 +55,7 @@ interface Props {
 }
 
 export default function AIChatModal({ onClose, currentNodeId }: Props) {
+  const { t } = useTranslation()
   const chat = useAIChat()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
@@ -191,17 +193,17 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             fontSize: 14, fontWeight: 600,
           }}>✨</span>
           <span style={{ fontSize: 14, fontWeight: 600 }}>
-            {chat.messages.length === 0 ? 'From AI' : 'Conversación con From AI'}
+            {chat.messages.length === 0 ? 'From AI' : t('ai.chatViewTitle')}
           </span>
           <div style={{ flex: 1 }} />
           <button
             onClick={() => chat.startNewSession()}
-            title="Nueva conversación"
+            title={t('ai.newConversation')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.7 }}
           >＋</button>
           <button
             onClick={onClose}
-            title="Cerrar (Esc)"
+            title={t('ai.closeButton')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}
           >✕</button>
         </div>
@@ -269,7 +271,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={onTextareaKey}
-            placeholder={isRecording ? 'Grabando…' : 'Escribe aquí… (⇧↵ para nueva línea, ↵ para enviar)'}
+            placeholder={isRecording ? t('ai.recordingLabel') : t('ai.chatPlaceholderCompact')}
             rows={4}
             style={{
               flex: 1,
@@ -329,6 +331,7 @@ function PendingConfirmationCard({
   onCancel: () => void
   disabled: boolean
 }) {
+  const { t } = useTranslation()
   const iconFor = (type: string) => {
     switch (type) {
       case 'create_note':     return '📝'
@@ -341,11 +344,11 @@ function PendingConfirmationCard({
   }
   const labelFor = (type: string) => {
     switch (type) {
-      case 'create_note':     return 'Nota'
-      case 'create_task':     return 'Tarea'
-      case 'create_event':    return 'Evento'
-      case 'create_resource': return 'Recurso'
-      case 'update_node':     return 'Modificar'
+      case 'create_note':     return t('ai.actionNoteCreated')
+      case 'create_task':     return t('ai.actionTaskCreated')
+      case 'create_event':    return t('ai.actionEventCreated')
+      case 'create_resource': return t('ai.actionResourceCreated')
+      case 'update_node':     return t('ai.actionNodeModified')
       default: return type
     }
   }
@@ -365,7 +368,7 @@ function PendingConfirmationCard({
         fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
       }}>
         <span style={{ color: '#f97316' }}>✋</span>
-        <span>Confirma antes de crear</span>
+        <span>{t('ai.confirmBeforeCreate')}</span>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>
           {actions.length} {actions.length === 1 ? 'elemento' : 'elementos'}
@@ -411,7 +414,7 @@ function PendingConfirmationCard({
             borderRadius: 6, padding: '4px 10px', fontSize: 12,
             color: 'var(--text-secondary)', cursor: disabled ? 'not-allowed' : 'pointer',
           }}
-        >Cancelar</button>
+        >{t('common.cancel')}</button>
         <div style={{ flex: 1 }} />
         <button
           onClick={onConfirm}
@@ -424,7 +427,7 @@ function PendingConfirmationCard({
             display: 'flex', alignItems: 'center', gap: 4,
           }}
         >
-          <span>✓</span><span>Crear todo</span>
+          <span>✓</span><span>{t('ai.confirmCreateAll')}</span>
         </button>
       </div>
     </div>
@@ -448,6 +451,7 @@ function EmptyState() {
 }
 
 function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id: string) => void }) {
+  const { t } = useTranslation()
   const isUser = msg.role === 'user'
   // Limpia bloques from-action y chips del texto visible
   const cleaned = msg.content
@@ -483,7 +487,7 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                 }}>
                   <span>{a.ok ? '✓' : '⚠'}</span>
-                  <span>{actionLabel(a.action)}</span>
+                  <span>{ACTION_LABEL_MAP[a.action] ? t(ACTION_LABEL_MAP[a.action]) : a.action}</span>
                   {a.createdIds.length > 0 && (
                     <button
                       onClick={() => onOpenNode(a.createdIds[0])}
@@ -491,7 +495,7 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
                         background: 'none', border: 'none', color: 'var(--accent)',
                         fontSize: 10, fontWeight: 500, cursor: 'pointer', padding: 0,
                       }}
-                    >Abrir</button>
+                    >{t('ai.openNodeButton')}</button>
                   )}
                 </span>
               ))}
@@ -517,7 +521,7 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
                     cursor: 'pointer',
                     padding: '2px 0',
                   }}
-                >↶ Deshacer</button>
+                >{t('ai.undoButton')}</button>
               )
             })()}
           </>
@@ -527,20 +531,18 @@ function MessageBubble({ msg, onOpenNode }: { msg: ChatMessage; onOpenNode: (id:
   )
 }
 
-function actionLabel(id: string): string {
-  switch (id) {
-    case 'create_note': return 'Nota creada'
-    case 'create_task': return 'Tarea creada'
-    case 'create_event': return 'Evento creado'
-    case 'update_node': return 'Nodo modificado'
-    case 'read_node': return 'Nodo leído'
-    case 'find_nodes': return 'Búsqueda'
-    case 'add_column': return 'Columna añadida'
-    case 'fill_column': return 'Columna rellena'
-    case 'add_row': return 'Fila añadida'
-    case 'change_view': return 'Vista cambiada'
-    case 'create_resource': return 'Recurso creado'
-    case 'run_prompt': return 'Prompt ejecutado'
-    default: return id
-  }
+// actionLabel is a pure map used in MessageBubble; keys come from ai.* in es.json
+const ACTION_LABEL_MAP: Record<string, string> = {
+  create_note: 'ai.actionNoteCreated',
+  create_task: 'ai.actionTaskCreated',
+  create_event: 'ai.actionEventCreated',
+  update_node: 'ai.actionNodeModified',
+  read_node: 'ai.actionNodeRead',
+  find_nodes: 'ai.actionSearch',
+  add_column: 'ai.actionColumnAdded',
+  fill_column: 'ai.actionColumnFilled',
+  add_row: 'ai.actionRowAdded',
+  change_view: 'ai.actionViewChanged',
+  create_resource: 'ai.actionResourceCreated',
+  run_prompt: 'ai.actionPromptRun',
 }

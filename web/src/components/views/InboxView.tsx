@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
 export default function InboxView() {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [processedIds, setProcessedIds] = useState<Set<string>>(new Set())
 
   // "Inbox" = nodos sin padres, sin estado específico, sin ser diario, recientes (últimos 30 días)
@@ -53,14 +55,14 @@ export default function InboxView() {
             <span className="inbox-count">{inboxItems.length}</span>
           )}
         </h1>
-        <p className="view-subtitle">Notas recientes sin organizar. Revísalas y muévelas a donde correspondan.</p>
+        <p className="view-subtitle">{t('inbox.recentHint')}</p>
       </div>
 
       <div className="view-body">
         {inboxItems.length === 0 ? (
           <div className="view-empty">
             <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-            <div>Tu inbox está vacío. Todas las notas recientes están organizadas.</div>
+            <div>{t('inbox.emptyHint')}</div>
           </div>
         ) : (
           <div className="inbox-list">
@@ -71,7 +73,7 @@ export default function InboxView() {
                     {item.status === 'pending' ? '○' : item.status === 'done' ? '✓' : item.isEvent ? '📅' : (item.types || []).includes('bucle') ? '↺' : '📄'}
                   </span>
                   <div className="inbox-item-content">
-                    <span className="inbox-item-title">{item.text || 'Sin título'}</span>
+                    <span className="inbox-item-title">{item.text || t('common.noTitle')}</span>
                     {item.body && <span className="inbox-item-preview">{item.body.slice(0, 60)}...</span>}
                     <span className="inbox-item-date">{new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                   </div>
@@ -80,18 +82,18 @@ export default function InboxView() {
                   <button
                     className="inbox-action-btn inbox-action-btn--keep"
                     onClick={() => store.updateNode(item.id, { isFavorite: true })}
-                    title="Marcar como favorito"
+                    title={t('inbox.markFavorite')}
                   >★</button>
                   <button
                     className="inbox-action-btn"
                     onClick={() => moveToToday(item)}
-                    title="Mover al diario de hoy"
+                    title={t('inbox.moveToDiary')}
                     style={{ fontSize: 14 }}
                   >📓</button>
                   <button
                     className="inbox-action-btn inbox-action-btn--done"
                     onClick={() => markProcessed(item.id)}
-                    title="Marcar como procesado"
+                    title={t('inbox.markDone')}
                   >✓</button>
                   <button
                     className="inbox-action-btn inbox-action-btn--delete"
@@ -99,7 +101,7 @@ export default function InboxView() {
                       store.deleteNode(item.id)
                       markProcessed(item.id)
                     }}
-                    title="Eliminar"
+                    title={t('common.delete')}
                   >✕</button>
                 </div>
               </div>

@@ -5,6 +5,7 @@
 // con transcripción, resumen y tareas (si las hay), todos colapsados.
 
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useRecordingStore } from '../../store/recordingStore'
 import { processRecording, type ProcessingResult } from '../../utils/recordingProcessor'
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +22,7 @@ type ProcessState  = 'idle' | 'processing' | 'done' | 'error'
 export default function WebRecordingBar() {
   const r = useRecordingStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [micPerm, setMicPerm] = useState<MicPermission>('unknown')
   const [processState, setProcessState] = useState<ProcessState>('idle')
   const [result, setResult] = useState<ProcessingResult | null>(null)
@@ -89,9 +91,9 @@ export default function WebRecordingBar() {
       <div className="rec-bar rec-bar--warning">
         <span style={{ fontSize: 14 }}>🎙</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--warning)' }}>Micrófono bloqueado</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--warning)' }}>{t('recording.micBlocked')}</div>
           <div style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.3, marginTop: 1 }}>
-            Ajustes del sistema → Privacidad → Micrófono → From
+            {t('recording.micInstructions')}
           </div>
         </div>
       </div>
@@ -104,7 +106,7 @@ export default function WebRecordingBar() {
       <div className="rec-bar rec-bar--warning">
         <span style={{ fontSize: 14 }}>⚠️</span>
         <div style={{ flex: 1, fontSize: 11, color: 'var(--warning)', lineHeight: 1.3 }}>{r.error}</div>
-        <button className="rec-bar-icon-btn" onClick={() => r.resetRecording()} title="Reintentar" style={{ fontSize: 14 }}>↺</button>
+        <button className="rec-bar-icon-btn" onClick={() => r.resetRecording()} title={t('recording.retry')} style={{ fontSize: 14 }}>↺</button>
       </div>
     )
   }

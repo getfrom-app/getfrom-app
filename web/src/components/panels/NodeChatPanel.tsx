@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { aiInlineStream } from '../../api/client'
 import type { Node } from '../../types'
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function NodeChatPanel({ node, onClose }: Props) {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
@@ -142,15 +144,15 @@ export default function NodeChatPanel({ node, onClose }: Props) {
   return (
     <div className="node-chat-panel">
       <div className="node-chat-header">
-        <span className="node-chat-title">✦ Chat IA</span>
+        <span className="node-chat-title">{t('panel.chatTitle')}</span>
         <div className="node-chat-header-actions">
           {hasAssistantMessages && (
             <>
-              <button className="node-chat-action-btn" onClick={copyLastResponse} title="Copiar última respuesta">📋</button>
-              <button className="node-chat-action-btn" onClick={insertIntoBody} title="Insertar en nota">↓ Insertar</button>
+              <button className="node-chat-action-btn" onClick={copyLastResponse} title={t('ai.copyLastResponse')}>📋</button>
+              <button className="node-chat-action-btn" onClick={insertIntoBody} title={t('ai.insertInNoteLabel')}>{t('ai.insertInNote')}</button>
             </>
           )}
-          <button className="node-chat-close" onClick={onClose} title="Cerrar (Esc)">×</button>
+          <button className="node-chat-close" onClick={onClose} title={t('ai.closeButton')}>×</button>
         </div>
       </div>
 
@@ -199,7 +201,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
           onClick={handleSend}
           disabled={!input.trim() || streaming}
         >
-          {streaming ? '◼ Stop' : '↑ Enviar'}
+          {streaming ? '◼ Stop' : `↑ ${t('ai.sendButton')}`}
         </button>
       </div>
     </div>

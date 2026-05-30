@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
@@ -11,6 +12,7 @@ interface TaskPropsPopoverProps {
 }
 
 export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskPropsPopoverProps) {
+  const { t } = useTranslation()
   const popoverRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
@@ -67,9 +69,9 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      <div className="tpp-title">{node.text || 'Sin título'}</div>
+      <div className="tpp-title">{node.text || t('common.noTitle')}</div>
 
-      <div className="tpp-section-label">Fecha</div>
+      <div className="tpp-section-label">{t('modal.dueDate')}</div>
       <div className="nqp-quick-row">
         {[
           { label: 'Hoy', days: 0 },
@@ -99,7 +101,7 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
         )}
       </div>
 
-      <div className="tpp-section-label">Prioridad</div>
+      <div className="tpp-section-label">{t('kanban.byPriority')}</div>
       <div className="nqp-chips-row">
         {priorityOpts.map(opt => (
           <button key={String(opt.v)}
@@ -132,7 +134,7 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
         ))}
       </div>
 
-      <div className="tpp-section-label">Estado</div>
+      <div className="tpp-section-label">{t('search.filterStatus')}</div>
       <div className="nqp-chips-row">
         {([
           { v: 'pending' as const, l: '○ Pendiente' },

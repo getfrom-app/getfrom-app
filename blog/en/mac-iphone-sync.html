@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One app for Mac, iPhone, and web: how From keeps everything in sync</title>
+  <meta name="description" content="From is available on Mac, iPhone, and web browser. Sync is real-time and automatic. Start on Mac, continue on iPhone, no interruptions.">
+  <meta name="keywords" content="mac iphone productivity app, sync notes across devices, cross-platform notes app, From app sync, mac iphone continuity">
+  <meta property="og:title" content="One app for Mac, iPhone, and web: how From keeps everything in sync">
+  <meta property="og:description" content="Start a note on Mac, review it on iPhone, continue in the browser. From's sync is instant and requires no setup.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/mac-iphone-sync/02-app-completa.png">
+  <meta property="og:url" content="https://getfrom.app/blog/en/mac-iphone-sync">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/en/mac-iphone-sync">
+  <link rel="alternate" hreflang="es" href="https://getfrom.app/blog/mac-iphone-sincronizacion.html" />
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 32px 0; }
+    .platform-card { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 12px; padding: 20px; text-align: center; }
+    .platform-card .icon { font-size: 32px; margin-bottom: 12px; }
+    .platform-card h4 { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: #111; }
+    .platform-card p { font-size: 13px; color: #666; margin: 0; line-height: 1.5; }
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+      .platform-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "One app for Mac, iPhone, and web: how From keeps everything in sync",
+    "description": "Start a note on Mac, review it on iPhone, continue in the browser. From's sync is instant and requires no setup.",
+    "image": "https://getfrom.app/img/blog/mac-iphone-sync/02-app-completa.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/en/mac-iphone-sync" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Cross-platform</span>
+  <h1>One app for Mac, iPhone, and web: how From keeps everything in sync</h1>
+  <p class="subtitle">The biggest problem with digital productivity systems is fragmentation across devices. From solves it with real-time sync that requires zero configuration.</p>
+  <div class="blog-meta">
+    <span>📅 May 28, 2026</span>
+    <span>⏱ 5 min read</span>
+    <span>🏷 Mac · iPhone · Sync</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>In this article</h4>
+    <ol>
+      <li><a href="#fragmentation">The device fragmentation problem</a></li>
+      <li><a href="#platforms">From on each platform</a></li>
+      <li><a href="#sync">How sync works</a></li>
+      <li><a href="#workflows">Cross-device workflows</a></li>
+      <li><a href="#offline">Offline access</a></li>
+    </ol>
+  </div>
+
+  <h2 id="fragmentation">The device fragmentation problem</h2>
+  <p>You start a note on Mac during a meeting. You want to review it on your iPhone while commuting. You get home and want to expand it in the browser because your computer isn't nearby. In most systems, this flow requires exports, manual syncing, or losing information along the way.</p>
+  <p>Device fragmentation is one of the biggest enemies of personal productivity. When your information isn't where you need it, you create duplicates, take screenshots, or simply abandon the system.</p>
+  <p>From solves this with a cloud architecture where the node tree is identical across all devices, always updated in real time.</p>
+
+  <div class="platform-grid">
+    <div class="platform-card">
+      <div class="icon">💻</div>
+      <h4>Mac</h4>
+      <p>Native app with full keyboard shortcuts, complete planner, and Google Calendar sync</p>
+    </div>
+    <div class="platform-card">
+      <div class="icon">📱</div>
+      <h4>iPhone</h4>
+      <p>Native app with voice capture, home screen widget, and touch filters</p>
+    </div>
+    <div class="platform-card">
+      <div class="icon">🌐</div>
+      <h4>Web</h4>
+      <p>Access from any browser, no installation needed. Full functionality at getfrom.app</p>
+    </div>
+  </div>
+
+  <h2 id="platforms">From on each platform</h2>
+
+  <h3>Mac — The main hub</h3>
+  <p>The Mac app is where most users spend the most time. It has the most complete feature set: keyboard shortcuts for everything, a visual planner with weekly view, native Google Calendar integration, Magic AI with voice capture, and access to the full tree.</p>
+  <p>The Mac app is native — it's not a web wrapper. That means it's fast, responds instantly, and integrates with the OS: notifications, Spotlight search, automatic dark mode.</p>
+
+  <h3>iPhone — Capture on the go</h3>
+  <p>The iPhone app is optimized for two use cases: quick idea capture on the move, and reviewing tasks and agenda when your Mac isn't available.</p>
+  <p>The iPhone widget lets you see your tasks for the day from the home screen without opening the app. Voice capture works with the iPhone microphone — an idea comes to you while walking, you say it out loud, and it appears in your tree within seconds.</p>
+
+  <h3>Web — Universal access</h3>
+  <p>If you're on someone else's computer, on an iPad, or on any device with a browser, you can access From at <a href="https://getfrom.app/app">getfrom.app/app</a>. Full functionality: node tree, filters, planner, and Magic AI.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="From in web browser showing the node tree and weekly planner with Google Calendar" loading="lazy" width="1280" height="700">
+    <figcaption>From in the web browser: full functionality without installation. The same tree, the same filters, the same AI — on any device with a browser.</figcaption>
+  </figure>
+
+  <h2 id="sync">How sync works</h2>
+  <p>From's sync is real-time and automatic. There's no sync button, no manual exports. When you create a node on Mac, it appears on iPhone in under a second. When you mark a task as done on iPhone, it updates on Mac instantly.</p>
+  <p>The status bar at the bottom of From shows sync status: "Connected", "Syncing", or the time of the last automatic backup. You always know your information is safe.</p>
+
+  <div class="callout">
+    <p>🔒 <strong>Automatic backups:</strong> From automatically backs up your tree periodically. You can see when the last backup happened in the bottom status bar. If something goes wrong, your data is protected.</p>
+  </div>
+
+  <h2 id="workflows">Cross-device workflows</h2>
+  <p>These are the most common workflows From makes frictionless:</p>
+
+  <h3>Mac to iPhone</h3>
+  <p>You plan your week on Mac Monday morning. Tuesday you're commuting and review the day's tasks on iPhone from the widget. You mark a task done — it updates on Mac automatically.</p>
+
+  <h3>iPhone to Mac</h3>
+  <p>You have an idea while walking. You say it out loud into the iPhone app. You get to your Mac and the idea is already in your tree, ready to develop.</p>
+
+  <h3>Without Mac — web only</h3>
+  <p>You're at someone's place without your Mac. You open getfrom.app in the browser and have full access to all your information. You add a task, check notes from a meeting, review your weekly agenda.</p>
+
+  <h2 id="offline">Offline access</h2>
+  <p>The Mac and iPhone apps have local cache: if you lose your connection, you can still view and edit your content. Changes made offline sync automatically when the connection is restored. Nothing is lost.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/mac-iphone-sync/01-planificador.png" alt="From planner with weekly view showing integrated Google Calendar events" loading="lazy" width="670" height="700">
+    <figcaption>The planner synced with Google Calendar: your calendar events appear on all devices automatically.</figcaption>
+  </figure>
+
+  <div class="cta-box">
+    <h3>Start on web, continue on Mac and iPhone</h3>
+    <p>One free account. Access on all devices. No setup required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacy</a> · <a href="/terms.html" style="color:#aaa">Terms</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service — From</title>
+    <meta name="description" content="From terms of service. License, subscription, data and responsibilities.">
+    <link rel="alternate" hreflang="es" href="https://getfrom.app/terms.html" />
+    <link rel="alternate" hreflang="en" href="https://getfrom.app/en/terms.html" />
+    <link rel="icon" type="image/svg+xml" href="../icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../i18n.js"></script>
+</head>
+<body data-page="terms">
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/support.html">Support</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en" selected>English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Sign in</a>
+            <a href="/en/#download" class="btn-nav">Download free</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="page-hero">
+    <h1>Terms of Service</h1>
+    <p>Terms and conditions for using From and its services.</p>
+</div>
+
+<!-- Legal content -->
+<div class="legal-body">
+    <p class="legal-updated">Last updated: May 22, 2026</p>
+
+    <h2>1. Acceptance</h2>
+    <p>By using From (web app, Mac app, iPhone app or any associated service), you accept these Terms. If you disagree, stop using the service.</p>
+    <p>From is developed and operated by <strong>Alberto Lezaun Pérez</strong>, based in Spain. Contact: <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>.</p>
+
+    <h2>2. The service</h2>
+    <p>From is a productivity platform available on the web (getfrom.app/app), as a native macOS app and as an iPhone app. It lets you organize notes, tasks, projects and a personal journal, with real-time sync between devices through our servers.</p>
+    <p>Services include:</p>
+    <ul>
+        <li>Content sync between Web, Mac and iPhone.</li>
+        <li>Integrated AI (chat, editor, agents) — requires an active account.</li>
+        <li>Publishing notes with a public URL.</li>
+        <li>Integration with Google Calendar and Google Drive.</li>
+    </ul>
+
+    <h2>3. Your data</h2>
+    <p><strong>Your content is yours.</strong> From acquires no ownership rights over your notes, tasks or files. You can export all your data at any time from Settings → Export.</p>
+    <p>To provide sync between devices, your content is stored on our servers (see Privacy Policy for details). By using the service, you grant us a limited, non-exclusive, non-transferable license to store and transmit your content solely for the purpose of providing the service.</p>
+
+    <h2>4. User account</h2>
+    <p>You need an account to access sync and advanced features. You are responsible for:</p>
+    <ul>
+        <li>Keeping your credentials confidential.</li>
+        <li>All activity that occurs under your account.</li>
+        <li>Notifying us immediately of any unauthorized access.</li>
+    </ul>
+
+    <h2>5. Free plan</h2>
+    <p>The free plan includes sync of up to 1,000 nodes between Web, Mac and iPhone, and basic access to the app. No credit card required.</p>
+
+    <h2>6. Pro subscription</h2>
+    <ul>
+        <li><strong>Free trial:</strong> 7 days free, no credit card required at sign-up.</li>
+        <li><strong>Billing:</strong> Monthly (€7/mo) or annual (€49/yr), processed by LemonSqueezy.</li>
+        <li><strong>Cancellation:</strong> Any time. You retain access until the end of the paid period.</li>
+        <li><strong>Refund:</strong> 14 days from purchase, in accordance with EU right of withdrawal. Write to us at <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>.</li>
+        <li><strong>AI tokens:</strong> Renewed monthly. Unused tokens do not roll over. Extra top-up tokens do not expire while the subscription is active.</li>
+    </ul>
+
+    <h2>7. Lifetime license</h2>
+    <p>The lifetime license grants a non-exclusive, non-transferable, permanent right to use From. It includes all future updates. It does not include AI tokens (which require a subscription or top-up).</p>
+    <ul>
+        <li>Personal use on all your devices.</li>
+        <li>No redistribution, sublicensing or resale.</li>
+        <li>No decompiling or reverse engineering of the application.</li>
+    </ul>
+
+    <h2>8. Acceptable use</h2>
+    <p>You may not use From to:</p>
+    <ul>
+        <li>Generate, store or distribute unlawful, harmful or rights-infringing content.</li>
+        <li>Attempt unauthorized access to From's systems or other users' data.</li>
+        <li>Circumvent usage limits, tokens or authentication mechanisms.</li>
+        <li>Any use that degrades service availability for other users.</li>
+    </ul>
+    <p>Violations may result in suspension or termination of your account.</p>
+
+    <h2>9. Third-party integrations</h2>
+    <ul>
+        <li><strong>AI providers:</strong> Anthropic (Claude), OpenAI (GPT), Google (Gemini). Their terms apply to API usage.</li>
+        <li><strong>Google Calendar and Drive:</strong> Integration via OAuth 2.0 and Google APIs. Subject to Google's terms.</li>
+        <li><strong>LemonSqueezy:</strong> Payment processor and Merchant of Record. Their terms govern transactions.</li>
+        <li><strong>Railway and Cloudflare:</strong> Server and storage infrastructure. They have no access to your content without your authorization.</li>
+    </ul>
+    <p>We are not responsible for changes to the availability or terms of these services.</p>
+
+    <h2>10. Published notes</h2>
+    <p>By publishing a note you agree that its content will be publicly accessible. You are solely responsible for the published content. We reserve the right to remove content that violates these Terms or applicable law, with prior notice whenever possible.</p>
+
+    <h2>11. Intellectual property</h2>
+    <p>The application, its code, design and brand are the property of Alberto Lezaun Pérez, protected by intellectual property laws. The use license does not grant you any rights over the software.</p>
+
+    <h2>12. Limitation of liability</h2>
+    <p>From is provided "as is". To the extent permitted by law:</p>
+    <ul>
+        <li>We do not guarantee uninterrupted availability of the online service.</li>
+        <li>We are not liable for data loss caused by events outside our control.</li>
+        <li>We are not liable for AI-generated content or the actions of autonomous agents.</li>
+        <li>Our total liability shall not exceed the amount paid by the user in the 12 months preceding the incident.</li>
+    </ul>
+    <p>We recommend using the periodic export feature as an additional backup.</p>
+
+    <h2>13. Service availability</h2>
+    <p>We are committed to keeping the service running but do not guarantee 100% uptime. For planned outages, we will give reasonable advance notice.</p>
+
+    <h2>14. Modifications</h2>
+    <p>We may update these Terms. Significant changes will be notified by email at least 30 days in advance. Continued use constitutes acceptance.</p>
+
+    <h2>15. Termination</h2>
+    <ul>
+        <li>You may cancel your account at any time from Settings or by contacting us.</li>
+        <li>We may suspend access if these Terms are violated, with prior notice.</li>
+        <li>In the event of service closure, we will give at least 90 days' notice.</li>
+    </ul>
+
+    <h2>16. Governing law</h2>
+    <p>These Terms are governed by Spanish law and European Union regulations. Disputes shall be subject to the competent courts in Spain, without prejudice to consumers' rights in their country of residence.</p>
+
+    <h2>17. Contact</h2>
+    <p>For any questions: <a href="mailto:hola@getfrom.app">hola@getfrom.app</a> — <a href="https://getfrom.app">getfrom.app</a></p>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>Your second brain. Web, Mac and iPhone.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Product</h4>
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/#download">Download</a>
+        </div>
+        <div class="footer-col">
+            <h4>Support</h4>
+            <a href="/en/support.html">Help Center</a>
+            <a href="mailto:hola@getfrom.app">Contact</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="/en/privacy.html">Privacy</a>
+            <a href="/en/terms.html">Terms</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun Pérez — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+    </div>
+</footer>
+
+</body>
+</html>

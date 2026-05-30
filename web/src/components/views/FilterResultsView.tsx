@@ -4,6 +4,7 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -47,6 +48,7 @@ function getBreadcrumb(node: Node, max = 3): string {
 function TableView({ matchIds }: { matchIds: Set<string> }) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const nodes = useMemo(() =>
     Array.from(matchIds)
       .map(id => s.getNode(id))
@@ -59,10 +61,10 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
       <table className="filter-table">
         <thead>
           <tr>
-            <th>Estado</th>
-            <th>Tarea / Nota</th>
-            <th>Contexto</th>
-            <th>Fecha</th>
+            <th>{t('search.filterStatus')}</th>
+            <th>{t('panel.tasks')}</th>
+            <th>{t('search.filterContext')}</th>
+            <th>{t('search.filterDate')}</th>
           </tr>
         </thead>
         <tbody>
@@ -71,7 +73,7 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
               <td className="filter-table-status">
                 <span className={`filter-status-dot ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`} />
               </td>
-              <td className="filter-table-text">{n.text || 'Sin título'}</td>
+              <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
               <td className="filter-table-crumb">{getBreadcrumb(n)}</td>
               <td className="filter-table-date">
                 {n.due ? new Date(n.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—'}
@@ -95,6 +97,7 @@ const KANBAN_COLS = [
 function KanbanView({ matchIds }: { matchIds: Set<string> }) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const nodes = useMemo(() =>
     Array.from(matchIds)
       .map(id => s.getNode(id))
@@ -122,7 +125,7 @@ function KanbanView({ matchIds }: { matchIds: Set<string> }) {
             <div className="filter-kanban-cards">
               {colNodes.map(n => (
                 <div key={n.id} className="filter-kanban-card" onClick={() => navigate(`/node/${n.id}`)}>
-                  <div className="filter-kanban-card-text">{n.text || 'Sin título'}</div>
+                  <div className="filter-kanban-card-text">{n.text || t('common.noTitle')}</div>
                   <div className="filter-kanban-card-crumb">{getBreadcrumb(n, 2)}</div>
                 </div>
               ))}
@@ -141,6 +144,7 @@ const DAYS_ES = ['L','M','X','J','V','S','D']
 function CalendarView({ matchIds }: { matchIds: Set<string> }) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const today = new Date(); today.setHours(0,0,0,0)
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
 
@@ -191,7 +195,7 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
                 {nodes.slice(0, 3).map(n => (
                   <div key={n.id} className={`filter-cal-task ${n.status === 'done' ? 'done' : ''}`}
                     onClick={() => navigate(`/node/${n.id}`)} title={n.text || ''}>
-                    {n.text?.slice(0, 22) || 'Sin título'}
+                    {n.text?.slice(0, 22) || t('common.noTitle')}
                   </div>
                 ))}
                 {nodes.length > 3 && <div className="filter-cal-more">+{nodes.length - 3}</div>}
@@ -213,6 +217,7 @@ interface SwitcherProps {
 }
 
 export function FilterViewSwitcher({ view, onChange, count, onClear }: SwitcherProps) {
+  const { t } = useTranslation()
   const modes: { id: FilterView; title: string }[] = [
     { id: 'lista',     title: 'Árbol' },
     { id: 'tabla',     title: 'Tabla' },

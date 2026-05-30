@@ -14,6 +14,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -140,6 +141,7 @@ type ViewMode = 'day' | 'week'
 
 export default function TimelinePanel({ diaryNode, onClose }: Props) {
   const s        = useStore()
+  const { t }    = useTranslation()
   const [mode, setMode] = useState<ViewMode>('day')
 
   // Fecha base del diary
@@ -355,7 +357,7 @@ export default function TimelinePanel({ diaryNode, onClose }: Props) {
               title={`${b.node.text}\n${formatTime(due)} – ${formatTime(dueEnd)}`}
             >
               <div className="tl-block-time">{formatTime(due)}</div>
-              <div className="tl-block-text">{b.node.text || 'Sin título'}</div>
+              <div className="tl-block-text">{b.node.text || t('common.noTitle')}</div>
               {/* Resize handle */}
               <div
                 className="tl-block-resize"
@@ -397,11 +399,11 @@ export default function TimelinePanel({ diaryNode, onClose }: Props) {
           <button
             className={`tl-tab ${mode === 'day' ? 'tl-tab--active' : ''}`}
             onClick={() => setMode('day')}
-          >Día</button>
+          >{t('timeline.dayMode')}</button>
           <button
             className={`tl-tab ${mode === 'week' ? 'tl-tab--active' : ''}`}
             onClick={() => setMode('week')}
-          >Semana</button>
+          >{t('timeline.weekMode')}</button>
         </div>
         <button className="tl-close" onClick={onClose} title="Cerrar timeline">×</button>
       </div>
@@ -409,7 +411,7 @@ export default function TimelinePanel({ diaryNode, onClose }: Props) {
       {/* Tareas sin hora — arrastrar al grid */}
       {unscheduled.length > 0 && (
         <div className="tl-unscheduled">
-          <div className="tl-unscheduled-label">Sin hora — arrastra al timeline</div>
+          <div className="tl-unscheduled-label">{t('panel.noDate')} — arrastra al timeline</div>
           <div className="tl-unscheduled-list">
             {unscheduled.map(n => (
               <div
@@ -420,7 +422,7 @@ export default function TimelinePanel({ diaryNode, onClose }: Props) {
                 title={n.text}
               >
                 <span className="tl-unscheduled-dot" />
-                <span className="tl-unscheduled-text">{n.text || 'Sin título'}</span>
+                <span className="tl-unscheduled-text">{n.text || t('common.noTitle')}</span>
               </div>
             ))}
           </div>

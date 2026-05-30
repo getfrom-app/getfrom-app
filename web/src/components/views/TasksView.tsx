@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -96,6 +97,7 @@ interface TaskRowProps {
 
 function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
 
   const isDone = task.status === 'done'
@@ -165,7 +167,7 @@ function TaskRow({ task, depth = 0, selected, onToggleSelect }: TaskRowProps) {
 
       <div className="task-info">
         <span className="task-text">
-          {task.text || 'Sin título'}
+          {task.text || t('common.noTitle')}
           {task.recurrence && (
             <span className="task-recurrence-badge" title={`Repite: ${task.recurrence}`} style={{ fontSize: 11, marginLeft: 4 }}>🔁</span>
           )}
@@ -304,6 +306,7 @@ function TaskSection({ section, collapsed, onToggle, selectedTaskIds, onToggleSe
 
 export default function TasksView() {
   const s = useStore()
+  const { t } = useTranslation()
   const [sectionState, setSectionStateRaw] = useState<Record<string, boolean>>(loadSectionState)
   const savedFilters = useMemo(() => loadFilters(), [])
   const [filterPriority, setFilterPriority] = useState<'all'|'high'|'medium'|'low'>(savedFilters.filterPriority || 'all')
@@ -537,7 +540,7 @@ export default function TasksView() {
   return (
     <div className="view tasks-view" role="main" aria-label="Vista de tareas">
       <div className="view-header">
-        <h1 className="view-title">Tareas</h1>
+        <h1 className="view-title">{t('panel.tasks')}</h1>
         {totalPending > 0 && (
           <span className="tasks-count">{totalPending} pendiente{totalPending !== 1 ? 's' : ''}</span>
         )}
@@ -624,7 +627,7 @@ export default function TasksView() {
         <input
           type="text"
           className="tasks-search-input"
-          placeholder="Buscar en tareas..."
+          placeholder={t('search.searchPlaceholder')}
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
         />

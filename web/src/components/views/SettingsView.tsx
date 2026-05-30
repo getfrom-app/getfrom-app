@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   CuentaPane,
   AparienciaPane,
@@ -125,6 +126,7 @@ function readMagic(key: string, def: boolean): boolean {
 }
 
 function MagicPane() {
+  const { t } = useTranslation()
   const [values, setValues] = useState<Record<string, boolean>>(() => {
     const v: Record<string, boolean> = {}
     MAGIC_TOGGLES.forEach(t => { v[t.key] = readMagic(t.key, t.defaultOn) })
@@ -138,7 +140,7 @@ function MagicPane() {
 
   return (
     <div className="st-pane">
-      <div className="st-section-title">Sugerencias mientras escribes</div>
+      <div className="st-section-title">{t('settings.magic.suggestions')}</div>
       {MAGIC_TOGGLES.slice(0, 2).map(t => (
         <div key={t.key} className="st-row">
           <div className="st-row-info">
@@ -158,7 +160,7 @@ function MagicPane() {
         </div>
       ))}
 
-      <div className="st-section-title" style={{ marginTop: 20 }}>Acciones sobre el contenido</div>
+      <div className="st-section-title" style={{ marginTop: 20 }}>{t('settings.magic.actions')}</div>
       {MAGIC_TOGGLES.slice(2, 4).map(t => (
         <div key={t.key} className="st-row">
           <div className="st-row-info">
@@ -178,7 +180,7 @@ function MagicPane() {
         </div>
       ))}
 
-      <div className="st-section-title" style={{ marginTop: 20 }}>Detalles visuales</div>
+      <div className="st-section-title" style={{ marginTop: 20 }}>{t('settings.magic.visual')}</div>
       {MAGIC_TOGGLES.slice(4).map(t => (
         <div key={t.key} className="st-row">
           <div className="st-row-info">
@@ -204,6 +206,7 @@ function MagicPane() {
 }
 
 function MagicLearningsSection() {
+  const { t } = useTranslation()
   const ls = useLearningsStore()
   const items = ls.getAll()
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -225,7 +228,7 @@ function MagicLearningsSection() {
   return (
     <>
       <div className="st-section-title" style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>Lo que Magic ha aprendido de ti</span>
+        <span>{t('settings.magic.learned')}</span>
         {items.length > 0 && (
           <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', borderRadius: 10, padding: '1px 6px' }}>
             {items.length}

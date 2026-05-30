@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
@@ -13,13 +14,14 @@ import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda } from '../../uti
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const s = useStore()
   const diary = s.todayDiary()
   useEffect(() => {
     if (diary) navigate(`/node/${diary.id}`, { replace: true })
   }, [diary?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  return <div className="view-loading">Cargando diario...</div>
+  return <div className="view-loading">{t('app.loadingDiary')}</div>
 }
 // Eliminadas en v9.1: TasksView, ChatView, KanbanView, TagView, FilesView, InboxView, TrashView
 // (reemplazadas por nodos del árbol o eliminadas sin sustituto)
@@ -55,6 +57,7 @@ import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const s = useStore()
@@ -541,7 +544,7 @@ export default function MainLayout() {
     return (
       <div className="error-screen">
         <p>Error al conectar: {loadError}</p>
-        <button onClick={() => window.location.reload()}>Reintentar</button>
+        <button onClick={() => window.location.reload()}>{t('app.retrying')}</button>
       </div>
     )
   }
@@ -642,7 +645,7 @@ export default function MainLayout() {
             <span>From</span>
           </div>
         </div>
-        <Suspense fallback={<div className="view-loading">Cargando...</div>}>
+        <Suspense fallback={<div className="view-loading">{t('common.loading')}</div>}>
         <Routes>
           <Route index element={<WFHomeView filterText={filterText} />} />
           {/* /followup obsoleto desde v8.20: redirige al diario */}

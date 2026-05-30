@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 export type FormatType =
   | 'h1' | 'h2' | 'h3'
@@ -68,6 +69,7 @@ function getSelectionRectInNode(el: HTMLElement | null): DOMRect | null {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function FormatToolbar({ onFormat, nodeRef }: Props) {
+  const { t } = useTranslation()
   const [selRect, setSelRect] = useState<DOMRect | null>(null)
   const [showColors, setShowColors] = useState(false)
   const toolbarRef = useRef<HTMLDivElement>(null)
@@ -173,34 +175,34 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
       {!showColors ? (
         // ── Barra principal ───────────────────────────────────────────────
         <>
-          <Btn type="h1" title="Título 1">
+          <Btn type="h1" title={t('format.heading1')}>
             <span style={{ fontWeight: 800, fontSize: 10, letterSpacing: '-0.5px' }}>H1</span>
           </Btn>
-          <Btn type="h2" title="Título 2">
+          <Btn type="h2" title={t('format.heading2')}>
             <span style={{ fontWeight: 800, fontSize: 10, letterSpacing: '-0.5px' }}>H2</span>
           </Btn>
-          <Btn type="h3" title="Título 3">
+          <Btn type="h3" title={t('format.heading3')}>
             <span style={{ fontWeight: 800, fontSize: 10, letterSpacing: '-0.5px' }}>H3</span>
           </Btn>
 
           <div className="ft-sep" />
 
-          <Btn type="bold" title="Negrita (⌘B)">
+          <Btn type="bold" title={t('format.bold')}>
             <strong style={{ fontSize: 13 }}>B</strong>
           </Btn>
-          <Btn type="italic" title="Cursiva (⌘I)">
+          <Btn type="italic" title={t('format.italic')}>
             <em style={{ fontSize: 13 }}>I</em>
           </Btn>
-          <Btn type="strikethrough" title="Tachado">
+          <Btn type="strikethrough" title={t('format.strikethrough')}>
             <s style={{ fontSize: 13 }}>S</s>
           </Btn>
 
           <div className="ft-sep" />
 
-          <Btn type="code" title="Código (⌘E)">
+          <Btn type="code" title={t('format.code')}>
             <span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span>
           </Btn>
-          <Btn type="link" title="Enlace (⌘K)">
+          <Btn type="link" title={t('format.link')}>
             <span style={{ fontSize: 12 }}>🔗</span>
           </Btn>
 
@@ -209,7 +211,7 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
           {/* Botón de color — abre el panel */}
           <button
             className="ft-btn"
-            title="Color de texto / resaltado"
+            title={t('format.highlight')}
             onMouseDown={e => { e.preventDefault(); setShowColors(true) }}
           >
             <span style={{
@@ -228,7 +230,7 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
             {/* Borrador de color de texto */}
             <button
               className="ft-btn ft-erase-btn"
-              title="Quitar color"
+              title={t('panel.resetColor')}
               onMouseDown={e => { e.preventDefault(); onFormat('text-color', '') }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
@@ -250,11 +252,11 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
 
           {/* Resaltado */}
           <div className="ft-color-row">
-            <span className="ft-color-label">Resaltado</span>
+            <span className="ft-color-label">{t('format.highlight')}</span>
             {/* Borrador de resaltado */}
             <button
               className="ft-btn ft-erase-btn"
-              title="Quitar resaltado"
+              title={t('panel.resetColor')}
               onMouseDown={e => { e.preventDefault(); onFormat('highlight', '') }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
@@ -283,7 +285,7 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
             <button
               className="ft-back-btn"
               onMouseDown={e => { e.preventDefault(); setShowColors(false) }}
-            >‹ volver</button>
+            >‹ {t('common.back')}</button>
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginLeft: 'auto' }}>⌘⇧H</span>
           </div>
         </div>

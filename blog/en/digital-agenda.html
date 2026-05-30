@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart digital agenda: how From replaces your paper planner</title>
+  <meta name="description" content="A digital agenda that combines notes, tasks, and events in one system. Google Calendar integration, a visual planner, and AI that knows your full schedule.">
+  <meta name="keywords" content="digital agenda, digital calendar, organize schedule, personal agenda app, replace paper planner, smart AI agenda">
+  <meta property="og:title" content="Smart digital agenda: how From replaces your paper planner">
+  <meta property="og:description" content="Notes, tasks, and events in one place. With Google Calendar integration and AI that knows your complete schedule.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/agenda-digital/01-planificador-gcal.png">
+  <meta property="og:url" content="https://getfrom.app/blog/en/digital-agenda">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/en/digital-agenda">
+  <link rel="alternate" hreflang="es" href="https://getfrom.app/blog/agenda-digital.html" />
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Smart digital agenda: how From replaces your paper planner",
+    "description": "Notes, tasks, and events in one place. With Google Calendar integration and AI that knows your complete schedule.",
+    "image": "https://getfrom.app/img/blog/agenda-digital/01-planificador-gcal.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/en/digital-agenda" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Agenda</span>
+  <h1>Smart digital agenda: how From replaces your paper planner</h1>
+  <p class="subtitle">Paper planners have one real advantage: everything is in the same place. From takes that idea digital — notes, tasks, events, and calendar, unified by AI.</p>
+  <div class="blog-meta">
+    <span>📅 May 28, 2026</span>
+    <span>⏱ 6 min read</span>
+    <span>🏷 Agenda · Calendar · Organization</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>In this article</h4>
+    <ol>
+      <li><a href="#advantage">The real advantage of paper planners</a></li>
+      <li><a href="#digital">Why digital agendas fall short</a></li>
+      <li><a href="#from">How From combines the best of both worlds</a></li>
+      <li><a href="#gcal">Google Calendar integrated: your events in context</a></li>
+      <li><a href="#ai">AI as your agenda assistant</a></li>
+      <li><a href="#routine">Your daily routine with From as your agenda</a></li>
+    </ol>
+  </div>
+
+  <h2 id="advantage">The real advantage of paper planners</h2>
+  <p>Millions of people still use paper planners in 2026, despite having smartphones and computers. It's not nostalgia — it's because a paper planner does something digital apps don't do well: <strong>it puts everything in the same place</strong>.</p>
+  <p>In a physical planner, Tuesday's page has the day's events, space for meeting notes, and a task list, all in one glance. In the digital world, that fragments into three separate apps that don't talk to each other.</p>
+
+  <h2 id="digital">Why digital agendas fall short</h2>
+  <p>Classic digital agendas — Google Calendar, Apple Calendar — are excellent for managing events. But they're not a complete productivity system. Notes live in a different app. Tasks live in another. The result is fragmented information and lost context.</p>
+  <p>When you have a client meeting, the event is in Google Calendar, the prep notes are in Notion, the action items are in Todoist, and the follow-up email is in Gmail. None of these apps knows about the others. You become the manual connector — and that carries a huge cognitive cost.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/agenda-digital/01-planificador-gcal.png" alt="From's planner showing the weekly view with integrated Google Calendar events" loading="lazy" width="670" height="700">
+    <figcaption>From's planner shows your Google Calendar events directly. No app switching, no copying information.</figcaption>
+  </figure>
+
+  <h2 id="from">How From combines the best of both worlds</h2>
+  <p>From takes the core idea of the paper planner — everything in the same place — and brings it digital with capabilities paper can't match:</p>
+  <ul>
+    <li><strong>Automatic daily note</strong> — The equivalent of your planner's daily page, with automatic dating and no page-turning</li>
+    <li><strong>Tasks with context</strong> — Tasks aren't a loose list; they're nested under the day, project, or meeting that originated them</li>
+    <li><strong>Calendar events</strong> — Google Calendar integrated: your day's events appear in the daily note</li>
+    <li><strong>Instant search</strong> — Find any note or decision from the past in seconds</li>
+    <li><strong>Sync</strong> — Mac, web, and iPhone with the same information in real time</li>
+  </ul>
+
+  <figure class="screenshot">
+    <img src="/img/blog/agenda-digital/02-nota-dia.png" alt="From's daily note with tasks, meeting notes, and hierarchically organized sub-nodes" loading="lazy" width="1280" height="700">
+    <figcaption>The daily note in From: tasks for the day, meeting notes, sub-nodes with context. Like your planner page, but with search, AI, and sync.</figcaption>
+  </figure>
+
+  <h2 id="gcal">Google Calendar integrated: your events in context</h2>
+  <p>The Google Calendar integration is two-way. Your events appear in From's planner and in the daily note. If you create an event in From, it shows up in Google Calendar.</p>
+  <p>This means when you start your workday and open From, you see at a glance: what you need to do today (pending tasks), who you're meeting with (GCal events), and what's left from yesterday (overdue tasks).</p>
+
+  <div class="callout">
+    <p>📅 <strong>Agenda tip:</strong> Press <kbd>P</kbd> to open the planner alongside your daily note. You get a full view of your commitments next to your notes and tasks space — exactly like a paper planner, but digital.</p>
+  </div>
+
+  <h2 id="ai">AI as your agenda assistant</h2>
+  <p>From's AI knows your complete agenda: your events, tasks, notes, and history. You can ask it things you can't ask any other digital app:</p>
+  <ul>
+    <li>"What do I have this week and what's overdue?"</li>
+    <li>"Create a task 'prepare materials' for tomorrow before the 10am meeting"</li>
+    <li>"When did I last speak with client García?"</li>
+    <li>"Organize my Tuesday — I have a meeting from 10 to 11 and a presentation at 4pm"</li>
+  </ul>
+
+  <h2 id="routine">Your daily routine with From as your agenda</h2>
+  <p>The transition from paper planner to From is smooth if you follow this routine for the first few weeks:</p>
+  <ol>
+    <li><strong>Morning:</strong> open From and press <kbd>H</kbd>. The daily note already exists with your calendar events.</li>
+    <li><strong>Before each meeting:</strong> navigate to the meeting node (or create it) and add preparation context.</li>
+    <li><strong>During the meeting:</strong> take notes directly in the meeting node — tasks with <kbd>Cmd+Enter</kbd>, notes as plain text.</li>
+    <li><strong>After the meeting:</strong> 5 minutes to turn notes into concrete tasks with dates.</li>
+    <li><strong>End of day:</strong> mark completed tasks as done. A quick glance at "Pending" to see what's left.</li>
+  </ol>
+
+  <div class="cta-box">
+    <h3>Your smart digital agenda</h3>
+    <p>Notes, tasks, events, and Google Calendar. All in From, free to start.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacy</a> · <a href="/terms.html" style="color:#aaa">Terms</a></p>
+</footer>
+
+</body>
+</html>

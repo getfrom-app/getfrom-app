@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore, type NodeStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
@@ -47,6 +48,7 @@ function formatDue(due: string): string {
 
 function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boolean; toggleTask: (id: string, status: string | null) => void }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
   return (
     <div
@@ -66,14 +68,14 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
         onClick={e => e.stopPropagation()}
       />
       <span className={`diary-task-text${task.status === 'done' ? ' done' : ''}`}>
-        {task.text || 'Sin título'}
+        {task.text || t('common.noTitle')}
       </span>
       {task.due && <span className="diary-task-due">{formatDue(task.due)}</span>}
       {hovered && task.status !== 'done' && (
         <div className="task-chip-quick-dates" onClick={e => e.stopPropagation()}>
           <button
             className="quick-date-btn"
-            title="Hoy"
+            title={t('common.today')}
             onClick={e => {
               e.stopPropagation()
               store.updateNode(task.id, { due: new Date(new Date().setHours(23, 59, 0, 0)).toISOString() })
@@ -81,7 +83,7 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
           >⏰</button>
           <button
             className="quick-date-btn"
-            title="Mañana"
+            title={t('diary.tomorrow')}
             onClick={e => {
               e.stopPropagation()
               const t = new Date()
@@ -92,7 +94,7 @@ function TaskChip({ task, indented, toggleTask }: { task: Node; indented?: boole
           >☀️</button>
           <button
             className="quick-date-btn"
-            title="Próxima semana"
+            title={t('diary.nextWeek')}
             onClick={e => {
               e.stopPropagation()
               const t = new Date()
@@ -153,6 +155,7 @@ function findOrCreateTemporalNode(
 export default function DiaryView() {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [dateOffset, setDateOffset] = useState(() => {
     const offset = searchParams.get('offset')
@@ -201,9 +204,9 @@ export default function DiaryView() {
   const dateStr = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 
   function formatOffsetLabel(): string {
-    if (dateOffset === 0) return 'Hoy'
+    if (dateOffset === 0) return t('common.today')
     if (dateOffset === -1) return 'Ayer'
-    if (dateOffset === 1) return 'Mañana'
+    if (dateOffset === 1) return t('diary.tomorrow')
     return dateStr
   }
 
@@ -334,7 +337,7 @@ export default function DiaryView() {
         <input
           className="diary-panel-search-input"
           type="text"
-          placeholder="Buscar tarea..."
+          placeholder={t('common.search') + '…'}
           value={pendingSearch}
           onChange={e => setPendingSearch(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') setPendingSearch('') }}
@@ -365,7 +368,7 @@ export default function DiaryView() {
           {searchInput}
           {statsHeader}
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 8px' }}>
-            {searchQ ? 'Sin resultados' : 'Nada pendiente hoy'}
+            {searchQ ? t('search.noResultsFor') : 'Nada pendiente hoy'}
           </div>
           {notesCreatedToday.length > 0 && (
             <div className="diary-pending-section">
@@ -378,7 +381,7 @@ export default function DiaryView() {
                   style={{ cursor: 'pointer' }}
                 >
                   <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
-                  <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
+                  <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || t('common.noTitle')}</span>
                 </div>
               ))}
             </div>
@@ -405,7 +408,7 @@ export default function DiaryView() {
                     onClick={() => navigate(`/node/${bucle.id}`)}
                   >
                     <span className="diary-bucle-icon">↺</span>
-                    <span className="diary-bucle-text">{bucle.text || 'Sin título'}</span>
+                    <span className="diary-bucle-text">{bucle.text || t('common.noTitle')}</span>
                   </div>
                   {children.length > 0 && (
                     <div className="diary-bucle-children">
@@ -468,7 +471,7 @@ export default function DiaryView() {
                   onClick={() => navigate(`/node/${proj.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <span className="diary-task-text">{proj.text || 'Sin título'}</span>
+                  <span className="diary-task-text">{proj.text || t('common.noTitle')}</span>
                   <span className="diary-task-due" style={{ marginLeft: 'auto' }}>({pendingCount})</span>
                 </div>
               )
@@ -488,7 +491,7 @@ export default function DiaryView() {
                 style={{ cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 12, marginRight: 4, opacity: 0.5 }}>📄</span>
-                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || 'Sin título'}</span>
+                <span className="diary-task-text" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.text || t('common.noTitle')}</span>
               </div>
             ))}
           </div>
@@ -577,14 +580,14 @@ export default function DiaryView() {
                     store.scheduleNodeAt(id, target.toISOString())
                   }}
                 >
-                  {allItems.map(t => (
+                  {allItems.map(item => (
                     <span
-                      key={t.id}
-                      className={t.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
-                      onClick={e => { e.stopPropagation(); navigate(`/node/${t.id}`) }}
-                      title={t.text || 'Sin título'}
+                      key={item.id}
+                      className={item.isEvent ? 'timeline-event-chip' : 'timeline-task-chip'}
+                      onClick={e => { e.stopPropagation(); navigate(`/node/${item.id}`) }}
+                      title={item.text || t('common.noTitle')}
                     >
-                      {t.isEvent ? '📅 ' : ''}{t.text || 'Sin título'}
+                      {item.isEvent ? '📅 ' : ''}{item.text || t('common.noTitle')}
                     </span>
                   ))}
                 </div>
@@ -631,18 +634,18 @@ export default function DiaryView() {
           return (
             <div key={day.toISOString()} className="agenda-day">
               <div className={`agenda-day-label${isToday ? ' today' : ''}`}>
-                {isToday ? 'Hoy' : day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {isToday ? t('common.today') : day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
               </div>
-              {dayTasks.length === 0 && <div className="agenda-empty">Sin tareas</div>}
-              {dayTasks.map(t => (
-                <div key={t.id} className="diary-task-chip" onClick={() => navigate(`/node/${t.id}`)}>
+              {dayTasks.length === 0 && <div className="agenda-empty">{t('kanban.noTasks')}</div>}
+              {dayTasks.map(task => (
+                <div key={task.id} className="diary-task-chip" onClick={() => navigate(`/node/${task.id}`)}>
                   <input type="checkbox" className="diary-task-check"
-                    checked={t.status === 'done'}
-                    onChange={e => { e.stopPropagation(); store.updateNode(t.id, { status: t.status === 'done' ? 'pending' : 'done' }) }}
+                    checked={task.status === 'done'}
+                    onChange={e => { e.stopPropagation(); store.updateNode(task.id, { status: task.status === 'done' ? 'pending' : 'done' }) }}
                     onClick={e => e.stopPropagation()}
                   />
-                  <span className={`diary-task-text${t.status === 'done' ? ' done' : ''}`}>{t.text || 'Sin título'}</span>
-                  {t.due && <span className="diary-task-due">{new Date(t.due).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>}
+                  <span className={`diary-task-text${task.status === 'done' ? ' done' : ''}`}>{task.text || t('common.noTitle')}</span>
+                  {task.due && <span className="diary-task-due">{new Date(task.due).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>}
                 </div>
               ))}
             </div>
@@ -893,7 +896,7 @@ export default function DiaryView() {
                     onClick={() => setDateOffset(0)}
                     title="Volver a hoy"
                   >
-                    Hoy
+                    {t('common.today')}
                   </button>
                 )}
                 <button
@@ -903,7 +906,7 @@ export default function DiaryView() {
                   title="Día siguiente"
                   style={{ opacity: dateOffset >= 0 ? 0.3 : 1 }}
                 >
-                  Mañana →
+                  {t('diary.tomorrow')} →
                 </button>
                 {/* Week navigation */}
                 <div className="diary-week-nav">
@@ -989,19 +992,19 @@ export default function DiaryView() {
               className={`diary-panel-tab${panelTab === 'pending' ? ' active' : ''}`}
               onClick={() => setPanelTab('pending')}
             >
-              Pendiente
+              {t('panel.tasks')}
             </button>
             <button
               className={`diary-panel-tab${panelTab === 'agenda' ? ' active' : ''}`}
               onClick={() => setPanelTab('agenda')}
             >
-              Agenda
+              {t('panel.upcoming')}
             </button>
             <button
               className={`diary-panel-tab${panelTab === 'stats' ? ' active' : ''}`}
               onClick={() => setPanelTab('stats')}
             >
-              Stats
+              {t('settings.tabStatistics')}
             </button>
           </div>
           {panelTab === 'pending' ? renderPending()

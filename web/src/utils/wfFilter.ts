@@ -86,39 +86,59 @@ function isFuture(node: Node): boolean {
 
 function matchesToken(token: string, node: Node, nodes: Map<string, Node>): boolean {
   switch (token) {
-    // Fecha
-    case 'hoy':      return isToday(node.due) || isToday(node.diaryDate)
+    // Fecha — ES + EN
+    case 'hoy':
+    case 'today':    return isToday(node.due) || isToday(node.diaryDate)
     case 'manana':
-    case 'mañana':   return isTomorrow(node.due)
-    case 'semana':   return isThisWeek(node.due)
-    case 'mes':      return isThisMonth(node.due) || isThisMonth(node.diaryDate)
-    case 'pasado':   return isPast(node)
-    case 'futuro':   return isFuture(node)
+    case 'mañana':
+    case 'tomorrow': return isTomorrow(node.due)
+    case 'semana':
+    case 'week':     return isThisWeek(node.due)
+    case 'mes':
+    case 'month':    return isThisMonth(node.due) || isThisMonth(node.diaryDate)
+    case 'pasado':
+    case 'past':     return isPast(node)
+    case 'futuro':
+    case 'future':   return isFuture(node)
     case 'con-fecha':
     case 'con fecha':
-    case 'confecha': return !!node.due
+    case 'confecha':
+    case 'dated':    return !!node.due
 
-    // Estado de tarea
+    // Estado de tarea — ES + EN
     case 'tarea':
+    case 'task':
     case 'tipo:tarea':  return node.status !== null && node.status !== undefined
-    case 'pendiente':   return node.status === 'pending'
-    case 'hecho':       return node.status === 'done'
+    case 'pendiente':
+    case 'pending':     return node.status === 'pending'
+    case 'hecho':
+    case 'done':
+    case 'completed':   return node.status === 'done'
     case 'futuro-tarea':
-    case 'programada':  return node.status === 'future'
+    case 'programada':
+    case 'scheduled':   return node.status === 'future'
     case 'vencido':
     case 'overdue':     return node.status === 'pending' && isOverdue(node.due)
     case 'sin-fecha':
-    case 'sinfecha':    return node.status === 'pending' && !node.due
+    case 'sinfecha':
+    case 'undated':     return node.status === 'pending' && !node.due
 
-    // Tipo de nodo
+    // Tipo de nodo — ES + EN
     case 'nota':
+    case 'note':
     case 'tipo:nota':   return node.status === null && !node.isEvent && !node.isResource
     case 'evento':
+    case 'event':
     case 'tipo:evento': return !!node.isEvent
-    case 'favorito':    return !!node.isFavorite
-    case 'diario':      return !!node.isDiaryEntry
-    case 'recurso':     return !!node.isResource
-    case 'archivo': {
+    case 'favorito':
+    case 'favorite':    return !!node.isFavorite
+    case 'diario':
+    case 'journal':
+    case 'diary':       return !!node.isDiaryEntry
+    case 'recurso':
+    case 'resource':    return !!node.isResource
+    case 'archivo':
+    case 'file': {
       // Archivos subidos: tienen _resourceKey en extraData o _resourceType image/pdf/file
       if (!node.isResource) return false
       try {
@@ -126,7 +146,8 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
         return !!(ed._resourceKey || ['image','pdf','file'].includes(ed._resourceType))
       } catch { return false }
     }
-    case 'enlace': {
+    case 'enlace':
+    case 'link': {
       // URLs pegadas: isResource pero sin _resourceKey (no subido)
       if (!node.isResource) return false
       try {
@@ -212,14 +233,14 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
 
 function parseOrGroups(filterText: string): string[][] {
   // Dividir por " o " como separador OR (con espacios para no romper "@o" o "octubre")
-  const orParts = filterText.split(/\s+o\s+/i)
+  const orParts = filterText.split(/\s+(?:o|or)\s+/i)
   return orParts.map(part => {
     // Tokenizar cada parte (respetar [[wiki]], @tag, #tag)
     const rawTokens: string[] = []
     const tokenRegex = /\[\[[^\]]+\]\]|@[\wÀ-ɏ\/\-]+|#[\wÀ-ɏ\/\-]+|\S+/g
     let m: RegExpExecArray | null
     while ((m = tokenRegex.exec(part)) !== null) rawTokens.push(m[0])
-    // Normalizar y filtrar la palabra "y" (AND explícito — ya es el comportamiento por defecto)
+    // Normalizar y filtrar "y" / "and" (AND explícito — ya es el comportamiento por defecto)
     return rawTokens
       .map(t => normalizeText(t))
       .filter(t => t && t !== 'y' && t !== 'and')
@@ -300,10 +321,15 @@ export function applyWFFilter(
 // ── Detección de consulta inteligente ─────────────────────────────────────
 
 const SMART_OPERATORS = [
+  // Español
   'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
   'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:',
+  // English
+  'today', 'tomorrow', 'week', 'month', 'past', 'future',
+  'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
+  'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event',
 ]
 
 export function isSmartQuery(text: string): boolean {
@@ -314,7 +340,7 @@ export function isSmartQuery(text: string): boolean {
 
 // ── Sugerencias de chips del filtro ───────────────────────────────────────
 
-export const FILTER_SUGGESTIONS = [
+export const FILTER_SUGGESTIONS_ES = [
   { label: 'Hoy',         query: 'hoy' },
   { label: 'Tareas',      query: 'tarea' },
   { label: 'Pendientes',  query: 'pendiente' },
@@ -327,6 +353,27 @@ export const FILTER_SUGGESTIONS = [
   { label: 'Favoritos',   query: 'favorito' },
   { label: 'Eventos',     query: 'evento' },
 ]
+
+export const FILTER_SUGGESTIONS_EN = [
+  { label: 'Today',       query: 'today' },
+  { label: 'Tasks',       query: 'task' },
+  { label: 'Pending',     query: 'pending' },
+  { label: 'Overdue',     query: 'overdue' },
+  { label: 'This week',   query: 'week' },
+  { label: 'This month',  query: 'month' },
+  { label: 'Past',        query: 'past' },
+  { label: 'Future',      query: 'future' },
+  { label: 'No date',     query: 'undated' },
+  { label: 'Favorites',   query: 'favorite' },
+  { label: 'Events',      query: 'event' },
+]
+
+// Para compatibilidad con código existente
+export const FILTER_SUGGESTIONS = FILTER_SUGGESTIONS_ES
+
+export function getFilterSuggestions(lang: string) {
+  return lang.startsWith('en') ? FILTER_SUGGESTIONS_EN : FILTER_SUGGESTIONS_ES
+}
 
 // ── Ejemplos de consultas booleanas (para el placeholder/ayuda) ────────────
 //

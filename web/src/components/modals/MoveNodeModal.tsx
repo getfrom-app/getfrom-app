@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -31,6 +32,7 @@ function getNodeIcon(n: Node): string {
 }
 
 export default function MoveNodeModal({ node, onClose }: Props) {
+  const { t } = useTranslation()
   const s = useStore()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
@@ -64,9 +66,10 @@ export default function MoveNodeModal({ node, onClose }: Props) {
 
     if (query.trim()) {
       const q = query.toLowerCase()
+      const noTitle = t('common.noTitle')
       const label = (n: Node) => n.isDiaryEntry && n.diaryDate
         ? new Date(n.diaryDate).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-        : (n.text || 'Sin título')
+        : (n.text || noTitle)
       return allNodes
         .filter(n => label(n).toLowerCase().includes(q))
         .sort((a, b) => {
@@ -103,8 +106,8 @@ export default function MoveNodeModal({ node, onClose }: Props) {
   const allItems = candidates.map(n => {
     const isToday = n.id === todayDiary?.id
     const text = n.isDiaryEntry && n.diaryDate
-      ? (isToday ? 'Hoy' : new Date(n.diaryDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }))
-      : (n.text || 'Sin título')
+      ? (isToday ? t('common.today') : new Date(n.diaryDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }))
+      : (n.text || t('common.noTitle'))
     return {
       id: n.id,
       text,
@@ -155,18 +158,18 @@ export default function MoveNodeModal({ node, onClose }: Props) {
       <div className="modal-card move-node-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-icon">⇢</span>
-          <h2>Mover nota</h2>
+          <h2>{t('modal.moveNote')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
         <div className="move-node-info">
-          Moviendo: <strong>{node.text || 'Sin título'}</strong>
+          {t('modal.moving')} <strong>{node.text || t('common.noTitle')}</strong>
         </div>
         <div className="move-node-search">
           <input
             ref={inputRef}
             type="text"
             className="modal-input"
-            placeholder="Buscar destino..."
+            placeholder={t('modal.searchDestination')}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}

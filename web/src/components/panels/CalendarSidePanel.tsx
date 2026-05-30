@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { TaskPropsPopover } from './DiaryRightPanel'
@@ -187,6 +188,7 @@ function GroupedSection({ groups, onOpenProps }: GroupedSectionProps) {
 // ── Resource row ─────────────────────────────────────────────────────────────
 
 function ResourceRow({ node }: { node: Node }) {
+  const { t } = useTranslation()
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
   const rowRef = useRef<HTMLDivElement>(null!)
@@ -210,7 +212,7 @@ function ResourceRow({ node }: { node: Node }) {
         }}
         onDragEnd={() => { calDragNodeId = null }}
         onClick={() => { if (!leaving) setPopoverOpen(v => !v) }}
-        title={node.text || 'Sin título'}
+        title={node.text || t('common.noTitle')}
       >
         {leaving ? (
           <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
@@ -246,6 +248,7 @@ function hasLiveContainerAncestor(nodeId: string): boolean {
 
 export default function CalendarSidePanel({ periodStart, periodEnd, view }: Props) {
   const s = useStore()
+  const { t } = useTranslation()
   const [isDragOver, setIsDragOver] = useState(false)
   const [modalNode, setModalNode] = useState<Node | null>(null)
 
@@ -327,7 +330,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
       }}
     >
       {isDragOver && (
-        <div className="cal-panel-drop-hint">Suelta para desagendar</div>
+        <div className="cal-panel-drop-hint">{t('panel.dropToUnschedule')}</div>
       )}
 
       {/* Containers vivos — mismo estilo que el panel del diario */}
@@ -343,7 +346,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
               title={node.text || 'Sin título'}
             >
               <span className="diary-agenda-container-icon">📁</span>
-              <span className="diary-agenda-text">{node.text || 'Sin título'}</span>
+              <span className="diary-agenda-text">{node.text || t('common.noTitle')}</span>
               <span className="diary-agenda-container-count">{childTasks.length}</span>
             </div>
             {childTasks.map(task => (
@@ -368,7 +371,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
       {unscheduled.length > 0 && (
         <div className="cal-panel-section">
           <div className="cal-panel-label">
-            Sin fecha
+            {t('panel.noDate')}
             <span className="cal-panel-count">{unscheduled.length}</span>
           </div>
           <GroupedSection groups={unscheduledGroups} onOpenProps={setModalNode} />
@@ -390,7 +393,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
       {resources.length > 0 && (
         <div className="cal-panel-section">
           <div className="cal-panel-label">
-            Recursos
+            {t('panel.resources')}
             <span className="cal-panel-count">{resources.length}</span>
           </div>
           {resources.map(n => <ResourceRow key={n.id} node={n} />)}
@@ -400,7 +403,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
       {!hasAnything && (
         <div className="cal-panel-empty">
           <span style={{ fontSize: 20, opacity: 0.3 }}>✓</span>
-          <span>Todo agendado</span>
+          <span>{t('panel.upcoming')}</span>
         </div>
       )}
 

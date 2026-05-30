@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import type { ResourceType } from '../panels/ResourcePanel'
@@ -59,6 +60,7 @@ function getResourceData(node: Node) {
 export default function ResourcesView() {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [typeFilter, setTypeFilter] = useState<ResourceType | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<StatusKey>('all')
@@ -145,12 +147,12 @@ export default function ResourcesView() {
       <div className="resources-main">
         <div className="resources-main-header">
           <div className="resources-main-title-row">
-            <h1 className="resources-title">🔗 Recursos</h1>
+            <h1 className="resources-title">{t('resources.title')}</h1>
             <span className="resources-count">{filtered.length}</span>
           </div>
           <div className="resources-view-toggle">
-            <button className={`resources-toggle-btn${viewMode === 'grid' ? ' active' : ''}`} onClick={() => setViewMode('grid')}>⊞</button>
-            <button className={`resources-toggle-btn${viewMode === 'list' ? ' active' : ''}`} onClick={() => setViewMode('list')}>☰</button>
+            <button className={`resources-toggle-btn${viewMode === 'grid' ? ' active' : ''}`} onClick={() => setViewMode('grid')} title={t('resources.gridView')}>⊞</button>
+            <button className={`resources-toggle-btn${viewMode === 'list' ? ' active' : ''}`} onClick={() => setViewMode('list')} title={t('resources.listView')}>☰</button>
           </div>
         </div>
 
@@ -189,7 +191,7 @@ export default function ResourcesView() {
                       <span>{TYPE_ICONS[type]} {TYPE_LABELS[type]}</span>
                       {meta?.domain && <span className="resource-card-domain">{meta.channel || meta.domain}</span>}
                     </div>
-                    <div className="resource-card-title">{meta?.title || node.text || 'Sin título'}</div>
+                    <div className="resource-card-title">{meta?.title || node.text || t('common.noTitle')}</div>
                     {meta?.description && (
                       <div className="resource-card-desc">{meta.description.slice(0, 80)}…</div>
                     )}

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../../api/client'
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || ''
@@ -17,12 +19,12 @@ export default function ResetPasswordPage() {
     setError('')
 
     if (password !== confirm) {
-      setError('Las contraseñas no coinciden')
+      setError(t('auth.errorPasswordsNoMatch'))
       return
     }
 
     if (!token) {
-      setError('Enlace de recuperación inválido')
+      setError(t('auth.errorInvalidResetLink'))
       return
     }
 
@@ -31,7 +33,7 @@ export default function ResetPasswordPage() {
       await resetPassword(token, password)
       navigate('/login', {
         replace: true,
-        state: { message: 'Contraseña cambiada, inicia sesión' },
+        state: { message: t('auth.passwordChanged') },
       })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error desconocido'
@@ -52,12 +54,12 @@ export default function ResetPasswordPage() {
           <span>From</span>
         </div>
 
-        <h1>Nueva contraseña</h1>
-        <p className="auth-subtitle">Elige una nueva contraseña segura.</p>
+        <h1>{t('auth.resetPasswordTitle')}</h1>
+        <p className="auth-subtitle">{t('auth.resetPasswordSubtitle')}</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-field">
-            <label htmlFor="password">Nueva contraseña</label>
+            <label htmlFor="password">{t('auth.newPasswordLabel')}</label>
             <input
               id="password"
               type="password"
@@ -71,7 +73,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="confirm">Confirmar contraseña</label>
+            <label htmlFor="confirm">{t('auth.confirmPasswordLabel')}</label>
             <input
               id="confirm"
               type="password"
@@ -86,7 +88,7 @@ export default function ResetPasswordPage() {
           {error && <div className="auth-error">{error}</div>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Guardando...' : 'Cambiar contraseña'}
+            {loading ? t('auth.savingButton') : t('auth.changePasswordButton')}
           </button>
         </form>
       </div>

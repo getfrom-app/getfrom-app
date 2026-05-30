@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Emojis organizados por categoría
 const EMOJI_GROUPS = [
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function EmojiPicker({ onSelect, onClose }: Props) {
+  const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export default function EmojiPicker({ onSelect, onClose }: Props) {
   return createPortal(
     <div ref={ref} className="emoji-picker">
       <div className="emoji-picker-header">
-        <span className="emoji-picker-title">Elige un icono</span>
-        <button className="emoji-picker-clear" onClick={() => onSelect('')} title="Quitar icono">✕ Quitar</button>
+        <span className="emoji-picker-title">{t('emoji.chooseIcon')}</span>
+        <button className="emoji-picker-clear" onClick={() => onSelect('')} title={t('emoji.removeIcon')}>{t('emoji.removeIcon')}</button>
       </div>
       <div className="emoji-picker-body">
         {EMOJI_GROUPS.map(group => (

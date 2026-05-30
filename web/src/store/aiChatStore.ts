@@ -759,8 +759,12 @@ class AIChatStore {
     // ── Aprendizajes del usuario (sistema "Enseñar a Magic") ───────────────
     const learningsBlock = learningsStore.buildPromptBlock()
 
+    // Locale del usuario — determina el idioma de las respuestas del AI
+    const userLocale = localStorage.getItem('from-lang') ?? 'es'
+    const dateLocale = userLocale.startsWith('en') ? 'en-US' : 'es-ES'
+
     // Fecha actual — crítico para interpretar "mañana", "hoy", fechas relativas
-    const nowStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const nowStr = new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     const dateBlock = `Fecha y hora actual: ${nowStr}`
 
     // Combinar con el perfil de usuario
@@ -776,6 +780,7 @@ class AIChatStore {
       currentNoteContent,
       dailyContext,
       pendingTasks,
+      locale: userLocale,
     }
   }
 

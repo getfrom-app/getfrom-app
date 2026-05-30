@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -11,6 +12,7 @@ interface Props {
 export default function NodePropertiesPanel({ node, onClose }: Props) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [newType, setNewType] = useState('')
   const [areaInput, setAreaInput] = useState('')
   const nodeArea = store.getNodeArea(node.id)
@@ -113,8 +115,8 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
   return (
     <div className="properties-panel">
       <div className="properties-panel-header">
-        <span className="properties-panel-title">Propiedades</span>
-        <button className="properties-close-btn" onClick={onClose} aria-label="Cerrar">
+        <span className="properties-panel-title">{t('panel.properties')}</span>
+        <button className="properties-close-btn" onClick={onClose} aria-label={t('common.close')}>
           ×
         </button>
       </div>
@@ -140,7 +142,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           onClick={toggleEvent}
           title={node.isEvent ? 'Quitar evento' : 'Marcar como evento'}
         >
-          📅 Evento
+          {t('panel.event')}
         </button>
         <button
           className={`prop-icon-btn ${isLocked ? 'active' : ''}`}
@@ -166,7 +168,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
       {/* Estado */}
       <div className="prop-section">
-        <div className="prop-section-label">Estado</div>
+        <div className="prop-section-label">{t('search.filterStatus')}</div>
         <div className="prop-pills">
           {statusOptions.map(opt => (
             <button
@@ -182,7 +184,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
       {/* Prioridad */}
       <div className="prop-section">
-        <div className="prop-section-label">Prioridad</div>
+        <div className="prop-section-label">{t('kanban.byPriority')}</div>
         <div className="prop-pills">
           {priorityOptions.map(opt => (
             <button
@@ -199,11 +201,11 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
       {/* Fecha rápida */}
       <div className="prop-section">
-        <div className="prop-section-label">Fecha</div>
+        <div className="prop-section-label">{t('modal.dueDate')}</div>
         <div className="prop-quick-dates">
           {[
-            { label: 'Hoy', days: 0 },
-            { label: 'Mañana', days: 1 },
+            { label: t('common.today'), days: 0 },
+            { label: t('common.tomorrow'), days: 1 },
             { label: 'Próx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8-d) % 7 || 7 })() },
             { label: 'Próx. semana', days: 7 },
           ].map(({ label, days }) => {
@@ -301,7 +303,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
         return (
           <div className="prop-section">
-            <div className="prop-section-label">Color</div>
+            <div className="prop-section-label">{t('panel.color')}</div>
             <div className="prop-color-chips">
               {colors.map(c => (
                 <button

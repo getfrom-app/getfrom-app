@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
@@ -14,6 +15,7 @@ interface Props {
 export default function NodeRightPanel({ node }: Props) {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [newType, setNewType] = useState('')
 
   // ── Recurso ──────────────────────────────────────────────────────────────
@@ -272,7 +274,7 @@ export default function NodeRightPanel({ node }: Props) {
       {showTasksBlock && (
         <div className="node-right-tasks-block">
           <div className="node-right-tasks-header">
-            <span className="node-right-tasks-label">Tareas</span>
+            <span className="node-right-tasks-label">{t('panel.tasks')}</span>
             <button className="node-right-tasks-add" onClick={() => {
               setTaskInputVisible(true)
               setTimeout(() => taskInputRef.current?.focus(), 50)
@@ -290,7 +292,7 @@ export default function NodeRightPanel({ node }: Props) {
                   {task.status === 'done' ? '✓' : '○'}
                 </button>
                 <span className={`node-right-task-text${task.status === 'done' ? ' done' : ''}${isOverdue ? ' overdue' : ''}`}>
-                  {task.text || 'Sin título'}
+                  {task.text || t('common.noTitle')}
                 </span>
                 {task.due && (
                   <span className={`node-right-task-due${isOverdue ? ' overdue' : ''}`}>
@@ -303,7 +305,7 @@ export default function NodeRightPanel({ node }: Props) {
           {taskInputVisible && (
             <div className="node-right-task-input-row">
               <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>○</span>
-              <input ref={taskInputRef} className="node-right-task-input" placeholder="Nueva tarea…"
+              <input ref={taskInputRef} className="node-right-task-input" placeholder={t('panel.newTask')}
                 value={newTaskText} onChange={e => setNewTaskText(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') createAssociatedTask()
@@ -317,7 +319,7 @@ export default function NodeRightPanel({ node }: Props) {
             <button className="node-right-tasks-empty" onClick={() => {
               setTaskInputVisible(true)
               setTimeout(() => taskInputRef.current?.focus(), 50)
-            }}>＋ Añadir tarea</button>
+            }}>{t('panel.addTask')}</button>
           )}
         </div>
       )}
@@ -345,18 +347,18 @@ export default function NodeRightPanel({ node }: Props) {
           }}
           title={isResource ? 'Es un recurso' : node.isEvent ? 'Es un evento' : isTask ? 'Quitar tarea' : 'Convertir en tarea'}
           style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
-        >○ Tarea</button>
+        >{t('panel.taskToggle')}</button>
         <button
           ref={eventBtnRef}
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={openEventPopup}
           title={node.isEvent ? 'Quitar evento' : 'Convertir en evento'}
-        >📅 Evento</button>
+        >{t('panel.event')}</button>
         <button
           className={`prop-icon-btn ${isResource ? 'active resource' : ''}`}
           onClick={toggleResource}
           title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}
-        >🔗 Recurso</button>
+        >🔗 {t('panel.resources')}</button>
       </div>
 
       {/* ── ResourcePanel: thumbnail + URL + tipo (solo recursos) ─────────── */}
@@ -370,7 +372,7 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── 1. ESTADO ────────────────────────────────────────────────────── */}
       {showProps && (
         <div className="prop-section">
-          <div className="prop-section-label">Estado</div>
+          <div className="prop-section-label">{t('search.filterStatus')}</div>
           {isResource ? (
             // Recursos: estado propio (resourceStatus)
             <div className="prop-pills">
@@ -536,7 +538,7 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── 4. PRIORIDAD (solo tareas pendientes) ────────────────────────── */}
       {isTask && node.status === 'pending' && (
         <div className="prop-section">
-          <div className="prop-section-label">Prioridad</div>
+          <div className="prop-section-label">{t('kanban.byPriority')}</div>
           <div className="prop-pills">
             {priorityOptions.map(opt => (
               <button key={String(opt.value)} className={`prop-pill ${node.priority === opt.value ? 'active' : ''}`}
@@ -553,7 +555,7 @@ export default function NodeRightPanel({ node }: Props) {
         return (
           <div className="prop-section">
             <div className="prop-section-label prop-section-label--row">
-              Propiedades
+              {t('panel.properties')}
               <button className="prop-add-btn" title="Añadir propiedad"
                 onClick={() => {
                   const name = prompt('Nombre de la propiedad:')
@@ -665,9 +667,9 @@ export default function NodeRightPanel({ node }: Props) {
           {evtMsg && <div className={`evt-popup-msg${evtMsg.startsWith('✓') ? ' ok' : ''}`}>{evtMsg}</div>}
 
           <div className="evt-modal-actions">
-            <button className="evt-popup-cancel" onClick={() => setShowEventPopup(false)}>Cancelar</button>
+            <button className="evt-popup-cancel" onClick={() => setShowEventPopup(false)}>{t('common.cancel')}</button>
             <button className="evt-popup-save" onClick={saveEvent} disabled={!evtDate || evtSyncing}>
-              {evtSyncing ? '↻ Guardando...' : '📅 Crear evento'}
+              {evtSyncing ? `↻ ${t('common.saving')}` : t('panel.event')}
             </button>
           </div>
           {!evtDate && <div className="evt-popup-hint">La fecha es obligatoria para crear el evento</div>}

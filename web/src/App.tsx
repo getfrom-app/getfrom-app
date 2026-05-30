@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
 import { connectGoogle } from './api/googleCalendar'
@@ -63,6 +64,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 // Maneja el callback de OAuth de Google
 function GoogleCallbackPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [error, setError] = useState<string | null>(null)
@@ -93,7 +95,7 @@ function GoogleCallbackPage() {
           onClick={() => navigate('/app/', { replace: true })}
           style={{ padding: '8px 16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
         >
-          Volver al inicio
+          {t('app.backToHome')}
         </button>
       </div>
     )

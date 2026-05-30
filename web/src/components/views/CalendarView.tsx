@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore, store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import CalendarSidePanel from '../panels/CalendarSidePanel'
@@ -38,6 +39,7 @@ interface EventPopupProps {
 }
 
 function EventPopup({ node, anchorEl, onClose, onOpen }: EventPopupProps) {
+  const { t } = useTranslation()
   const popupRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
@@ -74,7 +76,7 @@ function EventPopup({ node, anchorEl, onClose, onOpen }: EventPopupProps) {
     >
       <div className="calendar-event-popup-header">
         <span className="calendar-event-popup-icon">{node.isEvent ? '📅' : '○'}</span>
-        <span className="calendar-event-popup-title">{node.text || 'Sin título'}</span>
+        <span className="calendar-event-popup-title">{node.text || t('common.noTitle')}</span>
         <button className="calendar-event-popup-close" onClick={onClose}>×</button>
       </div>
       {node.due && (
@@ -94,7 +96,7 @@ function EventPopup({ node, anchorEl, onClose, onOpen }: EventPopupProps) {
         <button
           className="btn-primary btn-sm"
           onClick={() => { onOpen(node.id); onClose() }}
-        >Abrir →</button>
+        >{t('calendar.openArrow')}</button>
         {node.status !== null && (
           <button
             className="btn-secondary btn-sm"
@@ -122,15 +124,16 @@ interface QuickEventCreateProps {
 }
 
 function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateProps) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
   function handleSubmit() {
-    const t = text.trim() || 'Nueva tarea'
+    const taskText = text.trim() || t('topbar.newTask')
     const diary = store.todayDiary()
-    const node = store.createNode({ text: t, parentId: diary?.id || null })
+    const node = store.createNode({ text: taskText, parentId: diary?.id || null })
     // Crear como TAREA por defecto (no como evento). El usuario puede convertir luego.
     store.updateNode(node.id, { due: date.toISOString(), isEvent: false, status: 'pending' })
     onCreate(node.id)
@@ -141,7 +144,7 @@ function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateP
       <input
         ref={inputRef}
         className="calendar-quick-create-input"
-        placeholder="Nombre de la tarea…"
+        placeholder={t('calendar.newTaskPlaceholder')}
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={e => {
@@ -150,8 +153,8 @@ function QuickEventCreate({ date, style, onCancel, onCreate }: QuickEventCreateP
         }}
       />
       <div className="calendar-quick-create-actions">
-        <button className="btn-primary btn-sm" onClick={handleSubmit}>Crear</button>
-        <button className="btn-secondary btn-sm" onClick={onCancel}>Cancelar</button>
+        <button className="btn-primary btn-sm" onClick={handleSubmit}>{t('calendar.createBtn')}</button>
+        <button className="btn-secondary btn-sm" onClick={onCancel}>{t('calendar.cancelBtn')}</button>
       </div>
     </div>
   )
@@ -1198,6 +1201,7 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
 
 export default function CalendarView() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const s = useStore()
   const us = useUserStore()
 
@@ -1338,7 +1342,7 @@ export default function CalendarView() {
                   className={`calendar-view-tab ${view === v ? 'calendar-view-tab--active' : ''}`}
                   onClick={() => setView(v)}
                 >
-                  {v === 'day' ? 'Día' : v === 'week' ? 'Semana' : v === 'month' ? 'Mes' : 'Año'}
+                  {v === 'day' ? t('timeline.dayMode') : v === 'week' ? t('timeline.weekMode') : v === 'month' ? t('timeline.monthMode') : 'Año'}
                 </button>
               ))}
             </div>

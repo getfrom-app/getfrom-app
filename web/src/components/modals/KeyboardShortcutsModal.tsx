@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { getAllHotkeys, formatHotkeyDisplay } from '../../store/hotkeysStore'
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function KeyboardShortcutsModal({ onClose }: Props) {
+  const { t } = useTranslation()
   const hotkeys = getAllHotkeys()
 
   // Agrupar por categoría
@@ -27,11 +29,11 @@ export default function KeyboardShortcutsModal({ onClose }: Props) {
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Atajos de teclado"
+        aria-label={t('shortcuts.keyboardTitle')}
       >
         <div className="modal-header">
-          <h2 className="modal-title">Atajos de teclado</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">✕</button>
+          <h2 className="modal-title">{t('shortcuts.keyboardTitle')}</h2>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>✕</button>
         </div>
 
         <div className="shortcuts-grid">
@@ -46,7 +48,7 @@ export default function KeyboardShortcutsModal({ onClose }: Props) {
                     </kbd>
                     <span className="shortcut-desc">
                       {h.label}
-                      {h.configurable && <span className="shortcut-configurable-hint"> · configurable en Ajustes</span>}
+                      {h.configurable && <span className="shortcut-configurable-hint">{t('shortcuts.configurable')}</span>}
                     </span>
                   </li>
                 ))}
@@ -56,7 +58,7 @@ export default function KeyboardShortcutsModal({ onClose }: Props) {
         </div>
 
         <p className="shortcuts-hint">
-          Pulsa <kbd className="shortcut-key">?</kbd> para abrir este panel ·
+          {t('shortcuts.pressKey')} <kbd className="shortcut-key">?</kbd> para abrir este panel ·
           {' '}<span style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => { onClose(); window.location.href = '/app/settings?tab=hotkeys' }}>Editar atajos →</span>
         </p>
       </div>

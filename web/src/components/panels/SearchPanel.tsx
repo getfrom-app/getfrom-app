@@ -3,6 +3,7 @@
  * Reemplaza el buscador expandible del topbar con un panel tipo MagicChat
  */
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 
 interface Props {
@@ -12,22 +13,22 @@ interface Props {
 }
 
 const TYPE_CHIPS = [
-  { label: 'Nota',    query: 'nota' },
-  { label: 'Tarea',   query: 'tarea' },
-  { label: 'Evento',  query: 'evento' },
-  { label: 'Archivo', query: 'archivo' },
-  { label: 'Enlace',  query: 'enlace' },
+  { labelKey: 'search.chipNote',    query: 'nota' },
+  { labelKey: 'search.chipTask',    query: 'tarea' },
+  { labelKey: 'search.chipEvent',   query: 'evento' },
+  { labelKey: 'search.chipFile',    query: 'archivo' },
+  { labelKey: 'search.chipLink',    query: 'enlace' },
 ]
 const TIME_CHIPS = [
-  { label: 'Hoy',         query: 'hoy' },
-  { label: 'Esta semana', query: 'semana' },
-  { label: 'Este mes',    query: 'mes' },
-  { label: 'Pasado',      query: 'pasado' },
-  { label: 'Futuro',      query: 'futuro' },
+  { labelKey: 'search.chipToday',     query: 'hoy' },
+  { labelKey: 'search.chipThisWeek',  query: 'semana' },
+  { labelKey: 'search.chipThisMonth', query: 'mes' },
+  { labelKey: 'search.chipPast',      query: 'pasado' },
+  { labelKey: 'search.chipFuture',    query: 'futuro' },
 ]
 const STATUS_CHIPS = [
-  { label: 'Pendiente', query: 'pendiente' },
-  { label: 'Hecho',     query: 'hecho' },
+  { labelKey: 'search.chipPending', query: 'pendiente' },
+  { labelKey: 'search.chipDone',    query: 'hecho' },
 ]
 
 function cartesian(arrays: string[][]): string[][] {
@@ -39,6 +40,7 @@ function cartesian(arrays: string[][]): string[][] {
 
 export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const s = useStore()
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [chipTypes,    setChipTypes]    = useState<Set<string>>(new Set())
@@ -134,14 +136,14 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   }
 
   // Chip renderer — texto puro, sin caja, igual que el dropdown flotante anterior
-  function renderChip(c: { label: string; query: string }, group: 'type' | 'time' | 'status' | 'context') {
+  function renderChip(c: { labelKey?: string; label?: string; query: string }, group: 'type' | 'time' | 'status' | 'context') {
     return (
       <button
         key={c.query}
         className={`search-panel-chip ${isChipSelected(c.query) ? 'active' : ''}`}
         onClick={() => toggleChip(c.query, group)}
       >
-        {c.label}
+        {c.labelKey ? t(c.labelKey) : c.label}
       </button>
     )
   }
@@ -162,7 +164,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
           ref={inputRef}
           type="text"
           className="search-panel-input"
-          placeholder="Buscar…"
+          placeholder={t('search.searchPlaceholder')}
           value={filterText}
           onChange={handleInputChange}
         />

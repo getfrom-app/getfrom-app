@@ -3,6 +3,7 @@
 // Botón flotante siempre visible (esquina inferior derecha) que abre
 // AIChatModal. Mismo patrón que Mac AIChatFloatingButton.swift.
 
+import { useTranslation } from 'react-i18next'
 import { useAIChat } from '../../store/aiChatStore'
 
 interface Props {
@@ -11,12 +12,13 @@ interface Props {
 }
 
 export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
+  const { t } = useTranslation()
   const chat = useAIChat()
   const hasSession = chat.messages.length > 0
   return (
     <button
       onClick={onClick}
-      title="Magic — dime qué necesitas (⌘J)"
+      title={t('ai.magicHint')}
       style={{
         position: 'fixed',
         right: 16,

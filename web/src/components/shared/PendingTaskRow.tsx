@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { renderInline } from '../outliner/InlineRenderer'
 import type { Node } from '../../types'
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function PendingTaskRow({ task, variant, indented, parentNote, onClick, onOpenProps, onDropAsChild }: Props) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [leaving, setLeaving] = useState<null | 'pulse' | 'fade'>(null)
@@ -108,7 +110,7 @@ export default function PendingTaskRow({ task, variant, indented, parentNote, on
       )}
 
       <span className={`diary-agenda-text${isDone ? ' done' : ''}`}>
-        {task.text ? renderInline(task.text) : 'Sin título'}
+        {task.text ? renderInline(task.text) : t('common.noTitle')}
       </span>
 
       {parentNote && (
@@ -126,7 +128,7 @@ export default function PendingTaskRow({ task, variant, indented, parentNote, on
               lineHeight: 1, borderRadius: 4,
             }}
             onClick={e => { e.stopPropagation(); onOpenProps() }}
-            title="Propiedades de la tarea"
+            title={t('panel.taskProperties')}
           >···</button>
         </div>
       )}

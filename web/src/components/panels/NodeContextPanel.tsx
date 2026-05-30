@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
 
 interface Props {
@@ -9,6 +10,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
   const s = useStore()
   const node = s.getNode(nodeId)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   if (!node) return null
 
@@ -68,19 +70,19 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="insights-grid">
           <div className="insight-item">
             <span className="insight-value">{children.length}</span>
-            <span className="insight-label">Bullets</span>
+            <span className="insight-label">{t('panel.bullets')}</span>
           </div>
           <div className="insight-item">
             <span className="insight-value">{wordCount}</span>
-            <span className="insight-label">Palabras</span>
+            <span className="insight-label">{t('panel.words')}</span>
           </div>
           <div className="insight-item">
             <span className="insight-value">{backlinks.length + outgoingLinks.length}</span>
-            <span className="insight-label">Links</span>
+            <span className="insight-label">{t('panel.links')}</span>
           </div>
           <div className="insight-item">
             <span className="insight-value">{childTasks.length}</span>
-            <span className="insight-label">Tareas</span>
+            <span className="insight-label">{t('panel.tasks')}</span>
           </div>
         </div>
       </div>
@@ -89,10 +91,10 @@ export default function NodeContextPanel({ nodeId }: Props) {
       {childTasks.length > 0 && (
         <div className="context-section">
           <div className="context-section-label">Subtareas</div>
-          {childTasks.slice(0, 10).map(t => (
-            <div key={t.id} className="context-task-row" onClick={() => navigate(`/node/${t.id}`)}>
-              <span className="context-task-status">{t.status === 'done' ? '✓' : '○'}</span>
-              <span className="context-task-text">{t.text || 'Sin título'}</span>
+          {childTasks.slice(0, 10).map(task => (
+            <div key={task.id} className="context-task-row" onClick={() => navigate(`/node/${task.id}`)}>
+              <span className="context-task-status">{task.status === 'done' ? '✓' : '○'}</span>
+              <span className="context-task-text">{task.text || t('common.noTitle')}</span>
             </div>
           ))}
         </div>
@@ -114,7 +116,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
           <div className="context-section-label">→ Enlaza a</div>
           {outgoingLinks.map(n => (
             <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
-              {n.text || 'Sin título'}
+              {n.text || t('common.noTitle')}
             </div>
           ))}
         </div>
@@ -126,7 +128,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
           <div className="context-section-label">← Mencionado en</div>
           {backlinks.map(n => (
             <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
-              {n.text || 'Sin título'}
+              {n.text || t('common.noTitle')}
             </div>
           ))}
         </div>
@@ -138,7 +140,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
           <div className="context-section-label">Relacionadas</div>
           {relatedByTag.map(n => (
             <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
-              {n.text || 'Sin título'}
+              {n.text || t('common.noTitle')}
             </div>
           ))}
         </div>
@@ -153,7 +155,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
               <span className="context-child-bullet">
                 {child.status === 'done' ? '✓' : child.status === 'pending' ? '○' : '·'}
               </span>
-              <span className="context-child-text">{child.text || 'Sin título'}</span>
+              <span className="context-child-text">{child.text || t('common.noTitle')}</span>
               {s.children(child.id).length > 0 && (
                 <span className="context-child-count">{s.children(child.id).length}</span>
               )}
@@ -171,7 +173,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
           <div className="context-section-label">Hermanas ({siblings.length - 1})</div>
           {siblings.filter(sib => sib.id !== node.id).slice(0, 5).map(sib => (
             <div key={sib.id} className="context-backlink" onClick={() => navigate(`/node/${sib.id}`)}>
-              <span>{sib.text || 'Sin título'}</span>
+              <span>{sib.text || t('common.noTitle')}</span>
             </div>
           ))}
         </div>

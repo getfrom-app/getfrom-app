@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 
 function formatDate(iso: string): string {
@@ -9,6 +10,7 @@ function formatDate(iso: string): string {
 export default function TrashView() {
   const s = useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [confirmClear, setConfirmClear] = useState(false)
 
@@ -69,31 +71,31 @@ export default function TrashView() {
     <div className="view trash-view">
       <div className="view-header">
         <div className="trash-header-row">
-          <h1 className="view-title">🗑 Papelera</h1>
+          <h1 className="view-title">{t('trash.title')}</h1>
           <span className="trash-count">{deletedNodes.length} elemento{deletedNodes.length !== 1 ? 's' : ''}</span>
         </div>
-        <p className="view-subtitle">Elementos eliminados en los últimos 30 días.</p>
+        <p className="view-subtitle">{t('trash.hint')}</p>
         <div className="trash-actions-bar">
           <input
             type="text"
             className="search-input"
-            placeholder="Buscar en papelera..."
+            placeholder={t('trash.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           {deletedNodes.length > 0 && (
             !confirmClear ? (
               <button className="btn-secondary" style={{ fontSize: 12 }} onClick={() => setConfirmClear(true)}>
-                Vaciar papelera
+                {t('trash.empty')}
               </button>
             ) : (
               <div className="trash-confirm-row">
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>¿Seguro?</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('trash.confirmEmpty')}</span>
                 <button className="btn-primary" style={{ fontSize: 12, background: '#ef4444' }} onClick={handleClearTrash}>
-                  Sí, eliminar
+                  {t('common.yes')}, {t('common.delete').toLowerCase()}
                 </button>
                 <button className="btn-secondary" style={{ fontSize: 12 }} onClick={() => setConfirmClear(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
               </div>
             )
@@ -105,7 +107,7 @@ export default function TrashView() {
         {deletedNodes.length === 0 ? (
           <div className="view-empty">
             <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-            <div>{search ? `Sin resultados para "${search}"` : 'La papelera está vacía'}</div>
+            <div>{search ? `${t('search.noResultsFor')} "${search}"` : 'La papelera está vacía'}</div>
           </div>
         ) : (
           <div className="trash-list">
@@ -116,7 +118,7 @@ export default function TrashView() {
                     {node.status === 'pending' ? '○' : node.status === 'done' ? '✓' : node.isEvent ? '📅' : (node.types || []).includes('bucle') ? '↺' : '📄'}
                   </span>
                   <div className="trash-item-content">
-                    <span className="trash-item-title">{node.text || 'Sin título'}</span>
+                    <span className="trash-item-title">{node.text || t('common.noTitle')}</span>
                     {node.body && <span className="trash-item-preview">{node.body.slice(0, 80)}</span>}
                     {node.deletedAt && (
                       <span className="trash-item-date">Eliminado: {formatDate(node.deletedAt)}</span>
