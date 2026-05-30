@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual time planner: organize your week in From</title>
+  <meta name="description" content="From includes a visual planner integrated with your Google Calendar. Organize your week with time blocking, drag events, and keep everything synced in real time.">
+  <meta name="keywords" content="time planner, time blocking, organize productive week, visual planner, digital calendar, time blocking app">
+  <meta property="og:title" content="Visual time planner: organize your week in From">
+  <meta property="og:description" content="Visual time blocking integrated with Google Calendar. Drag tasks to the calendar, organize your week, and keep everything in sync.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/planificador-tiempo/01-planificador-semana.png">
+  <meta property="og:url" content="https://getfrom.app/blog/en/time-planner">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/en/time-planner">
+  <link rel="alternate" hreflang="es" href="https://getfrom.app/blog/planificador-tiempo.html" />
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Visual time planner: organize your week in From",
+    "description": "Visual time blocking integrated with Google Calendar. Drag tasks to the calendar, organize your week, and keep everything in sync.",
+    "image": "https://getfrom.app/img/blog/planificador-tiempo/01-planificador-semana.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/en/time-planner" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Planning</span>
+  <h1>Visual time planner: organize your week in From</h1>
+  <p class="subtitle">A weekly planner integrated with Google Calendar, without leaving your notes system. Press P and it appears. That simple.</p>
+  <div class="blog-meta">
+    <span>📅 May 28, 2026</span>
+    <span>⏱ 5 min read</span>
+    <span>🏷 Time blocking · Planning · Calendar</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>In this article</h4>
+    <ol>
+      <li><a href="#what-is">What time blocking is and why it works</a></li>
+      <li><a href="#planner">From's planner: instant access</a></li>
+      <li><a href="#gcal">Google Calendar integration</a></li>
+      <li><a href="#week">How to plan your week in 15 minutes</a></li>
+      <li><a href="#habit">The weekly planning habit</a></li>
+    </ol>
+  </div>
+
+  <h2 id="what-is">What time blocking is and why it works</h2>
+  <p>Time blocking is a productivity technique where, instead of keeping an open task list, you assign specific time blocks on your calendar to each task or type of work. Instead of "I need to do X today", you think "from 9 to 11 I do X, from 11 to 12 I do Y".</p>
+  <p>The evidence behind time blocking is solid: when you have a reserved block for a task, you're less likely to procrastinate, there's less task-switching, and you get better at estimating how long things actually take.</p>
+  <p>The historical problem with time blocking is that it required jumping between your task app and calendar. In From, they're integrated: your note tree and the visual planner coexist on the same screen.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/planificador-tiempo/01-planificador-semana.png" alt="From's weekly planner showing the day view with Google Calendar events" loading="lazy" width="670" height="700">
+    <figcaption>From's planner shows your week with Google Calendar events integrated. Press P from anywhere to open it.</figcaption>
+  </figure>
+
+  <h2 id="planner">From's planner: instant access</h2>
+  <p>From's planner activates with the <kbd>P</kbd> key from anywhere in the app. It opens as a right-side panel that coexists with your note tree — you can see both at the same time.</p>
+  <p>There are two main views:</p>
+  <ul>
+    <li><strong>Day view</strong> — Shows the hours of the current day with time blocks</li>
+    <li><strong>Week view</strong> — Full week view, ideal for Monday planning</li>
+  </ul>
+  <p>You can zoom in on the planner to see 30-minute blocks in more detail, or zoom out to see the full week at a glance.</p>
+
+  <div class="callout">
+    <p>⌨️ <strong>Shortcut:</strong> <kbd>P</kbd> opens and closes the planner. While it's open, you can keep navigating your note tree normally — the planner is a side panel, not a full screen.</p>
+  </div>
+
+  <h2 id="gcal">Google Calendar integration</h2>
+  <p>If you connect your Google Calendar, all your events appear directly in From's planner. Meetings, commitments, recurring events — all visible in the same view as your notes and tasks.</p>
+  <p>Sync is real-time: if someone adds you to a meeting in Google Calendar, it appears in From within seconds. If you create an event in From, it appears in Google Calendar.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/planificador-tiempo/02-vista-completa.png" alt="Full From view with note tree on the left and planner with Google Calendar on the right" loading="lazy" width="1280" height="700">
+    <figcaption>The full view: note tree and planner side by side. See your daily commitments alongside your projects and tasks.</figcaption>
+  </figure>
+
+  <h2 id="week">How to plan your week in 15 minutes</h2>
+  <p>The weekly planning ritual with From is simple. Do it every Monday morning:</p>
+  <ol>
+    <li><strong>Open the week view</strong> with <kbd>P</kbd> → Week</li>
+    <li><strong>Review fixed commitments</strong> — Google Calendar meetings are already there</li>
+    <li><strong>Filter pending tasks</strong> with the "Pending" or "This week" shortcut</li>
+    <li><strong>Assign days to the most important tasks</strong> — tasks with dates appear on their day automatically</li>
+    <li><strong>Identify free slots</strong> and decide what deep work goes in each one</li>
+    <li><strong>Create time blocks</strong> directly in the planner for focused work</li>
+  </ol>
+
+  <h2 id="habit">The weekly planning habit</h2>
+  <p>The planner is only as useful as the habit you build around it. These are the rules that make the biggest difference:</p>
+  <ul>
+    <li><strong>Fixed planning time</strong> — Monday before 10am, always. No exceptions.</li>
+    <li><strong>Daily review</strong> — Every morning, 5 minutes looking at today's view in the planner</li>
+    <li><strong>Respect the blocks</strong> — If you blocked 9–11 for deep work, defend that time</li>
+    <li><strong>Real-time updates</strong> — If something urgent comes up, move the block in the planner immediately</li>
+  </ul>
+  <p>The advantage of having the planner integrated with your notes is zero friction. When something changes, you change it right where you are. No need to open another app.</p>
+
+  <div class="cta-box">
+    <h3>Plan your week with From</h3>
+    <p>Visual planner + Google Calendar + notes. All in one app.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacy</a> · <a href="/terms.html" style="color:#aaa">Terms</a></p>
+</footer>
+
+</body>
+</html>

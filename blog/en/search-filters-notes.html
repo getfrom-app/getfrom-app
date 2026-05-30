@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find any note in seconds: From's filter system</title>
+  <meta name="description" content="From includes a filter system that accepts natural language, one-click chips, and saved panels. Find any note, task, or event in under 5 seconds.">
+  <meta name="keywords" content="find notes fast, productivity filters, organize notes system, smart note search, natural language filter app">
+  <meta property="og:title" content="Find any note in seconds: From's filter system">
+  <meta property="og:description" content="Natural language filters, one-click chips, and saved panels. You'll never waste time searching for your notes and tasks again.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/filtros-busqueda/01-filtro-pendientes.png">
+  <meta property="og:url" content="https://getfrom.app/blog/en/search-filters-notes">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/en/search-filters-notes">
+  <link rel="alternate" hreflang="es" href="https://getfrom.app/blog/filtros-busqueda-notas.html" />
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f5f3ff; padding: 2px 6px; border-radius: 4px; font-size: 14px; color: #7c3aed; font-family: monospace; }
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Find any note in seconds: From's filter system",
+    "description": "Natural language filters, one-click chips, and saved panels. You'll never waste time searching for your notes and tasks again.",
+    "image": "https://getfrom.app/img/blog/filtros-busqueda/01-filtro-pendientes.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/en/search-filters-notes" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Search</span>
+  <h1>Find any note in seconds: From's filter system</h1>
+  <p class="subtitle">A system that captures everything but lets you find nothing is useless. From has three levels of filters so anything you've captured is less than 5 seconds away.</p>
+  <div class="blog-meta">
+    <span>📅 May 28, 2026</span>
+    <span>⏱ 5 min read</span>
+    <span>🏷 Search · Filters · Organization</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>In this article</h4>
+    <ol>
+      <li><a href="#levels">The three levels of the filter system</a></li>
+      <li><a href="#chips">Level 1: one-click chips</a></li>
+      <li><a href="#text">Level 2: text and natural language</a></li>
+      <li><a href="#panels">Level 3: saved panels</a></li>
+      <li><a href="#combinations">Most useful filter combinations</a></li>
+      <li><a href="#context">Results with context: the tree as reference</a></li>
+    </ol>
+  </div>
+
+  <h2 id="levels">The three levels of the filter system</h2>
+  <p>Retrieval is as important as capture. A system where you store everything but can't find anything has the same practical value as storing nothing. That's why From has three levels of filters, each for a different use case.</p>
+  <p>The goal is that <strong>anything you've captured is less than 5 seconds away</strong>. Without remembering which folder it's in, without technical search operators, without manually navigating the tree.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/filtros-busqueda/01-filtro-pendientes.png" alt="From showing the result of the 'Pending' filter with all tasks and their hierarchical context" loading="lazy" width="1280" height="700">
+    <figcaption>The 'Pending' filter shows all pending tasks across the entire tree, with their context hierarchy. One click from the sidebar.</figcaption>
+  </figure>
+
+  <h2 id="chips">Level 1: one-click chips</h2>
+  <p>Chips are predefined filter buttons that appear when you open the search bar (<kbd>Cmd+F</kbd>). They're the most commonly used filters, available with a single click:</p>
+  <ul>
+    <li><code>Today</code> — Everything under today's note</li>
+    <li><code>Tomorrow</code> — Everything under tomorrow's note</li>
+    <li><code>This week</code> — Everything in the next 7 days</li>
+    <li><code>Overdue</code> — Tasks with a past date that aren't complete</li>
+    <li><code>Pending</code> — All unchecked tasks</li>
+    <li><code>Done</code> — Completed tasks</li>
+    <li><code>Task</code> — Only nodes marked as tasks</li>
+    <li><code>Event</code> — Only calendar events</li>
+  </ul>
+  <p>You can combine chips: "Pending" + "This week" shows pending tasks for the next 7 days. "Overdue" + "Task" shows only overdue tasks, excluding notes.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/filtros-busqueda/02-panel-filtros-chips.png" alt="From's filter panel showing quick-select chips: Today, Tomorrow, This week, Overdue, Pending, Done, Task, Event" loading="lazy" width="1280" height="700">
+    <figcaption>Filter chips: one click to filter by type, date, or status. They can be combined for more specific filters.</figcaption>
+  </figure>
+
+  <h2 id="text">Level 2: text and natural language</h2>
+  <p>If chips aren't enough, you can type directly in the search bar. From accepts two types of text input:</p>
+
+  <h3>Text search</h3>
+  <p>Type any word and From filters all nodes that contain it. Search is real-time — results appear as you type.</p>
+
+  <h3>Natural language with AI</h3>
+  <p>Write a query in natural language and the AI interprets it. "Meeting notes from last week", "tasks for the web project", "everything related to client García". The AI translates the intent into technical filters and shows the results.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/filtros-busqueda/03-filtro-lenguaje-natural.png" alt="From's filter bar with natural language text: 'pending tasks this week'" loading="lazy" width="1280" height="700">
+    <figcaption>Write in natural language. The AI understands "pending tasks this week" and shows exactly that — no need to know technical operators.</figcaption>
+  </figure>
+
+  <h2 id="panels">Level 3: saved panels</h2>
+  <p>Filters you use more than once can be saved as panels in the left sidebar. One click and the filter applies immediately — no need to open the search bar or select chips.</p>
+  <p>From ships with two panels: "Pending" and "This week". You can add your own from the save panel menu on any active filter.</p>
+  <p>Panels users most commonly add:</p>
+  <ul>
+    <li>"Overdue" — To review what's running behind</li>
+    <li>"Learning this week" — To filter recent learning notes</li>
+    <li>"Unprocessed ideas" — To review ideas pending evaluation</li>
+    <li>"This week minus today's tasks" — To plan the rest of the week</li>
+  </ul>
+
+  <div class="callout">
+    <p>💡 <strong>Advanced tip:</strong> The "Task" shortcut in the sidebar acts as your universal task inbox — it shows all tasks in the system, regardless of where they live. Perfect for the weekly review.</p>
+  </div>
+
+  <h2 id="combinations">Most useful filter combinations</h2>
+  <p>These are the combinations that deliver the most value day to day:</p>
+  <ul>
+    <li><strong>Pending + Today</strong> — The tasks you need to do today. Your daily list.</li>
+    <li><strong>Overdue + Task</strong> — Tasks running behind. Urgency review.</li>
+    <li><strong>This week + Event</strong> — All your commitments for the week. Agenda view.</li>
+    <li><strong>Pending + This week</strong> — Your plan for the week. Foundation for Monday planning.</li>
+    <li><strong>Done + Today</strong> — What you completed today. For end-of-day review.</li>
+  </ul>
+
+  <h2 id="context">Results with context: the tree as reference</h2>
+  <p>Unlike the flat search in other apps, results in From always show the complete hierarchical context. If a task is nested under "Web project &gt; Design phase &gt; Tuesday meeting", you see that hierarchy in the result.</p>
+  <p>This eliminates ambiguity: when two notes share the same name in different projects, the context tells you which is which without having to open them.</p>
+
+  <div class="cta-box">
+    <h3>Find everything in seconds with From</h3>
+    <p>Smart filters, natural language, and saved panels. Free to start.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacy</a> · <a href="/terms.html" style="color:#aaa">Terms</a></p>
+</footer>
+
+</body>
+</html>

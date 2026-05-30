@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Project Management: Forget Trello and Use From</title>
+  <meta name="description" content="Trello is for teams. For managing your personal projects you need something more agile. From organizes your projects with hierarchy, AI, and smart filters.">
+  <meta name="keywords" content="personal project management, trello personal alternative, tasks projects app, organize personal projects, personal productivity 2026">
+  <meta property="og:title" content="Personal Project Management: Forget Trello and Use From">
+  <meta property="og:description" content="Trello is for teams. For personal projects you need speed, hierarchy, and smart filters. From has it all.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/gestion-proyectos/01-tareas-filtradas.png">
+  <meta property="og:url" content="https://getfrom.app/blog/en/personal-project-management">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://getfrom.app/blog/en/personal-project-management">
+  <link rel="alternate" hreflang="es" href="https://getfrom.app/blog/gestion-proyectos-personal.html" />
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; color: #1a1a1a; max-width: 800px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #888; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .screenshot { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06); border: 1px solid #f0f0f0; }
+    .screenshot img { width: 100%; display: block; }
+    .screenshot figcaption { font-size: 13px; color: #888; text-align: center; padding: 10px 16px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+    .callout { background: #f5f3ff; border-left: 3px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 28px 0; }
+    .callout p { margin: 0; font-size: 16px; color: #4c1d95; }
+    .cta-box { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 60px 0 0; }
+    .cta-box h3 { font-size: 24px; font-weight: 700; margin: 0 0 12px; }
+    .cta-box p { font-size: 16px; opacity: .85; margin: 0 0 28px; }
+    .cta-box a { display: inline-block; background: #fff; color: #7c3aed; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav a { text-decoration: none; color: #333; font-size: 14px; font-weight: 500; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
+    nav.blog-nav .back { font-size: 13px; color: #888; }
+    .toc { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 20px 24px; margin: 0 0 48px; }
+    .toc h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 12px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; line-height: 1.7; }
+    .toc a { color: #7c3aed; text-decoration: none; }
+    @media (max-width: 600px) {
+      .blog-hero { padding: 60px 16px 40px; }
+      .blog-body { padding: 40px 16px 60px; }
+      .cta-box { padding: 32px 20px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Personal Project Management: Forget Trello and Use From",
+    "description": "How to manage your personal projects with From: hierarchy, AI, and smart filters.",
+    "image": "https://getfrom.app/img/blog/gestion-proyectos/01-tareas-filtradas.png",
+    "author": { "@type": "Organization", "name": "From" },
+    "publisher": { "@type": "Organization", "name": "From", "logo": { "@type": "ImageObject", "url": "https://getfrom.app/icon.svg" } },
+    "datePublished": "2026-05-28",
+    "dateModified": "2026-05-28",
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://getfrom.app/blog/en/personal-project-management" }
+  }
+  </script>
+</head>
+<body>
+
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+
+<header class="blog-hero">
+  <span class="tag">Projects</span>
+  <h1>Personal Project Management: Forget Trello and Use From</h1>
+  <p class="subtitle">Trello is brilliant for teams coordinating visual workflows. For your personal projects, you need something faster, more contextual, and with AI built in.</p>
+  <div class="blog-meta">
+    <span>📅 May 28, 2026</span>
+    <span>⏱ 6 min read</span>
+    <span>🏷 Projects · Tasks · Productivity</span>
+  </div>
+</header>
+
+<article class="blog-body">
+
+  <div class="toc">
+    <h4>In this article</h4>
+    <ol>
+      <li><a href="#problem">Why Trello doesn't work for personal projects</a></li>
+      <li><a href="#hierarchy">From's hierarchy model</a></li>
+      <li><a href="#tasks">Nested tasks: unlimited subtasks</a></li>
+      <li><a href="#filters">See only what matters at each moment</a></li>
+      <li><a href="#ai">Create complete projects with AI in seconds</a></li>
+      <li><a href="#workflow">The daily workflow</a></li>
+    </ol>
+  </div>
+
+  <h2 id="problem">Why Trello doesn't work for personal projects</h2>
+  <p>Trello was built to coordinate teams with visual workflows. Cards in columns (To Do → In Progress → Done) make sense when multiple people move cards and need to see the team's status at a glance.</p>
+  <p>When you use it alone, the model breaks. Cards have no hierarchy — you can't have real subtasks inside a task. There's no connection between your projects and your notes. There are no smart filters. And there's definitely no AI that understands your content.</p>
+  <p>For personal projects you need <strong>capture speed, natural hierarchy, and context</strong>. That's exactly what From offers.</p>
+
+  <h2 id="hierarchy">From's hierarchy model</h2>
+  <p>In From, everything is a node. A project is a node. Its phases are sub-nodes. The tasks in each phase are sub-nodes of sub-nodes. There's no depth limit — you can go as deep as you need.</p>
+  <p>This hierarchy gives you something Trello can't: <strong>permanent context</strong>. When you see a task, you always know which project it belongs to, which phase it's in, and what surrounds it. No tags, no cross-references needed.</p>
+
+  <figure class="screenshot">
+    <img src="/img/blog/gestion-proyectos/01-tareas-filtradas.png" alt="From showing all active project tasks with their full hierarchical context" loading="lazy" width="1280" height="700">
+    <figcaption>Each task shows its full context: project, phase, date. Without configuring anything — the hierarchical tree does it automatically.</figcaption>
+  </figure>
+
+  <h2 id="tasks">Nested tasks: unlimited subtasks</h2>
+  <p>In Trello, subtasks are a clunky add-on — a checklist inside a card that doesn't have the same functionality as a real task. In From, a subtask is exactly like a normal task but nested under another one.</p>
+  <p>This means you can:</p>
+  <ul>
+    <li>Nest tasks as deep as you need</li>
+    <li>See the status of subtasks from the parent task</li>
+    <li>Filter pending subtasks without losing project context</li>
+    <li>Assign dates to tasks and subtasks independently</li>
+    <li>Create notes inside a task to document the work</li>
+  </ul>
+
+  <div class="callout">
+    <p>💡 <strong>Hierarchy tip:</strong> Use <kbd>Tab</kbd> to make any node a child of the node above it. <kbd>Shift+Tab</kbd> moves it up a level. Reorganizing entire projects takes seconds.</p>
+  </div>
+
+  <h2 id="filters">See only what matters at each moment</h2>
+  <p>The trap of managing multiple projects is seeing too much at once. When you open Trello with five boards, you have to mentally zoom in to find what needs doing today.</p>
+  <p>In From, filters solve this. Click "Pending" in the sidebar and you see only your pending tasks from all projects, sorted by date with their project context visible. Click "This week" and you see only what's due this week.</p>
+  <p>You can create your own saved filters: "Overdue tasks", "Web project this week", "Unprocessed ideas". Each is a one-click shortcut in the sidebar.</p>
+
+  <h2 id="ai">Create complete projects with AI in seconds</h2>
+  <p>Imagine you need to manage a new product launch. In Trello it would take 15–20 minutes to create the board, lists, cards, and configure members. In From, open Magic AI and write:</p>
+  <p><em>"Create a project called 'Q3 Product Launch' with phases: market research, design, development, marketing, and launch. In each phase add a pending task to define objectives."</em></p>
+  <p>In 5 seconds you have the complete structure created with a single message.</p>
+
+  <h2 id="workflow">The daily workflow</h2>
+  <p>With From, the personal project workflow is simple:</p>
+  <ol>
+    <li><strong>Morning:</strong> press <kbd>H</kbd> to see today's note. Your tasks for the day are immediately visible.</li>
+    <li><strong>During the day:</strong> work on the tasks of the current project. Navigate to the project node for full context.</li>
+    <li><strong>New task:</strong> press <kbd>N</kbd> to add a task directly to the node you're in, or use Magic AI to add it to the right project.</li>
+    <li><strong>Review:</strong> use "This week" or "Pending" to see the global status of all projects.</li>
+    <li><strong>End of day:</strong> mark completed tasks. Status is recorded automatically.</li>
+  </ol>
+
+  <div class="cta-box">
+    <h3>Start managing your projects with From</h3>
+    <p>Free forever on web. Mac and iPhone apps included.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+
+</article>
+
+<footer style="text-align:center; padding: 40px 24px; font-size:13px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <p>© 2026 From · <a href="/privacy.html" style="color:#aaa">Privacy</a> · <a href="/terms.html" style="color:#aaa">Terms</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing — From</title>
+    <meta name="description" content="Choose the plan that works best for you. From free forever, Pro from €7/mo, or Lifetime for €149.">
+    <link rel="alternate" hreflang="es" href="https://getfrom.app/pricing.html" />
+    <link rel="alternate" hreflang="en" href="https://getfrom.app/en/pricing.html" />
+    <link rel="icon" type="image/svg+xml" href="../icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="../i18n.js"></script>
+    <style>
+        /* Pricing page overrides */
+        .pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 32px 0 48px;
+        }
+        .pricing-toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        .pricing-toggle-label.active {
+            color: #0e0e10;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            cursor: pointer;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.08);
+            border-radius: 13px;
+            border: 1px solid rgba(0,0,0,0.12);
+            transition: background 0.2s;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .toggle-switch input:checked ~ .toggle-track {
+            background: var(--accent, #7c5bf2);
+        }
+        .toggle-switch input:checked ~ .toggle-thumb {
+            transform: translateX(22px);
+        }
+        .save-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #22c55e;
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+
+        /* 4-column pricing grid */
+        .pricing-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 1060px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .pricing-grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 540px) {
+            .pricing-grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+        .pricing-card {
+            background: #f8f8fb;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px;
+            padding: 28px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .pricing-card.featured {
+            border-color: var(--accent, #7c5bf2);
+            background: rgba(124,91,242,0.08);
+        }
+        .plan-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            background: var(--accent, #7c5bf2);
+            border-radius: 20px;
+            padding: 3px 12px;
+            white-space: nowrap;
+        }
+        .plan-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+        .plan-price {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0e0e10;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .plan-price sup {
+            font-size: 18px;
+            font-weight: 600;
+            vertical-align: super;
+        }
+        .plan-price-period {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .plan-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .plan-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .plan-feature-icon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            margin-top: 1px;
+        }
+        .plan-feature-icon.check {
+            color: var(--accent, #7c5bf2);
+        }
+        .plan-feature-icon.dash {
+            color: rgba(0,0,0,0.2);
+        }
+        .plan-feature.muted {
+            color: rgba(0,0,0,0.3);
+        }
+        .plan-cta {
+            display: block;
+            text-align: center;
+            padding: 11px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        .plan-cta:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+        .plan-cta.primary {
+            background: var(--accent, #7c5bf2);
+            color: #fff;
+        }
+        .plan-cta.secondary {
+            background: rgba(0,0,0,0.05);
+            color: #0e0e10;
+            border: 1px solid rgba(0,0,0,0.12);
+        }
+        .plan-cta.gold {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+        }
+
+        /* Comparison table */
+        .comparison-wrap {
+            max-width: 1060px;
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            text-align: left;
+            color: var(--text-secondary);
+        }
+        .comparison-table thead th {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0e0e10;
+            background: rgba(0,0,0,0.03);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .comparison-table thead th.col-featured {
+            background: rgba(124,91,242,0.12);
+            color: var(--accent, #7c5bf2);
+        }
+        .comparison-table td.col-featured {
+            background: rgba(124,91,242,0.04);
+        }
+        .check-icon { color: var(--accent, #7c5bf2); font-size: 16px; }
+        .dash-icon { color: rgba(0,0,0,0.18); }
+
+        /* FAQ */
+        .faq-list {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+        .faq-item {
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+            padding: 20px 0;
+        }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-q {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0e0e10;
+            margin: 0 0 8px;
+        }
+        .faq-a {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 0;
+        }
+    </style>
+</head>
+<body data-page="pricing">
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/support.html">Support</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en" selected>English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Sign in</a>
+            <a href="/en/#download" class="btn-nav">Download free</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="page-hero">
+    <span class="hero-badge">Pricing</span>
+    <h1>Choose the plan that<br>works best for you</h1>
+    <p>Create your free account. No credit card required.</p>
+</div>
+
+<!-- Pricing cards -->
+<section class="section" style="padding-top: 0;">
+    <div class="pricing-grid-4">
+
+        <!-- Free -->
+        <div class="pricing-card">
+            <div class="plan-name">Free</div>
+            <div class="plan-price"><sup>€</sup>0</div>
+            <div class="plan-price-period">forever</div>
+            <div class="plan-desc">The essentials to get started. No card needed.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    1,000 synced nodes
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Mac, iPhone and web
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Tasks, notes and journal
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    No AI
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    No attachments
+                </li>
+                <li class="plan-feature muted">
+                    <svg class="plan-feature-icon dash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="12" y2="8"/></svg>
+                    No note publishing
+                </li>
+            </ul>
+            <a href="/app/" class="plan-cta secondary">Get started free</a>
+        </div>
+
+        <!-- Pro Monthly -->
+        <div class="pricing-card">
+            <div class="plan-name">Pro Monthly</div>
+            <div class="plan-price"><sup>€</sup>7</div>
+            <div class="plan-price-period">per month · cancel anytime</div>
+            <div class="plan-desc">All of From, no limits, AI included.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Unlimited nodes
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Full AI (Claude + GPT)
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Attachments
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Publish notes with URL
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Priority support
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Bring your own API key
+                </li>
+            </ul>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f" class="plan-cta primary">Subscribe</a>
+        </div>
+
+        <!-- Pro Annual (featured, always visible) -->
+        <div class="pricing-card featured" id="card-annual">
+            <div class="plan-badge">⭐ Recommended</div>
+            <div class="plan-name">Pro Annual</div>
+            <div class="plan-price" id="annual-price"><sup>€</sup>49</div>
+            <div class="plan-price-period" id="annual-period">per year · €4.08/mo</div>
+            <div class="plan-desc">Best value. Save 30% vs monthly.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Unlimited nodes
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Full AI (Claude + GPT)
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Attachments
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Publish notes with URL
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Priority support
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Bring your own API key
+                </li>
+            </ul>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/1553200" class="plan-cta primary" id="annual-btn">Subscribe — €49/year</a>
+        </div>
+
+        <!-- Lifetime -->
+        <div class="pricing-card">
+            <div class="plan-name">Lifetime</div>
+            <div class="plan-price"><sup>€</sup>149</div>
+            <div class="plan-price-period">one-time · forever</div>
+            <div class="plan-desc">All Pro + 3M AI tokens included. No subscriptions.</div>
+            <ul class="plan-features">
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Everything in Pro, forever
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    3,000,000 AI tokens included
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Bring your own API key
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Updates forever
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Top up tokens anytime
+                </li>
+                <li class="plan-feature">
+                    <svg class="plan-feature-icon check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,8 6.5,11.5 13,5"/></svg>
+                    Priority support
+                </li>
+            </ul>
+            <a href="https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520" class="plan-cta gold">Buy Lifetime</a>
+        </div>
+
+    </div>
+</section>
+
+<!-- Comparison table -->
+<div class="section-alt">
+    <section class="section" style="padding-top: 0; padding-bottom: 0;">
+        <div class="section-header">
+            <h2>Plan comparison</h2>
+        </div>
+        <div class="comparison-wrap">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="width:35%; text-align:left;">Feature</th>
+                        <th>Free</th>
+                        <th>Pro Monthly</th>
+                        <th class="col-featured">Pro Annual</th>
+                        <th>Lifetime</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Synced nodes</td>
+                        <td>1,000</td>
+                        <td>Unlimited</td>
+                        <td class="col-featured">Unlimited</td>
+                        <td>Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Devices (Mac, iPhone, Web)</td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>AI (Claude + GPT)</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Included AI tokens</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td>Monthly</td>
+                        <td class="col-featured">Monthly</td>
+                        <td>3,000,000</td>
+                    </tr>
+                    <tr>
+                        <td>Attachments</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Publish notes with URL</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Own API key</td>
+                        <td><span class="dash-icon">—</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                        <td class="col-featured"><span class="check-icon">✓</span></td>
+                        <td><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Support</td>
+                        <td>Community</td>
+                        <td>Priority</td>
+                        <td class="col-featured">Priority</td>
+                        <td>Priority</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- FAQ -->
+<section class="section">
+    <div class="section-header">
+        <h2>Frequently asked questions</h2>
+    </div>
+    <div class="faq-list">
+        <div class="faq-item">
+            <h3 class="faq-q">What happens when my subscription ends?</h3>
+            <p class="faq-a">Your data is not deleted. Sync pauses and AI becomes unavailable, but you still access all your content on the free plan (up to 1,000 nodes). Reactivate whenever you want.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">Can I switch plans?</h3>
+            <p class="faq-a">Yes, at any time from <strong>Settings → Account → Subscription</strong>. You can switch from monthly to annual, cancel or upgrade to Lifetime without losing anything.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">Does it work offline?</h3>
+            <p class="faq-a">Mac and iPhone keep a local copy and keep working without a connection. Changes sync automatically when the network is back. The web version requires a connection.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">What are AI tokens?</h3>
+            <p class="faq-a">Tokens are the unit of consumption for language models (Claude, GPT). Every chat message, AI edit or agent run consumes tokens. 3M tokens equals roughly 2–3 years of normal use. If you run out, you can buy a top-up or connect your own API key.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">Does the Lifetime plan include future updates?</h3>
+            <p class="faq-a">Yes. Lifetime includes all From updates forever. Pro includes updates while your subscription is active.</p>
+        </div>
+        <div class="faq-item">
+            <h3 class="faq-q">Can I use my own Claude or OpenAI API key?</h3>
+            <p class="faq-a">Yes. On any Pro or Lifetime plan you can connect your Anthropic, OpenAI or Google API key in <strong>Settings → AI</strong>. The tokens you use will be charged to your provider account, not to From.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA final -->
+<section class="cta">
+    <h2>Create your free account</h2>
+    <p>No credit card. No time limit. Decide later.</p>
+    <a href="/app/" class="btn-primary" style="font-size: 16px; padding: 14px 32px;">
+        Open From in the browser
+    </a>
+    <a href="/en/#download" style="display:inline-block; margin-top:12px; font-size:14px; color:var(--text-secondary); text-decoration:none;">
+        Or download for macOS →
+    </a>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>Your second brain. Web, Mac and iPhone.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Product</h4>
+            <a href="/en/#features">Features</a>
+            <a href="/en/pricing.html">Pricing</a>
+            <a href="/changelog.html">What's New</a>
+            <a href="/en/#download">Download</a>
+        </div>
+        <div class="footer-col">
+            <h4>Support</h4>
+            <a href="/en/support.html">Help Center</a>
+            <a href="mailto:hola@getfrom.app">Contact</a>
+            <a href="/account.html">My account</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="/en/privacy.html">Privacy</a>
+            <a href="/en/terms.html">Terms</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun Pérez — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+    </div>
+</footer>
+
+
+</body>
+</html>
