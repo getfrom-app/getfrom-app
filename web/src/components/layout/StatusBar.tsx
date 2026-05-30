@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.4.24'
+export const WEB_VERSION = 'v9.4.25'
 
 interface Props {
   isSyncing: boolean
@@ -111,15 +111,15 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       <span className="footer-sep" />
 
       {/* Último backup */}
-      <span className="footer-item" title="Último backup automático">
-        Último backup {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
+      <span className="footer-item" title={t('statusbar.lastBackupHint')}>
+        {t('statusbar.lastBackup')} {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
       </span>
 
       {/* Próxima ejecución de agente programado */}
       {nextRunLabel && (
         <>
           <span className="footer-sep" />
-          <span className="footer-item" title="Próxima ejecución automática de agente">
+          <span className="footer-item" title={t('statusbar.nextAgentRunHint')}>
             ⏰ {nextRunLabel}
           </span>
         </>
@@ -128,7 +128,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       <span className="footer-sep" />
 
       {/* Nodos activos */}
-      <span className="footer-item" title="Nodos en tu árbol">
+      <span className="footer-item" title={t('statusbar.nodeCountHint')}>
         {nodeCount.toLocaleString()} {t('statusbar.nodeCountHint')}
       </span>
 

@@ -4,6 +4,51 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## v9.4.24 — Mayo 2026 · Internacionalización completa ES/EN
+
+### App web en inglés (Web)
+- 50+ componentes y 710 claves de traducción — toda la interfaz disponible en inglés
+- Detección automática de idioma por configuración del navegador
+- Selector manual en **Ajustes → Idioma** (icono 🌐) con aplicación inmediata
+- Cualquier idioma no-español detectado por el navegador → interfaz en inglés
+
+### Landing y Blog en inglés (Web)
+- Landing getfrom.app disponible en inglés en `/en/`
+- Blog en inglés en `/blog/en/` con 13 artículos traducidos
+- SEO bilingüe — URLs canónicas y hreflang correctamente configurados
+
+### Magic AI bilingüe (Web · Servidor)
+- Magic responde en el idioma del usuario (español o inglés) de forma automática
+- Los filtros del árbol son bilingüe: `today/task/pending/done/week` equivalen a sus versiones en español
+- Los chips de sugerencia del filtro cambian de idioma según la configuración
+
+### Email marketing bilingüe (Servidor)
+- Las secuencias de nurturing se envían en inglés a usuarios con locale no-español
+- Detección de idioma en el momento del registro, persistida en el perfil
+
+---
+
+## v9.4.20 — Mayo 2026 · Email marketing, Trial 7 días y Telegram
+
+### Trial de 7 días con tarjeta (Web · LemonSqueezy)
+- Cualquier usuario puede activar una prueba gratuita de 7 días con todas las funcionalidades Pro
+- Se requiere tarjeta de crédito; si no se cancela, pasa automáticamente al plan Pro mensual
+- Badge "Prueba gratuita · X días restantes" visible en la barra superior durante el trial
+- Acceso completo a IA, nodos ilimitados y todas las integraciones durante el periodo de prueba
+
+### Sistema de email nurturing (Servidor)
+- Secuencias automáticas para cada tipo de usuario: free, pro, lifetime y trial
+- Emails de bienvenida, activación de features, recordatorios y retención
+- BCC de control en todos los emails salientes para supervisión
+- Gestión completa vía Railway + LemonSqueezy webhooks
+
+### Canal de Telegram @FromMagicBot (Telegram)
+- Canal oficial con tips semanales sobre cómo sacar el máximo partido a From
+- Automatización completa: los tips se envían sin intervención manual
+- Suscríbete desde getfrom.app o directamente en Telegram buscando @FromMagicBot
+
+---
+
 ## v9.4 — Mayo 2026 · Onboarding, paneles rediseñados, drag-to-select, Magic más inteligente
 
 ### Onboarding interactivo (Web)

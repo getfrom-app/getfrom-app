@@ -1,4 +1,4 @@
-# From — Manual de usuario v9.1
+# From — Manual de usuario v9.4
 
 > Web · Mac · iPhone · getfrom.app
 
@@ -840,6 +840,14 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 - Cancelar suscripción (el acceso se mantiene hasta el final del periodo pagado).
 - Historial de tokens de IA consumidos.
 
+### Idioma
+
+From está disponible en español e inglés. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo.
+
+Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e English. El cambio se aplica de inmediato sin necesidad de recargar.
+
+Si tu navegador está configurado en cualquier idioma que no sea español, la interfaz se mostrará en inglés por defecto.
+
 ### Apariencia
 
 - **Tema**: claro, oscuro o automático (sigue el sistema).
@@ -919,13 +927,32 @@ From tiene integración nativa con Claude Desktop y Claude Code. Una vez conecta
 | Plan | Precio | Incluye |
 |---|---|---|
 | **Gratis** | €0 | Hasta 1.000 nodos sync, sin IA, sin archivos |
+| **Trial** | 7 días gratis | Acceso completo a Pro durante 7 días (requiere tarjeta) |
 | **Pro Mensual** | €7/mes | Nodos ilimitados, IA completa, archivos adjuntos, notas públicas |
 | **Pro Anual** | €49/año (€4,08/mes) | Todo lo de Pro Mensual, facturado anualmente |
 | **Lifetime** | €149 pago único | Todo lo de Pro para siempre + 3M tokens de IA incluidos |
 
+### Prueba gratuita de 7 días
+
+Puedes probar todas las funcionalidades Pro durante 7 días sin coste. Se requiere tarjeta de crédito para activar el trial; si no cancelas antes de que finalice el periodo, la suscripción pasa automáticamente a Pro mensual.
+
+Durante el trial tienes acceso completo a IA, nodos ilimitados, archivos adjuntos e integraciones. La barra superior muestra un badge **"Prueba gratuita · X días restantes"** para que sepas cuánto tiempo queda.
+
+Para cancelar en cualquier momento: **Ajustes → Cuenta → Suscripción → Cancelar** o desde [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
+
 Gestiona tu suscripción en **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
 
 Si tienes código de beta o cupón, introdúcelo en el checkout al comprar.
+
+---
+
+## 22. Canal de Telegram — @FromMagicBot
+
+Suscríbete al canal oficial de From en Telegram para recibir tips semanales sobre cómo sacar el máximo partido a la app: atajos, flujos de trabajo, casos de uso con Magic y novedades.
+
+**Cómo unirte:** busca **@FromMagicBot** en Telegram o accede desde el enlace en getfrom.app.
+
+Los tips se envían de forma automática sin necesidad de interacción. Es un canal de difusión, ideal para aprender From de forma gradual sin saturar tu bandeja de entrada.
 
 ---
 
