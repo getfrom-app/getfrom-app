@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>From — Smart outliner with Magic AI for Web, Mac and iPhone</title>
-    <meta name="description" content="From is the outliner for Web, Mac and iPhone with built-in Magic AI: voice, recording, agents and chat that know your notes. Instant sync and local backup every 2h. Free to start.">
+    <meta name="description" content="From is the outliner for Web, Mac and iPhone with integrated Magic AI: voice, recording, agents and chat that know your notes. Instant sync and local backup every 2h. Free to start.">
     <meta property="og:title" content="From — Smart outliner with Magic AI">
-    <meta property="og:description" content="Lightning-fast outliner with Magic AI: speak, record and act on your notes. Instant Web+Mac+iPhone sync and local backup every 2 hours. Free to start.">
+    <meta property="og:description" content="Ultra-fast outliner with Magic AI: speak, record and act on your notes. Instant Web+Mac+iPhone sync and local backup every 2 hours. Free to start.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://getfrom.app/en/">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" type="image/svg+xml" href="../icon.svg">
     <link rel="alternate" hreflang="es" href="https://getfrom.app/index.html" />
+    <link rel="alternate" hreflang="en" href="https://getfrom.app/en/index.html" />
+    <link rel="icon" type="image/svg+xml" href="../icon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,12 +39,12 @@
             <a href="#magic">Magic AI</a>
             <a href="#ios-sync">iOS + Sync</a>
             <a href="#ai">Agents</a>
-            <a href="../blog/index.html">Blog</a>
+            <a href="/blog/index.html">Blog</a>
             <a href="/en/pricing.html">Pricing</a>
-            <a href="../changelog.html">What's new</a>
-            <a href="../docs/index.html">Manual</a>
-            <a href="../support.html">Support</a>
-            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
+            <a href="/changelog.html">What's New</a>
+            <a href="/docs/index.html">Manual</a>
+            <a href="/en/support.html">Support</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en" selected>English</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option><option value="pt">Português</option><option value="it">Italiano</option><option value="ko">한국어</option></select>
             <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/register'">Sign in</a>
             <a href="#download" class="btn-nav">Download free</a>
         </div>
@@ -54,24 +55,23 @@
 <section class="hero">
     <span class="hero-badge">✦ v9.1 — Web · Mac · iPhone · Magic AI</span>
     <h1>Your second brain.<br><span>With its own voice.</span></h1>
-    <p>Hold <kbd>R</kbd> and speak. Magic AI listens, understands and creates nodes in your daily journal instantly. Ask it to organize your week, review your tasks or run an automated agent — and it does it. This isn't a chatbot sitting on top of your notes. It's an AI that knows your tree and acts on it.</p>
+    <p>Hold <kbd>R</kbd> and speak. Magic AI listens, understands and creates nodes in your journal instantly. Ask it to organize your week, review your tasks or run an automated agent — and it does. It's not a chatbot on top of your notes. It's an AI that knows your tree and acts on it.</p>
     <div class="hero-actions">
         <a href="/app/register" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Get started free</span>
+            <span>Create free account</span>
         </a>
         <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-secondary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Download for Mac</span>
         </a>
     </div>
-    <p class="hero-footnote">Web · Mac · iPhone · Free to start · No credit card required</p>
+    <p class="hero-footnote">Web · Mac · iPhone · Free to start · No credit card</p>
 </section>
 
 <!-- Hero Carousel -->
 <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 64px;">
   <div id="hero-carousel" style="position:relative; border-radius:16px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06);">
-    <!-- Slides -->
     <div id="hero-slides" style="display:flex; transition:transform 0.5s cubic-bezier(0.4,0,0.2,1); will-change:transform;">
       <img src="../img/screenshots/planificador.png" alt="Weekly planner with color-coded events" style="min-width:100%;display:block;">
       <img src="../img/screenshots/diario-hoy.png" alt="Today's journal with tasks and notes" style="min-width:100%;display:block;">
@@ -80,10 +80,8 @@
       <img src="../img/screenshots/vista-calendario.png" alt="Monthly calendar view for May 2026" style="min-width:100%;display:block;">
       <img src="../img/screenshots/outliner-jerarquia.png" alt="Node tree with full hierarchy" style="min-width:100%;display:block;">
     </div>
-    <!-- Prev / Next arrows -->
-    <button onclick="heroCarousel(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:opacity .2s;" aria-label="Previous">‹</button>
-    <button onclick="heroCarousel(1)"  style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:opacity .2s;" aria-label="Next">›</button>
-    <!-- Dots -->
+    <button onclick="heroCarousel(-1)" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:opacity .2s;" aria-label="Previous">&#8249;</button>
+    <button onclick="heroCarousel(1)"  style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:opacity .2s;" aria-label="Next">&#8250;</button>
     <div id="hero-dots" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:7px;">
       <span class="hero-dot active"></span>
       <span class="hero-dot"></span>
@@ -122,16 +120,16 @@
 <section class="section" id="how-it-works">
     <div class="section-header">
         <span class="section-label">Why From is different</span>
-        <h2>One tree. Your whole life. No trade-offs.</h2>
-        <p>Forget folders, loose files, systems that break down and AI that only knows how to talk. In From everything lives in a node tree synced in real time. Faster than jotting on paper. More powerful than anything you've tried before.</p>
+        <h2>One tree. Your whole life. No compromises.</h2>
+        <p>Forget folders, loose files, systems that break and AI that only talks. In From everything lives in a node tree that syncs instantly. Faster than writing a note on paper. More powerful than anything you've tried.</p>
     </div>
     <div class="features-grid features-grid--3" style="max-width: 900px;">
         <div class="card">
             <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
             </div>
-            <h3>Frictionless outliner with superpowers</h3>
-            <p>Workflowy's speed. Notion's power. Nest, move, reorganize. All in a tree that never slows you down.</p>
+            <h3>Friction-free outliner with superpowers</h3>
+            <p>The speed of Workflowy. The power of Notion. Nest, move, reorganize. All in a tree that never slows you down.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
@@ -145,7 +143,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             </div>
             <h3>Real sync — no iCloud, no excuses</h3>
-            <p>Write on Mac, open iPhone: it's already there. From's private server. Zero iCloud Drive dependency. Seconds of latency, always.</p>
+            <p>Write on Mac, open iPhone: it's already there. From's private server. Zero dependency on iCloud Drive. Seconds of latency, always.</p>
         </div>
     </div>
 </section>
@@ -154,9 +152,9 @@
 <div class="section-alt" id="magic">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
-            <span class="section-label">✦ Magic — AI with voice</span>
+            <span class="section-label">&#10022; Magic — AI with voice</span>
             <h2>Speak. Magic listens and acts.</h2>
-            <p>Hold R from anywhere to open Magic and record instantly. Release and Magic transcribes, understands and creates nodes in your journal. Or type directly by pressing Space. Everything Magic generates goes to your tree — never to a separate panel.</p>
+            <p>Hold R from anywhere to open Magic and record instantly. Release and Magic transcribes, understands and creates nodes in your journal. Or type directly by pressing Space. Everything Magic generates goes into your tree — never to a separate panel.</p>
         </div>
 
         <div class="features-grid features-grid--3" style="max-width: 900px;">
@@ -171,15 +169,15 @@
                 <div class="card-icon" style="background: rgba(139,92,246,0.12); color: #8b5cf6;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </div>
-                <h3>Conversations that live as nodes</h3>
-                <p>Each Magic conversation creates a <strong>✦ Title</strong> node in today's journal, with the collapsed transcript and generated nodes as children. Resume the conversation later and add to the same node.</p>
+                <h3>Conversations that live in nodes</h3>
+                <p>Every Magic conversation creates a <strong>&#10022; Title</strong> node in today's journal, with the transcript collapsed and the generated nodes as children. You can resume the conversation later and add to the same node.</p>
             </div>
             <div class="card" style="border: 1px solid rgba(139,92,246,0.2); background: rgba(139,92,246,0.02);">
                 <div class="card-icon" style="background: rgba(139,92,246,0.12); color: #8b5cf6;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 </div>
                 <h3>Teach Magic — it learns from you</h3>
-                <p>Right-click any node → <strong>Teach Magic</strong>. Correct its interpretations: "this isn't a task", "use this context". Magic learns and applies it to all future conversations. Your personal assistant, calibrated by you.</p>
+                <p>Right-click any node &#8594; <strong>Teach Magic</strong>. Fix its interpretations: "this is not a task", "use this context". Magic learns and applies it in all future conversations. Your personal assistant, calibrated by you.</p>
             </div>
         </div>
 
@@ -189,7 +187,7 @@
                 <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8b5cf6; margin-bottom: 10px; text-align: center;">Magic Chat — conversation window</p>
                 <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06);">
                     <img src="../img/screenshots/magic-chat-respuesta.png"
-                         alt="Magic AI answering a question about pending tasks with an organized list"
+                         alt="Magic AI responding to a question about pending tasks with an organized list"
                          style="width: 100%; display: block;">
                 </div>
             </div>
@@ -208,12 +206,12 @@
                 <div style="flex: 1; min-width: 220px;">
                     <p style="font-size: 12px; color: #8b5cf6; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Meeting recorder</p>
                     <h3 style="margin: 0 0 10px; font-size: 18px;">Record. Magic processes it.</h3>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Activate the long recorder from the sidebar for meetings, classes or lengthy notes. When you stop, Magic analyzes the audio and creates in your journal: an executive summary, full transcript and extracted task list. All as nodes, editable from the first second.</p>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Activate the long recorder from the sidebar for meetings, classes or long notes. When you stop, Magic analyzes the audio and creates in your journal: an executive summary, full transcript and extracted task list. All as nodes, editable from the first second.</p>
                 </div>
                 <div style="flex: 1; min-width: 220px;">
                     <p style="font-size: 12px; color: #8b5cf6; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Scheduled agents</p>
-                    <h3 style="margin: 0 0 10px; font-size: 18px;">Working while you sleep</h3>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Set up an agent in your tree and schedule its run: daily at 08:00, weekly on Mondays. The server executes the agent automatically and writes the result to your journal. By the time you open the app, it's already done.</p>
+                    <h3 style="margin: 0 0 10px; font-size: 18px;">Work while you sleep.</h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Configure an agent in your tree and set its schedule: daily at 08:00, weekly on Mondays. The server runs the agent automatically and writes the result to your journal. When you open the app, it's already done.</p>
                 </div>
             </div>
         </div>
@@ -232,7 +230,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Web — Use now
         </a>
-        <a href="/app/register" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none;">
+        <a href="/en/pricing.html" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Pricing
         </a>
@@ -243,13 +241,13 @@
     </div>
 </div>
 
-<!-- NEW iOS + Sync Section -->
+<!-- iOS + Sync Section -->
 <div class="section-alt" id="ios-sync">
     <section class="section" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
             <span class="section-label">Mac + iPhone + Web</span>
             <h2>Your brain, always with you.</h2>
-            <p>From is available on web, Mac and iPhone. The same power across all your devices. Capture ideas in 3 seconds, check your notes anywhere and keep everything in sync instantly.</p>
+            <p>From is available on web, Mac and iPhone. The same power across all your devices. Capture ideas in 3 seconds, check your notes anywhere and keep sync instant.</p>
         </div>
 
         <div class="ios-highlight-grid">
@@ -258,8 +256,8 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13,2 13,9 20,9"/></svg>
                 </div>
                 <div>
-                    <h3>Quick capture with inline shortcuts</h3>
-                    <p>Write your idea and add inline shortcuts instantly: <code>-t</code> for task, <code>-p:high</code> for high priority, <code>-d:tomorrow</code> for date. No menus, no friction.</p>
+                    <h3>Quick capture with shortcuts</h3>
+                    <p>Type your idea and add inline shortcuts instantly: <code>-t</code> for task, <code>-p:high</code> for high priority, <code>-d:tomorrow</code> for a date. No menus, no friction.</p>
                 </div>
             </div>
             <div class="ios-feature-card">
@@ -267,8 +265,8 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
                 </div>
                 <div>
-                    <h3>Automatic daily journal across all devices</h3>
-                    <p>Every day, From creates your journal node automatically. The same content on web, Mac and iPhone, synced. Open the app or browser and start writing — the context is already there.</p>
+                    <h3>Automatic journal on all your devices</h3>
+                    <p>Every day, From creates your journal node automatically. The same content on web, Mac and iPhone, synced. Open the app or browser and start writing — context is already there.</p>
                 </div>
             </div>
             <div class="ios-feature-card">
@@ -276,8 +274,8 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
                 </div>
                 <div>
-                    <h3>Task panel always up to date</h3>
-                    <p>Overdue, due today and active loops visible at a glance. Mark done by swiping, reschedule by tapping. Your to-do list always in sync.</p>
+                    <h3>Always up-to-date task panel</h3>
+                    <p>Overdue tasks, today's tasks and active loops visible at a glance. Mark done by swiping, reschedule by tapping. Your to-do list always in sync.</p>
                 </div>
             </div>
             <div class="ios-feature-card">
@@ -295,12 +293,12 @@
             <div class="ios-cta-text">
                 <span class="section-label" style="margin-bottom: 6px; display: inline-block;">Available now</span>
                 <h3>From — web, Mac and iPhone</h3>
-                <p>The intelligent notes revolution, on all your devices. Open from your browser, download the Mac app or open on iPhone: your tree is already waiting.</p>
+                <p>The intelligent notes revolution, on all your devices. Open from the browser, download for Mac or open on iPhone: your tree is already waiting.</p>
             </div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <a href="/app/register" class="btn-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    Use in your browser — free
+                    Use in browser — free
                 </a>
                 <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-secondary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -318,7 +316,7 @@
 <section class="section" id="features">
     <div class="section-header">
         <h2>Six reasons you won't go back</h2>
-        <p>From isn't another notes app. It's the system you've been looking for: fast, intelligent, cross-platform and with your data under your control.</p>
+        <p>From is not another notes app. It's the system you've been looking for: fast, smart, cross-platform and with your data under your control.</p>
     </div>
     <div class="features-grid">
         <div class="card">
@@ -326,28 +324,28 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <h3>AI that acts, not just talks</h3>
-            <p>From's AI knows your notes. Ask it to organize your week and it does it. Ask about a project and it summarizes what you wrote three months ago. It edits your bullets directly. This isn't ChatGPT with a note on top — it's something else entirely.</p>
+            <p>From's AI knows your notes. Ask it to organize your week and it does. Ask about a project and it summarizes what you wrote three months ago. It edits your bullets directly. It's not ChatGPT with a note on top — it's something else entirely.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <h3>Outliner like Workflowy, but with superpowers</h3>
-            <p>Write fast, nest without limits, rearrange with drag &amp; drop. Use <code>/</code> for tasks, views, headings. Zoom into any bullet to focus. Workflowy's speed with the power of a modern app.</p>
+            <p>Write fast, nest without limit, reorganize with drag &amp; drop. Use <code>/</code> for tasks, views, headings. Zoom into any bullet to focus. Workflowy's speed with the power of a modern app.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
             </div>
             <h3>Your notes travel with you — always</h3>
-            <p>Web, Mac and iPhone synced in real time. No iCloud Drive, no waiting, no setup. Write on your computer in the morning, check from iPhone in the evening. Same content, live.</p>
+            <p>Web, Mac and iPhone synced instantly. No iCloud Drive, no waiting, nothing to configure. Write on your computer in the morning, check on iPhone in the afternoon. Same thing, real time.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(255,149,0,0.12); color: var(--orange);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
             <h3>Never lose anything — local backup every 2h</h3>
-            <p>From saves a full copy of your notes on your Mac every 2 hours in standard Markdown that any editor can open. The cloud can fail — your disk doesn't lie. Your data is yours, period.</p>
+            <p>From saves a complete copy of your notes on your Mac every 2 hours, in standard Markdown that any editor can open. The cloud can fail — your disk doesn't lie. Your data is yours, full stop.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(175,82,222,0.1); color: var(--purple);">
@@ -360,8 +358,8 @@
             <div class="card-icon" style="background: rgba(255,59,48,0.1); color: var(--red);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <h3>Built-in agenda — time inside your tree</h3>
-            <p>Year → Month → Week → Day structure. Dated tasks, automatic journal, visual timeline with your Apple Calendar events. Past and future in the same tree, without switching apps.</p>
+            <h3>Built-in calendar — time in your tree</h3>
+            <p>Year &#8594; Month &#8594; Week &#8594; Day structure. Tasks with dates, automatic journal, visual timeline with your Apple Calendar events. Past and future in the same tree, without switching apps.</p>
         </div>
     </div>
 </section>
@@ -370,7 +368,6 @@
 <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px 64px;">
     <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; font-weight: 500; letter-spacing: 0.02em;">From in action</p>
 
-    <!-- Row 1 -->
     <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
         <div>
             <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Smart filter</p>
@@ -392,7 +389,6 @@
         </div>
     </div>
 
-    <!-- Row 1b — tasks -->
     <div style="margin-bottom: 20px;">
         <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">Task management</p>
         <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06); background: var(--surface, #f7f7f7); display: flex; align-items: center; justify-content: center; height: 110px;">
@@ -400,10 +396,9 @@
         </div>
     </div>
 
-    <!-- Row 2 -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start;">
         <div>
-            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">✦ Magic AI</p>
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">&#10022; Magic AI</p>
             <div style="border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);">
                 <img src="../img/screenshots/detalle-magic.png" alt="Magic AI window with active conversation" style="width: 100%; display: block;">
             </div>
@@ -434,7 +429,7 @@
     <div class="section-header">
         <span class="section-label">Comparison</span>
         <h2>From vs. the rest</h2>
-        <p>We're not afraid of comparisons. Use this to decide.</p>
+        <p>We're not afraid of comparisons. Use it to decide.</p>
     </div>
     <div class="comparison-table-wrapper" style="overflow-x: auto; max-width: 960px; margin: 0 auto;">
         <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -450,35 +445,35 @@
             <tbody>
                 <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 500;">Capture speed</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">⚡ Instant</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#9889; Instant</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">Slow (Electron)</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Fast</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Fast</td>
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 500;">Real contextual AI</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">✓ Knows your notes</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#10003; Knows your notes</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">Basic (no context)</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">None</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">Paid plugins</td>
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 500;">Automatic local backup</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">✓ Every 2 hours</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#10003; Every 2 hours</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">No</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">No</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Yes (local files)</td>
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 500;">Web + Mac + iPhone</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">✓ All three</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#10003; All three</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Yes</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Yes</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">No native sync</td>
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 500;">Sync without iCloud Drive</td>
-                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">✓ Own server</td>
+                    <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#10003; Own server</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Yes (own cloud)</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--green);">Yes</td>
                     <td style="padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-secondary);">Requires plugin/iCloud</td>
@@ -492,7 +487,7 @@
                 </tr>
                 <tr>
                     <td style="padding: 12px 16px; font-weight: 500;">Native Mac app (not Electron)</td>
-                    <td style="padding: 12px 16px; text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">✓ Tauri (Rust)</td>
+                    <td style="padding: 12px 16px; text-align: center; background: rgba(74,144,217,0.04); color: var(--green); font-weight: 600;">&#10003; Tauri (Rust)</td>
                     <td style="padding: 12px 16px; text-align: center; color: var(--text-secondary);">Electron</td>
                     <td style="padding: 12px 16px; text-align: center; color: var(--text-secondary);">Web app</td>
                     <td style="padding: 12px 16px; text-align: center; color: var(--text-secondary);">Electron</td>
@@ -507,7 +502,7 @@
     <div class="section-header">
         <span class="section-label">Sync</span>
         <h2>Your tree. On all your devices.</h2>
-        <p>From syncs in real time via private server. Open the app on web, Mac or iPhone and your nodes are already there. No iCloud Drive, no extra configuration.</p>
+        <p>From syncs in real time via a private server. Open the app on web, Mac or iPhone and your nodes are already there. No iCloud Drive, no extra configuration.</p>
     </div>
 
     <div class="sync-visual">
@@ -546,28 +541,28 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
             </div>
             <h3>Real-time sync</h3>
-            <p>Every change to a node propagates instantly to all your devices. Private cloud server, minimal latency, always up to date.</p>
+            <p>Every node change propagates instantly to all your devices. Private cloud server, minimal latency, always up to date.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(66,133,244,0.1); color: #4285F4;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13,2 13,9 20,9"/></svg>
             </div>
             <h3>Google Drive and Docs</h3>
-            <p>Connect multiple Google accounts. Link notes to Google Docs with automatic two-way sync. Your Google Docs as context for the AI.</p>
+            <p>Connect multiple Google accounts. Link notes to Google Docs with automatic two-way sync. Your Google docs as context for AI.</p>
         </div>
         <div class="card">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             </div>
             <h3>Automatic backup every 2 hours</h3>
-            <p>Your data is stored on Cloudflare R2. Full local backup every 2 hours in standard Markdown. Export anytime — no lock-in.</p>
+            <p>Your data is stored on Cloudflare R2. Full local backup every 2 hours in standard Markdown. Export any time — no lock-in.</p>
         </div>
     </div>
 </section>
 
 <!-- Outliner full screenshot -->
 <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 48px;">
-    <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 12px; text-align: center;">The full outliner — year, month and day hierarchy with tasks, notes and events</p>
+    <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 12px; text-align: center;">Full outliner — year, month and day hierarchy with tasks, notes and events</p>
     <div style="border-radius: 14px; overflow: hidden; box-shadow: 0 16px 56px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06);">
         <img src="../img/screenshots/outliner-jerarquia.png"
              alt="From outliner with full hierarchy: Agenda, 2026, May, days, tasks with checkboxes, nested notes"
@@ -577,10 +572,10 @@
 
 <!-- Planner screenshot -->
 <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 48px;">
-    <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 12px; text-align: center;">Task view + integrated weekly planner</p>
+    <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 12px; text-align: center;">Tasks view + integrated weekly planner</p>
     <div style="border-radius: 14px; overflow: hidden; box-shadow: 0 16px 56px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06);">
         <img src="../img/screenshots/planificador.png"
-             alt="From weekly planner view with tasks organized by day and pending tasks side panel"
+             alt="From weekly planner view with tasks organized by day and a pending items sidebar"
              style="width: 100%; display: block;">
     </div>
 </div>
@@ -590,27 +585,22 @@
     <div style="text-align: center; margin-bottom: 32px;">
         <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary);">Light or dark, always elegant</span>
         <h2 style="font-size: 28px; font-weight: 700; margin: 10px 0 8px; color: var(--text);">Designed to work at any hour</h2>
-        <p style="color: var(--text-secondary); font-size: 15px; max-width: 500px; margin: 0 auto;">Drag the divider to compare light and dark mode. The same design, always clean.</p>
+        <p style="color: var(--text-secondary); font-size: 15px; max-width: 500px; margin: 0 auto;">Drag the divider to compare light and dark mode. Same design, always clean.</p>
     </div>
     <div id="img-compare" style="position: relative; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 56px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.08); user-select: none; cursor: col-resize;">
-        <!-- Dark mode (bottom layer, full width) -->
         <img src="../img/screenshots/planificador-dark.png"
              alt="Planner in dark mode"
              style="width: 100%; display: block;">
-        <!-- Light mode (top layer, clipped) -->
         <div id="img-compare-clip" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; pointer-events: none;">
             <img src="../img/screenshots/planificador.png"
                  alt="Planner in light mode"
                  style="width: 100%; max-width: none; display: block; position: absolute; top: 0; left: 0;">
         </div>
-        <!-- Divider line -->
         <div id="img-compare-handle" style="position: absolute; top: 0; left: 50%; width: 3px; height: 100%; background: var(--accent, #4a90d9); transform: translateX(-50%); pointer-events: none;">
-            <!-- Handle circle -->
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; background: var(--accent, #4a90d9); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,.3);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M8 6l-4 6 4 6"/><path d="M16 6l4 6-4 6"/></svg>
             </div>
         </div>
-        <!-- Labels -->
         <div style="position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.92); color: #1a1a2e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 10px; border-radius: 6px; pointer-events: none;">Light mode</div>
         <div style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 10px; border-radius: 6px; pointer-events: none;">Dark mode</div>
     </div>
@@ -622,53 +612,24 @@
     var clip = document.getElementById('img-compare-clip');
     var handle = document.getElementById('img-compare-handle');
     if (!container) return;
-
     function setPosition(clientX) {
         var rect = container.getBoundingClientRect();
         var x = Math.max(0, Math.min(clientX - rect.left, rect.width));
         var pct = (x / rect.width * 100).toFixed(2);
         clip.style.width = pct + '%';
         handle.style.left = pct + '%';
-        // Fix light image width to always fill its clip container
         var lightImg = clip.querySelector('img');
         lightImg.style.width = (rect.width) + 'px';
     }
-
     var dragging = false;
-
-    container.addEventListener('mousedown', function(e) {
-        dragging = true;
-        setPosition(e.clientX);
-        e.preventDefault();
-    });
-    window.addEventListener('mousemove', function(e) {
-        if (!dragging) return;
-        setPosition(e.clientX);
-    });
+    container.addEventListener('mousedown', function(e) { dragging = true; setPosition(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', function(e) { if (!dragging) return; setPosition(e.clientX); });
     window.addEventListener('mouseup', function() { dragging = false; });
-
-    container.addEventListener('touchstart', function(e) {
-        dragging = true;
-        setPosition(e.touches[0].clientX);
-        e.preventDefault();
-    }, { passive: false });
-    window.addEventListener('touchmove', function(e) {
-        if (!dragging) return;
-        setPosition(e.touches[0].clientX);
-    }, { passive: true });
+    container.addEventListener('touchstart', function(e) { dragging = true; setPosition(e.touches[0].clientX); e.preventDefault(); }, { passive: false });
+    window.addEventListener('touchmove', function(e) { if (!dragging) return; setPosition(e.touches[0].clientX); }, { passive: true });
     window.addEventListener('touchend', function() { dragging = false; });
-
-    // Fix image width on resize
-    window.addEventListener('resize', function() {
-        var lightImg = clip.querySelector('img');
-        if (lightImg) lightImg.style.width = container.getBoundingClientRect().width + 'px';
-    });
-
-    // Init light image width after load
-    window.addEventListener('load', function() {
-        var lightImg = clip.querySelector('img');
-        if (lightImg) lightImg.style.width = container.getBoundingClientRect().width + 'px';
-    });
+    window.addEventListener('resize', function() { var l = clip.querySelector('img'); if (l) l.style.width = container.getBoundingClientRect().width + 'px'; });
+    window.addEventListener('load', function() { var l = clip.querySelector('img'); if (l) l.style.width = container.getBoundingClientRect().width + 'px'; });
 })();
 </script>
 
@@ -744,7 +705,7 @@
     <div class="section-header">
         <span class="section-label">Agents &amp; AI</span>
         <h2>Automate what you repeat every day.</h2>
-        <p>From's agents run on their own, on the schedule you configure, and write results to your journal. No need to open the app — when you arrive in the morning, it's already done.</p>
+        <p>From agents run on their own, on the schedule you configure, and write results to your journal. No need to open the app — when you arrive in the morning, it's already done.</p>
     </div>
 
     <div class="features-grid features-grid--4" style="max-width: 940px;">
@@ -753,43 +714,43 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <h3>Chat that knows your notes</h3>
-            <p>Ask "what's the status of project X?" and From searches your tree, retrieves the relevant fragments and answers with real context. No hallucinations — it works with what you've written.</p>
+            <p>Ask "what's the status of project X?" and From searches your tree, retrieves the relevant fragments and answers with real context. It doesn't hallucinate — it works with what you've written.</p>
         </div>
         <div class="card" style="border: 1px solid rgba(255,149,0,0.2); background: rgba(255,149,0,0.02);">
             <div class="card-icon" style="background: rgba(255,149,0,0.1); color: var(--orange);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
             <h3>Edit your notes directly</h3>
-            <p>Select a block, write "summarize this in three points" and the AI rewrites the bullet. Preview changes before accepting. It doesn't generate text in a separate panel — it operates where you work.</p>
+            <p>Select a block, type "summarize this in three points" and the AI rewrites the bullet. Preview the changes before accepting. It doesn't generate text in a side panel — it operates where you work.</p>
         </div>
         <div class="card" style="border: 1px solid rgba(255,45,85,0.2); background: rgba(255,45,85,0.02);">
             <div class="card-icon" style="background: rgba(255,45,85,0.1); color: var(--pink);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             </div>
             <h3>Scheduled agents — daily or weekly</h3>
-            <p>Set up an agent with its schedule: daily at 08:00, weekly on Mondays. The server runs it automatically and writes the result to your journal. Your automated routines, hands-free.</p>
+            <p>Configure an agent with its schedule: daily at 08:00, weekly on Mondays. The server runs it automatically and writes the result to your journal. Your automated routines, no intervention needed.</p>
         </div>
         <div class="card" style="border: 1px solid rgba(52,199,89,0.2); background: rgba(52,199,89,0.02);">
             <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green);">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <h3>Your API key, your privacy</h3>
-            <p>Choose Claude, GPT or Gemini. Use From's managed AI or your own API key. Only the relevant fragment reaches the model. Nobody trains on your notes.</p>
+            <p>Choose Claude, GPT or Gemini. Use From's managed AI or your own API key. Only the relevant fragment travels to the model. Nobody trains on your notes.</p>
         </div>
     </div>
 
     <div class="ai-examples-strip" style="max-width: 860px; margin: 48px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
             <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Real example</p>
-            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"Summarize Tuesday's meeting notes and extract the tasks with dates."</strong><br><span style="color: var(--text-secondary);">→ From reads your Tuesday journal, creates 4 dated tasks and puts the summary in the parent bullet. No copy-paste needed.</span></p>
+            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"Summarize Tuesday's meeting notes and extract the tasks with dates."</strong><br><span style="color: var(--text-secondary);">&#8594; From reads your Tuesday journal, creates 4 dated tasks and puts the summary in the parent bullet. No copy-pasting.</span></p>
         </div>
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
             <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Real example</p>
-            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"What did I decide about the redesign project?"</strong><br><span style="color: var(--text-secondary);">→ From searches weeks of notes, finds the exact bullet where you made the decision and cites it with the date.</span></p>
+            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"What did I decide about the redesign project?"</strong><br><span style="color: var(--text-secondary);">&#8594; From searches weeks of notes, finds the exact bullet where you made the decision and cites it with the date.</span></p>
         </div>
         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
             <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Real example</p>
-            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"Organize my week based on high-priority tasks."</strong><br><span style="color: var(--text-secondary);">→ The overnight agent reviews your backlog and distributes tasks by day before you open the app in the morning.</span></p>
+            <p style="font-size: 13px; color: var(--text); margin: 0; line-height: 1.6;"><strong>"Organize my week based on high-priority tasks."</strong><br><span style="color: var(--text-secondary);">&#8594; The overnight agent reviews your backlog and distributes tasks by day before you open the app in the morning.</span></p>
         </div>
     </div>
 </section>
@@ -798,7 +759,7 @@
 <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px 48px;">
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
         <div>
-            <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px; text-align: center;">Magic Chat — typing a natural language instruction</p>
+            <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px; text-align: center;">Magic Chat — writing a natural language instruction</p>
             <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.15);">
                 <img src="../img/screenshots/magic-chat-escribiendo.png"
                      alt="Magic Chat with a natural language instruction being typed by the user"
@@ -806,7 +767,7 @@
             </div>
         </div>
         <div>
-            <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px; text-align: center;">Calendar journal view — May 2026</p>
+            <p style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px; text-align: center;">Journal calendar view — May 2026</p>
             <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.15);">
                 <img src="../img/screenshots/vista-calendario.png"
                      alt="From monthly calendar view in dark mode, with May 29 highlighted"
@@ -822,7 +783,7 @@
         <div class="section-header">
             <span class="section-label">Privacy</span>
             <h2>Your privacy, by design</h2>
-            <p>From doesn't sell or share your data. Your tree is yours. The server exists to sync, not to read your content.</p>
+            <p>From does not sell or share your data. Your tree is yours. The server exists to sync, not to read your content.</p>
         </div>
         <div class="privacy-grid">
             <div class="privacy-card">
@@ -844,14 +805,14 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 </div>
                 <h3>No lock-in</h3>
-                <p>Your content is exportable at any time. If you leave From, you take everything with you. No proprietary formats with no way out.</p>
+                <p>Your content is exportable at any time. If you leave From, you take everything with you. No proprietary formats with no exit.</p>
             </div>
             <div class="privacy-card">
                 <div class="card-icon" style="background: rgba(52,199,89,0.1); color: var(--green); margin: 0 auto 16px;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </div>
                 <h3>Local backup every 2h</h3>
-                <p>From saves a full snapshot of your notes on your Mac every 2 hours. Standard Markdown, readable with any editor. Restore any point from the last 12h in Settings. Your tree also lives on the private server, accessible from web and iPhone.</p>
+                <p>From saves a complete snapshot of your notes on your Mac every 2 hours. Standard Markdown, readable with any editor. Restore any moment from the last 12h from Settings. Your tree also lives on the private server, accessible from web and iPhone.</p>
             </div>
         </div>
     </section>
@@ -860,23 +821,23 @@
 <!-- How it works -->
 <section class="section">
     <div class="section-header">
-        <h2>Up and running in 30 seconds</h2>
+        <h2>Get started in 30 seconds</h2>
     </div>
     <div class="steps">
         <div class="step">
             <div class="step-number">1</div>
             <h3>Start on your platform</h3>
-            <p>Open your browser at getfrom.app/app, install the app on Mac or download it on iPhone. No complex setup, no iCloud required.</p>
+            <p>Open the browser at getfrom.app/app, install the app on Mac or download it on iPhone. No complex setup, no mandatory iCloud.</p>
         </div>
         <div class="step">
             <div class="step-number">2</div>
             <h3>Create your workspace</h3>
-            <p>Name your first workspace and start adding nodes. From automatically syncs with all your devices.</p>
+            <p>Name your first workspace and start adding nodes. From syncs automatically with all your devices.</p>
         </div>
         <div class="step">
             <div class="step-number">3</div>
             <h3>Start working</h3>
-            <p>Create nodes, organize projects, schedule tasks. The AI already knows your context from minute one.</p>
+            <p>Create nodes, organize projects, schedule tasks. AI already knows your context from minute one.</p>
         </div>
     </div>
 </section>
@@ -886,9 +847,9 @@
     <section class="section text-center" style="padding-top: 0; padding-bottom: 0;">
         <div class="section-header">
             <h2>Simple and fair</h2>
-            <p>Lifetime license to use From forever. Optional subscription only if you want managed AI without setting up API keys.</p>
+            <p>Lifetime license to use From forever. Optional subscription only if you want managed AI without configuring API keys.</p>
         </div>
-        <a href="/en/pricing.html" class="btn-primary">See pricing</a>
+        <a href="/en/pricing.html" class="btn-primary">View pricing</a>
     </section>
 </div>
 
@@ -900,11 +861,11 @@
     <div class="faq">
         <div class="faq-item">
             <h3>What platforms is From available on?</h3>
-            <p>From is available on web (getfrom.app/app), macOS and iPhone — all synced in real time. What you write on any device appears instantly on the others. You can start right now from your browser, no download needed.</p>
+            <p>From is available on web (getfrom.app/app), macOS and iPhone — all synced in real time. What you write on any device appears instantly on the others. You can start right now from the browser, without downloading anything.</p>
         </div>
         <div class="faq-item">
             <h3>What sets From apart from Notion, Obsidian or Apple Notes?</h3>
-            <p>From offers native apps on Mac and iPhone (pure Swift, not Electron) and a modern web app, syncs in real time via its own server without relying on iCloud Drive, has integrated contextual AI that knows your notes, and combines outliner + tasks + journal + agents in a single app. It's not a Swiss army knife — it's a tool designed to flow.</p>
+            <p>From offers native apps for Mac and iPhone (pure Swift, not Electron) and a modern web app, syncs in real time via its own server without depending on iCloud Drive, has integrated contextual AI that knows your notes, and combines outliner + tasks + journal + agents in one app. It's not a Swiss army knife — it's a tool designed to flow.</p>
         </div>
         <div class="faq-item">
             <h3>How does sync work?</h3>
@@ -912,27 +873,27 @@
         </div>
         <div class="faq-item">
             <h3>What is Magic AI?</h3>
-            <p>Magic is From's built-in AI assistant. Hold R to record by voice or press Space to type. Magic understands your notes, creates nodes in your journal and can learn from your corrections ("teach Magic"). It also includes a long recorder for meetings and scheduled agents that work on their own.</p>
+            <p>Magic is the AI assistant built into From. Hold R to record by voice or press Space to type. Magic understands your notes, creates nodes in your journal and can learn from your corrections ("Teach Magic"). It also includes a long recorder for meetings and scheduled agents that work on their own.</p>
         </div>
         <div class="faq-item">
             <h3>How does the AI work?</h3>
-            <p>From indexes your node tree and retrieves relevant context when you interact with the AI. Only the necessary fragment reaches the API — nothing is shared with third parties. You can choose between Claude, GPT or Gemini, or use From's managed AI.</p>
+            <p>From indexes your node tree and retrieves relevant context when you interact with AI. Only the necessary fragment travels to the API — nothing is shared with third parties. You can choose between Claude, GPT or Gemini, or use From's managed AI.</p>
         </div>
         <div class="faq-item">
             <h3>What happens if I stop using From?</h3>
-            <p>Export everything at any time. From doesn't hold you back: your data is yours and you can take it with you. Automatic local backup every 2 hours in standard Markdown.</p>
+            <p>Export everything at any time. From doesn't hold you: your data is yours and you can take it with you. Automatic local backup every 2 hours in standard Markdown.</p>
         </div>
         <div class="faq-item">
             <h3>Can I import my notes from Notion or Obsidian?</h3>
-            <p>Yes. From imports from Obsidian, Notion, LogSeq, NotePlan, Bear and any Markdown folder. Undated notes go to yesterday's journal; dated tasks go automatically to the right day. See the <a href="../docs/index.html">Manual</a> for per-app instructions.</p>
+            <p>Yes. From imports from Obsidian, Notion, LogSeq, NotePlan, Bear and any Markdown folder. Notes without dates go to yesterday's journal; dated tasks automatically go to their corresponding day. See the <a href="/docs/index.html">Manual</a> for instructions per app.</p>
         </div>
         <div class="faq-item">
             <h3>Do I need an API key for AI?</h3>
             <p>Not necessarily. You can use From's managed AI (with subscription) or bring your own API key from Anthropic, OpenAI or Google. You can also connect your Claude subscription directly.</p>
         </div>
         <div class="faq-item">
-            <h3>Is my data safe?</h3>
-            <p>Your data is stored on From's private servers and Cloudflare R2, with encryption in transit and at rest. No telemetry, no analytics, no data sales.</p>
+            <h3>Is my data secure?</h3>
+            <p>Your data is stored on From's private servers and Cloudflare R2, with encryption in transit and at rest. No telemetry, no analytics, no data selling.</p>
         </div>
     </div>
 </section>
@@ -940,11 +901,11 @@
 <!-- CTA -->
 <section class="cta" id="download">
     <h2>Speak. Magic acts. You move forward.</h2>
-    <p>Lightning-fast outliner, Magic AI with voice, agents that work on their own and real sync across Web, Mac and iPhone. Your notes always with you and your privacy always protected. Free to start — no credit card, no tricks.</p>
+    <p>Ultra-fast outliner, Magic AI with voice, agents that work on their own and real sync on Web, Mac and iPhone. Your notes always with you and your privacy always protected. Free to start — no card, no tricks.</p>
     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
         <a href="/app/register" class="btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Get started free</span>
+            <span>Create free account</span>
         </a>
         <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-secondary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -952,10 +913,10 @@
         </a>
     </div>
     <div style="display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary);">
-        <span>✓ Web · Mac · iPhone</span>
-        <span>✓ No credit card required</span>
-        <span>✓ Local backup every 2h</span>
-        <span>✓ Export whenever you want</span>
+        <span>&#10003; Web &#183; Mac &#183; iPhone</span>
+        <span>&#10003; No credit card</span>
+        <span>&#10003; Local backup every 2h</span>
+        <span>&#10003; Export whenever you want</span>
     </div>
 </section>
 
@@ -977,27 +938,27 @@
             <a href="#features">Features</a>
             <a href="#ios-sync">iOS + Sync</a>
             <a href="/en/pricing.html">Pricing</a>
-            <a href="../changelog.html">What's new</a>
+            <a href="/changelog.html">What's New</a>
             <a href="#download">Download</a>
-            <a href="../claude.html">Claude Extension</a>
+            <a href="/claude.html">Claude Extension</a>
         </div>
         <div class="footer-col">
             <h4>Support</h4>
-            <a href="../blog/index.html">Blog</a>
-            <a href="../docs/index.html">Manual</a>
-            <a href="../support.html">Help center</a>
+            <a href="/blog/index.html">Blog</a>
+            <a href="/docs/index.html">Manual</a>
+            <a href="/en/support.html">Help Center</a>
             <a href="mailto:hola@getfrom.app">Contact</a>
-            <a href="../account.html">My account</a>
+            <a href="/account.html">My account</a>
             <a href="https://t.me/+98em8pFqeAc0M2Rk" target="_blank" rel="noopener">Telegram</a>
         </div>
         <div class="footer-col">
             <h4>Legal</h4>
-            <a href="../privacy.html">Privacy</a>
-            <a href="../terms.html">Terms</a>
+            <a href="/en/privacy.html">Privacy</a>
+            <a href="/en/terms.html">Terms</a>
         </div>
     </div>
     <div class="footer-bottom">
-        © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+        &#169; 2026 Alberto Lezaun. All rights reserved. &#8212; <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
     </div>
 </footer>
 

@@ -5,11 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Términos de Servicio — From</title>
     <meta name="description" content="Términos y condiciones de uso de From. Licencia, suscripción, datos y responsabilidades.">
+    <link rel="alternate" hreflang="es" href="https://getfrom.app/terms.html" />
+    <link rel="alternate" hreflang="en" href="https://getfrom.app/en/terms.html" />
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script>
+  (function() {
+    var lang = navigator.language || navigator.userLanguage || '';
+    if (lang.startsWith('en') && !sessionStorage.getItem('from-lang-chosen')) {
+      sessionStorage.setItem('from-lang-chosen', '1');
+      window.location.href = window.location.href.replace(/(getfrom\.app\/)/, '$1en/');
+    }
+  })();
+</script>
     <script src="i18n.js"></script>
 </head>
 <body data-page="terms">
