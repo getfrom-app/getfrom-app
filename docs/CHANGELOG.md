@@ -4,6 +4,20 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## iOS v2.2 — Junio 2026 · Internacionalización iOS
+
+### iPhone — Internacionalización completa (iOS)
+- Interfaz completamente traducida al inglés para usuarios no-españoles
+- Detección automática de idioma según la configuración del dispositivo
+- Fechas, horas y formatos regionales adaptados al idioma del usuario (Locale.current en todas partes)
+- Ajustes, sincronización, cuenta, IA y todos los menús disponibles en inglés
+
+### Soporte para trial en iPhone (iOS)
+- Badge y etiqueta de plan correctos durante el periodo de prueba gratuita
+- `trialing` reconocido como acceso Pro completo en todas las pantallas
+
+---
+
 ## v9.4.24 — Mayo 2026 · Internacionalización completa ES/EN
 
 ### App web en inglés (Web)
