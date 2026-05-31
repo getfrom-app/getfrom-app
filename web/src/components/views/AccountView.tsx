@@ -95,8 +95,26 @@ export default function AccountView() {
   // Claude API token (MCP)
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
+  const [mcpPromptCopied, setMcpPromptCopied] = useState(false)
   const [generatingMcp, setGeneratingMcp] = useState(false)
   const [mcpLoaded, setMcpLoaded] = useState(false)
+
+  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática — no esperes a que te lo pida.
+
+INICIO DE CONVERSACIÓN:
+- Si menciono un área de trabajo (La Isla, inversión, piloto, personal, coding, From, MiTrading, Media Sector...), llama a from_get_context("nombre-en-kebab-case") antes de responder.
+- Llama a from_get_today_note() al inicio y guarda el ID.
+
+DURANTE LA CONVERSACIÓN (automático, sin que te lo pida):
+- Si generas un documento, análisis, plan, resumen o entregable → guárdalo en From con from_create_node(parentId=ID_DIARIO).
+- Si menciono una tarea o acción pendiente → créala con from_create_node(isTask=true, parentId=ID_DIARIO).
+- Si subo un archivo, PDF o URL → crea un nodo con el contenido en From.
+- No pidas permiso para guardar. Hazlo y confírmame en una línea qué guardaste.
+
+AL TERMINAR (cuando diga "fin"):
+- from_create_node(text="Sesión FECHA — TEMA", body=resumen completo, parentId=ID_DIARIO).
+- Si aprendiste algo nuevo del área → from_update_context(contexto, info nueva).
+- Confirma en una línea qué se guardó.`
 
   useEffect(() => {
     userStore.fetchMe()
@@ -318,6 +336,12 @@ export default function AccountView() {
     navigator.clipboard.writeText(mcpToken).catch(() => {})
     setMcpCopied(true)
     setTimeout(() => setMcpCopied(false), 2000)
+  }
+
+  function copyClaudePrompt() {
+    navigator.clipboard.writeText(CLAUDE_CUSTOM_INSTRUCTIONS).catch(() => {})
+    setMcpPromptCopied(true)
+    setTimeout(() => setMcpPromptCopied(false), 3000)
   }
 
   const { user } = us
@@ -885,56 +909,84 @@ export default function AccountView() {
           <section className="settings-section">
             <h2 className="settings-section-title">{t('settings.groupIntegrations')}</h2>
 
-            {/* Claude Desktop MCP */}
-            <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+            {/* Claude Desktop MCP — Paso 1: token */}
+            <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+
+              {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                 <div style={{ flex: 1 }}>
                   <div className="settings-row-label">{t('sidebar.claudeMCP')}</div>
                   <div className="settings-row-hint">
-                    Conecta Claude con tu vault de From para acceder a tus notas desde el asistente.{' '}
+                    Conecta Claude con tu vault. Instala la extensión y genera tu token.{' '}
                     <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
-                      {t('mcp.docsButton')}
+                      Más info →
                     </a>
                   </div>
                 </div>
                 <a
                   href="https://getfrom.app/from.dxt"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  download
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
                 >
-                  {t('mcp.downloadDxtButton')}
+                  ↓ Descargar From.dxt
                 </a>
               </div>
 
-              {/* Token MCP */}
-              <div style={{ width: '100%' }}>
-                <div className="settings-row-label" style={{ marginBottom: 6, fontSize: 12, color: 'var(--text-secondary)' }}>{t('mcp.apiTokenLabel')}</div>
+              {/* Paso 1: Token */}
+              <div style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>1</span>
+                  Token de API — pégalo en Claude Desktop al instalar la extensión
+                </div>
                 {mcpLoaded && (
                   mcpToken ? (
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
+                        <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg)', borderRadius: 6, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
                           {mcpToken}
                         </code>
                         <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
-                          {mcpCopied ? t('mcp.tokenCopied') : t('mcp.copyTokenButton')}
+                          {mcpCopied ? '✓ Copiado' : 'Copiar'}
                         </button>
                       </div>
-                      <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 12, color: 'var(--danger)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-                        {generatingMcp ? t('mcp.regeneratingToken') : t('mcp.regenerateTokenButton')}
+                      <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
+                        {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
                       </button>
                     </div>
                   ) : (
-                    <div className="settings-actions">
-                      <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-                        {generatingMcp ? t('mcp.generatingToken') : t('mcp.generateTokenButton')}
-                      </button>
-                    </div>
+                    <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 13 }}>
+                      {generatingMcp ? 'Generando...' : 'Generar token de API'}
+                    </button>
                   )
                 )}
               </div>
+
+              {/* Paso 2: Custom Instructions — solo si hay token */}
+              {mcpToken && (
+                <div style={{ width: '100%', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>2</span>
+                    Activa el guardado automático
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, margin: '0 0 10px' }}>
+                    Copia el siguiente bloque y pégalo en <strong style={{ color: 'var(--text)' }}>Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas</strong>. Hazlo una vez y Claude guardará tus conversaciones en From automáticamente.
+                  </p>
+                  <div style={{ position: 'relative' }}>
+                    <pre style={{ margin: 0, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 120, overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
+                      {CLAUDE_CUSTOM_INSTRUCTIONS}
+                    </pre>
+                    <button
+                      onClick={copyClaudePrompt}
+                      className="btn-primary"
+                      style={{ marginTop: 8, fontSize: 13, width: '100%', justifyContent: 'center' }}
+                    >
+                      {mcpPromptCopied ? '✓ Copiado — pégalo en Claude Desktop → Ajustes → Perfil' : 'Copiar instrucciones'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* Divider */}
