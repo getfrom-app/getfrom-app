@@ -421,5 +421,5 @@ export async function getApiToken(): Promise<{ token: string | null }> {
 }
 
 export async function generateApiToken(): Promise<{ token: string }> {
-  return apiRequest('/auth/api-token/generate', { method: 'POST' })
+  return apiRequest('/auth/api-token', { method: 'POST' })
 }
