@@ -3,6 +3,15 @@
   <channel>
     <title>From Updates</title>
     <item>
+      <title>From 9.4.0</title>
+      <pubDate>Fri, 30 May 2026 10:00:00 +0200</pubDate>
+      <sparkle:version>9.4.0</sparkle:version>
+      <sparkle:shortVersionString>9.4.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+      <description><![CDATA[<ul><li>Interfaz en español e inglés — detección automática del idioma del sistema</li><li>Magic AI responde en tu idioma</li><li>Filtros en inglés: today, task, pending, done, week...</li><li>Selector de idioma en Ajustes → 🌐 Idioma</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.4.0/From.dmg" sparkle:edSignature="" length="5649698" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>From 9.1.2</title>
       <pubDate>Thu, 28 May 2026 15:10:10 +0200</pubDate>
       <sparkle:version>9.1.2</sparkle:version>
