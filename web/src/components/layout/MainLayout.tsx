@@ -72,20 +72,23 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [plannerOpen, setPlannerOpen] = useState(false)
 
-  // Panel diario de hoy: se muestra cuando la URL es el nodo del diario de hoy
-  const diaryPanelDate = useMemo(() => {
-    if (!currentNodeIdFromRoute) return null
-    const node = s.getNode(currentNodeIdFromRoute)
-    if (!node?.diaryDate) return null
-    const d = new Date(node.diaryDate)
+  // Panel diario de hoy: calculado en cada render (reacciona a cambios del store)
+  // Usar string como gate para useMemo y evitar Date nuevo en cada render (loop GCal)
+  const _currentNode = currentNodeIdFromRoute ? s.getNode(currentNodeIdFromRoute) : null
+  const _diaryIsToday = (() => {
+    if (!_currentNode?.diaryDate) return false
+    const d = new Date(_currentNode.diaryDate)
     const now = new Date()
-    const isToday = d.getFullYear() === now.getFullYear() &&
-                    d.getMonth() === now.getMonth() &&
-                    d.getDate() === now.getDate()
-    if (!isToday) return null
+    return d.getFullYear() === now.getFullYear() &&
+           d.getMonth() === now.getMonth() &&
+           d.getDate() === now.getDate()
+  })()
+  // Fecha estable para no re-disparar el useEffect de GCal en cada render
+  const diaryPanelDate = useMemo(() => {
+    if (!_diaryIsToday) return null
     const today = new Date(); today.setHours(0, 0, 0, 0)
     return today
-  }, [currentNodeIdFromRoute, s])
+  }, [_diaryIsToday])
 
   // R global hold-to-record
   const isRKeyDownRef = useRef(false)
