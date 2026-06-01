@@ -718,7 +718,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             setSelectedId(n.id)
           }}>{placeholder}</div>
         )}
-        {nodes.length === 0 && !placeholder && (
+        {nodes.length === 0 && !placeholder && !autoFocusEmpty && (
           <div className="outliner-empty-state" onClick={() => {
             const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
             setSelectedId(n.id)
