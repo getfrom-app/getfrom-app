@@ -57,7 +57,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
   const [forceType, setForceType] = useState<ForceType>(null)
   const r = useRecordingStore()
   const isRecording = r.phase === 'recording'
-  const rKeyDownRef = useRef(false)
+  const spaceHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const spaceIsRecordingRef = useRef(false)
 
   // Sincronizar transcript de grabación en el input en tiempo real
   useEffect(() => {
@@ -89,34 +90,61 @@ export default function QuickCaptureNode({ onClose }: Props) {
     }
   }, [r.transcript, r.phase, isRecording]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // R (hold) = grabar mientras se mantiene pulsado
-  // Usamos fase de CAPTURA (true) + stopImmediatePropagation para que el handler
-  // de MainLayout (que también escucha 'R' globalmente) no lo reciba cuando el modal está abierto.
+  // Space (hold) = grabar mientras se mantiene pulsado.
+  // Space corto (< 250ms) = espacio normal en el input.
+  // Se intercepta en fase CAPTURA para evitar que el contentEditable reciba el evento
+  // mientras estamos grabando o decidiendo si grabar.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'r' && e.key !== 'R') return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      // Interceptar R para que no llegue al handler global de MainLayout
+      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      // Siempre prevenir el default: gestionamos nosotros el espacio
+      e.preventDefault()
       e.stopImmediatePropagation()
-      if (rKeyDownRef.current) return
-      rKeyDownRef.current = true
-      if (recordingStore.phase === 'idle') recordingStore.startRecording()
+      if (spaceIsRecordingRef.current) return // ya grabando
+      // Timer: si se mantiene > 250ms → empezar a grabar
+      spaceHoldTimerRef.current = setTimeout(() => {
+        spaceIsRecordingRef.current = true
+        if (recordingStore.phase === 'idle') recordingStore.startRecording()
+      }, 250)
     }
     function onKeyUp(e: KeyboardEvent) {
-      if (e.key !== 'r' && e.key !== 'R') return
+      if (e.code !== 'Space') return
+      e.preventDefault()
       e.stopImmediatePropagation()
-      if (!rKeyDownRef.current) return
-      rKeyDownRef.current = false
-      if (recordingStore.phase === 'recording') recordingStore.stopRecording()
+      if (spaceHoldTimerRef.current) {
+        clearTimeout(spaceHoldTimerRef.current)
+        spaceHoldTimerRef.current = null
+      }
+      if (spaceIsRecordingRef.current) {
+        // Estaba grabando → parar
+        spaceIsRecordingRef.current = false
+        if (recordingStore.phase === 'recording') recordingStore.stopRecording()
+      } else {
+        // Press corto → insertar un espacio en el input manualmente
+        if (inputRef.current && document.activeElement === inputRef.current) {
+          const sel = window.getSelection()
+          if (sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0)
+            range.deleteContents()
+            range.insertNode(document.createTextNode(' '))
+            range.collapse(false)
+            sel.removeAllRanges()
+            sel.addRange(range)
+            const newText = inputRef.current.textContent || ''
+            setText(newText)
+            analyze(newText)
+          }
+        }
+      }
     }
-    // capture: true → se ejecuta ANTES que los handlers en fase bubble (MainLayout)
     window.addEventListener('keydown', onKeyDown, true)
     window.addEventListener('keyup', onKeyUp, true)
     return () => {
       window.removeEventListener('keydown', onKeyDown, true)
       window.removeEventListener('keyup', onKeyUp, true)
+      if (spaceHoldTimerRef.current) clearTimeout(spaceHoldTimerRef.current)
     }
-  }, [])
+  }, [analyze])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -308,12 +336,6 @@ export default function QuickCaptureNode({ onClose }: Props) {
       saveAndClose()
     }
 
-    // R = grabar voz (solo si el input está vacío)
-    if (e.key === 'r' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !getCurrentText()) {
-      e.preventDefault()
-      onClose()
-      setTimeout(() => recordingStore.startRecording(), 80)
-    }
   }
 
   // Ghost text label
@@ -399,7 +421,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
             <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>ESC</kbd>
             {/* Mic / Stop */}
             <button
-              title={isRecording ? 'Parar grabación' : 'Grabar voz (mantén R)'}
+              title={isRecording ? 'Parar grabación' : 'Grabar voz (mantén Espacio)'}
               onMouseDown={e => {
                 e.preventDefault()
                 if (isRecording) {
