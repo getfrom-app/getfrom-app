@@ -770,29 +770,21 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
           if (childTasks.length === 0) return null
           return (
             <div key={node.id}>
+              {/* Header padre — estilo outliner From */}
               <div
-                className={`diary-agenda-seguimiento${dragOverSegId === node.id ? ' diary-agenda-seguimiento--drop' : ''}`}
-                draggable={false}
-                style={{ userSelect: 'none' }}
-                onDragEnd={() => { _agendaDragId = null; setDragOverSegId(null) }}
-                onDragOver={e => {
-                  if (_agendaDragId && _agendaDragId !== node.id) {
-                    e.preventDefault(); e.dataTransfer.dropEffect = 'move'
-                    setDragOverSegId(node.id)
-                  }
-                }}
-                onDragLeave={() => setDragOverSegId(null)}
-                onDrop={e => {
-                  e.preventDefault()
-                  const id = _agendaDragId; _agendaDragId = null
-                  setDragOverSegId(null)
-                  if (id && id !== node.id) dropAsChild(id, node.id)
-                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px 2px', cursor: 'pointer' }}
                 onClick={() => navigate(`/node/${node.id}`)}
+                onDragOver={e => { if (_agendaDragId) { e.preventDefault(); setDragOverSegId(node.id) } }}
+                onDragLeave={() => setDragOverSegId(null)}
+                onDrop={e => { e.preventDefault(); const id = _agendaDragId; _agendaDragId = null; setDragOverSegId(null); if (id && id !== node.id) dropAsChild(id, node.id) }}
               >
-                <span className="diary-agenda-container-icon">📁</span>
-                <span className="diary-agenda-text">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
-                <span className="diary-agenda-container-count">{childTasks.length}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, opacity: 0.8 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {node.text || t('common.noTitle')}
+                </span>
+                <svg width="8" height="8" viewBox="0 0 10 10" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                  <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                </svg>
               </div>
               {childTasks.map(task => (
                 <AgendaTaskRow

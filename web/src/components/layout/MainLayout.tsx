@@ -72,8 +72,7 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [plannerOpen, setPlannerOpen] = useState(false)
 
-  // Panel diario de hoy: calculado en cada render (reacciona a cambios del store)
-  // Usar string como gate para useMemo y evitar Date nuevo en cada render (loop GCal)
+  // Panel diario de hoy — persiste aunque el usuario navegue a una tarea desde el panel
   const _currentNode = currentNodeIdFromRoute ? s.getNode(currentNodeIdFromRoute) : null
   const _diaryIsToday = (() => {
     if (!_currentNode?.diaryDate) return false
@@ -83,12 +82,20 @@ export default function MainLayout() {
            d.getMonth() === now.getMonth() &&
            d.getDate() === now.getDate()
   })()
-  // Fecha estable para no re-disparar el useEffect de GCal en cada render
-  const diaryPanelDate = useMemo(() => {
-    if (!_diaryIsToday) return null
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    return today
-  }, [_diaryIsToday])
+  // Fecha almacenada en estado: se fija al entrar al diario de hoy y se limpia
+  // solo al salir a una vista que NO sea un nodo (home, búsqueda, ajustes…)
+  const [diaryPanelDate, setDiaryPanelDate] = useState<Date | null>(null)
+  useEffect(() => {
+    if (_diaryIsToday) {
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      setDiaryPanelDate(today)
+    } else if (!currentNodeIdFromRoute) {
+      // Navegar fuera de cualquier nodo → cerrar panel
+      setDiaryPanelDate(null)
+    }
+    // Si es otro nodo pero NO es hoy → mantener el panel abierto
+    // (el usuario puede haber clickeado una tarea del panel)
+  }, [_diaryIsToday, currentNodeIdFromRoute])
 
   // R global hold-to-record
   const isRKeyDownRef = useRef(false)
