@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.4.42'
+export const WEB_VERSION = 'v9.4.43'
 
 interface Props {
   isSyncing: boolean
@@ -41,7 +41,8 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   // Verificar actualizaciones disponibles (solo en Mac Tauri)
   useEffect(() => {
     if (!isTauriEnv) return
-    const check = async () => {
+
+    const checkForUpdates = async () => {
       try {
         const { check } = await import('@tauri-apps/plugin-updater')
         const update = await check()
@@ -58,14 +59,32 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
               }
             }
           })
+        } else {
+          // Si vino del menú "Buscar actualizaciones" y no hay nada nuevo,
+          // limpiar el estado (por si había una notificación previa ya instalada)
+          setUpdateAvailable(prev => prev)
         }
       } catch { /* silencioso — sin conexión o sin latest.json */ }
     }
+
     // Check al inicio con delay
-    const t1 = setTimeout(check, 5000)
+    const t1 = setTimeout(checkForUpdates, 5000)
     // Y cada hora
-    const t2 = setInterval(check, 3_600_000)
-    return () => { clearTimeout(t1); clearInterval(t2) }
+    const t2 = setInterval(checkForUpdates, 3_600_000)
+
+    // Escuchar evento del menú nativo "Buscar actualizaciones..."
+    let unlisten: (() => void) | null = null
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('from:check-update', () => {
+        checkForUpdates()
+      }).then(fn => { unlisten = fn })
+    }).catch(() => {})
+
+    return () => {
+      clearTimeout(t1)
+      clearInterval(t2)
+      unlisten?.()
+    }
   }, [])
 
   // Online / offline listener
