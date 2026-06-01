@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.4.43'
+export const WEB_VERSION = 'v9.4.44'
 
 interface Props {
   isSyncing: boolean
@@ -28,6 +28,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
   const [macVersion, setMacVersion] = useState<string | null>(null)
 
   // Leer versión nativa Tauri (solo Mac)
@@ -51,10 +52,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
             version: update.version,
             download: async () => {
               setUpdating(true)
+              setUpdateError(null)
               try {
                 await update.downloadAndInstall()
+                // Relaunch explícito tras instalar (por si el updater no lo hace solo)
+                const { relaunch } = await import('@tauri-apps/plugin-process')
+                await relaunch()
               } catch (e) {
                 console.error('Update failed:', e)
+                const msg = e instanceof Error ? e.message : String(e)
+                setUpdateError(msg)
                 setUpdating(false)
               }
             }
@@ -205,8 +212,22 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       {/* Spacer */}
       <span style={{ flex: 1 }} />
 
+      {/* Error de actualización */}
+      {updateError && (
+        <>
+          <span
+            style={{ fontSize: 11, color: 'var(--color-error, #e53e3e)', padding: '0 6px', cursor: 'pointer' }}
+            title={updateError}
+            onClick={() => setUpdateError(null)}
+          >
+            ⚠ Error al actualizar — {updateError.slice(0, 60)}
+          </span>
+          <span className="footer-sep" />
+        </>
+      )}
+
       {/* Nueva versión disponible (solo Mac Tauri) */}
-      {updateAvailable && (
+      {updateAvailable && !updateError && (
         <>
           <button
             onClick={updating ? undefined : updateAvailable.download}
