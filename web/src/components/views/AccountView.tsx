@@ -99,23 +99,27 @@ export default function AccountView() {
   const [generatingMcp, setGeneratingMcp] = useState(false)
   const [mcpLoaded, setMcpLoaded] = useState(false)
 
-  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática — no esperes a que te lo pida.
+  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
 
-ARQUITECTURA DE FROM (crítico): From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos. Usa from_create_tree para contenido estructurado, nunca body.
+ARQUITECTURA DE FROM (crítico):
+From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
+Usa from_create_tree para contenido estructurado. Los hijos con heading:2 se muestran como H2.
 
 INICIO DE CONVERSACIÓN:
-- Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab") antes de responder.
+- Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab").
 - Llama a from_get_today_note() y guarda el ID.
+- Busca si ya existe sesión: from_search("Sesión " + fecha). Si existe, guarda su ID y el ID del nodo de transcripción.
 
 DURANTE LA CONVERSACIÓN (automático):
-- Análisis, plan, documento o resumen → from_create_tree con el contenido como children anidados (parentId=ID_DIARIO).
-- Tarea o acción pendiente → from_create_node(text=tarea, isTask=true, parentId=ID_DIARIO).
-- No pidas permiso. Hazlo y confírmame en una línea qué guardaste.
+- Análisis o documento → from_create_tree con children usando heading:2 para secciones, más transcript con la conversación íntegra.
+- Tarea → from_create_node(isTask:true, parentId=ID_DIARIO).
+- No pidas permiso. Confírmame en una línea qué guardaste.
 
 AL TERMINAR ("fin"):
-- from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[secciones como nodos hijos]).
+- SI es la primera vez: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2, text:"Resumen", children:[...]}, ...], transcript="conversación íntegra").
+- SI ya existe la sesión: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="continuación", newChildren=[{heading:2, text:"Actualización", children:[...]}]).
 - Si hay info nueva del área → from_update_context(contexto, info).
-- Confirma en una línea qué se guardó.`
+- Confirma: "Guardado en From (cuenta: X) — [título sesión]".`
 
   useEffect(() => {
     userStore.fetchMe()
