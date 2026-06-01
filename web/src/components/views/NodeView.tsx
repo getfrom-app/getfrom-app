@@ -711,18 +711,19 @@ export default function NodeView() {
   })()
 
   // Panel derecho de tareas: solo para el diario de HOY
-  // Comparar directamente con store.todayDiary() es más robusto que calcular fechas
-  const isNodeToday = store.todayDiary()?.id === node.id
-  const [showDiaryPanel, setShowDiaryPanel] = useState(isNodeToday)
-  // Sincronizar cuando cambia el nodo (navegar a hoy → abrir, salir → cerrar)
-  useEffect(() => {
-    setShowDiaryPanel(isNodeToday)
-  }, [node.id, isNodeToday])
-  const diaryPanelDate = isNodeToday ? (() => {
-    if (node.diaryDate) return new Date(node.diaryDate)
-    const today = new Date(); today.setHours(0,0,0,0)
+  // Panel derecho: detectar si es el diario de HOY comparando diaryDate con fecha local
+  // Sin estado intermedio — se computa directamente en cada render
+  const diaryPanelDate = (() => {
+    if (!node.diaryDate) return null
+    const d = new Date(node.diaryDate)
+    const now = new Date()
+    const isToday = d.getFullYear() === now.getFullYear() &&
+                    d.getMonth() === now.getMonth() &&
+                    d.getDate() === now.getDate()
+    if (!isToday) return null
+    const today = new Date(); today.setHours(0, 0, 0, 0)
     return today
-  })() : null
+  })()
 
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -1348,7 +1349,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${showDiaryPanel && diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -2394,7 +2395,7 @@ export default function NodeView() {
       </div>
 
       {/* Panel derecho: tareas de hoy — solo al ver el diario de hoy */}
-      {showDiaryPanel && diaryPanelDate && !focusMode && (
+      {diaryPanelDate && !focusMode && (
         <DiaryRightPanel diaryDate={diaryPanelDate} />
       )}
 
