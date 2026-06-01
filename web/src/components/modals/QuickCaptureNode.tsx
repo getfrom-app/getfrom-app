@@ -32,12 +32,29 @@ interface Props {
   onClose: () => void
 }
 
+// Shortcuts inline al final del texto:
+//   -t  → fuerza tarea
+//   -e  → fuerza evento
+//   -n  → fuerza nota (cancela detección automática)
+type ForceType = 'task' | 'event' | 'note' | null
+const FORCE_SHORTCUTS: Record<string, ForceType> = { '-t': 'task', '-e': 'event', '-n': 'note' }
+
+function detectForceType(t: string): { forceType: ForceType; cleanText: string } {
+  for (const [shortcut, type] of Object.entries(FORCE_SHORTCUTS)) {
+    if (t.trimEnd().endsWith(' ' + shortcut) || t.trimEnd() === shortcut) {
+      return { forceType: type, cleanText: t.trimEnd().slice(0, -shortcut.length).trimEnd() }
+    }
+  }
+  return { forceType: null, cleanText: t }
+}
+
 export default function QuickCaptureNode({ onClose }: Props) {
   const inputRef = useRef<HTMLDivElement>(null)
   const [text, setText] = useState('')
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   const [taskPrediction, setTaskPrediction] = useState(false)
   const [ctxSuggestion, setCtxSuggestion] = useState<CtxSuggestion | null>(null)
+  const [forceType, setForceType] = useState<ForceType>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -45,16 +62,21 @@ export default function QuickCaptureNode({ onClose }: Props) {
 
   // Análisis del texto en tiempo real
   const analyze = useCallback((t: string) => {
+    // 0. Shortcuts inline (-t, -e, -n)
+    const { forceType: ft, cleanText: ct } = detectForceType(t)
+    setForceType(ft)
+    const textToAnalyze = ft ? ct : t
+
     // 1. Fecha / recurrencia al final
-    if (t.length > 3) {
-      setDatePrediction(extractDateFromEnd(t))
+    if (textToAnalyze.length > 3) {
+      setDatePrediction(extractDateFromEnd(textToAnalyze))
     } else {
       setDatePrediction(null)
     }
 
-    // 2. Detección de verbo → tarea
-    const normed = normalize(t)
-    if (t.length > 4 && buildTaskVerbRegex().test(normed)) {
+    // 2. Detección de verbo → tarea (solo si no hay force type)
+    const normed = normalize(textToAnalyze)
+    if (!ft && textToAnalyze.length > 4 && buildTaskVerbRegex().test(normed)) {
       setTaskPrediction(true)
     } else {
       setTaskPrediction(false)
@@ -150,10 +172,15 @@ export default function QuickCaptureNode({ onClose }: Props) {
     const sibs = store.children(today.id)
     const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(s => s.siblingOrder)) : 0
 
+    // Aplicar shortcut de tipo si hay uno
+    const { forceType: ft, cleanText: afterForce } = detectForceType(rawText)
+    const effectiveText = ft ? afterForce : rawText
+
     // Parsear fecha si hay predicción
-    const dp = extractDateFromEnd(rawText)
-    const cleanText = dp ? dp.cleanText : rawText
-    const isTask = taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalize(rawText)))
+    const dp = extractDateFromEnd(effectiveText)
+    const cleanText = dp ? dp.cleanText : effectiveText
+    const isTask = ft === 'task' || (ft !== 'note' && ft !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalize(effectiveText)))))
+    const isEvent = ft === 'event'
 
     // Detectar @contexto en el texto
     const ctxMatch = rawText.match(/@([\wÀ-ɏ\s\-]+)/g)
@@ -175,8 +202,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
 
     if (dp?.parsed.date) {
       const updates: Record<string, unknown> = {}
-      if (dp.timeStr) {
-        const [h, m] = dp.timeStr.split(':').map(Number)
+      if (dp.timeStr || isEvent) {
+        const [h, m] = (dp.timeStr || '00:00').split(':').map(Number)
         const d = new Date(dp.parsed.date)
         d.setHours(h, m, 0, 0)
         updates.due = d.toISOString()
@@ -189,6 +216,9 @@ export default function QuickCaptureNode({ onClose }: Props) {
         updates.recurrence = recurrenceToString(dp.parsed.recurrence)
       }
       store.updateNode(node.id, updates)
+    } else if (isEvent) {
+      // Evento sin fecha explícita — marcar como evento (fecha se asignará después)
+      store.updateNode(node.id, { isEvent: true })
     } else if (isTask) {
       store.updateNode(node.id, { status: 'pending' })
     }
@@ -259,8 +289,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
       }}>
         {/* Input principal */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ color: taskPrediction ? 'var(--accent)' : 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
-            {taskPrediction ? '☐' : '•'}
+          <span style={{ color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
+            {forceType === 'event' ? '📅' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
           </span>
           <div
             ref={inputRef}
