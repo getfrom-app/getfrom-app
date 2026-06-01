@@ -2,6 +2,7 @@ import { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
+import { store } from './store/nodeStore'
 import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
@@ -148,8 +149,23 @@ function useDesktopOAuthCallback() {
   }, [])
 }
 
+// Sync disparado desde Rust (timer 15s + foco de ventana)
+function useTauriSyncListener() {
+  useEffect(() => {
+    if (!isTauriEnv) return
+    let unlisten: (() => void) | null = null
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('from:sync', () => {
+        store.sync().catch(() => {})
+      }).then((fn) => { unlisten = fn })
+    }).catch(() => {})
+    return () => { unlisten?.() }
+  }, [])
+}
+
 function AppInner() {
   useDesktopOAuthCallback()
+  useTauriSyncListener()
   return (
     <Routes>
       {/* Rutas públicas */}
