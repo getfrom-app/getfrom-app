@@ -3,6 +3,15 @@
   <channel>
     <title>From Updates</title>
     <item>
+      <title>From 9.4.1</title>
+      <pubDate>Sun, 01 Jun 2026 07:20:00 +0200</pubDate>
+      <sparkle:version>9.4.1</sparkle:version>
+      <sparkle:shortVersionString>9.4.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+      <description><![CDATA[<ul><li>Ajustes → Integraciones → Claude: flujo de 3 pasos con botón "Copiar instrucciones"</li><li>Activa el guardado automático en Claude Desktop sin comandos</li><li>Enlace de descarga del DXT corregido</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.4.1/From.dmg" sparkle:edSignature="y6QXEoqif3rAqDC07u/1ww8WeOxpnWMQIwDz8V6Va1Y5CSsb3nJsE84ENjt7bSMW2Qz5myTpUo4pH5zG187BCg==" length="5651706" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>From 9.4.0</title>
       <pubDate>Fri, 30 May 2026 10:00:00 +0200</pubDate>
       <sparkle:version>9.4.0</sparkle:version>
