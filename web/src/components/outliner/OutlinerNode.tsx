@@ -21,7 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
-import { nextRecurrence, extractDateFromEnd } from '../../utils/naturalDate'
+import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 
@@ -1860,6 +1860,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
       // Updates base del nodo: tipo, hora, texto limpio
       const updates: Record<string, unknown> = { extraData: JSON.stringify(ed) }
+      if (opts.recurrence) updates.recurrence = recurrenceToString(opts.recurrence)
       if (opts.isEvent) updates.isEvent = true
       else if (opts.makeTask || node.status === null) updates.status = 'pending'
       if (opts.timeStr) {
@@ -2000,11 +2001,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     } else if (node.status === 'pending') {
       store.updateNode(node.id, { status: 'done' })
       // ── Recurrencia: crear siguiente instancia ────────────────────────────
-      try {
-        const ed = JSON.parse(node.extraData || '{}')
-        const rec = ed._recurrence as RecurrenceConfig | undefined
-        if (rec) {
-          // Calcular base: fecha del nodo padre (diary day) o hoy
+      // Prioritario: node.recurrence (campo DB); fallback: extraData._recurrence (legado)
+      const recStr = node.recurrence
+      let rec: RecurrenceConfig | undefined
+      if (recStr) {
+        rec = recurrenceFromString(recStr) ?? undefined
+      } else {
+        try {
+          const ed = JSON.parse(node.extraData || '{}')
+          rec = ed._recurrence as RecurrenceConfig | undefined
+        } catch {}
+      }
+      if (rec) {
+        try {
           const parent = store.getNode(node.parentId || '')
           const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
           baseDate.setHours(0, 0, 0, 0)
@@ -2012,20 +2021,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           const dayNode = ensureDayPath(nextDate)
           const sibs = store.children(dayNode.id)
           const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
           const newNode = store.createNode({
             text: node.text,
             parentId: dayNode.id,
-            siblingOrder: lastOrder + 1,
+            siblingOrder: lastOrder + 1000,
             isTask: true,
             types: node.types,
           })
-          // Copiar extraData con recurrencia al nodo recién creado
           store.updateNode(newNode.id, {
             status: 'pending',
+            recurrence: node.recurrence ?? undefined,
             extraData: JSON.stringify({ ...ed, _recurrence: rec }),
           })
+        } catch (e) {
+          console.error('[recurrence] Error creando siguiente instancia:', e)
         }
-      } catch { /* ignorar errores de recurrencia */ }
+      }
     } else {
       store.updateNode(node.id, { status: null })
     }
@@ -2038,10 +2051,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     } else {
       // pending o null → done (con gestión de recurrencia igual que toggleTask)
       store.updateNode(node.id, { status: 'done' })
-      try {
-        const ed = JSON.parse(node.extraData || '{}')
-        const rec = ed._recurrence as RecurrenceConfig | undefined
-        if (rec) {
+      // ── Recurrencia: crear siguiente instancia ────────────────────────────
+      // Prioritario: node.recurrence (campo DB); fallback: extraData._recurrence (legado)
+      const recStr = node.recurrence
+      let rec: RecurrenceConfig | undefined
+      if (recStr) {
+        rec = recurrenceFromString(recStr) ?? undefined
+      } else {
+        try {
+          const ed = JSON.parse(node.extraData || '{}')
+          rec = ed._recurrence as RecurrenceConfig | undefined
+        } catch {}
+      }
+      if (rec) {
+        try {
           const parent = store.getNode(node.parentId || '')
           const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
           baseDate.setHours(0, 0, 0, 0)
@@ -2049,19 +2072,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           const dayNode = ensureDayPath(nextDate)
           const sibs = store.children(dayNode.id)
           const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+          let ed: Record<string, unknown> = {}
+          try { ed = JSON.parse(node.extraData || '{}') } catch {}
           const newNode = store.createNode({
             text: node.text,
             parentId: dayNode.id,
-            siblingOrder: lastOrder + 1,
+            siblingOrder: lastOrder + 1000,
             isTask: true,
             types: node.types,
           })
           store.updateNode(newNode.id, {
             status: 'pending',
+            recurrence: node.recurrence ?? undefined,
             extraData: JSON.stringify({ ...ed, _recurrence: rec }),
           })
+        } catch (e) {
+          console.error('[recurrence] Error creando siguiente instancia:', e)
         }
-      } catch { /* ignorar errores de recurrencia */ }
+      }
     }
   }
 
@@ -2372,6 +2400,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
         }
       }
+      return
+    } else if (action === 'recurrence' && payload.recurrence) {
+      // Asignar recurrencia al nodo: guardar en node.recurrence (campo DB) y extraData._recurrence (legado)
+      const rec = payload.recurrence
+      const recStr = recurrenceToString(rec)
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+      ed._recurrence = rec
+      store.updateNode(node.id, {
+        recurrence: recStr,
+        extraData: JSON.stringify(ed),
+        // Si no es tarea aún, convertir a tarea pendiente
+        ...(node.status === null ? { status: 'pending' } : {}),
+      })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Repetición configurada: ${rec.display}`, type: 'success' } }))
       return
     }
 
@@ -3122,13 +3165,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Badge de recurrencia (tareas con /mover a recurrente) */}
-            {node.status !== null && !node.isSeguimiento && !node.isEvent && (() => {
+            {/* Badge de recurrencia — lee de node.recurrence o extraData._recurrence */}
+            {node.status !== null && !node.isEvent && (() => {
+              // Prioritario: node.recurrence (campo DB unificado)
+              if (node.recurrence) {
+                const rec = recurrenceFromString(node.recurrence)
+                if (rec) return (
+                  <span className="node-recurrence-badge" title={`Repite: ${rec.display}`}>
+                    ↻ {rec.display}
+                  </span>
+                )
+              }
+              // Fallback: extraData._recurrence (legado)
               try {
                 const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
                 if (!rec) return null
                 return (
-                  <span className="node-recurrence-badge" title={`Recurrencia: ${rec.display}`}>
+                  <span className="node-recurrence-badge" title={`Repite: ${rec.display}`}>
                     ↻ {rec.display}
                   </span>
                 )

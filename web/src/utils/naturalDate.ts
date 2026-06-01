@@ -337,3 +337,36 @@ export function getSuggestion(partial: string): string | null {
 
   return null
 }
+
+/** Convierte RecurrenceConfig a string para node.recurrence (campo DB) */
+export function recurrenceToString(rec: RecurrenceConfig): string {
+  if (rec.type === 'daily') return 'daily'
+  if (rec.type === 'monthly') return rec.monthDay ? `monthly:${rec.monthDay}` : 'monthly'
+  if (rec.type === 'weekly' || rec.type === 'custom') {
+    if (rec.days?.length) return `weekly:${rec.days.join(',')}`
+    return 'weekly'
+  }
+  return 'daily'
+}
+
+/** Convierte string de node.recurrence a RecurrenceConfig */
+export function recurrenceFromString(str: string): RecurrenceConfig | null {
+  if (!str) return null
+  // Intentar parsear como JSON (formato RecurrenceConfig serializado)
+  if (str.startsWith('{')) {
+    try { return JSON.parse(str) as RecurrenceConfig } catch {}
+  }
+  const [type, param] = str.split(':')
+  if (type === 'daily') return { type: 'daily', display: 'diario' }
+  if (type === 'monthly') return { type: 'monthly', monthDay: param ? parseInt(param) : undefined, display: 'mes' }
+  if (type === 'weekly') {
+    if (param) {
+      const days = param.split(',').map(Number)
+      const DAY_NAMES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+      const display = days.map(d => DAY_NAMES[d] ?? '?').join(' y ')
+      return { type: 'weekly', days, display }
+    }
+    return { type: 'weekly', display: 'semana' }
+  }
+  return null
+}

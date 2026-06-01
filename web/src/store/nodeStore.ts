@@ -957,17 +957,7 @@ export class NodeStore {
     const node = this.nodes.get(id)
     if (!node) return
 
-    // Lógica de recurrencia: cuando se marca done y tiene recurrencia,
-    // calcular la siguiente fecha y dejarla como pending
-    let finalChanges = changes
-    if (changes.status === 'done' && node.recurrence && node.status !== 'done') {
-      const nextDue = this.calculateNextRecurrence(node.recurrence, node.due)
-      if (nextDue) {
-        finalChanges = { ...changes, status: 'pending', due: nextDue }
-      }
-    }
-
-    const updated = { ...node, ...finalChanges, updatedAt: new Date().toISOString(), _isDirty: true }
+    const updated = { ...node, ...changes, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)
     // Invalidar siempre el cache: guarda referencias de Node y al hacer spread
     // creamos un objeto nuevo — el cache quedaría apuntando al objeto viejo.

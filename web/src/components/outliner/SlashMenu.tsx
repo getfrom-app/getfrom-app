@@ -16,6 +16,7 @@ export type SlashAction =
   | 'add-date'
   | 'mirror'
   | 'add-shortcut'
+  | 'recurrence'
 
 export interface SlashMenuOption {
   label: string
@@ -24,6 +25,7 @@ export interface SlashMenuOption {
   description: string
   action?: SlashAction
   group?: string
+  recurrence?: RecurrenceConfig
 }
 
 const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
@@ -67,6 +69,11 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'IA', label: 'Crear esquema', icon: '📋', prefix: '', description: 'Generar un outline del contenido', action: 'ai-draft-outline' },
   { group: 'IA', label: 'Corregir gramática', icon: '✏️', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
   { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
+  // ── Recurrencia ───────────────────────────────────────────────────────────
+  { group: 'Recurrencia', label: 'Repetir diario', icon: '↻', prefix: '', description: 'Crear copia cada día al completar', action: 'recurrence' as const, recurrence: { type: 'daily' as const, display: 'diario' } },
+  { group: 'Recurrencia', label: 'Repetir semanal', icon: '↻', prefix: '', description: 'Crear copia cada semana al completar', action: 'recurrence' as const, recurrence: { type: 'weekly' as const, display: 'semana' } },
+  { group: 'Recurrencia', label: 'Repetir lun y jue', icon: '↻', prefix: '', description: 'Crear copia los lunes y jueves al completar', action: 'recurrence' as const, recurrence: { type: 'weekly' as const, days: [1, 4], display: 'lun y jue' } },
+  { group: 'Recurrencia', label: 'Repetir mensual', icon: '↻', prefix: '', description: 'Crear copia cada mes al completar', action: 'recurrence' as const, recurrence: { type: 'monthly' as const, display: 'mes' } },
   // ── Gestión ───────────────────────────────────────────────────────────────
   { group: 'Gestión', label: 'Añadir a atajos', icon: '⭐', prefix: '', description: 'Guardar como atajo en la barra lateral', action: 'add-shortcut' },
   { group: 'Gestión', label: 'Añadir fecha', icon: '🗓', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
@@ -78,6 +85,7 @@ export interface SlashSelectPayload {
   action: SlashAction
   moveToDate?: Date
   moveToRecurrence?: RecurrenceConfig
+  recurrence?: RecurrenceConfig
 }
 
 interface Props {
@@ -153,7 +161,7 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
         }
         if (filtered[activeIdx]) {
           const opt = filtered[activeIdx]
-          onSelect({ prefix: opt.prefix, action: opt.action })
+          onSelect({ prefix: opt.prefix, action: opt.action, recurrence: opt.recurrence })
         }
       } else if (e.key === 'Escape') {
         e.preventDefault(); e.stopPropagation()
@@ -243,7 +251,7 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
                   onMouseEnter={() => setActiveIdx(idx)}
                   onMouseDown={e => {
                     e.preventDefault()
-                    onSelect({ prefix: opt.prefix, action: opt.action })
+                    onSelect({ prefix: opt.prefix, action: opt.action, recurrence: opt.recurrence })
                   }}
                 >
                   <span className="slash-menu-icon">{opt.icon}</span>
