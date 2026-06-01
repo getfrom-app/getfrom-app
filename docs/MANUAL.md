@@ -895,29 +895,51 @@ Ve a **Ajustes → Importar**, elige la fuente y sigue el proceso.
 
 ## 20. Conexión con Claude (MCP)
 
-From tiene integración nativa con Claude Desktop y Claude Code. Una vez conectado, Claude puede leer y escribir en tu árbol de From directamente desde el chat.
+From tiene integración nativa con Claude Desktop y Claude Code. Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
 
-### Cómo conectar
+### Cómo conectar — Claude Desktop (recomendado)
 
 1. Ve a **Ajustes → Integraciones → Claude (MCP)**.
-2. Pulsa "Generar token de API". El token dura 1 año.
-3. Sigue las instrucciones que aparecen en pantalla para añadir el MCP a tu configuración de Claude.
-4. Reinicia Claude. Las herramientas de From aparecen automáticamente.
+2. Pulsa **"Generar token de API"**. El token dura 1 año.
+3. Descarga **From.dxt** con el botón que aparece en la misma pantalla.
+4. Haz doble clic en el archivo. Claude Desktop lo instala y pide el token — pégalo.
+5. En la misma pantalla de ajustes aparece el **Paso 3**: copia el bloque de instrucciones y pégalo en **Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas**.
 
-### Qué puede hacer Claude con tu From
+Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus conversaciones.
 
-- **Crear notas y tareas**: Claude puede añadir nodos directamente a tu árbol.
-- **Editar nodos existentes**: actualizar contenido, cambiar estado de tareas.
-- **Buscar en tu árbol**: "¿qué tengo apuntado sobre el proyecto X?" → Claude busca en tus notas y responde con contexto real.
-- **Listar tareas pendientes**: ver todas tus tareas por estado, fecha o contexto.
+### Cómo conectar — Claude Code (CLI)
 
-**Ejemplo de uso:**
+1. Genera tu token en **Ajustes → Integraciones → Claude (MCP)**.
+2. Añade la entrada `from` a `~/.claude.json` bajo la clave `mcpServers`:
+
+```json
+"mcpServers": {
+  "from": {
+    "type": "http",
+    "url": "https://from-server-production.up.railway.app/mcp",
+    "headers": { "Authorization": "Bearer TU_TOKEN" }
+  }
+}
+```
+
+3. Copia el bloque de instrucciones de Ajustes y pégalo en tu `~/.claude/CLAUDE.md`.
+4. Reinicia Claude Code.
+
+### Qué hace Claude con From automáticamente
+
+- **Guarda documentos y análisis** que genera durante la conversación.
+- **Crea tareas** cuando mencionas acciones pendientes.
+- **Guarda resúmenes de sesión** cuando dices "fin".
+- **Carga contexto de área** si mencionas La Isla, inversión, piloto, etc.
+- **Busca en tu vault** antes de responder para darte contexto real.
+
+**Ejemplos:**
 
 ```
-"Claude, crea en From un resumen de esta conversación"
 "¿Qué tareas tengo pendientes para hoy?"
-"Añade a From una tarea para llamar a Adrián mañana a las 10"
+"Añade una tarea para llamar a Adrián mañana a las 10"
 "Busca en mis notas todo lo relacionado con La Isla"
+fin  →  Claude guarda el resumen de la conversación en From automáticamente
 ```
 
 ---
