@@ -70,56 +70,63 @@ class RecordingStore {
 
     if (this.micStream) this._startAudioMeter(this.micStream)
 
-    const recognition = new SpeechAPI()
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = 'es-ES'
+    // Texto acumulado a lo largo de todas las sesiones de reconocimiento
+    // (Chrome para la recognition cada ~60s o tras silencios — hay que reiniciar)
+    let accumulatedText = ''
+    let sessionInterim = ''
 
-    // Transcripción acumulada entre sesiones (Chrome para la recognition periódicamente)
-    let accumulatedFinal = ''  // resultados isFinal de todas las sesiones
-    let currentInterim = ''    // resultados interim de la sesión actual
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let sessionFinal = ''
-      let interim = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript
-        if (event.results[i].isFinal) sessionFinal += t + ' '
-        else interim = t
-      }
-      if (sessionFinal) accumulatedFinal += sessionFinal
-      currentInterim = interim
-      this.transcript = accumulatedFinal + currentInterim
-      this.finalText = accumulatedFinal
-      this.notify()
-    }
-
-    recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (e.error === 'not-allowed') {
-        this.error = 'Permiso de micrófono denegado'
-        this._stopInternal()
-      }
-      // no-speech, aborted, etc. son normales — onend reiniciará
-    }
-
-    recognition.onend = () => {
+    // Crear nueva instancia de SpeechRecognition por cada sesión.
+    // Reusar la misma instancia con .start() en onend causa un loop rápido
+    // en Chrome que impide grabar correctamente.
+    const createSession = () => {
       if (this.phase !== 'recording') return
-      // Al terminar la sesión, guardar el interim como final antes de reiniciar.
-      // Chrome raramente marca como isFinal — si no lo hacemos, perdemos todo
-      // lo hablado que no tuvo silencio suficiente para finalizarse.
-      if (currentInterim.trim()) {
-        accumulatedFinal += currentInterim.trim() + ' '
-        currentInterim = ''
-        this.transcript = accumulatedFinal
-        this.finalText = accumulatedFinal
+      const rec = new SpeechAPI()
+      rec.continuous = true
+      rec.interimResults = true
+      rec.lang = 'es-ES'
+
+      rec.onresult = (event: SpeechRecognitionEvent) => {
+        let sessionFinal = ''
+        let interim = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript
+          if (event.results[i].isFinal) sessionFinal += t + ' '
+          else interim = t
+        }
+        if (sessionFinal) accumulatedText += sessionFinal
+        sessionInterim = interim
+        this.transcript = accumulatedText + sessionInterim
+        this.finalText = accumulatedText
         this.notify()
       }
-      // Reiniciar la sesión para grabación continua
-      try { recognition.start() } catch { /* ya arrancando */ }
+
+      rec.onerror = (e: SpeechRecognitionErrorEvent) => {
+        if (e.error === 'not-allowed') {
+          this.error = 'Permiso de micrófono denegado'
+          this._stopInternal()
+        }
+        // no-speech, aborted → normales, onend reiniciará
+      }
+
+      rec.onend = () => {
+        if (this.phase !== 'recording') return
+        // Guardar interim antes de terminar la sesión (Chrome raramente marca isFinal)
+        if (sessionInterim.trim()) {
+          accumulatedText += sessionInterim.trim() + ' '
+          sessionInterim = ''
+          this.transcript = accumulatedText
+          this.finalText = accumulatedText
+          this.notify()
+        }
+        // Esperar 300ms antes de crear nueva sesión — evita el loop rápido start/end
+        setTimeout(createSession, 300)
+      }
+
+      this.recognition = rec
+      rec.start()
     }
 
-    this.recognition = recognition
-    recognition.start()
+    createSession()
 
     this.elapsed = 0
     this.transcript = ''
@@ -178,10 +185,9 @@ class RecordingStore {
   }
 
   stopRecording() {
-    // Preservar todo el transcript (incluye interim no finalizado)
-    if (this.transcript.trim()) {
-      this.finalText = this.transcript.trim()
-    }
+    // Preservar todo el transcript (incluye interim no finalizado por Chrome)
+    const current = this.transcript.trim()
+    if (current) this.finalText = current
     this.recognition?.stop()
     this.recognition = null
     this._stopInternal()
