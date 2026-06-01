@@ -90,26 +90,32 @@ export default function QuickCaptureNode({ onClose }: Props) {
   }, [r.transcript, r.phase, isRecording]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // R (hold) = grabar mientras se mantiene pulsado
+  // Usamos fase de CAPTURA (true) + stopImmediatePropagation para que el handler
+  // de MainLayout (que también escucha 'R' globalmente) no lo reciba cuando el modal está abierto.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'r' && e.key !== 'R') return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (rKeyDownRef.current) return // ya estaba pulsado
-      const active = document.activeElement as HTMLElement | null
-      // Si el foco está en el contentEditable del modal, no interferir
-      if (active === inputRef.current) return
+      // Interceptar R para que no llegue al handler global de MainLayout
+      e.stopImmediatePropagation()
+      if (rKeyDownRef.current) return
       rKeyDownRef.current = true
       if (recordingStore.phase === 'idle') recordingStore.startRecording()
     }
     function onKeyUp(e: KeyboardEvent) {
       if (e.key !== 'r' && e.key !== 'R') return
+      e.stopImmediatePropagation()
       if (!rKeyDownRef.current) return
       rKeyDownRef.current = false
       if (recordingStore.phase === 'recording') recordingStore.stopRecording()
     }
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
-    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp) }
+    // capture: true → se ejecuta ANTES que los handlers en fase bubble (MainLayout)
+    window.addEventListener('keydown', onKeyDown, true)
+    window.addEventListener('keyup', onKeyUp, true)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true)
+      window.removeEventListener('keyup', onKeyUp, true)
+    }
   }, [])
 
   useEffect(() => {
