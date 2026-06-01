@@ -55,6 +55,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
   const [taskPrediction, setTaskPrediction] = useState(false)
   const [ctxSuggestion, setCtxSuggestion] = useState<CtxSuggestion | null>(null)
   const [forceType, setForceType] = useState<ForceType>(null)
+  // @ picker: dropdown cuando el usuario escribe @
+  const [atPicker, setAtPicker] = useState<{ query: string; items: { id: string; label: string }[]; activeIdx: number } | null>(null)
   const r = useRecordingStore()
   const isRecording = r.phase === 'recording'
   const spaceHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -152,12 +154,36 @@ export default function QuickCaptureNode({ onClose }: Props) {
     inputRef.current?.focus()
   }, [])
 
+  // Items para el @ picker: contextos + todos los nodos activos
+  function buildAtItems(query: string) {
+    const q = query.toLowerCase()
+    const all = store.allActive().filter(n =>
+      !n.deletedAt && n.text && !n.isDiaryEntry && !n.isChat &&
+      !/^\d{4}$/.test(n.text) &&
+      !['🗑 Papelera','🤖 Agentes','📋 Plantillas','🏷 Tags','🧠 Contexto','📅 Agenda'].includes(n.text)
+    )
+    return all
+      .filter(n => !q || n.text.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(n => ({ id: n.id, label: n.text }))
+  }
+
   // Análisis del texto en tiempo real
   const analyze = useCallback((t: string) => {
     // 0. Shortcuts inline (-t, -e, -n)
     const { forceType: ft, cleanText: ct } = detectForceType(t)
     setForceType(ft)
     const textToAnalyze = ft ? ct : t
+
+    // 0b. @ picker: detectar @query al final del texto antes del cursor
+    const atMatch = textToAnalyze.match(/@([\wÀ-ɏ\s]*)$/)
+    if (atMatch) {
+      const query = atMatch[1]
+      const items = buildAtItems(query)
+      setAtPicker(p => ({ query, items, activeIdx: p?.activeIdx ?? 0 }))
+    } else {
+      setAtPicker(null)
+    }
 
     // 1. Fecha / recurrencia al final
     if (textToAnalyze.length > 3) {
@@ -326,7 +352,36 @@ export default function QuickCaptureNode({ onClose }: Props) {
     onClose()
   }
 
+  function selectAtItem(item: { id: string; label: string }) {
+    if (!inputRef.current || !atPicker) return
+    const t = inputRef.current.textContent || ''
+    // Reemplazar @query con @NombreCompleto
+    const newText = t.replace(/@[\wÀ-ɏ\s]*$/, `@${item.label} `)
+    inputRef.current.textContent = newText
+    // Cursor al final
+    const range = document.createRange()
+    const sel = window.getSelection()
+    const textNode = inputRef.current.firstChild
+    if (textNode) { range.setStart(textNode, newText.length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
+    setText(newText)
+    setAtPicker(null)
+    analyze(newText)
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    // @ picker toma prioridad
+    if (atPicker) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setAtPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setAtPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p); return }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        const item = atPicker.items[atPicker.activeIdx]
+        if (item) selectAtItem(item)
+        return
+      }
+      if (e.key === 'Escape') { setAtPicker(null); return }
+    }
+
     if (e.key === 'Escape') { onClose(); return }
 
     if (e.key === 'Tab') {
@@ -340,7 +395,6 @@ export default function QuickCaptureNode({ onClose }: Props) {
       e.preventDefault()
       saveAndClose()
     }
-
   }
 
   // Ghost text label
@@ -460,8 +514,34 @@ export default function QuickCaptureNode({ onClose }: Props) {
           </div>
         </div>
 
+        {/* @ picker dropdown */}
+        {atPicker && atPicker.items.length > 0 && (
+          <div style={{
+            marginTop: 4, borderTop: '1px solid var(--border)',
+            maxHeight: 180, overflowY: 'auto',
+          }}>
+            {atPicker.items.map((item, idx) => (
+              <div
+                key={item.id}
+                onMouseDown={e => { e.preventDefault(); selectAtItem(item) }}
+                style={{
+                  padding: '5px 12px 5px 24px',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  background: idx === atPicker.activeIdx ? 'var(--bg-hover)' : 'transparent',
+                  color: 'var(--text-primary)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>@</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Ghost text — solo si hay predicción */}
-        {ghostLabel && (
+        {!atPicker && ghostLabel && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingLeft: 24 }}>
             <span className="from-ghost">
               <span className="from-ghost-text">{ghostLabel}</span>
