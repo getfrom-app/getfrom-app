@@ -764,24 +764,32 @@ JWT HS256 con `JWT_SECRET` de Railway. Expiración: 15 min (access) + 30 días (
 
 ## Proceso de publicación de versión (macOS)
 
-1. Bump `MARKETING_VERSION` y `CURRENT_PROJECT_VERSION` (entero incremental) en Xcode
-2. `xcodebuild archive` (Release, Developer ID, Hardened Runtime)
-3. `xcodebuild -exportArchive` → `.app`
-4. `hdiutil create` → `.dmg`
-5. `xcrun notarytool submit --keychain-profile "notarytool" --wait`
-6. `xcrun stapler staple` + `validate`
-7. `/tmp/sparkle-bin/bin/sign_update From.dmg` → obtener `edSignature` y `length`
-8. `gh release create vX.X /tmp/From.dmg` en repo `getfrom-app/getfrom-app`
-9. Añadir `<item>` en `landing/appcast.xml` con edSignature, length y sparkle:version
-10. `git push` en landing → GitHub Pages publica en ~1 min → Sparkle detecta automáticamente
+⚠️ **Proceso actualizado desde v9.4.4. El proceso anterior con Sparkle `sign_update` está OBSOLETO.**
 
-**Credenciales notarización:** guardadas en Keychain como `"notarytool"` (`--keychain-profile "notarytool"`)
+El updater es `tauri-plugin-updater`. Cada release requiere un `latest.json` firmado con la clave Tauri.
 
-Referencia completa: `docs/publicar-version.md`
+```bash
+# 1. Bump versión en from-mac/src-tauri/tauri.conf.json
+# 2. Build notarizado
+export APPLE_ID="albertolezaun@me.com" APPLE_PASSWORD="ulbw-glkh-jztf-hsin"
+export APPLE_TEAM_ID="5YNQRA7NUE"
+export TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/from-mac.key
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+make notarize   # desde from-mac/
+
+# 3. Firmar DMG con clave Tauri
+cargo tauri signer sign --password "" -f ~/.tauri/from-mac.key /tmp/From.dmg
+
+# 4. Crear latest.json y publicar en ambos repos
+gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R albertolezaun-afk/from-mac
+gh release create vX.X.X /tmp/From.dmg -R getfrom-app/getfrom-app  # descarga pública
+```
+
+**Clave de firma:** `~/.tauri/from-mac.key` (sin contraseña) — no perder nunca.
 
 ### Versión actual publicada
-- **macOS**: v3.0 (build 18) — publicada 2026-05-06
-- **iOS**: pendiente App Store (roadmap)
+- **macOS**: v9.4.4 — publicada 2026-06-01, con actualizador automático integrado
+- **iOS**: v2.2 build 108 — en revisión App Store
 
 ---
 

@@ -32,13 +32,13 @@ También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa
 
 ### Instalar en Mac
 
-1. Ve a [getfrom.app/download](https://getfrom.app/download) y descarga el archivo `From.dmg`.
+1. Ve a [getfrom.app](https://getfrom.app) y descarga el archivo `From.dmg`.
 2. Abre el DMG y arrastra el icono de From a la carpeta **Aplicaciones**.
 3. Abre From desde el Launchpad o desde la carpeta Aplicaciones.
 4. Si macOS advierte que no puede comprobar el desarrollador, ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
 5. Inicia sesión con tu cuenta.
 
-Las actualizaciones de Mac se instalan automáticamente en segundo plano.
+**Actualizaciones automáticas (desde v9.4.4):** cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión — Actualizar` en la barra inferior de From. Un clic instala la actualización sin salir de la app. No hace falta descargar nada manualmente.
 
 ### Instalar en iPhone
 

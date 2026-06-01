@@ -508,24 +508,32 @@ JWT HS256 with Railway `JWT_SECRET`. Expiry: 15 min (access) + 30 days (refresh)
 
 ## macOS version release process
 
-1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` (incremental integer) in Xcode
-2. `xcodebuild archive` (Release, Developer ID, Hardened Runtime)
-3. `xcodebuild -exportArchive` → `.app`
-4. `hdiutil create` → `.dmg`
-5. `xcrun notarytool submit --keychain-profile "notarytool" --wait`
-6. `xcrun stapler staple` + `validate`
-7. `/tmp/sparkle-bin/bin/sign_update From.dmg` → get `edSignature` and `length`
-8. `gh release create vX.X /tmp/From.dmg` in repo `getfrom-app/getfrom-app`
-9. Add `<item>` to `landing/appcast.xml` with edSignature, length and sparkle:version
-10. `git push` landing → GitHub Pages publishes in ~1 min → Sparkle auto-detects
+⚠️ **Updated process since v9.4.4. The old Sparkle `sign_update` process is OBSOLETE.**
 
-**Notarization credentials:** stored in Keychain as `"notarytool"` (`--keychain-profile "notarytool"`)
+The updater is `tauri-plugin-updater`. Each release requires a `latest.json` signed with the Tauri key.
 
-Full reference: `docs/publicar-version.md`
+```bash
+# 1. Bump version in from-mac/src-tauri/tauri.conf.json
+# 2. Notarized build
+export APPLE_ID="albertolezaun@me.com" APPLE_PASSWORD="ulbw-glkh-jztf-hsin"
+export APPLE_TEAM_ID="5YNQRA7NUE"
+export TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/from-mac.key
+export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+make notarize   # from from-mac/
+
+# 3. Sign DMG with Tauri key
+cargo tauri signer sign --password "" -f ~/.tauri/from-mac.key /tmp/From.dmg
+
+# 4. Create latest.json and publish to both repos
+gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R albertolezaun-afk/from-mac
+gh release create vX.X.X /tmp/From.dmg -R getfrom-app/getfrom-app  # public download
+```
+
+**Signing key:** `~/.tauri/from-mac.key` (no password) — never lose it.
 
 ### Current published version
-- **macOS**: v3.0 (build 18) — published 2026-05-06
-- **iOS**: pending App Store (roadmap)
+- **macOS**: v9.4.4 — published 2026-06-01, with integrated auto-updater
+- **iOS**: v2.2 build 108 — under App Store review
 
 ---
 

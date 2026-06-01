@@ -4,6 +4,23 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Mac v9.4.4 — Junio 2026 · Actualizador automático
+
+### Actualización automática desde la app (Mac)
+- **Primera versión con actualización automática**: a partir de ahora, cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión X.X.X — Actualizar` en la barra inferior de From
+- Un clic descarga e instala la actualización sin salir de la app ni reiniciar manualmente
+- El sistema comprueba si hay novedades 5 segundos después de abrir From, y luego cada hora
+- Esta es la **última vez que hace falta descargar manualmente** desde la web
+
+### Sincronización mejorada (Mac)
+- El sync con el servidor ahora se ejecuta desde Rust cada 15 segundos, independientemente de si la ventana está en primer plano o en background
+- Sync inmediato al recuperar el foco de la ventana
+
+### Fix (Web · Mac)
+- Escape en ⌘K cierra la paleta sin subir un nivel en el árbol
+
+---
+
 ## iOS v2.2 — Junio 2026 · Internacionalización iOS
 
 ### iPhone — Internacionalización completa (iOS)
