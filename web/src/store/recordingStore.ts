@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export type RecordingSource = 'mic' | 'system' | 'both'
+export type RecordingSource = 'mic'
 export type RecordingPhase = 'idle' | 'recording' | 'done'
 
 interface SpeechRecognitionResultItem { readonly transcript: string }
@@ -21,8 +21,6 @@ declare global { interface Window { SpeechRecognition?: SpeechRecognitionCtor; w
 class RecordingStore {
   phase: RecordingPhase = 'idle'
   source: RecordingSource = 'mic'
-  micEnabled: boolean = true
-  sysEnabled: boolean = true
   transcript = ''
   finalText = ''
   elapsed = 0
@@ -32,7 +30,6 @@ class RecordingStore {
   private recognition: SpeechRecognitionInstance | null = null
   private timer: ReturnType<typeof setInterval> | null = null
   private micStream: MediaStream | null = null
-  private sysStream: MediaStream | null = null
   private analyser: AnalyserNode | null = null
   private audioCtx: AudioContext | null = null
   private animFrame: number | null = null
@@ -52,40 +49,8 @@ class RecordingStore {
     return !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   }
 
-  setSource(s: RecordingSource) {
-    if (this.phase === 'idle') {
-      this.source = s
-      this.notify()
-    }
-  }
-
-  setMicEnabled(v: boolean) {
-    if (this.phase !== 'idle') return
-    // Don't allow disabling both
-    if (!v && !this.sysEnabled) return
-    this.micEnabled = v
-    this._syncSourceFromToggles()
-    this.notify()
-  }
-
-  setSysEnabled(v: boolean) {
-    if (this.phase !== 'idle') return
-    if (!v && !this.micEnabled) return
-    this.sysEnabled = v
-    this._syncSourceFromToggles()
-    this.notify()
-  }
-
-  private _syncSourceFromToggles() {
-    if (this.micEnabled && this.sysEnabled) this.source = 'both'
-    else if (this.micEnabled) this.source = 'mic'
-    else if (this.sysEnabled) this.source = 'system'
-  }
-
   async startRecording() {
-    if (this.phase === 'recording') return // already recording
-    // Always derive source from toggles before starting
-    this._syncSourceFromToggles()
+    if (this.phase === 'recording') return
 
     const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechAPI) {
@@ -94,67 +59,63 @@ class RecordingStore {
       return
     }
 
-    // Get audio streams
+    // Solo micrófono
     try {
-      if (this.source === 'mic' || this.source === 'both') {
-        this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      }
+      this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
       this.error = 'Permiso de micrófono denegado'
       this.notify()
       return
     }
 
-    try {
-      if (this.source === 'system' || this.source === 'both') {
-        const display = await (navigator.mediaDevices as unknown as { getDisplayMedia: (c: object) => Promise<MediaStream> }).getDisplayMedia({ audio: true, video: true })
-        display.getVideoTracks().forEach((t: MediaStreamTrack) => t.stop())
-        this.sysStream = display
-      }
-    } catch {
-      // system audio not available — continue with mic only
-      if (this.source === 'system') {
-        this.error = 'Audio del sistema no disponible en este navegador'
-        this.notify()
-        return
-      }
-    }
+    if (this.micStream) this._startAudioMeter(this.micStream)
 
-    // Start audio meter on available stream
-    const meterStream = this.micStream || this.sysStream
-    if (meterStream) this._startAudioMeter(meterStream)
-
-    // Set up SpeechRecognition
     const recognition = new SpeechAPI()
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'es-ES'
 
-    let fullTranscript = ''
+    // Transcripción acumulada entre sesiones (Chrome para la recognition periódicamente)
+    let accumulatedFinal = ''  // resultados isFinal de todas las sesiones
+    let currentInterim = ''    // resultados interim de la sesión actual
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let sessionFinal = ''
       let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript
-        if (event.results[i].isFinal) fullTranscript += t + ' '
+        if (event.results[i].isFinal) sessionFinal += t + ' '
         else interim = t
       }
-      this.transcript = fullTranscript + interim
-      this.finalText = fullTranscript
+      if (sessionFinal) accumulatedFinal += sessionFinal
+      currentInterim = interim
+      this.transcript = accumulatedFinal + currentInterim
+      this.finalText = accumulatedFinal
       this.notify()
     }
+
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      // 'no-speech' y 'aborted' son normales — Chrome los emite periódicamente, no son errores fatales
       if (e.error === 'not-allowed') {
         this.error = 'Permiso de micrófono denegado'
         this._stopInternal()
       }
-      // Para cualquier otro error no fatal, onend se encargará de reiniciar
+      // no-speech, aborted, etc. son normales — onend reiniciará
     }
+
     recognition.onend = () => {
       if (this.phase !== 'recording') return
-      // Chrome para la SpeechRecognition automáticamente cada ~60s o tras silencio.
-      // Reiniciar para mantener la grabación continua sin perder la transcripción acumulada.
-      try { recognition.start() } catch { /* ya estaba corriendo */ }
+      // Al terminar la sesión, guardar el interim como final antes de reiniciar.
+      // Chrome raramente marca como isFinal — si no lo hacemos, perdemos todo
+      // lo hablado que no tuvo silencio suficiente para finalizarse.
+      if (currentInterim.trim()) {
+        accumulatedFinal += currentInterim.trim() + ' '
+        currentInterim = ''
+        this.transcript = accumulatedFinal
+        this.finalText = accumulatedFinal
+        this.notify()
+      }
+      // Reiniciar la sesión para grabación continua
+      try { recognition.start() } catch { /* ya arrancando */ }
     }
 
     this.recognition = recognition
@@ -189,7 +150,6 @@ class RecordingStore {
         this.analyser.getByteFrequencyData(data)
         const avg = data.reduce((a, b) => a + b, 0) / data.length
         this.audioLevel = avg / 128
-        // Throttle level notifications to ~15fps to avoid spamming rerenders
         const now = Date.now()
         if (now - this._levelNotifyThrottle > 66) {
           this._levelNotifyThrottle = now
@@ -198,7 +158,7 @@ class RecordingStore {
         this.animFrame = requestAnimationFrame(tick)
       }
       this.animFrame = requestAnimationFrame(tick)
-    } catch { /* AudioContext not available */ }
+    } catch { /* AudioContext no disponible */ }
   }
 
   stopAudioMeter() {
@@ -213,14 +173,12 @@ class RecordingStore {
     if (this.timer !== null) { clearInterval(this.timer); this.timer = null }
     this.stopAudioMeter()
     this.micStream?.getTracks().forEach(t => t.stop()); this.micStream = null
-    this.sysStream?.getTracks().forEach(t => t.stop()); this.sysStream = null
     this.phase = 'done'
     this.notify()
   }
 
   stopRecording() {
-    // Preservar el transcript actual (incluye interim) como finalText antes de parar.
-    // Chrome puede no haber marcado como isFinal los últimos segundos al detener.
+    // Preservar todo el transcript (incluye interim no finalizado)
     if (this.transcript.trim()) {
       this.finalText = this.transcript.trim()
     }

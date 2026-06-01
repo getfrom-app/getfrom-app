@@ -255,16 +255,6 @@ export default function WebRecordingBar() {
             <path d="M8 13v2"/>
           </svg>
         </button>
-        <button
-          className={`rec-bar-icon-btn ${r.sysEnabled ? 'on' : 'off'}`}
-          onClick={() => r.setSysEnabled(!r.sysEnabled)}
-          title={r.sysEnabled ? 'Audio del sistema activado' : 'Audio del sistema desactivado'}
-        >
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2.5 6h2L8 3v10L4.5 10h-2z"/>
-            <path d="M11 5.5a3.5 3.5 0 0 1 0 5"/>
-          </svg>
-        </button>
       </div>
 
       <button
