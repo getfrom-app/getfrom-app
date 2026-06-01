@@ -4,7 +4,31 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Mac v9.4.4 — Junio 2026 · Actualizador automático
+## Mac v9.4.6 · Web v9.4.41 — Junio 2026 · Pagos y suscripciones corregidos
+
+### Flujos de pago y suscripción completamente revisados (Web · Mac · Servidor)
+
+Revisión completa de todos los flujos de alta, suscripción, cancelación y renovación. Se han corregido seis errores que podían impedir que la cuenta se actualizase correctamente tras completar un pago.
+
+- **Upgrade funciona desde todos los puntos**: el botón de suscripción en la app, el banner superior y el modal de límite ya generan un checkout correctamente vinculado a tu cuenta
+- **La cuenta se actualiza sola al volver del pago**: al completar el checkout y volver a la app, el estado Pro aparece automáticamente en segundos sin necesidad de recargar
+- **Cupones del 100% funcionan correctamente**: suscripciones o licencias activadas con cupón de descuento total ya actualizan el plan sin necesidad de pagar
+- **Cancelación disponible durante el periodo de prueba**: ahora puedes cancelar desde Ajustes tanto si estás en suscripción activa como en periodo de prueba
+- **Topup de tokens corregido**: el botón "Comprar más tokens" ya lleva al producto correcto (tokens adicionales), no a una segunda suscripción
+- **Indicador de pago pendiente**: si un pago falla, la app muestra el estado "Pago pendiente" claramente en Ajustes
+
+### Descarga directa desde getfrom.app (Web)
+- El botón "Descargar para Mac" en la cabecera descarga el archivo directamente sin redirigir a la sección de descarga
+
+### Integración con Claude — MCP (Servidor)
+- Nuevo tool `from_create_tree`: crea un nodo con toda su estructura de hijos en una sola llamada. Ideal para que Claude guarde resúmenes estructurados
+- Nuevo tool `from_update_session`: actualiza una sesión existente añadiendo nuevos nodos hijos
+- Corrección: la nota del diario de hoy se identifica por fecha real, no por flag interno (eliminaba race condition de zona horaria)
+- Todo el contenido creado por Claude va en nodos hijos — nunca en campos internos del sistema
+
+---
+
+## Mac v9.4.4 / v9.4.5 — Junio 2026 · Actualizador automático
 
 ### Actualización automática desde la app (Mac)
 - **Primera versión con actualización automática**: a partir de ahora, cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión X.X.X — Actualizar` en la barra inferior de From
