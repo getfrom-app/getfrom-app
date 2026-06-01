@@ -103,7 +103,12 @@ export default function NodeView() {
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [bodyEditing, setBodyEditing] = useState(false)
-  const [bodyValue, setBodyValue] = useState('')
+  // Inicializar con el body actual del nodo si ya existe (evita flash vacío en nodos con body externo)
+  const [bodyValue, setBodyValue] = useState(() => {
+    if (!effectiveId) return ''
+    const n = store.getNode(effectiveId)
+    return n?.body || ''
+  })
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
