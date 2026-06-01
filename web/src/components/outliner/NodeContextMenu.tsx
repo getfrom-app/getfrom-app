@@ -114,10 +114,14 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   // Ajustar posición tras render para usar tamaño real (incluye submenús abiertos)
   useLayoutEffect(() => {
     if (!menuRef.current) return
-    const rect = menuRef.current.getBoundingClientRect()
-    const margin = 8
-    const adjustedY = Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin))
-    const adjustedX = Math.max(margin, Math.min(x, window.innerWidth - rect.width - margin))
+    // Medir la altura REAL usando scrollHeight (no getBoundingClientRect, que puede estar
+    // recortado si el menú ya está fuera del viewport en el primer render)
+    const h = menuRef.current.scrollHeight || menuRef.current.offsetHeight
+    const w = menuRef.current.scrollWidth || menuRef.current.offsetWidth
+    const marginH = 20 // margen inferior cómodo (evita pegar al borde + barra de estado)
+    const marginW = 8
+    const adjustedY = Math.max(marginH, Math.min(y, window.innerHeight - h - marginH))
+    const adjustedX = Math.max(marginW, Math.min(x, window.innerWidth - w - marginW))
     menuRef.current.style.top = `${adjustedY}px`
     menuRef.current.style.left = `${adjustedX}px`
   }, [x, y, showConvert, showColorPicker, showTemplates])
