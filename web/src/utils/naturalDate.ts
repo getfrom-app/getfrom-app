@@ -392,6 +392,44 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
   const words = textWithoutTime.split(/\s+/)
   if (words.length < 2) return null // necesita al menos "[tarea] [fecha]"
 
+  // ── Paso 1: buscar recurrencia al final (hasta 5 palabras) ─────────────────
+  // Si la hay, intentar extraer también una fecha en las palabras anteriores.
+  for (let rn = Math.min(5, words.length - 1); rn >= 1; rn--) {
+    const recPart = words.slice(words.length - rn).join(' ')
+    const rec = parseRecurrenceOnly(recPart)
+    if (!rec) continue
+
+    const remainingWords = words.slice(0, words.length - rn)
+    if (remainingWords.length === 0) return null
+
+    // Intentar extraer una fecha de las palabras restantes (hasta 4 palabras al final)
+    for (let dn = Math.min(4, remainingWords.length - 1); dn >= 1; dn--) {
+      const datePart = remainingWords.slice(remainingWords.length - dn).join(' ')
+      const dateOnly = parseNaturalDate(datePart)
+      if (dateOnly) {
+        const cleanText = remainingWords.slice(0, remainingWords.length - dn).join(' ')
+        if (!cleanText.trim()) return null
+        // Base de la recurrencia = la fecha detectada
+        const baseDate = dateOnly.date ?? new Date()
+        const parsed: ParsedDate = {
+          date: baseDate,
+          recurrence: rec,
+          label: `${dateOnly.label} · ↻ ${rec.display}`,
+        }
+        return { cleanText, dateText: `${datePart} ${recPart}`, parsed, timeStr, isEvent: false }
+      }
+    }
+
+    // Solo recurrencia (sin fecha explícita) — base = hoy
+    const cleanText = remainingWords.join(' ')
+    if (!cleanText.trim()) return null
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const nextDate = nextRecurrence(today, rec)
+    const parsed: ParsedDate = { date: nextDate, recurrence: rec, label: `↻ ${rec.display}` }
+    return { cleanText, dateText: recPart, parsed, timeStr: undefined, isEvent: false }
+  }
+
+  // ── Paso 2: solo fecha (sin recurrencia) ────────────────────────────────────
   for (let n = Math.min(5, words.length - 1); n >= 1; n--) {
     const datePart = words.slice(words.length - n).join(' ')
     const parsed = parseNaturalDate(datePart)
@@ -402,20 +440,6 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
       const lowerClean = norm(cleanText)
       const isEvent = !!timeStr || EVENT_KEYWORDS.some(kw => lowerClean.includes(norm(kw)))
       return { cleanText, dateText: fullDateText, parsed, timeStr, isEvent }
-    }
-    // También probar con parseRecurrenceOnly: "cada dos días", "cada lunes"...
-    const recOnly = parseRecurrenceOnly(datePart)
-    if (recOnly) {
-      const cleanText = words.slice(0, words.length - n).join(' ')
-      if (!cleanText.trim()) return null
-      const today = new Date(); today.setHours(0, 0, 0, 0)
-      const nextDate = nextRecurrence(today, recOnly)
-      const parsed: ParsedDate = {
-        date: nextDate,
-        recurrence: recOnly,
-        label: `↻ ${recOnly.display}`,
-      }
-      return { cleanText, dateText: datePart, parsed, timeStr: undefined, isEvent: false }
     }
   }
 
