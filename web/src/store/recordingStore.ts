@@ -84,8 +84,15 @@ class RecordingStore {
 
   async startRecording() {
     if (this.phase === 'recording') return // already recording
-    // Always derive source from toggles before starting
-    this._syncSourceFromToggles()
+    // En web (no Tauri) solo mic: getDisplayMedia requiere diálogo de pantalla compartida
+    const isTauri = typeof window !== 'undefined' && (window as unknown as { __TAURI__?: unknown }).__TAURI__
+    if (!isTauri) {
+      this.source = 'mic'
+      this.micEnabled = true
+      this.sysEnabled = false
+    } else {
+      this._syncSourceFromToggles()
+    }
 
     const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechAPI) {
@@ -143,11 +150,18 @@ class RecordingStore {
       this.notify()
     }
     recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (e.error !== 'aborted') this.error = 'Error: ' + e.error
-      this._stopInternal()
+      // 'no-speech' y 'aborted' son normales — Chrome los emite periódicamente, no son errores fatales
+      if (e.error === 'not-allowed') {
+        this.error = 'Permiso de micrófono denegado'
+        this._stopInternal()
+      }
+      // Para cualquier otro error no fatal, onend se encargará de reiniciar
     }
     recognition.onend = () => {
-      if (this.phase === 'recording') this._stopInternal()
+      if (this.phase !== 'recording') return
+      // Chrome para la SpeechRecognition automáticamente cada ~60s o tras silencio.
+      // Reiniciar para mantener la grabación continua sin perder la transcripción acumulada.
+      try { recognition.start() } catch { /* ya estaba corriendo */ }
     }
 
     this.recognition = recognition
