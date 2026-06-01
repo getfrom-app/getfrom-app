@@ -2365,7 +2365,6 @@ export default function NodeView() {
                   <Outliner
                     parentId={node.id}
                     autoFocusEmpty
-                    placeholder="Añade contenido…"
                     filterText={smartFilterResult ? undefined : (activeFilterQuery || undefined)}
                     filterMatchIds={smartFilterResult?.matchIds}
                     filterAncestorIds={smartFilterResult?.ancestorIds}

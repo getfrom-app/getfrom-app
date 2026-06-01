@@ -713,7 +713,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         onMouseDown={handleContainerMouseDown}
       >
         {nodes.length === 0 && placeholder && (
-          <div className="outliner-placeholder">{placeholder}</div>
+          <div className="outliner-placeholder" style={{ cursor: 'text' }} onClick={() => {
+            const n = store.createNode({ text: '', parentId, siblingOrder: 1 })
+            setSelectedId(n.id)
+          }}>{placeholder}</div>
         )}
         {nodes.length === 0 && !placeholder && (
           <div className="outliner-empty-state" onClick={() => {
