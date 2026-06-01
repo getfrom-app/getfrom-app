@@ -238,18 +238,30 @@ export function parseRecurrenceOnly(input: string): RecurrenceConfig | null {
     return { type: 'daily', display: 'diario' }
   }
 
-  // "N días" / "cada N días"
-  const nDaysM = text.match(/^(?:cada )?(\d+) dias?$/)
-  if (nDaysM) {
-    const n = parseInt(nDaysM[1])
-    if (n > 0) return { type: 'daily', interval: n, display: n === 1 ? 'diario' : `${n} días` }
+  // Palabras numéricas en español → número
+  const ES_NUMBERS: Record<string, number> = {
+    un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+    seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+    once: 11, doce: 12, quince: 15, veinte: 20, treinta: 30,
+  }
+  function parseNum(s: string): number | undefined {
+    const n = parseInt(s)
+    if (!isNaN(n)) return n
+    return ES_NUMBERS[s]
   }
 
-  // "N semanas" / "cada N semanas"
-  const nWeeksM = text.match(/^(?:cada )?(\d+) semanas?$/)
+  // "N días" / "cada N días" / "cada dos días"
+  const nDaysM = text.match(/^(?:cada )?(\w+) dias?$/)
+  if (nDaysM) {
+    const n = parseNum(nDaysM[1])
+    if (n && n > 0) return { type: 'daily', interval: n, display: n === 1 ? 'diario' : `${n} días` }
+  }
+
+  // "N semanas" / "cada N semanas" / "cada dos semanas"
+  const nWeeksM = text.match(/^(?:cada )?(\w+) semanas?$/)
   if (nWeeksM) {
-    const n = parseInt(nWeeksM[1])
-    if (n > 0) return { type: 'weekly', interval: n, display: n === 1 ? 'semana' : `${n} semanas` }
+    const n = parseNum(nWeeksM[1])
+    if (n && n > 0) return { type: 'weekly', interval: n, display: n === 1 ? 'semana' : `${n} semanas` }
   }
 
   // "semanal" / "cada semana" / "semanalmente"
@@ -257,11 +269,11 @@ export function parseRecurrenceOnly(input: string): RecurrenceConfig | null {
     return { type: 'weekly', display: 'semana' }
   }
 
-  // "N meses" / "cada N meses"
-  const nMonthsM = text.match(/^(?:cada )?(\d+) meses?$/)
+  // "N meses" / "cada N meses" / "cada dos meses"
+  const nMonthsM = text.match(/^(?:cada )?(\w+) meses?$/)
   if (nMonthsM) {
-    const n = parseInt(nMonthsM[1])
-    if (n > 0) return { type: 'monthly', interval: n, display: n === 1 ? 'mes' : `${n} meses` }
+    const n = parseNum(nMonthsM[1])
+    if (n && n > 0) return { type: 'monthly', interval: n, display: n === 1 ? 'mes' : `${n} meses` }
   }
 
   // "mensual" / "cada mes"
@@ -270,10 +282,10 @@ export function parseRecurrenceOnly(input: string): RecurrenceConfig | null {
   }
 
   // "N años" / "cada N años"
-  const nYearsM = text.match(/^(?:cada )?(\d+) anos?$/)
+  const nYearsM = text.match(/^(?:cada )?(\w+) anos?$/)
   if (nYearsM) {
-    const n = parseInt(nYearsM[1])
-    if (n > 0) return { type: 'monthly', interval: n * 12, display: n === 1 ? 'año' : `${n} años` }
+    const n = parseNum(nYearsM[1])
+    if (n && n > 0) return { type: 'monthly', interval: n * 12, display: n === 1 ? 'año' : `${n} años` }
   }
 
   // "cada lunes" / "todos los martes"
@@ -375,12 +387,25 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
     const parsed = parseNaturalDate(datePart)
     if (parsed) {
       const cleanText = words.slice(0, words.length - n).join(' ')
-      if (!cleanText.trim()) return null // no dejar tarea vacía
+      if (!cleanText.trim()) return null
       const fullDateText = datePart + (timeMatch ? timeMatch[0] : '')
-      // Detectar si es evento
       const lowerClean = norm(cleanText)
       const isEvent = !!timeStr || EVENT_KEYWORDS.some(kw => lowerClean.includes(norm(kw)))
       return { cleanText, dateText: fullDateText, parsed, timeStr, isEvent }
+    }
+    // También probar con parseRecurrenceOnly: "cada dos días", "cada lunes"...
+    const recOnly = parseRecurrenceOnly(datePart)
+    if (recOnly) {
+      const cleanText = words.slice(0, words.length - n).join(' ')
+      if (!cleanText.trim()) return null
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const nextDate = nextRecurrence(today, recOnly)
+      const parsed: ParsedDate = {
+        date: nextDate,
+        recurrence: recOnly,
+        label: `↻ ${recOnly.display}`,
+      }
+      return { cleanText, dateText: datePart, parsed, timeStr: undefined, isEvent: false }
     }
   }
 
