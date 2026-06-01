@@ -3188,7 +3188,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <span className="from-ghost-text">
                   {'☐ '}{datePrediction.parsed.label}
                   {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
-                  {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
                 </span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">↵</span>
@@ -3219,7 +3218,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <span className="from-ghost-text">
                   {datePrediction.parsed.label}
                   {datePrediction.timeStr ? ` · ${datePrediction.timeStr}` : ''}
-                  {datePrediction.parsed.recurrence ? ` · ↻ ${datePrediction.parsed.recurrence.display}` : ''}
                 </span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">↵</span>
