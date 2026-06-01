@@ -2817,9 +2817,58 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ) : (
           <div
             className="node-text-group"
+            onMouseDown={e => {
+              // Capturar posición de cursor en mousedown para restaurarla tras el cambio
+              // de contenido HTML→texto plano que ocurre en handleFocus.
+              // También maneja clics en badges (fuera del contentEditable).
+              if (isNota || isAiPrompting) return
+              if ((e.target as HTMLElement).closest('button, input, select, [role="button"]')) return
+              if (!contentRef.current) return
+              const clickedInContent = contentRef.current === e.target || contentRef.current.contains(e.target as unknown as globalThis.Node)
+              if (!isEditing) {
+                // Transición HTML→texto: capturar posición precisa o fin si el clic fue en un badge
+                if (clickedInContent) {
+                  try {
+                    const cr = document.caretRangeFromPoint(e.clientX, e.clientY)
+                    if (cr && contentRef.current.contains(cr.startContainer)) {
+                      const r = document.createRange()
+                      r.setStart(contentRef.current, 0)
+                      r.setEnd(cr.startContainer, cr.startOffset)
+                      pendingCursorPosRef.current = r.toString().length
+                    } else {
+                      pendingCursorPosRef.current = nodeTextRef.current.length
+                    }
+                  } catch { pendingCursorPosRef.current = nodeTextRef.current.length }
+                } else {
+                  // Clic en badge → cursor al final del texto
+                  pendingCursorPosRef.current = nodeTextRef.current.length
+                }
+              } else if (!clickedInContent) {
+                // Ya en modo edición, clic en badge → cursor al final
+                pendingCursorPosRef.current = nodeTextRef.current.length
+              }
+              // isEditing && clickedInContent → el browser maneja el cursor directamente
+            }}
             onClick={e => {
               if (!isNota && !isAiPrompting && !(e.target as HTMLElement).closest('button, input, select, [role="button"]')) {
                 contentRef.current?.focus()
+                // Si ya estábamos en modo edición y hay posición pendiente (p.ej. clic en badge),
+                // handleFocus no volverá a dispararse → aplicar cursor aquí
+                if (isEditing && pendingCursorPosRef.current !== null && contentRef.current) {
+                  const pos = pendingCursorPosRef.current
+                  pendingCursorPosRef.current = null
+                  try {
+                    const textNode = contentRef.current.firstChild
+                    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                      const p = Math.min(pos, textNode.textContent?.length ?? 0)
+                      const range = document.createRange()
+                      range.setStart(textNode, p)
+                      range.collapse(true)
+                      window.getSelection()?.removeAllRanges()
+                      window.getSelection()?.addRange(range)
+                    }
+                  } catch { /* ignore */ }
+                }
               }
             }}
           >
@@ -2907,20 +2956,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            onMouseDown={e => {
-              if (!isEditing && contentRef.current) {
-                try {
-                  // Captura offset de carácter en posición de clic antes del swap textContent
-                  const caretRange = document.caretRangeFromPoint(e.clientX, e.clientY)
-                  if (caretRange && contentRef.current.contains(caretRange.startContainer)) {
-                    const r = document.createRange()
-                    r.setStart(contentRef.current, 0)
-                    r.setEnd(caretRange.startContainer, caretRange.startOffset)
-                    pendingCursorPosRef.current = r.toString().length
-                  }
-                } catch { /* ignore */ }
-              }
-            }}
             onClick={e => {
               // Triple click → seleccionar todo el texto del nodo
               if (e.detail >= 3) {

@@ -288,6 +288,16 @@ export function parseRecurrenceOnly(input: string): RecurrenceConfig | null {
     if (n && n > 0) return { type: 'monthly', interval: n * 12, display: n === 1 ? 'año' : `${n} años` }
   }
 
+  // "cada 2 lunes" / "cada 3 martes" → weekly con intervalo en un día concreto
+  const nDayNameM = text.match(/^cada (\w+) (\w+)$/)
+  if (nDayNameM) {
+    const n = parseNum(nDayNameM[1])
+    const dayNum = DAYS_ES[nDayNameM[2]]
+    if (n && n > 1 && dayNum !== undefined) {
+      return { type: 'weekly', days: [dayNum], interval: n, display: `c/${n} ${DAY_NAMES_SHORT[dayNum]}` }
+    }
+  }
+
   // "cada lunes" / "todos los martes"
   const oneDayM = text.match(/^(?:todos los|cada) (\w+)$/)
   if (oneDayM) {
