@@ -1,8 +1,9 @@
-import { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react'
+import { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
 import { store } from './store/nodeStore'
+import { userStore } from './store/userStore'
 import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
@@ -149,6 +150,35 @@ function useDesktopOAuthCallback() {
   }, [])
 }
 
+// Detecta ?welcome=1 al volver del checkout de LemonSqueezy y refresca el estado del usuario
+// hasta que isPremium sea true (máx 30s con polling cada 2s)
+function usePostCheckoutRefresh() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (!searchParams.has('welcome')) return
+
+    // Limpiar parámetro de la URL sin recargar
+    setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete('welcome'); return p }, { replace: true })
+
+    // Refrescar inmediatamente
+    userStore.fetchMe().catch(() => {})
+
+    // Polling cada 2s hasta confirmar Pro (máx 30s = 15 intentos)
+    let attempts = 0
+    pollingRef.current = setInterval(async () => {
+      attempts++
+      try { await userStore.fetchMe() } catch { /* ignore */ }
+      if (userStore.isPremium || attempts >= 15) {
+        if (pollingRef.current) clearInterval(pollingRef.current)
+      }
+    }, 2000)
+
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 // Sync disparado desde Rust (timer 15s + foco de ventana)
 function useTauriSyncListener() {
   useEffect(() => {
@@ -166,6 +196,7 @@ function useTauriSyncListener() {
 function AppInner() {
   useDesktopOAuthCallback()
   useTauriSyncListener()
+  usePostCheckoutRefresh()
   return (
     <Routes>
       {/* Rutas públicas */}
