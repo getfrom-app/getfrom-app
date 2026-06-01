@@ -17,9 +17,40 @@ const FILTER_VIEW_KEY = 'from_wf_filter_view'
 
 interface Props {
   filterText?: string
+  contextFilterId?: string | null
 }
 
-export default function WFHomeView({ filterText }: Props) {
+// Convierte el texto de un nodo contexto al slug usado en node.types
+function ctxTextToSlug(text: string) {
+  return text.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-\/]/g, '')
+}
+
+// Construye filterMatchIds + ancestorIds para filtrar por contexto
+function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; ancestorIds: Set<string> } | null {
+  const ctxNode = store.getNode(contextNodeId)
+  if (!ctxNode) return null
+  const slug = ctxTextToSlug(ctxNode.text)
+  const matchIds = new Set<string>()
+  const ancestorIds = new Set<string>()
+  store.allActive().forEach(n => {
+    if (n.deletedAt) return
+    if ((n.types || []).includes(slug)) matchIds.add(n.id)
+  })
+  // Recoger todos los ancestros para que el árbol muestre el camino
+  matchIds.forEach(id => {
+    let cur = store.getNode(id)
+    while (cur?.parentId) {
+      ancestorIds.add(cur.parentId)
+      cur = store.getNode(cur.parentId)
+    }
+  })
+  return { matchIds, ancestorIds }
+}
+
+export default function WFHomeView({ filterText, contextFilterId }: Props) {
   const s = useStore()
 
   // ── Loading gate ──────────────────────────────────────────────────────────
@@ -61,16 +92,27 @@ export default function WFHomeView({ filterText }: Props) {
   }, [storeReady, agendaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro inteligente ─────────────────────────────────────────────────────
+  // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
+  const contextFilter = useMemo(() => {
+    if (!contextFilterId) return null
+    return buildContextFilter(contextFilterId)
+  }, [contextFilterId, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Filtro por texto ───────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
+    if (contextFilter) return null // el filtro de contexto tiene prioridad
     if (!filterText?.trim()) return null
-    // Normalizar sinónimos internamente — el usuario ve su texto original
     const effective = normalizeSynonyms(filterText) ?? filterText
     if (!isSmartQuery(effective)) return null
     return applyWFFilter(s.nodes, effective)
-  }, [filterText, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filterText, contextFilter, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFiltering = !!filterText?.trim()
-  const matchCount = filterResult?.matchIds.size ?? 0
+  const isFiltering = !!filterText?.trim() || !!contextFilter
+  const matchCount = contextFilter?.matchIds.size ?? filterResult?.matchIds.size ?? 0
+
+  // Los ids activos (ya sea de contexto o de texto)
+  const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
+  const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -125,12 +167,14 @@ export default function WFHomeView({ filterText }: Props) {
       onDrop={handleDrop}
     >
       {/* Barra de resultados con selector de vista */}
-      {filterResult?.hasFilter && matchCount === 0 && (
+      {isFiltering && matchCount === 0 && (
         <div className="wf-filter-empty">
-          Sin resultados para <strong>"{filterText}"</strong>
+          {contextFilter
+            ? 'Sin nodos con este contexto'
+            : <>Sin resultados para <strong>"{filterText}"</strong></>}
         </div>
       )}
-      {filterResult?.hasFilter && matchCount > 0 && (
+      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && (
         <FilterViewSwitcher
           view={filterView}
           onChange={changeFilterView}
@@ -139,26 +183,26 @@ export default function WFHomeView({ filterText }: Props) {
         />
       )}
 
-      {/* Vistas alternativas cuando hay filtro activo */}
-      {filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
+      {/* Vistas alternativas cuando hay filtro de texto activo */}
+      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
         <TableView matchIds={filterResult.matchIds} />
       )}
-      {filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
+      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
         <KanbanView matchIds={filterResult.matchIds} />
       )}
-      {filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
+      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
         <CalendarView matchIds={filterResult.matchIds} />
       )}
 
       {/* Árbol — vista lista (default) o sin filtro */}
-      <div style={{ display: (filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
+      <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
         <Outliner
           parentId={agendaId}
           autoFocusEmpty={false}
           placeholder="Escribe algo… o pulsa Enter para crear un nodo"
-          filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
-          filterMatchIds={filterResult?.matchIds}
-          filterAncestorIds={filterResult?.ancestorIds}
+          filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
+          filterMatchIds={activeMatchIds}
+          filterAncestorIds={activeAncestorIds}
           disableLocalFilter
         />
       </div>

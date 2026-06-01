@@ -55,56 +55,42 @@ import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
-// ── Panel derecho: nodo contexto ─────────────────────────────────────────────
+// ── Panel derecho: nodo contexto — outliner editable completo ────────────────
+import Outliner from '../outliner/Outliner'
+
 function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
   const s = useStore()
   const navigate = useNavigate()
-  const node = s.getNode(nodeId)
-  const children = s.children(nodeId).filter(n => !n.deletedAt)
   const { t } = useTranslation()
+  const node = s.getNode(nodeId)
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px', borderBottom: '1px solid var(--border)',
+        padding: '10px 14px', borderBottom: '1px solid var(--border)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {node.text || t('common.noTitle')}
         </span>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
           <button
             onClick={() => navigate(`/node/${nodeId}`)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 13, padding: '2px 6px' }}
-            title="Abrir nodo"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 13, padding: '2px 6px', borderRadius: 4 }}
+            title="Abrir nodo completo"
           >↗</button>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, padding: '2px 6px', lineHeight: 1 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 18, padding: '0 6px', lineHeight: 1, borderRadius: 4 }}
             title="Cerrar"
           >×</button>
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-        {children.length === 0 ? (
-          <div style={{ padding: '16px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Sin contenido en este contexto
-          </div>
-        ) : children.map(c => (
-          <div
-            key={c.id}
-            onClick={() => navigate(`/node/${c.id}`)}
-            style={{
-              padding: '6px 16px', fontSize: 13, cursor: 'pointer',
-              color: 'var(--text-secondary)', borderRadius: 4,
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover)')}
-            onMouseLeave={e => (e.currentTarget.style.background = '')}
-          >
-            {c.text || t('common.noTitle')}
-          </div>
-        ))}
+      {/* Outliner editable — mismos nodos que en el árbol principal */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        <Outliner parentId={nodeId} autoFocusEmpty={false} />
       </div>
     </div>
   )
@@ -780,7 +766,7 @@ export default function MainLayout() {
         </div>
         <Suspense fallback={<div className="view-loading">{t('common.loading')}</div>}>
         <Routes>
-          <Route index element={<WFHomeView filterText={filterText} />} />
+          <Route index element={<WFHomeView filterText={filterText} contextFilterId={contextNodeId} />} />
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />
           {/* SearchView: resultados de filtros y atajos (⌘F, shortcuts) — MANTENER */}
