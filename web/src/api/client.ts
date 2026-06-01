@@ -122,7 +122,7 @@ export async function logout() {
 export interface UserProfile {
   id: string
   email: string
-  subscriptionStatus: 'active' | 'trialing' | 'expired' | 'cancelled' | null
+  subscriptionStatus: 'active' | 'trialing' | 'past_due' | 'expired' | 'cancelled' | null
   subscriptionRenewsAt: string | null
   trialEndsAt: string | null
   licenseStatus: 'active' | null
@@ -174,7 +174,20 @@ export async function cancelSubscription(): Promise<{ ok: boolean; billingPortal
 }
 
 export async function changePlan(): Promise<{ ok: boolean; action: 'checkout' | 'portal'; checkoutUrl?: string }> {
-  return apiRequest('/auth/plan/change', { method: 'POST' })
+  return apiRequest('/auth/plan/change', { method: 'POST', body: JSON.stringify({ to: 'subscription' }) })
+}
+
+export async function getCheckoutUrl(product: 'subscription' | 'license' | 'topup', userId: string, email: string): Promise<string> {
+  const res = await apiRequest<{ url: string }>('/webhooks/checkout-url', {
+    method: 'POST',
+    body: JSON.stringify({
+      product,
+      userId,
+      email,
+      locale: navigator.language?.slice(0, 2) ?? 'en',
+    }),
+  })
+  return res.url ?? ''
 }
 
 export async function changePlanAnnual(): Promise<{ ok: boolean; action: string; checkoutUrl?: string }> {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useUserStore } from '../../store/userStore'
 import { useTranslation } from 'react-i18next'
+import { changePlan } from '../../api/client'
 
 const DISMISS_KEY = 'from_trial_banner_dismissed'
 
@@ -10,6 +11,7 @@ export default function TrialBanner() {
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem(DISMISS_KEY) === '1'
   )
+  const [loading, setLoading] = useState(false)
 
   // Only show for loaded, non-premium users
   if (!u.user || u.isPremium || dismissed) return null
@@ -19,17 +21,29 @@ export default function TrialBanner() {
     setDismissed(true)
   }
 
+  async function handleUpgrade() {
+    setLoading(true)
+    try {
+      const res = await changePlan()
+      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
+    } catch {
+      // fallback: llevar a pricing
+      window.open('/pricing', '_blank')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="trial-banner">
       <span>{t('trialBanner.message')}</span>
-      <a
+      <button
         className="trial-banner-cta"
-        href="https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f"
-        target="_blank"
-        rel="noopener noreferrer"
+        onClick={handleUpgrade}
+        disabled={loading}
       >
-        {t('trialBanner.cta')}
-      </a>
+        {loading ? '…' : t('trialBanner.cta')}
+      </button>
       <button
         className="trial-banner-dismiss"
         onClick={handleDismiss}

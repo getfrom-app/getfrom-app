@@ -1,12 +1,11 @@
 import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
+import { changePlan, getCheckoutUrl } from '../../api/client'
 
-// URLs de LemonSqueezy
-const LS_SUBSCRIPTION = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f'
-const LS_TOPUP        = 'https://from.lemonsqueezy.com/checkout/buy/c42fa312-41b6-4145-ad34-7a67a702488f' // mismo plan por ahora
-const LS_BILLING      = 'https://app.lemonsqueezy.com/billing'
+const LS_BILLING = 'https://app.lemonsqueezy.com/billing'
 
 interface Props {
   reason: 'node_limit' | 'ai_limit'
@@ -18,6 +17,34 @@ export default function PaywallModal({ reason, onClose }: Props) {
   const navigate = useNavigate()
   const us = useUserStore()
   const isPremium = us.isPremium
+  const [loading, setLoading] = useState(false)
+
+  async function openSubscriptionCheckout() {
+    setLoading(true)
+    try {
+      const res = await changePlan()
+      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
+    } catch {
+      window.open('/pricing', '_blank')
+    } finally {
+      setLoading(false)
+      onClose()
+    }
+  }
+
+  async function openTopupCheckout() {
+    setLoading(true)
+    try {
+      const url = await getCheckoutUrl('topup', us.user?.id ?? '', us.user?.email ?? '')
+      if (url) window.open(url, '_blank')
+      else window.open(LS_BILLING, '_blank')
+    } catch {
+      window.open(LS_BILLING, '_blank')
+    } finally {
+      setLoading(false)
+      onClose()
+    }
+  }
 
   // ── Contenido según el escenario ────────────────────────────────────────
   let icon     = '✨'
@@ -40,8 +67,8 @@ export default function PaywallModal({ reason, onClose }: Props) {
     icon          = '⚡'
     title         = 'Te has quedado sin tokens de IA'
     subtitle      = 'Has consumido todos tus tokens del mes. Puedes comprar tokens adicionales o esperar a la renovación de tu suscripción.'
-    primaryLabel  = 'Comprar más tokens'
-    primaryAction = () => { window.open(LS_TOPUP, '_blank'); onClose() }
+    primaryLabel  = loading ? '…' : 'Comprar más tokens'
+    primaryAction = openTopupCheckout
     secondaryLabel = 'Gestionar suscripción'
 
   } else {
@@ -49,8 +76,8 @@ export default function PaywallModal({ reason, onClose }: Props) {
     icon          = '✨'
     title         = 'La IA de From requiere suscripción'
     subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que From organice todo por ti.'
-    primaryLabel  = 'Suscribirme ahora'
-    primaryAction = () => { window.open(LS_SUBSCRIPTION, '_blank'); onClose() }
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
   }
 
   return createPortal(
@@ -98,6 +125,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           <button
             onClick={primaryAction}
+            disabled={loading}
             style={{
               background: 'var(--accent)',
               color: 'white',
@@ -106,10 +134,11 @@ export default function PaywallModal({ reason, onClose }: Props) {
               padding: '12px 20px',
               fontSize: 14,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: loading ? 'default' : 'pointer',
+              opacity: loading ? 0.7 : 1,
               transition: 'background 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--accent-hover)' }}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
           >
             {primaryLabel}

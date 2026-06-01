@@ -848,7 +848,7 @@ AL TERMINAR ("fin"):
               </button>
             )}
 
-            {user?.subscriptionStatus === 'active' && (
+            {(user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing') && (
               <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
                 {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
               </button>

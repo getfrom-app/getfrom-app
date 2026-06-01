@@ -69,6 +69,7 @@ class UserStore {
       const days = ends ? Math.ceil((ends.getTime() - Date.now()) / 86400000) : 0
       return days > 0 ? `Prueba gratuita — ${days}d restantes` : 'Prueba gratuita'
     }
+    if (this.user?.subscriptionStatus === 'past_due') return 'Pago pendiente'
     return 'Plan gratuito'
   }
 
