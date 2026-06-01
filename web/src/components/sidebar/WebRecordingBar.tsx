@@ -49,7 +49,9 @@ export default function WebRecordingBar() {
   }, [r.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleProcessRecording() {
-    const transcript = r.finalText.trim()
+    // finalText = resultados confirmados. Si está vacío (Chrome no finalizó los últimos
+    // segundos antes de parar), usar transcript completo como fallback.
+    const transcript = (r.finalText || r.transcript).trim()
 
     // Sin transcripción: reset directo
     if (!transcript) {

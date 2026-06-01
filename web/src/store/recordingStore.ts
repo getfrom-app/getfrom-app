@@ -219,6 +219,11 @@ class RecordingStore {
   }
 
   stopRecording() {
+    // Preservar el transcript actual (incluye interim) como finalText antes de parar.
+    // Chrome puede no haber marcado como isFinal los últimos segundos al detener.
+    if (this.transcript.trim()) {
+      this.finalText = this.transcript.trim()
+    }
     this.recognition?.stop()
     this.recognition = null
     this._stopInternal()
