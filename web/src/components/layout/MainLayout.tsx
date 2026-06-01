@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
@@ -34,18 +34,16 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import PlannerPanel from '../panels/PlannerPanel'
-import DiaryRightPanel from '../panels/DiaryRightPanel'
 import SearchPanel from '../panels/SearchPanel'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
 import MagicChat from '../aichat/MagicChat'
-import AIChatFloatingButton from '../aichat/AIChatFloatingButton'
+import QuickCaptureNode from '../modals/QuickCaptureNode'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
 import VoiceCaptureModal from '../modals/VoiceCaptureModal'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
-import QuickCapturePanel from '../modals/QuickCapturePanel'
 import OnboardingWidget from '../onboarding/OnboardingWidget'
 import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
@@ -70,32 +68,59 @@ export default function MainLayout() {
   })()
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
-  const [plannerOpen, setPlannerOpen] = useState(false)
+  const [filterText, setFilterText] = useFilterStore()
 
-  // Panel diario de hoy — persiste aunque el usuario navegue a una tarea desde el panel
-  const _currentNode = currentNodeIdFromRoute ? s.getNode(currentNodeIdFromRoute) : null
-  const _diaryIsToday = (() => {
-    if (!_currentNode?.diaryDate) return false
-    const d = new Date(_currentNode.diaryDate)
-    const now = new Date()
-    return d.getFullYear() === now.getFullYear() &&
-           d.getMonth() === now.getMonth() &&
-           d.getDate() === now.getDate()
-  })()
-  // Fecha almacenada en estado: se fija al entrar al diario de hoy y se limpia
-  // solo al salir a una vista que NO sea un nodo (home, búsqueda, ajustes…)
-  const [diaryPanelDate, setDiaryPanelDate] = useState<Date | null>(null)
-  useEffect(() => {
-    if (_diaryIsToday) {
-      const today = new Date(); today.setHours(0, 0, 0, 0)
-      setDiaryPanelDate(today)
-    } else if (!currentNodeIdFromRoute) {
-      // Navegar fuera de cualquier nodo → cerrar panel
-      setDiaryPanelDate(null)
-    }
-    // Si es otro nodo pero NO es hoy → mantener el panel abierto
-    // (el usuario puede haber clickeado una tarea del panel)
-  }, [_diaryIsToday, currentNodeIdFromRoute])
+  // Columna derecha unificada
+  type RightPanel = 'magic' | 'filter' | 'planner' | null
+  const PANEL_ORDER: Array<Exclude<RightPanel, null>> = ['planner', 'filter', 'magic']
+  const [rightPanel, setRightPanel] = useState<RightPanel>(null)
+  const lastPanelRef = useRef<Exclude<RightPanel, null>>('planner')
+
+  function openPanel(p: Exclude<RightPanel, null>) {
+    lastPanelRef.current = p
+    setRightPanel(p)
+  }
+  function togglePanel(p: Exclude<RightPanel, null>) {
+    setRightPanel(prev => {
+      if (prev === p) return null
+      lastPanelRef.current = p
+      return p
+    })
+  }
+  function cyclePanel(dir: 'up' | 'down') {
+    setRightPanel(prev => {
+      if (!prev) {
+        const next = lastPanelRef.current
+        lastPanelRef.current = next
+        return next
+      }
+      const idx = PANEL_ORDER.indexOf(prev)
+      const next = dir === 'down'
+        ? PANEL_ORDER[(idx + 1) % PANEL_ORDER.length]
+        : PANEL_ORDER[(idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length]
+      lastPanelRef.current = next
+      return next
+    })
+  }
+
+  // Alias legacy para compatibilidad con eventos externos y lógica existente
+  const showAIChat = rightPanel === 'magic'
+  const showSearch = rightPanel === 'filter'
+  const setShowAIChat = (v: boolean | ((prev: boolean) => boolean)) => {
+    setRightPanel(prev => {
+      const next = typeof v === 'function' ? v(prev === 'magic') : v
+      if (next) { lastPanelRef.current = 'magic'; return 'magic' }
+      return prev === 'magic' ? null : prev
+    })
+  }
+  const setShowSearch = (v: boolean | ((prev: boolean) => boolean)) => {
+    setRightPanel(prev => {
+      const next = typeof v === 'function' ? v(prev === 'filter') : v
+      if (!next && prev === 'filter') setFilterText('')
+      if (next) { lastPanelRef.current = 'filter'; return 'filter' }
+      return prev === 'filter' ? null : prev
+    })
+  }
 
   // R global hold-to-record
   const isRKeyDownRef = useRef(false)
@@ -133,23 +158,6 @@ export default function MainLayout() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
-  // panelMode: único estado → sin frames intermedios con ambos panels abiertos
-  const [panelMode, setPanelMode] = useState<null | 'magic' | 'search'>(null)
-  const showAIChat = panelMode === 'magic'
-  const showSearch = panelMode === 'search'
-  const setShowAIChat = (v: boolean | ((prev: boolean) => boolean)) => {
-    setPanelMode(prev => {
-      const next = typeof v === 'function' ? v(prev === 'magic') : v
-      return next ? 'magic' : (prev === 'magic' ? null : prev)
-    })
-  }
-  const setShowSearch = (v: boolean | ((prev: boolean) => boolean)) => {
-    setPanelMode(prev => {
-      const next = typeof v === 'function' ? v(prev === 'search') : v
-      if (!next && prev === 'search') setFilterText('')  // siempre limpiar al cerrar
-      return next ? 'search' : (prev === 'search' ? null : prev)
-    })
-  }
   const [magicPanelW, setMagicPanelW] = useState(() => {
     const saved = localStorage.getItem('magic-panel-w')
     return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 500
@@ -168,8 +176,9 @@ export default function MainLayout() {
   useEffect(() => {
     function handler(e: Event) {
       const mode = (e as CustomEvent<{ mode: null | 'magic' | 'search' }>).detail?.mode ?? null
-      setPanelMode(mode)
-      if (!mode) setFilterText('')
+      if (!mode) { setRightPanel(null); setFilterText('') }
+      else if (mode === 'magic') openPanel('magic')
+      else if (mode === 'search') openPanel('filter')
     }
     window.addEventListener('from:panelMode', handler)
     return () => window.removeEventListener('from:panelMode', handler)
@@ -216,7 +225,6 @@ export default function MainLayout() {
   function handleEdgeLeave() {
     if (magicHoverTimerRef.current) clearTimeout(magicHoverTimerRef.current)
   }
-  const [filterText, setFilterText] = useFilterStore()
   const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
   const [slugInput, setSlugInput] = useState('')
   const slugModalInputRef = useRef<HTMLInputElement>(null)
@@ -258,7 +266,7 @@ export default function MainLayout() {
   // Cerrar búsqueda + limpiar filtro al navegar dentro de un nodo
   useEffect(() => {
     if (showSearch) {
-      setPanelMode(null)
+      setRightPanel(null)
       setFilterText('')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -368,17 +376,40 @@ export default function MainLayout() {
           }, 150)
         }
       }
-      // Cmd+J o Espacio (sin input activo) → Magic Chat (solo abre)
-      if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setShowAIChat(v => !v)
-      }
+      // Espacio (sin input activo) → captura rápida
       if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) { e.preventDefault(); setShowQuickCapture(true) }
+      }
+      // M (sin modificador) → toggle Magic Chat
+      if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) togglePanel('magic')
+      }
+      // F (sin modificador) → toggle panel de filtro/búsqueda
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) togglePanel('filter')
+      }
+      // → (ArrowRight sin modificador) → toggle última columna derecha
+      if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) {
+          if (rightPanel) setRightPanel(null)
+          else openPanel(lastPanelRef.current)
+        }
+      }
+      // ↓/↑ → ciclar entre paneles cuando uno está abierto
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused && rightPanel) {
           e.preventDefault()
-          setShowAIChat(true)
+          cyclePanel(e.key === 'ArrowDown' ? 'down' : 'up')
         }
       }
       // R (mantener, sin input activo) → abre Magic Chat + empieza a grabar
@@ -399,7 +430,7 @@ export default function MainLayout() {
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) {
           e.preventDefault()
-          setPlannerOpen(v => !v)
+          togglePanel('planner')
         }
       }
       // Cmd+Shift+S → toggle sidebar
@@ -523,7 +554,7 @@ export default function MainLayout() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture])
+  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture, rightPanel])
 
   // Listener del modal de URL corta (slug) — disparado desde NodeContextMenu vía CustomEvent
   useEffect(() => {
@@ -578,7 +609,7 @@ export default function MainLayout() {
 
   return (
     <ToastProvider>
-    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'} ${plannerOpen ? 'planner-open' : ''}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'} ${rightPanel === 'planner' ? 'planner-open' : ''}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
 
       {/* ── Traffic lights row (solo Mac) ── */}
       <div
@@ -626,9 +657,9 @@ export default function MainLayout() {
           onOpenSettings={() => navigate('/settings')}
           onToggleSidebar={() => setSidebarOpen(v => !v)}
           sidebarOpen={sidebarOpen}
-          onTogglePlanner={() => setPlannerOpen(v => !v)}
-          plannerOpen={plannerOpen}
-          onToggleSearch={() => setPanelMode(p => p === 'search' ? null : 'search')}
+          onTogglePlanner={() => togglePanel('planner')}
+          plannerOpen={rightPanel === 'planner'}
+          onToggleSearch={() => togglePanel('filter')}
         />
       </div>
 
@@ -715,35 +746,33 @@ export default function MainLayout() {
         </Suspense>
       </main>
 
-      {/* ── Panel tareas de hoy — aparece al ver el diario de hoy ── */}
-      {diaryPanelDate && (
-        <DiaryRightPanel diaryDate={diaryPanelDate} />
+      {/* ── Columna derecha unificada — Magic, Filtro o Planificador ── */}
+      {rightPanel && (
+        <div className="right-panel-unified" style={{
+          width: rightPanel === 'magic' ? magicPanelW : 380,
+          display: 'flex', flexDirection: 'column',
+          borderLeft: '1px solid var(--border)',
+          flexShrink: 0, overflow: 'hidden',
+          position: 'relative',
+        }}>
+          {rightPanel === 'magic' && (
+            <>
+              <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
+              <MagicChat mode="panel" onClose={() => setRightPanel(null)} currentNodeId={currentNodeIdFromRoute} />
+            </>
+          )}
+          {rightPanel === 'filter' && (
+            <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setRightPanel(null)} />
+          )}
+          {rightPanel === 'planner' && (
+            <PlannerPanel onClose={() => setRightPanel(null)} />
+          )}
+        </div>
       )}
-
-      {/* ── Planner Panel — timeline lateral derecho ── */}
-      {plannerOpen && (
-        <PlannerPanel onClose={() => setPlannerOpen(false)} />
-      )}
-
-      {/* ── Panel lateral derecho — Magic o Búsqueda comparten el mismo wrapper ── */}
-      {/* Al cambiar entre ellos no hay animación, solo cambia el contenido */}
-      <div
-        className={`magic-panel-wrap ${(showAIChat || showSearch) ? 'magic-panel-wrap--open' : ''}`}
-        style={{ width: (showAIChat || showSearch) ? magicPanelW : 0 }}
-      >
-        <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
-        {showSearch && (
-          <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setShowSearch(false)} />
-        )}
-        {showAIChat && (
-          <MagicChat mode="panel" onClose={() => setShowAIChat(false)} currentNodeId={currentNodeIdFromRoute} />
-        )}
-      </div>
 
       </div>{/* .main-body */}
 
       {/* ── Trigger borde derecho: hover abre Magic, clic colapsa si está abierto ── */}
-      {/* Trigger borde derecho en TODAS las páginas */}
       <div
         className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
         onMouseEnter={handleEdgeEnter}
@@ -761,14 +790,22 @@ export default function MainLayout() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
-      {/* Botón ✦ siempre en su posición fija, encima del panel */}
-      <AIChatFloatingButton onClick={() => setPanelMode(p => p === 'magic' ? null : 'magic')} isOpen={showAIChat} />
+      {/* Botón FAB de captura rápida */}
+      <button
+        className="quick-capture-fab"
+        onClick={() => setShowQuickCapture(true)}
+        title="Captura rápida (Espacio)"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </button>
+      {showQuickCapture && <QuickCaptureNode onClose={() => setShowQuickCapture(false)} />}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
       {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
       {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
-      {showQuickCapture && <QuickCapturePanel onClose={() => setShowQuickCapture(false)} />}
       {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}
       {slugModal && (
         <div

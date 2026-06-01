@@ -12736,3 +12736,29 @@ textarea:focus-visible,
 }
 .lang-flag { font-size: 16px; line-height: 1; }
 .lang-label { font-weight: 500; }
+
+/* ── Quick Capture FAB ─────────────────────────────────────────────────── */
+.quick-capture-fab {
+  position: fixed;
+  bottom: 44px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 100;
+}
+.quick-capture-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(139,92,246,0.5);
+}
+.quick-capture-fab:active { transform: scale(0.96); }
+.wf-layout .quick-capture-fab { bottom: 44px; }
