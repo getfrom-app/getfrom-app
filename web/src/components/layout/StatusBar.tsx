@@ -29,6 +29,8 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [updateChecking, setUpdateChecking] = useState(false)
+  const [updateUpToDate, setUpdateUpToDate] = useState(false)
   const [macVersion, setMacVersion] = useState<string | null>(null)
 
   // Leer versión nativa Tauri (solo Mac)
@@ -44,6 +46,9 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
     if (!isTauriEnv) return
 
     const checkForUpdates = async () => {
+      setUpdateChecking(true)
+      setUpdateError(null)
+      setUpdateUpToDate(false)
       try {
         const { check } = await import('@tauri-apps/plugin-updater')
         const update = await check()
@@ -55,11 +60,9 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
               setUpdateError(null)
               try {
                 await update.downloadAndInstall()
-                // Relaunch explícito tras instalar (por si el updater no lo hace solo)
                 const { relaunch } = await import('@tauri-apps/plugin-process')
                 await relaunch()
               } catch (e) {
-                console.error('Update failed:', e)
                 const msg = e instanceof Error ? e.message : String(e)
                 setUpdateError(msg)
                 setUpdating(false)
@@ -67,11 +70,15 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
             }
           })
         } else {
-          // Si vino del menú "Buscar actualizaciones" y no hay nada nuevo,
-          // limpiar el estado (por si había una notificación previa ya instalada)
-          setUpdateAvailable(prev => prev)
+          setUpdateUpToDate(true)
+          setTimeout(() => setUpdateUpToDate(false), 4000)
         }
-      } catch { /* silencioso — sin conexión o sin latest.json */ }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        setUpdateError(msg)
+      } finally {
+        setUpdateChecking(false)
+      }
     }
 
     // Check al inicio con delay
@@ -211,6 +218,26 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
 
       {/* Spacer */}
       <span style={{ flex: 1 }} />
+
+      {/* Comprobando actualización */}
+      {updateChecking && (
+        <>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)', padding: '0 6px' }}>
+            Comprobando...
+          </span>
+          <span className="footer-sep" />
+        </>
+      )}
+
+      {/* Al día */}
+      {updateUpToDate && !updateChecking && (
+        <>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', padding: '0 6px' }}>
+            ✓ Al día
+          </span>
+          <span className="footer-sep" />
+        </>
+      )}
 
       {/* Error de actualización */}
       {updateError && (
