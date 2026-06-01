@@ -47,6 +47,12 @@ export default function WFTopBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  // Nodos sistema — para navegación desde el menú
+  const rootNodes = s.children(null).filter(n => !n.deletedAt)
+  const papeleraNode = rootNodes.find(n => n.text === '🗑 Papelera')
+  const agentesNode  = rootNodes.find(n => n.text === '🤖 Agentes')
+  const plantillasNode = rootNodes.find(n => n.text === '📋 Plantillas')
+
   // ── Breadcrumb ────────────────────────────────────────────────────────────
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isNodeView = path.startsWith('/node/')
@@ -235,11 +241,23 @@ export default function WFTopBar({
         </button>
         {menuOpen && (
           <div className="wf-topbar-dropdown">
-            <button className="wf-topbar-dropdown-item" onClick={() => { navigate('/trash'); setMenuOpen(false) }}>
-              <span>🗑</span> {t('sidebar.trash')}
-            </button>
+            {agentesNode && (
+              <button className="wf-topbar-dropdown-item" onClick={() => { navigate(`/node/${agentesNode.id}`); setMenuOpen(false) }}>
+                <span>🤖</span> Agentes
+              </button>
+            )}
+            {plantillasNode && (
+              <button className="wf-topbar-dropdown-item" onClick={() => { navigate(`/node/${plantillasNode.id}`); setMenuOpen(false) }}>
+                <span>📋</span> Plantillas
+              </button>
+            )}
+            {papeleraNode && (
+              <button className="wf-topbar-dropdown-item" onClick={() => { navigate(`/node/${papeleraNode.id}`); setMenuOpen(false) }}>
+                <span>🗑</span> {t('sidebar.trash')}
+              </button>
+            )}
             <button className="wf-topbar-dropdown-item" onClick={() => { onOpenSettings(); setMenuOpen(false) }}>
-              <span>⚙️</span> {t('sidebar.settings')}
+              <span>⚙️</span> Ajustes
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>

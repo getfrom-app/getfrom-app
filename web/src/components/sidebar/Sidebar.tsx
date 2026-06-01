@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useRecordingStore } from '../../store/recordingStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import { useUserStore } from '../../store/userStore'
 import type { Node } from '../../types'
 import WebRecordingBar from './WebRecordingBar'
 import { getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
+import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 // (Google status ahora vive solo en Ajustes — eliminado del sidebar en v8.21)
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
   showSaved?: boolean
   isGuest?: boolean
   onOpenSettings?: () => void
+  onSelectContext?: (nodeId: string) => void
+  selectedContextId?: string | null
 }
 
 function getNodeIcon(n: Node): string {
@@ -48,7 +51,7 @@ function savePanels(panels: Panel[]) {
 
 type SidebarTab = 'favorites' | 'panels'
 
-export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved, isGuest, onOpenSettings }: Props) {
+export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved, isGuest, onOpenSettings, onSelectContext, selectedContextId }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
@@ -408,6 +411,61 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     )
   }
 
+  const [expandedCtxIds, setExpandedCtxIds] = useState<Set<string>>(new Set())
+  function toggleCtxExpand(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setExpandedCtxIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function renderCtxNode(nodeId: string, depth: number): React.ReactNode {
+    const node = s.getNode(nodeId)
+    if (!node || node.deletedAt) return null
+    const kids = s.children(nodeId).filter(n => !n.deletedAt)
+    const isActive = selectedContextId === nodeId
+    const expanded = expandedCtxIds.has(nodeId)
+    return (
+      <div key={nodeId}>
+        <div
+          className={`wf-qa-item${isActive ? ' active' : ''}`}
+          style={{ paddingLeft: `${12 + depth * 14}px` }}
+          onClick={() => onSelectContext?.(nodeId)}
+        >
+          {kids.length > 0 ? (
+            <span
+              style={{ marginRight: 4, fontSize: 10, cursor: 'pointer', opacity: 0.5, display: 'inline-block', transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', userSelect: 'none' }}
+              onClick={e => toggleCtxExpand(nodeId, e)}
+            >›</span>
+          ) : (
+            <span style={{ marginRight: 4, width: 14, display: 'inline-block' }} />
+          )}
+          <span className="wf-qa-item-name">{node.text || t('common.noTitle')}</span>
+        </div>
+        {kids.length > 0 && expanded && (
+          <div>{kids.map(k => renderCtxNode(k.id, depth + 1))}</div>
+        )}
+      </div>
+    )
+  }
+
+  function renderContextos() {
+    const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    if (!contextoRoot) return null
+    const contextos = s.children(contextoRoot.id).filter(n => !n.deletedAt)
+    if (contextos.length === 0) return null
+    return (
+      <div className="sidebar-tab-content wf-quick-access" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
+          <span className="wf-qa-section-label">CONTEXTOS</span>
+        </div>
+        {contextos.map(c => renderCtxNode(c.id, 0))}
+      </div>
+    )
+  }
+
   function renderShortcuts() {
     const atajosNode = getAtajosNode()
     const atajosChildren = atajosNode ? s.children(atajosNode.id).filter(n => !n.deletedAt) : []
@@ -509,6 +567,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
             transition: 'flex 0.35s cubic-bezier(0.4,0,0.2,1)',
           }}>
             {renderShortcuts()}
+            {renderContextos()}
           </div>
 
           {/* Recording bar — se expande a la mitad al grabar */}

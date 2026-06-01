@@ -10,6 +10,7 @@ import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
 import { getPresignedUpload } from '../../api/client'
+import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -38,18 +39,26 @@ export default function WFHomeView({ filterText }: Props) {
     localStorage.setItem(FILTER_VIEW_KEY, v)
   }
 
+  // ── Nodo Agenda — la vista raíz muestra sus hijos directamente ───────────
+  const agendaNode = useMemo(() => {
+    if (!storeReady) return null
+    return store.children(null).find(n => !n.deletedAt && n.text === AGENDA_ROOT_NAME) ?? null
+  }, [storeReady, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const agendaId = agendaNode?.id ?? null
+
   // ── Colapsar root nodes al primer arranque ─────────────────────────────────
   useEffect(() => {
-    if (!storeReady) return
+    if (!storeReady || !agendaId) return
     if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
-    const roots = store.children(null).filter(n => !n.deletedAt)
+    const roots = store.children(agendaId).filter(n => !n.deletedAt)
     if (roots.length === 0) return
     roots.forEach(root => {
       const kids = store.children(root.id).filter(n => !n.deletedAt)
       if (kids.length > 0 && !root.isCollapsed) store.updateNode(root.id, { isCollapsed: true })
     })
     localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
-  }, [storeReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeReady, agendaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro inteligente ─────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
@@ -103,7 +112,7 @@ export default function WFHomeView({ filterText }: Props) {
     if (!store.isLoaded) return
     const files = Array.from(e.dataTransfer.files)
     if (files.length === 0) return
-    files.forEach(file => uploadFileAsNode(file, null))
+    files.forEach(file => uploadFileAsNode(file, agendaId))
   }
 
   if (!storeReady) return <div className="wf-home-view" />
@@ -144,13 +153,12 @@ export default function WFHomeView({ filterText }: Props) {
       {/* Árbol — vista lista (default) o sin filtro */}
       <div style={{ display: (filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
         <Outliner
-          parentId={null}
+          parentId={agendaId}
           autoFocusEmpty={false}
           placeholder="Escribe algo… o pulsa Enter para crear un nodo"
           filterText={filterResult ? undefined : (isFiltering ? filterText : undefined)}
           filterMatchIds={filterResult?.matchIds}
           filterAncestorIds={filterResult?.ancestorIds}
-          excludeDiaryEntries
           disableLocalFilter
         />
       </div>

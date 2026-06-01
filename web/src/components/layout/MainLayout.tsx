@@ -55,6 +55,61 @@ import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
+// ── Panel derecho: nodo contexto ─────────────────────────────────────────────
+function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+  const s = useStore()
+  const navigate = useNavigate()
+  const node = s.getNode(nodeId)
+  const children = s.children(nodeId).filter(n => !n.deletedAt)
+  const { t } = useTranslation()
+  if (!node) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', borderBottom: '1px solid var(--border)',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+          {node.text || t('common.noTitle')}
+        </span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => navigate(`/node/${nodeId}`)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 13, padding: '2px 6px' }}
+            title="Abrir nodo"
+          >↗</button>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, padding: '2px 6px', lineHeight: 1 }}
+            title="Cerrar"
+          >×</button>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        {children.length === 0 ? (
+          <div style={{ padding: '16px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            Sin contenido en este contexto
+          </div>
+        ) : children.map(c => (
+          <div
+            key={c.id}
+            onClick={() => navigate(`/node/${c.id}`)}
+            style={{
+              padding: '6px 16px', fontSize: 13, cursor: 'pointer',
+              color: 'var(--text-secondary)', borderRadius: 4,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = '')}
+          >
+            {c.text || t('common.noTitle')}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function MainLayout() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -71,21 +126,32 @@ export default function MainLayout() {
   const [filterText, setFilterText] = useFilterStore()
 
   // Columna derecha unificada
-  type RightPanel = 'magic' | 'filter' | 'planner' | null
-  const PANEL_ORDER: Array<Exclude<RightPanel, null>> = ['planner', 'filter', 'magic']
+  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | null
+  type CyclablePanel = 'planner' | 'filter' | 'magic'
+  const PANEL_ORDER: CyclablePanel[] = ['planner', 'filter', 'magic']
   const [rightPanel, setRightPanel] = useState<RightPanel>(null)
-  const lastPanelRef = useRef<Exclude<RightPanel, null>>('planner')
+  const [contextNodeId, setContextNodeId] = useState<string | null>(null)
+  const lastPanelRef = useRef<CyclablePanel>('planner')
 
-  function openPanel(p: Exclude<RightPanel, null>) {
+  function openPanel(p: CyclablePanel) {
     lastPanelRef.current = p
     setRightPanel(p)
   }
-  function togglePanel(p: Exclude<RightPanel, null>) {
+  function togglePanel(p: CyclablePanel) {
     setRightPanel(prev => {
       if (prev === p) return null
       lastPanelRef.current = p
       return p
     })
+  }
+  function handleSelectContext(nodeId: string) {
+    if (contextNodeId === nodeId && rightPanel === 'context') {
+      setRightPanel(null)
+      setContextNodeId(null)
+    } else {
+      setContextNodeId(nodeId)
+      setRightPanel('context')
+    }
   }
   function cyclePanel(dir: 'up' | 'down') {
     setPanelSlideDir(dir)
@@ -96,7 +162,8 @@ export default function MainLayout() {
         lastPanelRef.current = next
         return next
       }
-      const idx = PANEL_ORDER.indexOf(prev)
+      const cyclable = PANEL_ORDER.includes(prev as CyclablePanel) ? (prev as CyclablePanel) : lastPanelRef.current
+      const idx = PANEL_ORDER.indexOf(cyclable)
       const next = dir === 'down'
         ? PANEL_ORDER[(idx + 1) % PANEL_ORDER.length]
         : PANEL_ORDER[(idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length]
@@ -680,6 +747,8 @@ export default function MainLayout() {
         showSaved={showSaved}
         isGuest={false}
         onOpenSettings={() => navigate('/settings')}
+        onSelectContext={handleSelectContext}
+        selectedContextId={contextNodeId}
       />
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -775,6 +844,12 @@ export default function MainLayout() {
             )}
             {rightPanel === 'planner' && (
               <PlannerPanel onClose={() => setRightPanel(null)} />
+            )}
+            {rightPanel === 'context' && contextNodeId && (
+              <ContextNodePanel
+                nodeId={contextNodeId}
+                onClose={() => { setRightPanel(null); setContextNodeId(null) }}
+              />
             )}
           </div>
         </div>
