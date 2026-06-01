@@ -16,7 +16,6 @@ import NodeKanbanView from '../views/NodeKanbanView'
 import NodeCalendarView from '../views/NodeCalendarView'
 import NodeContextMenu from './NodeContextMenu'
 import FormatToolbar from './FormatToolbar'
-import { aiInlineStream, TokensError } from '../../api/client'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
@@ -290,14 +289,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
-  const [isAiStreaming, setIsAiStreaming] = useState(false)
-  const [aiPendingText, setAiPendingText] = useState<string | null>(null)
-  const aiOriginalText = useRef<string>('')
-  const [showAiToolbar, setShowAiToolbar] = useState(false)
-  // IA inline: estado del prompt previo al stream
-  const [isAiPrompting, setIsAiPrompting] = useState(false)
-  const [aiPromptText, setAiPromptText] = useState('')
-
   // Performance: memoize isNodeShortcut to avoid localStorage on every render
   const [isShortcutState, setIsShortcutState] = useState(() => isNodeShortcut(node.id))
   useEffect(() => {
@@ -322,7 +313,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     window.addEventListener('from:open-task-props', handleOpenTaskProps)
     return () => window.removeEventListener('from:open-task-props', handleOpenTaskProps)
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  const aiPromptRef = useRef<HTMLInputElement>(null)
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
   // Quick-props inline popup (fecha/hora/repetición/prioridad)
   const [showQuickProps, setShowQuickProps] = useState(false)
@@ -1042,9 +1032,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setTaskPrediction(false)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
-    // Ocultar AI toolbar con delay para permitir que los botones reciban el click
-    setTimeout(() => setShowAiToolbar(false), 200)
-
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
     // Se ejecuta aquí (blur) y no en handleInput para no crear un nodo por cada tecla.
     const finalText = contentRef.current?.textContent || ''
@@ -1081,40 +1068,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const text = contentRef.current?.textContent || ''
-
-    // AI pending state: Tab=accept, Escape=discard, Cmd+Space=iterate, any other key=accept then type
-    if (aiPendingText !== null && !isAiStreaming) {
-      const clearPending = () => {
-        if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-        setAiPendingText(null)
-        setShowAiToolbar(false)
-      }
-      const acceptPending = () => {
-        const finalText = aiPendingText.replace(/ /g, ' ')
-        nodeTextRef.current = finalText
-        store.updateNode(node.id, { text: finalText })
-        clearPending()
-      }
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        acceptPending()
-        return
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        // Descartar: restaurar texto original
-        if (contentRef.current) contentRef.current.textContent = aiOriginalText.current
-        nodeTextRef.current = aiOriginalText.current
-        clearPending()
-        return
-      }
-      // Ignorar teclas modificadoras solas y Cmd+Space (iterar, manejado abajo)
-      if (!['Meta', 'Control', 'Alt', 'Shift'].includes(e.key) && !(e.key === ' ' && (e.metaKey || e.ctrlKey))) {
-        // Cualquier otra tecla: aceptar texto IA y continuar escribiendo
-        acceptPending()
-        // No preventDefault — la tecla sigue su curso normal
-      }
-    }
 
     // If slash menu is open, let it handle arrow keys and Enter/Escape
     if (showSlash) {
@@ -1272,18 +1225,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
-    // Espacio al inicio del bullet vacío → mostrar input de prompt IA (como Mac)
-    if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !showSlash && !picker) {
-      const sel = window.getSelection()
-      const cursorAtStart = sel && sel.focusOffset === 0 && text === ''
-      if (cursorAtStart) {
-        e.preventDefault()
-        setIsAiPrompting(true)
-        setTimeout(() => aiPromptRef.current?.focus(), 0)
-        return
-      }
-    }
-
     // Cmd+/ → ciclar heading H1 → H2 → H3 → normal
     if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -1328,75 +1269,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         else if (e.key === 'e') applyFormat('code')
         return
       }
-    }
-
-    // Cmd+Space → completar con IA inline
-    if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !isAiStreaming) {
-      e.preventDefault()
-      e.stopPropagation()
-      const currentText = contentRef.current?.textContent || ''
-      if (!currentText.trim()) return
-      // Si hay texto pendiente: Cmd+Space = iterar (aceptar texto IA y continuar generando)
-      if (aiPendingText !== null) {
-        if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-        const acceptedText = aiPendingText.replace(/ /g, ' ')
-        nodeTextRef.current = acceptedText
-        store.updateNode(node.id, { text: acceptedText })
-        setAiPendingText(null)
-        setShowAiToolbar(false)
-        // aiOriginalText se actualiza al texto aceptado para la siguiente iteración
-        aiOriginalText.current = acceptedText
-      } else {
-        aiOriginalText.current = currentText
-      }
-      setIsAiStreaming(true)
-      let aiText = ''
-      const resource = store.findAncestorResource(node.id)
-      aiInlineStream(
-        currentText + '\n',
-        undefined,
-        (chunk) => {
-          aiText += chunk
-          if (contentRef.current) {
-            contentRef.current.textContent = currentText + aiText
-            // Cursor al final
-            const range = document.createRange()
-            const sel = window.getSelection()
-            const textNode = contentRef.current.firstChild
-            if (textNode) {
-              range.setStart(textNode, contentRef.current.textContent?.length || 0)
-              range.collapse(true)
-              sel?.removeAllRanges()
-              sel?.addRange(range)
-            }
-          }
-        },
-        {
-          ...(resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : {}),
-          userProfile: store.perfilIANode()?.body ?? undefined,
-          tagDefinitions: store.tagDefinitionsForNode(node.id),
-        }
-      ).then(() => {
-        const fullText = (currentText + aiText).replace(/ /g, ' ')
-        // Fase 2: modo ghost — NO guardar en store todavía
-        setAiPendingText(fullText)
-        setShowAiToolbar(true)
-        if (contentRef.current) {
-          contentRef.current.textContent = fullText
-          contentRef.current.classList.add('node-text--ai-pending')
-          // Cursor al final
-          const range = document.createRange()
-          const sel = window.getSelection()
-          const textNode = contentRef.current.firstChild
-          if (textNode) {
-            range.setStart(textNode, contentRef.current.textContent?.length || 0)
-            range.collapse(true)
-            sel?.removeAllRanges()
-            sel?.addRange(range)
-          }
-        }
-      }).catch((e) => { if (e instanceof TokensError) { window.dispatchEvent(new CustomEvent("from:paywall", { detail: { reason: "ai_limit" } })) } else { console.error(e) } }).finally(() => setIsAiStreaming(false))
-      return
     }
 
     // Cmd+Enter (Mac) / Ctrl+Enter (Win) → ciclar estado: normal → pendiente → hecha → normal
@@ -1722,7 +1594,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }
       }
     }
-  }, [node, onSelect, onSelectNext, showSlash, picker, aiPendingText, isAiStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node, onSelect, onSelectNext, showSlash, picker]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag & Drop ──────────────────────────────────────────────────────────
 
@@ -2684,7 +2556,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // Capturar posición de cursor en mousedown para restaurarla tras el cambio
               // de contenido HTML→texto plano que ocurre en handleFocus.
               // También maneja clics en badges (fuera del contentEditable).
-              if (isNota || isAiPrompting) return
+              if (isNota) return
               if ((e.target as HTMLElement).closest('button, input, select, [role="button"]')) return
               if (!contentRef.current) return
               const clickedInContent = contentRef.current === e.target || contentRef.current.contains(e.target as unknown as globalThis.Node)
@@ -2713,7 +2585,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // isEditing && clickedInContent → el browser maneja el cursor directamente
             }}
             onClick={e => {
-              if (!isNota && !isAiPrompting && !(e.target as HTMLElement).closest('button, input, select, [role="button"]')) {
+              if (!isNota && !(e.target as HTMLElement).closest('button, input, select, [role="button"]')) {
                 contentRef.current?.focus()
                 // Si ya estábamos en modo edición y hay posición pendiente (p.ej. clic en badge),
                 // handleFocus no volverá a dispararse → aplicar cursor aquí
@@ -2740,61 +2612,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {/* Lista: dash visual "–" decorativo */}
             {isBullet && <span className="lista-dash" aria-hidden="true">–</span>}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
-            {isAiPrompting ? (
-              // Input de prompt IA — igual que Mac: ✦ + escribir prompt + Enter
-              <div className="node-ai-prompt-container">
-                <span className="node-ai-prompt-icon">✦</span>
-                <input
-                  ref={aiPromptRef}
-                  className="node-ai-prompt-input"
-                  placeholder="Pide a la IA..."
-                  value={aiPromptText}
-                  onChange={e => setAiPromptText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      if (!aiPromptText.trim()) {
-                        setIsAiPrompting(false)
-                        setAiPromptText('')
-                        setTimeout(() => contentRef.current?.focus(), 0)
-                        return
-                      }
-                      const prompt = aiPromptText
-                      setIsAiPrompting(false)
-                      setAiPromptText('')
-                      setIsAiStreaming(true)
-                      let aiText = ''
-                      aiInlineStream(prompt, undefined, (chunk) => {
-                        aiText += chunk
-                        nodeTextRef.current = aiText
-                        if (contentRef.current) contentRef.current.textContent = aiText
-                      }, {
-                        userProfile: store.perfilIANode()?.body ?? undefined,
-                        tagDefinitions: store.tagDefinitionsForNode(node.id),
-                      })
-                      .catch(console.error).finally(() => {
-                        setIsAiStreaming(false)
-                        store.updateNode(node.id, { text: aiText })
-                      })
-                    }
-                    if (e.key === 'Escape') {
-                      setIsAiPrompting(false)
-                      setAiPromptText('')
-                      setTimeout(() => contentRef.current?.focus(), 0)
-                    }
-                  }}
-                  onBlur={() => {
-                    // Si pierde foco sin enviar, cancelar
-                    setTimeout(() => {
-                      if (!aiPromptRef.current || document.activeElement !== aiPromptRef.current) {
-                        setIsAiPrompting(false)
-                        setAiPromptText('')
-                      }
-                    }, 100)
-                  }}
-                />
-              </div>
-            ) : isNota ? (
+            {isNota ? (
               <div
                 className="node-text node-text--nota"
                 onClick={() => navigate(`/node/${node.id}`)}
@@ -3269,157 +3087,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       {/* Format toolbar — aparece al seleccionar texto */}
       {/* FormatToolbar: se muestra solo cuando hay selección DENTRO de este nodo */}
       <FormatToolbar onFormat={applyFormat} nodeRef={contentRef} />
-
-      {/* AI inline toolbar — aparece tras generar texto con Cmd+Space */}
-      {showAiToolbar && aiPendingText !== null && !isAiStreaming && (
-        <div className="ai-inline-toolbar" onMouseDown={e => e.preventDefault()}>
-          <span className="ai-inline-toolbar-hint">✦ IA</span>
-          <button
-            className="ai-inline-toolbar-btn ai-inline-toolbar-btn--accept"
-            title="Aceptar (Tab)"
-            onClick={() => {
-              const finalText = aiPendingText.replace(/ /g, ' ')
-              nodeTextRef.current = finalText
-              store.updateNode(node.id, { text: finalText })
-              if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-              setAiPendingText(null)
-              setShowAiToolbar(false)
-              contentRef.current?.focus()
-            }}
-          >
-            Aceptar <kbd>Tab</kbd>
-          </button>
-          <button
-            className="ai-inline-toolbar-btn"
-            title="Descartar (Esc)"
-            onClick={() => {
-              if (contentRef.current) {
-                contentRef.current.textContent = aiOriginalText.current
-                contentRef.current.classList.remove('node-text--ai-pending')
-              }
-              nodeTextRef.current = aiOriginalText.current
-              setAiPendingText(null)
-              setShowAiToolbar(false)
-              contentRef.current?.focus()
-            }}
-          >
-            Descartar <kbd>Esc</kbd>
-          </button>
-          <div className="ai-inline-toolbar-sep" />
-          <button
-            className="ai-inline-toolbar-btn"
-            title="Regenerar desde el texto original"
-            onClick={() => {
-              // Descartar + regenerar desde texto original
-              if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-              setAiPendingText(null)
-              setShowAiToolbar(false)
-              const baseText = aiOriginalText.current
-              if (!baseText.trim()) return
-              setIsAiStreaming(true)
-              let aiText = ''
-              const resource = store.findAncestorResource(node.id)
-              aiInlineStream(
-                baseText + '\n',
-                undefined,
-                (chunk) => {
-                  aiText += chunk
-                  if (contentRef.current) {
-                    contentRef.current.textContent = baseText + aiText
-                  }
-                },
-                {
-                  ...(resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : {}),
-                  userProfile: store.perfilIANode()?.body ?? undefined,
-                  tagDefinitions: store.tagDefinitionsForNode(node.id),
-                }
-              ).then(() => {
-                const fullText = (baseText + aiText).replace(/ /g, ' ')
-                setAiPendingText(fullText)
-                setShowAiToolbar(true)
-                if (contentRef.current) {
-                  contentRef.current.textContent = fullText
-                  contentRef.current.classList.add('node-text--ai-pending')
-                }
-              }).catch(console.error).finally(() => setIsAiStreaming(false))
-            }}
-          >
-            ↻ Regenerar
-          </button>
-          <button
-            className="ai-inline-toolbar-btn"
-            title="Resumir el texto generado en una frase"
-            onClick={() => {
-              // Aceptar texto actual y resumir
-              const baseText = aiPendingText.replace(/ /g, ' ')
-              nodeTextRef.current = baseText
-              store.updateNode(node.id, { text: baseText })
-              if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-              setAiPendingText(null)
-              setShowAiToolbar(false)
-              aiOriginalText.current = baseText
-              setIsAiStreaming(true)
-              let aiText = ''
-              aiInlineStream(
-                `Resume en una sola frase concisa: "${baseText}"`,
-                undefined,
-                (chunk) => {
-                  aiText += chunk
-                  nodeTextRef.current = aiText
-                  if (contentRef.current) contentRef.current.textContent = aiText
-                },
-                { userProfile: store.perfilIANode()?.body ?? undefined }
-              ).then(() => {
-                const finalText = aiText.replace(/ /g, ' ')
-                setAiPendingText(finalText)
-                setShowAiToolbar(true)
-                if (contentRef.current) {
-                  contentRef.current.textContent = finalText
-                  contentRef.current.classList.add('node-text--ai-pending')
-                }
-              }).catch(console.error).finally(() => setIsAiStreaming(false))
-            }}
-          >
-            ⊟ Resumir
-          </button>
-          <button
-            className="ai-inline-toolbar-btn"
-            title="Ampliar con más detalle"
-            onClick={() => {
-              // Aceptar texto actual y ampliar
-              const baseText = aiPendingText.replace(/ /g, ' ')
-              nodeTextRef.current = baseText
-              store.updateNode(node.id, { text: baseText })
-              if (contentRef.current) contentRef.current.classList.remove('node-text--ai-pending')
-              setAiPendingText(null)
-              setShowAiToolbar(false)
-              aiOriginalText.current = baseText
-              setIsAiStreaming(true)
-              let aiText = ''
-              aiInlineStream(
-                `Amplía con más detalle manteniendo el estilo: "${baseText}"`,
-                undefined,
-                (chunk) => {
-                  aiText += chunk
-                  nodeTextRef.current = aiText
-                  if (contentRef.current) contentRef.current.textContent = aiText
-                },
-                { userProfile: store.perfilIANode()?.body ?? undefined }
-              ).then(() => {
-                const finalText = aiText.replace(/ /g, ' ')
-                setAiPendingText(finalText)
-                setShowAiToolbar(true)
-                if (contentRef.current) {
-                  contentRef.current.textContent = finalText
-                  contentRef.current.classList.add('node-text--ai-pending')
-                }
-              }).catch(console.error).finally(() => setIsAiStreaming(false))
-            }}
-          >
-            ⊕ Ampliar
-          </button>
-        </div>
-      )}
 
       {/* Slash menu */}
       {showSlash && (
