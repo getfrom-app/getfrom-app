@@ -711,21 +711,18 @@ export default function NodeView() {
   })()
 
   // Panel derecho de tareas: solo para el diario de HOY
-  // Panel derecho: detectar si es el diario de HOY
-  // DEBUG: log para diagnóstico (eliminar tras confirmar funcionamiento)
-  const diaryPanelDate = (() => {
-    console.log('[DiaryPanel] node.isDiaryEntry=', node.isDiaryEntry, 'node.diaryDate=', node.diaryDate)
+  // Panel derecho: fecha estable con useMemo para no re-disparar el useEffect de GCal en cada render
+  const diaryPanelDate = useMemo(() => {
     if (!node.diaryDate) return null
     const d = new Date(node.diaryDate)
     const now = new Date()
     const isToday = d.getFullYear() === now.getFullYear() &&
                     d.getMonth() === now.getMonth() &&
                     d.getDate() === now.getDate()
-    console.log('[DiaryPanel] d=', d.toLocaleDateString(), 'now=', now.toLocaleDateString(), 'isToday=', isToday)
     if (!isToday) return null
     const today = new Date(); today.setHours(0, 0, 0, 0)
     return today
-  })()
+  }, [node.diaryDate])
 
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']

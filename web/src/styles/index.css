@@ -9993,6 +9993,10 @@ textarea:focus-visible,
 .wf-layout .tag-nodes-panel {
   display: none !important;
 }
+/* Excepción: panel de tareas de hoy en nodo de diario — visible en WF también */
+.wf-layout .node-view--with-diary-panel .diary-right-panel {
+  display: flex !important;
+}
 .wf-layout .node-view-body,
 .wf-layout .node-view {
   grid-template-columns: 1fr !important;
