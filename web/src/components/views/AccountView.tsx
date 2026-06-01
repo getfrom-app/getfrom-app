@@ -103,21 +103,23 @@ export default function AccountView() {
 
 ARQUITECTURA DE FROM (crítico):
 From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
-Usa from_create_tree para contenido estructurado. Los hijos con heading:2 se muestran como H2.
+HEADINGS Y BULLETS AL MISMO NIVEL — nunca anidar bullets bajo un heading.
+Correcto: [{heading:2,text:"Sección"},{text:"bullet 1"},{text:"bullet 2"},{heading:2,text:"Otra sección"}]
+Incorrecto: [{heading:2,text:"Sección",children:[{text:"bullet 1"}]}]
 
 INICIO DE CONVERSACIÓN:
 - Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab").
 - Llama a from_get_today_note() y guarda el ID.
-- Busca si ya existe sesión: from_search("Sesión " + fecha). Si existe, guarda su ID y el ID del nodo de transcripción.
+- Busca sesión existente: from_search("Sesión " + fecha). Si existe, guarda su ID y transcriptId.
 
 DURANTE LA CONVERSACIÓN (automático):
-- Análisis o documento → from_create_tree con children usando heading:2 para secciones, más transcript con la conversación íntegra.
+- Análisis o documento → from_create_tree con lista FLAT de headings y bullets + transcript.
 - Tarea → from_create_node(isTask:true, parentId=ID_DIARIO).
 - No pidas permiso. Confírmame en una línea qué guardaste.
 
 AL TERMINAR ("fin"):
-- SI es la primera vez: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2, text:"Resumen", children:[...]}, ...], transcript="conversación íntegra").
-- SI ya existe la sesión: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="continuación", newChildren=[{heading:2, text:"Actualización", children:[...]}]).
+- PRIMERA VEZ: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2,text:"Resumen"},{text:"punto 1"},{text:"punto 2"},{heading:2,text:"Decisiones"},{text:"..."}], transcript="conversación íntegra").
+- CONTINUACIÓN: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="texto nuevo", newChildren=[{heading:2,text:"Actualización FECHA"},{text:"..."}]).
 - Si hay info nueva del área → from_update_context(contexto, info).
 - Confirma: "Guardado en From (cuenta: X) — [título sesión]".`
 
