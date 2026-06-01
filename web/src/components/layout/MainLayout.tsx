@@ -397,14 +397,11 @@ export default function MainLayout() {
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) togglePanel('filter')
       }
-      // → (ArrowRight sin modificador) → toggle última columna derecha
+      // → (ArrowRight sin modificador) → siempre colapsa/abre la columna derecha
+      // No bloqueamos aunque haya un input activo (el usuario lo acepta explícitamente)
       if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) {
-          if (rightPanel) setRightPanel(null)
-          else openPanel(lastPanelRef.current)
-        }
+        if (rightPanel) { e.preventDefault(); setRightPanel(null) }
+        else { e.preventDefault(); openPanel(lastPanelRef.current) }
       }
       // ↓/↑ → ciclar entre paneles cuando uno está abierto
       // También funciona si el input/textarea enfocado está vacío
@@ -667,6 +664,8 @@ export default function MainLayout() {
           onTogglePlanner={() => togglePanel('planner')}
           plannerOpen={rightPanel === 'planner'}
           onToggleSearch={() => togglePanel('filter')}
+          onToggleMagic={() => togglePanel('magic')}
+          rightPanel={rightPanel}
         />
       </div>
 

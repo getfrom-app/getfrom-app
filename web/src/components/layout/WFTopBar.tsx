@@ -20,6 +20,8 @@ interface Props {
   onTogglePlanner?: () => void
   plannerOpen?: boolean
   onToggleSearch: () => void
+  onToggleMagic?: () => void
+  rightPanel?: string | null
 }
 
 export default function WFTopBar({
@@ -33,6 +35,8 @@ export default function WFTopBar({
   onTogglePlanner,
   plannerOpen,
   onToggleSearch,
+  onToggleMagic,
+  rightPanel,
 }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -152,32 +156,44 @@ export default function WFTopBar({
 
       <div className="wf-topbar-spacer" />
 
-      {/* ── Buscar — abre panel lateral ── */}
-      <button className="wf-topbar-btn" onClick={onToggleSearch} title={`${t('common.search')} (⌘F)`}>
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-        </svg>
-      </button>
-
-      {/* Hoy */}
+      {/* Día (Hoy) */}
       <button
         className="wf-topbar-btn"
         title={t('topbar.goToToday')}
-        onClick={() => {
-          const dayNode = ensureDayPath(new Date())
-          navigate(`/node/${dayNode.id}`)
-        }}
+        onClick={() => { const dayNode = ensureDayPath(new Date()); navigate(`/node/${dayNode.id}`) }}
       >
         <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
         </svg>
       </button>
 
-      {/* Planificador */}
+      {/* Magic Chat (M) */}
       <button
-        className={`wf-topbar-btn wf-topbar-planner-btn ${plannerOpen ? 'active' : ''}`}
+        className={`wf-topbar-btn ${rightPanel === 'magic' ? 'active' : ''}`}
+        onClick={onToggleMagic}
+        title="Magic Chat (M)"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
+        </svg>
+      </button>
+
+      {/* Filtro / Buscar (F) */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'filter' ? 'active' : ''}`}
+        onClick={onToggleSearch}
+        title={`${t('common.search')} (F)`}
+      >
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {/* Planificador (P) */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'planner' ? 'active' : ''}`}
         onClick={onTogglePlanner}
-        title="Planificador"
+        title="Planificador (P)"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/>
