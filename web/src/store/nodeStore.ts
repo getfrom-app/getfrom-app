@@ -1260,31 +1260,43 @@ export class NodeStore {
       })),
     }
 
-    // FIX bug de revert: snapshot de los IDs que SE ENVÍAN para distinguirlos
-    // de los que se modifiquen DURANTE el await (race condition que causaba
-    // que cambios locales se perdieran al recibir la respuesta del servidor).
+    // Snapshot de IDs + updatedAt antes del await para detectar modificaciones durante el vuelo
     const sentIds = new Set(dirtyNodes.map(n => n.id))
+    const sentVersions = new Map(dirtyNodes.map(n => [n.id, n.updatedAt]))
 
     try {
       const res = await syncNodes(payload)
       this.lastSyncAt = res.syncAt
-      // Solo limpiar los IDs que se enviaron (no los modificados DURANTE el await)
-      for (const id of sentIds) this.dirtyIds.delete(id)
+
+      // Solo limpiar de dirtyIds los nodos que NO se modificaron durante el await.
+      // Si updatedAt cambió durante el vuelo → el nodo tiene cambios más nuevos → conservar dirty.
+      for (const id of sentIds) {
+        const current = this.nodes.get(id)
+        if (!current || current.updatedAt === sentVersions.get(id)) {
+          this.dirtyIds.delete(id)
+        }
+        // Si updatedAt cambió → fue editado durante el await → se enviará en el próximo sync
+      }
 
       // Apply server nodes (merge)
-      // Defensive: un nodo con datos corruptos no debe romper el sync entero.
       for (const rawNode of res.nodes) {
         try {
           const n = rawNode as Node
           if (!this.nodes.has(n.id)) {
             this.applyNode(n)
           } else {
-            // Si el nodo se ha modificado localmente DESPUÉS de empezar este sync
-            // (está en dirtyIds), NO sobrescribir — el próximo sync lo enviará.
+            // Nodo dirty (modificado después de iniciar el sync) → no sobreescribir
             if (this.dirtyIds.has(n.id)) {
               continue
             }
-            // Server wins solo si no hay cambios locales pendientes
+            // Nodo enviado por este sync: solo sobreescribir si no hubo modificación durante el await
+            if (sentIds.has(n.id)) {
+              const current = this.nodes.get(n.id)
+              if (current && current.updatedAt !== sentVersions.get(n.id)) {
+                // Modificado durante el await → conservar versión local más nueva
+                continue
+              }
+            }
             this.applyNode(n)
           }
         } catch (err) {
