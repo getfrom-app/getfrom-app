@@ -924,7 +924,7 @@ AL TERMINAR (cuando diga "fin"):
                   </div>
                 </div>
                 <a
-                  href="https://getfrom.app/from.dxt"
+                  href="https://getfrom.app/From.dxt"
                   download
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
