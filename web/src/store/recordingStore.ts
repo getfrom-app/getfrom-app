@@ -70,15 +70,20 @@ class RecordingStore {
 
     if (this.micStream) this._startAudioMeter(this.micStream)
 
-    // texto permanente = todo lo confirmado (isFinal de todas las sesiones anteriores + interim guardado en onend)
-    let permanent = ''
+    // transcriptBuffer: nunca encoge. Cuando Chrome resetea su buffer silenciosamente
+    // y transcript se achica a las últimas palabras, transcriptBuffer conserva todo.
+    let transcriptBuffer = ''
 
-    // Timer cada 1.5s: actualiza finalText con lo que tenemos hasta ahora
-    // (por si el usuario para manualmente entre snapshots)
+    // Timer cada 800ms: actualiza el buffer con el transcript actual si es más largo
     const snapshotTimer = setInterval(() => {
       if (this.phase !== 'recording') { clearInterval(snapshotTimer); return }
-      this.finalText = this.transcript.trim()
-    }, 1500)
+      if (this.transcript.length > transcriptBuffer.length) {
+        transcriptBuffer = this.transcript
+        this.finalText = transcriptBuffer.trim()
+      }
+    }, 800)
+
+    let permanent = ''  // texto confirmado de sesiones anteriores
 
     const createSession = () => {
       if (this.phase !== 'recording') return
@@ -87,11 +92,10 @@ class RecordingStore {
       rec.interimResults = true
       rec.lang = 'es-ES'
 
-      let sessionFinals = ''  // isFinal acumulados EN ESTA sesión (desde resultIndex)
+      let sessionFinals = ''
       let liveInterim = ''
 
       rec.onresult = (event: SpeechRecognitionEvent) => {
-        // Solo procesar resultados nuevos (desde resultIndex)
         let newFinals = ''
         let interim = ''
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -101,9 +105,13 @@ class RecordingStore {
         }
         if (newFinals) sessionFinals += newFinals
         liveInterim = interim
-        // transcript = todo lo anterior + finals de esta sesión + interim actual
-        this.transcript = permanent + sessionFinals + liveInterim
-        this.finalText = (permanent + sessionFinals).trim()
+        const current = permanent + sessionFinals + liveInterim
+        this.transcript = current
+        // Guardar el máximo visto
+        if (current.length > transcriptBuffer.length) {
+          transcriptBuffer = current
+          this.finalText = transcriptBuffer.trim()
+        }
         this.notify()
       }
 
@@ -116,11 +124,14 @@ class RecordingStore {
 
       rec.onend = () => {
         if (this.phase !== 'recording') return
-        // Guardar todo lo de esta sesión en permanent antes de la siguiente
-        const sessionText = (sessionFinals + liveInterim).trim()
-        if (sessionText) permanent = (permanent + sessionText + ' ').trimStart()
-        this.transcript = permanent
+        // Al terminar sesión: guardar todo en permanent usando el máximo visto
+        const best = transcriptBuffer.length > (permanent + sessionFinals + liveInterim).length
+          ? transcriptBuffer
+          : (permanent + sessionFinals + liveInterim).trim()
+        permanent = best ? best + ' ' : permanent
+        this.transcript = permanent.trim()
         this.finalText = permanent.trim()
+        if (permanent.length > transcriptBuffer.length) transcriptBuffer = permanent.trim()
         this.notify()
         setTimeout(createSession, 300)
       }
@@ -189,11 +200,12 @@ class RecordingStore {
   }
 
   stopRecording() {
-    // finalText ya se mantiene actualizado por el timer y onresult
-    // Por si acaso, tomar el más largo entre transcript y finalText
+    // Usar el más largo entre transcript y finalText (finalText puede tener más del buffer)
     const t = this.transcript.trim()
     const f = this.finalText.trim()
     if (t.length > f.length) this.finalText = t
+    // Si finalText sigue vacío, usar transcript
+    if (!this.finalText && t) this.finalText = t
     this.recognition?.stop()
     this.recognition = null
     this._stopInternal()

@@ -136,27 +136,25 @@ export async function processRecording(
     types,
   })
 
-  // ── Transcripción completa — nodos hijos, colapsada ─────────────────────
-  const transcriptNode = store.createNode({
-    text:     'Transcripción completa',
-    parentId: parent.id,
-  })
-  store.updateNode(transcriptNode.id, { isCollapsed: true })
-
-  // Cada fragmento de ~40 palabras → un nodo hijo
-  const chunks = splitIntoChunks(transcript, 40)
-  if (chunks.length === 0) {
-    store.createNode({ text: transcript.trim(), parentId: transcriptNode.id })
+  // ── Transcripción literal — expandida, sin tocar por la IA ─────────────
+  // Cada fragmento de ~50 palabras → un nodo hijo visible directamente
+  const chunks = splitIntoChunks(transcript, 50)
+  if (chunks.length <= 1) {
+    // Texto corto: un solo nodo hijo directo (sin contenedor)
+    store.createNode({ text: transcript.trim() || '(sin audio detectado)', parentId: parent.id })
   } else {
+    // Texto largo: contenedor "Transcripción" expandido con hijos
+    const transcriptNode = store.createNode({ text: 'Transcripción', parentId: parent.id })
+    // NO colapsado — el usuario ve su texto inmediatamente
     for (const chunk of chunks) {
       store.createNode({ text: chunk, parentId: transcriptNode.id })
     }
   }
 
-  // ── Resumen — nodos hijos por párrafo/línea, colapsado ──────────────────
+  // ── Resumen IA — colapsado ───────────────────────────────────────────────
   if (analysis.summary) {
     const summaryNode = store.createNode({
-      text:     durationSec >= 180 ? 'Resumen ejecutivo' : 'Resumen',
+      text:     durationSec >= 180 ? 'Resumen' : 'Resumen',
       parentId: parent.id,
     })
     store.updateNode(summaryNode.id, { isCollapsed: true })
