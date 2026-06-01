@@ -70,14 +70,18 @@ class RecordingStore {
 
     if (this.micStream) this._startAudioMeter(this.micStream)
 
-    // Texto acumulado a lo largo de todas las sesiones de reconocimiento
-    // (Chrome para la recognition cada ~60s o tras silencios — hay que reiniciar)
-    let accumulatedText = ''
-    let sessionInterim = ''
+    // Chrome silenciosamente resetea su buffer de resultados sin disparar onend.
+    // Solución: guardar el transcript MÁXIMO visto en un timer cada 2s.
+    // Aunque Chrome resetee a las últimas 2 palabras, savedMax conserva todo lo anterior.
+    let savedMax = ''
+    const snapshotTimer = setInterval(() => {
+      if (this.phase !== 'recording') { clearInterval(snapshotTimer); return }
+      if (this.transcript.length > savedMax.length) {
+        savedMax = this.transcript
+        this.finalText = savedMax
+      }
+    }, 2000)
 
-    // Crear nueva instancia de SpeechRecognition por cada sesión.
-    // Reusar la misma instancia con .start() en onend causa un loop rápido
-    // en Chrome que impide grabar correctamente.
     const createSession = () => {
       if (this.phase !== 'recording') return
       const rec = new SpeechAPI()
@@ -85,18 +89,20 @@ class RecordingStore {
       rec.interimResults = true
       rec.lang = 'es-ES'
 
+      let sessionAccum = ''   // resultados isFinal de ESTA sesión
+
       rec.onresult = (event: SpeechRecognitionEvent) => {
-        let sessionFinal = ''
+        let newFinal = ''
         let interim = ''
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const t = event.results[i][0].transcript
-          if (event.results[i].isFinal) sessionFinal += t + ' '
+          if (event.results[i].isFinal) newFinal += t + ' '
           else interim = t
         }
-        if (sessionFinal) accumulatedText += sessionFinal
-        sessionInterim = interim
-        this.transcript = accumulatedText + sessionInterim
-        this.finalText = accumulatedText
+        if (newFinal) sessionAccum += newFinal
+        // transcript = lo mejor que tenemos: max guardado + acumulado sesión + interim actual
+        const best = savedMax.length > sessionAccum.length ? savedMax : sessionAccum
+        this.transcript = best + interim
         this.notify()
       }
 
@@ -105,20 +111,16 @@ class RecordingStore {
           this.error = 'Permiso de micrófono denegado'
           this._stopInternal()
         }
-        // no-speech, aborted → normales, onend reiniciará
       }
 
       rec.onend = () => {
         if (this.phase !== 'recording') return
-        // Guardar interim antes de terminar la sesión (Chrome raramente marca isFinal)
-        if (sessionInterim.trim()) {
-          accumulatedText += sessionInterim.trim() + ' '
-          sessionInterim = ''
-          this.transcript = accumulatedText
-          this.finalText = accumulatedText
+        // Al terminar sesión, asegurar que el transcript actual quede en savedMax
+        if (this.transcript.length > savedMax.length) {
+          savedMax = this.transcript
+          this.finalText = savedMax
           this.notify()
         }
-        // Esperar 300ms antes de crear nueva sesión — evita el loop rápido start/end
         setTimeout(createSession, 300)
       }
 
@@ -186,9 +188,11 @@ class RecordingStore {
   }
 
   stopRecording() {
-    // Preservar todo el transcript (incluye interim no finalizado por Chrome)
+    // Usar el transcript más largo que tengamos (snapshot timer puede tener más)
     const current = this.transcript.trim()
-    if (current) this.finalText = current
+    const saved = this.finalText.trim()
+    if (current.length > saved.length) this.finalText = current
+    else if (!saved && current) this.finalText = current
     this.recognition?.stop()
     this.recognition = null
     this._stopInternal()
