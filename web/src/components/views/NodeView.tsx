@@ -710,20 +710,19 @@ export default function NodeView() {
     return null
   })()
 
-  // Panel derecho de tareas: solo para el diario de HOY, controlado por estado
-  const [showDiaryPanel, setShowDiaryPanel] = useState(false)
-  const isNodeToday = (() => {
-    if (!node.isDiaryEntry || !node.diaryDate) return false
-    const d = new Date(node.diaryDate); d.setHours(0,0,0,0)
-    const today = new Date(); today.setHours(0,0,0,0)
-    return d.getTime() === today.getTime()
-  })()
-  // Auto-abrir al entrar en el diario de hoy, cerrar al salir
+  // Panel derecho de tareas: solo para el diario de HOY
+  // Comparar directamente con store.todayDiary() es más robusto que calcular fechas
+  const isNodeToday = store.todayDiary()?.id === node.id
+  const [showDiaryPanel, setShowDiaryPanel] = useState(isNodeToday)
+  // Sincronizar cuando cambia el nodo (navegar a hoy → abrir, salir → cerrar)
   useEffect(() => {
-    if (isNodeToday) setShowDiaryPanel(true)
-    else setShowDiaryPanel(false)
+    setShowDiaryPanel(isNodeToday)
   }, [node.id, isNodeToday])
-  const diaryPanelDate = isNodeToday && node.diaryDate ? new Date(node.diaryDate) : null
+  const diaryPanelDate = isNodeToday ? (() => {
+    if (node.diaryDate) return new Date(node.diaryDate)
+    const today = new Date(); today.setHours(0,0,0,0)
+    return today
+  })() : null
 
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
