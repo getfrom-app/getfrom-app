@@ -304,6 +304,45 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     window.dispatchEvent(new Event('wf:shortcuts-changed'))
   }
 
+  const [hoveredAtajoId, setHoveredAtajoId] = useState<string | null>(null)
+
+  function getSortedSiblings(parentId: string | null) {
+    return s.children(parentId).filter(n => !n.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
+  }
+  function moveAtajoUp(nodeId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const node = s.getNode(nodeId); if (!node) return
+    const sibs = getSortedSiblings(node.parentId ?? null)
+    const idx = sibs.findIndex(n => n.id === nodeId); if (idx <= 0) return
+    const prev = sibs[idx - 1]
+    const tmp = prev.siblingOrder
+    store.updateNode(nodeId, { siblingOrder: tmp - 0.5 })
+  }
+  function moveAtajoDown(nodeId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const node = s.getNode(nodeId); if (!node) return
+    const sibs = getSortedSiblings(node.parentId ?? null)
+    const idx = sibs.findIndex(n => n.id === nodeId); if (idx < 0 || idx >= sibs.length - 1) return
+    const next = sibs[idx + 1]
+    store.updateNode(nodeId, { siblingOrder: next.siblingOrder + 0.5 })
+  }
+  function indentAtajo(nodeId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const node = s.getNode(nodeId); if (!node) return
+    const sibs = getSortedSiblings(node.parentId ?? null)
+    const idx = sibs.findIndex(n => n.id === nodeId); if (idx <= 0) return
+    const prev = sibs[idx - 1]
+    const prevKids = s.children(prev.id).filter(n => !n.deletedAt)
+    const maxOrder = prevKids.length > 0 ? Math.max(...prevKids.map(c => c.siblingOrder)) : 0
+    store.updateNode(nodeId, { parentId: prev.id, siblingOrder: maxOrder + 1000 })
+  }
+  function dedentAtajo(nodeId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    const node = s.getNode(nodeId); if (!node || !node.parentId) return
+    const parent = s.getNode(node.parentId); if (!parent) return
+    store.updateNode(nodeId, { parentId: parent.parentId ?? null, siblingOrder: parent.siblingOrder + 0.5 })
+  }
+
   function renderAtajoNode(nodeId: string, depth: number = 0): React.ReactNode {
     const node = s.getNode(nodeId)
     if (!node || node.deletedAt) return null
@@ -354,6 +393,14 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
       setRenamingAtajoId(null)
     }
 
+    const isHovered = hoveredAtajoId === nodeId
+    const siblings = getSortedSiblings(s.getNode(nodeId)?.parentId ?? null)
+    const idx = siblings.findIndex(n => n.id === nodeId)
+    const canUp = idx > 0
+    const canDown = idx < siblings.length - 1
+    const canIndent = idx > 0
+    const canDedent = !!(s.getNode(nodeId)?.parentId)
+
     return (
       <div key={nodeId}>
         <div
@@ -361,11 +408,12 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           style={{ paddingLeft: `${12 + depth * 14}px` }}
           onClick={handleClick}
           title={scData?.query !== undefined ? `Filtrar: ${scData.query}` : node.text || ''}
+          onMouseEnter={() => setHoveredAtajoId(nodeId)}
+          onMouseLeave={() => setHoveredAtajoId(null)}
           onContextMenu={e => {
             e.preventDefault()
             setRenamingAtajoId(nodeId)
             setRenamingAtajoText(node.text || '')
-            // Pequeño timeout para que el input aparezca y pueda hacer focus
             setTimeout(() => {
               const input = document.querySelector(`[data-rename-atajo="${nodeId}"]`) as HTMLInputElement
               if (input) { input.select(); input.focus() }
@@ -396,11 +444,22 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           ) : (
             <span className="wf-qa-item-name">{node.text || t('common.noTitle')}</span>
           )}
-          <button
-            className="wf-qa-item-del"
-            onClick={e => handleDeleteAtajoNode(nodeId, e)}
-            title={t('sidebar.removeShortcut')}
-          >×</button>
+          {/* Botones de organización — visibles al hover */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 1, opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', flexShrink: 0 }}>
+            {canDedent && (
+              <button className="wf-qa-item-org" onClick={e => dedentAtajo(nodeId, e)} title="Quitar sangría (Shift+Tab)">⇤</button>
+            )}
+            {canIndent && (
+              <button className="wf-qa-item-org" onClick={e => indentAtajo(nodeId, e)} title="Añadir sangría (Tab)">⇥</button>
+            )}
+            {canUp && (
+              <button className="wf-qa-item-org" onClick={e => moveAtajoUp(nodeId, e)} title="Subir">↑</button>
+            )}
+            {canDown && (
+              <button className="wf-qa-item-org" onClick={e => moveAtajoDown(nodeId, e)} title="Bajar">↓</button>
+            )}
+            <button className="wf-qa-item-del" onClick={e => handleDeleteAtajoNode(nodeId, e)} title={t('sidebar.removeShortcut')}>×</button>
+          </div>
         </div>
         {hasChildren && !isCollapsed && (
           <div>
@@ -424,7 +483,9 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   function renderCtxNode(nodeId: string, depth: number): React.ReactNode {
     const node = s.getNode(nodeId)
     if (!node || node.deletedAt) return null
-    const kids = s.children(nodeId).filter(n => !n.deletedAt)
+    // Solo mostrar hijos que tienen contenido propio (no texto plano hoja)
+    const kids = s.children(nodeId)
+      .filter(n => !n.deletedAt && s.children(n.id).filter(k => !k.deletedAt).length > 0)
     const isActive = selectedContextId === nodeId
     const expanded = expandedCtxIds.has(nodeId)
     return (
@@ -474,13 +535,6 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
       <div className="sidebar-tab-content wf-quick-access">
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
           <span className="wf-qa-section-label">{t('sidebar.panelsHeader')}</span>
-          {atajosNode && (
-            <button
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1, padding: '0 2px', opacity: 0.6 }}
-              onClick={() => navigate(`/node/${atajosNode.id}`)}
-              title={t('sidebar.organizeShortcuts')}
-            >✎</button>
-          )}
         </div>
 
         {atajosChildren.length === 0 ? (

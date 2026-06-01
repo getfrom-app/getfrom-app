@@ -242,6 +242,22 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:panelMode', handler)
   }, [])
 
+  // Cerrar panel contexto al navegar a otra ruta o al activar un panel/filtro
+  useEffect(() => {
+    if (rightPanel === 'context') {
+      setRightPanel(null)
+      setContextNodeId(null)
+    }
+  }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    function onPanelClick() {
+      if (rightPanel === 'context') { setRightPanel(null); setContextNodeId(null) }
+    }
+    window.addEventListener('wf:set-filter', onPanelClick)
+    return () => window.removeEventListener('wf:set-filter', onPanelClick)
+  }, [rightPanel])
+
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
   useEffect(() => {
     if (!showAIChat || !currentNodeIdFromRoute) return

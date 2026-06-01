@@ -9976,6 +9976,20 @@ textarea:focus-visible,
 .wf-qa-item:hover .wf-qa-item-del { opacity: 1; }
 .wf-qa-item-del:hover { color: var(--text-primary); }
 
+/* Botones de organización de atajos (↑↓ indent/dedent) */
+.wf-qa-item-org {
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: color 0.1s, background 0.1s;
+}
+.wf-qa-item-org:hover { color: var(--text-primary); background: var(--bg-hover); }
+
 /* ── WF Star button — atajo unificado ─────────────────────────────────────── */
 .node-star-btn {
   border: none;
