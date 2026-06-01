@@ -1814,6 +1814,13 @@ body.outliner-drag-active {
   pointer-events: none;
 }
 
+/* QuickCaptureNode placeholder — contentEditable con data-placeholder */
+[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
 .node-open-btn {
   display: flex;
   align-items: center;

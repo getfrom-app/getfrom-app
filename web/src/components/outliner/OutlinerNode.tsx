@@ -860,16 +860,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       // No activar si ya hay un @ justo antes (lo gestiona el picker)
       if (!/@[\wÀ-ɏ\s]*$/.test(beforeCursor)) {
         const ctxNodes: { slug: string; displayName: string }[] = []
-        const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-        if (tagsRoot) {
-          // Solo hijos directos del nodo Contexto — los nombres de contexto reales.
-          // NO recursivo: los nodos hijo de cada contexto son descripciones/notas,
-          // no nombres de contexto, y añadirlos causa sugerencias erróneas.
-          for (const child of store.children(tagsRoot.id)) {
-            if (child.deletedAt || !child.text) continue
-            const slug = child.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-            ctxNodes.push({ slug, displayName: child.text })
-          }
+        // Buscar en TODOS los nodos activos con texto >= 3 chars (no solo Tags/Contexto)
+        // Excluir nodos de sistema, diary entries y nodos de solo año/número
+        const allActiveNodes = store.allActive().filter(n =>
+          !n.deletedAt && n.text && n.text.length >= 3 &&
+          !n.isDiaryEntry && !n.isChat &&
+          !/^\d{4}$/.test(n.text) && // excluir años
+          !['🗑 Papelera', '🤖 Agentes', '📋 Plantillas', '🏷 Tags', '🧠 Contexto', '📅 Agenda'].includes(n.text)
+        )
+        for (const n of allActiveNodes) {
+          const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+          if (slug.length >= 2) ctxNodes.push({ slug, displayName: n.text })
         }
 
         const normStr = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
