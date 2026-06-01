@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
+import { recordingStore } from '../../store/recordingStore'
 import type { DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 
@@ -216,6 +217,13 @@ export default function QuickCaptureNode({ onClose }: Props) {
       e.preventDefault()
       saveAndClose()
     }
+
+    // R = grabar voz (solo si el input está vacío)
+    if (e.key === 'r' && !e.metaKey && !e.ctrlKey && !e.shiftKey && !getCurrentText()) {
+      e.preventDefault()
+      onClose()
+      setTimeout(() => recordingStore.startRecording(), 80)
+    }
   }
 
   // Ghost text label
@@ -275,37 +283,33 @@ export default function QuickCaptureNode({ onClose }: Props) {
               lineHeight: '1.5',
             }}
           />
-          <kbd style={{
-            fontSize: 10, color: 'var(--text-tertiary)',
-            border: '1px solid var(--border)', borderRadius: 4,
-            padding: '2px 5px', flexShrink: 0,
-          }}>ESC</kbd>
+          {/* Atajos a la derecha */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>↵</kbd>
+            <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>ESC</kbd>
+            {/* R = grabar voz */}
+            <button
+              title="Grabar voz (R)"
+              onMouseDown={e => { e.preventDefault(); onClose(); setTimeout(() => recordingStore.startRecording(), 80) }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
+                <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
+                <path d="M8 13v2"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Ghost text row */}
+        {/* Ghost text — solo si hay predicción */}
         {ghostLabel && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            marginTop: 8, paddingLeft: 24,
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingLeft: 24 }}>
             <span className="from-ghost">
               <span className="from-ghost-text">{ghostLabel}</span>
               <span className="from-ghost-sep">·</span>
               <span className="from-ghost-key">{ghostAcceptKey}</span>
             </span>
-            {!ctxSuggestion && (
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 4 }}>↵ para guardar</span>
-            )}
-          </div>
-        )}
-
-        {/* Hint cuando no hay ghost text */}
-        {!ghostLabel && !text && (
-          <div style={{
-            marginTop: 6, paddingLeft: 24,
-            fontSize: 10, color: 'var(--text-tertiary)',
-          }}>
-            fecha · cada lunes · @contexto · ↵ para guardar
           </div>
         )}
       </div>
