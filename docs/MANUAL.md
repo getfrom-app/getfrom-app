@@ -964,7 +964,9 @@ Para cancelar en cualquier momento: **Ajustes → Cuenta → Suscripción → Ca
 
 Gestiona tu suscripción en **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
 
-Si tienes código de beta o cupón, introdúcelo en el checkout al comprar.
+Tras completar el pago, tu plan se actualiza automáticamente en la app en cuestión de segundos. No hace falta recargar ni cerrar sesión.
+
+Si tienes código de beta o cupón, introdúcelo en el checkout al comprar. Los cupones del 100% activan el plan igual que un pago normal.
 
 ---
 
