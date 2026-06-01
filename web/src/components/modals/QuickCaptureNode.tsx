@@ -60,19 +60,17 @@ export default function QuickCaptureNode({ onClose }: Props) {
       setTaskPrediction(false)
     }
 
-    // 3. Sugerencia de contexto (busca en TODOS los nodos activos)
+    // 3. Sugerencia de contexto — solo hijos de 🧠 Contexto (o 🏷 Tags legacy)
     if (t.length >= 3) {
-      const allNodes = store.allActive().filter(n =>
-        !n.deletedAt && n.text && n.text.length >= 3 &&
-        !n.isDiaryEntry && !n.isChat &&
-        !/^\d{4}$/.test(n.text) &&
-        !['🗑 Papelera', '🤖 Agentes', '📋 Plantillas', '🏷 Tags', '🧠 Contexto', '📅 Agenda'].includes(n.text)
-      )
+      const ctxRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+      const ctxNodes = ctxRoot
+        ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
+        : []
 
       let found: CtxSuggestion | null = null
       const normT = normalize(t)
 
-      for (const n of allNodes) {
+      for (const n of ctxNodes) {
         const normName = normalize(n.text)
         for (let len = Math.min(t.length, normName.length - 1); len >= 3; len--) {
           const tail = normT.slice(-len)
