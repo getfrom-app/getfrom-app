@@ -84,15 +84,8 @@ class RecordingStore {
 
   async startRecording() {
     if (this.phase === 'recording') return // already recording
-    // En web (no Tauri) solo mic: getDisplayMedia requiere diálogo de pantalla compartida
-    const isTauri = typeof window !== 'undefined' && (window as unknown as { __TAURI__?: unknown }).__TAURI__
-    if (!isTauri) {
-      this.source = 'mic'
-      this.micEnabled = true
-      this.sysEnabled = false
-    } else {
-      this._syncSourceFromToggles()
-    }
+    // Always derive source from toggles before starting
+    this._syncSourceFromToggles()
 
     const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechAPI) {
