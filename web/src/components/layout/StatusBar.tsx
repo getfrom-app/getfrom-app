@@ -8,12 +8,14 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.4.38'
+export const WEB_VERSION = 'v9.4.39'
 
 interface Props {
   isSyncing: boolean
   showSaved?: boolean
 }
+
+const isTauriEnv = import.meta.env.VITE_TAURI === 'true'
 
 export default function StatusBar({ isSyncing, showSaved }: Props) {
   const s = useStore()
@@ -24,6 +26,38 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null)
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
+  const [updating, setUpdating] = useState(false)
+
+  // Verificar actualizaciones disponibles (solo en Mac Tauri)
+  useEffect(() => {
+    if (!isTauriEnv) return
+    const check = async () => {
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater')
+        const update = await check()
+        if (update?.available) {
+          setUpdateAvailable({
+            version: update.version,
+            download: async () => {
+              setUpdating(true)
+              try {
+                await update.downloadAndInstall()
+              } catch (e) {
+                console.error('Update failed:', e)
+                setUpdating(false)
+              }
+            }
+          })
+        }
+      } catch { /* silencioso — sin conexión o sin latest.json */ }
+    }
+    // Check al inicio con delay
+    const t1 = setTimeout(check, 5000)
+    // Y cada hora
+    const t2 = setInterval(check, 3_600_000)
+    return () => { clearTimeout(t1); clearInterval(t2) }
+  }, [])
 
   // Online / offline listener
   useEffect(() => {
@@ -142,6 +176,25 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
 
       {/* Spacer */}
       <span style={{ flex: 1 }} />
+
+      {/* Nueva versión disponible (solo Mac Tauri) */}
+      {updateAvailable && (
+        <>
+          <button
+            onClick={updating ? undefined : updateAvailable.download}
+            disabled={updating}
+            style={{
+              background: 'none', border: 'none', cursor: updating ? 'default' : 'pointer',
+              fontSize: 11, color: updating ? 'var(--text-tertiary)' : 'var(--accent)',
+              fontWeight: 600, padding: '0 6px', display: 'flex', alignItems: 'center', gap: 4,
+            }}
+            title={`Versión ${updateAvailable.version} disponible`}
+          >
+            {updating ? '⬇ Instalando...' : `✦ Nueva versión ${updateAvailable.version} — Actualizar`}
+          </button>
+          <span className="footer-sep" />
+        </>
+      )}
 
       {/* Versión */}
       <span className="footer-version">{WEB_VERSION}</span>
