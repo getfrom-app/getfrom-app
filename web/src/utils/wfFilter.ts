@@ -263,23 +263,26 @@ export function applyWFFilter(
 
   const matchIds = new Set<string>()
 
-  // Detectar IDs de carpetas de sistema (Agentes, Plantillas) para excluirlas
-  // de resultados cuando el filtro es por estado/fecha (no texto libre)
+  // Detectar IDs de carpetas excluidas siempre de búsquedas:
+  // - Sistema: Agentes, Plantillas (solo en búsquedas semánticas)
+  // - Papelera: 🗑 Papelera (SIEMPRE excluida — son nodos eliminados)
   const SYSTEM_FOLDER_TEXTS = new Set(['🤖 Agentes', '📋 Plantillas'])
   const systemFolderIds = new Set<string>()
+  const papeleraIds = new Set<string>()
   for (const n of nodes.values()) {
-    if (!n.deletedAt && !n.parentId && SYSTEM_FOLDER_TEXTS.has(n.text || '')) {
-      systemFolderIds.add(n.id)
+    if (!n.deletedAt && !n.parentId) {
+      if (SYSTEM_FOLDER_TEXTS.has(n.text || '')) systemFolderIds.add(n.id)
+      if ((n.text || '') === '🗑 Papelera') papeleraIds.add(n.id)
     }
   }
 
-  // Precalcular si un nodo es descendiente de una carpeta de sistema
-  function isSystemDescendant(nodeId: string): boolean {
+  // Precalcular si un nodo es descendiente de una carpeta excluida
+  function isExcludedDescendant(nodeId: string, excludedIds: Set<string>): boolean {
     let cur = nodes.get(nodeId)
     const visited = new Set<string>()
     while (cur?.parentId && !visited.has(cur.parentId)) {
       visited.add(cur.parentId)
-      if (systemFolderIds.has(cur.parentId)) return true
+      if (excludedIds.has(cur.parentId)) return true
       cur = nodes.get(cur.parentId)
     }
     return false
@@ -291,8 +294,10 @@ export function applyWFFilter(
 
   for (const node of nodes.values()) {
     if (node.deletedAt) continue
-    // Excluir carpetas de sistema y sus descendientes en búsquedas semánticas
-    if (isSemantic && (systemFolderIds.has(node.id) || isSystemDescendant(node.id))) continue
+    // Papelera excluida siempre (en cualquier tipo de búsqueda)
+    if (papeleraIds.has(node.id) || isExcludedDescendant(node.id, papeleraIds)) continue
+    // Carpetas de sistema excluidas en búsquedas semánticas
+    if (isSemantic && (systemFolderIds.has(node.id) || isExcludedDescendant(node.id, systemFolderIds))) continue
 
     // Un nodo coincide si CUALQUIER grupo OR coincide (OR entre grupos)
     // Un grupo coincide si TODOS sus tokens coinciden (AND dentro de grupo)

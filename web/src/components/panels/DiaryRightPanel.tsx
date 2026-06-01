@@ -9,7 +9,6 @@ import { useMemo } from 'react'
 import { useStore } from '../../store/nodeStore'
 import { applyWFFilter } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
-import { isInPapelera } from '../../utils/papeleraHelper'
 import Outliner from '../outliner/Outliner'
 
 export interface DiaryRightPanelProps {
@@ -24,18 +23,10 @@ const DIARY_PANEL_QUERY = 'pendiente y hoy o vencido'
 export default function DiaryRightPanel({ diaryDate: _diaryDate, rangeType: _rangeType, timelineMode: _timelineMode }: DiaryRightPanelProps) {
   const s = useStore()
 
-  // Aplicar filtro vivo — se recalcula con cada cambio del store
-  // Excluir nodos de la Papelera (están "activos" pero son basura)
+  // Aplicar filtro vivo — applyWFFilter ya excluye la Papelera globalmente
   const filterResult = useMemo(() => {
     const effective = normalizeSynonyms(DIARY_PANEL_QUERY) ?? DIARY_PANEL_QUERY
-    const raw = applyWFFilter(s.nodes, effective)
-    if (!raw) return null
-    // Filtrar matchIds que estén en la Papelera
-    const cleanMatchIds = new Set<string>()
-    for (const id of raw.matchIds) {
-      if (!isInPapelera(id)) cleanMatchIds.add(id)
-    }
-    return { matchIds: cleanMatchIds, ancestorIds: raw.ancestorIds }
+    return applyWFFilter(s.nodes, effective)
   }, [s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const count = filterResult?.matchIds.size ?? 0
