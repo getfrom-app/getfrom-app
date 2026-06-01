@@ -568,6 +568,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }, 900)
   }
 
+  // Badge de fecha para tareas: "hoy", "mañana", "lun 8 jun"
+  const taskDueBadge = node.status !== null && !node.isEvent && node.due ? (() => {
+    const d = new Date(node.due)
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+    d.setHours(0, 0, 0, 0)
+    if (d.getTime() === today.getTime()) return { label: 'hoy', overdue: false }
+    if (d.getTime() === tomorrow.getTime()) return { label: 'mañana', overdue: false }
+    const overdue = d < today
+    const sameYear = d.getFullYear() === today.getFullYear()
+    const sameMonth = sameYear && d.getMonth() === today.getMonth()
+    const label = d.toLocaleDateString('es-ES', {
+      weekday: 'short',
+      day: 'numeric',
+      ...(sameMonth ? {} : { month: 'short' }),
+    })
+    return { label, overdue }
+  })() : null
+
   const evtBadgeLabel = node.due ? (() => {
     const d = new Date(node.due)
     const dateStr = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
@@ -3157,6 +3176,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   document.body
                 )}
               </div>
+            )}
+
+            {/* Badge de fecha — solo para tareas con due date */}
+            {taskDueBadge && (
+              <span
+                className={`node-due-badge${taskDueBadge.overdue ? ' node-due-badge--overdue' : ''}`}
+                title={new Date(node.due!).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+              >
+                {taskDueBadge.label}
+              </span>
             )}
 
             {/* Badge de recurrencia — lee de node.recurrence o extraData._recurrence */}
