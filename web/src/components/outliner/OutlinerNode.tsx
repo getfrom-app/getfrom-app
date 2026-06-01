@@ -1887,155 +1887,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado`, type: 'info' } }))
   }
 
-  /** ¿El nodo padre es un contexto con significado (no un diary day ni temporal)? */
-  function getMeaningfulParent(): { id: string; text: string } | null {
-    if (!node.parentId) return null
-    const parent = store.getNode(node.parentId)
-    if (!parent || parent.deletedAt) return null
-    // Excluir: diary entries, años (4 dígitos), meses por nombre, semanas
-    if (parent.isDiaryEntry) return null
-    if (/^\d{4}$/.test(parent.text || '')) return null
-    if (/^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/i.test(parent.text || '')) return null
-    if (/^semana\s/i.test(parent.text || '')) return null
-    if (/^(lunes|martes|miércoles|jueves|viernes|sábado|domingo),/i.test(parent.text || '')) return null
-    return { id: parent.id, text: parent.text || '' }
-  }
-
-  /** Mueve el nodo a un día destino, creando referencia en origen si tiene contexto significativo */
-  function moveNodeToDay(
-    targetDate: Date,
-    opts: { label: string; isEvent?: boolean; timeStr?: string; recurrence?: RecurrenceConfig; makeTask?: boolean; cleanText?: string }
-  ) {
-    const dayNode = ensureDayPath(targetDate)
-    const isSameDay = node.parentId === dayNode.id
-    if (isSameDay) return
-
-    // Contexto original significativo
-    const originParent = getMeaningfulParent()
-
-    // Animación fly-right
-    const rowEl = contentRef.current?.closest('.outliner-node') as HTMLElement | null
-    if (rowEl) {
-      rowEl.style.transition = 'transform 300ms cubic-bezier(0.4,0,1,1), opacity 250ms'
-      rowEl.style.transform = 'translateX(100vw)'
-      rowEl.style.opacity = '0'
-    }
-
-    setTimeout(() => {
-      store.beginBatch()
-      const sibs = store.children(dayNode.id)
-      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-      let ed: Record<string, unknown> = {}
-      try { ed = JSON.parse(node.extraData || '{}') } catch {}
-      if (opts.recurrence) ed._recurrence = opts.recurrence
-
-      // Updates base del nodo: tipo, hora, texto limpio
-      const updates: Record<string, unknown> = { extraData: JSON.stringify(ed) }
-      if (opts.recurrence) updates.recurrence = recurrenceToString(opts.recurrence)
-      if (opts.isEvent) updates.isEvent = true
-      else if (opts.makeTask || node.status === null) updates.status = 'pending'
-      if (opts.timeStr) {
-        const h = parseInt(opts.timeStr.split(':')[0]), m = parseInt(opts.timeStr.split(':')[1])
-        updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
-      }
-      if (opts.cleanText) updates.text = opts.cleanText
-
-      if (originParent) {
-        // ── Con contexto padre significativo ─────────────────────────────────
-        // El nodo se mueve físicamente al destino, bajo un espejo del padre.
-        // En origen: espejo del nodo movido (para mantener el contexto).
-        // En destino: espejo del padre + nodo movido + espejos de todos sus hermanos.
-
-        // 1. Espejo del padre en destino — reutilizar si ya existe
-        const existingParentMirror = store.children(dayNode.id).find(n => {
-          try { return JSON.parse(n.extraData || '{}')._mirrorOf === originParent.id } catch { return false }
-        })
-        let parentMirrorId: string
-        if (existingParentMirror) {
-          parentMirrorId = existingParentMirror.id
-        } else {
-          const parentMirror = store.createNode({
-            text: originParent.text,
-            parentId: dayNode.id,
-            siblingOrder: lastOrder + 1,
-          })
-          store.updateNode(parentMirror.id, {
-            extraData: JSON.stringify({ _mirrorOf: originParent.id })
-          })
-          parentMirrorId = parentMirror.id
-        }
-
-        // 2. Mover el nodo bajo el espejo del padre
-        const mirrorSibs = store.children(parentMirrorId)
-        const mirrorLastOrder = mirrorSibs.length > 0 ? Math.max(...mirrorSibs.map(x => x.siblingOrder)) : 0
-        updates.parentId = parentMirrorId
-        updates.siblingOrder = mirrorLastOrder + 1
-        store.updateNode(node.id, updates)
-
-        // 3. Espejos de todos los hermanos (hijos del padre original, excepto el nodo movido)
-        //    que no estén ya reflejados bajo el espejo del padre en destino
-        const originalSiblings = store.children(node.parentId || '').filter(s => !s.deletedAt && s.id !== node.id)
-        let sibOrder = mirrorLastOrder + 2
-        for (const sib of originalSiblings) {
-          const alreadyMirrored = store.children(parentMirrorId).some(c => {
-            try { return JSON.parse(c.extraData || '{}')._mirrorOf === sib.id } catch { return false }
-          })
-          if (!alreadyMirrored) {
-            const sibMirror = store.createNode({ text: sib.text, parentId: parentMirrorId, siblingOrder: sibOrder++ })
-            store.updateNode(sibMirror.id, { extraData: JSON.stringify({ _mirrorOf: sib.id }) })
-          }
-        }
-
-        // 4. Espejo del nodo movido en el origen (para que el padre original siga mostrándolo)
-        const taskMirror = store.createNode({
-          text: opts.cleanText ?? node.text,
-          parentId: node.parentId,
-          siblingOrder: node.siblingOrder,
-        })
-        store.updateNode(taskMirror.id, {
-          extraData: JSON.stringify({ _mirrorOf: node.id, _mirrorDestLabel: opts.label })
-        })
-        // Foco en el espejo del origen para seguir escribiendo
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: taskMirror.id } }))
-        }, 30)
-
-      } else {
-        // ── Sin contexto padre: mover al día directamente ────────────────────
-        updates.parentId = dayNode.id
-        updates.siblingOrder = lastOrder + 1
-        store.updateNode(node.id, updates)
-
-        const siblingsAfter = store.children(node.parentId || '').filter(s => s.siblingOrder > node.siblingOrder && !s.deletedAt)
-        const nextIsEmpty = siblingsAfter.length > 0 && !(store.getNode(siblingsAfter[0].id)?.text)
-        if (!nextIsEmpty) {
-          const newSibling = store.createNode({ text: '', parentId: node.parentId, siblingOrder: node.siblingOrder + 0.5 })
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: newSibling.id } }))
-          }, 30)
-        } else {
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('wf:focus-node', { detail: { nodeId: siblingsAfter[0].id } }))
-          }, 30)
-        }
-      }
-
-      store.endBatch()
-      if (rowEl) { rowEl.style.transform = ''; rowEl.style.opacity = ''; rowEl.style.transition = '' }
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ ${opts.label}`, type: 'success' } }))
-    }, 310)
-  }
-
   function acceptDatePrediction() {
     if (!datePrediction) return
-    const { cleanText, parsed, timeStr, isEvent } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
+    const { cleanText, parsed, timeStr } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
     setDatePrediction(null)
     nodeTextRef.current = cleanText
     store.updateNode(node.id, { text: cleanText })
     if (contentRef.current) contentRef.current.textContent = cleanText
     const targetDate = new Date(parsed.date); targetDate.setHours(0,0,0,0)
+    const updates: Record<string, unknown> = { due: targetDate.toISOString(), status: node.status ?? 'pending' }
+    if (timeStr) {
+      const h = parseInt(timeStr.split(':')[0]), m = parseInt(timeStr.split(':')[1])
+      updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
+    }
+    if (parsed.recurrence) updates.recurrence = recurrenceToString(parsed.recurrence)
+    store.updateNode(node.id, updates)
     const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
-    moveNodeToDay(targetDate, { label, isEvent: !!isEvent, timeStr, recurrence: parsed.recurrence, makeTask: true, cleanText })
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 Fecha: ${label}`, type: 'success' } }))
   }
 
   function acceptCtxCompletion() {
@@ -2352,32 +2220,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     // ── Nuevas acciones WF ──────────────────────────────────────────────────
     if (action === 'move-today') {
-      const dayNode = ensureDayPath(new Date())
-      const sibs = store.children(dayNode.id)
-      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-      store.updateNode(node.id, { parentId: dayNode.id, siblingOrder: lastOrder + 1 })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a hoy', type: 'success' } }))
+      const today = new Date(); today.setHours(0,0,0,0)
+      store.updateNode(node.id, { due: today.toISOString(), status: node.status ?? 'pending' })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: hoy', type: 'success' } }))
+      return
+    } else if (action === 'move-tomorrow') {
+      const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
+      store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: mañana', type: 'success' } }))
+      return
+    } else if (action === 'move-next-week') {
+      const d = new Date()
+      const dow = d.getDay()
+      d.setDate(d.getDate() + (dow === 0 ? 1 : 8 - dow)); d.setHours(0,0,0,0)
+      store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: próxima semana', type: 'success' } }))
       return
     } else if (action === 'move-to' && payload.moveToDate) {
-      const targetDate = new Date(payload.moveToDate); targetDate.setHours(0,0,0,0)
-      const label = targetDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-        + (payload.moveToRecurrence ? ` · ↻ ${payload.moveToRecurrence.display}` : '')
-      moveNodeToDay(targetDate, { label, recurrence: payload.moveToRecurrence })
-      return
-    } else if (action === 'move-tomorrow' || action === 'move-next-week') {
-      const targetDate = new Date()
-      if (action === 'move-tomorrow') {
-        targetDate.setDate(targetDate.getDate() + 1)
-      } else {
-        const dow = targetDate.getDay()
-        targetDate.setDate(targetDate.getDate() + (dow === 0 ? 1 : 8 - dow))
-      }
-      targetDate.setHours(0, 0, 0, 0)
-      const diaryNode = ensureDayPath(targetDate)
-      const sibs = store.children(diaryNode.id)
-      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-      store.updateNode(node.id, { parentId: diaryNode.id, siblingOrder: lastOrder + 1 })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Movido al ${targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}` } }))
+      const d = new Date(payload.moveToDate); d.setHours(0,0,0,0)
+      const label = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+      const updates: Record<string, unknown> = { due: d.toISOString(), status: node.status ?? 'pending' }
+      if (payload.moveToRecurrence) updates.recurrence = recurrenceToString(payload.moveToRecurrence)
+      store.updateNode(node.id, updates)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 Fecha: ${label}`, type: 'success' } }))
       return
     } else if (action === 'expand-all') {
       const getAllDescEx = (id: string): string[] => {

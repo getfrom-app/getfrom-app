@@ -52,11 +52,11 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
   { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
-  // ── Mover ─────────────────────────────────────────────────────────────────
-  { group: 'Mover', label: 'Mover a fecha…', icon: '📅', prefix: 'mover a ', description: 'viernes · 29 mayo · todos los martes · en 3 días…', action: 'move-to-prompt' },
-  { group: 'Mover', label: 'Mover a hoy', icon: '☀️', prefix: '', description: 'Mover esta nota al diario de hoy', action: 'move-today' },
-  { group: 'Mover', label: 'Mover a mañana', icon: '📆', prefix: '', description: 'Mover al diario de mañana', action: 'move-tomorrow' },
-  { group: 'Mover', label: 'Mover a próxima semana', icon: '📋', prefix: '', description: 'Mover al inicio de la próxima semana', action: 'move-next-week' },
+  // ── Fecha ─────────────────────────────────────────────────────────────────
+  { group: 'Fecha', label: 'Fecha…', icon: '📅', prefix: 'mover a ', description: 'Poner fecha: viernes · 29 mayo · en 3 días…', action: 'move-to-prompt' },
+  { group: 'Fecha', label: 'Fecha: hoy', icon: '☀️', prefix: '', description: 'Asignar fecha de hoy', action: 'move-today' },
+  { group: 'Fecha', label: 'Fecha: mañana', icon: '📆', prefix: '', description: 'Asignar fecha de mañana', action: 'move-tomorrow' },
+  { group: 'Fecha', label: 'Fecha: próx. semana', icon: '📋', prefix: '', description: 'Asignar fecha al inicio de la próxima semana', action: 'move-next-week' },
   // ── Árbol ─────────────────────────────────────────────────────────────────
   { group: 'Árbol', label: 'Expandir todo', icon: '▿', prefix: '', description: 'Expandir todos los hijos', action: 'expand-all' },
   { group: 'Árbol', label: 'Colapsar todo', icon: '▸', prefix: '', description: 'Colapsar todos los hijos', action: 'collapse-all' },

@@ -17,6 +17,7 @@ import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
 import NodeChatPanel from '../panels/NodeChatPanel'
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
+import DiaryRightPanel from '../panels/DiaryRightPanel'
 import { recordRecentNode } from '../CommandPalette'
 import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
@@ -709,6 +710,9 @@ export default function NodeView() {
     return null
   })()
 
+  // Fecha del diario para el panel derecho (solo si este nodo ES un diary entry)
+  const diaryPanelDate = node.isDiaryEntry && node.diaryDate ? new Date(node.diaryDate) : null
+
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const temporalNodeType: 'year' | 'month' | 'week' | null = (() => {
@@ -1333,7 +1337,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -2377,6 +2381,11 @@ export default function NodeView() {
           })()}
         </div>
       </div>
+
+      {/* Panel derecho: tareas del día cuando estamos en un nodo de diario */}
+      {diaryPanelDate && !focusMode && (
+        <DiaryRightPanel diaryDate={diaryPanelDate} />
+      )}
 
       {showChat && (
         <NodeChatPanel

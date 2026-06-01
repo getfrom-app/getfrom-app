@@ -4525,6 +4525,30 @@ body.outliner-drag-active {
 .focus-goal-clear { opacity: 0.5; cursor: pointer; background: none; border: none; font-size: 13px; }
 .node-view--with-context .node-view-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
+/* ── NodeView con panel de diario ────────────────────────────────────────── */
+.node-view--with-diary-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
+}
+.node-view--with-diary-panel .node-view-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.node-view--with-diary-panel .diary-right-panel {
+  width: 380px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+@media (max-width: 900px) {
+  .node-view--with-diary-panel .diary-right-panel { display: none; }
+}
+
 /* In-doc search bar (⌘F) */
 .in-doc-search-bar { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .in-doc-search-input { flex: 1; border: none; background: transparent; font-size: 13px; color: var(--text-primary); outline: none; }
