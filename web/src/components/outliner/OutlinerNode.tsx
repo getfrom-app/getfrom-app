@@ -264,6 +264,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   nodeTextRef.current = node.text
   // Captura posición de clic antes de que handleFocus reemplace innerHTML con textContent
   const pendingCursorPosRef = useRef<number | null>(null)
+  // Cuando el foco viene de un clic (no de teclado), impide que el useEffect de isSelected
+  // sobreescriba la posición del cursor que handleFocus acaba de restaurar.
+  const skipIsSelectedCursorRef = useRef(false)
   const children = store.children(node.id)
   // Colapsado — cuando hay filtro activo y este nodo tiene descendientes que coinciden,
   // forzamos la expansión para que el usuario vea los resultados aunque estuviera colapsado.
@@ -484,6 +487,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // ciclo de selección siempre funcione.
   useEffect(() => {
     if (isSelected && contentRef.current) {
+      // Si el foco vino de un clic (mousedown), handleFocus ya colocó el cursor donde
+      // el usuario hizo clic. No sobreescribir con cursor-al-final.
+      if (skipIsSelectedCursorRef.current) {
+        skipIsSelectedCursorRef.current = false
+        setIsEditing(true)
+        contentRef.current.closest('.outliner-node')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        return
+      }
       setIsEditing(true)
       contentRef.current.focus()
       // Scroll the node into view
@@ -998,17 +1009,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const handleFocus = useCallback(() => {
     // Espejos de mirrors de padre (no editables) — los espejos de tarea sí se pueden editar
     setIsEditing(true)
-    onSelect(node.id)
-    // Usar ref (no closure) para obtener el texto más reciente y evitar
-    // que handleFocus restaure el texto antiguo (e.g., '/') después de
-    // que handleSlashSelect ya lo haya actualizado
     if (contentRef.current) {
       const savedPos = pendingCursorPosRef.current
       pendingCursorPosRef.current = null
       contentRef.current.textContent = nodeTextRef.current
 
-      // Restaurar cursor a donde hizo clic el usuario
       if (savedPos !== null) {
+        // Foco vino de un clic — restaurar cursor donde hizo clic.
+        // Señalar al useEffect de isSelected que no sobreescriba el cursor.
+        skipIsSelectedCursorRef.current = true
         try {
           const textNode = contentRef.current.firstChild
           if (textNode && textNode.nodeType === Node.TEXT_NODE) {
@@ -1023,7 +1032,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         } catch { /* ignore */ }
       }
     }
-  }, [node.id, onSelect]) // nodeTextRef es estable, no necesita estar en deps
+    // onSelect DESPUÉS de restaurar cursor (para que isSelected effect vea la bandera)
+    onSelect(node.id)
+  }, [node.id, onSelect]) // nodeTextRef / pendingCursorPosRef / skipIsSelectedCursorRef son refs estables
 
   const handleBlur = useCallback(() => {
     setIsEditing(false)
