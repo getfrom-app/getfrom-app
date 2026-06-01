@@ -240,6 +240,7 @@ function getCursorRect(el: HTMLElement): DOMRect {
 
 // Module-level drag state (shared across all OutlinerNode instances)
 let _draggedNodeId: string | null = null
+let _dropAsChild = false // true cuando el drop debe hacer al nodo arrastrado hijo del destino
 
 function getAllDescendants(nodeId: string): string[] {
   const result: string[] = []
@@ -261,6 +262,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
   const nodeTextRef = useRef(node.text)
   nodeTextRef.current = node.text
+  // Captura posición de clic antes de que handleFocus reemplace innerHTML con textContent
+  const pendingCursorPosRef = useRef<number | null>(null)
   const children = store.children(node.id)
   // Colapsado — cuando hay filtro activo y este nodo tiene descendientes que coinciden,
   // forzamos la expansión para que el usuario vea los resultados aunque estuviera colapsado.
@@ -1000,7 +1003,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // que handleFocus restaure el texto antiguo (e.g., '/') después de
     // que handleSlashSelect ya lo haya actualizado
     if (contentRef.current) {
+      const savedPos = pendingCursorPosRef.current
+      pendingCursorPosRef.current = null
       contentRef.current.textContent = nodeTextRef.current
+
+      // Restaurar cursor a donde hizo clic el usuario
+      if (savedPos !== null) {
+        try {
+          const textNode = contentRef.current.firstChild
+          if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+            const pos = Math.min(savedPos, (textNode.textContent?.length ?? 0))
+            const range = document.createRange()
+            range.setStart(textNode, pos)
+            range.collapse(true)
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+          }
+        } catch { /* ignore */ }
+      }
     }
   }, [node.id, onSelect]) // nodeTextRef es estable, no necesita estar en deps
 
@@ -1657,6 +1678,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
       // Nivel raíz del outliner: borrar y mover cursor al bullet anterior
       onSelectNext(node.id, 'up')
+      // Limpiar espejos que apuntan a este nodo antes de borrarlo
+      const nowIso = new Date().toISOString()
+      store.allActive().forEach(n => {
+        try {
+          const ed = JSON.parse(n.extraData || '{}')
+          if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: nowIso })
+        } catch { /* ignore */ }
+      })
       store.deleteNode(node.id)
     }
 
@@ -1701,6 +1730,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (_draggedNodeId === node.id) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    const rect = e.currentTarget.getBoundingClientRect()
+    _dropAsChild = (e.clientX - rect.left) / rect.width > 0.65
     setIsDragOver(true)
   }
 
@@ -1725,7 +1756,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Acepta drops del outliner interno (_draggedNodeId) Y del agenda/timeline
     // (cal-node-id en dataTransfer). v8.26: reparenta tareas arrastradas.
     const draggedId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+    const asChild = _dropAsChild
     _draggedNodeId = null
+    _dropAsChild = false
     if (!draggedId || draggedId === node.id) return
 
     const draggedNode = store.getNode(draggedId)
@@ -1733,6 +1766,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     // Evitar mover un nodo a su propio descendiente
     if (isDescendant(draggedId, node.id)) return
+
+    if (asChild) {
+      // Hacer al nodo arrastrado primer hijo del destino
+      const targetChildren = store.children(node.id).sort((a, b) => a.siblingOrder - b.siblingOrder)
+      const firstOrder = targetChildren.length > 0 ? targetChildren[0].siblingOrder - 1000 : 1000
+      store.updateNode(draggedId, { parentId: node.id, siblingOrder: firstOrder })
+      return
+    }
 
     if (draggedNode.parentId === node.parentId) {
       // MISMO PADRE → reordenar (comportamiento existente)
@@ -2579,7 +2620,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     >
       <div
         className={nodeRowClass}
-        draggable={false}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -2856,7 +2896,32 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onKeyDown={handleKeyDown}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onMouseDown={e => {
+              if (!isEditing && contentRef.current) {
+                try {
+                  // Captura offset de carácter en posición de clic antes del swap textContent
+                  const caretRange = document.caretRangeFromPoint(e.clientX, e.clientY)
+                  if (caretRange && contentRef.current.contains(caretRange.startContainer)) {
+                    const r = document.createRange()
+                    r.setStart(contentRef.current, 0)
+                    r.setEnd(caretRange.startContainer, caretRange.startOffset)
+                    pendingCursorPosRef.current = r.toString().length
+                  }
+                } catch { /* ignore */ }
+              }
+            }}
             onClick={e => {
+              // Triple click → seleccionar todo el texto del nodo
+              if (e.detail >= 3) {
+                e.preventDefault()
+                const sel = window.getSelection()
+                const range = document.createRange()
+                range.selectNodeContents(e.currentTarget)
+                sel?.removeAllRanges()
+                sel?.addRange(range)
+                return
+              }
+
               const target = e.target as HTMLElement
 
               // Click en @context-inline → animar y filtrar

@@ -12,7 +12,7 @@
  *  - Aplicar plantilla → (hijos del nodo "Plantillas")
  *  - Eliminar (no para diarios/temporales)
  */
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { store, nodeMeta } from '../../store/nodeStore'
@@ -111,10 +111,16 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     ? store.children(templateParent.id).filter(n => !n.deletedAt)
     : []
 
-  // Ajustar posición
-  const menuW = 220, menuH = 420
-  const adjustedX = Math.min(x, window.innerWidth - menuW - 8)
-  const adjustedY = Math.min(y, window.innerHeight - menuH - 8)
+  // Ajustar posición tras render para usar tamaño real (incluye submenús abiertos)
+  useLayoutEffect(() => {
+    if (!menuRef.current) return
+    const rect = menuRef.current.getBoundingClientRect()
+    const margin = 8
+    const adjustedY = Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin))
+    const adjustedX = Math.max(margin, Math.min(x, window.innerWidth - rect.width - margin))
+    menuRef.current.style.top = `${adjustedY}px`
+    menuRef.current.style.left = `${adjustedX}px`
+  }, [x, y, showConvert, showColorPicker, showTemplates])
 
   // Cerrar al click fuera (solo si no hay submodal)
   useEffect(() => {
@@ -280,7 +286,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     <div
       ref={menuRef}
       className="context-menu"
-      style={{ position: 'fixed', top: adjustedY, left: adjustedX, zIndex: 2000, minWidth: 220 }}
+      style={{ position: 'fixed', top: y, left: x, zIndex: 2000, minWidth: 220 }}
       onContextMenu={e => e.preventDefault()}
     >
       {/* Duplicar + Mover + Espejo */}
