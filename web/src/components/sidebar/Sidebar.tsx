@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useRecordingStore } from '../../store/recordingStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
@@ -55,6 +56,8 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   const us = useUserStore()
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('panels')
+  const recording = useRecordingStore()
+  const isRecording = recording.phase === 'recording'
   const [panels, setPanels] = useState<Panel[]>(getPanels)
 
   // Refresca paneles cuando CommandPalette crea uno nuevo
@@ -498,13 +501,27 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     <aside className={`sidebar ${open ? 'open' : 'closed'}`}>
       {open ? (
         <>
-          {/* Atajos unificados WF */}
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {/* Atajos unificados WF — se encoge cuando graba */}
+          <div style={{
+            flex: isRecording ? '0 0 50%' : 1,
+            overflowY: 'auto',
+            minHeight: 0,
+            transition: 'flex 0.35s cubic-bezier(0.4,0,0.2,1)',
+          }}>
             {renderShortcuts()}
           </div>
 
-          {/* Recording bar */}
-          <WebRecordingBar />
+          {/* Recording bar — se expande a la mitad al grabar */}
+          <div style={{
+            flex: isRecording ? '0 0 50%' : '0 0 auto',
+            minHeight: 0,
+            overflow: 'hidden',
+            transition: 'flex 0.35s cubic-bezier(0.4,0,0.2,1)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <WebRecordingBar expanded={isRecording} />
+          </div>
 
           {/* Footer global — movido al nivel raíz de MainLayout */}
         </>

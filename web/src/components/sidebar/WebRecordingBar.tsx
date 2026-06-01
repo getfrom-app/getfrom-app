@@ -19,7 +19,7 @@ function formatTime(s: number) {
 type MicPermission = 'unknown' | 'granted' | 'denied' | 'prompt'
 type ProcessState  = 'idle' | 'processing' | 'done' | 'error'
 
-export default function WebRecordingBar() {
+export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
   const r = useRecordingStore()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -193,8 +193,14 @@ export default function WebRecordingBar() {
   // ── Grabando ────────────────────────────────────────────────────────────
   if (r.phase === 'recording') {
     return (
-      <div style={{ borderTop: '1px solid var(--border)', background: 'rgba(239,68,68,0.04)', flexShrink: 0 }}>
-        <div className="rec-bar rec-bar--active" style={{ borderTop: 'none' }}>
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        background: 'rgba(239,68,68,0.04)',
+        display: 'flex', flexDirection: 'column',
+        height: '100%', minHeight: 0,
+      }}>
+        {/* Barra de control */}
+        <div className="rec-bar rec-bar--active" style={{ borderTop: 'none', flexShrink: 0 }}>
           <span className="rec-bar-dot" />
           <span className="rec-bar-timer">{formatTime(r.elapsed)}</span>
 
@@ -221,17 +227,21 @@ export default function WebRecordingBar() {
           </button>
         </div>
 
-        {/* Transcripción en vivo */}
-        {r.transcript && (
-          <div style={{
-            padding: '3px 8px 6px', fontSize: 10.5, color: 'var(--text-secondary)',
-            lineHeight: 1.4, maxHeight: 44, overflow: 'hidden',
-            maskImage: 'linear-gradient(to bottom, transparent, black 30%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%)',
-          }}>
-            {r.transcript}
-          </div>
-        )}
+        {/* Transcripción en vivo — ocupa todo el espacio disponible */}
+        <div style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: 'auto',
+          padding: '8px 10px 10px',
+          fontSize: 11.5,
+          color: 'var(--text-primary)',
+          lineHeight: 1.55,
+        }}>
+          {r.transcript
+            ? <span>{r.transcript}</span>
+            : <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Escuchando…</span>
+          }
+        </div>
       </div>
     )
   }
