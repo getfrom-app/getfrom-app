@@ -10,6 +10,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
+import { isInPapelera } from '../../utils/papeleraHelper'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -620,6 +621,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const isThisDayToday = diaryDate.toDateString() === now.toDateString()
   const seguimientoNodes = isThisDayToday
     ? s.liveContainers()
+        .filter(n => !isInPapelera(n.id))
         .filter(n => !hasLiveContainerAncestor(n.id))
         .filter(n => {
           // Solo mostrar containers con ≥1 tarea overdue, hoy o sin fecha.
@@ -630,7 +632,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     : []
 
   const allPending = s.allActive().filter(
-    n => n.status === 'pending' && !n.deletedAt && n.due
+    n => n.status === 'pending' && !n.deletedAt && n.due && !isInPapelera(n.id)
   )
 
   // Tareas sin fecha: pendientes con due=null que son hijas directas de
@@ -643,7 +645,7 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
   const undatedDiaryTasks = todayDiaryId
     ? s.allActive().filter(n =>
         n.status === 'pending' && !n.due && n.parentId === todayDiaryId &&
-        !seguimientoIds.has(n.id)
+        !seguimientoIds.has(n.id) && !isInPapelera(n.id)
       )
     : []
 
@@ -744,17 +746,9 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
     if (store.getNode(parentId)?.isCollapsed) store.updateNode(parentId, { isCollapsed: false })
   }
 
-  // ── Recursos pendientes / en progreso ──────────────────────────────────────
-  const pendingResources = s.allResources().filter(n => {
-    try {
-      const ed = JSON.parse(n.extraData || '{}')
-      return ed._resourceStatus === 'pending' || ed._resourceStatus === 'consuming' || !ed._resourceStatus
-    } catch { return false }
-  }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-
   function renderAgenda() {
     // Eventos de Google Calendar ya se muestran en el Timeline — no duplicar en Agenda.
-    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || undatedDiaryTasks.length > 0 || pendingResources.length > 0
+    const hasAnything = seguimientoNodes.length > 0 || overdue.length > 0 || todayTasks.length > 0 || undatedDiaryTasks.length > 0
 
     if (!hasAnything) {
       return (
@@ -817,67 +811,11 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
           )
         })}
 
-        {/* Tareas vencidas + sus hijos de tarea */}
-        {overdue.map(task => {
-          const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
-          return (
-            <React.Fragment key={task.id}>
-              <AgendaTaskRow
-                task={task}
-                checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'overdue'}`}
-                parentNote={getParentNote(task)}
-                onToggle={() => toggleTask(task.id, task.status)}
-                onClick={() => navigate(`/node/${task.id}`)}
-                onDropBefore={draggedId => dropBefore(draggedId, task.id)}
-                onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
-              />
-              {taskKids.map(child => (
-                <AgendaTaskRow
-                  key={child.id}
-                  task={child}
-                  checkboxClass={childTaskCheckboxClass(child)}
-                  indented
-                  isEvent={child.isEvent}
-                  onToggle={() => toggleTask(child.id, child.status)}
-                  onClick={() => navigate(`/node/${child.id}`)}
-                  onDropBefore={draggedId => dropBefore(draggedId, child.id)}
-                  onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
-                />
-              ))}
-            </React.Fragment>
-          )
-        })}
+        {/* Tareas vencidas — agrupadas por padre */}
+        {renderTasksGrouped(overdue, 'overdue')}
 
-        {/* Tareas de hoy + sus hijos de tarea */}
-        {todayTasks.map(task => {
-          const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
-          return (
-            <React.Fragment key={task.id}>
-              <AgendaTaskRow
-                task={task}
-                checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : 'today'}`}
-                parentNote={getParentNote(task)}
-                onToggle={() => toggleTask(task.id, task.status)}
-                onClick={() => navigate(`/node/${task.id}`)}
-                onDropBefore={draggedId => dropBefore(draggedId, task.id)}
-                onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
-              />
-              {taskKids.map(child => (
-                <AgendaTaskRow
-                  key={child.id}
-                  task={child}
-                  checkboxClass={childTaskCheckboxClass(child)}
-                  indented
-                  isEvent={child.isEvent}
-                  onToggle={() => toggleTask(child.id, child.status)}
-                  onClick={() => navigate(`/node/${child.id}`)}
-                  onDropBefore={draggedId => dropBefore(draggedId, child.id)}
-                  onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
-                />
-              ))}
-            </React.Fragment>
-          )
-        })}
+        {/* Tareas de hoy — agrupadas por padre */}
+        {renderTasksGrouped(todayTasks, 'today')}
 
         {/* Tareas sin fecha explícita de la diary de hoy */}
         {undatedDiaryTasks.length > 0 && undatedDiaryTasks.map(task => (
@@ -892,52 +830,117 @@ export default function DiaryRightPanel({ diaryDate, rangeType = 'day', timeline
             onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
           />
         ))}
+      </div>
+    )
+  }
 
-        {/* Recursos pendientes / en progreso */}
-        {pendingResources.length > 0 && (
-          <div className="diary-agenda-resources-section">
-            <div className="diary-agenda-section-label">{t('panel.resources')}</div>
-            {pendingResources.map(node => {
-              let ed: Record<string, unknown> = {}
-              try { ed = JSON.parse(node.extraData || '{}') } catch {}
-              const status = (ed._resourceStatus as string) || 'pending'
-              const meta = ed._resourceMeta as { title?: string; image?: string; domain?: string; channel?: string } | null
-              const type = (ed._resourceType as string) || 'url'
-              const url = (ed._resourceUrl as string) || ''
-              const typeIcon = type === 'youtube' ? '▶️' : type === 'book' ? '📚' : type === 'podcast' ? '🎙' : type === 'document' ? '📄' : '🔗'
-              const statusColor = status === 'consuming' ? '#3b82f6' : '#06b6d4'
+  // ── Helper: agrupar tareas por su nodo padre ──────────────────────────────
+  function groupTasksByParent(tasks: Node[]): Array<{ parent: Node | null; tasks: Node[] }> {
+    const groups = new Map<string | null, { parent: Node | null; tasks: Node[] }>()
+    for (const task of tasks) {
+      const parent = task.parentId ? s.getNode(task.parentId) : null
+      // Si el padre es una diary entry o no existe → standalone (null group)
+      const groupKey = (!parent || parent.isDiaryEntry) ? null : parent.id
+      const groupParent: Node | null = groupKey ? (parent ?? null) : null
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { parent: groupParent, tasks: [] })
+      }
+      groups.get(groupKey)!.tasks.push(task)
+    }
+    // Orden: grupos con padre primero, luego standalone
+    const result: Array<{ parent: Node | null; tasks: Node[] }> = []
+    for (const [key, group] of groups) {
+      if (key !== null) result.push(group)
+    }
+    const standalone = groups.get(null)
+    if (standalone) result.push(standalone)
+    return result
+  }
+
+  function renderTasksGrouped(tasks: Node[], variant: 'overdue' | 'today') {
+    const groups = groupTasksByParent(tasks)
+    return groups.map(({ parent, tasks: groupTasks }) => {
+      if (parent) {
+        // Con padre: mostrar header del padre + tareas indentadas
+        return (
+          <div key={parent.id}>
+            {/* Header del nodo padre */}
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px 2px', cursor: 'pointer' }}
+              onClick={() => navigate(`/node/${parent.id}`)}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--text-tertiary)', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {parent.text || t('common.noTitle')}
+              </span>
+              {s.children(parent.id).length > 0 && (
+                <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>
+              )}
+            </div>
+            {/* Tareas bajo este padre */}
+            {groupTasks.map(task => {
+              const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
               return (
-                <div
-                  key={node.id}
-                  className="diary-agenda-resource-row"
-                  onClick={() => navigate(`/node/${node.id}`)}
-                >
-                  <span className="diary-agenda-resource-icon">{typeIcon}</span>
-                  <span className="diary-agenda-resource-title">
-                    {meta?.title || node.text || t('common.noTitle')}
-                  </span>
-                  <span
-                    className="diary-agenda-resource-status"
-                    style={{ color: statusColor, borderColor: statusColor }}
-                  >
-                    {status === 'consuming' ? 'En progreso' : 'Pendiente'}
-                  </span>
-                  {url && (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="diary-agenda-resource-open"
-                      onClick={e => e.stopPropagation()}
-                    >↗</a>
-                  )}
-                </div>
+                <React.Fragment key={task.id}>
+                  <AgendaTaskRow
+                    task={task}
+                    checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : variant}`}
+                    indented
+                    onToggle={() => toggleTask(task.id, task.status)}
+                    onClick={() => navigate(`/node/${task.id}`)}
+                    onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+                    onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
+                  />
+                  {taskKids.map(child => (
+                    <AgendaTaskRow
+                      key={child.id}
+                      task={child}
+                      checkboxClass={childTaskCheckboxClass(child)}
+                      indented
+                      isEvent={child.isEvent}
+                      onToggle={() => toggleTask(child.id, child.status)}
+                      onClick={() => navigate(`/node/${child.id}`)}
+                      onDropBefore={draggedId => dropBefore(draggedId, child.id)}
+                      onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
+                    />
+                  ))}
+                </React.Fragment>
               )
             })}
           </div>
-        )}
-      </div>
-    )
+        )
+      } else {
+        // Standalone: sin padre significativo
+        return groupTasks.map(task => {
+          const taskKids = store.children(task.id).filter(c => !c.deletedAt && c.status !== null)
+          return (
+            <React.Fragment key={task.id}>
+              <AgendaTaskRow
+                task={task}
+                checkboxClass={`diary-agenda-checkbox diary-agenda-checkbox--${task.status === 'done' ? 'done' : variant}`}
+                onToggle={() => toggleTask(task.id, task.status)}
+                onClick={() => navigate(`/node/${task.id}`)}
+                onDropBefore={draggedId => dropBefore(draggedId, task.id)}
+                onDropAsChild={draggedId => dropAsChild(draggedId, task.id)}
+              />
+              {taskKids.map(child => (
+                <AgendaTaskRow
+                  key={child.id}
+                  task={child}
+                  checkboxClass={childTaskCheckboxClass(child)}
+                  indented
+                  isEvent={child.isEvent}
+                  onToggle={() => toggleTask(child.id, child.status)}
+                  onClick={() => navigate(`/node/${child.id}`)}
+                  onDropBefore={draggedId => dropBefore(draggedId, child.id)}
+                  onDropAsChild={draggedId => dropAsChild(draggedId, child.id)}
+                />
+              ))}
+            </React.Fragment>
+          )
+        })
+      }
+    })
   }
 
   // ── Timeline logic ─────────────────────────────────────────────────────────

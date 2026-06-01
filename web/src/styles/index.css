@@ -4084,7 +4084,7 @@ body.outliner-drag-active {
 .diary-view { overflow: hidden; }
 .diary-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .diary-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
-.diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; flex: 1; }
+.diary-right-panel { width: 440px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0; flex: 1; padding-bottom: 28px; }
 
 /* ── Timeline como columna toggleable (entre main y right panel) ──────────── */
 .diary-timeline-aside {
@@ -11113,6 +11113,7 @@ textarea:focus-visible,
   position: relative;
   border-left: 1px solid transparent; /* invisible cuando está cerrado */
   background: var(--bg-primary);
+  padding-bottom: 28px;
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
