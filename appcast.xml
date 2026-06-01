@@ -3,6 +3,15 @@
   <channel>
     <title>From Updates</title>
     <item>
+      <title>From 9.4.2</title>
+      <pubDate>Sun, 01 Jun 2026 07:50:00 +0200</pubDate>
+      <sparkle:version>9.4.2</sparkle:version>
+      <sparkle:shortVersionString>9.4.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+      <description><![CDATA[<ul><li>Sync automático cada 15 segundos — los nodos de Claude aparecen sin tocar nada</li><li>Sync inmediato al volver al foco de la ventana</li><li>Muestra la cuenta activa en Ajustes → Integraciones → Claude</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.4.2/From.dmg" sparkle:edSignature="3jVD6A+b02SnLLCoFkeVWHtvA0eKXeD83sSXAhA20+lscxeyqK8oJVxfXLBhAu3BuQu57YrywGgcR6UNTs45CA==" length="5651851" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>From 9.4.1</title>
       <pubDate>Sun, 01 Jun 2026 07:20:00 +0200</pubDate>
       <sparkle:version>9.4.1</sparkle:version>
