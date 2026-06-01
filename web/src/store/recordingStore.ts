@@ -126,14 +126,15 @@ class RecordingStore {
       rec.start()
     }
 
-    createSession()
-
+    // Establecer phase ANTES de llamar createSession (que lo comprueba)
     this.elapsed = 0
     this.transcript = ''
     this.finalText = ''
     this.error = ''
     this.phase = 'recording'
     this.notify()
+
+    createSession()
 
     this.timer = setInterval(() => {
       this.elapsed++

@@ -243,16 +243,6 @@ export default function WebRecordingBar() {
         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Grabadora</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-        <span className="rec-bar-icon-btn on" title="Micrófono">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
-            <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
-            <path d="M8 13v2"/>
-          </svg>
-        </span>
-      </div>
-
       <button
         className="rec-bar-icon-btn rec-bar-icon-btn--record"
         onClick={() => r.startRecording()}
