@@ -711,15 +711,17 @@ export default function NodeView() {
   })()
 
   // Panel derecho de tareas: solo para el diario de HOY
-  // Panel derecho: detectar si es el diario de HOY comparando diaryDate con fecha local
-  // Sin estado intermedio — se computa directamente en cada render
+  // Panel derecho: detectar si es el diario de HOY
+  // DEBUG: log para diagnóstico (eliminar tras confirmar funcionamiento)
   const diaryPanelDate = (() => {
+    console.log('[DiaryPanel] node.isDiaryEntry=', node.isDiaryEntry, 'node.diaryDate=', node.diaryDate)
     if (!node.diaryDate) return null
     const d = new Date(node.diaryDate)
     const now = new Date()
     const isToday = d.getFullYear() === now.getFullYear() &&
                     d.getMonth() === now.getMonth() &&
                     d.getDate() === now.getDate()
+    console.log('[DiaryPanel] d=', d.toLocaleDateString(), 'now=', now.toLocaleDateString(), 'isToday=', isToday)
     if (!isToday) return null
     const today = new Date(); today.setHours(0, 0, 0, 0)
     return today
