@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
-import { recordingStore } from '../../store/recordingStore'
+import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import type { DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 
@@ -55,6 +55,62 @@ export default function QuickCaptureNode({ onClose }: Props) {
   const [taskPrediction, setTaskPrediction] = useState(false)
   const [ctxSuggestion, setCtxSuggestion] = useState<CtxSuggestion | null>(null)
   const [forceType, setForceType] = useState<ForceType>(null)
+  const r = useRecordingStore()
+  const isRecording = r.phase === 'recording'
+  const rKeyDownRef = useRef(false)
+
+  // Sincronizar transcript de grabación en el input en tiempo real
+  useEffect(() => {
+    if (!isRecording) {
+      // Al parar: transcript queda en el input para editar
+      if (r.phase === 'done' && r.transcript && inputRef.current) {
+        const t = r.transcript.trim()
+        inputRef.current.textContent = t
+        setText(t)
+        analyze(t)
+        // Cursor al final
+        const range = document.createRange()
+        const sel = window.getSelection()
+        const node = inputRef.current.firstChild
+        if (node) { range.setStart(node, (node.textContent?.length ?? 0)); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
+        inputRef.current.focus()
+        recordingStore.resetRecording()
+      }
+      return
+    }
+    // Mientras graba: reflejar transcript en el input
+    if (inputRef.current && r.transcript !== undefined) {
+      const t = r.transcript
+      if (inputRef.current.textContent !== t) {
+        inputRef.current.textContent = t
+        setText(t)
+        analyze(t)
+      }
+    }
+  }, [r.transcript, r.phase, isRecording]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // R (hold) = grabar mientras se mantiene pulsado
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'r' && e.key !== 'R') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (rKeyDownRef.current) return // ya estaba pulsado
+      const active = document.activeElement as HTMLElement | null
+      // Si el foco está en el contentEditable del modal, no interferir
+      if (active === inputRef.current) return
+      rKeyDownRef.current = true
+      if (recordingStore.phase === 'idle') recordingStore.startRecording()
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key !== 'r' && e.key !== 'R') return
+      if (!rKeyDownRef.current) return
+      rKeyDownRef.current = false
+      if (recordingStore.phase === 'recording') recordingStore.stopRecording()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp) }
+  }, [])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -287,6 +343,26 @@ export default function QuickCaptureNode({ onClose }: Props) {
         width: 560,
         maxWidth: '90vw',
       }}>
+        {/* Onda de audio — solo cuando graba */}
+        {isRecording && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 1.5,
+            height: 28, marginBottom: 8, paddingLeft: 24,
+          }}>
+            {Array.from({ length: 24 }).map((_, i) => (
+              <div key={i} style={{
+                width: 2.5, borderRadius: 2, flexShrink: 0,
+                height: Math.max(3, Math.min(24, r.audioLevel * 28 * (0.3 + Math.abs(Math.sin(i * 0.7 + Date.now() / 150)) * 0.7))),
+                background: '#ef4444',
+                transition: 'height 0.06s ease',
+              }} />
+            ))}
+            <span style={{ marginLeft: 8, fontSize: 11, color: '#ef4444', fontWeight: 600 }}>
+              {Math.floor(r.elapsed / 60)}:{String(r.elapsed % 60).padStart(2, '0')}
+            </span>
+          </div>
+        )}
+
         {/* Input principal */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
@@ -315,17 +391,38 @@ export default function QuickCaptureNode({ onClose }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>↵</kbd>
             <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>ESC</kbd>
-            {/* R = grabar voz */}
+            {/* Mic / Stop */}
             <button
-              title="Grabar voz (R)"
-              onMouseDown={e => { e.preventDefault(); onClose(); setTimeout(() => recordingStore.startRecording(), 80) }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+              title={isRecording ? 'Parar grabación' : 'Grabar voz (mantén R)'}
+              onMouseDown={e => {
+                e.preventDefault()
+                if (isRecording) {
+                  recordingStore.stopRecording()
+                } else {
+                  recordingStore.startRecording()
+                }
+              }}
+              style={{
+                background: isRecording ? '#ef4444' : 'none',
+                border: 'none', cursor: 'pointer',
+                color: isRecording ? 'white' : 'var(--text-tertiary)',
+                padding: isRecording ? '3px 6px' : '2px 4px',
+                borderRadius: isRecording ? 4 : 0,
+                display: 'flex', alignItems: 'center',
+                transition: 'all 0.15s',
+              }}
             >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
-                <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
-                <path d="M8 13v2"/>
-              </svg>
+              {isRecording ? (
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+                  <rect x="2" y="2" width="8" height="8" rx="1.5"/>
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
+                  <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
+                  <path d="M8 13v2"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>
