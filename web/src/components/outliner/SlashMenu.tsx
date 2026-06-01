@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { parseNaturalDate, getSuggestion } from '../../utils/naturalDate'
+import { parseNaturalDate, getSuggestion, parseRecurrenceOnly } from '../../utils/naturalDate'
 import type { RecurrenceConfig } from '../../utils/naturalDate'
 
 export type SlashAction =
@@ -17,6 +17,7 @@ export type SlashAction =
   | 'mirror'
   | 'add-shortcut'
   | 'recurrence'
+  | 'recurrence-prompt'
 
 export interface SlashMenuOption {
   label: string
@@ -70,10 +71,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'IA', label: 'Corregir gramática', icon: '✏️', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
   { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
   // ── Recurrencia ───────────────────────────────────────────────────────────
-  { group: 'Recurrencia', label: 'Repetir diario', icon: '↻', prefix: '', description: 'Crear copia cada día al completar', action: 'recurrence' as const, recurrence: { type: 'daily' as const, display: 'diario' } },
-  { group: 'Recurrencia', label: 'Repetir semanal', icon: '↻', prefix: '', description: 'Crear copia cada semana al completar', action: 'recurrence' as const, recurrence: { type: 'weekly' as const, display: 'semana' } },
-  { group: 'Recurrencia', label: 'Repetir lun y jue', icon: '↻', prefix: '', description: 'Crear copia los lunes y jueves al completar', action: 'recurrence' as const, recurrence: { type: 'weekly' as const, days: [1, 4], display: 'lun y jue' } },
-  { group: 'Recurrencia', label: 'Repetir mensual', icon: '↻', prefix: '', description: 'Crear copia cada mes al completar', action: 'recurrence' as const, recurrence: { type: 'monthly' as const, display: 'mes' } },
+  { group: 'Recurrencia', label: 'Repetir…', icon: '↻', prefix: 'repetir ', description: 'cada lunes · 3 días · 2 semanas · mensual…', action: 'recurrence-prompt' as const },
   // ── Gestión ───────────────────────────────────────────────────────────────
   { group: 'Gestión', label: 'Añadir a atajos', icon: '⭐', prefix: '', description: 'Guardar como atajo en la barra lateral', action: 'add-shortcut' },
   { group: 'Gestión', label: 'Añadir fecha', icon: '🗓', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
@@ -102,14 +100,20 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
   // ── Detectar "mover a [fecha]" dinámicamente ──────────────────────────────
   // Activar con o sin espacio final: "mover a", "mover a viernes", "enviar a ..."
   const MOVE_PREFIXES = ['mover a', 'mover al', 'move to', 'enviar a', 'enviar al']
+  const REPEAT_PREFIXES = ['repetir ', 'repetir', 'repeat ', 'cada ']
   const ql = query.toLowerCase().trim()
   const movePrefix = MOVE_PREFIXES.find(p => ql.startsWith(p))
   const moveDateQuery = movePrefix ? query.slice(query.toLowerCase().indexOf(movePrefix) + movePrefix.length).trim() : null
   const parsedMove = moveDateQuery ? parseNaturalDate(moveDateQuery) : null
   const isMoveMode = !!movePrefix
+  // Modo repetir: "repetir X" → parsear recurrencia
+  const repeatPrefix = REPEAT_PREFIXES.find(p => ql.startsWith(p))
+  const repeatQuery = repeatPrefix ? query.slice(query.toLowerCase().indexOf(repeatPrefix) + repeatPrefix.length).trim() : null
+  const parsedRepeat = repeatQuery ? parseRecurrenceOnly(repeatQuery) : null
+  const isRepeatMode = !!repeatPrefix && repeatPrefix !== 'cada '  // "cada " solo activa si ya está con texto
 
   // Filter by query — en modo mover, no mostrar opciones normales
-  const filtered = isMoveMode ? [] : OPTIONS.filter(opt =>
+  const filtered = (isMoveMode || isRepeatMode) ? [] : OPTIONS.filter(opt =>
     !query ||
     opt.label.toLowerCase().includes(query.toLowerCase()) ||
     opt.description.toLowerCase().includes(query.toLowerCase())
@@ -146,17 +150,23 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
         e.preventDefault(); e.stopPropagation()
         setActiveIdx(i => Math.max(i - 1, 0))
       } else if (e.key === 'Tab' && isMoveMode) {
-        // Tab: aceptar sugerencia de autocompletado
         e.preventDefault(); e.stopPropagation()
         if (parsedMove) {
           onSelect({ prefix: '', action: 'move-to', moveToDate: parsedMove.date, moveToRecurrence: parsedMove.recurrence })
         }
         return
+      } else if (e.key === 'Tab' && isRepeatMode && parsedRepeat) {
+        e.preventDefault(); e.stopPropagation()
+        onSelect({ prefix: '', action: 'recurrence', recurrence: parsedRepeat })
+        return
       } else if (e.key === 'Enter') {
         e.preventDefault(); e.stopPropagation()
-        // En modo "mover a": confirmar si hay fecha parseada
         if (isMoveMode && parsedMove) {
           onSelect({ prefix: '', action: 'move-to', moveToDate: parsedMove.date, moveToRecurrence: parsedMove.recurrence })
+          return
+        }
+        if (isRepeatMode && parsedRepeat) {
+          onSelect({ prefix: '', action: 'recurrence', recurrence: parsedRepeat })
           return
         }
         if (filtered[activeIdx]) {
@@ -181,6 +191,40 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
+
+  // ── Render modo "repetir" ─────────────────────────────────────────────────
+  if (isRepeatMode) {
+    const EXAMPLES = ['diario', 'cada lunes', 'cada 3 días', '2 semanas', 'mensual', 'lun y jue']
+    return createPortal(
+      <div ref={menuRef} className="slash-menu slash-menu--move" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000, minWidth: 220 }}>
+        <div className="slash-menu-move-field">
+          <span className="slash-menu-move-icon">↻</span>
+          <span className="slash-menu-move-typed">{repeatQuery || ''}</span>
+          {!repeatQuery && <span className="slash-menu-move-placeholder">cada lunes · 3 días · mensual…</span>}
+        </div>
+        {parsedRepeat ? (
+          <div style={{ padding: '4px 6px 2px' }}>
+            <span className="from-ghost" style={{ marginLeft: 0 }}>
+              <span className="from-ghost-text">↻ {parsedRepeat.display}</span>
+              <span className="from-ghost-sep">·</span>
+              <span className="from-ghost-key">↵</span>
+            </span>
+          </div>
+        ) : repeatQuery ? (
+          <div className="slash-menu-move-no-match">No reconocido — prueba "cada lunes" o "3 días"</div>
+        ) : (
+          <div className="slash-menu-move-examples">
+            {EXAMPLES.map(ex => (
+              <span key={ex} className="slash-menu-move-example"
+                onMouseDown={e => { e.preventDefault(); const rec = parseRecurrenceOnly(ex); if (rec) onSelect({ prefix: '', action: 'recurrence', recurrence: rec }) }}
+              >{ex}</span>
+            ))}
+          </div>
+        )}
+      </div>,
+      document.body
+    )
+  }
 
   // ── Render modo "mover a" ──────────────────────────────────────────────────
   if (isMoveMode) {

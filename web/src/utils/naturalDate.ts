@@ -6,6 +6,7 @@
 
 export interface RecurrenceConfig {
   type: 'daily' | 'weekly' | 'monthly' | 'custom'
+  interval?: number // intervalo: 1=cada vez, 2=cada 2, 3=cada 3, etc.
   days?: number[]   // 0=Dom … 6=Sáb (para weekly)
   monthDay?: number // para monthly en día concreto
   display: string   // badge: "mar", "lun y jue", "diario", "mes"
@@ -223,22 +224,104 @@ export function parseNaturalDate(input: string): ParsedDate | null {
   return null
 }
 
+/** Parser de recurrencia pura: "3 días", "cada lunes", "2 semanas", "mensual"...
+ *  Devuelve RecurrenceConfig o null si no reconoce el patrón.
+ */
+export function parseRecurrenceOnly(input: string): RecurrenceConfig | null {
+  const text = input.trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+    .replace(/ó/g, 'o').replace(/ú/g, 'u')
+
+  // "diario" / "cada día" / "diariamente"
+  if (['diario', 'cada dia', 'diariamente', 'a diario', 'todos los dias', 'cada 1 dia', 'cada 1 dias'].includes(text)) {
+    return { type: 'daily', display: 'diario' }
+  }
+
+  // "N días" / "cada N días"
+  const nDaysM = text.match(/^(?:cada )?(\d+) dias?$/)
+  if (nDaysM) {
+    const n = parseInt(nDaysM[1])
+    if (n > 0) return { type: 'daily', interval: n, display: n === 1 ? 'diario' : `${n} días` }
+  }
+
+  // "N semanas" / "cada N semanas"
+  const nWeeksM = text.match(/^(?:cada )?(\d+) semanas?$/)
+  if (nWeeksM) {
+    const n = parseInt(nWeeksM[1])
+    if (n > 0) return { type: 'weekly', interval: n, display: n === 1 ? 'semana' : `${n} semanas` }
+  }
+
+  // "semanal" / "cada semana" / "semanalmente"
+  if (['semanal', 'cada semana', 'semanalmente'].includes(text)) {
+    return { type: 'weekly', display: 'semana' }
+  }
+
+  // "N meses" / "cada N meses"
+  const nMonthsM = text.match(/^(?:cada )?(\d+) meses?$/)
+  if (nMonthsM) {
+    const n = parseInt(nMonthsM[1])
+    if (n > 0) return { type: 'monthly', interval: n, display: n === 1 ? 'mes' : `${n} meses` }
+  }
+
+  // "mensual" / "cada mes"
+  if (['mensual', 'cada mes', 'mensualmente'].includes(text)) {
+    return { type: 'monthly', display: 'mes' }
+  }
+
+  // "N años" / "cada N años"
+  const nYearsM = text.match(/^(?:cada )?(\d+) anos?$/)
+  if (nYearsM) {
+    const n = parseInt(nYearsM[1])
+    if (n > 0) return { type: 'monthly', interval: n * 12, display: n === 1 ? 'año' : `${n} años` }
+  }
+
+  // "cada lunes" / "todos los martes"
+  const oneDayM = text.match(/^(?:todos los|cada) (\w+)$/)
+  if (oneDayM) {
+    const dayNum = DAYS_ES[oneDayM[1]]
+    if (dayNum !== undefined) {
+      return { type: 'weekly', days: [dayNum], display: DAY_NAMES_SHORT[dayNum] }
+    }
+  }
+
+  // "cada lunes y jueves"
+  const twoDaysM = text.match(/^(?:todos los|cada) (\w+) y (\w+)$/)
+  if (twoDaysM) {
+    const d1 = DAYS_ES[twoDaysM[1]], d2 = DAYS_ES[twoDaysM[2]]
+    if (d1 !== undefined && d2 !== undefined) {
+      return { type: 'custom', days: [d1, d2].sort((a, b) => a - b), display: `${DAY_NAMES_SHORT[d1]} y ${DAY_NAMES_SHORT[d2]}` }
+    }
+  }
+
+  // "al 15 de cada mes" / "cada día 15"
+  const monthDayM = text.match(/^(?:al?\s+|cada\s+dia\s+|el\s+dia\s+)?(\d+)(?:\s+de)?\s+cada\s+mes$/)
+  if (monthDayM) {
+    const day = parseInt(monthDayM[1])
+    return { type: 'monthly', monthDay: day, display: `día ${day}` }
+  }
+
+  return null
+}
+
 /** Siguiente ocurrencia según recurrencia */
 export function nextRecurrence(from: Date, rec: RecurrenceConfig): Date {
   const base = new Date(from); base.setHours(0, 0, 0, 0)
 
+  const interval = rec.interval ?? 1
   if (rec.type === 'daily') {
-    const d = new Date(base); d.setDate(d.getDate() + 1); return d
+    const d = new Date(base); d.setDate(d.getDate() + interval); return d
   }
   if (rec.type === 'monthly') {
     if (rec.monthDay) return nextMonthDay(new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1), rec.monthDay)
-    const d = new Date(base); d.setMonth(d.getMonth() + 1); return d
+    const d = new Date(base); d.setMonth(d.getMonth() + interval); return d
   }
   if ((rec.type === 'weekly' || rec.type === 'custom') && rec.days?.length) {
     const candidates = rec.days.map(day => nextWeekday(base, day))
     return candidates.reduce((a, b) => (a < b ? a : b))
   }
-  const d = new Date(base); d.setDate(d.getDate() + 7); return d
+  // weekly sin días específicos: respetar interval
+  const d = new Date(base); d.setDate(d.getDate() + 7 * interval); return d
 }
 
 // ── Detección de fecha al final del texto de una tarea ───────────────────────
@@ -340,11 +423,12 @@ export function getSuggestion(partial: string): string | null {
 
 /** Convierte RecurrenceConfig a string para node.recurrence (campo DB) */
 export function recurrenceToString(rec: RecurrenceConfig): string {
-  if (rec.type === 'daily') return 'daily'
-  if (rec.type === 'monthly') return rec.monthDay ? `monthly:${rec.monthDay}` : 'monthly'
+  const n = rec.interval && rec.interval > 1 ? `:i${rec.interval}` : ''
+  if (rec.type === 'daily') return `daily${n}`
+  if (rec.type === 'monthly') return rec.monthDay ? `monthly:${rec.monthDay}` : `monthly${n}`
   if (rec.type === 'weekly' || rec.type === 'custom') {
-    if (rec.days?.length) return `weekly:${rec.days.join(',')}`
-    return 'weekly'
+    if (rec.days?.length) return `weekly:${rec.days.join(',')}${n}`
+    return `weekly${n}`
   }
   return 'daily'
 }
@@ -352,21 +436,31 @@ export function recurrenceToString(rec: RecurrenceConfig): string {
 /** Convierte string de node.recurrence a RecurrenceConfig */
 export function recurrenceFromString(str: string): RecurrenceConfig | null {
   if (!str) return null
-  // Intentar parsear como JSON (formato RecurrenceConfig serializado)
   if (str.startsWith('{')) {
     try { return JSON.parse(str) as RecurrenceConfig } catch {}
   }
-  const [type, param] = str.split(':')
-  if (type === 'daily') return { type: 'daily', display: 'diario' }
-  if (type === 'monthly') return { type: 'monthly', monthDay: param ? parseInt(param) : undefined, display: 'mes' }
+  // Extraer intervalo si existe ":iN" al final
+  const intervalMatch = str.match(/:i(\d+)$/)
+  const interval = intervalMatch ? parseInt(intervalMatch[1]) : undefined
+  const base = intervalMatch ? str.slice(0, str.lastIndexOf(':i')) : str
+  const [type, param] = base.split(':')
+  const DAY_NAMES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+  if (type === 'daily') {
+    const n = interval ?? 1
+    return { type: 'daily', interval: n > 1 ? n : undefined, display: n === 1 ? 'diario' : `${n} días` }
+  }
+  if (type === 'monthly') {
+    const n = interval ?? 1
+    return { type: 'monthly', monthDay: param ? parseInt(param) : undefined, interval: n > 1 ? n : undefined, display: n === 1 ? 'mes' : `${n} meses` }
+  }
   if (type === 'weekly') {
     if (param) {
       const days = param.split(',').map(Number)
-      const DAY_NAMES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
       const display = days.map(d => DAY_NAMES[d] ?? '?').join(' y ')
       return { type: 'weekly', days, display }
     }
-    return { type: 'weekly', display: 'semana' }
+    const n = interval ?? 1
+    return { type: 'weekly', interval: n > 1 ? n : undefined, display: n === 1 ? 'semana' : `${n} semanas` }
   }
   return null
 }
