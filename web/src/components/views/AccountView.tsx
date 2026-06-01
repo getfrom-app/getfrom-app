@@ -937,6 +937,8 @@ AL TERMINAR (cuando diga "fin"):
               <div style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>1</span>
+                  {/* Email de la cuenta activa */}
+                  {user?.email && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>Cuenta: {user.email}</span>}
                   Token de API — pégalo en Claude Desktop al instalar la extensión
                 </div>
                 {mcpLoaded && (

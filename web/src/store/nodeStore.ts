@@ -152,6 +152,7 @@ export class NodeStore {
   private listeners: Set<Listener> = new Set()
   private dirtyIds: Set<string> = new Set()
   private syncTimer: ReturnType<typeof setTimeout> | null = null
+  private remotePollTimer: ReturnType<typeof setInterval> | null = null
   private history: Array<{ nodes: Map<string, Node> }> = []
   private historyIndex = -1
   private readonly MAX_HISTORY = 50
@@ -166,9 +167,28 @@ export class NodeStore {
     this.historyIndex = this.history.length - 1
   }
 
+  /** Inicia el polling remoto cada 15s para recibir cambios de otros clientes (MCP, iOS, etc.) */
+  startRemotePolling() {
+    if (this.remotePollTimer) return
+    this.remotePollTimer = setInterval(() => {
+      if (!getToken() || this.isSyncing) return
+      this.sync()
+    }, 15_000)
+    // También sincronizar al recuperar foco (vuelve de otra app/ventana)
+    document.addEventListener('visibilitychange', this._onVisibilityChange)
+  }
+
+  private _onVisibilityChange = () => {
+    if (document.visibilityState === 'visible' && getToken()) {
+      this.sync()
+    }
+  }
+
   /** Limpia completamente el store al cambiar de cuenta. Llamar siempre en logout. */
   reset() {
     if (this.syncTimer) clearTimeout(this.syncTimer)
+    if (this.remotePollTimer) { clearInterval(this.remotePollTimer); this.remotePollTimer = null }
+    document.removeEventListener('visibilitychange', this._onVisibilityChange)
     this.nodes = new Map()
     this.workspaces = []
     this.lastSyncAt = null

@@ -271,6 +271,7 @@ export default function MainLayout() {
         // los nodos de sistema se recrean en cada recarga.
         await store.sync(true)
         store.setLoaded()
+        store.startRemotePolling() // Polling 15s para recibir cambios remotos (MCP, otros clientes)
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)
