@@ -710,8 +710,20 @@ export default function NodeView() {
     return null
   })()
 
-  // Fecha del diario para el panel derecho (solo si este nodo ES un diary entry)
-  const diaryPanelDate = node.isDiaryEntry && node.diaryDate ? new Date(node.diaryDate) : null
+  // Panel derecho de tareas: solo para el diario de HOY, controlado por estado
+  const [showDiaryPanel, setShowDiaryPanel] = useState(false)
+  const isNodeToday = (() => {
+    if (!node.isDiaryEntry || !node.diaryDate) return false
+    const d = new Date(node.diaryDate); d.setHours(0,0,0,0)
+    const today = new Date(); today.setHours(0,0,0,0)
+    return d.getTime() === today.getTime()
+  })()
+  // Auto-abrir al entrar en el diario de hoy, cerrar al salir
+  useEffect(() => {
+    if (isNodeToday) setShowDiaryPanel(true)
+    else setShowDiaryPanel(false)
+  }, [node.id, isNodeToday])
+  const diaryPanelDate = isNodeToday && node.diaryDate ? new Date(node.diaryDate) : null
 
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -1337,7 +1349,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${showDiaryPanel && diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -2382,8 +2394,8 @@ export default function NodeView() {
         </div>
       </div>
 
-      {/* Panel derecho: tareas del día cuando estamos en un nodo de diario */}
-      {diaryPanelDate && !focusMode && (
+      {/* Panel derecho: tareas de hoy — solo al ver el diario de hoy */}
+      {showDiaryPanel && diaryPanelDate && !focusMode && (
         <DiaryRightPanel diaryDate={diaryPanelDate} />
       )}
 

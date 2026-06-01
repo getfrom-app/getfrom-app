@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
 import { useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
+import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 
 interface Props {
   onNewNote: () => void
@@ -54,7 +55,9 @@ export default function TopBar({ onNewNote, onCommandPalette, onNewTask, onNewEv
   const nodeTitle = currentNode?.text || 'Sin título'
 
   function goHome() {
-    navigate('/')
+    // Navegar al nodo del diario de hoy → NodeView lo detecta y abre el panel derecho
+    const today = getTodayDiaryUnderAgenda()
+    navigate(`/node/${today.id}`)
   }
 
   function toggleTheme() {
