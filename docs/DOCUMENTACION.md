@@ -781,8 +781,7 @@ make notarize   # desde from-mac/
 cargo tauri signer sign --password "" -f ~/.tauri/from-mac.key /tmp/From.dmg
 
 # 4. Crear latest.json y publicar en ambos repos
-gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R albertolezaun-afk/from-mac
-gh release create vX.X.X /tmp/From.dmg -R getfrom-app/getfrom-app  # descarga pública
+gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R getfrom-app/getfrom-app
 ```
 
 **Clave de firma:** `~/.tauri/from-mac.key` (sin contraseña) — no perder nunca.
