@@ -94,18 +94,17 @@ export default function QuickCaptureNode({ onClose }: Props) {
     }
   }, [r.transcript, r.phase, isRecording]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Space (hold) = grabar mientras se mantiene pulsado.
-  // Space corto (< 250ms) = espacio normal en el input.
-  // Se intercepta en fase CAPTURA para evitar que el contentEditable reciba el evento
-  // mientras estamos grabando o decidiendo si grabar.
+  // Space (hold) = grabar — SOLO cuando el input está vacío.
+  // Si el input tiene texto, Space se comporta con normalidad (escribe espacio).
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
-      // Siempre prevenir el default: gestionamos nosotros el espacio
+      // Solo interceptar si el input está vacío
+      const isEmpty = !(inputRef.current?.textContent || '').trim()
+      if (!isEmpty) return // dejar pasar — comportamiento normal del contentEditable
       e.preventDefault()
       e.stopImmediatePropagation()
-      if (spaceIsRecordingRef.current) return // ya grabando
-      // Timer: si se mantiene > 250ms → empezar a grabar
+      if (spaceIsRecordingRef.current) return
       spaceHoldTimerRef.current = setTimeout(() => {
         spaceIsRecordingRef.current = true
         if (recordingStore.phase === 'idle') recordingStore.startRecording()
@@ -113,6 +112,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
     }
     function onKeyUp(e: KeyboardEvent) {
       if (e.code !== 'Space') return
+      // Si no estamos en modo grabación, no hacer nada especial
+      if (!spaceIsRecordingRef.current && !spaceHoldTimerRef.current) return
       e.preventDefault()
       e.stopImmediatePropagation()
       if (spaceHoldTimerRef.current) {
@@ -120,25 +121,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
         spaceHoldTimerRef.current = null
       }
       if (spaceIsRecordingRef.current) {
-        // Estaba grabando → parar
         spaceIsRecordingRef.current = false
         if (recordingStore.phase === 'recording') recordingStore.stopRecording()
-      } else {
-        // Press corto → insertar un espacio en el input manualmente
-        if (inputRef.current && document.activeElement === inputRef.current) {
-          const sel = window.getSelection()
-          if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0)
-            range.deleteContents()
-            range.insertNode(document.createTextNode(' '))
-            range.collapse(false)
-            sel.removeAllRanges()
-            sel.addRange(range)
-            const newText = inputRef.current.textContent || ''
-            setText(newText)
-            analyzeRef.current?.(newText)
-          }
-        }
       }
     }
     window.addEventListener('keydown', onKeyDown, true)
