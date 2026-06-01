@@ -4,6 +4,20 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Mac v9.4.16 · Web v9.4.46 — Junio 2026 · Actualizador automático verificado
+
+### Actualizador automático — confirmado funcionando (Mac)
+- El actualizador automático se ha verificado en entorno real: detecta la nueva versión, descarga, instala y relanza la app con un solo clic sin intervención manual
+- Versión Mac visible en la barra inferior: `v9.4.XX · Mac 9.4.XX`
+- Menú nativo macOS: **From → Buscar actualizaciones...** para forzar la comprobación al instante
+
+### Proceso de instalación y release Mac (interno)
+- Corrección del proceso de publicación: el artefacto del updater es `From.app.tar.gz` (no el DMG)
+- Para instalar From Mac correctamente: arrastrar desde el DMG a Aplicaciones en Finder
+- El DMG notarizado garantiza que la app se ejecuta directamente desde `/Applications/` sin restricciones del sistema
+
+---
+
 ## Mac v9.4.6 · Web v9.4.41 — Junio 2026 · Pagos y suscripciones corregidos
 
 ### Flujos de pago y suscripción completamente revisados (Web · Mac · Servidor)
