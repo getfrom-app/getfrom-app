@@ -88,6 +88,8 @@ export default function MainLayout() {
     })
   }
   function cyclePanel(dir: 'up' | 'down') {
+    setPanelSlideDir(dir)
+    setPanelKey(k => k + 1)
     setRightPanel(prev => {
       if (!prev) {
         const next = lastPanelRef.current
@@ -158,12 +160,15 @@ export default function MainLayout() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
-  const [magicPanelW, setMagicPanelW] = useState(() => {
-    const saved = localStorage.getItem('magic-panel-w')
-    return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 500
+  const [rightPanelW, setRightPanelW] = useState(() => {
+    const saved = localStorage.getItem('right-panel-w')
+    return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 480
   })
-  const magicResizingRef = useRef(false)
   const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Slide animation state
+  const [panelSlideDir, setPanelSlideDir] = useState<'up' | 'down'>('down')
+  const [panelKey, setPanelKey] = useState(0)
 
   // Notificar cuando Magic se abre (para onboarding)
   useEffect(() => {
@@ -196,26 +201,24 @@ export default function MainLayout() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [showAIChat, currentNodeIdFromRoute])
 
-  // Resize del panel de Magic desde su borde izquierdo
-  function handleMagicResizeDown(e: React.MouseEvent) {
-    e.preventDefault()
-    magicResizingRef.current = true
+  // Resize del panel derecho desde su borde izquierdo
+  function handleRightPanelResizeDown(e: React.MouseEvent) {
     const startX = e.clientX
-    const startW = magicPanelW
+    const startW = rightPanelW
+    document.body.classList.add('sidebar-resizing')
     function onMove(ev: MouseEvent) {
-      if (!magicResizingRef.current) return
-      const delta = startX - ev.clientX
-      const newW = Math.max(320, Math.min(900, startW + delta))
-      setMagicPanelW(newW)
+      const w = Math.max(320, Math.min(900, startW + startX - ev.clientX))
+      setRightPanelW(w)
     }
     function onUp() {
-      magicResizingRef.current = false
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-      localStorage.setItem('magic-panel-w', String(magicPanelW))
+      document.body.classList.remove('sidebar-resizing')
+      localStorage.setItem('right-panel-w', String(rightPanelW))
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
     }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    e.preventDefault()
   }
 
   // Hover en la franja derecha → toggle Magic con delay
@@ -404,10 +407,14 @@ export default function MainLayout() {
         }
       }
       // ↓/↑ → ciclar entre paneles cuando uno está abierto
+      // También funciona si el input/textarea enfocado está vacío
       if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused && rightPanel) {
+        const inputEl = active as HTMLInputElement | null
+        const isNonEmptyInput = (active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA')
+          && (inputEl?.value || '') !== ''
+        const isContentEditable = !!active?.isContentEditable && (active.textContent || '') !== ''
+        if (!isNonEmptyInput && !isContentEditable && rightPanel) {
           e.preventDefault()
           cyclePanel(e.key === 'ArrowDown' ? 'down' : 'up')
         }
@@ -749,24 +756,28 @@ export default function MainLayout() {
       {/* ── Columna derecha unificada — Magic, Filtro o Planificador ── */}
       {rightPanel && (
         <div className="right-panel-unified" style={{
-          width: rightPanel === 'magic' ? magicPanelW : 380,
+          width: rightPanelW,
           display: 'flex', flexDirection: 'column',
           borderLeft: '1px solid var(--border)',
           flexShrink: 0, overflow: 'hidden',
           position: 'relative',
         }}>
-          {rightPanel === 'magic' && (
-            <>
-              <div className="magic-panel-resize-bar" onMouseDown={handleMagicResizeDown} />
+          <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
+          <div
+            key={panelKey}
+            className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
+          >
+            {rightPanel === 'magic' && (
               <MagicChat mode="panel" onClose={() => setRightPanel(null)} currentNodeId={currentNodeIdFromRoute} />
-            </>
-          )}
-          {rightPanel === 'filter' && (
-            <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setRightPanel(null)} />
-          )}
-          {rightPanel === 'planner' && (
-            <PlannerPanel onClose={() => setRightPanel(null)} />
-          )}
+            )}
+            {rightPanel === 'filter' && (
+              <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setRightPanel(null)} />
+            )}
+            {rightPanel === 'planner' && (
+              <PlannerPanel onClose={() => setRightPanel(null)} />
+            )}
+          </div>
         </div>
       )}
 

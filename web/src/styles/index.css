@@ -11165,6 +11165,18 @@ textarea:focus-visible,
   background: rgba(139, 92, 246, 0.18);
 }
 
+/* ── Right panel slide animation ─────────────────────────────────────── */
+@keyframes rightPanelSlideDown {
+  from { transform: translateY(-18px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes rightPanelSlideUp {
+  from { transform: translateY(18px);  opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.right-panel-slide--down { animation: rightPanelSlideDown 0.2s cubic-bezier(0.4,0,0.2,1); }
+.right-panel-slide--up   { animation: rightPanelSlideUp   0.2s cubic-bezier(0.4,0,0.2,1); }
+
 .magic-chat-modal {
   width: 100%;
   background: var(--bg-primary);
