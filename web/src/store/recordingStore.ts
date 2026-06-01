@@ -70,17 +70,15 @@ class RecordingStore {
 
     if (this.micStream) this._startAudioMeter(this.micStream)
 
-    // Chrome silenciosamente resetea su buffer de resultados sin disparar onend.
-    // Solución: guardar el transcript MÁXIMO visto en un timer cada 2s.
-    // Aunque Chrome resetee a las últimas 2 palabras, savedMax conserva todo lo anterior.
-    let savedMax = ''
+    // texto permanente = todo lo confirmado (isFinal de todas las sesiones anteriores + interim guardado en onend)
+    let permanent = ''
+
+    // Timer cada 1.5s: actualiza finalText con lo que tenemos hasta ahora
+    // (por si el usuario para manualmente entre snapshots)
     const snapshotTimer = setInterval(() => {
       if (this.phase !== 'recording') { clearInterval(snapshotTimer); return }
-      if (this.transcript.length > savedMax.length) {
-        savedMax = this.transcript
-        this.finalText = savedMax
-      }
-    }, 2000)
+      this.finalText = this.transcript.trim()
+    }, 1500)
 
     const createSession = () => {
       if (this.phase !== 'recording') return
@@ -89,20 +87,23 @@ class RecordingStore {
       rec.interimResults = true
       rec.lang = 'es-ES'
 
-      let sessionAccum = ''   // resultados isFinal de ESTA sesión
+      let sessionFinals = ''  // isFinal acumulados EN ESTA sesión (desde resultIndex)
+      let liveInterim = ''
 
       rec.onresult = (event: SpeechRecognitionEvent) => {
-        let newFinal = ''
+        // Solo procesar resultados nuevos (desde resultIndex)
+        let newFinals = ''
         let interim = ''
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const t = event.results[i][0].transcript
-          if (event.results[i].isFinal) newFinal += t + ' '
+          if (event.results[i].isFinal) newFinals += t + ' '
           else interim = t
         }
-        if (newFinal) sessionAccum += newFinal
-        // transcript = lo mejor que tenemos: max guardado + acumulado sesión + interim actual
-        const best = savedMax.length > sessionAccum.length ? savedMax : sessionAccum
-        this.transcript = best + interim
+        if (newFinals) sessionFinals += newFinals
+        liveInterim = interim
+        // transcript = todo lo anterior + finals de esta sesión + interim actual
+        this.transcript = permanent + sessionFinals + liveInterim
+        this.finalText = (permanent + sessionFinals).trim()
         this.notify()
       }
 
@@ -115,12 +116,12 @@ class RecordingStore {
 
       rec.onend = () => {
         if (this.phase !== 'recording') return
-        // Al terminar sesión, asegurar que el transcript actual quede en savedMax
-        if (this.transcript.length > savedMax.length) {
-          savedMax = this.transcript
-          this.finalText = savedMax
-          this.notify()
-        }
+        // Guardar todo lo de esta sesión en permanent antes de la siguiente
+        const sessionText = (sessionFinals + liveInterim).trim()
+        if (sessionText) permanent = (permanent + sessionText + ' ').trimStart()
+        this.transcript = permanent
+        this.finalText = permanent.trim()
+        this.notify()
         setTimeout(createSession, 300)
       }
 
@@ -188,11 +189,11 @@ class RecordingStore {
   }
 
   stopRecording() {
-    // Usar el transcript más largo que tengamos (snapshot timer puede tener más)
-    const current = this.transcript.trim()
-    const saved = this.finalText.trim()
-    if (current.length > saved.length) this.finalText = current
-    else if (!saved && current) this.finalText = current
+    // finalText ya se mantiene actualizado por el timer y onresult
+    // Por si acaso, tomar el más largo entre transcript y finalText
+    const t = this.transcript.trim()
+    const f = this.finalText.trim()
+    if (t.length > f.length) this.finalText = t
     this.recognition?.stop()
     this.recognition = null
     this._stopInternal()
