@@ -711,18 +711,8 @@ export default function NodeView() {
   })()
 
   // Panel derecho de tareas: solo para el diario de HOY
-  // Panel derecho: fecha estable con useMemo para no re-disparar el useEffect de GCal en cada render
-  const diaryPanelDate = useMemo(() => {
-    if (!node.diaryDate) return null
-    const d = new Date(node.diaryDate)
-    const now = new Date()
-    const isToday = d.getFullYear() === now.getFullYear() &&
-                    d.getMonth() === now.getMonth() &&
-                    d.getDate() === now.getDate()
-    if (!isToday) return null
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    return today
-  }, [node.diaryDate])
+  // El panel de tareas de hoy se muestra en MainLayout (no aquí),
+  // así evitamos conflictos de CSS con el layout de NodeView.
 
   // Detect temporal node type (when viewing a year/month/week node directly)
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -1348,7 +1338,7 @@ export default function NodeView() {
 
   return (
     <div
-      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''} ${diaryPanelDate ? 'node-view--with-diary-panel' : ''}`}
+      className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
       onDragOver={handleViewDragOver}
       onDrop={handleViewDrop}
     >
@@ -2393,10 +2383,6 @@ export default function NodeView() {
         </div>
       </div>
 
-      {/* Panel derecho: tareas de hoy — solo al ver el diario de hoy */}
-      {diaryPanelDate && !focusMode && (
-        <DiaryRightPanel diaryDate={diaryPanelDate} />
-      )}
 
       {showChat && (
         <NodeChatPanel

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
@@ -34,6 +34,7 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import PlannerPanel from '../panels/PlannerPanel'
+import DiaryRightPanel from '../panels/DiaryRightPanel'
 import SearchPanel from '../panels/SearchPanel'
 import PaywallModal from '../paywall/PaywallModal'
 import CommandPalette from '../CommandPalette'
@@ -70,6 +71,21 @@ export default function MainLayout() {
   const [loadError, setLoadError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [plannerOpen, setPlannerOpen] = useState(false)
+
+  // Panel diario de hoy: se muestra cuando la URL es el nodo del diario de hoy
+  const diaryPanelDate = useMemo(() => {
+    if (!currentNodeIdFromRoute) return null
+    const node = s.getNode(currentNodeIdFromRoute)
+    if (!node?.diaryDate) return null
+    const d = new Date(node.diaryDate)
+    const now = new Date()
+    const isToday = d.getFullYear() === now.getFullYear() &&
+                    d.getMonth() === now.getMonth() &&
+                    d.getDate() === now.getDate()
+    if (!isToday) return null
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    return today
+  }, [currentNodeIdFromRoute, s])
 
   // R global hold-to-record
   const isRKeyDownRef = useRef(false)
@@ -688,6 +704,11 @@ export default function MainLayout() {
         </Routes>
         </Suspense>
       </main>
+
+      {/* ── Panel tareas de hoy — aparece al ver el diario de hoy ── */}
+      {diaryPanelDate && (
+        <DiaryRightPanel diaryDate={diaryPanelDate} />
+      )}
 
       {/* ── Planner Panel — timeline lateral derecho ── */}
       {plannerOpen && (
