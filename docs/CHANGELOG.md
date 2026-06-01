@@ -4,6 +4,31 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.4.59 — 1 junio 2026 · Bugs críticos outliner + UX
+
+### Cursor donde haces clic (CRÍTICO)
+El cursor del ratón ahora se coloca exactamente donde haces clic dentro de un nodo, en lugar de ir siempre al final. También se resuelve el problema de pérdida de foco al hacer clic. Incluye soporte correcto para clics en los badges de fecha/recurrencia.
+
+### Menú contextual siempre visible
+El menú de botón derecho ya no se corta por la parte inferior de la pantalla, independientemente de cuántas opciones tenga abiertas.
+
+### Triple clic selecciona todo el texto
+Haz triple clic en cualquier nodo para seleccionar todo su contenido.
+
+### Espejos eliminados al borrar el original
+Al eliminar un nodo (incluso con Backspace en un nodo vacío), los espejos que lo referencian se eliminan automáticamente.
+
+### Drag & drop mejorado — soporte de indentación
+Al arrastrar un nodo, suéltalo en el lado derecho de otro nodo para convertirlo en hijo (indentar). Suéltalo en el lado izquierdo para reordenar como hermano.
+
+### Badge de fecha en tareas y eventos
+Las tareas y eventos con fecha de vencimiento muestran un badge con la fecha ("hoy", "mañana", "lun 8 jun"). Las fechas pasadas aparecen en rojo.
+
+### Recurrencia "cada 2 lunes", "cada 3 martes"...
+El sistema de recurrencia ahora reconoce patrones como "cada 2 lunes" o "cada 3 martes" (semanal con intervalo en un día concreto).
+
+---
+
 ## Mac v9.4.16 · Web v9.4.46 — Junio 2026 · Actualizador automático verificado
 
 ### Actualizador automático — confirmado funcionando (Mac)
