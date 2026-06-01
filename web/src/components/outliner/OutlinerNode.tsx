@@ -1994,6 +1994,52 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setCtxCompletion(null)
   }
 
+  /** Crea la siguiente instancia de un nodo recurrente en el día correcto del diario */
+  function spawnRecurrence(rec: RecurrenceConfig) {
+    try {
+      const parent = store.getNode(node.parentId || '')
+      const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
+      baseDate.setHours(0, 0, 0, 0)
+      const nextDate = nextRecurrence(baseDate, rec)
+      const dayNode = ensureDayPath(nextDate)
+      const sibs = store.children(dayNode.id)
+      const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch {}
+
+      // Calcular el due del nuevo nodo:
+      // - Evento con hora → preservar la hora en el nuevo día
+      // - Tarea o evento sin hora → usar la fecha del nuevo día
+      let newDue: string | undefined
+      if (node.due) {
+        const origDue = new Date(node.due)
+        const hasTime = origDue.getHours() !== 0 || origDue.getMinutes() !== 0
+        if (hasTime) {
+          newDue = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate(),
+            origDue.getHours(), origDue.getMinutes()).toISOString()
+        } else {
+          newDue = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate()).toISOString()
+        }
+      }
+
+      const newNode = store.createNode({
+        text: node.text,
+        parentId: dayNode.id,
+        siblingOrder: lastOrder + 1000,
+        isTask: !node.isEvent,  // tarea si no es evento
+        types: node.types,
+      })
+      store.updateNode(newNode.id, {
+        ...(node.isEvent ? { isEvent: true } : { status: 'pending' }),
+        ...(newDue ? { due: newDue } : {}),
+        recurrence: node.recurrence ?? undefined,
+        extraData: JSON.stringify({ ...ed, _recurrence: rec }),
+      })
+    } catch (e) {
+      console.error('[recurrence] Error creando siguiente instancia:', e)
+    }
+  }
+
   function toggleTask() {
     if (node.status === null) {
       const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
@@ -2012,33 +2058,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           rec = ed._recurrence as RecurrenceConfig | undefined
         } catch {}
       }
-      if (rec) {
-        try {
-          const parent = store.getNode(node.parentId || '')
-          const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
-          baseDate.setHours(0, 0, 0, 0)
-          const nextDate = nextRecurrence(baseDate, rec)
-          const dayNode = ensureDayPath(nextDate)
-          const sibs = store.children(dayNode.id)
-          const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-          let ed: Record<string, unknown> = {}
-          try { ed = JSON.parse(node.extraData || '{}') } catch {}
-          const newNode = store.createNode({
-            text: node.text,
-            parentId: dayNode.id,
-            siblingOrder: lastOrder + 1000,
-            isTask: true,
-            types: node.types,
-          })
-          store.updateNode(newNode.id, {
-            status: 'pending',
-            recurrence: node.recurrence ?? undefined,
-            extraData: JSON.stringify({ ...ed, _recurrence: rec }),
-          })
-        } catch (e) {
-          console.error('[recurrence] Error creando siguiente instancia:', e)
-        }
-      }
+      if (rec) spawnRecurrence(rec)
     } else {
       store.updateNode(node.id, { status: null })
     }
@@ -2063,33 +2083,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           rec = ed._recurrence as RecurrenceConfig | undefined
         } catch {}
       }
-      if (rec) {
-        try {
-          const parent = store.getNode(node.parentId || '')
-          const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
-          baseDate.setHours(0, 0, 0, 0)
-          const nextDate = nextRecurrence(baseDate, rec)
-          const dayNode = ensureDayPath(nextDate)
-          const sibs = store.children(dayNode.id)
-          const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
-          let ed: Record<string, unknown> = {}
-          try { ed = JSON.parse(node.extraData || '{}') } catch {}
-          const newNode = store.createNode({
-            text: node.text,
-            parentId: dayNode.id,
-            siblingOrder: lastOrder + 1000,
-            isTask: true,
-            types: node.types,
-          })
-          store.updateNode(newNode.id, {
-            status: 'pending',
-            recurrence: node.recurrence ?? undefined,
-            extraData: JSON.stringify({ ...ed, _recurrence: rec }),
-          })
-        } catch (e) {
-          console.error('[recurrence] Error creando siguiente instancia:', e)
-        }
-      }
+      if (rec) spawnRecurrence(rec)
     }
   }
 
