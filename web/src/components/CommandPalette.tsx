@@ -480,7 +480,7 @@ export default function CommandPalette({ onClose }: Props) {
   useEffect(() => { setActiveIdx(0) }, [query])
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') { onClose(); return }
+    if (e.key === 'Escape') { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); onClose(); return }
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, items.length - 1)) }
     if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)) }
     if (e.key === 'Enter') { e.preventDefault(); if (items[activeIdx]) items[activeIdx].action() }
