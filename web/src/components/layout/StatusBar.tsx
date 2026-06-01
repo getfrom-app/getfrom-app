@@ -247,7 +247,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
             title={updateError}
             onClick={() => setUpdateError(null)}
           >
-            ⚠ Error al actualizar — {updateError.slice(0, 60)}
+            ⚠ Error — {updateError.slice(0, 200)}
           </span>
           <span className="footer-sep" />
         </>
