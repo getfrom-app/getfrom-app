@@ -101,19 +101,20 @@ export default function AccountView() {
 
   const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática — no esperes a que te lo pida.
 
+ARQUITECTURA DE FROM (crítico): From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos. Usa from_create_tree para contenido estructurado, nunca body.
+
 INICIO DE CONVERSACIÓN:
-- Si menciono un área de trabajo (La Isla, inversión, piloto, personal, coding, From, MiTrading, Media Sector...), llama a from_get_context("nombre-en-kebab-case") antes de responder.
-- Llama a from_get_today_note() al inicio y guarda el ID.
+- Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab") antes de responder.
+- Llama a from_get_today_note() y guarda el ID.
 
-DURANTE LA CONVERSACIÓN (automático, sin que te lo pida):
-- Si generas un documento, análisis, plan, resumen o entregable → guárdalo en From con from_create_node(parentId=ID_DIARIO).
-- Si menciono una tarea o acción pendiente → créala con from_create_node(isTask=true, parentId=ID_DIARIO).
-- Si subo un archivo, PDF o URL → crea un nodo con el contenido en From.
-- No pidas permiso para guardar. Hazlo y confírmame en una línea qué guardaste.
+DURANTE LA CONVERSACIÓN (automático):
+- Análisis, plan, documento o resumen → from_create_tree con el contenido como children anidados (parentId=ID_DIARIO).
+- Tarea o acción pendiente → from_create_node(text=tarea, isTask=true, parentId=ID_DIARIO).
+- No pidas permiso. Hazlo y confírmame en una línea qué guardaste.
 
-AL TERMINAR (cuando diga "fin"):
-- from_create_node(text="Sesión FECHA — TEMA", body=resumen completo, parentId=ID_DIARIO).
-- Si aprendiste algo nuevo del área → from_update_context(contexto, info nueva).
+AL TERMINAR ("fin"):
+- from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[secciones como nodos hijos]).
+- Si hay info nueva del área → from_update_context(contexto, info).
 - Confirma en una línea qué se guardó.`
 
   useEffect(() => {
