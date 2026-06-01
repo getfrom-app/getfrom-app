@@ -59,6 +59,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
   const isRecording = r.phase === 'recording'
   const spaceHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const spaceIsRecordingRef = useRef(false)
+  // Ref a analyze para usarla en el Space handler sin closure stale
+  const analyzeRef = useRef<((t: string) => void) | null>(null)
 
   // Sincronizar transcript de grabación en el input en tiempo real
   useEffect(() => {
@@ -132,7 +134,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
             sel.addRange(range)
             const newText = inputRef.current.textContent || ''
             setText(newText)
-            analyze(newText)
+            analyzeRef.current?.(newText)
           }
         }
       }
@@ -144,7 +146,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
       window.removeEventListener('keyup', onKeyUp, true)
       if (spaceHoldTimerRef.current) clearTimeout(spaceHoldTimerRef.current)
     }
-  }, [analyze])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -201,6 +203,9 @@ export default function QuickCaptureNode({ onClose }: Props) {
       setCtxSuggestion(null)
     }
   }, [])
+
+  // Mantener ref siempre actualizada
+  analyzeRef.current = analyze
 
   function getCurrentText() {
     return inputRef.current?.textContent || ''
