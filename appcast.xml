@@ -3,6 +3,15 @@
   <channel>
     <title>From Updates</title>
     <item>
+      <title>From 9.4.4</title>
+      <pubDate>Mon, 01 Jun 2026 11:00:00 +0200</pubDate>
+      <sparkle:version>9.4.4</sparkle:version>
+      <sparkle:shortVersionString>9.4.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+      <description><![CDATA[<ul><li>Actualizador automático integrado — futuras versiones con un clic desde la barra inferior</li><li>Sync Rust 15s mejorado</li><li>Escape en ⌘K no sube en el árbol</li></ul>]]></description>
+      <enclosure url="https://github.com/albertolezaun-afk/from-mac/releases/download/v9.4.4/From.dmg" sparkle:edSignature="o5N49S86y7Oho468H9sZ70bKLs7IgTO31+AhAdwm30rQNpudscIM6mPXCdNt+aLwSMGD210zoqUviqCqnNJ9Cg==" length="5661011" type="application/octet-stream"/>
+    </item>
+    <item>
       <title>From 9.4.3</title>
       <pubDate>Mon, 01 Jun 2026 10:50:00 +0200</pubDate>
       <sparkle:version>9.4.3</sparkle:version>
