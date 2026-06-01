@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.4.41'
+export const WEB_VERSION = 'v9.4.42'
 
 interface Props {
   isSyncing: boolean
@@ -28,6 +28,15 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [macVersion, setMacVersion] = useState<string | null>(null)
+
+  // Leer versión nativa Tauri (solo Mac)
+  useEffect(() => {
+    if (!isTauriEnv) return
+    import('@tauri-apps/api/app').then(({ getVersion }) => {
+      getVersion().then(v => setMacVersion(v)).catch(() => {})
+    }).catch(() => {})
+  }, [])
 
   // Verificar actualizaciones disponibles (solo en Mac Tauri)
   useEffect(() => {
@@ -197,7 +206,9 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       )}
 
       {/* Versión */}
-      <span className="footer-version">{WEB_VERSION}</span>
+      <span className="footer-version">
+        {WEB_VERSION}{macVersion ? ` · Mac ${macVersion}` : ''}
+      </span>
     </div>
   )
 }
