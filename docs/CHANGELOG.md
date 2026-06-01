@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.4.60 — 1 junio 2026 · Fix empty state en nodos vacíos
+
+### "Nota vacía" ya no aparece al abrir un nodo sin contenido
+Al abrir un nodo vacío ya no aparece el mensaje "Nota vacía / Haz clic aquí...". Se muestra directamente el bullet vacío listo para escribir.
+
+---
+
 ## Web v9.4.59 — 1 junio 2026 · Bugs críticos outliner + UX
 
 ### Cursor donde haces clic (CRÍTICO)
