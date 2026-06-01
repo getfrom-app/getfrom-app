@@ -377,6 +377,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
+      // Si hay sugerencia de contexto activa, Enter la acepta (no guarda aún)
+      if (ctxSuggestion) { acceptCtx(); return }
       saveAndClose()
     }
   }
@@ -524,14 +526,21 @@ export default function QuickCaptureNode({ onClose }: Props) {
           </div>
         )}
 
-        {/* Ghost text — solo si hay predicción */}
-        {!atPicker && ghostLabel && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingLeft: 24 }}>
-            <span className="from-ghost">
-              <span className="from-ghost-text">{ghostLabel}</span>
-              <span className="from-ghost-sep">·</span>
-              <span className="from-ghost-key">{ghostAcceptKey}</span>
-            </span>
+        {/* Ghost text — espacio siempre reservado para no expandir el modal */}
+        {!atPicker && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            marginTop: 8, paddingLeft: 24,
+            minHeight: 22,
+            visibility: ghostLabel ? 'visible' : 'hidden',
+          }}>
+            {ghostLabel && (
+              <span className="from-ghost">
+                <span className="from-ghost-text">{ghostLabel}</span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">{ghostAcceptKey}</span>
+              </span>
+            )}
           </div>
         )}
       </div>
