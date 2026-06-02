@@ -30,14 +30,21 @@ function normalizeNFD(s: string) {
 
 // ── Force type shortcuts inline ──────────────────────────────────────────────
 
-type ForceType = 'task' | 'event' | 'note' | null
-const FORCE_SHORTCUTS: Record<string, ForceType> = { '-t': 'task', '-e': 'event', '-n': 'note' }
+type ForceType = 'task' | 'event' | 'note' | 'bucle' | null
+const FORCE_SHORTCUTS: Record<string, ForceType> = { '-t': 'task', '-e': 'event', '-n': 'note', '-b': 'bucle' }
 
 function detectForceType(t: string): { forceType: ForceType; cleanText: string } {
+  const trimmed = t.trimEnd()
+  // Shortcuts: -t, -e, -n, -b
   for (const [shortcut, type] of Object.entries(FORCE_SHORTCUTS)) {
-    if (t.trimEnd().endsWith(' ' + shortcut) || t.trimEnd() === shortcut) {
-      return { forceType: type, cleanText: t.trimEnd().slice(0, -shortcut.length).trimEnd() }
+    if (trimmed.endsWith(' ' + shortcut) || trimmed === shortcut) {
+      return { forceType: type, cleanText: trimmed.slice(0, -shortcut.length).trimEnd() }
     }
+  }
+  // Palabra "bucle" al final del texto (cualquier case): "Casa Alicante bucle"
+  if (/\s+bucle$/i.test(trimmed) || /^bucle$/i.test(trimmed)) {
+    const clean = trimmed.replace(/\s*bucle$/i, '').trim()
+    return { forceType: 'bucle', cleanText: clean }
   }
   return { forceType: null, cleanText: t }
 }
@@ -455,16 +462,18 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
     const dp = extractDateFromEnd(effectiveText)
     const cleanText = dp ? dp.cleanText : effectiveText
-    const isTask = ft === 'task' || (ft !== 'note' && ft !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText)))))
+    const isBucle = ft === 'bucle'
+    const isTask = !isBucle && (ft === 'task' || (ft !== 'note' && ft !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))))))
     const isEvent = ft === 'event'
 
     const ctxMatch = rawText.match(/@([\wÀ-ɏ\s\-]+)/g)
     const types: string[] = []
+    if (isBucle) types.push('bucle')
     if (ctxMatch) {
       for (const m of ctxMatch) {
         const name = m.slice(1).trim()
         const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-        if (slug) types.push(slug)
+        if (slug && slug !== 'bucle') types.push(slug)  // evitar duplicado si escribió @bucle
       }
     }
 
@@ -473,6 +482,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       parentId: today.id,
       siblingOrder: lastOrder + 1000,
       ...(isTask ? { isTask: true } : {}),
+      ...(types.length > 0 ? { types } : {}),
     })
 
     if (dp?.parsed.date) {
@@ -497,14 +507,10 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       store.updateNode(node.id, { status: 'pending' })
     }
 
-    if (types.length > 0) {
-      store.updateNode(node.id, { types })
-    }
-
     store.sync(true).catch(() => {})
 
-    const label = isEvent ? 'Evento' : isTask ? 'Tarea' : 'Nota'
-    showToast(`✓ ${label} creada`)
+    const label = isEvent ? 'Evento' : isTask ? 'Tarea' : isBucle ? 'Bucle' : 'Nota'
+    showToast(`✓ ${label} creado`)
     onClose()
   }
 
@@ -772,13 +778,14 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       const typed = ctxSuggestion.displayName.slice(0, ctxSuggestion.typedLen)
       return `@${typed}${ctxSuggestion.ghost}`
     }
+    if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
     if (taskPrediction) return '☐ tarea'
     if (datePrediction) return datePrediction.parsed.label + (datePrediction.timeStr ? ' · ' + datePrediction.timeStr : '')
     return null
   })()
 
-  const ghostAcceptKey = ctxSuggestion ? '⇥' : (taskPrediction && !datePrediction) ? '↵' : '⇥'
+  const ghostAcceptKey = ctxSuggestion ? '⇥' : (forceType === 'bucle' || (taskPrediction && !datePrediction)) ? '↵' : '⇥'
 
   // ── Icon helper ────────────────────────────────────────────────────────────
   function itemIcon(item: PaletteItem): string {
@@ -861,7 +868,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
             color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)',
             fontSize: 14, flexShrink: 0,
           }}>
-            {forceType === 'event' ? '📅' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
+            {forceType === 'event' ? '📅' : forceType === 'bucle' ? '⟲' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
           </span>
           <div
             ref={inputRef}
