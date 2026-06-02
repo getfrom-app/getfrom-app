@@ -65,17 +65,27 @@ function isOverdue(dateStr: string | null | undefined): boolean {
   return d < todayMidnight()
 }
 
-/** Ayer y antes — due o diaryDate estrictamente antes de hoy */
+/** Ayer y antes
+ * - Nodos de diario (isDiaryEntry): usa diaryDate
+ * - Tareas/notas regulares: usa SOLO due (diaryDate es metadata de dónde se creó, no vencimiento)
+ */
 function isPast(node: Node): boolean {
-  const ref = node.due || node.diaryDate
-  if (!ref) return false
-  const d = new Date(ref)
-  return d < todayMidnight()
+  // Para diarios: usar diaryDate
+  if (node.isDiaryEntry) {
+    if (!node.diaryDate) return false
+    return new Date(node.diaryDate) < todayMidnight()
+  }
+  // Para tareas/notas: solo la fecha de vencimiento explícita
+  if (!node.due) return false
+  return new Date(node.due) < todayMidnight()
 }
 
-/** Mañana en adelante — due o diaryDate estrictamente después de hoy */
+/** Mañana en adelante
+ * - Nodos de diario: usa diaryDate
+ * - Tareas/notas: usa due
+ */
 function isFuture(node: Node): boolean {
-  const ref = node.due || node.diaryDate
+  const ref = node.isDiaryEntry ? node.diaryDate : node.due
   if (!ref) return false
   const d = new Date(ref)
   const tomorrow = todayMidnight(); tomorrow.setDate(tomorrow.getDate() + 1)
