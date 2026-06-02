@@ -709,16 +709,20 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   // ── handleKeyDown ──────────────────────────────────────────────────────────
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    // Siempre capturar — ninguna tecla debe llegar al árbol ni a MainLayout
+    // Para teclas de navegación: preventDefault PRIMERO para evitar que el
+    // contentEditable mueva el cursor antes de que podamos capturar el evento
+    const isNav = ['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)
+    if (isNav) e.preventDefault()
+
+    // Siempre detener la propagación — ninguna tecla llega al árbol ni a MainLayout
     e.stopPropagation();
     (e.nativeEvent as Event).stopImmediatePropagation()
 
     // @ picker toma prioridad
     if (atPicker) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setAtPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
-      if (e.key === 'ArrowUp') { e.preventDefault(); setAtPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p); return }
+      if (e.key === 'ArrowDown') { setAtPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
+      if (e.key === 'ArrowUp') { setAtPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p); return }
       if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault()
         const item = atPicker.items[atPicker.activeIdx]
         if (item) selectAtItem(item)
         return
@@ -737,8 +741,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       onClose(); return
     }
 
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, items.length - 1)); return }
-    if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); return }
+    if (e.key === 'ArrowDown') { setActiveIdx(i => Math.min(i + 1, items.length - 1)); return }
+    if (e.key === 'ArrowUp') { setActiveIdx(i => Math.max(i - 1, 0)); return }
 
     if (e.key === 'Tab') {
       e.preventDefault()
@@ -802,17 +806,19 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{
-        background: 'var(--bg-primary)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
-        padding: '14px 16px 12px',
-        width: 560,
-        maxWidth: '90vw',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
+      <div
+        onKeyDown={handleKeyDown as unknown as React.KeyboardEventHandler<HTMLDivElement>}
+        style={{
+          background: 'var(--bg-primary)',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
+          padding: '14px 16px 12px',
+          width: 560,
+          maxWidth: '90vw',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
 
         {/* Subview header */}
         {view !== 'default' && (
@@ -975,6 +981,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
             {items.map((item, idx) => (
               <button
                 key={item.id}
+                tabIndex={-1}
                 data-active={idx === activeIdx ? 'true' : 'false'}
                 onMouseDown={e => { e.preventDefault(); item.action() }}
                 onMouseEnter={() => setActiveIdx(idx)}
