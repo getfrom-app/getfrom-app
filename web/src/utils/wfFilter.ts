@@ -163,29 +163,10 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
       // @tag o #tag
       if (token.startsWith('@') || token.startsWith('#')) {
         const tagName = token.slice(1)
-        // Solo comprobar types[] — NO buscar en el texto del nodo.
-        // El filtro de contexto debe mostrar nodos con ese contexto asignado,
-        // no nodos que mencionen el nombre del contexto en su texto.
-        const hasType = (node.types || []).some(t => normalizeText(t).includes(tagName))
-        const isStructuralChild = (() => {
-          let contextNode: Node | null = null
-          for (const [, n] of nodes) {
-            if (n.deletedAt) continue
-            const slug = normalizeText(n.text || '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-            if (slug === tagName || slug.endsWith('/' + tagName)) { contextNode = n; break }
-          }
-          if (!contextNode) return false
-          const ctxId = contextNode.id
-          let cur = nodes.get(node.id)
-          const vis = new Set<string>()
-          while (cur?.parentId && !vis.has(cur.id)) {
-            vis.add(cur.id)
-            if (cur.parentId === ctxId) return true
-            cur = nodes.get(cur.parentId)
-          }
-          return false
-        })()
-        return hasType || isStructuralChild
+        // Solo comprobar types[] — el filtro de contexto muestra nodos con
+        // ese contexto ASIGNADO (@contexto en types[]), no descendientes del
+        // nodo de definición en 🧠 Contexto (isStructuralChild eliminado).
+        return (node.types || []).some(t => normalizeText(t).includes(tagName))
       }
 
       // [[wiki-link]]
