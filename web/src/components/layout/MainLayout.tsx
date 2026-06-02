@@ -546,10 +546,10 @@ export default function MainLayout() {
         const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .wf-topbar-dropdown')
         if (hasFloatingMenu) return
 
-        // Prioridad 2.5: deseleccionar contexto activo → cerrar panel derecho
+        // Prioridad 2.5: volver a lista de contextos (no cerrar el panel)
         if (rightPanel === 'context') {
-          setRightPanel(null)
-          setContextNodeId(null)
+          setRightPanel('context-list')
+          setContextNodeId(null)  // limpia filtro del árbol
           return
         }
 
