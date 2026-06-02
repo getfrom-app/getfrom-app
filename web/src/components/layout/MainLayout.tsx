@@ -58,38 +58,24 @@ import { invalidatePredictionCache } from '../../store/predictionStore'
 // ── Panel derecho: nodo contexto — outliner editable completo ────────────────
 import Outliner from '../outliner/Outliner'
 
-function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const node = s.getNode(nodeId)
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
+      {/* Header — solo título */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 14px', borderBottom: '1px solid var(--border)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
           {node.text || t('common.noTitle')}
         </span>
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          <button
-            onClick={() => navigate(`/node/${nodeId}`)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 13, padding: '2px 6px', borderRadius: 4 }}
-            title="Abrir nodo completo"
-          >↗</button>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 18, padding: '0 6px', lineHeight: 1, borderRadius: 4 }}
-            title="Cerrar"
-          >×</button>
-        </div>
       </div>
-      {/* Outliner editable — mismos nodos que en el árbol principal */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      {/* Outliner editable con margen superior para separar del header */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 8 }}>
         <Outliner parentId={nodeId} autoFocusEmpty={true} />
       </div>
     </div>

@@ -2725,8 +2725,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 }
               }
             }}
-            data-placeholder={isFirstEmpty ? "Escribe '/' para comandos · Espacio para Magic" : "Escribe algo..."}
-            data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos · Espacio para Magic" : undefined}
+            data-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : "Escribe algo..."}
+            data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : undefined}
             onPaste={e => {
               const clipText = e.clipboardData.getData('text/plain')
               const urlRegex = /^https?:\/\/[^\s]+$/
