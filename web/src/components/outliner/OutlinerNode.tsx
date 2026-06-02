@@ -3360,9 +3360,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         } catch { /* fallthrough */ }
         // Excluir tareas atómicas del body — viven en el panel derecho (Tareas asociadas)
         let bodyChildren = children.filter(c => !(c.isAtomic && c.status !== null))
-        // Con filtro smart activo y este nodo es ancestro: solo mostrar hijos que
-        // son match o ancestros de match. Evita renderizar miles de hermanos irrelevantes.
-        if (filterMatchIds && filterMatchIds.size > 0 && anyDescendantMatches) {
+        // Con filtro smart activo y este nodo tiene hijos-match: solo mostrar hijos que
+        // son match o ancestros de match. Evita renderizar hermanos irrelevantes.
+        // hasMatchingDescendants cubre el caso en que el padre también coincide con el filtro
+        // (anyDescendantMatches es false si matchesFilter es true).
+        if (filterMatchIds && filterMatchIds.size > 0 && (anyDescendantMatches || hasMatchingDescendants)) {
           bodyChildren = bodyChildren.filter(c =>
             filterMatchIds.has(c.id) || filterAncestorIds?.has(c.id)
           )
