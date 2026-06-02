@@ -70,20 +70,20 @@ class RecordingStore {
 
     if (this.micStream) this._startAudioMeter(this.micStream)
 
-    // transcriptBuffer: nunca encoge. Cuando Chrome resetea su buffer silenciosamente
-    // y transcript se achica a las últimas palabras, transcriptBuffer conserva todo.
-    let transcriptBuffer = ''
+    // maxSeen: texto más largo visto en cualquier momento. NUNCA encoge.
+    // Soluciona el bug de Chrome que descarta resultados intermedios silenciosamente.
+    let maxSeen = ''
 
-    // Timer cada 800ms: actualiza el buffer con el transcript actual si es más largo
-    const snapshotTimer = setInterval(() => {
-      if (this.phase !== 'recording') { clearInterval(snapshotTimer); return }
-      if (this.transcript.length > transcriptBuffer.length) {
-        transcriptBuffer = this.transcript
-        this.finalText = transcriptBuffer.trim()
+    // permanent: texto confirmado de sesiones anteriores (cuando Chrome reinicia la sesión)
+    let permanent = ''
+
+    const updateMax = (text: string) => {
+      const trimmed = text.trim()
+      if (trimmed.length > maxSeen.length) {
+        maxSeen = trimmed
+        this.finalText = maxSeen
       }
-    }, 800)
-
-    let permanent = ''  // texto confirmado de sesiones anteriores
+    }
 
     const createSession = () => {
       if (this.phase !== 'recording') return
@@ -92,26 +92,23 @@ class RecordingStore {
       rec.interimResults = true
       rec.lang = 'es-ES'
 
-      let sessionFinals = ''
-      let liveInterim = ''
-
       rec.onresult = (event: SpeechRecognitionEvent) => {
-        let newFinals = ''
-        let interim = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const t = event.results[i][0].transcript
-          if (event.results[i].isFinal) newFinals += t + ' '
-          else interim = t
+        // Leer TODOS los resultados actuales de Chrome (no solo desde resultIndex)
+        // para detectar si Chrome ha descartado texto previo
+        let chromeAll = ''
+        for (let i = 0; i < event.results.length; i++) {
+          chromeAll += event.results[i][0].transcript
+          if (event.results[i].isFinal) chromeAll += ' '
         }
-        if (newFinals) sessionFinals += newFinals
-        liveInterim = interim
-        const current = permanent + sessionFinals + liveInterim
-        this.transcript = current
-        // Guardar el máximo visto
-        if (current.length > transcriptBuffer.length) {
-          transcriptBuffer = current
-          this.finalText = transcriptBuffer.trim()
-        }
+
+        // Texto completo = lo confirmado de sesiones anteriores + lo actual de Chrome
+        const full = (permanent + ' ' + chromeAll).trim()
+
+        // Si Chrome ha descartado texto (full < maxSeen), mantener maxSeen
+        // Si Chrome tiene más texto, actualizarlo
+        const display = full.length >= maxSeen.length ? full : maxSeen
+        this.transcript = display
+        updateMax(display)
         this.notify()
       }
 
@@ -124,14 +121,10 @@ class RecordingStore {
 
       rec.onend = () => {
         if (this.phase !== 'recording') return
-        // Al terminar sesión: guardar todo en permanent usando el máximo visto
-        const best = transcriptBuffer.length > (permanent + sessionFinals + liveInterim).length
-          ? transcriptBuffer
-          : (permanent + sessionFinals + liveInterim).trim()
-        permanent = best ? best + ' ' : permanent
-        this.transcript = permanent.trim()
-        this.finalText = permanent.trim()
-        if (permanent.length > transcriptBuffer.length) transcriptBuffer = permanent.trim()
+        // Al terminar sesión: guardar el máximo acumulado como permanent
+        permanent = maxSeen
+        this.transcript = permanent
+        this.finalText = permanent
         this.notify()
         setTimeout(createSession, 300)
       }
@@ -200,11 +193,9 @@ class RecordingStore {
   }
 
   stopRecording() {
-    // Usar el más largo entre transcript y finalText (finalText puede tener más del buffer)
+    // finalText siempre tiene el máximo visto (maxSeen). Asegurar coherencia con transcript.
     const t = this.transcript.trim()
-    const f = this.finalText.trim()
-    if (t.length > f.length) this.finalText = t
-    // Si finalText sigue vacío, usar transcript
+    if (t.length > this.finalText.length) this.finalText = t
     if (!this.finalText && t) this.finalText = t
     this.recognition?.stop()
     this.recognition = null
