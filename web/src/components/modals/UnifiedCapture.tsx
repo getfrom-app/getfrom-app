@@ -316,11 +316,13 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
       for (const n of ctxNodes) {
         const normName = normalizeNFD(n.text)
-        for (let len = Math.min(t.length, normName.length - 1); len >= 3; len--) {
+        // Incluir el nombre completo (normName.length, sin -1) y sin excluir tail===normName
+        // para que "from" detecte "From" igual que "fro"
+        for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
           const tail = normT.slice(-len)
           const charBefore = t[t.length - len - 1]
           const isWordStart = !charBefore || /[\s,;:([\-]/.test(charBefore)
-          if (isWordStart && normName.startsWith(tail) && tail !== normName) {
+          if (isWordStart && normName.startsWith(tail)) {
             const ghost = n.text.slice(len)
             found = { nodeId: n.id, displayName: n.text, typedLen: len, ghost }
             break
