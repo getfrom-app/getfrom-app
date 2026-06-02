@@ -511,13 +511,15 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(s => s.siblingOrder)) : 0
 
     const { forceType: ft, cleanText: afterForce } = detectForceType(rawText)
-    const effectiveText = ft ? afterForce : rawText
+    // Si el shortcut ya fue eliminado del texto (lockedForceTypeRef), usarlo como fallback
+    const effective = ft ?? lockedForceTypeRef.current
+    const effectiveText = effective ? afterForce : rawText
 
     const dp = extractDateFromEnd(effectiveText)
     const cleanText = dp ? dp.cleanText : effectiveText
-    const isBucle = ft === 'bucle'
-    const isTask = !isBucle && (ft === 'task' || (ft !== 'note' && ft !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))))))
-    const isEvent = ft === 'event'
+    const isBucle = effective === 'bucle'
+    const isTask = !isBucle && (effective === 'task' || (effective !== 'note' && effective !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))))))
+    const isEvent = effective === 'event'
 
     const types: string[] = []
     if (isBucle) types.push('bucle')
@@ -566,7 +568,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
     store.sync(true).catch(() => {})
 
-    const label = isEvent ? 'Evento' : isTask ? 'Tarea' : isBucle ? 'Bucle' : 'Nota'
+    const label = isEvent ? 'Evento' : isBucle ? 'Bucle' : isTask ? 'Tarea' : 'Nota'
     setAssignedCtx([])
     lockedForceTypeRef.current = null
     showToast(`✓ ${label} creado`)
