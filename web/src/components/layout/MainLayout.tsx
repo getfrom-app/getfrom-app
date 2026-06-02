@@ -780,7 +780,10 @@ export default function MainLayout() {
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
       )}
       {showCommandPalette && (
-        <CommandPalette onClose={() => setShowCommandPalette(false)} />
+        <CommandPalette
+          onClose={() => setShowCommandPalette(false)}
+          onSelectContext={(nodeId) => { handleSelectContext(nodeId); setShowCommandPalette(false) }}
+        />
       )}
       {/* Botón FAB de captura rápida */}
       <button

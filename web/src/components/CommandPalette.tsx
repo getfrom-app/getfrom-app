@@ -10,6 +10,7 @@ import { getAtajosNode, getShortcutData } from '../utils/atajosHelper'
 
 interface Props {
   onClose: () => void
+  onSelectContext?: (nodeId: string) => void
 }
 
 interface PaletteItem {
@@ -151,7 +152,7 @@ function parseQuery(raw: string): ParsedQuery {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CommandPalette({ onClose }: Props) {
+export default function CommandPalette({ onClose, onSelectContext }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
@@ -235,7 +236,7 @@ export default function CommandPalette({ onClose }: Props) {
             taskStatus: null as null,
             score: 150,
             action: () => {
-              window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: `@${(n.text||'').toLowerCase().replace(/\s+/g, '-')}` } }))
+              onSelectContext?.(n.id)
               onClose()
             },
           }))
@@ -276,23 +277,25 @@ export default function CommandPalette({ onClose }: Props) {
       }]
     }
 
-    // ── Contextos (🧠 Contexto): búsqueda por nombre del contexto ─────────
+    // ── Contextos (🧠 Contexto): "contextos" muestra todos; cualquier nombre filtra ──
     const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
     if (contextoRoot) {
-      const ctxNodes = store.children(contextoRoot.id).filter(n =>
-        !n.deletedAt && n.text && normalizeText(n.text).includes(qNorm)
-      )
+      const showAllCtx = ['contextos', 'contexto', 'context'].some(k => k.startsWith(qNorm) || qNorm === k)
+      const ctxNodes = store.children(contextoRoot.id).filter(n => {
+        if (n.deletedAt || !n.text) return false
+        if (showAllCtx) return true
+        return normalizeText(n.text).includes(qNorm)
+      })
       if (ctxNodes.length > 0) {
         return ctxNodes.map(n => ({
           id: `ctx-${n.id}`,
           label: n.text || '',
-          sublabel: 'Filtrar nodos con este contexto',
+          sublabel: 'Abrir contexto',
           type: 'wf-action' as const,
           taskStatus: null as null,
-          score: 200,
+          score: showAllCtx ? 150 : scoreMatch(n.text || '', q),
           action: () => {
-            const slug = (n.text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-')
-            window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: `@${slug}` } }))
+            onSelectContext?.(n.id)
             onClose()
           },
         }))
@@ -585,7 +588,7 @@ export default function CommandPalette({ onClose }: Props) {
                     ) : item.type === 'create' ? (
                       <span className="cmdpalette-create-icon">+</span>
                     ) : item.type === 'wf-action' ? (
-                      <span className="cmdpalette-create-icon">{item.id.startsWith('atajo-') ? '📊' : '⌘'}</span>
+                      <span className="cmdpalette-create-icon">{item.id.startsWith('ctx-') ? '🧠' : item.id.startsWith('atajo-') ? '📊' : '⌘'}</span>
                     ) : null}
                     <div className="cmdpalette-item-info">
                       <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>
