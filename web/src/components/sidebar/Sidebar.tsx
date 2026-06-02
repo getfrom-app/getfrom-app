@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRecordingStore } from '../../store/recordingStore'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -471,6 +471,27 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   }
 
   const [expandedCtxIds, setExpandedCtxIds] = useState<Set<string>>(new Set())
+  const [addingCtx, setAddingCtx] = useState(false)
+  const [newCtxName, setNewCtxName] = useState('')
+  const newCtxInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (addingCtx) setTimeout(() => newCtxInputRef.current?.focus(), 30)
+  }, [addingCtx])
+
+  function createCtx() {
+    const name = newCtxName.trim()
+    setAddingCtx(false)
+    setNewCtxName('')
+    if (!name) return
+    const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    if (!contextoRoot) return
+    const sibs = store.children(contextoRoot.id).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    const newNode = store.createNode({ text: name, parentId: contextoRoot.id, siblingOrder: maxOrder + 1000 })
+    onSelectContext?.(newNode.id)
+  }
+
   function toggleCtxExpand(id: string, e: React.MouseEvent) {
     e.stopPropagation()
     setExpandedCtxIds(prev => {
@@ -516,13 +537,37 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
     if (!contextoRoot) return null
     const contextos = s.children(contextoRoot.id).filter(n => !n.deletedAt)
-    if (contextos.length === 0) return null
     return (
       <div className="sidebar-tab-content wf-quick-access" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="wf-qa-section-header" style={{ padding: '8px 12px 4px' }}>
           <span className="wf-qa-section-label">CONTEXTOS</span>
+          <button
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1, padding: '0 2px', opacity: 0.7 }}
+            onClick={() => setAddingCtx(true)}
+            title="Nuevo contexto"
+          >+</button>
         </div>
         {contextos.map(c => renderCtxNode(c.id, 0))}
+        {addingCtx && (
+          <div style={{ display: 'flex', alignItems: 'center', padding: '4px 12px', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-tertiary)', flexShrink: 0 }}>›</span>
+            <input
+              ref={newCtxInputRef}
+              value={newCtxName}
+              onChange={e => setNewCtxName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); createCtx() }
+                if (e.key === 'Escape') { setAddingCtx(false); setNewCtxName('') }
+              }}
+              onBlur={() => { if (newCtxName.trim()) createCtx(); else { setAddingCtx(false); setNewCtxName('') } }}
+              placeholder="Nombre del contexto…"
+              style={{
+                flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit',
+              }}
+            />
+          </div>
+        )}
       </div>
     )
   }
