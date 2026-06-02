@@ -373,6 +373,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   const blockType = extraBlock ?? detectBlockType(displayNode.text)
   const isHeading = blockType === 'h1' || blockType === 'h2' || blockType === 'h3'
+
+  // Auto-normalizar nodos con prefijo markdown pero sin extraBlock guardado.
+  // Se activa la primera vez que se renderiza el nodo (ej. creados por Claude MCP, pegados).
+  // Hace store.updateNode en background — sin bloquear el render.
+  useEffect(() => {
+    if (extraBlock) return // ya normalizado
+    const text = displayNode.text
+    const mdMap: Array<[string, string]> = [['### ', 'h3'], ['## ', 'h2'], ['# ', 'h1']]
+    for (const [prefix, kind] of mdMap) {
+      if (text.startsWith(prefix)) {
+        const targetId = mirrorOfId ?? node.id
+        try {
+          const ed = JSON.parse(node.extraData || '{}')
+          ed._block = kind
+          store.updateNode(targetId, { text: text.slice(prefix.length), extraData: JSON.stringify(ed) })
+        } catch {}
+        break
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, displayNode.text])
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
   const isNota = (node.types || []).includes('nota')

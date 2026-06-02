@@ -221,9 +221,11 @@ interface Props {
 export type BlockType = 'h1' | 'h2' | 'h3' | 'divider' | 'quote' | 'numbered' | 'code' | 'bullet' | 'text'
 
 export function detectBlockType(text: string): BlockType {
-  // v8.25: headings y bullets ya NO se detectan por prefijo de texto. Viven
-  // 100% en extraData._block (campo Node.block tras v8.24). Si alguna nota
-  // queda con prefijo "# " o "- ", la migración v8.23 la limpia al cargar.
+  // Headings markdown: detectados para nodos creados externamente (Claude MCP, paste, etc.)
+  // El OutlinerNode auto-normaliza el nodo en background (strip prefix + set _block).
+  if (text.startsWith('### ')) return 'h3'
+  if (text.startsWith('## ')) return 'h2'
+  if (text.startsWith('# ')) return 'h1'
   if (text === '---') return 'divider'
   if (text.startsWith('> ')) return 'quote'
   if (/^\d+\.\s/.test(text)) return 'numbered'
