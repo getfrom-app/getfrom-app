@@ -396,12 +396,12 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     const t = getCurrentText()
     setText(t)
     analyze(t)
+    if (justAcceptedCtx) setJustAcceptedCtx(false)  // vuelve a mostrar lista al escribir
   }
 
   // ── Aceptar ghost text ─────────────────────────────────────────────────────
-  // Ref: tras aceptar sugerencia de contexto, el siguiente Enter debe crear
-  // (no ejecutar el resultado de búsqueda que queda seleccionado en activeIdx)
-  const justAcceptedCtxRef = useRef(false)
+  // State: tras aceptar sugerencia de contexto, ocultar lista hasta próxima tecla
+  const [justAcceptedCtx, setJustAcceptedCtx] = useState(false)
 
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
@@ -420,7 +420,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setCtxSuggestion(null)
     setDatePrediction(null)
     setTaskPrediction(false)
-    justAcceptedCtxRef.current = true  // próximo Enter → crear, no navegar
+    setJustAcceptedCtx(true)  // ocultar lista, próximo Enter → crear
     analyze(newText)
   }
 
@@ -820,8 +820,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       // 2. ctx suggestion → aceptar ghost text
       if (ctxSuggestion) { acceptCtx(); return }
       // 2b. Acabamos de aceptar un contexto → el siguiente Enter crea directamente
-      if (justAcceptedCtxRef.current) {
-        justAcceptedCtxRef.current = false
+      if (justAcceptedCtx) {
+        setJustAcceptedCtx(false)
         const t = getCurrentText().trim()
         if (t) { saveAndClose(); return }
         onClose(); return
@@ -1044,13 +1044,13 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
           </div>
         )}
 
-        {/* Separador */}
-        {!atPicker && (
+        {/* Separador — oculto junto a la lista */}
+        {!atPicker && !justAcceptedCtx && (
           <div style={{ height: 1, background: 'var(--border)', margin: '4px 0', flexShrink: 0 }} />
         )}
 
-        {/* Lista de items — ocupa todo el espacio restante del modal */}
-        {!atPicker && items.length > 0 && (
+        {/* Lista de items — oculta tras aceptar contexto hasta próxima escritura */}
+        {!atPicker && !justAcceptedCtx && items.length > 0 && (
           <div
             ref={listRef}
             style={{ flex: 1, overflowY: 'auto', marginTop: 2, paddingBottom: 8 }}
