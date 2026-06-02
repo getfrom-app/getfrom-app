@@ -1492,17 +1492,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const todayISOt = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
         store.updateNode(node.id, { text: cleanText, status: 'pending', due: node.due ?? todayISOt })
         if (contentRef.current) contentRef.current.textContent = cleanText
-        return
-      }
-      // (Eliminado sufijo -b: bucle ya no existe como concepto.)
-      if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
+        // Fall through — create sibling below
+      } else if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
+        // (Eliminado sufijo -b: bucle ya no existe como concepto.)
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
         const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
         store.updateNode(node.id, { text: cleanText, isEvent: true, status: null, due: todayISO })
         if (contentRef.current) contentRef.current.textContent = cleanText
-        return
-      }
+        // Fall through — create sibling below
+      } else {
       // Paridad Mac v8.30: -a (agente), -p (prompt). Reusan NBSP variant.
       const nbspA = trimmed.endsWith('\u00a0-a')
       const nbspP = trimmed.endsWith('\u00a0-p')
@@ -1529,6 +1528,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         store.updateNode(node.id, { text: cleanText, types, extraData: JSON.stringify(ed) })
         if (contentRef.current) contentRef.current.textContent = cleanText
         return
+      }
       }
       // Create sibling justo debajo — siempre crea, aunque haya nodos después.
       // siblingOrder = midpoint entre el actual y el siguiente (o +1 si no hay).
