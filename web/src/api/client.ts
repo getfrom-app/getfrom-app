@@ -403,10 +403,14 @@ export async function withTokenGuard<T>(
 
 // ── Files (R2) ───────────────────────────────────────────────────────────
 
-export async function getPresignedUpload(filename: string, contentType: string): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
-  return apiRequest('/files/presign-upload', {
+/** Upload a file via server (server proxies to R2, no CORS issues). */
+export async function uploadFile(file: File): Promise<{ key: string; publicUrl: string }> {
+  const fd = new FormData()
+  fd.append('file', file)
+  return apiRequest<{ key: string; publicUrl: string }>('/files/upload', {
     method: 'POST',
-    body: JSON.stringify({ filename, contentType }),
+    body: fd,
+    // No Content-Type header — let browser set multipart boundary automatically
   })
 }
 

@@ -9,7 +9,7 @@ import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
-import { getPresignedUpload } from '../../api/client'
+import { uploadFile } from '../../api/client'
 import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
@@ -186,11 +186,9 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       siblingOrder: maxOrder + 1,
     })
     try {
-      const { uploadUrl, key, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
-      await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
+      const { key, publicUrl } = await uploadFile(file)
       const resourceType = file.type.startsWith('image/') ? 'image'
         : file.type === 'application/pdf' ? 'pdf' : 'file'
-      // Guardamos key + publicUrl. La publicUrl es presigned (1h) — se regenera al abrir.
       store.updateNode(newNode.id, {
         isResource: true,
         extraData: JSON.stringify({ _resource: true, _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }),

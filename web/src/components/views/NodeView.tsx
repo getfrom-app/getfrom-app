@@ -27,7 +27,7 @@ import { createCalendarEvent, updateCalendarEvent, fromRecToRRule, type Calendar
 import { getGcalColor } from '../../utils/gcalNodesSync'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
-import { getPresignedUpload, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
+import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
@@ -990,19 +990,9 @@ export default function NodeView() {
     if (!file || !node) return
     setUploading(true)
     try {
-      const { uploadUrl, key, publicUrl } = await getPresignedUpload(
-        file.name,
-        file.type || 'application/octet-stream'
-      )
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      })
+      const { key, publicUrl } = await uploadFile(file)
       setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
 
-      // Guardar URL del archivo como contenido principal del nodo
-      // (imagen, PDF o cualquier archivo — el texto del nodo es el nombre)
       const resourceType = file.type.startsWith('image/') ? 'image'
         : file.type === 'application/pdf' ? 'pdf'
         : 'file'
@@ -1318,8 +1308,7 @@ export default function NodeView() {
     // Mostrar toast de progreso
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `⬆ Subiendo ${file.name}…`, type: 'info' } }))
     try {
-      const { uploadUrl, key, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
-      await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
+      const { key, publicUrl } = await uploadFile(file)
       setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
       const resourceType = file.type.startsWith('image/') ? 'image' : file.type === 'application/pdf' ? 'pdf' : 'file'
       let ed: Record<string, unknown> = {}
