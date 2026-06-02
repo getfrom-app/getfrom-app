@@ -2695,7 +2695,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                via useEffect (innerHTML) para evitar el bug removeChild del reconciler */
             <div
               ref={contentRef}
-              className={`node-text ${!isEditing ? 'node-text--rendered' : ''}${isFirstEmpty ? ' node-text--first-empty' : ''}`}
+              className={`node-text ${!isEditing ? 'node-text--rendered' : ''} ${(blockType === 'h1' || blockType === 'h2' || blockType === 'h3') ? `node-text--${blockType}` : ''}${isFirstEmpty ? ' node-text--first-empty' : ''}`}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}

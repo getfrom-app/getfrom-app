@@ -2751,6 +2751,16 @@ body.outliner-drag-active {
   cursor: text;
 }
 
+/* Heading styles aplicados al contentEditable — activos tanto en edición como en render.
+   Así el usuario ve el heading mientras escribe, no solo después de pulsar Enter. */
+.node-text--h1 { font-size: 1.6em; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+.node-text--h2 { font-size: 1.3em; font-weight: 600; color: var(--text-primary); line-height: 1.35; }
+.node-text--h3 { font-size: 1.1em; font-weight: 600; color: var(--text-primary); }
+/* Evitar doble font-size cuando el span .block-h* está dentro del contenedor ya estilizado */
+.node-text--h1 .block-h1,
+.node-text--h2 .block-h2,
+.node-text--h3 .block-h3 { font-size: inherit; font-weight: inherit; line-height: inherit; }
+
 .node-text--divider {
   flex: 1;
   display: flex;
