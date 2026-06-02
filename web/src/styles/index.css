@@ -2678,21 +2678,21 @@ body.outliner-drag-active {
 /* ── Block types ─────────────────────────────────────────────────────────── */
 
 .block-h1 {
-  font-size: 1.6em;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.3;
 }
 
 .block-h2 {
-  font-size: 1.3em;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text-primary);
   line-height: 1.35;
 }
 
 .block-h3 {
-  font-size: 1.1em;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -2753,9 +2753,9 @@ body.outliner-drag-active {
 
 /* Heading styles aplicados al contentEditable — activos tanto en edición como en render.
    Así el usuario ve el heading mientras escribe, no solo después de pulsar Enter. */
-.node-text--h1 { font-size: 1.6em; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
-.node-text--h2 { font-size: 1.3em; font-weight: 600; color: var(--text-primary); line-height: 1.35; }
-.node-text--h3 { font-size: 1.1em; font-weight: 600; color: var(--text-primary); }
+.node-text--h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+.node-text--h2 { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.35; }
+.node-text--h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 /* Evitar doble font-size cuando el span .block-h* está dentro del contenedor ya estilizado */
 .node-text--h1 .block-h1,
 .node-text--h2 .block-h2,
