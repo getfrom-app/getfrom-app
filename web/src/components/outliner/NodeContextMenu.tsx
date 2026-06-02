@@ -134,10 +134,13 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }, [x, y, showConvert, showColorPicker, showTemplates])
 
   // Cerrar al click fuera (solo si no hay submodal)
+  // Excepción: clic en un handle ⋮⋮ → añade/quita de la selección sin cerrar el menú
   useEffect(() => {
     if (showMove) return
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as globalThis.Node)) {
+      const target = e.target as HTMLElement
+      if (target.closest('.node-drag-handle')) return  // handle → no cerrar
+      if (menuRef.current && !menuRef.current.contains(target)) {
         onClose()
       }
     }

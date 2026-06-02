@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
-import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds } from './Outliner'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, openSelectionMenu } from './Outliner'
 import type { Node } from '../../types'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { createNodeShortcut } from '../../utils/atajosHelper'
@@ -2448,6 +2448,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onClick={e => {
               e.stopPropagation()
               toggleNodeSelection(node.id, store)
+              // Abrir (o mantener) el menú flotante en la posición del handle
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              openSelectionMenu({ x: rect.right + 8, y: rect.top })
             }}
             aria-label="Seleccionar nodo"
           >⋮⋮</span>
@@ -3376,7 +3379,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           onClose={() => setContextMenu(null)}
           onNavigate={navigate}
           onSelect={onSelect}
-          selectedIds={globalSelectedIds.size > 1 && globalSelectedIds.has(node.id) ? globalSelectedIds : undefined}
         />
       )}
     </div>

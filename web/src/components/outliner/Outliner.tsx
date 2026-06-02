@@ -3,6 +3,8 @@ import { store, useStore } from '../../store/nodeStore'
 import OutlinerNode from './OutlinerNode'
 import type { Node } from '../../types'
 import { trashNode } from '../../utils/papeleraHelper'
+import { useNavigate } from 'react-router-dom'
+import NodeContextMenu from './NodeContextMenu'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -37,7 +39,30 @@ function gClearSelected() {
 export function getGlobalSelectedIds(): Set<string> { return _gSelectedIds }
 
 /** Exportado: limpiar toda la selección */
-export function clearGlobalSelection() { gClearSelected() }
+export function clearGlobalSelection() {
+  gClearSelected()
+  _selMenuPos = null
+  _selMenuListeners.forEach(fn => fn())
+}
+
+// ── Menú flotante de selección múltiple ─────────────────────────────────────
+let _selMenuPos: { x: number; y: number } | null = null
+const _selMenuListeners = new Set<() => void>()
+
+export function openSelectionMenu(pos: { x: number; y: number }) {
+  _selMenuPos = pos
+  _selMenuListeners.forEach(fn => fn())
+}
+
+function useSelectionMenuPos() {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(_selMenuPos)
+  useEffect(() => {
+    const cb = () => setPos(_selMenuPos ? { ..._selMenuPos } : null)
+    _selMenuListeners.add(cb)
+    return () => { _selMenuListeners.delete(cb) }
+  }, [])
+  return pos
+}
 
 /** Exportado: toggle selección de un nodo + todos sus descendientes */
 export function toggleNodeSelection(nodeId: string, storeInstance: { children: (id: string) => Array<{ id: string; deletedAt?: string | null }> }) {
@@ -214,6 +239,8 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const dragAnchorId = useRef<string | null>(null)
   const dragAnchorMidY = useRef<number>(0)  // midY del nodo ancla para computeGlobalSelection
   const containerRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const selMenuPos = useSelectionMenuPos()
   const [localFilterOpen, setLocalFilterOpen] = useState(false)
   const [localFilterText, setLocalFilterText] = useState('')
   const localFilterRef = useRef<HTMLInputElement>(null)
@@ -790,6 +817,28 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           solo con el teclado: Delete borrar · Tab indentar · Shift+Tab
           desindentar · ⌘C copiar · Escape limpiar.
           Los nodos seleccionados se resaltan con fondo azul via CSS. */}
+
+      {/* Menú flotante de selección — se abre al hacer clic en cualquier handle */}
+      {selMenuPos && selectedIds.size > 0 && (() => {
+        const firstId = [...selectedIds][0]
+        const firstNode = store.getNode(firstId)
+        if (!firstNode) return null
+        return (
+          <NodeContextMenu
+            node={firstNode}
+            x={selMenuPos.x}
+            y={selMenuPos.y}
+            selectedIds={selectedIds}
+            onClose={() => {
+              _selMenuPos = null
+              _selMenuListeners.forEach(fn => fn())
+              gClearSelected()
+            }}
+            onNavigate={navigate}
+            onSelect={setSelectedId}
+          />
+        )
+      })()}
     </>
   )
 }
