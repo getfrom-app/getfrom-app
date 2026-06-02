@@ -203,6 +203,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
   const [ctxSuggestion, setCtxSuggestion] = useState<CtxSuggestion | null>(null)
   const [forceType, setForceType] = useState<ForceType>(null)
   const [atPicker, setAtPicker] = useState<{ query: string; items: { id: string; label: string }[]; activeIdx: number } | null>(null)
+  // Contextos asignados como chips (sin @ en el texto)
+  const [assignedCtx, setAssignedCtx] = useState<{ name: string; slug: string }[]>([])
 
   // ── Estado palette (CommandPalette) ────────────────────────────────────────
   const [view, setView] = useState<PaletteView>('default')
@@ -410,9 +412,16 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
+    // El contexto se asigna como chip (sin @ en el texto)
+    const slug = ctxSuggestion.displayName.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+    setAssignedCtx(prev =>
+      prev.some(c => c.slug === slug) ? prev : [...prev, { name: ctxSuggestion!.displayName, slug }]
+    )
+    // Quitar los caracteres que el usuario había escrito del contexto del texto
     const t = getCurrentText()
-    const before = t.slice(0, -ctxSuggestion.typedLen)
-    const newText = before + '@' + ctxSuggestion.displayName + ' '
+    const newText = t.slice(0, -ctxSuggestion.typedLen).trimEnd() + ' '
     skipNextInputRef.current = true
     inputRef.current.textContent = newText
     const range = document.createRange()
@@ -427,8 +436,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setAtPicker(null)
     setDatePrediction(null)
     setTaskPrediction(false)
-    setJustAcceptedCtx(true)  // ocultar lista, próximo Enter → crear
-    // No llamar analyze: reabriría atPicker detectando "@Context " al final
+    setJustAcceptedCtx(true)
     const { forceType: ft } = detectForceType(newText)
     setForceType(ft)
   }
@@ -488,14 +496,18 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     const isTask = !isBucle && (ft === 'task' || (ft !== 'note' && ft !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))))))
     const isEvent = ft === 'event'
 
-    const ctxMatch = rawText.match(/@([\wÀ-ɏ\s\-]+)/g)
     const types: string[] = []
     if (isBucle) types.push('bucle')
-    if (ctxMatch) {
-      for (const m of ctxMatch) {
-        const name = m.slice(1).trim()
-        const slug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-        if (slug && slug !== 'bucle') types.push(slug)  // evitar duplicado si escribió @bucle
+    // Contextos asignados como chips (sin @ en el texto)
+    for (const ctx of assignedCtx) {
+      if (ctx.slug && !types.includes(ctx.slug)) types.push(ctx.slug)
+    }
+    // @menciones en el texto → nodos referenciados (no contextos, siguen funcionando)
+    const atMentions = rawText.match(/@([\wÀ-ɏ\-]+)/g)
+    if (atMentions) {
+      for (const m of atMentions) {
+        const slug = m.slice(1).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+        if (slug && !types.includes(slug)) types.push(slug)
       }
     }
 
@@ -532,6 +544,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     store.sync(true).catch(() => {})
 
     const label = isEvent ? 'Evento' : isTask ? 'Tarea' : isBucle ? 'Bucle' : 'Nota'
+    setAssignedCtx([])
     showToast(`✓ ${label} creado`)
     onClose()
   }
@@ -857,7 +870,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
   const ghostLabel = (() => {
     if (ctxSuggestion) {
       const typed = ctxSuggestion.displayName.slice(0, ctxSuggestion.typedLen)
-      return `@${typed}${ctxSuggestion.ghost}`
+      return `${typed}${ctxSuggestion.ghost}`
     }
     if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
@@ -1039,6 +1052,27 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
                 <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 11 }}>@</span>
                 {item.label}
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Chips de contextos asignados (sin @ en el texto) */}
+        {assignedCtx.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 24, marginTop: 6, flexShrink: 0 }}>
+            {assignedCtx.map(ctx => (
+              <span key={ctx.slug} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'var(--accent)', color: 'white',
+                borderRadius: 20, padding: '2px 8px 2px 6px',
+                fontSize: 11, fontWeight: 500,
+              }}>
+                <span style={{ opacity: 0.8 }}>◈</span>
+                {ctx.name}
+                <button
+                  onMouseDown={e => { e.preventDefault(); setAssignedCtx(prev => prev.filter(c => c.slug !== ctx.slug)) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'white', opacity: 0.7, padding: 0, fontSize: 12, lineHeight: 1 }}
+                >×</button>
+              </span>
             ))}
           </div>
         )}
