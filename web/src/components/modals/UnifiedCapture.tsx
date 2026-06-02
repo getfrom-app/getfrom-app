@@ -249,11 +249,34 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       .map(n => ({ id: n.id, label: n.text }))
   }
 
+  // Ref para mantener el forceType tras eliminar el shortcut del texto
+  const lockedForceTypeRef = useRef<ForceType>(null)
+
   // ── Análisis ghost text ────────────────────────────────────────────────────
   const analyze = useCallback((t: string) => {
     const { forceType: ft, cleanText: ct } = detectForceType(t)
-    setForceType(ft)
-    const textToAnalyze = ft ? ct : t
+
+    if (ft !== null) {
+      // Shortcut nuevo detectado: guardarlo y eliminarlo del input inmediatamente
+      lockedForceTypeRef.current = ft
+      setForceType(ft)
+      if (ct !== t.trimEnd() && inputRef.current) {
+        // Eliminar el shortcut del DOM sin activar onInput
+        skipNextInputRef.current = true
+        inputRef.current.textContent = ct
+        // Cursor al final
+        const range = document.createRange()
+        const sel = window.getSelection()
+        const textNode = inputRef.current.firstChild
+        if (textNode) { range.setStart(textNode, ct.length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
+      }
+    } else {
+      // Sin shortcut en el texto — mantener el tipo bloqueado si existe
+      setForceType(lockedForceTypeRef.current)
+    }
+
+    const effective = lockedForceTypeRef.current ?? ft
+    const textToAnalyze = effective ? ct : t
 
     // @ picker
     const atMatch = textToAnalyze.match(/@([\wÀ-ɏ\s]*)$/)
@@ -544,6 +567,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
     const label = isEvent ? 'Evento' : isTask ? 'Tarea' : isBucle ? 'Bucle' : 'Nota'
     setAssignedCtx([])
+    lockedForceTypeRef.current = null
     showToast(`✓ ${label} creado`)
     onClose()
   }
