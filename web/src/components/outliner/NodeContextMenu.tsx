@@ -61,6 +61,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const isMulti = effectiveIds.length > 1
   const { t } = useTranslation()
   const [showMove, setShowMove] = useState(false)
+  // nodeIds capturados al abrir el modal — inmunes a re-renders posteriores
+  const [moveNodeIds, setMoveNodeIds] = useState<string[] | undefined>(undefined)
   const [showConvert, setShowConvert] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showPrediction, setShowPrediction] = useState(false)
@@ -328,6 +330,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         </button>
         <button className="context-menu-item" onClick={e => {
           e.preventDefault(); e.stopPropagation()
+          // Capturar los IDs AHORA antes de que la selección pueda cambiar
+          setMoveNodeIds(isMulti ? [...effectiveIds] : undefined)
           setShowMove(true)
         }}>
           <span className="context-menu-icon">→</span> {t('context.moveTo')}
@@ -766,7 +770,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {showMove && (
         <MoveNodeModal
           node={node}
-          nodeIds={isMulti ? effectiveIds : undefined}
+          nodeIds={moveNodeIds}
           onClose={() => { setShowMove(false); onClose() }}
         />
       )}

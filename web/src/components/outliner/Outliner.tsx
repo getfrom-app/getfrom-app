@@ -562,7 +562,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         // - handle ⋮⋮: gestiona su propio toggle
         // - context-menu: las acciones del menú necesitan la selección activa
         const upTarget = e.target as HTMLElement
-        if (!upTarget.closest?.('.node-drag-handle') && !upTarget.closest?.('.context-menu')) {
+        if (
+          !upTarget.closest?.('.node-drag-handle') &&
+          !upTarget.closest?.('.context-menu') &&
+          !upTarget.closest?.('.modal-overlay')   // MoveNodeModal y otros modales
+        ) {
           gClearSelected()
         }
       }
