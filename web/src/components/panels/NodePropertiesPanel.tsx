@@ -47,15 +47,6 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
     store.updateNode(node.id, { isFavorite: !node.isFavorite })
   }
 
-  function toggleBucle() {
-    const types = node.types || []
-    if (types.includes('bucle')) {
-      store.updateNode(node.id, { types: types.filter(t => t !== 'bucle') })
-    } else {
-      store.updateNode(node.id, { types: [...types, 'bucle'], status: 'pending' })
-    }
-  }
-
   function toggleEvent() {
     store.updateNode(node.id, { isEvent: !node.isEvent })
   }
@@ -85,7 +76,6 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
     store.updateNode(node.id, { types: (node.types || []).filter(t => t !== type) })
   }
 
-  const isBucle = (node.types || []).includes('bucle')
   const usedTags = s.allUsedTags()
 
   const statusOptions: { value: Node['status']; label: string }[] = [
@@ -121,7 +111,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         </button>
       </div>
 
-      {/* Favorito + Bucle + Evento */}
+      {/* Favorito + Evento */}
       <div className="prop-row">
         <button
           className={`prop-icon-btn ${node.isFavorite ? 'active' : ''}`}
@@ -129,13 +119,6 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           title={node.isFavorite ? 'Quitar de favoritos' : 'Fijar'}
         >
           {node.isFavorite ? '★' : '☆'} Fijado
-        </button>
-        <button
-          className={`prop-icon-btn ${isBucle ? 'active bucle' : ''}`}
-          onClick={toggleBucle}
-          title={isBucle ? 'Quitar bucle' : 'Convertir en bucle'}
-        >
-          ↺ Bucle
         </button>
         <button
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
@@ -150,19 +133,6 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           title={isLocked ? 'Desbloquear nota' : 'Bloquear nota (solo lectura)'}
         >
           {isLocked ? '🔒 Bloqueado' : '🔓 Bloquear'}
-        </button>
-        <button
-          className={`prop-icon-btn ${node.isSeguimiento ? 'active' : ''}`}
-          onClick={() => {
-            const newVal = !node.isSeguimiento
-            // Al activar seguimiento, quitar el status de tarea para evitar duplicidades
-            const updates: Record<string, unknown> = { isSeguimiento: newVal }
-            if (newVal && node.status !== null) updates.status = null
-            store.updateNode(node.id, updates as Parameters<typeof store.updateNode>[1])
-          }}
-          title={node.isSeguimiento ? 'Cerrar bucle' : 'Abrir bucle'}
-        >
-          ● Bucle
         </button>
       </div>
 

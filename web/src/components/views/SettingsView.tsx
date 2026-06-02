@@ -350,7 +350,7 @@ function EstadísticasPane() {
   const diaryDates = new Set(
     diaryEntries.filter(n => n.diaryDate).map(n => new Date(n.diaryDate!).toDateString())
   )
-  const followUps = nodes.filter(n => n.isSeguimiento && !n.deletedAt).length
+  const followUps = nodes.filter(n => (n.types || []).includes('bucle') && !n.deletedAt).length
   let diaryStreak = 0
   const today = new Date(); today.setHours(0, 0, 0, 0)
   for (let i = 0; i < 365; i++) {

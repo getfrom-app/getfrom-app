@@ -156,6 +156,8 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
       } catch { return false }
     }
     case 'activo':      return !!node.isActive
+    case 'bucle':
+    case 'loop':        return (node.types || []).includes('bucle')
 
     default:
       // @tag o #tag

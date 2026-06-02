@@ -20,21 +20,6 @@ function getDiaryForDate(date: Date): Node | null {
   return null
 }
 
-function isBucle(n: Node): boolean {
-  return (n.types?.includes('bucle') ?? false) && n.status !== 'done' && !n.deletedAt
-}
-
-function hasLoopAncestor(nodeId: string): boolean {
-  let current = store.getNode(nodeId)
-  while (current?.parentId) {
-    const parent = store.getNode(current.parentId)
-    if (!parent) break
-    if (parent.types?.includes('bucle')) return true
-    current = parent
-  }
-  return false
-}
-
 function formatDue(due: string): string {
   const d = new Date(due)
   const now = new Date()
@@ -222,39 +207,24 @@ export default function DiaryView() {
 
   // ── Pending tasks logic ────────────────────────────────────────────────
 
-  // All active bucles
-  const bucles = dateOffset === 0
-    ? s.allActive().filter(n => isBucle(n))
-    : []
-
-  // For each bucle, get its pending children
-  function getBucleChildren(bucleId: string): Node[] {
-    return store.children(bucleId).filter(
-      n => n.status !== null && n.status !== 'done' && !n.deletedAt
-    )
-  }
-
   const allPending = s.allActive().filter(
     n => n.status === 'pending' && !n.deletedAt
   )
 
   const overdue = allPending.filter(n => {
     if (!n.due) return false
-    if (hasLoopAncestor(n.id)) return false
     return new Date(n.due) < todayStart
   })
 
   const todayTasks = allPending.filter(n => {
     if (!n.due) return false
-    if (hasLoopAncestor(n.id)) return false
     const d = new Date(n.due)
     return d >= todayStart && d <= todayEnd
   })
 
   const noDateTasks = allPending.filter(n => {
     if (n.due) return false
-    if (isBucle(n)) return false
-    if (hasLoopAncestor(n.id)) return false
+    if ((n.types || []).includes('bucle')) return false
     return true
   }).slice(0, 10)
 
@@ -329,8 +299,7 @@ export default function DiaryView() {
     const filteredToday = filterTasks(todayTasks)
     const filteredNoDate = filterTasks(noDateTasks)
 
-    const hasBucles = bucles.length > 0 && !searchQ
-    const hasAnything = hasBucles || filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
+    const hasAnything = filteredOverdue.length > 0 || filteredToday.length > 0 || filteredNoDate.length > 0 || (!searchQ && activeProjects.length > 0)
 
     const searchInput = (
       <div className="diary-panel-search">
@@ -394,39 +363,6 @@ export default function DiaryView() {
       <div className="diary-panel-content">
         {searchInput}
         {statsHeader}
-
-        {/* Bucles abiertos — solo hoy */}
-        {hasBucles && (
-          <div className="diary-pending-section">
-            <div className="diary-pending-label" style={{ color: 'var(--accent)' }}>Bucles abiertos</div>
-            {bucles.map(bucle => {
-              const children = getBucleChildren(bucle.id)
-              return (
-                <div key={bucle.id} className="diary-bucle-section">
-                  <div
-                    className="diary-bucle-header"
-                    onClick={() => navigate(`/node/${bucle.id}`)}
-                  >
-                    <span className="diary-bucle-icon">↺</span>
-                    <span className="diary-bucle-text">{bucle.text || t('common.noTitle')}</span>
-                  </div>
-                  {children.length > 0 && (
-                    <div className="diary-bucle-children">
-                      {children.map(child => (
-                        <TaskChip
-                          key={child.id}
-                          task={child}
-                          indented
-                          toggleTask={toggleTask}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
 
         {/* Vencidas */}
         {filteredOverdue.length > 0 && (

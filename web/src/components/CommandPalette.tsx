@@ -80,7 +80,6 @@ interface ParsedQuery {
   cleanText: string
   isTask: boolean
   isEvent: boolean
-  isSeguimiento: boolean
   isFavorite: boolean
   due: string | null
   dateLabel: string | null
@@ -147,7 +146,7 @@ function parseQuery(raw: string): ParsedQuery {
       dateLabel = `${days[date.getDay()]} ${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}`
     }
   }
-  return { cleanText, isTask, isEvent, isSeguimiento: false, isFavorite, due: date ? date.toISOString() : null, dateLabel }
+  return { cleanText, isTask, isEvent, isFavorite, due: date ? date.toISOString() : null, dateLabel }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

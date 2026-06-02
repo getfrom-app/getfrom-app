@@ -251,7 +251,7 @@ function priorityBg(node: Node): string {
   if (meta.color) return meta.color
   if (node.isEvent && !node.status) return 'var(--calendar-event-color, #f5c97a)'
   if (node.status === 'done')        return '#a3a8b3'
-  if (node.isSeguimiento)            return '#b8a7e8'
+  if ((node.types || []).includes('bucle')) return '#b8a7e8'
   if (meta.resource)                 return '#8ed4dd'
   if (node.priority === 'high')      return '#f0a3a3'
   if (node.priority === 'medium')    return '#f5c197'
@@ -282,7 +282,7 @@ function gcalEventColor(ev: CalendarEvent): string {
 
 function nodeIcon(node: Node): string {
   if (node.isEvent && !node.status) return '📅'
-  if (node.isSeguimiento) return '👁'
+  if ((node.types || []).includes('bucle')) return '⟲'
   if (nodeMeta(node).resource) return '◆'
   return ''
 }
@@ -475,7 +475,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   // Eventos y tareas con fecha — los BUCLES NO van al calendario (son contenedores).
   const nodesWithDue = allNodes.filter(n =>
     n.due && !n.deletedAt &&
-    !n.isSeguimiento
+    !(n.types || []).includes('bucle')
   )
 
   // Nodos para un día determinado — incluye eventos que SOLAPAN este día

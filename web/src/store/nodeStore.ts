@@ -771,7 +771,7 @@ export class NodeStore {
     const node = {
       id, parentId: null, text: tagName, body: null,
       siblingOrder: Date.now(), types: [], collections: [],
-      status: null, isActive: false, isEvent: false, isSeguimiento: false,
+      status: null, isActive: false, isEvent: false,
       isDiaryEntry: false, isChat: false, isCollapsed: false, isFavorite: false,
       due: null, dueEnd: null, priority: null, recurrence: null, diaryDate: null,
       extraData: JSON.stringify(ed), publicSlug: null, deletedAt: null,
@@ -925,7 +925,6 @@ export class NodeStore {
       status: params.isTask ? 'pending' : null,
       isActive: false,
       isEvent: false,
-      isSeguimiento: false,
       isDiaryEntry: params.isDiaryEntry || false,
       isChat: false,
       isCollapsed: false,
@@ -1142,7 +1141,7 @@ export class NodeStore {
     const node = this.getNode(nodeId)
     if (!node) return null
     // Bucle: NO se puede agendar. Es un contenedor binario abierto/cerrado.
-    if (node.isSeguimiento || (node.types || []).includes('bucle')) return null
+    if ((node.types || []).includes('bucle')) return null
     const updates: Partial<Node> = { due: iso }
     // Limpiar dueEnd al reprogramar — si no, una duración antigua haría que el
     // bloque se extienda al día siguiente y aparezca duplicado en el calendario
@@ -1381,38 +1380,6 @@ export class NodeStore {
     if (temporalOrphans > 0) {
       // eslint-disable-next-line no-console
       console.log(`[temporal-orphans] ${temporalOrphans} nodos movidos a root desde estructura temporal`)
-      this.notify()
-      await this.sync()
-    }
-
-    // v8.12: ELIMINACIÓN del concepto "bucle". Batch sin notify por nodo
-    // (con muchos bucles, un notify por iteración congelaba la app).
-    let migrated = 0
-    const nowIso = new Date().toISOString()
-    for (const [id, node] of this.nodes.entries()) {
-      if (node.deletedAt) continue
-      const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
-      if (!isBucle) continue
-      const newTypes = (node.types || []).filter(t => t !== 'bucle')
-      this.nodes.set(id, {
-        ...node,
-        isSeguimiento: false,
-        types: newTypes,
-        status: node.status === 'pending' && !node.due ? null : node.status,
-        due: null,
-        dueEnd: null,
-        recurrence: null,
-        isEvent: false,
-        updatedAt: nowIso,
-        _isDirty: true,
-      })
-      this.dirtyIds.add(id)
-      migrated++
-    }
-    if (migrated > 0) {
-      this.invalidateChildrenCache()
-      // eslint-disable-next-line no-console
-      console.log(`[migration v8.12] ${migrated} bucles convertidos a notas normales`)
       this.notify()
       await this.sync()
     }

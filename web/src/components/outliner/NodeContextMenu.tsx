@@ -66,6 +66,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const isTask = node.status !== null && node.status !== undefined
   const isEvent = !!node.isEvent
   const isFav = isNodeShortcut(node.id) || node.isFavorite
+  const isBucle = (node.types || []).includes('bucle')
   const meta = nodeMeta(node)
   const currentBlock = meta.block ?? null
   const isDiary = node.isDiaryEntry
@@ -372,6 +373,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         <button className="context-menu-item" onClick={run(toggleShortcut)}>
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
           {isFav ? t('context.removeFavorite') : t('context.addFavorite')}
+        </button>
+        <button className="context-menu-item" onClick={run(() => {
+          const types = node.types || []
+          if (types.includes('bucle')) {
+            store.updateNode(node.id, { types: types.filter(t => t !== 'bucle') })
+          } else {
+            store.updateNode(node.id, { types: [...types, 'bucle'] })
+          }
+        })}>
+          <span className="context-menu-icon">⟲</span>
+          {isBucle ? 'Cerrar bucle' : 'Abrir bucle'}
         </button>
       </div>
 

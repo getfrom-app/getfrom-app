@@ -1461,30 +1461,8 @@ export default function NodeView() {
           )}
 
           <div className="node-title-row">
-            {/* Icono del nodo — seguimiento=checkbox, evento=calendario, normal=emoji */}
-            {node.isSeguimiento ? (
-              // Checkbox cuadrado morado para seguimiento
-              <button
-                className={`node-seguimiento-title-btn ${node.status === 'done' ? 'done' : ''}`}
-                onClick={() => {
-                  store.updateNode(node!.id, {
-                    status: node.status === 'done' ? null : 'done'
-                  })
-                }}
-                title={node.status === 'done' ? 'Completado — clic para reactivar' : 'Bucle abierto — clic para cerrar'}
-              >
-                {node.status === 'done' ? (
-                  <svg width="28" height="28" viewBox="0 0 28 28">
-                    <rect x="2" y="2" width="24" height="24" rx="6" stroke="#22c55e" strokeWidth="2" fill="#22c55e" fillOpacity="0.18"/>
-                    <path d="M8 14l4 4 8-8" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="28" height="28" viewBox="0 0 28 28">
-                    <rect x="2" y="2" width="24" height="24" rx="6" stroke="var(--accent)" strokeWidth="2" fill="var(--accent)" fillOpacity="0.14"/>
-                  </svg>
-                )}
-              </button>
-            ) : node.isEvent ? (
+            {/* Icono del nodo — evento=calendario, normal=emoji */}
+            {node.isEvent ? (
               // Icono calendario para eventos
               <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1499,7 +1477,7 @@ export default function NodeView() {
               // Recurso pendiente (sin tarea ni evento): checkbox cian
               try {
                 const ed = JSON.parse(node.extraData || '{}')
-                if (ed._resource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent && !node.isSeguimiento) {
+                if (ed._resource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent) {
                   return (
                     <button
                       className="bullet-btn task task-sq--resource"

@@ -45,6 +45,7 @@ const PHRASE_SYNONYMS: [RegExp, string][] = [
   [/\bthis week\b/gi, 'semana'],
   [/\beste mes\b/gi, 'mes'],
   [/\bel mes\b/gi, 'mes'],
+  [/\ben bucle\b/gi, 'bucle'],
   [/\bsin fecha\b/gi, 'sin-fecha'],
   [/\bcon fecha\b/gi, 'con-fecha'],
   [/\bpor hacer\b/gi, 'pendiente'],
@@ -129,6 +130,11 @@ const TOKEN_SYNONYMS: Record<string, string> = {
   'resources': 'recurso',
   'enlace': 'recurso',
   'link': 'recurso',
+  // bucle
+  'bucles': 'bucle',
+  'loop': 'bucle',
+  'loops': 'bucle',
+  'abierto': 'bucle',
 }
 
 /**

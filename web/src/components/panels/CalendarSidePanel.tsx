@@ -21,8 +21,6 @@ function checkboxClassForNode(n: Node, todayStart: Date, todayEnd: Date): string
   if (n.status === 'done') return 'diary-agenda-checkbox diary-agenda-checkbox--done'
   // Recurso: cian (mantiene su identidad de recurso aunque tenga o no fecha)
   if (isResourceNode(n)) return 'diary-agenda-checkbox diary-agenda-checkbox--resource'
-  // Activa (seguimiento) — lila
-  if (n.isSeguimiento) return 'diary-agenda-checkbox diary-agenda-checkbox--seguimiento'
   if (n.status === 'future') return 'diary-agenda-checkbox diary-agenda-checkbox--future'
   if (n.due) {
     const d = new Date(n.due)
@@ -58,7 +56,6 @@ function isTemporalNode(node: Node): boolean {
 interface TaskGroup {
   parentId: string | null
   parentText: string
-  parentIsSeguimiento: boolean
   tasks: Node[]
 }
 
@@ -74,17 +71,14 @@ function buildGroups(tasks: Node[], allNodes: Node[]): TaskGroup[] {
       groups.set(key, {
         parentId: key,
         parentText: isRealParent ? (parent!.text || 'Sin título') : '',
-        parentIsSeguimiento: isRealParent ? !!parent!.isSeguimiento : false,
         tasks: [],
       })
     }
     groups.get(key)!.tasks.push(task)
   }
 
-  // Sort: seguimiento groups first, then grouped by parent, then standalone last
+  // Sort: grouped by parent first, standalone last
   return Array.from(groups.values()).sort((a, b) => {
-    if (a.parentIsSeguimiento && !b.parentIsSeguimiento) return -1
-    if (!a.parentIsSeguimiento && b.parentIsSeguimiento) return 1
     if (a.parentId && !b.parentId) return -1
     if (!a.parentId && b.parentId) return 1
     return a.parentText.localeCompare(b.parentText)
@@ -167,7 +161,7 @@ function GroupedSection({ groups, onOpenProps }: GroupedSectionProps) {
         <div key={group.parentId ?? `standalone-${gi}`} className="cal-panel-group">
           {group.parentId && (
             <div
-              className={`cal-panel-group-header ${group.parentIsSeguimiento ? 'cal-panel-group-header--seguimiento' : ''}`}
+              className="cal-panel-group-header"
               title={group.parentText}
             >
               <span className="cal-panel-group-title">{group.parentText}</span>

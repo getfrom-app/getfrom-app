@@ -31,6 +31,9 @@ const STATUS_CHIPS = [
   { labelKey: 'search.chipPending', query: 'pendiente' },
   { labelKey: 'search.chipDone',    query: 'hecho' },
 ]
+const BUCLE_CHIPS = [
+  { labelKey: 'search.chipBucle', query: 'bucle' },
+]
 
 function cartesian(arrays: string[][]): string[][] {
   return arrays.reduce<string[][]>(
@@ -47,6 +50,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipTypes,    setChipTypes]    = useState<Set<string>>(new Set())
   const [chipTimes,    setChipTimes]    = useState<Set<string>>(new Set())
   const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
+  const [chipBucles,   setChipBucles]   = useState<Set<string>>(new Set())
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
 
   // Top 5 contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
@@ -87,11 +91,12 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
     setChipTypes(new Set())
     setChipTimes(new Set())
     setChipStatuses(new Set())
+    setChipBucles(new Set())
     setChipContexts(new Set())
   }
 
-  function toggleChip(query: string, group: 'type' | 'time' | 'status' | 'context') {
-    const setter = { type: setChipTypes, time: setChipTimes, status: setChipStatuses, context: setChipContexts }[group]
+  function toggleChip(query: string, group: 'type' | 'time' | 'status' | 'bucle' | 'context') {
+    const setter = { type: setChipTypes, time: setChipTimes, status: setChipStatuses, bucle: setChipBucles, context: setChipContexts }[group]
     setter(prev => {
       const next = new Set(prev)
       next.has(query) ? next.delete(query) : next.add(query)
@@ -101,7 +106,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   }
 
   function isChipSelected(query: string) {
-    return chipTypes.has(query) || chipTimes.has(query) || chipStatuses.has(query) || chipContexts.has(query)
+    return chipTypes.has(query) || chipTimes.has(query) || chipStatuses.has(query) || chipBucles.has(query) || chipContexts.has(query)
   }
 
   // Recalcular query cuando cambian los chips
@@ -109,9 +114,10 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
     const types    = [...chipTypes]
     const times    = [...chipTimes]
     const statuses = [...chipStatuses]
+    const bucles   = [...chipBucles]
     const contexts = [...chipContexts]
 
-    if (!types.length && !times.length && !statuses.length && !contexts.length) {
+    if (!types.length && !times.length && !statuses.length && !bucles.length && !contexts.length) {
       // Solo limpiar si no hay texto manual en el input
       if (!inputRef.current?.value) {
         onFilter('')
@@ -119,12 +125,12 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
       return
     }
 
-    const groups = [types, times, statuses, contexts].filter(g => g.length > 0)
+    const groups = [types, times, statuses, bucles, contexts].filter(g => g.length > 0)
     const combos = cartesian(groups)
     const query = combos.map(combo => combo.join(' y ')).join(' o ')
     onFilter(query + ' ')
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chipTypes, chipTimes, chipStatuses, chipContexts])
+  }, [chipTypes, chipTimes, chipStatuses, chipBucles, chipContexts])
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
@@ -135,7 +141,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   }
 
   // Chip renderer — texto puro, sin caja, igual que el dropdown flotante anterior
-  function renderChip(c: { labelKey?: string; label?: string; query: string }, group: 'type' | 'time' | 'status' | 'context') {
+  function renderChip(c: { labelKey?: string; label?: string; query: string }, group: 'type' | 'time' | 'status' | 'bucle' | 'context') {
     return (
       <button
         key={c.query}
@@ -176,7 +182,10 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
       <div className="search-panel-chips">
         <div className="search-panel-row">{TYPE_CHIPS.map(c => renderChip(c, 'type'))}</div>
         <div className="search-panel-row">{TIME_CHIPS.map(c => renderChip(c, 'time'))}</div>
-        <div className="search-panel-row">{STATUS_CHIPS.map(c => renderChip(c, 'status'))}</div>
+        <div className="search-panel-row">
+          {STATUS_CHIPS.map(c => renderChip(c, 'status'))}
+          {BUCLE_CHIPS.map(c => renderChip(c, 'bucle'))}
+        </div>
         {contextChips.length > 0 && (
           <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
         )}

@@ -78,7 +78,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
   // inmediatamente y navegar a su nota (es un contenedor, no una tarea).
-  const isBucle = node.isSeguimiento || (node.types || []).includes('bucle')
+  const isBucle = (node.types || []).includes('bucle')
   useEffect(() => {
     if (isBucle) {
       popNavigate(`/node/${node.id}`)
