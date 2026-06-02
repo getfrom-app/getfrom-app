@@ -195,7 +195,11 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
   const s = useStore()
   const [savingPanel, setSavingPanel] = useState(false)
   const [panelName, setPanelName] = useState('')
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const panelInputRef = useRef<HTMLInputElement>(null)
+  const renameInputRef = useRef<HTMLInputElement>(null)
 
   const panels = useMemo(() => {
     const atajosNode = getAtajosNode()
@@ -213,6 +217,26 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
   function deletePanel(id: string, e: React.MouseEvent) {
     e.stopPropagation()
     store.deleteNode(id)
+  }
+
+  function startRename(p: { id: string; name: string }, e: React.MouseEvent) {
+    e.stopPropagation()
+    setRenamingId(p.id)
+    setRenameValue(p.name)
+    setTimeout(() => { renameInputRef.current?.focus(); renameInputRef.current?.select() }, 20)
+  }
+
+  function confirmRename() {
+    if (!renamingId) return
+    const trimmed = renameValue.trim()
+    if (trimmed) store.updateNode(renamingId, { text: trimmed })
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  function cancelRename() {
+    setRenamingId(null)
+    setRenameValue('')
   }
 
   function startSaving() {
@@ -233,32 +257,84 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
       {panels.map(p => {
         const isActive = activeQuery === p.query
+        const isRenaming = renamingId === p.id
+        const isHovered = hoveredId === p.id
+
         return (
           <div
             key={p.id}
-            onClick={() => onApply(isActive ? '' : p.query)}
+            onClick={() => { if (!isRenaming) onApply(isActive ? '' : p.query) }}
+            onMouseEnter={() => setHoveredId(p.id)}
+            onMouseLeave={() => setHoveredId(null)}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '5px 12px', cursor: 'pointer', fontSize: 13,
+              padding: '5px 8px 5px 12px', cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
               color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-              background: isActive ? 'var(--bg-hover)' : 'transparent',
+              background: isActive ? 'var(--bg-hover)' : isHovered ? 'var(--bg-hover)' : 'transparent',
             }}
-            onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-            onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
           >
             <span style={{ fontSize: 12, opacity: 0.6, flexShrink: 0 }}>◈</span>
-            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-            <button
-              onClick={e => deletePanel(p.id, e)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, padding: '0 2px', opacity: 0, flexShrink: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
-            >×</button>
+
+            {isRenaming ? (
+              <input
+                ref={renameInputRef}
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); confirmRename() }
+                  if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+                }}
+                onBlur={confirmRename}
+                style={{
+                  flex: 1, border: 'none', outline: 'none',
+                  background: 'transparent', fontSize: 13,
+                  color: 'var(--text-primary)', fontFamily: 'inherit',
+                }}
+              />
+            ) : (
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.name}
+              </span>
+            )}
+
+            {/* Botones: sólo visibles en hover o cuando se está renombrando */}
+            {!isRenaming && (isHovered || isActive) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                <button
+                  title="Renombrar"
+                  onClick={e => startRename(p, e)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-tertiary)', fontSize: 12,
+                    padding: '2px 4px', borderRadius: 3, lineHeight: 1,
+                    display: 'flex', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13.25l-3 .75.75-3z"/>
+                  </svg>
+                </button>
+                <button
+                  title="Eliminar"
+                  onClick={e => deletePanel(p.id, e)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-tertiary)', fontSize: 14,
+                    padding: '2px 4px', borderRadius: 3, lineHeight: 1,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-error, #e53e3e)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >×</button>
+              </div>
+            )}
           </div>
         )
       })}
 
-      {/* Nodo vacío para guardar búsqueda activa como filtro — igual que "Nuevo contexto…" */}
+      {/* Fila para guardar la búsqueda activa como filtro */}
       {activeQuery && !savingPanel && (
         <div
           onClick={startSaving}
