@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -223,6 +224,9 @@ export default function NodeView() {
   // Tag picker en el título (#tag autocompletado)
   const [titleTagPicker, setTitleTagPicker] = useState<{ query: string; items: string[]; activeIdx: number } | null>(null)
   const [titleTagPickerPos, setTitleTagPickerPos] = useState<{ top: number; left: number } | null>(null)
+  // "Mover a" picker en el título
+  const [titleMovePicker, setTitleMovePicker] = useState<{ query: string; items: Array<{ id: string; label: string }>; activeIdx: number } | null>(null)
+  const [titleMovePickerPos, setTitleMovePickerPos] = useState<{ top: number; left: number } | null>(null)
 
   // Record recent visit
   useEffect(() => {
@@ -881,7 +885,49 @@ export default function NodeView() {
       } else if (!hashMatch) {
         setTitleTagPicker(null)
       }
+
+      // Detect "mover a" command
+      const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
+      if (moveMatch && !slashMatch) {
+        const query = moveMatch[1].trim().toLowerCase()
+        const today = getTodayDiaryUnderAgenda()
+        const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+        const tomorrow = ensureDayPath(tomorrowDate)
+        const quickItems = [
+          { id: today.id, label: 'Hoy' },
+          { id: tomorrow.id, label: 'Mañana' },
+        ].filter(i => !query || i.label.toLowerCase().includes(query))
+        const nodeItems = store.allActive()
+          .filter(n => !n.deletedAt && n.id !== node!.id && n.text &&
+            (!query || n.text.toLowerCase().includes(query)))
+          .filter(n => n.id !== today.id && n.id !== tomorrow.id)
+          .slice(0, 8)
+          .map(n => ({ id: n.id, label: n.text || '' }))
+        const items = [...quickItems, ...nodeItems]
+        if (items.length > 0) {
+          const cursorRect = range.getBoundingClientRect()
+          setTitleMovePicker({ query: moveMatch[1], items, activeIdx: 0 })
+          setTitleMovePickerPos({ top: cursorRect.bottom + 4, left: Math.max(8, Math.min(cursorRect.left, window.innerWidth - 220)) })
+        } else {
+          setTitleMovePicker(null)
+        }
+      } else {
+        setTitleMovePicker(null)
+      }
     }
+  }
+
+  function applyTitleMove(item: { id: string; label: string }) {
+    if (!titleRef.current || !node) return
+    const rawText = titleRef.current.textContent || ''
+    const cleanText = rawText.replace(/\s*(?:mover a|move to)\s*.*/i, '').trim()
+    const siblings = store.children(item.id)
+    const maxOrder = siblings.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
+    store.updateNode(node.id, { text: cleanText, parentId: item.id, siblingOrder: maxOrder + 1000 })
+    if (titleRef.current) titleRef.current.textContent = cleanText
+    setTitleMovePicker(null)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ Movido a "${item.label.slice(0, 30)}"`, type: 'success' } }))
+    navigate('/')
   }
 
   function applyTitleTag(tag: string) {
@@ -1601,6 +1647,13 @@ export default function NodeView() {
                 handleTitleInput(e)
               })}
               onKeyDown={isLocked ? undefined : (e => {
+                // Move picker navigation
+                if (titleMovePicker) {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setTitleMovePicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setTitleMovePicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p); return }
+                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); applyTitleMove(titleMovePicker.items[titleMovePicker.activeIdx]); return }
+                  if (e.key === 'Escape') { setTitleMovePicker(null); return }
+                }
                 // Tag picker navigation
                 if (titleTagPicker) {
                   if (e.key === 'ArrowDown') {
@@ -1743,6 +1796,23 @@ export default function NodeView() {
                     <span className="inline-picker-content">
                       <span className="inline-picker-label">{tag}</span>
                     </span>
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
+            {/* "Mover a" picker en el título */}
+            {titleMovePicker && titleMovePickerPos && createPortal(
+              <div className="inline-picker" style={{ position: 'fixed', top: titleMovePickerPos.top, left: titleMovePickerPos.left, zIndex: 1000 }}>
+                <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>→ Mover a...</div>
+                {titleMovePicker.items.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    className={`inline-picker-item ${idx === titleMovePicker.activeIdx ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyTitleMove(item) }}
+                  >
+                    <span className="inline-picker-icon">→</span>
+                    <span className="inline-picker-content"><span className="inline-picker-label">{item.label}</span></span>
                   </button>
                 ))}
               </div>,

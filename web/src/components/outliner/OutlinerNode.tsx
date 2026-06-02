@@ -6,7 +6,7 @@ import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGloba
 import type { Node } from '../../types'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { createNodeShortcut } from '../../utils/atajosHelper'
-import { ensureDayPath } from '../../utils/agendaHelper'
+import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
@@ -151,7 +151,7 @@ interface PickerItem {
 }
 
 interface InlinePicker {
-  type: '@' | '#' | 'mirror'
+  type: '@' | '#' | 'mirror' | 'move'
   query: string
   items: PickerItem[]
   activeIdx: number
@@ -632,6 +632,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return dateStr + timeStr
   })() : null
 
+  function buildMovePickerItems(query: string): PickerItem[] {
+    const q = query.trim().toLowerCase()
+    const today = getTodayDiaryUnderAgenda()
+    const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+    const tomorrow = ensureDayPath(tomorrowDate)
+    const quickItems: PickerItem[] = [
+      { id: today.id, label: 'Hoy', group: 'note' as const },
+      { id: tomorrow.id, label: 'Mañana', group: 'note' as const },
+    ].filter(item => !q || item.label.toLowerCase().includes(q) ||
+      normalizeNFD(item.label).includes(normalizeNFD(q)))
+    const nodeItems = store.allActive()
+      .filter(n => !n.deletedAt && n.id !== node.id && n.text &&
+        (!q || n.text.toLowerCase().includes(q) || normalizeNFD(n.text).includes(normalizeNFD(q))))
+      .filter(n => n.id !== today.id && n.id !== tomorrow.id)
+      .slice(0, 8)
+      .map(n => ({ id: n.id, label: n.text, status: n.status, group: 'note' as const }))
+    return [...quickItems, ...nodeItems]
+  }
+
+  function normalizeNFD(s: string) {
+    return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  }
+
   function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
     if (type === '@') {
       // @ — contextos del árbol 🧠 Contexto: buscar por nombre visible, no por slug
@@ -813,6 +836,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const atMatch = before.match(/@([^@\n]*)$/)
     const hashMatch = before.match(/#(\w*)$/)
 
+    // Detectar "mover a [query]" en el texto completo (case-insensitive, ignora acentos)
+    const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
+
     if (picker?.type === 'mirror') {
       // En modo mirror, el texto que escribe es el query de búsqueda
       const query = text
@@ -821,6 +847,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         .slice(0, 10)
         .map(n => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], bodyPreview: n.body?.slice(0, 30) }))
       setPicker(p => p ? { ...p, query, items, activeIdx: 0 } : p)
+    } else if (moveMatch) {
+      const query = moveMatch[1]
+      const items = buildMovePickerItems(query)
+      setPicker({ type: 'move', query, items, activeIdx: 0 })
     } else if (atMatch) {
       const query = atMatch[1]
       const items = buildPickerItems('@', query)
@@ -923,6 +953,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function applyPickerSelection(item: PickerItem) {
     if (!picker || !contentRef.current) return
+
+    // ── Move: mover el nodo al destino seleccionado ──
+    if (picker.type === 'move') {
+      const rawText = contentRef.current?.textContent || ''
+      // Quitar "mover a [query]" del texto, conservando el texto previo
+      const cleanText = rawText.replace(/\s*(?:mover a|move to)\s*.*/i, '').trim()
+      const siblings = store.children(item.id)
+      const maxOrder = siblings.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
+      store.updateNode(node.id, { text: cleanText, parentId: item.id, siblingOrder: maxOrder + 1000 })
+      if (contentRef.current) contentRef.current.textContent = cleanText
+      setPicker(null)
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `→ Movido a "${(item.label || '').slice(0, 30)}"`, type: 'success' }
+      }))
+      return
+    }
 
     // ── Mirror: convertir el nodo actual en espejo del nodo seleccionado ──
     if (picker.type === 'mirror') {
@@ -3235,15 +3281,31 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         />
       )}
 
-      {/* Inline picker (@ / # / mirror) — portal para evitar conflicto DOM */}
+      {/* Inline picker (@ / # / mirror / move) — portal para evitar conflicto DOM */}
       {picker && picker.items.length > 0 && createPortal(
         <div className="inline-picker" style={pickerStyle}>
+          {picker.type === 'move' && (
+            <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>
+              → Mover a...
+            </div>
+          )}
           {picker.type === 'mirror' && (
             <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
               ⬡ Espejo — selecciona el nodo a reflejar aquí
             </div>
           )}
-          {picker.type === '@' ? (() => {
+          {picker.type === 'move' ? picker.items.map((item, idx) => (
+            <button
+              key={item.id}
+              className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
+              onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
+            >
+              <span className="inline-picker-icon">→</span>
+              <span className="inline-picker-content">
+                <span className="inline-picker-label">{item.label}</span>
+              </span>
+            </button>
+          )) : picker.type === '@' ? (() => {
             const contextItems = picker.items.filter(i => i.group === 'context')
             const noteItems = picker.items.filter(i => i.group === 'note')
             const renderItem = (item: PickerItem, idx: number) => (
