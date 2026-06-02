@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.20 / Mac v9.5.2 — 2 junio 2026 · Planificador rediseñado y filtros en tiempo real
+
+### Planificador — nuevo modelo de datos
+
+El planificador ha sido rediseñado de raíz. Antes, arrastrar una tarea al planificador creaba un nodo duplicado ("time block") y podía mover el nodo original fuera de su lugar en el árbol. Ahora **el nodo nunca se mueve**: el drag simplemente asigna una hora al nodo original, y el planificador lo muestra en el hueco de tiempo correspondiente.
+
+**Franja "Todo el día"**: nueva zona encima del timeline en cada columna del día. Muestra las tareas con fecha asignada pero sin hora, y los eventos de todo el día de Google Calendar. Puedes arrastrar cualquier elemento de esa franja al timeline para asignarle una hora concreta, o desde el árbol directamente a la franja para asignar solo fecha.
+
+**Sincronización con Google Calendar al planificar**: si tienes Google Calendar conectado, asignar una hora a una tarea en el planificador crea automáticamente un evento en Google Calendar. Si mueves o redimensionas el bloque, el evento se actualiza. Si quitas la hora, el evento se elimina.
+
+**Context menu mejorado**: clic derecho sobre cualquier bloque permite "Quitar hora (→ todo el día)", "Quitar del planificador", "Ir al nodo" y cambiar el color.
+
+### Filtros en tiempo real
+
+Los filtros ahora se recalculan al instante cuando cambia cualquier propiedad de un nodo: si mueves una tarea a mañana mediante el botón "→ mañana", desaparece del filtro de hoy sin necesidad de recargar. Antes era necesario refrescar la página para que el filtro se actualizara.
+
+Cuando un nodo deja de cumplir el filtro activo, sale con una animación: desliza hacia la derecha con fade-out antes de desaparecer, en vez de desaparecer bruscamente.
+
+### Fixes — Enter crea hermano en todos los casos
+
+Al escribir un texto y convertirlo en tarea (`-t` + Enter), evento (`-e` + Enter), o al aceptar la predicción automática de tarea+fecha (Enter en el ghost text), ahora siempre se crea un nodo hermano vacío debajo con el cursor listo. Antes el cursor se quedaba en el mismo nodo.
+
+---
+
 ## Web v9.5.56 / Mac v9.5.1 — 2 junio 2026 · Captura unificada y polish UX
 
 ### Captura unificada — un solo modal para todo

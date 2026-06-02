@@ -444,6 +444,8 @@ Los siguientes elementos son del sistema y se acceden desde el menú `···` (a
 
 Los filtros te permiten ver exactamente lo que necesitas en cada momento, sin reorganizar el árbol.
 
+Los filtros son **reactivos en tiempo real**: si mueves una tarea a mañana, cambia su estado o le asignas una fecha, el filtro se actualiza al instante sin necesidad de refrescar. Los nodos que dejan de cumplir el filtro salen con una animación de deslizamiento.
+
 **Activar:** ⌘F o clic en la barra de filtro superior.
 
 ### Lenguaje natural
@@ -689,25 +691,55 @@ Los agentes se configuran en su panel de propiedades:
 
 El Planificador es la vista de calendario de From. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
-**Vista Día**: timeline de 24 horas con tus tareas y eventos. Puedes:
-- Arrastra eventos de Google Calendar para cambiarles la hora o el día.
-- Redimensiona un evento arrastrando su borde inferior para cambiar la duración.
-- Haz clic en una hora vacía para crear un nuevo evento.
-- Arrastra el eje de horas (la columna izquierda con las horas) verticalmente para hacer zoom.
+**Vista Día**: timeline de 24 horas con tus tareas y eventos dividido en dos zonas:
 
-**Vista Año**: los 12 meses del año en una grid responsive. Haz clic en cualquier día para navegar directamente a la nota de ese día en la Agenda. Los días con contenido aparecen destacados.
+- **Franja "Todo el día"** (parte superior): muestra las tareas del día sin hora asignada y los eventos de todo el día de Google Calendar. Es el punto de partida para planificar.
+- **Timeline de horas** (parte inferior): muestra las tareas y eventos con hora concreta. Los bloques indican su hora de inicio y pueden redimensionarse para ajustar la duración.
+
+**Vista Año**: los 12 meses del año en una grid responsive. Los días con tareas o eventos aparecen con un punto. Haz clic en cualquier día para navegar a la nota de ese día en la Agenda.
 
 **Navegación**: botones ‹ › para avanzar o retroceder. Botón **Hoy** para volver al día actual.
 
-Pulsa **Escape** para cerrar el planificador.
+### Planificar una tarea — asignar hora
 
-### Mover y redimensionar eventos de Google Calendar
+El Planificador no mueve ni duplica tus nodos. Simplemente les asigna una hora.
 
-Si tienes Google Calendar conectado, puedes gestionar los eventos directamente en el planificador sin salir de From:
+**Desde el árbol al timeline**: arrastra cualquier nodo desde el árbol central hacia el timeline del planificador. Se asigna la hora del punto donde sueltas. El nodo sigue en el mismo lugar del árbol — solo ha ganado una hora programada.
 
-- **Arrastra un evento** a otra hora o día: el evento se mueve visualmente al instante y se sincroniza con Google Calendar en segundo plano.
-- **Redimensiona la duración**: arrastra el borde inferior del evento para alargar o acortar su duración.
-- Si la operación falla (sin conexión, error de la API), el evento vuelve automáticamente a su posición original.
+**Desde el árbol a "Todo el día"**: arrastra un nodo a la franja superior para asignarle solo una fecha (sin hora). Aparece en la franja all-day hasta que le asignes hora.
+
+**Desde "Todo el día" al timeline**: arrastra un elemento de la franja all-day hacia el timeline para asignarle una hora concreta. A partir de ese momento aparece en el grid de horas.
+
+**Clic en hora vacía**: crea un nuevo bloque directamente en esa hora. Escribe el título y pulsa Enter.
+
+**Redimensionar**: arrastra el borde inferior de cualquier bloque para cambiar su duración.
+
+**Mover un bloque**: arrastra el bloque a otra hora o día. La línea morada indica el inicio real del bloque al posicionarlo.
+
+### Sincronización con Google Calendar al planificar
+
+Si tienes Google Calendar conectado, el planificador crea y actualiza eventos automáticamente:
+
+- **Asignar hora** a una tarea → se crea un evento en Google Calendar.
+- **Mover o redimensionar** el bloque → el evento de Google Calendar se actualiza al instante.
+- **Quitar la hora** (clic derecho → "Quitar hora") → el evento de Google Calendar se elimina.
+
+Los eventos de Google Calendar también se muestran en el planificador con su color original y pueden moverse y redimensionarse directamente desde From.
+
+### Clic derecho sobre un bloque
+
+- **Ir al nodo** — navega al nodo en el árbol.
+- **Quitar hora (→ todo el día)** — elimina la hora pero mantiene la fecha. El nodo vuelve a la franja all-day.
+- **Quitar del planificador** — elimina la fecha y hora por completo.
+- **Color** — cambia el color del bloque en el planificador.
+
+### Zoom
+
+- **Zoom vertical** (escala de horas): arrastra el eje de horas (columna con las horas) hacia arriba para hacer zoom in o hacia abajo para zoom out. También con Shift + rueda del ratón.
+- **Zoom horizontal** (columnas de días): arrastra la cabecera de días hacia la izquierda o derecha para ver más o menos días simultáneamente (entre 2 y 7).
+- **Restablecer zoom**: botón ↺ en la barra del planificador.
+
+Pulsa **Escape** para cerrar el planificador (o centrar la vista si no está centrada).
 
 ---
 
