@@ -128,6 +128,11 @@ export default function PlannerPanel({ onClose }: Props) {
       .catch(e => {
         console.error('[PlannerPanel] GCal error:', e)
         setGcalError('Error cargando Google Calendar')
+        // Si el token expiró, actualizar el store para que Settings muestre el estado real
+        const msg = e instanceof Error ? e.message : ''
+        if (msg.includes('token') || msg.includes('401') || msg.includes('refresh')) {
+          us.markGoogleDisconnected()
+        }
       })
   }, [us.googleConnected, centerDate.toDateString()]) // eslint-disable-line
 

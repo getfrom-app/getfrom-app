@@ -49,8 +49,17 @@ class UserStore {
       this.googleEmail = status.email
       this.notify()
     } catch {
-      // Silently ignore
+      // Si falla, asumir desconectado (token inválido o servidor caído)
+      this.googleConnected = false
+      this.googleEmail = null
+      this.notify()
     }
+  }
+
+  markGoogleDisconnected() {
+    this.googleConnected = false
+    this.googleEmail = null
+    this.notify()
   }
 
   get isPremium(): boolean {
