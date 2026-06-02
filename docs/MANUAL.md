@@ -1,4 +1,4 @@
-# From — Manual de usuario v9.4
+# From — Manual de usuario v9.5
 
 > Web · Mac · iPhone · getfrom.app
 
@@ -48,12 +48,12 @@ Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](
 
 Cuando entras en From por primera vez encuentras:
 
-- **El árbol principal** en el centro: tu espacio de trabajo. Al principio incluye los nodos raíz del sistema: 📅 Agenda, 🧠 Contexto, 📋 Plantillas, 📊 Paneles, 🤖 Agentes y 🗑 Papelera.
-- **El sidebar izquierdo**: accesos rápidos, navegación y ajustes.
-- **El panel derecho**: propiedades y contenido del nodo seleccionado.
-- **La barra superior**: breadcrumb de navegación y controles de filtro y vista.
+- **El árbol principal** en el centro: tu espacio de trabajo. Muestra directamente la **Agenda** — los años (2026, 2027...) desde donde navegas a meses, días y notas.
+- **El sidebar izquierdo**: tus paneles guardados y la lista de contextos.
+- **La barra superior**: breadcrumb de navegación y controles de vista y panel derecho.
+- **El panel derecho**: se abre con Magic (IA), Filtro, Planificador o el contenido de un Contexto seleccionado.
 
-Para empezar: haz clic en el área en blanco del árbol o pulsa `Enter` para crear tu primer nodo.
+Para empezar: haz clic en el año actual para ver tus notas del mes, o pulsa `H` para ir directamente al día de hoy.
 
 ---
 
@@ -317,19 +317,35 @@ Al mover un nodo a otro día, se deja un espejo ⬡ en la posición original par
 
 ## 6. El Sidebar
 
-El sidebar es el panel izquierdo de navegación. Contiene:
+El sidebar es el panel izquierdo de navegación. Contiene dos secciones principales:
 
-**📊 Paneles** — tus vistas dinámicas personalizadas, sincronizadas entre dispositivos. Aparecen en la parte superior para que llegues de un clic a los nodos y filtros que usas más. Cada panel se actualiza automáticamente mostrando siempre el estado actual. Puedes reordenarlos arrastrándolos.
+### PANELES
 
-**Hoy** — abre el nodo del día actual en la Agenda. Tu punto de partida cada mañana.
+Tus vistas dinámicas personalizadas. Cada panel es un filtro guardado o un acceso a un nodo concreto. Se actualizan automáticamente mostrando siempre el estado actual.
 
-**Planificador** — vista de calendario con tus tareas y eventos del mes. Desde aquí planificas y navegas entre días.
+- **Reordenar**: arrastra los paneles con el handle `⠿` que aparece al pasar el cursor.
+- **Eliminar**: icono `×` al pasar el cursor.
+- **Crear**: activa un filtro con ⌘F y pulsa el icono 📊 en la barra de resultados para guardarlo como panel.
+- **Seleccionar**: clic en el panel activa el filtro en la vista central. Escape lo desactiva y vuelve a la agenda.
 
-**Papelera** — contiene los nodos eliminados. Puedes recuperarlos en cualquier momento (clic derecho → "Restaurar") o eliminarlos definitivamente.
+### CONTEXTOS
 
-**Ajustes** — abre el panel de configuración: cuenta, IA, integraciones, apariencia, backup y preferencias.
+Lista de todos tus contextos, accesibles de un clic. Los contextos son etiquetas de trabajo que agrupan nodos relacionados a través del árbol.
 
-**Cerrar sesión** — cierra la sesión activa.
+- **Clic en un contexto**: filtra el árbol central mostrando todos los nodos con ese contexto, y abre el contenido del contexto (editable) en el panel derecho.
+- **Chevron ›**: si un contexto tiene sub-contextos con contenido, puedes expandirlos.
+- **Botón +**: crea un nuevo contexto directamente desde el sidebar. Escribe el nombre y pulsa Enter.
+- **Escape**: deselecciona el contexto activo y cierra el panel derecho.
+
+### El menú ··· (arriba a la derecha)
+
+Acceso a las herramientas del sistema que no viven en el árbol principal:
+
+- **Agentes** — tus agentes de IA autónomos.
+- **Plantillas** — plantillas reutilizables.
+- **Papelera** — nodos eliminados. Puedes recuperarlos (clic derecho → Restaurar) o borrarlos definitivamente.
+- **Ajustes** — cuenta, IA, integraciones, apariencia, backup.
+- **Cerrar sesión**.
 
 ---
 
@@ -346,102 +362,81 @@ La barra superior muestra en todo momento dónde estás y te da acceso a los con
 
 ## 8. Sistema @ — Contextos
 
-Los contextos son etiquetas que agrupan nodos relacionados más allá de la jerarquía del árbol. Imagina que tienes proyectos de trabajo repartidos en distintas ramas del árbol: con un contexto `@trabajo` puedes verlos todos juntos de golpe sin reorganizar nada.
+Los contextos son etiquetas que agrupan nodos relacionados más allá de la jerarquía del árbol. Imagina que tienes proyectos de trabajo repartidos en distintas ramas: con el contexto `@trabajo` los ves todos juntos de golpe sin reorganizar nada.
 
-### Asignar un contexto
+### Asignar un contexto a un nodo
 
-Escribe `@` en cualquier nodo. Se abre el picker de contextos con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
+Escribe `@` en cualquier nodo. Se abre el picker con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
 
-Puedes asignar más de un contexto al mismo nodo.
+Puedes asignar más de un contexto al mismo nodo. También funciona en el **Quick Capture** (Espacio): escribe el nombre del contexto y From lo sugiere como ghost text.
 
-### Dónde se definen los contextos
+### Crear y gestionar contextos
 
-Todos tus contextos viven en el nodo raíz **🧠 Contexto**. Ábrelo para:
+**Desde el sidebar**: pulsa `+` en la sección CONTEXTOS. Escribe el nombre y pulsa Enter. El nuevo contexto aparece en la lista y se abre en el panel derecho listo para añadir contenido.
 
-- Crear nuevos contextos.
-- Renombrarlos.
-- Organizarlos en grupos.
-- Añadir a cada contexto información de fondo que la IA usa como contexto adicional al trabajar contigo (por ejemplo, en el contexto `@trabajo` puedes describir en qué empresa trabajas, cuál es tu rol y qué proyectos llevas).
+**Desde el propio contexto (panel derecho)**: al seleccionar un contexto, se abre como outliner editable en la columna derecha. Añade hijos para describir el contexto, guardar instrucciones para la IA o crear sub-secciones.
 
-Dentro de **🧠 Contexto** también vive tu **Perfil**: información personal que la IA carga siempre para entenderte mejor sin que tengas que explicarte en cada conversación.
+Los contextos viven internamente en el nodo **🧠 Contexto** del sistema (accesible desde ⌘K si lo necesitas).
 
-### Filtrar por @contexto
+### Filtrar por contexto desde el sidebar
 
-En la barra de filtros (⌘F), escribe `@trabajo` (o el nombre de tu contexto) para ver todos los nodos con ese contexto asignado. Los contextos más usados aparecen como chips de sugerencia debajo del campo de filtro.
+Haz clic en cualquier contexto del sidebar. El árbol central se filtra mostrando todos los nodos con ese contexto asignado, y el panel derecho muestra el contenido del contexto.
+
+Pulsa **Escape** para desactivar el filtro y volver a la agenda.
+
+### Filtrar por @contexto desde el campo de búsqueda
+
+En la barra de filtros (⌘F), escribe `@trabajo` (o el nombre de tu contexto) para ver todos los nodos con ese contexto asignado.
+
+### El Perfil de IA
+
+Dentro del contexto **Perfil IA** puedes escribir información personal que la IA carga siempre: quién eres, en qué trabajas, tus proyectos activos, preferencias de comunicación. La IA lo usa automáticamente en todas las conversaciones.
 
 ### Por qué usar contextos
 
-Los contextos te permiten cruzar el árbol por dimensión. Tus tareas de trabajo están repartidas por proyectos en distintas ramas, pero con `@trabajo` las ves todas juntas. Tus lecturas pendientes en distintas carpetas aparecen juntas con `@leer`. Sin mover nada, sin duplicar nada.
+Los contextos te permiten cruzar el árbol por dimensión. Tus tareas de trabajo están repartidas por proyectos en distintas ramas, pero con `@trabajo` las ves todas juntas. Sin mover nada, sin duplicar nada.
 
 ---
 
-## 9. Nodos raíz del sistema
+## 9. La Agenda y el sistema de nodos
 
-Siempre presentes al fondo del árbol (no se pueden eliminar):
+### La Agenda — vista principal
 
-### 📅 Agenda
+La vista de inicio de From ES la Agenda. Al abrir la app ves directamente los años (2026, 2027...). Navegar es tan sencillo como expandir el año → mes → día.
 
-El diario de From. Organiza el tiempo en una jerarquía: **Agenda → Año → Mes → Día**. Cada día tiene su propia nota, y dentro de ella encuentras:
+La Agenda organiza el tiempo en la jerarquía: **Año → Mes → Día**. Cada día tiene su propia nota con:
 
 - Las tareas con vencimiento ese día (incluidas las vencidas que siguen pendientes).
 - Los eventos del día (sincronizados con Google Calendar si está conectado).
-- Un área de escritura libre: notas del día, capturas rápidas, ideas.
+- Un área de escritura libre para notas del día, capturas e ideas.
 
-**Ir al día de hoy:** pulsa **Hoy** en el sidebar o escribe `/hoy` en cualquier nodo.
+**Ir al día de hoy:** pulsa `H` o el icono de calendario en la barra superior.
 
-**Navegar a otros días:** expande el árbol de la Agenda. También puedes navegar desde el Planificador haciendo clic en cualquier día del calendario.
+**Navegar a otro día:** expande el árbol de años/meses/días. También puedes navegar desde el Planificador (tecla `P`) haciendo clic en cualquier día.
 
-**Cuando mueves una tarea "a hoy" o "a mañana"**, From la coloca dentro del nodo de ese día en la Agenda. En su posición original deja un espejo automático para que no pierdas la referencia.
+**Mover tareas a otro día:** slash menu → `/Mover a hoy`, `/Mover a mañana` o `/Mover a fecha...`. From coloca el nodo en el día destino y deja un espejo en el origen.
 
-Los nodos con tareas pendientes en su interior se muestran con un icono 📁 (contenedor vivo), indicando que hay trabajo activo dentro aunque el nodo esté colapsado.
+Los nodos con tareas pendientes en su interior muestran el icono 📁 (contenedor vivo) aunque estén colapsados.
 
-### 🧠 Contexto
+### Nodos del sistema (menú ···)
 
-Gestiona tus contextos de trabajo y tu perfil personal para la IA.
+Los siguientes elementos son del sistema y se acceden desde el menú `···` (arriba a la derecha) o desde ⌘K. No aparecen en el árbol principal.
 
-- **Perfil**: nodo especial dentro de Contexto. La IA lo carga siempre. Escribe aquí quién eres, en qué trabajas y cualquier información que quieras que la IA tenga siempre presente.
-- **Contextos**: crea aquí los @contextos que quieras. Puedes añadir dentro de cada contexto una descripción o instrucciones que la IA usará cuando trabajes en ese contexto.
-- **Prompts de IA por contexto**: dentro de cualquier contexto puedes añadir prompts específicos (hijos del tipo Prompt). La IA los detecta y los usa automáticamente cuando ese contexto está activo.
+**🤖 Agentes** — agentes de IA autónomos. Al abrir un agente aparecen los controles: toggle Activo/Pausado y botón ▶ Ejecutar.
 
-### 📋 Plantillas
+**📋 Plantillas** — plantillas reutilizables. Para usar una: slash menu → `/Plantilla`.
 
-Guarda aquí cualquier nodo (con todos sus hijos) como plantilla reutilizable. Una plantilla puede ser una estructura de proyecto, una checklist de onboarding, el formato de reunión semanal, o cualquier cosa que repitas.
+**🗑 Papelera** — nodos eliminados. La jerarquía se preserva.
+- Clic derecho → **Restaurar** — devuelve el nodo a su ubicación original.
+- Clic derecho → **Eliminar permanentemente**.
 
-Para usar una plantilla: slash menu → `/Plantilla` en cualquier nodo. From crea una copia de la plantilla en la posición actual.
-
-### 📊 Paneles
-
-Contiene los paneles que has guardado. Desde aquí puedes reorganizarlos, renombrarlos o eliminarlos. También puedes hacer clic derecho en cualquier panel del sidebar para gestionarlo directamente.
-
-### 🤖 Agentes
-
-Contiene los agentes de IA predefinidos y los que crees tú. Un agente es una instrucción que le das a Magic para que ejecute una tarea automáticamente.
-
-Al abrir un nodo agente, aparece la **barra de controles**:
-- **Toggle Activo/Pausado** — activa o desactiva el agente
-- **▶ Ejecutar** — lanza el agente ahora. El resultado aparece como nodo en el diario de hoy
-
-Puedes crear agentes personalizados directamente en el árbol desde el nodo raíz 🤖 Agentes.
-
-### 🗑 Papelera
-
-Cuando eliminas un nodo va a la Papelera (no se borra permanentemente). La **jerarquía se preserva**: si borras A y luego B (padre de A), la Papelera muestra B→A como estaban.
-
-- **Botón derecho → Restaurar** — devuelve el nodo a su ubicación original
-- **Botón derecho → Eliminar permanentemente** — lo borra definitivamente
-- **Vaciar papelera** — aparece como control al abrir el nodo Papelera
-
-### ⚙️ Ajustes
-
-Accesible también desde el sidebar. Contiene:
-
-- **Cuenta**: email, contraseña, plan actual, cancelar suscripción.
-- **IA**: modelo de IA activo, claves API propias (plan Pro/Lifetime), configuración de agentes.
-- **Predicciones**: añade palabras propias para que From las reconozca como señal de tarea o evento al escribir.
+**⚙️ Ajustes**:
+- **Cuenta**: email, contraseña, plan actual.
+- **IA**: modelo activo, claves API propias (Pro/Lifetime), configuración de agentes.
+- **Predicciones**: palabras clave para reconocer tareas y eventos.
 - **Integraciones**: Google Calendar, conexión MCP con Claude.
-- **Datos / Backup**: historial de snapshots, crear snapshot manual, restaurar backup, exportar en JSON o Markdown.
-- **Apariencia**: tema claro/oscuro/sistema, densidad (compacto/normal/espacioso), color de acento, rango horario del planificador.
-- **Notificaciones**: configura qué alertas recibes y cómo.
+- **Datos / Backup**: snapshots, restaurar, exportar JSON o Markdown.
+- **Apariencia**: tema claro/oscuro, densidad, color de acento.
 
 ---
 
@@ -523,7 +518,7 @@ Cuando tienes un filtro útil, guárdalo en el sidebar con el botón 📊 de la 
 
 ## 11. Paneles (📊)
 
-Los paneles son vistas dinámicas fijas en la parte superior del sidebar. Se actualizan automáticamente siempre que los abres. Hay dos tipos:
+Los paneles son vistas dinámicas fijas en la sección PANELES del sidebar. Se actualizan automáticamente siempre que los abres. Hay dos tipos:
 
 **Panel de nodo**: muestra ese nodo y todos sus descendientes y referencias. Como hacer zoom en ese nodo pero accesible siempre desde el sidebar.
 
@@ -533,14 +528,14 @@ Los paneles son vistas dinámicas fijas en la parte superior del sidebar. Se act
 
 **Desde un filtro activo:** con el filtro en pantalla, pulsa el icono 📊 en la barra de resultados.
 
-**Desde un nodo:** clic derecho sobre el nodo → "Añadir a paneles". El panel muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo desde otras partes del árbol.
+**Desde un nodo:** clic derecho sobre el nodo → "Añadir a paneles". El panel muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo.
 
 ### Gestionar paneles
 
-- Los paneles tienen una vista asociada (lista/tabla/kanban/calendario) que se recuerda.
+- **Reordenar**: arrastra el panel con el handle `⠿` que aparece al pasar el cursor.
+- **Eliminar**: icono `×` al pasar el cursor. El nodo no se borra, solo el panel.
+- **Activar**: clic en el panel aplica el filtro en el árbol central. Escape lo desactiva.
 - Se sincronizan entre todos tus dispositivos.
-- Para eliminar un panel: clic derecho en el sidebar → "Eliminar". El nodo no se borra, solo el panel.
-- Para reorganizar: arrastra los paneles en el sidebar o entra al nodo 📊 Paneles del árbol.
 
 ---
 
@@ -591,13 +586,12 @@ Puedes crear múltiples vistas para el mismo nodo (como las vistas de Notion). P
 Magic es el asistente de IA de From. No es un chatbot genérico: conoce tu árbol, tus tareas, tus contextos y tu perfil personal.
 
 **Abrir Magic:**
-- **Hover en el borde derecho** de la pantalla → la columna de Magic se abre
-- **Botón ✨** (esquina inferior derecha)
-- **Mantén R** — graba inmediatamente. Suelta R para transcribir y enviar
+- Icono ✦ en la barra superior derecha
+- Tecla `M` (sin ningún input activo)
 
-Escribe en el campo "¿Qué necesitas?" y pulsa Enter para enviar. Haz clic en cualquier parte de la columna para enfocar el campo automáticamente.
+Escribe en el campo y pulsa Enter para enviar.
 
-**Grabar con voz:** mantén R mientras hablas. Al soltar, Magic transcribe tu voz y lo envía. El waveform animado muestra que está escuchando.
+**Grabar con voz:** mantén `R` mientras hablas. Al soltar, transcribe y envía. El waveform animado muestra que está escuchando.
 
 **Dónde crea Magic las cosas:**
 - Recordatorios y tareas genéricas → van al **diario de hoy**
@@ -627,41 +621,21 @@ Magic aprende de tus correcciones y se adapta a ti progresivamente. El objetivo:
 
 **Ver lo aprendido:** Ajustes → Magic → sección "Lo que Magic ha aprendido de ti". Edita o borra cualquier elemento individualmente.
 
-### Chat IA (versión texto)
-
-**Abrir el chat:** ⌘J o Espacio.
-
 **Qué puede hacer:**
 
 - Resumir el contenido del nodo actual y sus hijos.
-- Crear tareas, notas o eventos directamente en tu árbol (te pide confirmación antes de escribir).
-- Buscar en tus notas ("¿qué decidimos sobre el cliente X?").
+- Crear tareas, notas o eventos directamente en tu árbol.
+- Buscar en tus notas.
 - Redactar texto con el contexto de lo que estás haciendo.
 - Responder preguntas usando tus propias notas como fuente.
-- Ejecutar acciones en masa ("marca como hecho todo lo de hoy").
+- Ejecutar acciones en masa.
 
-**Chips de acceso rápido:** al abrir el chat, aparecen chips de acciones sugeridas según el nodo que tienes abierto (Resumir, Priorizar, Organizar, Continuar escribiendo...). Haz clic para lanzar esa acción directamente.
-
-**Quick reply chips:** la IA puede sugerirte opciones de respuesta rápida en forma de chips. Haz clic en uno para enviarlo como tu próximo mensaje.
-
-**Contexto automático:** no tienes que explicarle en qué estás. La IA carga automáticamente:
+**Contexto automático:** la IA carga automáticamente:
 - El nodo abierto con su título, body e hijos.
 - El diario de hoy con tus tareas y eventos.
-- Tus tareas pendientes (vencidas, hoy, próximas, sin fecha).
+- Tus tareas pendientes.
 - Los contextos (@) activos con sus instrucciones.
-- Tu perfil desde 🧠 Contexto.
-
-### IA Inline (✨)
-
-Dentro de cualquier nodo puedes pedir ayuda a la IA sin salir del editor.
-
-**Cómo activar:**
-
-- Pulsa Espacio al principio de un nodo con bullet/lista para que aparezca el campo de prompt inline.
-- Usa `/Resumir` para resumir el contenido del nodo y sus hijos.
-- Usa `/Encontrar tareas` para que la IA lea el texto y extraiga las tareas, creándolas como hijos.
-
-La respuesta se inserta como hijos del nodo, con streaming en tiempo real. El resultado es editable inmediatamente.
+- Tu perfil de IA.
 
 ### Ghost text — predicciones mientras escribes
 
@@ -711,14 +685,19 @@ Los agentes se configuran en su panel de propiedades:
 
 ## 14. El Planificador
 
-El Planificador es la vista de calendario de From. Accede desde el sidebar (icono de calendario), desde la barra lateral, o pulsa `P` (sin ningún input activo) para abrirlo y cerrarlo al instante.
+El Planificador es la vista de calendario de From. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
-- Vista **mensual** por defecto, con las tareas y eventos del mes distribuidos en sus días.
-- Las tareas con fecha aparecen en el día correspondiente.
-- Los eventos de Google Calendar aparecen con su color de calendario.
-- Haz clic en cualquier **día** para ir a ese día en la Agenda.
-- Haz clic en un **evento** para editarlo: cambiar título, hora, o eliminarlo. Pulsa Enter en los campos de hora o fecha para guardar sin necesidad de hacer clic.
-- El rango de horas del planificador se configura en Ajustes → Apariencia → Calendario y Timeline (por defecto 7:00-23:00).
+**Vista Día**: timeline de 24 horas con tus tareas y eventos. Puedes:
+- Arrastra eventos de Google Calendar para cambiarles la hora o el día.
+- Redimensiona un evento arrastrando su borde inferior para cambiar la duración.
+- Haz clic en una hora vacía para crear un nuevo evento.
+- Arrastra el eje de horas (la columna izquierda con las horas) verticalmente para hacer zoom.
+
+**Vista Año**: los 12 meses del año en una grid responsive. Haz clic en cualquier día para navegar directamente a la nota de ese día en la Agenda. Los días con contenido aparecen destacados.
+
+**Navegación**: botones ‹ › para avanzar o retroceder. Botón **Hoy** para volver al día actual.
+
+Pulsa **Escape** para cerrar el planificador.
 
 ### Mover y redimensionar eventos de Google Calendar
 
@@ -817,9 +796,11 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 | Colapsar/expandir nodo | Clic en ▶ |
 | Filtro inteligente inline | `⌘F` |
 | Abrir/cerrar planificador | `P` |
-| Chat IA | `⌘J` |
+| Abrir/cerrar Magic | `M` |
 | Slash menu | `/` |
 | Paleta de comandos (búsqueda global) | `⌘K` |
+| Ir al día de hoy | `H` |
+| Deseleccionar contexto / limpiar filtro | `Escape` |
 | Toggle nodo ↔ tarea | `⌘Enter` |
 | Negrita | `⌘B` |
 | Cursiva | `⌘I` |

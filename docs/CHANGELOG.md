@@ -4,6 +4,42 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.5.17 — 2 junio 2026 · Rediseño UX completo
+
+### Agenda como vista principal
+La vista de inicio muestra directamente los años (2026, 2027...) sin mostrar el nodo "Agenda" como intermediario. El árbol empieza donde importa. El breadcrumb va `🏠 › 2026 › Junio › ...` directamente.
+
+### Sistema de Contextos en el sidebar
+El sidebar izquierdo tiene ahora una sección **CONTEXTOS** debajo de PANELES con todos tus contextos listados. Funciona así:
+- **Clic en un contexto**: filtra el árbol central mostrando todos los nodos con ese contexto + abre el contexto en el panel derecho como outliner editable
+- **Botón +**: crea un nuevo contexto directamente desde el sidebar sin navegar a ningún nodo
+- **Chevron ›**: despliega sub-contextos que tienen contenido
+- **Escape**: deselecciona el contexto activo y cierra el panel
+
+### Paneles reorganizables con drag & drop
+Arrastra los paneles del sidebar para reordenarlos. Desaparece el botón "abrir como nodo" — los paneles son paneles, no nodos.
+
+### Nodos sistema accesibles desde el menú ···
+Agentes, Plantillas y Papelera ya no aparecen en el árbol principal. Se accede a ellos desde el menú `···` (arriba a la derecha). También disponibles desde ⌘K.
+
+### IA inline eliminada del outliner
+Se elimina el chat IA inline (Cmd+Space dentro de un nodo). El panel Magic cubre completamente este caso con más contexto, historial y mejor UX.
+
+### Planificador mejorado
+- **Resize sin zoom**: arrastrar el divisor del planificador ya no cambia el zoom del contenido
+- **Calendario año responsive**: se adapta al ancho del panel
+- **Clic en día del año**: navega directamente al nodo de ese día en la Agenda
+
+### QuickCapture mejorado
+- Enter acepta la sugerencia de contexto (primer Enter) y luego crea el nodo (segundo Enter)
+- La fila del ghost text siempre reserva espacio — el modal no salta al aparecer una sugerencia
+
+### Escape inteligente
+- Escape con contexto activo → deselecciona y cierra el panel
+- Escape con filtro de panel activo → limpia el filtro y vuelve a la agenda
+
+---
+
 ## Web v9.4.60 — 1 junio 2026 · Fix empty state en nodos vacíos
 
 ### "Nota vacía" ya no aparece al abrir un nodo sin contenido
