@@ -37,9 +37,8 @@ const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import PlannerPanel from '../panels/PlannerPanel'
 import SearchPanel from '../panels/SearchPanel'
 import PaywallModal from '../paywall/PaywallModal'
-import CommandPalette from '../CommandPalette'
 import MagicChat from '../aichat/MagicChat'
-import QuickCaptureNode from '../modals/QuickCaptureNode'
+import UnifiedCapture from '../modals/UnifiedCapture'
 import NewTaskModal from '../modals/NewTaskModal'
 import NewNoteModal from '../modals/NewNoteModal'
 import NewEventModal from '../modals/NewEventModal'
@@ -67,7 +66,7 @@ function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Outliner con misma fuente (13px), mismo padding-top que el filtro */}
-      <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 32 }}>
+      <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 8 }}>
         <Outliner parentId={nodeId} autoFocusEmpty={true} />
       </div>
     </div>
@@ -92,7 +91,9 @@ export default function MainLayout() {
   type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder' | null
   type CyclablePanel = 'planner' | 'filter' | 'magic' | 'context-list' | 'recorder'
   const PANEL_ORDER: CyclablePanel[] = ['planner', 'filter', 'magic', 'context-list', 'recorder']
-  const [rightPanel, setRightPanel] = useState<RightPanel>(null)
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() =>
+    (localStorage.getItem('from-right-panel') as RightPanel) ?? 'filter'
+  )
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   const lastPanelRef = useRef<CyclablePanel>('planner')
 
@@ -160,13 +161,12 @@ export default function MainLayout() {
     void e
   }
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
-  const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [showUnifiedCapture, setShowUnifiedCapture] = useState(false)
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewNote, setShowNewNote] = useState(false)
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [showVoiceCapture, setShowVoiceCapture] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
-  const [showQuickCapture, setShowQuickCapture] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [rightPanelW, setRightPanelW] = useState(() => {
     const saved = localStorage.getItem('right-panel-w')
@@ -184,6 +184,15 @@ export default function MainLayout() {
       window.dispatchEvent(new Event('from:magic-opened'))
     }
   }, [showAIChat])
+
+  // Persistir preferencia de panel derecho
+  useEffect(() => {
+    if (rightPanel && rightPanel !== 'context') {
+      localStorage.setItem('from-right-panel', rightPanel)
+    } else if (!rightPanel) {
+      localStorage.removeItem('from-right-panel')
+    }
+  }, [rightPanel])
 
   // Cerrar panel desde eventos externos (ej. onboarding al terminar)
   useEffect(() => {
@@ -391,7 +400,7 @@ export default function MainLayout() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setShowCommandPalette(v => !v)
+        setShowUnifiedCapture(v => !v)
       }
       // H (sin modificador) → ir al diario de hoy sin crear nodo
       if (e.key === 'h' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
@@ -420,7 +429,7 @@ export default function MainLayout() {
       if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) { e.preventDefault(); setShowQuickCapture(true) }
+        if (!isInputFocused) { e.preventDefault(); setShowUnifiedCapture(true) }
       }
       // M (sin modificador) → toggle Magic Chat
       if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
@@ -540,7 +549,7 @@ export default function MainLayout() {
       }
       if (e.key === 'Escape') {
         // Prioridad 1: cerrar modales/paleta abiertos (los propios componentes lo gestionan via useEffect)
-        if (showCommandPalette || showNewTask || showNewEvent || showVoiceCapture || showShortcuts || showQuickCapture) return
+        if (showUnifiedCapture || showNewTask || showNewEvent || showVoiceCapture || showShortcuts || showUnifiedCapture) return
 
         // Prioridad 2: cerrar menús flotantes (slash, pickers, etc.) — sus propios handlers lo harán
         const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .wf-topbar-dropdown')
@@ -600,7 +609,7 @@ export default function MainLayout() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture, rightPanel])
+  }, [navigate, showUnifiedCapture, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, rightPanel])
 
   // Listener del modal de URL corta (slug) — disparado desde NodeContextMenu vía CustomEvent
   useEffect(() => {
@@ -668,7 +677,7 @@ export default function MainLayout() {
         <WFTopBar
           onFilter={setFilterText}
           filterText={filterText}
-          onCommandPalette={() => setShowCommandPalette(v => !v)}
+          onCommandPalette={() => setShowUnifiedCapture(v => !v)}
           onLogout={handleLogout}
           onOpenSettings={() => navigate('/settings')}
           onTogglePlanner={() => togglePanel('planner')}
@@ -739,6 +748,24 @@ export default function MainLayout() {
           position: 'relative',
         }}>
           <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
+          {/* Título del panel — mismo estilo tipográfico que el título de nota */}
+          <div className="right-panel-title-bar">
+            <span className="right-panel-title-text">
+              {rightPanel === 'magic' && 'Magic'}
+              {rightPanel === 'filter' && 'Filtro'}
+              {rightPanel === 'planner' && 'Planificador'}
+              {rightPanel === 'context-list' && 'Contextos'}
+              {rightPanel === 'recorder' && 'Grabación'}
+              {rightPanel === 'context' && (() => {
+                const n = contextNodeId ? store.getNode(contextNodeId) : null
+                return n?.text || 'Contexto'
+              })()}
+            </span>
+            <button className="right-panel-title-close" onClick={() => {
+              setRightPanel(null)
+              if (rightPanel === 'context') setContextNodeId(null)
+            }} title="Cerrar">×</button>
+          </div>
           <div
             key={panelKey}
             className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
@@ -779,23 +806,22 @@ export default function MainLayout() {
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
       )}
-      {showCommandPalette && (
-        <CommandPalette
-          onClose={() => setShowCommandPalette(false)}
-          onSelectContext={(nodeId) => { handleSelectContext(nodeId); setShowCommandPalette(false) }}
+      {showUnifiedCapture && (
+        <UnifiedCapture
+          onClose={() => setShowUnifiedCapture(false)}
+          onSelectContext={(nodeId) => { handleSelectContext(nodeId); setShowUnifiedCapture(false) }}
         />
       )}
-      {/* Botón FAB de captura rápida */}
+      {/* Botón FAB */}
       <button
         className="quick-capture-fab"
-        onClick={() => setShowQuickCapture(true)}
-        title="Captura rápida (Espacio)"
+        onClick={() => setShowUnifiedCapture(true)}
+        title="Nueva nota · buscar (Espacio / ⌘K)"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </button>
-      {showQuickCapture && <QuickCaptureNode onClose={() => setShowQuickCapture(false)} />}
       {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
       {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
@@ -876,7 +902,7 @@ export default function MainLayout() {
       )}
       <button
         className="mobile-fab"
-        onClick={() => setShowCommandPalette(true)}
+        onClick={() => setShowUnifiedCapture(true)}
         title="Búsqueda rápida"
         aria-label="Abrir búsqueda"
       >

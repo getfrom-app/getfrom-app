@@ -265,6 +265,13 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
           disableLocalFilter
         />
       </div>
+
+      {/* Hint — sólo en home sin filtro activo */}
+      {!isFiltering && (
+        <div className="wf-home-space-hint">
+          <span>Espacio</span> · nueva nota &nbsp;·&nbsp; <span>⌘K</span> · buscar
+        </div>
+      )}
     </div>
   )
 }
