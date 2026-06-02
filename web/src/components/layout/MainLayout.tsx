@@ -90,7 +90,7 @@ function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => 
       </div>
       {/* Outliner editable — mismos nodos que en el árbol principal */}
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-        <Outliner parentId={nodeId} autoFocusEmpty={false} />
+        <Outliner parentId={nodeId} autoFocusEmpty={true} />
       </div>
     </div>
   )

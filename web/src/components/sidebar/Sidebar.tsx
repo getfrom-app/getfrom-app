@@ -305,42 +305,48 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
   }
 
   const [hoveredAtajoId, setHoveredAtajoId] = useState<string | null>(null)
+  const [dragAtajoId, setDragAtajoId] = useState<string | null>(null)
+  const [dragOverAtajoId, setDragOverAtajoId] = useState<string | null>(null)
+  const [dragOverPos, setDragOverPos] = useState<'before' | 'after'>('after')
 
   function getSortedSiblings(parentId: string | null) {
     return s.children(parentId).filter(n => !n.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
   }
-  function moveAtajoUp(nodeId: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    const node = s.getNode(nodeId); if (!node) return
-    const sibs = getSortedSiblings(node.parentId ?? null)
-    const idx = sibs.findIndex(n => n.id === nodeId); if (idx <= 0) return
-    const prev = sibs[idx - 1]
-    const tmp = prev.siblingOrder
-    store.updateNode(nodeId, { siblingOrder: tmp - 0.5 })
+
+  function handleAtajoDragStart(nodeId: string, e: React.DragEvent) {
+    setDragAtajoId(nodeId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', nodeId)
   }
-  function moveAtajoDown(nodeId: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    const node = s.getNode(nodeId); if (!node) return
-    const sibs = getSortedSiblings(node.parentId ?? null)
-    const idx = sibs.findIndex(n => n.id === nodeId); if (idx < 0 || idx >= sibs.length - 1) return
-    const next = sibs[idx + 1]
-    store.updateNode(nodeId, { siblingOrder: next.siblingOrder + 0.5 })
+  function handleAtajoDragOver(nodeId: string, e: React.DragEvent) {
+    if (!dragAtajoId || dragAtajoId === nodeId) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+    setDragOverAtajoId(nodeId)
+    setDragOverPos(pos)
   }
-  function indentAtajo(nodeId: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    const node = s.getNode(nodeId); if (!node) return
-    const sibs = getSortedSiblings(node.parentId ?? null)
-    const idx = sibs.findIndex(n => n.id === nodeId); if (idx <= 0) return
-    const prev = sibs[idx - 1]
-    const prevKids = s.children(prev.id).filter(n => !n.deletedAt)
-    const maxOrder = prevKids.length > 0 ? Math.max(...prevKids.map(c => c.siblingOrder)) : 0
-    store.updateNode(nodeId, { parentId: prev.id, siblingOrder: maxOrder + 1000 })
+  function handleAtajoDrop(targetId: string, e: React.DragEvent) {
+    e.preventDefault()
+    const srcId = dragAtajoId; if (!srcId || srcId === targetId) { resetDrag(); return }
+    const srcNode = s.getNode(srcId); if (!srcNode) { resetDrag(); return }
+    const targetNode = s.getNode(targetId); if (!targetNode) { resetDrag(); return }
+    const sibs = getSortedSiblings(targetNode.parentId ?? null)
+    const tIdx = sibs.findIndex(n => n.id === targetId)
+    let newOrder: number
+    if (dragOverPos === 'before') {
+      const prev = sibs[tIdx - 1]
+      newOrder = prev ? (prev.siblingOrder + targetNode.siblingOrder) / 2 : targetNode.siblingOrder - 1000
+    } else {
+      const next = sibs[tIdx + 1]
+      newOrder = next ? (targetNode.siblingOrder + next.siblingOrder) / 2 : targetNode.siblingOrder + 1000
+    }
+    store.updateNode(srcId, { parentId: targetNode.parentId ?? null, siblingOrder: newOrder })
+    resetDrag()
   }
-  function dedentAtajo(nodeId: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    const node = s.getNode(nodeId); if (!node || !node.parentId) return
-    const parent = s.getNode(node.parentId); if (!parent) return
-    store.updateNode(nodeId, { parentId: parent.parentId ?? null, siblingOrder: parent.siblingOrder + 0.5 })
+  function resetDrag() {
+    setDragAtajoId(null); setDragOverAtajoId(null)
   }
 
   function renderAtajoNode(nodeId: string, depth: number = 0): React.ReactNode {
@@ -394,22 +400,27 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
     }
 
     const isHovered = hoveredAtajoId === nodeId
-    const siblings = getSortedSiblings(s.getNode(nodeId)?.parentId ?? null)
-    const idx = siblings.findIndex(n => n.id === nodeId)
-    const canUp = idx > 0
-    const canDown = idx < siblings.length - 1
-    const canIndent = idx > 0
-    const canDedent = !!(s.getNode(nodeId)?.parentId)
+    const isDragging = dragAtajoId === nodeId
+    const isDragOver = dragOverAtajoId === nodeId
 
     return (
       <div key={nodeId}>
+        {/* Indicador drop — encima */}
+        {isDragOver && dragOverPos === 'before' && (
+          <div style={{ height: 2, margin: '0 12px', background: 'var(--accent)', borderRadius: 1 }} />
+        )}
         <div
           className={`wf-qa-item${isActiveNode ? ' active' : ''}`}
-          style={{ paddingLeft: `${12 + depth * 14}px` }}
+          style={{ paddingLeft: `${12 + depth * 14}px`, opacity: isDragging ? 0.4 : 1 }}
           onClick={handleClick}
           title={scData?.query !== undefined ? `Filtrar: ${scData.query}` : node.text || ''}
           onMouseEnter={() => setHoveredAtajoId(nodeId)}
           onMouseLeave={() => setHoveredAtajoId(null)}
+          draggable
+          onDragStart={e => handleAtajoDragStart(nodeId, e)}
+          onDragOver={e => handleAtajoDragOver(nodeId, e)}
+          onDrop={e => handleAtajoDrop(nodeId, e)}
+          onDragEnd={resetDrag}
           onContextMenu={e => {
             e.preventDefault()
             setRenamingAtajoId(nodeId)
@@ -420,6 +431,10 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
             }, 20)
           }}
         >
+          {/* Handle de arrastre — visible al hover */}
+          <span
+            style={{ opacity: isHovered ? 0.4 : 0, transition: 'opacity 0.1s', cursor: 'grab', fontSize: 11, marginRight: 2, flexShrink: 0, userSelect: 'none' }}
+          >⠿</span>
           <span className="wf-qa-item-icon">
             {icon === '__panel_svg__' ? (
               <svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0, opacity:0.7}}>
@@ -444,23 +459,17 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
           ) : (
             <span className="wf-qa-item-name">{node.text || t('common.noTitle')}</span>
           )}
-          {/* Botones de organización — visibles al hover */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 1, opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', flexShrink: 0 }}>
-            {canDedent && (
-              <button className="wf-qa-item-org" onClick={e => dedentAtajo(nodeId, e)} title="Quitar sangría (Shift+Tab)">⇤</button>
-            )}
-            {canIndent && (
-              <button className="wf-qa-item-org" onClick={e => indentAtajo(nodeId, e)} title="Añadir sangría (Tab)">⇥</button>
-            )}
-            {canUp && (
-              <button className="wf-qa-item-org" onClick={e => moveAtajoUp(nodeId, e)} title="Subir">↑</button>
-            )}
-            {canDown && (
-              <button className="wf-qa-item-org" onClick={e => moveAtajoDown(nodeId, e)} title="Bajar">↓</button>
-            )}
-            <button className="wf-qa-item-del" onClick={e => handleDeleteAtajoNode(nodeId, e)} title={t('sidebar.removeShortcut')}>×</button>
-          </div>
+          <button
+            className="wf-qa-item-del"
+            style={{ opacity: isHovered ? undefined : 0 }}
+            onClick={e => handleDeleteAtajoNode(nodeId, e)}
+            title={t('sidebar.removeShortcut')}
+          >×</button>
         </div>
+        {/* Indicador drop — debajo */}
+        {isDragOver && dragOverPos === 'after' && (
+          <div style={{ height: 2, margin: '0 12px', background: 'var(--accent)', borderRadius: 1 }} />
+        )}
         {hasChildren && !isCollapsed && (
           <div>
             {children.map(child => renderAtajoNode(child.id, depth + 1))}
@@ -518,11 +527,11 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
         >
           {kids.length > 0 ? (
             <span
-              style={{ marginRight: 4, fontSize: 10, cursor: 'pointer', opacity: 0.5, display: 'inline-block', transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', userSelect: 'none' }}
+              style={{ marginRight: 4, fontSize: 14, cursor: 'pointer', opacity: 0.5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, flexShrink: 0, transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', userSelect: 'none', borderRadius: 3 }}
               onClick={e => toggleCtxExpand(nodeId, e)}
             >›</span>
           ) : (
-            <span style={{ marginRight: 4, width: 14, display: 'inline-block' }} />
+            <span style={{ marginRight: 4, width: 18, display: 'inline-block', flexShrink: 0 }} />
           )}
           <span className="wf-qa-item-name">{node.text || t('common.noTitle')}</span>
         </div>
