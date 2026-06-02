@@ -415,6 +415,8 @@ export default function MainLayout() {
     function handleKeyDown(e: KeyboardEvent) {
       // El modal UnifiedCapture gestiona su propio teclado — no interferir
       if (showUnifiedCapture) return
+      // No procesar atajos globales hasta que el store esté listo
+      if (!store.isLoaded) return
 
       // ⌘K → captura rápida / buscador unificado
       if (e.key === getHotkeyKey('command-palette') && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
