@@ -577,6 +577,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     lockedForceTypeRef.current = null
     showToast(`✓ ${label} creado`)
     onClose()
+    navigate(`/node/${node.id}`)
   }
 
   // ── buildItems (del CommandPalette, sin panel-save) ────────────────────────
