@@ -12452,6 +12452,10 @@ textarea:focus-visible,
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /* PlannerPanel */
+/* ── Outliner dentro del panel de contexto — misma fuente que la lista ──── */
+.ctx-panel-outliner .node-text { font-size: 13px !important; line-height: 1.5 !important; }
+.ctx-panel-outliner .node-row  { min-height: 22px; }
+
 .pp-year-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
