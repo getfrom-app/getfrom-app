@@ -11472,7 +11472,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px 10px; /* título del panel gestiona el top padding */
+  padding: 0 20px 10px;
   flex-shrink: 0;
 }
 .search-panel-input {
@@ -11500,7 +11500,7 @@ textarea:focus-visible,
 }
 .search-panel-clear:hover { color: var(--text-primary); }
 .search-panel-chips {
-  padding: 8px 4px 12px; /* left 4px + chip 8px = 12px total */
+  padding: 8px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -12728,39 +12728,7 @@ textarea:focus-visible,
 .quick-capture-fab:active { transform: scale(0.96); }
 .wf-layout .quick-capture-fab { bottom: 44px; }
 
-/* ── Panel derecho — título tipo heading ─────────────────────────────────── */
-.right-panel-title-bar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  /*
-   * padding-top: 24px  = node-view-main padding-top (view-header ahora tiene padding-top:0)
-   * padding-bottom: 16px = node-title margin-bottom (8px) + view-header padding-bottom (8px)
-   * Así el título y el contenido quedan a la misma altura que en el árbol.
-   */
-  padding: 24px 20px 16px 20px;
-  flex-shrink: 0;
-}
-.right-panel-title-text {
-  /* Mismo tamaño que h1.node-title: font-size:26px, font-weight:700 */
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-.right-panel-title-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-tertiary);
-  font-size: 18px;
-  padding: 0 2px;
-  line-height: 1;
-  opacity: 0.5;
-  transition: opacity 0.15s;
-}
-.right-panel-title-close:hover { opacity: 1; }
+/* (right-panel-title-bar eliminado — los paneles arrancan a la misma altura que el árbol)
 
 /* ── WFHomeView — hint de Espacio ────────────────────────────────────────── */
 .wf-home-space-hint {

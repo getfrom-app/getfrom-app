@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
+import { getHotkeyKey } from '../../store/hotkeysStore'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
 import ContextListPanel from '../panels/ContextListPanel'
@@ -427,12 +428,13 @@ export default function MainLayout() {
       // El modal UnifiedCapture gestiona su propio teclado — no interferir
       if (showUnifiedCapture) return
 
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      // ⌘K → captura rápida / buscador unificado
+      if (e.key === getHotkeyKey('command-palette') && (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
         e.preventDefault()
         setShowUnifiedCapture(v => !v)
       }
-      // H (sin modificador) → ir al diario de hoy sin crear nodo
-      if (e.key === 'h' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // Ir a hoy (por defecto H, sin modificador)
+      if (e.key === getHotkeyKey('go-today') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) {
@@ -441,8 +443,8 @@ export default function MainLayout() {
           navigate(`/node/${today.id}`)
         }
       }
-      // N (sin modificador) → crear nodo en el diario de hoy y enfocar
-      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // Nuevo nodo hoy (por defecto N, sin modificador)
+      if (e.key === getHotkeyKey('new-today') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) {
@@ -468,13 +470,13 @@ export default function MainLayout() {
         })()
         if (isEmpty) { e.preventDefault(); setShowUnifiedCapture(true) }
       }
-      // Cmd+M → toggle Magic Chat
-      if (e.key === 'm' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+      // ⌘M → toggle Magic Chat (configurable)
+      if (e.key === getHotkeyKey('toggle-magic') && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         togglePanel('magic')
       }
-      // Cmd+F → toggle panel de filtro/búsqueda
-      if (e.key === 'f' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+      // ⌘F → toggle filtro/búsqueda (configurable)
+      if (e.key === getHotkeyKey('toggle-filter') && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         togglePanel('filter')
       }
@@ -497,19 +499,19 @@ export default function MainLayout() {
           cyclePanel(e.key === 'ArrowDown' ? 'down' : 'up')
         }
       }
-      // R (sin input) → toggle grabadora
-      if (e.key === 'r' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // Toggle grabadora — sin modificador, configurable (por defecto R)
+      if (e.key === getHotkeyKey('toggle-recorder') && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) { e.preventDefault(); togglePanel('recorder') }
       }
-      // Cmd+Shift+C → toggle lista de contextos
-      if (e.key === 'c' && !e.repeat && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      // ⌘⇧C → toggle lista de contextos (configurable)
+      if (e.key === getHotkeyKey('toggle-contexts') && !e.repeat && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault()
         togglePanel('context-list')
       }
-      // Cmd+P → toggle planificador
-      if (e.key === 'p' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+      // ⌘P → toggle planificador (configurable)
+      if (e.key === getHotkeyKey('toggle-planner') && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         togglePanel('planner')
       }
@@ -548,7 +550,8 @@ export default function MainLayout() {
           store.collapseAll(null)
         }
       }
-      if (e.key === '?') {
+      // Ver atajos (configurable, por defecto ?)
+      if (e.key === getHotkeyKey('show-shortcuts')) {
         const active = document.activeElement
         const isInputFocused =
           active?.tagName === 'INPUT' ||
@@ -778,30 +781,14 @@ export default function MainLayout() {
           position: 'relative',
         }}>
           <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
-          {/* Título del panel — alineado con el título de nota (28px, padding-top: 24px) */}
-          {/* Planner se libra: tiene su propio diseño interno */}
-          {rightPanel !== 'planner' && (
-            <div className="right-panel-title-bar">
-              <span className="right-panel-title-text">
-                {rightPanel === 'magic' && 'Magic'}
-                {rightPanel === 'filter' && 'Filtro'}
-                {rightPanel === 'context-list' && 'Contextos'}
-                {rightPanel === 'recorder' && 'Grabación'}
-                {rightPanel === 'context' && (() => {
-                  const n = contextNodeId ? store.getNode(contextNodeId) : null
-                  return n?.text || 'Contexto'
-                })()}
-              </span>
-              <button className="right-panel-title-close" onClick={() => {
-                setRightPanel(null)
-                if (rightPanel === 'context') setContextNodeId(null)
-              }} title="Cerrar">×</button>
-            </div>
-          )}
           <div
             key={panelKey}
             className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden',
+              // Alinear top con el nodo raíz del árbol (wf-home-view padding-top: 32px)
+              paddingTop: rightPanel === 'planner' ? 0 : 32,
+            }}
           >
             {rightPanel === 'magic' && (
               <MagicChat mode="panel" onClose={() => setRightPanel(null)} currentNodeId={currentNodeIdFromRoute} />
