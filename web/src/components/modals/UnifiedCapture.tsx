@@ -316,6 +316,9 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
       for (const n of ctxNodes) {
         const normName = normalizeNFD(n.text)
+        const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+        // No sugerir contextos ya aceptados como chip
+        if (assignedCtx.some(c => c.slug === slug)) continue
         // Incluir el nombre completo (normName.length, sin -1) y sin excluir tail===normName
         // para que "from" detecte "From" igual que "fro"
         for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
@@ -440,16 +443,18 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
-    // El contexto se asigna como chip (sin @ en el texto)
+    // Añadir chip de contexto
     const slug = ctxSuggestion.displayName.toLowerCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
     setAssignedCtx(prev =>
       prev.some(c => c.slug === slug) ? prev : [...prev, { name: ctxSuggestion!.displayName, slug }]
     )
-    // Quitar los caracteres que el usuario había escrito del contexto del texto
+    // Mantener el nombre del contexto en el texto con la capitalización correcta
+    // (ej. "from" → "From") para que el nodo se cree con el título completo
     const t = getCurrentText()
-    const newText = t.slice(0, -ctxSuggestion.typedLen).trimEnd() + ' '
+    const prefix = t.slice(0, -ctxSuggestion.typedLen)
+    const newText = prefix + ctxSuggestion.displayName + ' '
     skipNextInputRef.current = true
     inputRef.current.textContent = newText
     const range = document.createRange()
@@ -463,7 +468,6 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setCtxSuggestion(null)
     setAtPicker(null)
     setJustAcceptedCtx(true)
-    // Mantener taskPrediction y datePrediction — son independientes del contexto asignado
     const { forceType: ft } = detectForceType(newText)
     setForceType(ft)
   }
