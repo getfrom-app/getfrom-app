@@ -28,8 +28,9 @@ const TIME_CHIPS = [
   { labelKey: 'search.chipFuture',    query: 'futuro' },
 ]
 const STATUS_CHIPS = [
-  { labelKey: 'search.chipPending', query: 'pendiente' },
-  { labelKey: 'search.chipDone',    query: 'hecho' },
+  { labelKey: 'search.chipPending',  query: 'pendiente' },
+  { labelKey: 'search.chipDone',     query: 'hecho' },
+  { labelKey: 'search.chipNoDate',   query: 'sin-fecha' },
 ]
 const BUCLE_CHIPS = [
   { labelKey: 'search.chipBucle', query: 'bucle' },

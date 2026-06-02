@@ -2995,13 +2995,34 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Badge de fecha — solo para tareas con due date */}
+            {/* Badge de fecha + botones de acción rápida en hover */}
             {taskDueBadge && (
-              <span
-                className={`node-due-badge${taskDueBadge.overdue ? ' node-due-badge--overdue' : ''}`}
-                title={new Date(node.due!).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-              >
-                {taskDueBadge.label}
+              <span className="node-due-badge-wrap">
+                <span
+                  className={`node-due-badge${taskDueBadge.overdue ? ' node-due-badge--overdue' : ''}`}
+                  title={new Date(node.due!).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                >
+                  {taskDueBadge.label}
+                </span>
+                <span className="node-date-actions">
+                  <button
+                    className="node-date-action-btn"
+                    title="Mover a mañana"
+                    onMouseDown={e => {
+                      e.preventDefault(); e.stopPropagation()
+                      const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
+                      store.updateNode(node.id, { due: d.toISOString() })
+                    }}
+                  >→ mañana</button>
+                  <button
+                    className="node-date-action-btn node-date-action-btn--remove"
+                    title="Quitar fecha"
+                    onMouseDown={e => {
+                      e.preventDefault(); e.stopPropagation()
+                      store.updateNode(node.id, { due: null })
+                    }}
+                  >× fecha</button>
+                </span>
               </span>
             )}
 

@@ -929,7 +929,12 @@ export class NodeStore {
       isChat: false,
       isCollapsed: false,
       isFavorite: false,
-      due: params.due || null,
+      // Tareas sin fecha explícita → hoy por defecto (evita perder tareas)
+      due: params.due !== undefined
+        ? params.due
+        : (params.isTask
+            ? (() => { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString() })()
+            : null),
       dueEnd: null,
       priority: null,
       recurrence: null,

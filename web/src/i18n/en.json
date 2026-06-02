@@ -518,6 +518,7 @@
   "search.chipFuture": "Future",
   "search.chipPending": "Pending",
   "search.chipDone": "Done",
+  "search.chipNoDate": "No date",
   "search.chipBucle": "Loop",
   "pricing.title": "Choose your plan",
   "pricing.titleAfterRegister": "Account created! Choose how to continue",
