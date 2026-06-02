@@ -35,17 +35,18 @@ const AccountView = lazy(() => import('../views/AccountView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
-import PlannerPanel from '../panels/PlannerPanel'
 import SearchPanel from '../panels/SearchPanel'
-import PaywallModal from '../paywall/PaywallModal'
-import MagicChat from '../aichat/MagicChat'
-import UnifiedCapture from '../modals/UnifiedCapture'
-import NewTaskModal from '../modals/NewTaskModal'
-import NewNoteModal from '../modals/NewNoteModal'
-import NewEventModal from '../modals/NewEventModal'
-import VoiceCaptureModal from '../modals/VoiceCaptureModal'
-import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
-import OnboardingWidget from '../onboarding/OnboardingWidget'
+// Componentes pesados: lazy-loaded para reducir el bundle inicial
+const PlannerPanel = lazy(() => import('../panels/PlannerPanel'))
+const MagicChat = lazy(() => import('../aichat/MagicChat'))
+const UnifiedCapture = lazy(() => import('../modals/UnifiedCapture'))
+const NewTaskModal = lazy(() => import('../modals/NewTaskModal'))
+const NewNoteModal = lazy(() => import('../modals/NewNoteModal'))
+const NewEventModal = lazy(() => import('../modals/NewEventModal'))
+const VoiceCaptureModal = lazy(() => import('../modals/VoiceCaptureModal'))
+const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsModal'))
+const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
+const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
 import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -56,8 +57,8 @@ import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
-// ── Panel derecho: nodo contexto — outliner editable completo ────────────────
-import Outliner from '../outliner/Outliner'
+// ── Panel derecho: nodo contexto — outliner editable completo (lazy) ─────────
+const Outliner = lazy(() => import('../outliner/Outliner'))
 
 function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   const s = useStore()
@@ -788,6 +789,7 @@ export default function MainLayout() {
           position: 'relative',
         }}>
           <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
+          <Suspense fallback={null}>
           <div
             key={panelKey}
             className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
@@ -822,6 +824,7 @@ export default function MainLayout() {
               <RecorderPanel onClose={() => setRightPanel(null)} />
             )}
           </div>
+          </Suspense>
         </div>
       )}
 
@@ -829,15 +832,17 @@ export default function MainLayout() {
 
       {/* ── Footer global ── */}
       <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
-      {paywallReason && (
-        <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
-      )}
-      {showUnifiedCapture && (
-        <UnifiedCapture
-          onClose={() => setShowUnifiedCapture(false)}
-          onSelectContext={(nodeId) => { handleSelectContext(nodeId); setShowUnifiedCapture(false) }}
-        />
-      )}
+      <Suspense fallback={null}>
+        {paywallReason && (
+          <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />
+        )}
+        {showUnifiedCapture && (
+          <UnifiedCapture
+            onClose={() => setShowUnifiedCapture(false)}
+            onSelectContext={(nodeId) => { handleSelectContext(nodeId); setShowUnifiedCapture(false) }}
+          />
+        )}
+      </Suspense>
       {/* Botón FAB */}
       <button
         className="quick-capture-fab"
@@ -848,11 +853,13 @@ export default function MainLayout() {
           <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </button>
-      {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
-      {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
-      {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
-      {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
-      {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      <Suspense fallback={null}>
+        {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
+        {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
+        {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
+        {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
+        {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
+      </Suspense>
       {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}
       {slugModal && (
         <div
@@ -934,7 +941,7 @@ export default function MainLayout() {
       >
         +
       </button>
-      <OnboardingWidget />
+      <Suspense fallback={null}><OnboardingWidget /></Suspense>
       {/* sync-indicator eliminado — el footer ya muestra el estado de sync */}
     </div>
     </ToastProvider>

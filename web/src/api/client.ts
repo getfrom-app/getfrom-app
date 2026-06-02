@@ -38,6 +38,8 @@ export function clearTokens() {
   _refreshToken = null
   localStorage.removeItem('from_access_token')
   localStorage.removeItem('from_refresh_token')
+  // Borrar snapshot de nodos al cerrar sesión (datos del usuario anterior)
+  try { localStorage.removeItem('from_snap_v1') } catch {}
 }
 
 async function refreshAccessToken(): Promise<string | null> {

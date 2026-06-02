@@ -44,9 +44,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 )
 
-// Ocultar el loading screen al montar la app
-const loadingEl = document.getElementById('app-loading')
-if (loadingEl) {
-  loadingEl.style.opacity = '0'
-  setTimeout(() => loadingEl.remove(), 300)
+// Ocultar el loading screen cuando el store esté listo (no al montar React,
+// sino cuando hay datos que mostrar — evita el flash de pantalla en blanco)
+function hideLoader() {
+  const el = document.getElementById('app-loading')
+  if (!el) return
+  el.classList.add('hidden')
+  setTimeout(() => el.remove(), 280)
 }
+window.addEventListener('from:store-loaded', hideLoader, { once: true })
+// Fallback: ocultar a los 8s por si el evento no llega (error de red, etc.)
+setTimeout(hideLoader, 8000)

@@ -1340,6 +1340,17 @@ export class NodeStore {
   }
 
   async initialLoad(): Promise<void> {
+    // ── Cache hit: mostrar contenido en caché mientras el sync ocurre en background ──
+    // Para usuarios que vuelven, esto hace que la app se sienta instantánea.
+    // El sync posterior sobrescribirá con datos frescos del servidor.
+    const hadSnapshot = this.loadSnapshot()
+    if (hadSnapshot) {
+      // Marcar como cargado desde caché para que WFHomeView renderice
+      this.isLoaded = true
+      this.notify()
+      window.dispatchEvent(new Event('from:store-loaded'))
+    }
+
     await this.sync()
 
     // Limpieza silenciosa: nodo vacío = no existe.
@@ -1500,12 +1511,58 @@ export class NodeStore {
 
     // Nota: isLoaded se establece externamente (en MainLayout tras cleanup)
     // para garantizar que WFHomeView no renderiza hasta que el árbol esté limpio.
+    // Guardamos snapshot AQUÍ (árbol ya limpio) para el siguiente inicio.
+    this.saveSnapshot()
   }
 
   /** Marcar store como listo para renderizar (llamar desde MainLayout tras cleanup) */
   setLoaded() {
     this.isLoaded = true
     this.notify()
+    // Señal para ocultar el loading screen en index.html
+    window.dispatchEvent(new Event('from:store-loaded'))
+  }
+
+  // ── Snapshot cache (localStorage) ────────────────────────────────────────
+  // Permite mostrar datos inmediatamente en el siguiente load sin esperar al servidor.
+  // El sync posterior actualiza los datos de forma silenciosa.
+  private static readonly SNAP_KEY = 'from_snap_v1'
+  private static readonly SNAP_MAX_AGE_MS = 2 * 60 * 60 * 1000 // 2h
+  private static readonly SNAP_MAX_BYTES = 4_000_000 // 4MB
+
+  /** Guardar snapshot de nodos activos en localStorage */
+  saveSnapshot(): void {
+    try {
+      const nodes = Array.from(this.nodes.values())
+      const payload = JSON.stringify({ ts: Date.now(), nodes, workspaces: this.workspaces })
+      if (payload.length > NodeStore.SNAP_MAX_BYTES) return
+      localStorage.setItem(NodeStore.SNAP_KEY, payload)
+    } catch { /* quota exceeded — silencioso */ }
+  }
+
+  /** Cargar snapshot de localStorage. Devuelve true si había datos válidos. */
+  loadSnapshot(): boolean {
+    try {
+      const raw = localStorage.getItem(NodeStore.SNAP_KEY)
+      if (!raw) return false
+      const { ts, nodes, workspaces } = JSON.parse(raw) as {
+        ts: number; nodes: unknown[]; workspaces?: unknown
+      }
+      if (!Array.isArray(nodes) || Date.now() - ts > NodeStore.SNAP_MAX_AGE_MS) return false
+      for (const n of nodes) {
+        const node = n as { id: string }
+        if (node?.id) this.nodes.set(node.id, node as never)
+      }
+      if (workspaces) this.workspaces = workspaces as never
+      this.invalidateChildrenCache()
+      this.notify()
+      return true
+    } catch { return false }
+  }
+
+  /** Borrar snapshot (llamar al hacer logout) */
+  static clearSnapshot(): void {
+    try { localStorage.removeItem(NodeStore.SNAP_KEY) } catch {}
   }
 
   private creatingDiaryPromise: Promise<void> | null = null
