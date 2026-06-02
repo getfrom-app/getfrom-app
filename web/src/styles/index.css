@@ -9985,8 +9985,8 @@ textarea:focus-visible,
 .wf-layout .breadcrumb-row { display: none; }
 .wf-layout .node-updated-at-inline { display: none; }
 .wf-layout .node-view { max-width: none !important; margin: 0 !important; }
-.wf-layout .view-header { padding-bottom: 8px; }
-.wf-layout .node-view .view-title { font-size: 28px; font-weight: 700; }
+.wf-layout .view-header { padding-top: 0; padding-bottom: 8px; }
+.wf-layout .node-view .view-title { font-size: 26px; font-weight: 700; }
 
 /* ── WF bullet dot — REGLA MAESTRA (no añadir más reglas para este selector) ── */
 /* El BOTÓN es un contenedor cuadrado 20×20px; el DOT es el ::after 6×6px */
@@ -12668,13 +12668,17 @@ textarea:focus-visible,
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  /* Mismo padding-top que .wf-layout .node-view-main (24px) */
-  padding: 24px 20px 8px 20px;
+  /*
+   * padding-top: 24px  = node-view-main padding-top (view-header ahora tiene padding-top:0)
+   * padding-bottom: 16px = node-title margin-bottom (8px) + view-header padding-bottom (8px)
+   * Así el título y el contenido quedan a la misma altura que en el árbol.
+   */
+  padding: 24px 20px 16px 20px;
   flex-shrink: 0;
 }
 .right-panel-title-text {
-  /* Mismo tamaño que .wf-layout .node-view .view-title */
-  font-size: 28px;
+  /* Mismo tamaño que h1.node-title: font-size:26px, font-weight:700 */
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
