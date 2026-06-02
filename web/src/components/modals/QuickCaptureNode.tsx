@@ -16,6 +16,7 @@ import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import type { DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
+import { useToast } from '../Toast'
 
 function normalize(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -58,6 +59,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
   // @ picker: dropdown cuando el usuario escribe @
   const [atPicker, setAtPicker] = useState<{ query: string; items: { id: string; label: string }[]; activeIdx: number } | null>(null)
   const r = useRecordingStore()
+  const { showToast } = useToast()
   const isRecording = r.phase === 'recording'
   const spaceHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const spaceIsRecordingRef = useRef(false)
@@ -333,6 +335,9 @@ export default function QuickCaptureNode({ onClose }: Props) {
     }
 
     store.sync(true).catch(() => {})
+
+    const label = isEvent ? 'Evento' : isTask ? 'Tarea' : 'Nota'
+    showToast(`✓ ${label} creada`)
     onClose()
   }
 
