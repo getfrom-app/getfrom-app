@@ -570,13 +570,18 @@ export default function MainLayout() {
         }
 
         // Prioridad 5: subir en la jerarquía (Escape sube al padre)
-        // Si estamos en /node/:id → navegar al padre, o a root si no hay padre
+        // Si el padre es Agenda (nodo transparente), ir al home en lugar de abrirlo
         const match = window.location.pathname.match(/\/node\/([^/]+)/)
         if (match) {
           const nodeId = match[1]
           const node = store.getNode(nodeId)
           if (node?.parentId) {
-            navigate(`/node/${node.parentId}`)
+            const parent = store.getNode(node.parentId)
+            if (!parent || parent.text === '📅 Agenda') {
+              navigate('/')
+            } else {
+              navigate(`/node/${node.parentId}`)
+            }
           } else {
             navigate('/')
           }
