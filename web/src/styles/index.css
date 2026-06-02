@@ -8134,6 +8134,8 @@ textarea:focus-visible,
 .node-drag-handle:hover { opacity: 1 !important; background: var(--bg-hover); }
 .node-drag-handle:active { cursor: grabbing; }
 .node-row.multi-selected .node-drag-handle { opacity: 1; color: var(--accent); }
+/* Handle activamente seleccionado vía clic — siempre visible con acento */
+.node-drag-handle--selected { opacity: 1 !important; color: var(--accent) !important; background: rgba(139,92,246,0.12); }
 
 /* Mejor visual feedback para drop targets */
 .node-row.drag-over { box-shadow: inset 0 -2px 0 var(--accent); }

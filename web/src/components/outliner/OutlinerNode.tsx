@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
-import { useGlobalSelection } from './Outliner'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection } from './Outliner'
 import type { Node } from '../../types'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { createNodeShortcut } from '../../utils/atajosHelper'
@@ -2413,17 +2413,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }
       >
 
-        {/* Drag handle — visible en hover. Sólo este elemento inicia drag (texto + bullet quedan libres). */}
+        {/* Drag handle — visible en hover. Arrastra para mover; clic para seleccionar/deseleccionar (+ hijos). */}
         {!isDivider && (
           <span
-            className="node-drag-handle"
+            className={`node-drag-handle${isMultiSelected ? ' node-drag-handle--selected' : ''}`}
             draggable
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            title="Arrastra para mover · Click para seleccionar"
+            title="Arrastra para mover · Click para seleccionar/deseleccionar"
             onMouseDown={e => e.stopPropagation()}
-            onClick={e => { e.stopPropagation(); if (onShiftSelect && e.shiftKey) { onShiftSelect(node.id) } else { onSelect(node.id) } }}
-            aria-label="Mover nodo"
+            onClick={e => {
+              e.stopPropagation()
+              toggleNodeSelection(node.id, store)
+            }}
+            aria-label="Seleccionar nodo"
           >⋮⋮</span>
         )}
 

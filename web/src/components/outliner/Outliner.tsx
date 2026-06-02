@@ -33,6 +33,31 @@ function gClearSelected() {
   gSetSelected(new Set())
 }
 
+/** Exportado: obtener todos los IDs seleccionados actualmente */
+export function getGlobalSelectedIds(): Set<string> { return _gSelectedIds }
+
+/** Exportado: limpiar toda la selección */
+export function clearGlobalSelection() { gClearSelected() }
+
+/** Exportado: toggle selección de un nodo + todos sus descendientes */
+export function toggleNodeSelection(nodeId: string, storeInstance: { children: (id: string) => Array<{ id: string; deletedAt?: string | null }> }) {
+  function collectIds(id: string, out: Set<string>) {
+    out.add(id)
+    for (const child of storeInstance.children(id)) {
+      if (!child.deletedAt) collectIds(child.id, out)
+    }
+  }
+  const ids = new Set(_gSelectedIds)
+  if (ids.has(nodeId)) {
+    const toRemove = new Set<string>()
+    collectIds(nodeId, toRemove)
+    toRemove.forEach(id => ids.delete(id))
+  } else {
+    collectIds(nodeId, ids)
+  }
+  gSetSelected(ids)
+}
+
 export function useGlobalSelection(): Set<string> {
   const [ids, setIds] = useState<Set<string>>(_gSelectedIds)
   useEffect(() => {
