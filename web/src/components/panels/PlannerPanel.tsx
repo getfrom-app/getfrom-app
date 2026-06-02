@@ -119,10 +119,22 @@ export default function PlannerPanel({ onClose }: Props) {
   // PlannerPanel usa width: 100% y el ResizeObserver adapta colW automáticamente.
 
   // ── GCal ──────────────────────────────────────────────────────────────────
+  const [gcalError, setGcalError] = useState('')
   useEffect(() => {
     if (!us.googleConnected) return
-    getCalendarEventsRange(addDays(centerDate,-14), addDays(centerDate,14)).then(setGcalEvents).catch(()=>{})
+    setGcalError('')
+    getCalendarEventsRange(addDays(centerDate,-14), addDays(centerDate,14))
+      .then(evs => { setGcalEvents(evs); setGcalError('') })
+      .catch(e => {
+        console.error('[PlannerPanel] GCal error:', e)
+        setGcalError('Error cargando Google Calendar')
+      })
   }, [us.googleConnected, centerDate.toDateString()]) // eslint-disable-line
+
+  // Forzar refresh de estado GCal al montar (por si el token ya era válido)
+  useEffect(() => {
+    us.refreshGoogleStatus?.()
+  }, []) // eslint-disable-line
 
   // ── colW dinámico ─────────────────────────────────────────────────────────
   const [colW, setColW] = useState(120)
