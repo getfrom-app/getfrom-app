@@ -194,6 +194,9 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   // ── Estado capture (QuickCaptureNode) ──────────────────────────────────────
   const inputRef = useRef<HTMLDivElement>(null)
+  // Suprimir el onInput sintético que dispara el DOM cuando se modifica inputRef.textContent
+  // programáticamente (en acceptCtx / selectAtItem), para evitar que resetee justAcceptedCtx
+  const skipNextInputRef = useRef(false)
   const [text, setText] = useState('')
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   const [taskPrediction, setTaskPrediction] = useState(false)
@@ -393,6 +396,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
   }
 
   function handleInput() {
+    // Ignorar el input sintético provocado por modificación programática del DOM
+    if (skipNextInputRef.current) { skipNextInputRef.current = false; return }
     const t = getCurrentText()
     setText(t)
     analyze(t)
@@ -408,6 +413,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     const t = getCurrentText()
     const before = t.slice(0, -ctxSuggestion.typedLen)
     const newText = before + '@' + ctxSuggestion.displayName + ' '
+    skipNextInputRef.current = true
     inputRef.current.textContent = newText
     const range = document.createRange()
     const sel = window.getSelection()
@@ -443,6 +449,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     if (!inputRef.current || !atPicker) return
     const t = inputRef.current.textContent || ''
     const newText = t.replace(/@[\wÀ-ɏ\s]*$/, `@${item.label} `)
+    skipNextInputRef.current = true
     inputRef.current.textContent = newText
     const range = document.createRange()
     const sel = window.getSelection()
