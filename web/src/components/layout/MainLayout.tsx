@@ -96,40 +96,33 @@ export default function MainLayout() {
     if (path !== '/' && path !== '') navigate('/')
   }
 
-  // Columna derecha unificada
-  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder' | null
-  type CyclablePanel = 'planner' | 'filter' | 'magic' | 'context-list' | 'recorder'
-  const PANEL_ORDER: CyclablePanel[] = ['planner', 'filter', 'magic', 'context-list', 'recorder']
-  const [rightPanel, setRightPanel] = useState<RightPanel>(() =>
-    (localStorage.getItem('from-right-panel') as RightPanel) ?? 'filter'
-  )
+  // Columna derecha — siempre visible, nunca se cierra
+  // 'context' es un panel especial (nodo concreto); el resto son los paneles ciclables.
+  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder'
+  type CyclablePanel = 'recorder' | 'context-list' | 'magic' | 'filter' | 'planner'
+  // PANEL_ORDER coincide con el orden de los iconos en WFTopBar (izquierda → derecha)
+  const PANEL_ORDER: CyclablePanel[] = ['recorder', 'context-list', 'magic', 'filter', 'planner']
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() => {
+    const saved = localStorage.getItem('from-right-panel') as RightPanel
+    return PANEL_ORDER.includes(saved as CyclablePanel) ? saved : 'filter'
+  })
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
-  const lastPanelRef = useRef<CyclablePanel>('planner')
 
-  function openPanel(p: CyclablePanel) {
-    lastPanelRef.current = p
-    setRightPanel(p)
-  }
-  function togglePanel(p: CyclablePanel) {
-    setRightPanel(prev => {
-      if (prev === p) return null
-      lastPanelRef.current = p
-      return p
-    })
-  }
+  function openPanel(p: CyclablePanel) { setRightPanel(p) }
+  // togglePanel ahora solo cambia de panel — no cierra
+  function togglePanel(p: CyclablePanel) { setRightPanel(p) }
+
   function handleSelectContext(nodeId: string) {
-    // Toggle: segundo clic en el mismo contexto lo cierra
     if (contextNodeId === nodeId && rightPanel === 'context') {
-      setRightPanel(null)
+      // Segundo clic → volver a la lista de contextos
+      setRightPanel('context-list')
       setContextNodeId(null)
       return
     }
-    // Normalizar pathname: la app vive en /app/ así que home = /app/ o /app o ''
     const normPath = location.pathname.replace(/^\/app\/?/, '') || '/'
     const atHome = normPath === '/' || normPath === ''
     if (!atHome) {
-      // Guardar en ref para aplicar DESPUÉS de que navigate complete
       pendingContextRef.current = nodeId
       navigate('/')
     } else {
@@ -150,42 +143,31 @@ export default function MainLayout() {
       setRightPanel('context')
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
-  function cyclePanel(dir: 'up' | 'down') {
-    setPanelSlideDir(dir)
+
+  // Ciclar entre paneles con ← → (dirección = orden de iconos en la barra)
+  function cyclePanel(dir: 'left' | 'right') {
+    const current = PANEL_ORDER.includes(rightPanel as CyclablePanel)
+      ? (rightPanel as CyclablePanel) : 'filter'
+    const idx = PANEL_ORDER.indexOf(current)
+    const next = dir === 'right'
+      ? PANEL_ORDER[(idx + 1) % PANEL_ORDER.length]
+      : PANEL_ORDER[(idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length]
+    setPanelSlideDir(dir === 'right' ? 'down' : 'up')
     setPanelKey(k => k + 1)
-    setRightPanel(prev => {
-      if (!prev) {
-        const next = lastPanelRef.current
-        lastPanelRef.current = next
-        return next
-      }
-      const cyclable = PANEL_ORDER.includes(prev as CyclablePanel) ? (prev as CyclablePanel) : lastPanelRef.current
-      const idx = PANEL_ORDER.indexOf(cyclable)
-      const next = dir === 'down'
-        ? PANEL_ORDER[(idx + 1) % PANEL_ORDER.length]
-        : PANEL_ORDER[(idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length]
-      lastPanelRef.current = next
-      return next
-    })
+    setRightPanel(next)
   }
 
   // Alias legacy para compatibilidad con eventos externos y lógica existente
   const showAIChat = rightPanel === 'magic'
   const showSearch = rightPanel === 'filter'
   const setShowAIChat = (v: boolean | ((prev: boolean) => boolean)) => {
-    setRightPanel(prev => {
-      const next = typeof v === 'function' ? v(prev === 'magic') : v
-      if (next) { lastPanelRef.current = 'magic'; return 'magic' }
-      return prev === 'magic' ? null : prev
-    })
+    const next = typeof v === 'function' ? v(rightPanel === 'magic') : v
+    if (next) setRightPanel('magic')
   }
   const setShowSearch = (v: boolean | ((prev: boolean) => boolean)) => {
-    setRightPanel(prev => {
-      const next = typeof v === 'function' ? v(prev === 'filter') : v
-      if (!next && prev === 'filter') setFilterText('')
-      if (next) { lastPanelRef.current = 'filter'; return 'filter' }
-      return prev === 'filter' ? null : prev
-    })
+    const next = typeof v === 'function' ? v(rightPanel === 'filter') : v
+    if (next) setRightPanel('filter')
+    else setFilterText('')
   }
 
   function handleDividerMouseDown(e: React.MouseEvent) {
@@ -217,20 +199,18 @@ export default function MainLayout() {
     }
   }, [showAIChat])
 
-  // Persistir preferencia de panel derecho
+  // Persistir preferencia de panel (siempre, excepto 'context' que es temporal)
   useEffect(() => {
-    if (rightPanel && rightPanel !== 'context') {
+    if (rightPanel !== 'context') {
       localStorage.setItem('from-right-panel', rightPanel)
-    } else if (!rightPanel) {
-      localStorage.removeItem('from-right-panel')
     }
   }, [rightPanel])
 
-  // Cerrar panel desde eventos externos (ej. onboarding al terminar)
+  // Cambiar panel desde eventos externos (ej. onboarding)
   useEffect(() => {
     function handler(e: Event) {
       const mode = (e as CustomEvent<{ mode: null | 'magic' | 'search' }>).detail?.mode ?? null
-      if (!mode) { setRightPanel(null); setFilterText('') }
+      if (!mode) { setFilterText('') }
       else if (mode === 'magic') openPanel('magic')
       else if (mode === 'search') openPanel('filter')
     }
@@ -247,24 +227,24 @@ export default function MainLayout() {
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al navegar a cualquier ruta: cerrar panel contexto y limpiar filtro activo
+  // Al navegar: si el panel de contexto está abierto, volver a context-list
   useEffect(() => {
     if (rightPanel === 'context') {
-      setRightPanel(null)
+      setRightPanel('context-list')
       setContextNodeId(null)
     }
-    // Si hay filtro de panel activo y el usuario navega a un nodo → limpiar
     if (location.pathname.startsWith('/node/') || location.pathname === '/') {
       setFilterText('')
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    function onPanelClick() {
-      if (rightPanel === 'context') { setRightPanel(null); setContextNodeId(null) }
+    function onSetFilter() {
+      // Al aplicar filtro, si estábamos en contexto volvemos a filtro
+      if (rightPanel === 'context') { setRightPanel('filter'); setContextNodeId(null) }
     }
-    window.addEventListener('wf:set-filter', onPanelClick)
-    return () => window.removeEventListener('wf:set-filter', onPanelClick)
+    window.addEventListener('wf:set-filter', onSetFilter)
+    return () => window.removeEventListener('wf:set-filter', onSetFilter)
   }, [rightPanel])
 
   // Cerrar Magic al hacer clic en cualquier nodo del outliner
@@ -345,12 +325,12 @@ export default function MainLayout() {
   }, [navigate])
 
   // Cerrar búsqueda + limpiar filtro al navegar a un nodo concreto
-  // (NO en home ni en primer mount — para preservar el panel abierto por defecto)
+  // Al navegar a un /node/ con el panel de filtro activo → limpiar el filtro
+  // (el panel sigue abierto — ya no se cierra al navegar)
   const didMountRef = useRef(false)
   useEffect(() => {
     if (!didMountRef.current) { didMountRef.current = true; return }
     if (showSearch && location.pathname.includes('/node/')) {
-      setRightPanel(null)
       setFilterText('')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -488,23 +468,16 @@ export default function MainLayout() {
         e.preventDefault()
         togglePanel('filter')
       }
-      // → (ArrowRight sin modificador) → siempre colapsa/abre la columna derecha
-      // No bloqueamos aunque haya un input activo (el usuario lo acepta explícitamente)
-      if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        if (rightPanel) { e.preventDefault(); setRightPanel(null) }
-        else { e.preventDefault(); openPanel(lastPanelRef.current) }
-      }
-      // ↓/↑ → ciclar entre paneles cuando uno está abierto
-      // También funciona si el input/textarea enfocado está vacío
-      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // ←/→ → ciclar entre paneles (orden = iconos del topbar, sin modificador, sin input activo)
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const inputEl = active as HTMLInputElement | null
         const isNonEmptyInput = (active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA')
           && (inputEl?.value || '') !== ''
         const isContentEditable = !!active?.isContentEditable && (active.textContent || '') !== ''
-        if (!isNonEmptyInput && !isContentEditable && rightPanel) {
+        if (!isNonEmptyInput && !isContentEditable) {
           e.preventDefault()
-          cyclePanel(e.key === 'ArrowDown' ? 'down' : 'up')
+          cyclePanel(e.key === 'ArrowRight' ? 'right' : 'left')
         }
       }
       // Toggle grabadora — sin modificador, configurable (por defecto R)
@@ -779,54 +752,51 @@ export default function MainLayout() {
         </Suspense>
       </main>
 
-      {/* ── Columna derecha unificada — Magic, Filtro o Planificador ── */}
-      {rightPanel && (
-        <div className="right-panel-unified" style={{
-          width: rightPanelW,
-          display: 'flex', flexDirection: 'column',
-          borderLeft: '1px solid var(--border)',
-          flexShrink: 0, overflow: 'hidden',
-          position: 'relative',
-        }}>
-          <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
-          <Suspense fallback={null}>
-          <div
-            key={panelKey}
-            className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
-            style={{
-              flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden',
-              // Alinear top con el nodo raíz del árbol (wf-home-view padding-top: 32px)
-              paddingTop: rightPanel === 'planner' ? 0 : 32,
-            }}
-          >
-            {rightPanel === 'magic' && (
-              <MagicChat mode="panel" onClose={() => setRightPanel(null)} currentNodeId={currentNodeIdFromRoute} />
-            )}
-            {rightPanel === 'filter' && (
-              <SearchPanel filterText={filterText} onFilter={applyFilter} onClose={() => setRightPanel(null)} />
-            )}
-            {rightPanel === 'planner' && (
-              <PlannerPanel onClose={() => setRightPanel(null)} />
-            )}
-            {rightPanel === 'context' && contextNodeId && (
-              <ContextNodePanel
-                nodeId={contextNodeId}
-                onClose={() => { setRightPanel(null); setContextNodeId(null) }}
-              />
-            )}
-            {rightPanel === 'context-list' && (
-              <ContextListPanel
-                onSelectContext={handleSelectContext}
-                selectedContextId={contextNodeId}
-              />
-            )}
-            {rightPanel === 'recorder' && (
-              <RecorderPanel onClose={() => setRightPanel(null)} />
-            )}
-          </div>
-          </Suspense>
+      {/* ── Columna derecha — siempre visible ── */}
+      <div className="right-panel-unified" style={{
+        width: rightPanelW,
+        display: 'flex', flexDirection: 'column',
+        borderLeft: '1px solid var(--border)',
+        flexShrink: 0, overflow: 'hidden',
+        position: 'relative',
+      }}>
+        <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
+        <Suspense fallback={null}>
+        <div
+          key={panelKey}
+          className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
+          style={{
+            flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden',
+            paddingTop: rightPanel === 'planner' ? 0 : 32,
+          }}
+        >
+          {rightPanel === 'magic' && (
+            <MagicChat mode="panel" onClose={() => openPanel('filter')} currentNodeId={currentNodeIdFromRoute} />
+          )}
+          {rightPanel === 'filter' && (
+            <SearchPanel filterText={filterText} onFilter={applyFilter} onClose={() => { setFilterText('') }} />
+          )}
+          {rightPanel === 'planner' && (
+            <PlannerPanel onClose={() => openPanel('filter')} />
+          )}
+          {rightPanel === 'context' && contextNodeId && (
+            <ContextNodePanel
+              nodeId={contextNodeId}
+              onClose={() => { setRightPanel('context-list'); setContextNodeId(null) }}
+            />
+          )}
+          {rightPanel === 'context-list' && (
+            <ContextListPanel
+              onSelectContext={handleSelectContext}
+              selectedContextId={contextNodeId}
+            />
+          )}
+          {rightPanel === 'recorder' && (
+            <RecorderPanel onClose={() => openPanel('filter')} />
+          )}
         </div>
-      )}
+        </Suspense>
+      </div>
 
       </div>{/* .main-body */}
 
