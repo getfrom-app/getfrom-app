@@ -115,38 +115,8 @@ export default function PlannerPanel({ onClose }: Props) {
   // Indicador snap durante drag-over: {dayKey, top}
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
 
-  // ── Ancho con resize ──────────────────────────────────────────────────────
-  const [panelW, setPanelW] = useState(() => {
-    const saved = localStorage.getItem('planner-panel-w')
-    // Si el valor guardado es el antiguo default (420) o menor, usar el nuevo (840)
-    if (saved) {
-      const n = parseInt(saved)
-      if (n >= 500) return Math.max(MIN_W, Math.min(MAX_W, n))
-    }
-    return DEFAULT_W
-  })
-  const resizingW = useRef(false)
-
-  function handleResizeBarDown(e: React.MouseEvent) {
-    e.preventDefault()
-    resizingW.current = true
-    const startX = e.clientX
-    const startW = panelW
-    function onMove(ev: MouseEvent) {
-      if (!resizingW.current) return
-      const delta = startX - ev.clientX   // arrastra izquierda → más ancho
-      const newW  = Math.max(MIN_W, Math.min(MAX_W, startW + delta))
-      setPanelW(newW)
-    }
-    function onUp() {
-      resizingW.current = false
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-      localStorage.setItem('planner-panel-w', String(panelW))
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }
+  // El ancho del panel lo gestiona MainLayout (right-panel-unified).
+  // PlannerPanel usa width: 100% y el ResizeObserver adapta colW automáticamente.
 
   // ── GCal ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -168,7 +138,7 @@ export default function PlannerPanel({ onClose }: Props) {
     const ro = new ResizeObserver(update)
     if (timelineRef.current) ro.observe(timelineRef.current)
     return () => ro.disconnect()
-  }, [panelW, visibleDayCnt])
+  }, [visibleDayCnt])
 
   // ── Drag eje vertical → zoom Y ────────────────────────────────────────────
   function handleAxisDrag(e: React.MouseEvent) {
@@ -553,9 +523,7 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="pp-root" style={{ width: panelW }}>
-      {/* Drag handle — borde izquierdo */}
-      <div className="pp-resize-bar" onMouseDown={handleResizeBarDown} />
+    <div className="pp-root" style={{ width: '100%' }}>
 
       {/* Header */}
       <div className="pp-header">
