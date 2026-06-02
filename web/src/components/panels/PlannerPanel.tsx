@@ -364,11 +364,20 @@ export default function PlannerPanel({ onClose }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Escape' || viewMode !== 'day') return
+      // Prioridad 1: cerrar input de nuevo bloque
+      if (newBlock) {
+        e.stopPropagation()
+        e.preventDefault()
+        setNewBlock(null)
+        return
+      }
+      // Prioridad 2: centrar el scroll si no está centrado
       if (!isAlreadyCentered()) { e.stopPropagation(); centerNow() }
+      // Si ya está centrado, dejar propagar → comportamiento normal de Escape
     }
     window.addEventListener('keydown', onKey, { capture: true })
     return () => window.removeEventListener('keydown', onKey, { capture: true })
-  }, [viewMode, colW, slotH]) // eslint-disable-line
+  }, [viewMode, colW, slotH, newBlock]) // eslint-disable-line
 
   // ── Refs drag/resize ──────────────────────────────────────────────────────
   const justResized = useRef(false)
