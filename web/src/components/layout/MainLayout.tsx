@@ -109,14 +109,18 @@ export default function MainLayout() {
     })
   }
   function handleSelectContext(nodeId: string) {
-    // Desde ContextListPanel: seleccionar contexto abre su contenido editable
+    // Toggle: segundo clic en el mismo contexto lo cierra
     if (contextNodeId === nodeId && rightPanel === 'context') {
       setRightPanel(null)
       setContextNodeId(null)
-    } else {
-      setContextNodeId(nodeId)
-      setRightPanel('context')
+      return
     }
+    // Siempre volver a home para que el filtro de contexto sea visible en el árbol
+    if (location.pathname !== '/' && !location.pathname.endsWith('/app/')) {
+      navigate('/', { replace: false })
+    }
+    setContextNodeId(nodeId)
+    setRightPanel('context')
   }
   function cyclePanel(dir: 'up' | 'down') {
     setPanelSlideDir(dir)
