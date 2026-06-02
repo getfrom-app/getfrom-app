@@ -227,14 +227,15 @@ export default function MainLayout() {
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al navegar: si el panel de contexto está abierto, volver a context-list
+  // Al navegar: limpiar contexto activo siempre (independientemente del panel visible)
   useEffect(() => {
     if (rightPanel === 'context') {
       setRightPanel('context-list')
-      setContextNodeId(null)
     }
+    // Limpiar contextNodeId siempre al navegar — evita que quede activo si el panel
+    // fue ciclado a otro tipo (filter/magic) mientras el contexto seguía activo
+    setContextNodeId(null)
     // Limpiar filtro solo al ENTRAR a un nodo concreto — no al volver a home
-    // (al volver a home desde un nodo con filtro activo, el filtro debe mantenerse)
     if (location.pathname.startsWith('/node/')) {
       setFilterText('')
     }
