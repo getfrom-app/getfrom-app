@@ -332,11 +332,11 @@ const SMART_OPERATORS = [
   'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
-  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:',
+  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'bucle',
   // English
   'today', 'tomorrow', 'week', 'month', 'past', 'future',
   'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
-  'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event',
+  'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event', 'loop',
 ]
 
 export function isSmartQuery(text: string): boolean {
