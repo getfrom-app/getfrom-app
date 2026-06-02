@@ -1,6 +1,6 @@
 /**
  * WFTopBar — Top bar estilo Workflowy
- * 🏠 › Padre › Nodo actual   [buscar]   ⌘K  ···
+ * 🏠 › Padre › Nodo actual   ···
  */
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next'
 interface Props {
   onFilter: (text: string) => void
   filterText: string
-  onCommandPalette: () => void
   onLogout: () => void
   onOpenSettings: () => void
   onTogglePlanner?: () => void
@@ -27,7 +26,6 @@ interface Props {
 export default function WFTopBar({
   onFilter,
   filterText,
-  onCommandPalette,
   onLogout,
   onOpenSettings,
   onTogglePlanner,
@@ -236,13 +234,6 @@ export default function WFTopBar({
           <rect x="7" y="10" width="12" height="4" rx="1" fill="currentColor" stroke="none"/>
           <line x1="3" y1="18" x2="21" y2="18"/>
           <rect x="3" y="16" width="6" height="4" rx="1" fill="currentColor" stroke="none"/>
-        </svg>
-      </button>
-
-      {/* ⌘K — solo rayo, sin texto */}
-      <button className="wf-topbar-btn" onClick={onCommandPalette} title="Acciones rápidas (⌘K)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
       </button>
 

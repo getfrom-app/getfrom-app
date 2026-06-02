@@ -312,9 +312,12 @@ export default function MainLayout() {
     }
   }, [navigate])
 
-  // Cerrar búsqueda + limpiar filtro al navegar dentro de un nodo
+  // Cerrar búsqueda + limpiar filtro al navegar a un nodo concreto
+  // (NO en home ni en primer mount — para preservar el panel abierto por defecto)
+  const didMountRef = useRef(false)
   useEffect(() => {
-    if (showSearch) {
+    if (!didMountRef.current) { didMountRef.current = true; return }
+    if (showSearch && location.pathname.includes('/node/')) {
       setRightPanel(null)
       setFilterText('')
     }
@@ -677,7 +680,7 @@ export default function MainLayout() {
         <WFTopBar
           onFilter={setFilterText}
           filterText={filterText}
-          onCommandPalette={() => setShowUnifiedCapture(v => !v)}
+
           onLogout={handleLogout}
           onOpenSettings={() => navigate('/settings')}
           onTogglePlanner={() => togglePanel('planner')}
@@ -816,7 +819,7 @@ export default function MainLayout() {
       <button
         className="quick-capture-fab"
         onClick={() => setShowUnifiedCapture(true)}
-        title="Nueva nota · buscar (Espacio / ⌘K)"
+        title="Nueva nota · buscar (Espacio)"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
