@@ -2574,6 +2574,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           <div
             className="node-text-group"
             onMouseDown={e => {
+              // Doble/triple clic → dejar que el browser seleccione palabra/línea con su comportamiento nativo
+              if (e.detail >= 2) return
               // Capturar posición de cursor en mousedown para restaurarla tras el cambio
               // de contenido HTML→texto plano que ocurre en handleFocus.
               // También maneja clics en badges (fuera del contentEditable).
@@ -2606,6 +2608,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // isEditing && clickedInContent → el browser maneja el cursor directamente
             }}
             onClick={e => {
+              // Doble/triple clic → el browser ya seleccionó palabra/línea — no interferir
+              if (e.detail >= 2) return
               if (!isNota && !(e.target as HTMLElement).closest('button, input, select, [role="button"]')) {
                 contentRef.current?.focus()
                 // Si ya estábamos en modo edición y hay posición pendiente (p.ej. clic en badge),

@@ -1,6 +1,6 @@
 /**
  * ContextListPanel — lista de contextos en panel derecho
- * Reemplaza la sección CONTEXTOS del sidebar izquierdo (eliminado v9.5.20)
+ * Hover: lápiz (renombrar) + × (eliminar), igual que los filtros guardados
  */
 import React, { useState, useRef, useEffect } from 'react'
 import { useStore, store } from '../../store/nodeStore'
@@ -15,10 +15,14 @@ interface Props {
 export default function ContextListPanel({ onSelectContext, selectedContextId }: Props) {
   const s = useStore()
   const { t } = useTranslation()
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-  const [addingCtx, setAddingCtx] = useState(false)
-  const [newCtxName, setNewCtxName] = useState('')
-  const newCtxInputRef = useRef<HTMLInputElement>(null)
+  const [expandedIds, setExpandedIds]   = useState<Set<string>>(new Set())
+  const [addingCtx, setAddingCtx]       = useState(false)
+  const [newCtxName, setNewCtxName]     = useState('')
+  const [hoveredId, setHoveredId]       = useState<string | null>(null)
+  const [renamingId, setRenamingId]     = useState<string | null>(null)
+  const [renameValue, setRenameValue]   = useState('')
+  const newCtxInputRef  = useRef<HTMLInputElement>(null)
+  const renameInputRef  = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (addingCtx) setTimeout(() => newCtxInputRef.current?.focus(), 30)
@@ -37,6 +41,26 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     onSelectContext(newNode.id)
   }
 
+  function startRename(nodeId: string, currentText: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setRenamingId(nodeId)
+    setRenameValue(currentText)
+    setTimeout(() => { renameInputRef.current?.focus(); renameInputRef.current?.select() }, 20)
+  }
+
+  function confirmRename() {
+    if (!renamingId) return
+    const trimmed = renameValue.trim()
+    if (trimmed) store.updateNode(renamingId, { text: trimmed })
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  function deleteCtx(nodeId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    store.deleteNode(nodeId)
+  }
+
   function toggleExpand(id: string, e: React.MouseEvent) {
     e.stopPropagation()
     setExpandedIds(prev => {
@@ -49,23 +73,25 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   function renderCtx(nodeId: string, depth: number): React.ReactNode {
     const node = s.getNode(nodeId)
     if (!node || node.deletedAt) return null
-    const kids = s.children(nodeId)
-      .filter(n => !n.deletedAt && s.children(n.id).filter(k => !k.deletedAt).length > 0)
-    const isActive = selectedContextId === nodeId
-    const expanded = expandedIds.has(nodeId)
+    const kids = s.children(nodeId).filter(n => !n.deletedAt && s.children(n.id).filter(k => !k.deletedAt).length > 0)
+    const isActive   = selectedContextId === nodeId
+    const expanded   = expandedIds.has(nodeId)
+    const isHovered  = hoveredId === nodeId
+    const isRenaming = renamingId === nodeId
+
     return (
       <div key={nodeId}>
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            padding: `5px 16px 5px ${16 + depth * 16}px`,
-            cursor: 'pointer', fontSize: 13, borderRadius: 4,
+            padding: `5px 8px 5px ${16 + depth * 16}px`,
+            cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
             color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-            background: isActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+            background: isActive ? 'rgba(139,92,246,0.08)' : isHovered ? 'var(--bg-hover)' : 'transparent',
           }}
-          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
-          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-          onClick={() => onSelectContext(nodeId)}
+          onMouseEnter={() => setHoveredId(nodeId)}
+          onMouseLeave={() => setHoveredId(null)}
+          onClick={() => { if (!isRenaming) onSelectContext(nodeId) }}
         >
           {kids.length > 0 ? (
             <span
@@ -75,9 +101,49 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
           ) : (
             <span style={{ width: 18, flexShrink: 0, display: 'inline-block' }} />
           )}
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {node.text || t('common.noTitle')}
-          </span>
+
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              onClick={e => e.stopPropagation()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); confirmRename() }
+                if (e.key === 'Escape') { e.preventDefault(); setRenamingId(null); setRenameValue('') }
+              }}
+              onBlur={confirmRename}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
+            />
+          ) : (
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {node.text || t('common.noTitle')}
+            </span>
+          )}
+
+          {/* Botones hover: lápiz + × */}
+          {!isRenaming && (isHovered || isActive) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+              <button
+                title="Renombrar"
+                onClick={e => startRename(nodeId, node.text || '', e)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '2px 4px', borderRadius: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13.25l-3 .75.75-3z"/>
+                </svg>
+              </button>
+              <button
+                title="Eliminar"
+                onClick={e => deleteCtx(nodeId, e)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, padding: '2px 4px', borderRadius: 3, lineHeight: 1 }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-error, #e53e3e)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >×</button>
+            </div>
+          )}
         </div>
         {kids.length > 0 && expanded && kids.map(k => renderCtx(k.id, depth + 1))}
       </div>
@@ -89,10 +155,8 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '8px 0 4px' }}>
-      {/* Lista de contextos */}
       {contextos.map(c => renderCtx(c.id, 0))}
 
-      {/* Nodo vacío al final — clic para crear nuevo contexto */}
       {!addingCtx ? (
         <div
           style={{ padding: '5px 16px', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'text', display: 'flex', alignItems: 'center', gap: 4 }}
