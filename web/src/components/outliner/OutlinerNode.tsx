@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
-import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection } from './Outliner'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds } from './Outliner'
 import type { Node } from '../../types'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { createNodeShortcut } from '../../utils/atajosHelper'
@@ -240,6 +240,7 @@ function getCursorRect(el: HTMLElement): DOMRect {
 
 // Module-level drag state (shared across all OutlinerNode instances)
 let _draggedNodeId: string | null = null
+let _draggedNodeIds: string[] = []  // todos los nodos arrastrados (multi-select), ordenados visualmente
 let _dropAsChild = false // true cuando el drop debe hacer al nodo arrastrado hijo del destino
 
 function getAllDescendants(nodeId: string): string[] {
@@ -1627,6 +1628,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function handleDragStart(e: React.DragEvent<HTMLElement>) {
     _draggedNodeId = node.id
+    // Si el nodo arrastrado pertenece a la selección múltiple, arrastrar todos
+    const selected = getGlobalSelectedIds()
+    if (selected.has(node.id) && selected.size > 1) {
+      // Ordenar por siblingOrder para mantener el orden relativo al soltar
+      _draggedNodeIds = [...selected].sort((a, b) => {
+        const na = store.getNode(a), nb = store.getNode(b)
+        return (na?.siblingOrder ?? 0) - (nb?.siblingOrder ?? 0)
+      })
+    } else {
+      _draggedNodeIds = [node.id]
+    }
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', node.id)
   }
@@ -1635,7 +1647,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Aceptar drag tanto del outliner interno como del agenda/timeline.
     const hasExternalId = !!e.dataTransfer.types.find(t => t === 'cal-node-id' || t === 'text/plain')
     if (!_draggedNodeId && !hasExternalId) return
-    if (_draggedNodeId === node.id) return
+    // Ignorar si el destino es uno de los nodos arrastrados
+    if (_draggedNodeIds.includes(node.id)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     const rect = e.currentTarget.getBoundingClientRect()
@@ -1661,49 +1674,59 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault()
     setIsDragOver(false)
-    // Acepta drops del outliner interno (_draggedNodeId) Y del agenda/timeline
-    // (cal-node-id en dataTransfer). v8.26: reparenta tareas arrastradas.
-    const draggedId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+
+    // Fallback a dataTransfer para drops externos (agenda/timeline)
+    const primaryId = _draggedNodeId || e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
+    const nodesToMove = _draggedNodeIds.length > 0 ? _draggedNodeIds : (primaryId ? [primaryId] : [])
     const asChild = _dropAsChild
     _draggedNodeId = null
+    _draggedNodeIds = []
     _dropAsChild = false
-    if (!draggedId || draggedId === node.id) return
 
-    const draggedNode = store.getNode(draggedId)
-    if (!draggedNode) return
+    if (!nodesToMove.length) return
 
-    // Evitar mover un nodo a su propio descendiente
-    if (isDescendant(draggedId, node.id)) return
+    // Filtrar: no mover al propio destino ni a sus descendientes
+    const valid = nodesToMove.filter(id => id !== node.id && !isDescendant(id, node.id))
+    if (!valid.length) return
 
     if (asChild) {
-      // Hacer al nodo arrastrado primer hijo del destino
+      // ── Indentados como hijos del destino ───────────────────────────────
       const targetChildren = store.children(node.id).sort((a, b) => a.siblingOrder - b.siblingOrder)
-      const firstOrder = targetChildren.length > 0 ? targetChildren[0].siblingOrder - 1000 : 1000
-      store.updateNode(draggedId, { parentId: node.id, siblingOrder: firstOrder })
+      const base = targetChildren.length > 0
+        ? targetChildren[0].siblingOrder - valid.length * 1000
+        : 1000
+      valid.forEach((id, i) => {
+        store.updateNode(id, { parentId: node.id, siblingOrder: base + i * 1000 })
+      })
+      clearGlobalSelection()
       return
     }
 
-    if (draggedNode.parentId === node.parentId) {
-      // MISMO PADRE → reordenar (comportamiento existente)
-      const siblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
-      const targetIdx = siblings.findIndex(n => n.id === node.id)
-      if (targetIdx === -1) return
-      const before = targetIdx > 0 ? siblings[targetIdx - 1].siblingOrder : siblings[targetIdx].siblingOrder - 1000
-      const newOrder = (before + siblings[targetIdx].siblingOrder) / 2
-      store.updateNode(draggedId, { siblingOrder: newOrder })
-    } else {
-      // DIFERENTE PADRE → reparenting: mover antes del nodo destino
-      const newSiblings = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
-      const targetIdx = newSiblings.findIndex(n => n.id === node.id)
-      const before = targetIdx > 0 ? newSiblings[targetIdx - 1].siblingOrder : (newSiblings[targetIdx]?.siblingOrder ?? 0) - 1000
-      const after = newSiblings[targetIdx]?.siblingOrder ?? before + 2000
-      const newOrder = (before + after) / 2
-      store.updateNode(draggedId, { parentId: node.parentId, siblingOrder: newOrder })
-    }
+    // ── Al mismo nivel que el destino, antes de él ──────────────────────
+    const targetParentId = node.parentId
+    // Obtener hermanos SIN los nodos que vamos a mover (para calcular posiciones limpias)
+    const siblings = store.children(targetParentId)
+      .filter(n => !valid.includes(n.id))
+      .sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const targetIdx = siblings.findIndex(n => n.id === node.id)
+    const targetOrder = node.siblingOrder
+    const beforeOrder = targetIdx > 0 ? siblings[targetIdx - 1].siblingOrder : targetOrder - valid.length * 1000
+
+    // Repartir equitativamente entre beforeOrder y targetOrder
+    const gap = targetOrder - beforeOrder
+    const step = gap / (valid.length + 1)
+    valid.forEach((id, i) => {
+      store.updateNode(id, {
+        parentId: targetParentId,
+        siblingOrder: beforeOrder + step * (i + 1),
+      })
+    })
+    clearGlobalSelection()
   }
 
   function handleDragEnd() {
     _draggedNodeId = null
+    _draggedNodeIds = []
     setIsDragOver(false)
   }
 
