@@ -5,9 +5,10 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
-import Sidebar from '../sidebar/Sidebar'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
+import ContextListPanel from '../panels/ContextListPanel'
+import RecorderPanel from '../panels/RecorderPanel'
 
 import WFHomeView from '../views/WFHomeView'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
@@ -94,13 +95,12 @@ export default function MainLayout() {
     return m ? m[1] : undefined
   })()
   const [loadError, setLoadError] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [filterText, setFilterText] = useFilterStore()
 
   // Columna derecha unificada
-  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | null
-  type CyclablePanel = 'planner' | 'filter' | 'magic'
-  const PANEL_ORDER: CyclablePanel[] = ['planner', 'filter', 'magic']
+  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder' | null
+  type CyclablePanel = 'planner' | 'filter' | 'magic' | 'context-list' | 'recorder'
+  const PANEL_ORDER: CyclablePanel[] = ['planner', 'filter', 'magic', 'context-list', 'recorder']
   const [rightPanel, setRightPanel] = useState<RightPanel>(null)
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   const lastPanelRef = useRef<CyclablePanel>('planner')
@@ -117,6 +117,7 @@ export default function MainLayout() {
     })
   }
   function handleSelectContext(nodeId: string) {
+    // Desde ContextListPanel: seleccionar contexto abre su contenido editable
     if (contextNodeId === nodeId && rightPanel === 'context') {
       setRightPanel(null)
       setContextNodeId(null)
@@ -163,32 +164,9 @@ export default function MainLayout() {
     })
   }
 
-  // R global hold-to-record
-  const isRKeyDownRef = useRef(false)
-
-  // Sidebar resize state
-  const sidebarWidthRef = useRef(parseInt(localStorage.getItem('from_sidebar_width') || '220'))
-  const [sidebarWidth, setSidebarWidthState] = useState(sidebarWidthRef.current)
-  function setSidebarWidth(w: number) { sidebarWidthRef.current = w; setSidebarWidthState(w) }
-
   function handleDividerMouseDown(e: React.MouseEvent) {
-    if (!sidebarOpen) { setSidebarOpen(true); return }
-    const startX = e.clientX
-    const startW = sidebarWidthRef.current
-    document.body.classList.add('sidebar-resizing')
-    function onMove(ev: MouseEvent) {
-      const w = Math.max(160, Math.min(520, startW + ev.clientX - startX))
-      setSidebarWidth(w)
-    }
-    function onUp() {
-      document.body.classList.remove('sidebar-resizing')
-      localStorage.setItem('from_sidebar_width', String(sidebarWidthRef.current))
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    e.preventDefault()
+    // Sidebar eliminado — función vacía por compatibilidad
+    void e
   }
   const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
@@ -475,17 +453,17 @@ export default function MainLayout() {
           cyclePanel(e.key === 'ArrowDown' ? 'down' : 'up')
         }
       }
-      // R (mantener, sin input activo) → abre Magic Chat + empieza a grabar
-      if (e.code === 'KeyR' && !e.repeat && !isRKeyDownRef.current && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      // R (sin input) → toggle grabadora
+      if (e.key === 'r' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) {
-          e.preventDefault()
-          isRKeyDownRef.current = true
-          setShowAIChat(true)
-          // Pequeño delay para que MagicChat monte y registre el listener
-          setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start')), 40)
-        }
+        if (!isInputFocused) { e.preventDefault(); togglePanel('recorder') }
+      }
+      // C (sin input) → toggle lista de contextos
+      if (e.key === 'c' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const active = document.activeElement as HTMLElement | null
+        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+        if (!isInputFocused) { e.preventDefault(); togglePanel('context-list') }
       }
       // P (sin modificador) → toggle planificador
       if (e.key === 'p' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
@@ -496,11 +474,7 @@ export default function MainLayout() {
           togglePanel('planner')
         }
       }
-      // Cmd+Shift+S → toggle sidebar
-      if (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
-        e.preventDefault()
-        setSidebarOpen(v => !v)
-      }
+      // (Cmd+Shift+S eliminado — no hay sidebar)
       // Cmd+, → Ajustes (página completa)
       if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -619,18 +593,8 @@ export default function MainLayout() {
         // Si ya estamos en root '/' no hacemos nada
       }
     }
-    function handleKeyUp(e: KeyboardEvent) {
-      if (e.code === 'KeyR' && isRKeyDownRef.current) {
-        isRKeyDownRef.current = false
-        window.dispatchEvent(new Event('magic-chat:record-stop'))
-      }
-    }
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [navigate, showCommandPalette, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, showQuickCapture, rightPanel])
 
   // Listener del modal de URL corta (slug) — disparado desde NodeContextMenu vía CustomEvent
@@ -686,7 +650,7 @@ export default function MainLayout() {
 
   return (
     <ToastProvider>
-    <div className={`main-layout wf-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'} ${rightPanel === 'planner' ? 'planner-open' : ''}`} style={{ '--sw': `${sidebarWidth}px` } as React.CSSProperties}>
+    <div className="main-layout wf-layout">
 
       {/* ── Traffic lights row (solo Mac) ── */}
       <div
@@ -694,96 +658,29 @@ export default function MainLayout() {
         style={{ WebkitAppRegion: 'drag', userSelect: 'none' } as React.CSSProperties}
       />
 
-      {/* ── Cabecera unificada ── */}
+      {/* ── Cabecera unificada — sin sidebar ── */}
       <div className="app-header">
-        {/* Parte izquierda: toggle + branding (misma anchura que sidebar) */}
-        <div className={`header-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-          <button
-            className="sidebar-toggle"
-            onClick={() => setSidebarOpen(v => !v)}
-            title="Toggle sidebar (⌘⇧S)"
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-              <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-              <rect x="2" y="11.5" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-            </svg>
-          </button>
-          {sidebarOpen && (
-            <button
-              onClick={() => navigate('/')}
-              className="header-brand"
-              title="Inicio"
-              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            >
-              <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
-                <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
-              </svg>
-              <span>From</span>
-            </button>
-          )}
-        </div>
-        {/* Parte derecha: WFTopBar */}
         <WFTopBar
           onFilter={setFilterText}
           filterText={filterText}
           onCommandPalette={() => setShowCommandPalette(v => !v)}
           onLogout={handleLogout}
           onOpenSettings={() => navigate('/settings')}
-          onToggleSidebar={() => setSidebarOpen(v => !v)}
-          sidebarOpen={sidebarOpen}
           onTogglePlanner={() => togglePanel('planner')}
           plannerOpen={rightPanel === 'planner'}
           onToggleSearch={() => togglePanel('filter')}
           onToggleMagic={() => togglePanel('magic')}
+          onToggleContextList={() => togglePanel('context-list')}
+          onToggleRecorder={() => togglePanel('recorder')}
           rightPanel={rightPanel}
         />
       </div>
 
-      {/* ── main-row: sidebar + contenido ── */}
-      <div className="main-row">
-      {/* Sidebar (sin sidebar-brand-section) */}
-      <Sidebar
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(o => !o)}
-        onLogout={handleLogout}
-        isSyncing={s.isSyncing}
-        showSaved={showSaved}
-        isGuest={false}
-        onOpenSettings={() => navigate('/settings')}
-        onSelectContext={handleSelectContext}
-        selectedContextId={contextNodeId}
-      />
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="sidebar-mobile-overlay"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      {/* ── Columna derecha: contenido ── */}
+      {/* ── Contenido: árbol + panel derecho ── */}
       <div className="main-body">
       <main className="main-content">
         <TrialBanner />
-        {/* Mobile hamburger */}
-        <div className="mobile-header">
-          <button className="mobile-hamburger" onClick={() => setSidebarOpen(true)}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <rect y="3" width="20" height="2" rx="1"/>
-              <rect y="9" width="20" height="2" rx="1"/>
-              <rect y="15" width="20" height="2" rx="1"/>
-            </svg>
-          </button>
-          <div className="mobile-logo">
-            <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
-              <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
-              <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
-            </svg>
-            <span>From</span>
-          </div>
-        </div>
+        {/* Mobile header eliminado — sidebar eliminado */}
         <Suspense fallback={<div className="view-loading">{t('common.loading')}</div>}>
         <Routes>
           <Route index element={<WFHomeView filterText={filterText} contextFilterId={contextNodeId} />} />
@@ -857,23 +754,22 @@ export default function MainLayout() {
                 onClose={() => { setRightPanel(null); setContextNodeId(null) }}
               />
             )}
+            {rightPanel === 'context-list' && (
+              <ContextListPanel
+                onSelectContext={handleSelectContext}
+                selectedContextId={contextNodeId}
+              />
+            )}
+            {rightPanel === 'recorder' && (
+              <RecorderPanel onClose={() => setRightPanel(null)} />
+            )}
           </div>
         </div>
       )}
 
       </div>{/* .main-body */}
 
-      {/* ── Trigger borde derecho: hover abre Magic, clic colapsa si está abierto ── */}
-      <div
-        className={`magic-edge-trigger ${showAIChat ? 'magic-edge-trigger--open' : ''}`}
-        onMouseEnter={handleEdgeEnter}
-        onMouseLeave={handleEdgeLeave}
-        onClick={() => { if (showAIChat) setShowAIChat(false) }}
-        title={showAIChat ? 'Cerrar Magic' : 'Abrir Magic (hover)'}
-      />
-
-      </div>{/* .main-row */}
-      {/* ── Footer global: de extremo a extremo, fuera del main-row ── */}
+      {/* ── Footer global ── */}
       <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
       {paywallReason && (
         <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />

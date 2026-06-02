@@ -15,12 +15,12 @@ interface Props {
   onCommandPalette: () => void
   onLogout: () => void
   onOpenSettings: () => void
-  onToggleSidebar: () => void
-  sidebarOpen: boolean
   onTogglePlanner?: () => void
   plannerOpen?: boolean
   onToggleSearch: () => void
   onToggleMagic?: () => void
+  onToggleContextList?: () => void
+  onToggleRecorder?: () => void
   rightPanel?: string | null
 }
 
@@ -30,12 +30,12 @@ export default function WFTopBar({
   onCommandPalette,
   onLogout,
   onOpenSettings,
-  onToggleSidebar,
-  sidebarOpen,
   onTogglePlanner,
   plannerOpen,
   onToggleSearch,
   onToggleMagic,
+  onToggleContextList,
+  onToggleRecorder,
   rightPanel,
 }: Props) {
   const navigate = useNavigate()
@@ -173,6 +173,30 @@ export default function WFTopBar({
       >
         <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {/* Grabadora (R) */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'recorder' ? 'active' : ''}`}
+        onClick={onToggleRecorder}
+        title="Grabadora (R)"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
+          <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
+          <path d="M8 13v2"/>
+        </svg>
+      </button>
+
+      {/* Contextos (C) */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'context-list' || rightPanel === 'context' ? 'active' : ''}`}
+        onClick={onToggleContextList}
+        title="Contextos (C)"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
       </button>
 
