@@ -151,7 +151,7 @@ interface PickerItem {
 }
 
 interface InlinePicker {
-  type: '@' | '#' | 'mirror' | 'move'
+  type: '@' | 'mirror' | 'move'
   query: string
   items: PickerItem[]
   activeIdx: number
@@ -655,7 +655,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   }
 
-  function buildPickerItems(type: '@' | '#', query: string): PickerItem[] {
+  function buildPickerItems(type: '@', query: string): PickerItem[] {
     if (type === '@') {
       // @ — contextos del árbol 🧠 Contexto: buscar por nombre visible, no por slug
       const treeItems: { id: string; label: string; slug: string }[] = []
@@ -730,12 +730,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
-    // Auto-sync bidireccional: types[] refleja los @contextos y #tags del texto.
-    // Preservamos types "builtin" (bucle, agente, etc.) que no son tags visuales.
+    // Auto-sync bidireccional: types[] refleja los @contextos del texto.
+    // Los #tags han sido eliminados de From — solo @ para contextos.
     const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
-    const hashTags = new Set([...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
     const atTags = new Set([...(text.match(/@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
-    const allContextTags = new Set([...hashTags, ...atTags])
+    const allContextTags = new Set([...atTags])
     const currentTypes = node.types || []
     const newTypes = [
       ...currentTypes.filter(t => BUILTIN_TYPES.has(t) || allContextTags.has(t)),
@@ -834,7 +833,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const before = text.slice(0, pos)
 
     const atMatch = before.match(/@([^@\n]*)$/)
-    const hashMatch = before.match(/#(\w*)$/)
 
     // Detectar "mover a [query]" en el texto completo (case-insensitive, ignora acentos)
     const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
@@ -855,10 +853,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const query = atMatch[1]
       const items = buildPickerItems('@', query)
       setPicker({ type: '@', query, items, activeIdx: 0 })
-    } else if (hashMatch) {
-      const query = hashMatch[1]
-      const items = buildPickerItems('#', query)
-      setPicker({ type: '#', query, items, activeIdx: 0 })
     } else {
       setPicker(null)
     }
@@ -1266,42 +1260,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         sel.removeAllRanges()
         return
       }
-    }
-
-    // ── Enter/Tab para confirmar #tag sin picker (cursor al final de #word) ──
-    // Detectar si el cursor está al final de un hashtag en curso
-    const pos = contentRef.current ? getCaretPosition(contentRef.current) : 0
-    const beforeCursor = text.slice(0, pos)
-    const tagMatch = beforeCursor.match(/#([\wÀ-ɏ\/\-]+)$/)
-
-    if (tagMatch && (e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && !e.metaKey && !e.ctrlKey && !picker) {
-      e.preventDefault()
-      const tagSlug = tagMatch[1]
-      // Confirmar el tag: crear en árbol si no existe
-      try { ensureTagInTree(tagSlug) } catch { /* silencioso */ }
-      // Añadir un espacio después del tag y renderizar con colores
-      if (contentRef.current) {
-        const after = text.slice(pos)
-        const newText = (beforeCursor + ' ' + after).trimEnd()
-        const trimmed = newText.trimStart()
-
-        // Guardar texto
-        store.updateNode(node.id, { text: trimmed })
-
-        // Renderizar con colores inmediatamente (innerHTML con tags coloreados)
-        const rendered = renderInlineToHtml(trimmed)
-        contentRef.current.innerHTML = rendered
-
-        // Posicionar cursor al final del texto renderizado
-        const sel = window.getSelection()
-        const range = document.createRange()
-        range.selectNodeContents(contentRef.current)
-        range.collapse(false)
-        sel?.removeAllRanges()
-        sel?.addRange(range)
-      }
-      // Tab: no hacer nada más. Enter: esperar segundo Enter para crear línea
-      return
     }
 
     // Cmd+/ → ciclar heading H1 → H2 → H3 → normal
@@ -3343,29 +3301,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             <button
               key={item.id}
               className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
-              onMouseDown={e => {
-                e.preventDefault()
-                applyPickerSelection(item)
-              }}
+              onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
             >
-              <span className="inline-picker-icon">{picker.type === 'mirror' ? '⬡' : '#'}</span>
+              <span className="inline-picker-icon">⬡</span>
               <span className="inline-picker-content">
                 <span className="inline-picker-label">{item.label}</span>
-                {picker.type === '#' && (
-                  <span className="inline-picker-meta">
-                    {item.status === 'pending' && <span className="inline-picker-badge status-pending">○</span>}
-                    {item.status === 'done' && <span className="inline-picker-badge status-done">✓</span>}
-                    {(item.types || []).includes('bucle') && <span className="inline-picker-badge type-bucle">↺</span>}
-                    {(item.types || []).some(t => ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota'].includes(t)) && (
-                      <span className="inline-picker-badge type-label">
-                        {(item.types || []).find(t => ['tarea', 'proyecto', 'área', 'referencia', 'evento', 'nota'].includes(t))}
-                      </span>
-                    )}
-                    {item.bodyPreview && (
-                      <span className="inline-picker-preview">{item.bodyPreview}{(item.bodyPreview?.length ?? 0) >= 30 ? '…' : ''}</span>
-                    )}
-                  </span>
-                )}
               </span>
             </button>
           ))}

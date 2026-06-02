@@ -221,8 +221,9 @@ export default function NodeView() {
   const [titleEditing, setTitleEditing] = useState(false)
   const [showTitleSlash, setShowTitleSlash] = useState(false)
   const [titleSlashQuery, setTitleSlashQuery] = useState('')
-  // Tag picker en el título (#tag autocompletado)
-  const [titleTagPicker, setTitleTagPicker] = useState<{ query: string; items: string[]; activeIdx: number } | null>(null)
+  // #tag picker eliminado — los tags no existen en From. Solo @ para contextos.
+  const [titleTagPicker, _setTitleTagPicker] = useState<null>(null)
+  const setTitleTagPicker = (_v: unknown) => {}  // noop — mantenido por compatibilidad con código existente
   const [titleTagPickerPos, setTitleTagPickerPos] = useState<{ top: number; left: number } | null>(null)
   // "Mover a" picker en el título
   const [titleMovePicker, setTitleMovePicker] = useState<{ query: string; items: Array<{ id: string; label: string }>; activeIdx: number } | null>(null)
@@ -400,13 +401,7 @@ export default function NodeView() {
     return applyWFFilter(s.nodes, effective)
   }, [activeFilterQuery, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cerrar title tag picker al hacer click fuera
-  useEffect(() => {
-    if (!titleTagPicker) return
-    function handler() { setTitleTagPicker(null) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [titleTagPicker])
+  // titleTagPicker eliminado — #tags no existen en From
 
   // Icono del nodo (extraData.icon)
   // ── Icono unificado: extraData.icon || primer emoji del texto ─────────────
@@ -831,21 +826,8 @@ export default function NodeView() {
     const text = anchors.length === 1 && !rawText.startsWith('http')
       ? (anchors[0].getAttribute('href') || rawText)
       : rawText
-    // Auto-sync bidireccional: types[] refleja los #tags del título.
-    const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
-    const hashTags = new Set([...(text.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
-    const currentTypes = node!.types || []
-    const newTypes = [
-      ...currentTypes.filter(t => BUILTIN_TYPES.has(t) || hashTags.has(t)),
-      ...[...hashTags].filter(t => !currentTypes.includes(t)),
-    ]
-    const typesChanged = newTypes.length !== currentTypes.length ||
-      newTypes.some((t, i) => t !== currentTypes[i])
-    if (typesChanged) {
-      store.updateNode(node!.id, { text, types: newTypes })
-    } else {
-      store.updateNode(node!.id, { text })
-    }
+    // Los #tags han sido eliminados de From — actualizar texto directamente
+    store.updateNode(node!.id, { text })
 
     const sel = window.getSelection()
     if (sel && sel.rangeCount > 0) {
@@ -864,27 +846,7 @@ export default function NodeView() {
         setTitleSlashQuery('')
       }
 
-      // Detect '#' for tag picker
-      const hashMatch = before.match(/#([^\s#]*)$/)
-      if (hashMatch && !slashMatch) {
-        const query = hashMatch[1].toLowerCase()
-        const allTags = store.allUsedTags()
-        const COMMON = ['tarea', 'proyecto', 'nota', 'referencia', 'evento', 'bucle']
-        const combined = Array.from(new Set([...allTags, ...COMMON]))
-        const items = combined.filter(t => !query || t.toLowerCase().includes(query)).slice(0, 10)
-        if (items.length > 0) {
-          const cursorRect = range.getBoundingClientRect()
-          setTitleTagPicker({ query, items, activeIdx: 0 })
-          setTitleTagPickerPos({
-            top: cursorRect.bottom + 4,
-            left: Math.max(8, Math.min(cursorRect.left, window.innerWidth - 220)),
-          })
-        } else {
-          setTitleTagPicker(null)
-        }
-      } else if (!hashMatch) {
-        setTitleTagPicker(null)
-      }
+      // #tag picker eliminado — los tags no existen en From
 
       // Detect "mover a" command
       const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
@@ -930,17 +892,7 @@ export default function NodeView() {
     navigate('/')
   }
 
-  function applyTitleTag(tag: string) {
-    if (!titleTagPicker || !titleRef.current) return
-    const text = titleRef.current.textContent || ''
-    const hashIdx = text.lastIndexOf('#' + titleTagPicker.query)
-    if (hashIdx < 0) { setTitleTagPicker(null); return }
-    const newText = text.slice(0, hashIdx) + '#' + tag + text.slice(hashIdx + 1 + titleTagPicker.query.length)
-    const newTypes = (node!.types || []).includes(tag) ? node!.types : [...(node!.types || []), tag]
-    store.updateNode(node!.id, { text: newText.trim(), types: newTypes })
-    if (titleRef.current) titleRef.current.textContent = newText.trim()
-    setTitleTagPicker(null)
-  }
+  // applyTitleTag eliminado — #tags no existen en From
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     // body desactivado — en From todo va en nodos hijos
@@ -1654,28 +1606,6 @@ export default function NodeView() {
                   if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); applyTitleMove(titleMovePicker.items[titleMovePicker.activeIdx]); return }
                   if (e.key === 'Escape') { setTitleMovePicker(null); return }
                 }
-                // Tag picker navigation
-                if (titleTagPicker) {
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault()
-                    setTitleTagPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p)
-                    return
-                  }
-                  if (e.key === 'ArrowUp') {
-                    e.preventDefault()
-                    setTitleTagPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p)
-                    return
-                  }
-                  if (e.key === 'Enter' || e.key === 'Tab') {
-                    e.preventDefault()
-                    applyTitleTag(titleTagPicker.items[titleTagPicker.activeIdx])
-                    return
-                  }
-                  if (e.key === 'Escape') {
-                    setTitleTagPicker(null)
-                    return
-                  }
-                }
                 if (e.key === 'Enter') {
                   e.preventDefault()
                   const firstNodeText = document.querySelector('.outliner-container .node-text') as HTMLElement | null
@@ -1779,28 +1709,7 @@ export default function NodeView() {
                 onClose={() => { setShowTitleSlash(false); setTitleSlashQuery('') }}
               />
             )}
-            {/* Tag picker del título — mismo estilo que el inline-picker del outliner */}
-            {titleTagPicker && titleTagPickerPos && createPortal(
-              <div
-                className="inline-picker"
-                style={{ position: 'fixed', top: titleTagPickerPos.top, left: titleTagPickerPos.left, zIndex: 1000 }}
-                onMouseDown={e => e.preventDefault()}
-              >
-                {titleTagPicker.items.map((tag, idx) => (
-                  <button
-                    key={tag}
-                    className={`inline-picker-item ${idx === titleTagPicker.activeIdx ? 'active' : ''}`}
-                    onMouseDown={e => { e.preventDefault(); applyTitleTag(tag) }}
-                  >
-                    <span className="inline-picker-icon">#</span>
-                    <span className="inline-picker-content">
-                      <span className="inline-picker-label">{tag}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>,
-              document.body
-            )}
+            {/* Tag picker del título eliminado — #tags no existen en From */}
             {/* "Mover a" picker en el título */}
             {titleMovePicker && titleMovePickerPos && createPortal(
               <div className="inline-picker" style={{ position: 'fixed', top: titleMovePickerPos.top, left: titleMovePickerPos.left, zIndex: 1000 }}>
