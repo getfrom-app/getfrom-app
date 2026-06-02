@@ -243,6 +243,11 @@ let _draggedNodeId: string | null = null
 let _draggedNodeIds: string[] = []  // todos los nodos arrastrados (multi-select), ordenados visualmente
 let _dropAsChild = false // true cuando el drop debe hacer al nodo arrastrado hijo del destino
 
+/** Exportado: IDs que se están arrastrando actualmente (vacío si no hay drag activo) */
+export function getDraggedIds(): string[] { return _draggedNodeIds }
+/** Exportado: ID del nodo arrastrado (o null) */
+export function getDraggedId(): string | null { return _draggedNodeId }
+
 function getAllDescendants(nodeId: string): string[] {
   const result: string[] = []
   const queue = [nodeId]
@@ -3353,7 +3358,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             filterMatchIds.has(c.id) || filterAncestorIds?.has(c.id)
           )
         }
-        return bodyChildren.map(child => (
+        const childNodes = bodyChildren.map(child => (
           <OutlinerNode
             key={child.id}
             node={child}
@@ -3369,6 +3374,38 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             filterAncestorIds={filterAncestorIds}
           />
         ))
+        // Zona de drop al final de los hijos — permite soltar después del último hijo
+        const lastChildOrder = bodyChildren.length > 0
+          ? Math.max(...bodyChildren.map(c => c.siblingOrder))
+          : 0
+        const ChildDropTrailer = () => {
+          const [over, setOver] = useState(false)
+          return bodyChildren.length > 0 ? (
+            <div
+              style={{
+                minHeight: 16,
+                marginLeft: (depth + 1) * 22,
+                borderTop: over ? '2px solid var(--accent)' : '2px solid transparent',
+                transition: 'border-color 0.1s',
+              }}
+              onDragOver={e => {
+                if (!_draggedNodeId) return
+                e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setOver(true)
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={e => {
+                e.preventDefault(); setOver(false)
+                const ids = _draggedNodeIds.length > 0 ? _draggedNodeIds : (_draggedNodeId ? [_draggedNodeId] : [])
+                if (!ids.length) return
+                ids.forEach((id, i) => {
+                  if (id !== node.id) store.updateNode(id, { parentId: node.id, siblingOrder: lastChildOrder + (i + 1) * 1000 })
+                })
+                clearGlobalSelection()
+              }}
+            />
+          ) : null
+        }
+        return <>{childNodes}<ChildDropTrailer key="child-trailer" /></>
       })()}
 
       {/* Context menu */}

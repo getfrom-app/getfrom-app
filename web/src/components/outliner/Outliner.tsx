@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
-import OutlinerNode from './OutlinerNode'
+import OutlinerNode, { getDraggedIds, getDraggedId } from './OutlinerNode'
 import type { Node } from '../../types'
 import { trashNode } from '../../utils/papeleraHelper'
 import { useNavigate } from 'react-router-dom'
@@ -155,6 +155,48 @@ function computeGlobalSelection(
     if (midY >= minY && midY <= maxY) result.add(id)
   }
   return result
+}
+
+// ── Drop trailer — zona de drop al final de cada lista de nodos ─────────────
+// Sin esto, no se puede arrastrar un nodo para colocarlo DESPUÉS del último elemento.
+interface DropTrailerProps {
+  parentId: string | null
+  lastSiblingOrder: number
+}
+function DropTrailer({ parentId, lastSiblingOrder }: DropTrailerProps) {
+  const [over, setOver] = useState(false)
+  return (
+    <div
+      style={{
+        minHeight: 28,
+        borderTop: over ? '2px solid var(--accent)' : '2px solid transparent',
+        transition: 'border-color 0.1s',
+      }}
+      onDragOver={e => {
+        const id = getDraggedId()
+        if (!id) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault()
+        setOver(false)
+        const ids = getDraggedIds()
+        const fallback = getDraggedId() || e.dataTransfer.getData('text/plain')
+        const nodesToMove = ids.length > 0 ? ids : (fallback ? [fallback] : [])
+        if (!nodesToMove.length) return
+        nodesToMove.forEach((id, i) => {
+          store.updateNode(id, {
+            parentId,
+            siblingOrder: lastSiblingOrder + (i + 1) * 1000,
+          })
+        })
+        gClearSelected()
+      }}
+    />
+  )
 }
 
 // Devuelve true SOLO si el target ES el propio elemento de texto/input
@@ -816,6 +858,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
           />
         ))}
+        {/* Zona de drop al final — permite arrastrar después del último nodo */}
+        {nodes.length > 0 && (
+          <DropTrailer
+            parentId={parentId}
+            lastSiblingOrder={Math.max(...nodes.map(n => n.siblingOrder))}
+          />
+        )}
       </div>
 
       {/* WF-style: no hay barra inferior. La multi-selección se opera
