@@ -11,7 +11,7 @@ import ContextListPanel from '../panels/ContextListPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 
 import WFHomeView from '../views/WFHomeView'
-import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
@@ -196,6 +196,15 @@ export default function MainLayout() {
     window.addEventListener('from:panelMode', handler)
     return () => window.removeEventListener('from:panelMode', handler)
   }, [])
+
+  // Si el usuario navega al nodo Agenda, redirigir al home (Agenda es transparente)
+  useEffect(() => {
+    const m = location.pathname.match(/\/node\/([^/]+)/)
+    if (m) {
+      const node = store.getNode(m[1])
+      if (node?.text === AGENDA_ROOT_NAME) navigate('/', { replace: true })
+    }
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al navegar a cualquier ruta: cerrar panel contexto y limpiar filtro activo
   useEffect(() => {
