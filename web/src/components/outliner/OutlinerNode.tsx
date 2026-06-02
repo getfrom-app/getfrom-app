@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
+import { useGlobalSelection } from './Outliner'
 import type { Node } from '../../types'
 import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { createNodeShortcut } from '../../utils/atajosHelper'
@@ -255,8 +256,13 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
   const navigate = useNavigate()
+  // Cada nodo calcula su propio estado de multi-selección desde el estado global,
+  // en lugar de heredar el boolean del padre. Esto permite seleccionar nodos
+  // en distintos niveles de jerarquía con drag-to-select.
+  const globalSelectedIds = useGlobalSelection()
+  const isMultiSelected = globalSelectedIds.has(node.id)
   const contentRef = useRef<HTMLDivElement>(null)
   // Ref siempre actualizado con el texto más reciente — evita stale closure en handleFocus
   const nodeTextRef = useRef(node.text)

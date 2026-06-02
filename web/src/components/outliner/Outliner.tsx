@@ -33,7 +33,7 @@ function gClearSelected() {
   gSetSelected(new Set())
 }
 
-function useGlobalSelection(): Set<string> {
+export function useGlobalSelection(): Set<string> {
   const [ids, setIds] = useState<Set<string>>(_gSelectedIds)
   useEffect(() => {
     const cb = () => setIds(new Set(_gSelectedIds))
