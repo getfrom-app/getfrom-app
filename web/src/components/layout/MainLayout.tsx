@@ -468,17 +468,15 @@ export default function MainLayout() {
         })()
         if (isEmpty) { e.preventDefault(); setShowUnifiedCapture(true) }
       }
-      // M (sin modificador) → toggle Magic Chat
-      if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) togglePanel('magic')
+      // Cmd+M → toggle Magic Chat
+      if (e.key === 'm' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        togglePanel('magic')
       }
-      // F (sin modificador) → toggle panel de filtro/búsqueda
-      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) togglePanel('filter')
+      // Cmd+F → toggle panel de filtro/búsqueda
+      if (e.key === 'f' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        togglePanel('filter')
       }
       // → (ArrowRight sin modificador) → siempre colapsa/abre la columna derecha
       // No bloqueamos aunque haya un input activo (el usuario lo acepta explícitamente)
@@ -505,20 +503,15 @@ export default function MainLayout() {
         const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
         if (!isInputFocused) { e.preventDefault(); togglePanel('recorder') }
       }
-      // C (sin input) → toggle lista de contextos
-      if (e.key === 'c' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) { e.preventDefault(); togglePanel('context-list') }
+      // Cmd+Shift+C → toggle lista de contextos
+      if (e.key === 'c' && !e.repeat && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault()
+        togglePanel('context-list')
       }
-      // P (sin modificador) → toggle planificador
-      if (e.key === 'p' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) {
-          e.preventDefault()
-          togglePanel('planner')
-        }
+      // Cmd+P → toggle planificador
+      if (e.key === 'p' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        togglePanel('planner')
       }
       // (Cmd+Shift+S eliminado — no hay sidebar)
       // Cmd+, → Ajustes (página completa)
@@ -545,8 +538,8 @@ export default function MainLayout() {
         e.preventDefault()
         store.redo()
       }
-      // Cmd+Shift+C → colapsar todos / expandir todos (toggle)
-      if (e.key === 'c' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      // Cmd+Shift+A → colapsar todos / expandir todos (toggle)
+      if (e.key === 'a' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault()
         const anyCollapsed = store.allActive().some(n => n.isCollapsed)
         if (anyCollapsed) {
