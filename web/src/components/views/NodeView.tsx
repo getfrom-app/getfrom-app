@@ -1712,6 +1712,11 @@ export default function NodeView() {
               </div>,
               document.body
             )}
+            {/* Bucle indicator en el título del nodo */}
+            {(node.types || []).includes('bucle') && (
+              <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
+            )}
+
             <div className="node-title-actions">
               {/* View mode switcher — visible en todos los nodos incluidas notas diarias y mensuales */}
               {(() => {

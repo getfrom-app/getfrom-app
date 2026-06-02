@@ -6069,12 +6069,21 @@ body.outliner-drag-active {
   top: 3px; /* compensar que los emojis tienden a renderizarse ligeramente altos */
 }
 .node-bucle-indicator {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
-  opacity: 0.7;
+  opacity: 0.75;
   flex-shrink: 0;
   line-height: 1;
-  margin-right: 2px;
+  margin-left: 5px;
+  user-select: none;
+}
+/* Versión grande para el título de NodeView */
+.node-bucle-indicator--title {
+  font-size: 22px;
+  opacity: 0.7;
+  margin-left: 8px;
+  margin-right: 4px;
+  align-self: center;
 }
 .diary-date-picker:focus { outline: none; border-color: var(--border-focus); opacity: 1; }
 

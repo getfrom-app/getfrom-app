@@ -2632,10 +2632,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
             {/* Lista: dash visual "–" decorativo */}
             {isBullet && <span className="lista-dash" aria-hidden="true">–</span>}
-            {/* Bucle indicator */}
-            {(node.types || []).includes('bucle') && (
-              <span className="node-bucle-indicator" title="Bucle abierto">⟲</span>
-            )}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
             {isNota ? (
               <div
@@ -2993,6 +2989,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   document.body
                 )}
               </div>
+            )}
+
+            {/* Bucle indicator — derecha, junto a badges */}
+            {(node.types || []).includes('bucle') && (
+              <span className="node-bucle-indicator" title="Bucle abierto">⟲</span>
             )}
 
             {/* Badge de fecha + botones de acción rápida en hover */}
