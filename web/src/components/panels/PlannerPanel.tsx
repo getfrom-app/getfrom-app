@@ -380,9 +380,12 @@ export default function PlannerPanel({ onClose }: Props) {
   }, [viewMode, colW, slotH, newBlock]) // eslint-disable-line
 
   // ── Refs drag/resize ──────────────────────────────────────────────────────
-  const justResized = useRef(false)
-  const justDragged = useRef(false)
-  const resizeRef   = useRef<{id:string; startMs:number; gcalEvent?:CalendarEvent}|null>(null)
+  const justResized  = useRef(false)
+  const justDragged  = useRef(false)
+  const resizeRef    = useRef<{id:string; startMs:number; gcalEvent?:CalendarEvent}|null>(null)
+  // Offset del cursor respecto al top del bloque al iniciar el drag (px).
+  // Se usa en dragOver para posicionar la snap line en el inicio real del bloque.
+  const dragOffsetY  = useRef(0)
 
   // ── Drop en columna timeline ──────────────────────────────────────────────
   function handleDrop(e: React.DragEvent, day: Date, colEl: HTMLElement) {
@@ -520,8 +523,14 @@ export default function PlannerPanel({ onClose }: Props) {
     }
     e.dataTransfer.setData('plannerBlockOffsetY', offsetY)
     e.dataTransfer.effectAllowed = 'move'
+    dragOffsetY.current = parseFloat(offsetY)  // para corregir snap line en dragOver
     justDragged.current = false
-    const onEnd = () => { justDragged.current = true; setTimeout(()=>{justDragged.current=false},200); el.removeEventListener('dragend',onEnd) }
+    const onEnd = () => {
+      justDragged.current = true
+      dragOffsetY.current = 0  // reset tras soltar
+      setTimeout(()=>{justDragged.current=false},200)
+      el.removeEventListener('dragend',onEnd)
+    }
     el.addEventListener('dragend', onEnd)
   }
 
@@ -633,7 +642,9 @@ export default function PlannerPanel({ onClose }: Props) {
         <div className="pp-col" style={{ height: TOTAL_HOURS * hourH }}
           onDragOver={e=>{ e.preventDefault(); e.currentTarget.classList.add('pp-col--drag-over')
             const rawY = e.clientY - e.currentTarget.getBoundingClientRect().top
-            setSnapLine({ dayKey: day.toISOString(), top: snapPx(rawY) })
+            // Restar el offset del cursor dentro del bloque para que la línea marque el inicio real
+            const topY = rawY - dragOffsetY.current
+            setSnapLine({ dayKey: day.toISOString(), top: snapPx(Math.max(0, topY)) })
           }}
           onDragLeave={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null) }}
           onDrop={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null); handleDrop(e, day, e.currentTarget) }}
