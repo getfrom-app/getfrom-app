@@ -11253,9 +11253,13 @@ textarea:focus-visible,
   flex-direction: column;
   gap: 6px;
 }
-/* En estado compacto el input va arriba: alinear cursor con el primer nodo del outliner */
+/* En estado compacto el input va arriba */
 .magic-chat-modal--compact .magic-chat-input-wrap {
-  padding-top: 32px;
+  padding-top: 12px;
+}
+/* En panel: el título del panel ya gestiona el top spacing */
+.magic-chat-panel .magic-chat-modal--compact .magic-chat-input-wrap {
+  padding-top: 0;
 }
 
 .magic-chat-textarea {
@@ -11403,7 +11407,7 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 12px 10px; /* título del panel gestiona el top padding */
+  padding: 0 12px 10px; /* título del panel gestiona el top padding */
   flex-shrink: 0;
 }
 .search-panel-input {
@@ -12664,11 +12668,13 @@ textarea:focus-visible,
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 28px 20px 0 20px;
+  /* Mismo padding-top que .wf-layout .node-view-main (24px) */
+  padding: 24px 20px 8px 20px;
   flex-shrink: 0;
 }
 .right-panel-title-text {
-  font-size: 22px;
+  /* Mismo tamaño que .wf-layout .node-view .view-title */
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);

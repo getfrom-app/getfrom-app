@@ -751,24 +751,26 @@ export default function MainLayout() {
           position: 'relative',
         }}>
           <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
-          {/* Título del panel — mismo estilo tipográfico que el título de nota */}
-          <div className="right-panel-title-bar">
-            <span className="right-panel-title-text">
-              {rightPanel === 'magic' && 'Magic'}
-              {rightPanel === 'filter' && 'Filtro'}
-              {rightPanel === 'planner' && 'Planificador'}
-              {rightPanel === 'context-list' && 'Contextos'}
-              {rightPanel === 'recorder' && 'Grabación'}
-              {rightPanel === 'context' && (() => {
-                const n = contextNodeId ? store.getNode(contextNodeId) : null
-                return n?.text || 'Contexto'
-              })()}
-            </span>
-            <button className="right-panel-title-close" onClick={() => {
-              setRightPanel(null)
-              if (rightPanel === 'context') setContextNodeId(null)
-            }} title="Cerrar">×</button>
-          </div>
+          {/* Título del panel — alineado con el título de nota (28px, padding-top: 24px) */}
+          {/* Planner se libra: tiene su propio diseño interno */}
+          {rightPanel !== 'planner' && (
+            <div className="right-panel-title-bar">
+              <span className="right-panel-title-text">
+                {rightPanel === 'magic' && 'Magic'}
+                {rightPanel === 'filter' && 'Filtro'}
+                {rightPanel === 'context-list' && 'Contextos'}
+                {rightPanel === 'recorder' && 'Grabación'}
+                {rightPanel === 'context' && (() => {
+                  const n = contextNodeId ? store.getNode(contextNodeId) : null
+                  return n?.text || 'Contexto'
+                })()}
+              </span>
+              <button className="right-panel-title-close" onClick={() => {
+                setRightPanel(null)
+                if (rightPanel === 'context') setContextNodeId(null)
+              }} title="Cerrar">×</button>
+            </div>
+          )}
           <div
             key={panelKey}
             className={`right-panel-slide right-panel-slide--${panelSlideDir}`}

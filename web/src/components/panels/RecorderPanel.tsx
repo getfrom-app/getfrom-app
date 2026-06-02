@@ -122,7 +122,7 @@ export default function RecorderPanel({ onClose }: Props) {
       {/* Primera línea: waveform + timer + botón */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '32px 12px 10px', flexShrink: 0,
+        padding: '0 12px 10px', flexShrink: 0,
       }}>
         <Waveform active={isActive} />
 
