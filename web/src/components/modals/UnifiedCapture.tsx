@@ -1055,37 +1055,32 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
           </div>
         )}
 
-        {/* Chips de contextos asignados (sin @ en el texto) */}
-        {assignedCtx.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 24, marginTop: 6, flexShrink: 0 }}>
+        {/* Fila única: chips de contexto + ghost text — siempre reserva espacio */}
+        {!atPicker && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+            marginTop: 6, paddingLeft: 24, paddingBottom: 4,
+            minHeight: 24, flexShrink: 0,
+          }}>
+            {/* Chips de contextos asignados */}
             {assignedCtx.map(ctx => (
               <span key={ctx.slug} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
+                display: 'inline-flex', alignItems: 'center', gap: 3,
                 background: 'var(--accent)', color: 'white',
-                borderRadius: 20, padding: '2px 8px 2px 6px',
-                fontSize: 11, fontWeight: 500,
+                borderRadius: 20, padding: '2px 6px 2px 5px',
+                fontSize: 11, fontWeight: 500, flexShrink: 0,
               }}>
-                <span style={{ opacity: 0.8 }}>◈</span>
+                <span style={{ opacity: 0.75 }}>◈</span>
                 {ctx.name}
                 <button
                   onMouseDown={e => { e.preventDefault(); setAssignedCtx(prev => prev.filter(c => c.slug !== ctx.slug)) }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'white', opacity: 0.7, padding: 0, fontSize: 12, lineHeight: 1 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'white', opacity: 0.7, padding: 0, fontSize: 11, lineHeight: 1 }}
                 >×</button>
               </span>
             ))}
-          </div>
-        )}
-
-        {/* Ghost text — espacio reservado siempre */}
-        {!atPicker && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            marginTop: 8, paddingLeft: 24, paddingBottom: 4,
-            minHeight: 22, flexShrink: 0,
-            visibility: ghostLabel ? 'visible' : 'hidden',
-          }}>
+            {/* Ghost text (tarea, fecha, contexto incompleto) */}
             {ghostLabel && (
-              <span className="from-ghost">
+              <span className="from-ghost" style={{ flexShrink: 0 }}>
                 <span className="from-ghost-text">{ghostLabel}</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">{ghostAcceptKey}</span>

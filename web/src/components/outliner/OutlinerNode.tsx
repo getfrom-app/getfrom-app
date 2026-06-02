@@ -2996,6 +2996,41 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <span className="node-bucle-indicator" title="Bucle abierto">⟲</span>
             )}
 
+            {/* Chips de contexto asignados vía types[] (sin @ en texto) */}
+            {(() => {
+              const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
+              const textLower = (displayNode.text || '').toLowerCase()
+              const ctxRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+              if (!ctxRoot) return null
+              return (node.types || [])
+                .filter(slug => {
+                  if (BUILTIN.has(slug)) return false
+                  // Ignorar si ya está como @slug en el texto
+                  if (textLower.includes('@' + slug.replace(/-/g, ''))) return false
+                  return true
+                })
+                .map(slug => {
+                  // Buscar el nodo contexto que corresponde a este slug
+                  const ctxNode = store.children(ctxRoot.id).find(n => {
+                    if (n.deletedAt) return false
+                    const s = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9\-\/]/g,'')
+                    return s === slug
+                  })
+                  if (!ctxNode) return null
+                  return (
+                    <span
+                      key={`ctx-type-${slug}`}
+                      className="context-inline"
+                      data-slug={slug}
+                      style={{ color: 'var(--accent)', fontSize: '0.8em', fontWeight: 500, marginLeft: 4, opacity: 0.8 }}
+                    >
+                      @{ctxNode.text}
+                    </span>
+                  )
+                })
+                .filter(Boolean)
+            })()}
+
             {/* Badge de fecha + botones de acción rápida en hover */}
             {taskDueBadge && (
               <span className="node-due-badge-wrap">
