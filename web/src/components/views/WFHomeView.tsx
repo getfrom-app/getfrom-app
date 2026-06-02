@@ -38,11 +38,15 @@ function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; anc
   const slug = ctxTextToSlug(ctxNode.text)
   const matchIds = new Set<string>()
   const ancestorIds = new Set<string>()
+  const slugLower = slug.toLowerCase()
   store.allActive().forEach(n => {
     if (n.deletedAt) return
     const types = n.types || []
-    // Buscar por ID del nodo (@ picker) O por slug de texto (escritura manual)
-    if (types.includes(contextNodeId) || types.includes(slug)) matchIds.add(n.id)
+    // Buscar por ID del nodo (@ picker) O por slug de texto (case-insensitive)
+    // El auto-sync guarda el texto tal cual (@From → "From"), el slug es "from"
+    if (types.includes(contextNodeId) || types.some(t => t.toLowerCase() === slugLower)) {
+      matchIds.add(n.id)
+    }
   })
   // Recoger todos los ancestros para que el árbol muestre el camino
   matchIds.forEach(id => {
@@ -204,7 +208,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         <Outliner
           parentId={agendaId}
           autoFocusEmpty={false}
-          placeholder="Escribe algo… o pulsa Enter para crear un nodo"
+          placeholder={isFiltering ? undefined : "Escribe algo… o pulsa Enter para crear un nodo"}
           filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
           filterMatchIds={activeMatchIds}
           filterAncestorIds={activeAncestorIds}
