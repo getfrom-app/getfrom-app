@@ -6,6 +6,7 @@ import type { Node } from '../../types'
 
 interface Props {
   node: Node
+  nodeIds?: string[]   // cuando se mueven varios nodos a la vez
   onClose: () => void
 }
 
@@ -31,7 +32,7 @@ function getNodeIcon(n: Node): string {
   return '📄'
 }
 
-export default function MoveNodeModal({ node, onClose }: Props) {
+export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
   const { t } = useTranslation()
   const s = useStore()
   const [query, setQuery] = useState('')
@@ -122,9 +123,11 @@ export default function MoveNodeModal({ node, onClose }: Props) {
   function moveTo(targetId: string) {
     const siblings = store.children(targetId)
     const maxOrder = siblings.reduce((max, n) => Math.max(max, n.siblingOrder), 0)
-    store.updateNode(node.id, {
-      parentId: targetId,
-      siblingOrder: maxOrder + 1000,
+    const idsToMove = nodeIds && nodeIds.length > 1 ? nodeIds : [node.id]
+    idsToMove.forEach((id, i) => {
+      if (id !== targetId) {
+        store.updateNode(id, { parentId: targetId, siblingOrder: maxOrder + (i + 1) * 1000 })
+      }
     })
     onClose()
   }
@@ -162,7 +165,10 @@ export default function MoveNodeModal({ node, onClose }: Props) {
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
         <div className="move-node-info">
-          {t('modal.moving')} <strong>{node.text || t('common.noTitle')}</strong>
+          {nodeIds && nodeIds.length > 1
+            ? <>{t('modal.moving')} <strong>{nodeIds.length} nodos</strong></>
+            : <>{t('modal.moving')} <strong>{node.text || t('common.noTitle')}</strong></>
+          }
         </div>
         <div className="move-node-search">
           <input

@@ -50,9 +50,15 @@ interface Props {
   onClose: () => void
   onNavigate: (id: string) => void
   onSelect: (id: string) => void
+  selectedIds?: Set<string>  // cuando hay múltiples nodos seleccionados
 }
 
-export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSelect }: Props) {
+export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSelect, selectedIds }: Props) {
+  // IDs efectivos: si hay selección múltiple y el nodo actual está incluido, operar en todos
+  const effectiveIds = (selectedIds && selectedIds.size > 1 && selectedIds.has(node.id))
+    ? [...selectedIds]
+    : [node.id]
+  const isMulti = effectiveIds.length > 1
   const { t } = useTranslation()
   const [showMove, setShowMove] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
@@ -254,8 +260,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }
 
   function deleteNode() {
+    if (isMulti) {
+      // Bulk: mover todos a papelera
+      if (!confirm(`¿Mover ${effectiveIds.length} nodos a la Papelera?`)) return
+      effectiveIds.forEach(id => trashNode(id))
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `${effectiveIds.length} nodos movidos a Papelera`, type: 'info' }
+      }))
+      onClose()
+      return
+    }
     const inPapelera = isInPapelera(node.id)
-
     if (inPapelera) {
       // Ya está en Papelera → eliminar permanentemente
       if (!confirm(`¿Eliminar permanentemente "${(node.text || 'Nodo').slice(0, 30)}"? Esta acción no se puede deshacer.`)) return
@@ -265,7 +280,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       }))
     } else {
       // Mover a Papelera (jerarquía preservada)
-      // Borrar espejos que apuntan a este nodo
       store.allActive().forEach(n => {
         try {
           const ed = JSON.parse(n.extraData || '{}')
@@ -294,6 +308,12 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       style={{ position: 'fixed', top: y, left: x, zIndex: 2000, minWidth: 220 }}
       onContextMenu={e => e.preventDefault()}
     >
+      {/* Cabecera multi-nodo */}
+      {isMulti && (
+        <div style={{ padding: '6px 14px 4px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, opacity: 0.9 }}>
+          {effectiveIds.length} nodos seleccionados
+        </div>
+      )}
       {/* Duplicar + Mover + Espejo */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(duplicate)}>
@@ -743,6 +763,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {showMove && (
         <MoveNodeModal
           node={node}
+          nodeIds={isMulti ? effectiveIds : undefined}
           onClose={() => { setShowMove(false); onClose() }}
         />
       )}

@@ -3376,6 +3376,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           onClose={() => setContextMenu(null)}
           onNavigate={navigate}
           onSelect={onSelect}
+          selectedIds={globalSelectedIds.size > 1 && globalSelectedIds.has(node.id) ? globalSelectedIds : undefined}
         />
       )}
     </div>
