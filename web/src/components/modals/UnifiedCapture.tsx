@@ -424,10 +424,13 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     }
     setText(newText)
     setCtxSuggestion(null)
+    setAtPicker(null)
     setDatePrediction(null)
     setTaskPrediction(false)
     setJustAcceptedCtx(true)  // ocultar lista, próximo Enter → crear
-    analyze(newText)
+    // No llamar analyze: reabriría atPicker detectando "@Context " al final
+    const { forceType: ft } = detectForceType(newText)
+    setForceType(ft)
   }
 
   function acceptDate() {
@@ -458,7 +461,13 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setText(newText)
     setAtPicker(null)
     setJustAcceptedCtx(true)  // ocultar resultados tras seleccionar @contexto
-    analyze(newText)
+    // NO llamar analyze: detectaría "@Media Sector " al final y reabriría el atPicker.
+    // Solo actualizamos predicciones de fecha/tarea sin tocar el atPicker.
+    const { forceType: ft } = detectForceType(newText)
+    setForceType(ft)
+    setCtxSuggestion(null)
+    setDatePrediction(null)
+    setTaskPrediction(false)
   }
 
   // ── saveAndClose (igual que QuickCaptureNode) ──────────────────────────────

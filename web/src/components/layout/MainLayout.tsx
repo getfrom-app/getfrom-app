@@ -116,10 +116,11 @@ export default function MainLayout() {
       setContextNodeId(null)
       return
     }
-    // Determinar si estamos en home (ruta raíz del router)
-    const atHome = location.pathname === '/' || location.pathname === ''
+    // Normalizar pathname: la app vive en /app/ así que home = /app/ o /app o ''
+    const normPath = location.pathname.replace(/^\/app\/?/, '') || '/'
+    const atHome = normPath === '/' || normPath === ''
     if (!atHome) {
-      // Guardar en ref para aplicar después de que el navigate complete
+      // Guardar en ref para aplicar DESPUÉS de que navigate complete
       pendingContextRef.current = nodeId
       navigate('/')
     } else {
@@ -130,7 +131,10 @@ export default function MainLayout() {
 
   // Aplicar contexto pendiente tras volver a home
   useEffect(() => {
-    if (pendingContextRef.current && (location.pathname === '/' || location.pathname === '')) {
+    if (!pendingContextRef.current) return
+    const normPath = location.pathname.replace(/^\/app\/?/, '') || '/'
+    const atHome = normPath === '/' || normPath === ''
+    if (atHome) {
       const nodeId = pendingContextRef.current
       pendingContextRef.current = null
       setContextNodeId(nodeId)
