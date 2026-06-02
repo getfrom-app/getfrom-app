@@ -28,7 +28,10 @@ function ctxTextToSlug(text: string) {
     .replace(/[^a-z0-9\-\/]/g, '')
 }
 
-// Construye filterMatchIds + ancestorIds para filtrar por contexto
+// Construye filterMatchIds + ancestorIds para filtrar por contexto.
+// Los contextos pueden estar guardados como:
+//   1. ID del nodo contexto (vía @ picker en el outliner)
+//   2. Slug del texto (vía texto manual @Nombre → auto-sync)
 function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; ancestorIds: Set<string> } | null {
   const ctxNode = store.getNode(contextNodeId)
   if (!ctxNode) return null
@@ -37,7 +40,9 @@ function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; anc
   const ancestorIds = new Set<string>()
   store.allActive().forEach(n => {
     if (n.deletedAt) return
-    if ((n.types || []).includes(slug)) matchIds.add(n.id)
+    const types = n.types || []
+    // Buscar por ID del nodo (@ picker) O por slug de texto (escritura manual)
+    if (types.includes(contextNodeId) || types.includes(slug)) matchIds.add(n.id)
   })
   // Recoger todos los ancestros para que el árbol muestre el camino
   matchIds.forEach(id => {
