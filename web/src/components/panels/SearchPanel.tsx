@@ -6,6 +6,16 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 
+const PANELS_KEY = 'from_panels'
+function addPanel(name: string, query: string) {
+  try {
+    const panels = JSON.parse(localStorage.getItem(PANELS_KEY) || '[]')
+    panels.push({ id: Date.now().toString(), name, query, createdAt: new Date().toISOString() })
+    localStorage.setItem(PANELS_KEY, JSON.stringify(panels))
+    window.dispatchEvent(new Event('panels-updated'))
+  } catch { /* ignore */ }
+}
+
 interface Props {
   filterText: string
   onFilter: (text: string) => void
@@ -47,6 +57,9 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipTimes,    setChipTimes]    = useState<Set<string>>(new Set())
   const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
+  const [savingPanel, setSavingPanel]   = useState(false)
+  const [panelName,   setPanelName]     = useState('')
+  const panelInputRef = useRef<HTMLInputElement>(null)
 
   // Top 5 contextos del nodo 🧠 Contexto
   const contextChips = useMemo(() => {
@@ -182,6 +195,58 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
           <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
         )}
       </div>
+
+      {/* Guardar como panel — visible cuando hay filtro activo */}
+      {filterText && !savingPanel && (
+        <div style={{ padding: '8px 12px 4px' }}>
+          <button
+            onClick={() => {
+              setSavingPanel(true)
+              setPanelName(filterText)
+              setTimeout(() => { panelInputRef.current?.focus(); panelInputRef.current?.select() }, 30)
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'none', border: '1px solid var(--border)', borderRadius: 6,
+              cursor: 'pointer', padding: '5px 10px', fontSize: 12,
+              color: 'var(--text-secondary)', width: '100%',
+            }}
+          >
+            <span style={{ fontSize: 14 }}>◈</span> Guardar como panel
+          </button>
+        </div>
+      )}
+      {filterText && savingPanel && (
+        <div style={{ padding: '8px 12px', display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input
+            ref={panelInputRef}
+            value={panelName}
+            onChange={e => setPanelName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && panelName.trim()) {
+                addPanel(panelName.trim(), filterText)
+                setSavingPanel(false)
+                setPanelName('')
+              }
+              if (e.key === 'Escape') { setSavingPanel(false); setPanelName('') }
+            }}
+            placeholder="Nombre del panel…"
+            style={{
+              flex: 1, border: '1px solid var(--border)', borderRadius: 6,
+              padding: '4px 8px', fontSize: 12, background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)', outline: 'none',
+            }}
+          />
+          <button
+            onClick={() => { if (panelName.trim()) { addPanel(panelName.trim(), filterText); setSavingPanel(false); setPanelName('') } }}
+            style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+          >◈</button>
+          <button
+            onClick={() => { setSavingPanel(false); setPanelName('') }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 16, padding: '0 2px' }}
+          >×</button>
+        </div>
+      )}
     </div>
   )
 }

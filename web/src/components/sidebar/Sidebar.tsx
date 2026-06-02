@@ -593,7 +593,7 @@ export default function Sidebar({ open, onToggle, onLogout, isSyncing, showSaved
 
         {atajosChildren.length === 0 ? (
           <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Pulsa 🔖 en cualquier filtro o ⭐ en un nodo para fijarlo aquí
+            Pulsa ◈ en el panel de filtro para guardar una búsqueda aquí
           </div>
         ) : (
           atajosChildren.map(child => renderAtajoNode(child.id, 0))
