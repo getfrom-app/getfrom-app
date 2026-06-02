@@ -71,8 +71,11 @@ export default function WFTopBar({
       cur = s.getNode(cur.parentId) ?? undefined
     }
     // fullPath = [root, ..., parent, current]
-    const current = fullPath[fullPath.length - 1] ?? null
-    const ancestors = fullPath.slice(0, -1)
+    // Ocultar nodo Agenda del breadcrumb — el home ya es la agenda
+    const HIDDEN = new Set(['📅 Agenda'])
+    const visible = fullPath.filter(n => !HIDDEN.has(n.label))
+    const current = visible[visible.length - 1] ?? null
+    const ancestors = visible.slice(0, -1)
     return { ancestors, current }
   }, [nodeId, s]) // eslint-disable-line react-hooks/exhaustive-deps
 
