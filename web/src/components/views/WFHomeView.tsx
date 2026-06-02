@@ -28,6 +28,17 @@ function ctxTextToSlug(text: string) {
     .replace(/[^a-z0-9\-\/]/g, '')
 }
 
+// Nodos raíz del sistema — nunca deben aparecer en resultados de filtro de contexto
+const SYSTEM_ROOT_TEXTS = new Set([
+  AGENDA_ROOT_NAME,
+  '🧠 Contexto',
+  '📋 Plantillas',
+  '🗑 Papelera',
+  '🤖 Agentes',
+  '📁 Paneles',
+  '📁 Atajos',
+])
+
 // Construye filterMatchIds + ancestorIds para filtrar por contexto.
 // Los contextos pueden estar guardados como:
 //   1. ID del nodo contexto (vía @ picker en el outliner)
@@ -54,6 +65,14 @@ function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; anc
     while (cur?.parentId) {
       ancestorIds.add(cur.parentId)
       cur = store.getNode(cur.parentId)
+    }
+  })
+  // Eliminar nodos raíz del sistema para que no aparezcan en el árbol filtrado
+  // (los nodos con parentId=null y texto de sistema)
+  ancestorIds.forEach(id => {
+    const n = store.getNode(id)
+    if (n && n.parentId === null && SYSTEM_ROOT_TEXTS.has(n.text)) {
+      ancestorIds.delete(id)
     }
   })
   return { matchIds, ancestorIds }
@@ -206,9 +225,9 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       {/* Árbol — vista lista (default) o sin filtro */}
       <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
         <Outliner
-          parentId={agendaId}
+          parentId={contextFilter ? null : agendaId}
           autoFocusEmpty={false}
-          placeholder={isFiltering ? undefined : "Escribe algo… o pulsa Enter para crear un nodo"}
+          placeholder={isFiltering ? ' ' : "Escribe algo… o pulsa Enter para crear un nodo"}
           filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
           filterMatchIds={activeMatchIds}
           filterAncestorIds={activeAncestorIds}
