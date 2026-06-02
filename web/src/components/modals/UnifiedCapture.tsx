@@ -450,6 +450,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     if (textNode) { range.setStart(textNode, newText.length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
     setText(newText)
     setAtPicker(null)
+    setJustAcceptedCtx(true)  // ocultar resultados tras seleccionar @contexto
     analyze(newText)
   }
 
