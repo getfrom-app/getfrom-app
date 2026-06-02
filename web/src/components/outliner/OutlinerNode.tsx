@@ -2383,11 +2383,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isAncestorContext = anyDescendantMatches && !matchesFilter && !!filterMatchIds
 
   // Filtro activo y este nodo es ancestro: forzar expansión para mostrar la cadena hasta el match.
-  // Si el nodo ES el match directo (matchesFilter) y no tiene descendientes que también coincidan,
-  // mostrarlo colapsado — evita que bucles y contextos se expandan innecesariamente.
-  const showChildren = matchesFilter && !anyDescendantMatches
-    ? false  // nodo es match directo sin hijos-match → colapsar
-    : (!isCollapsed || anyDescendantMatches)
+  // Si el nodo ES el match directo y tiene descendientes que también coinciden (está en filterAncestorIds),
+  // expandirlo para que se vean esos hijos. Si no tiene hijos-match, colapsarlo.
+  // anyDescendantMatches solo es true cuando !matchesFilter, así que para nodos que
+  // coinciden Y tienen hijos-match usamos filterAncestorIds directamente.
+  const hasMatchingDescendants = !!(filterAncestorIds?.has(node.id))
+  const showChildren = matchesFilter && !hasMatchingDescendants
+    ? false  // match directo sin hijos-match → colapsar (ej: bucle sin sub-bucles)
+    : (!isCollapsed || anyDescendantMatches || hasMatchingDescendants)
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
