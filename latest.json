@@ -1,11 +1,11 @@
 {
-  "version": "9.5.0",
-  "notes": "⌘K rediseñado, contextos en búsqueda, filtros con rename/delete, toast de confirmación, fix filtro de contexto",
-  "pub_date": "2026-06-02T10:04:13Z",
+  "version": "9.5.1",
+  "notes": "Captura unificada (Espacio+FAB), títulos paneles, headings markdown, breadcrumb, Espacio inteligente",
+  "pub_date": "2026-06-02T12:31:21Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaUVSVVF3VXJoRGRjb1RzWnBCQi83RXRLOXg1cFVXclFQSGhHMnYvVUp6ZXc0YXdiTE1zZG0xbUhVQ1V5Q056Y21ucVhkaTZUWVBqdE5ybHBVQUNEUSthcVIwU1VrTGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMzk0NjQ3CWZpbGU6RnJvbS5hcHAudGFyLmd6Cm5DUkxQalVTcG51bDJEMi9VaHZoOWl2eFUxczhFcjUxUUNTbXJGQTRSVDhGY3N5Zm1XVEh5Sll5dU9EVnl1OThyS0lzRi9TR3lxL2pPaUZiTU1FRUNnPT0K",
-      "url": "https://github.com/getfrom-app/getfrom-app/releases/download/v9.5.0/From.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaUVSVVF3VXJoRFI5RENqcEh2bFl1VzVrQ25yZThTRW15KytRRUJvcHVuZktmUmdVZVZLM0xSYlZCVTR5bWlQZFFsdVdTNTdydHUwakpEWDRvVUlTamhRRGx6Q0hoekFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNDAzNDgxCWZpbGU6RnJvbS5hcHAudGFyLmd6ClZGblIzOWV4UFpWTXpOY01wNGs2TFVhRWEzZ2Mxb0pCb2dGRFBpMys5a0RzZ2NSZkJNSTFRS29NUUxOZ2hUQzBsWERGU0E0RU5hWFlMVEJ4R09UR0RBPT0K",
+      "url": "https://github.com/getfrom-app/getfrom-app/releases/download/v9.5.1/From.app.tar.gz"
     }
   }
 }

@@ -4,6 +4,32 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.5.56 / Mac v9.5.1 — 2 junio 2026 · Captura unificada y polish UX
+
+### Captura unificada — un solo modal para todo
+Pulsar **Espacio** o el botón **+** abre ahora un único modal que hace todo: crea notas y busca nodos a la vez. Ya no hay un modal de "captura rápida" separado y una paleta de comandos separada — es uno solo.
+
+Sin texto muestra los accesos rápidos: Hoy, Mañana, Filtros y Contextos. En cuanto escribes, aparecen resultados de búsqueda con la opción de crear al final. El ghost text de predicción (fechas, tareas, contextos) sigue funcionando igual que antes.
+
+**Espacio inteligente:** si el input activo está vacío (un nodo en blanco, el filtro sin texto, Magic sin texto), Espacio abre el modal en vez de insertar un espacio. Cuando hay texto, Espacio funciona con normalidad.
+
+### Columna derecha: título y alineación
+Cada columna (Filtro, Magic, Contextos, Grabación) tiene ahora un título al inicio con la misma tipografía que el título de la nota: **26px, negrita**. El título y el primer elemento de la columna quedan a la misma altura que el título de nota y el primer nodo del árbol respectivamente.
+
+### Columna de filtros abierta por defecto
+Al abrir From, la columna de filtros ya aparece visible por defecto. La preferencia se guarda: si la cierras, la próxima sesión empieza sin ella.
+
+### Headings markdown desde agentes externos
+Los nodos creados por Claude u otros agentes con prefijos markdown (`### Título`, `## Título`, `# Título`) se detectan y renderizan automáticamente como headings. En segundo plano, el nodo se normaliza (quita el prefijo del texto y guarda el tipo en los metadatos).
+
+### Breadcrumb sin truncar
+El breadcrumb del topbar usa ahora todo el espacio disponible entre los botones de navegación y los iconos de la derecha. El nodo actual ya no se trunca.
+
+### Botón ⌘K eliminado
+El botón rayo del topbar desaparece. Todo el acceso a búsqueda y creación está en Espacio y el botón +.
+
+---
+
 ## Web v9.5.46 — 2 junio 2026 · ⌘K rediseñado, contextos, filtros
 
 ### ⌘K más limpio y potente
