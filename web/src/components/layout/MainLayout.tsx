@@ -582,6 +582,13 @@ export default function MainLayout() {
         const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .wf-topbar-dropdown')
         if (hasFloatingMenu) return
 
+        // Prioridad 2.5: deseleccionar contexto activo → cerrar panel derecho
+        if (rightPanel === 'context') {
+          setRightPanel(null)
+          setContextNodeId(null)
+          return
+        }
+
         // Prioridad 3: deseleccionar texto seleccionado
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) {
@@ -597,6 +604,13 @@ export default function MainLayout() {
           active?.isContentEditable
         if (isInputFocused) {
           active?.blur()
+          return
+        }
+
+        // Prioridad 4.5: limpiar filtro de panel activo → volver a la agenda limpia
+        if (filterText) {
+          setFilterText('')
+          window.dispatchEvent(new CustomEvent('wf:clear-filter'))
           return
         }
 
