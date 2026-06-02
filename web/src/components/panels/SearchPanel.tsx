@@ -119,10 +119,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
     const contexts = [...chipContexts]
 
     if (!types.length && !times.length && !statuses.length && !bucles.length && !contexts.length) {
-      // Solo limpiar si no hay texto manual en el input
-      if (!inputRef.current?.value) {
-        onFilter('')
-      }
+      onFilter('')
       return
     }
 
