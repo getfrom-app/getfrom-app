@@ -88,6 +88,13 @@ export default function MainLayout() {
   const [loadError, setLoadError] = useState('')
   const [filterText, setFilterText] = useFilterStore()
 
+  // Wrapper: aplicar filtro + navegar a raíz si estamos dentro de un nodo
+  const applyFilter = (q: string) => {
+    setFilterText(q)
+    const path = window.location.pathname.replace(/^\/app\/?/, '') || '/'
+    if (path !== '/' && path !== '') navigate('/')
+  }
+
   // Columna derecha unificada
   type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder' | null
   type CyclablePanel = 'planner' | 'filter' | 'magic' | 'context-list' | 'recorder'
@@ -708,7 +715,7 @@ export default function MainLayout() {
       {/* ── Cabecera unificada — sin sidebar ── */}
       <div className="app-header">
         <WFTopBar
-          onFilter={setFilterText}
+          onFilter={applyFilter}
           filterText={filterText}
 
           onLogout={handleLogout}
@@ -794,7 +801,7 @@ export default function MainLayout() {
               <MagicChat mode="panel" onClose={() => setRightPanel(null)} currentNodeId={currentNodeIdFromRoute} />
             )}
             {rightPanel === 'filter' && (
-              <SearchPanel filterText={filterText} onFilter={setFilterText} onClose={() => setRightPanel(null)} />
+              <SearchPanel filterText={filterText} onFilter={applyFilter} onClose={() => setRightPanel(null)} />
             )}
             {rightPanel === 'planner' && (
               <PlannerPanel onClose={() => setRightPanel(null)} />
