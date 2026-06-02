@@ -33,7 +33,8 @@ export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   { id: 'new-today',        category: 'Captura',      label: 'Nuevo nodo hoy',           description: 'Ir al diario de hoy y crear nodo vacío',           defaultKey: 'n',          configurable: true },
 
   // ── Paneles laterales ──────────────────────────────────────────────────────
-  { id: 'toggle-filter',    category: 'Paneles',      label: 'Filtro / Búsqueda',        description: 'Abrir / cerrar el panel de filtro y búsqueda',     defaultKey: 'f',          modifiers: ['meta'], configurable: true },
+  { id: 'toggle-filter',    category: 'Paneles',      label: 'Filtro / Búsqueda global', description: 'Abrir / cerrar el panel de filtro global (⌘F)',    defaultKey: 'f',          modifiers: ['meta'], configurable: true },
+  { id: 'search-in-note',   category: 'Paneles',      label: 'Buscar en esta nota',      description: 'Búsqueda dentro de la nota abierta (⌘⇧F)',         defaultKey: 'f',          modifiers: ['meta', 'shift'], configurable: false },
   { id: 'toggle-magic',     category: 'Paneles',      label: 'Magic Chat',               description: 'Abrir / cerrar el asistente IA Magic Chat',        defaultKey: 'm',          modifiers: ['meta'], configurable: true },
   { id: 'toggle-planner',   category: 'Paneles',      label: 'Planificador',             description: 'Abrir / cerrar el planificador lateral',           defaultKey: 'p',          modifiers: ['meta'], configurable: true },
   { id: 'toggle-contexts',  category: 'Paneles',      label: 'Contextos',                description: 'Abrir / cerrar la lista de contextos',             defaultKey: 'c',          modifiers: ['meta', 'shift'], configurable: true },

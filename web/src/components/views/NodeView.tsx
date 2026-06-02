@@ -358,7 +358,7 @@ export default function NodeView() {
         e.preventDefault()
         // setShowProperties(v => !v) // panel siempre visible
       }
-      if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'F' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault()
         setShowInDocSearch(v => {
           if (!v) setTimeout(() => inDocSearchRef.current?.focus(), 50)
@@ -1358,7 +1358,7 @@ export default function NodeView() {
               onChange={e => setInDocSearch(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') { setShowInDocSearch(false); setInDocSearch('') } }}
             />
-            {inDocSearch && <span className="in-doc-search-hint">⌘F para cerrar</span>}
+            {inDocSearch && <span className="in-doc-search-hint">⌘⇧F para cerrar</span>}
             <button className="in-doc-search-close" onClick={() => { setShowInDocSearch(false); setInDocSearch('') }}>×</button>
           </div>
         )}

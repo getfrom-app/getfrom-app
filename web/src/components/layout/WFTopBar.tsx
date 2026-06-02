@@ -91,21 +91,7 @@ export default function WFTopBar({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-        // En NodeView, el Cmd+F lo gestiona el nodo (búsqueda en el nodo).
-        // Solo abrir el panel de búsqueda global si NO estamos en /node/
-        const path = window.location.pathname.replace(/^\/app/, '') || '/'
-        if (path.startsWith('/node/')) return
-        e.preventDefault()
-        onToggleSearch()
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [onToggleSearch])
+  // ── Keyboard shortcuts — Cmd+F gestionado por MainLayout ─────────────────
 
   function goHome() { navigate('/') }
 

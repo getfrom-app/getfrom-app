@@ -269,12 +269,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   ownNodeIdsRef.current = new Set(nodes.map(n => n.id))
   flatVisibleIdsRef.current = flatVisibleIds
 
-  // Cmd+F opens local filter when no external filterText prop is provided and local filter is not disabled
+  // Cmd+Shift+F opens local filter when no external filterText prop is provided and local filter is not disabled
+  // (Cmd+F alone abre el panel de filtro global en MainLayout)
   useEffect(() => {
     if (filterText !== undefined) return // external filter manages this
     if (disableLocalFilter) return // parent manages filtering globally (e.g. WFTopBar)
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'F') {
         e.preventDefault()
         setLocalFilterOpen(true)
         setTimeout(() => localFilterRef.current?.focus(), 0)
