@@ -1045,57 +1045,58 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
           </div>
         )}
 
-        {/* Separador — oculto junto a la lista */}
-        {!atPicker && !justAcceptedCtx && (
-          <div style={{ height: 1, background: 'var(--border)', margin: '4px 0', flexShrink: 0 }} />
-        )}
-
-        {/* Lista de items — oculta tras aceptar contexto hasta próxima escritura */}
-        {!atPicker && !justAcceptedCtx && items.length > 0 && (
-          <div
-            ref={listRef}
-            style={{ flex: 1, overflowY: 'auto', marginTop: 2, paddingBottom: 8 }}
-          >
-            {items.map((item, idx) => (
-              <button
-                key={item.id}
-                tabIndex={-1}
-                data-active={idx === activeIdx ? 'true' : 'false'}
-                onMouseDown={e => { e.preventDefault(); item.action() }}
-                onMouseEnter={() => setActiveIdx(idx)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  width: '100%', padding: '7px 12px',
-                  background: idx === activeIdx ? 'var(--bg-hover)' : 'transparent',
-                  border: 'none', textAlign: 'left', cursor: 'pointer',
-                  fontSize: 13, borderRadius: 6,
-                  color: item.taskStatus === 'done' ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                  textDecoration: item.taskStatus === 'done' ? 'line-through' : 'none',
-                }}
-              >
-                <span style={{
-                  fontSize: item.type === 'create' ? 16 : 13,
-                  color: item.type === 'create' ? 'var(--accent)' : 'var(--text-tertiary)',
-                  flexShrink: 0, width: 18, textAlign: 'center',
-                }}>
-                  {itemIcon(item)}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.label}
-                  </div>
-                  {item.sublabel && (
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.sublabel}
+        {/* Separador + lista — ocultos en modo creación:
+            - texto con @contexto (usuario referenciando, no buscando)
+            - forceType activo (-t, -b, -e)
+            - justAcceptedCtx (recién aceptó un contexto) */}
+        {!atPicker && !justAcceptedCtx && !(text.includes('@')) && forceType === null && items.length > 0 && (
+          <>
+            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0', flexShrink: 0 }} />
+            <div
+              ref={listRef}
+              style={{ flex: 1, overflowY: 'auto', marginTop: 2, paddingBottom: 8 }}
+            >
+              {items.map((item, idx) => (
+                <button
+                  key={item.id}
+                  tabIndex={-1}
+                  data-active={idx === activeIdx ? 'true' : 'false'}
+                  onMouseDown={e => { e.preventDefault(); item.action() }}
+                  onMouseEnter={() => setActiveIdx(idx)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    width: '100%', padding: '7px 12px',
+                    background: idx === activeIdx ? 'var(--bg-hover)' : 'transparent',
+                    border: 'none', textAlign: 'left', cursor: 'pointer',
+                    fontSize: 13, borderRadius: 6,
+                    color: item.taskStatus === 'done' ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                    textDecoration: item.taskStatus === 'done' ? 'line-through' : 'none',
+                  }}
+                >
+                  <span style={{
+                    fontSize: item.type === 'create' ? 16 : 13,
+                    color: item.type === 'create' ? 'var(--accent)' : 'var(--text-tertiary)',
+                    flexShrink: 0, width: 18, textAlign: 'center',
+                  }}>
+                    {itemIcon(item)}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.label}
                     </div>
+                    {item.sublabel && (
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.sublabel}
+                      </div>
+                    )}
+                  </div>
+                  {(item.id === 'cat-filtros' || item.id === 'cat-contextos' || item.id === 'cat-bucles') && (
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: 12, flexShrink: 0 }}>→</span>
                   )}
-                </div>
-                {(item.id === 'cat-filtros' || item.id === 'cat-contextos' || item.id === 'cat-bucles') && (
-                  <span style={{ color: 'var(--text-tertiary)', fontSize: 12, flexShrink: 0 }}>→</span>
-                )}
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>,
