@@ -28,7 +28,7 @@ function ctxTextToSlug(text: string) {
     .replace(/[^a-z0-9\-\/]/g, '')
 }
 
-// Nodos raíz del sistema — nunca deben aparecer en resultados de filtro de contexto
+// Nodos raíz del sistema — no se deben mostrar como raíces en resultados de contexto
 const SYSTEM_ROOT_TEXTS = new Set([
   AGENDA_ROOT_NAME,
   '🧠 Contexto',
@@ -43,19 +43,28 @@ const SYSTEM_ROOT_TEXTS = new Set([
 // Los contextos pueden estar guardados como:
 //   1. ID del nodo contexto (vía @ picker en el outliner)
 //   2. Slug del texto (vía texto manual @Nombre → auto-sync)
-function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; ancestorIds: Set<string> } | null {
+//   3. Texto crudo tal cual (@From → "From" en types via auto-sync de texto)
+function buildContextFilter(contextNodeId: string): {
+  matchIds: Set<string>
+  ancestorIds: Set<string>
+  systemRootIds: Set<string>
+} | null {
   const ctxNode = store.getNode(contextNodeId)
   if (!ctxNode) return null
   const slug = ctxTextToSlug(ctxNode.text)
   const matchIds = new Set<string>()
   const ancestorIds = new Set<string>()
   const slugLower = slug.toLowerCase()
+  const textLower = ctxNode.text.toLowerCase()
   store.allActive().forEach(n => {
     if (n.deletedAt) return
     const types = n.types || []
-    // Buscar por ID del nodo (@ picker) O por slug de texto (case-insensitive)
-    // El auto-sync guarda el texto tal cual (@From → "From"), el slug es "from"
-    if (types.includes(contextNodeId) || types.some(t => t.toLowerCase() === slugLower)) {
+    // Buscar por ID del nodo (@ picker) O por slug O por texto crudo (case-insensitive)
+    // El auto-sync extrae el texto del @mention tal cual: @From → "From" en types
+    if (
+      types.includes(contextNodeId) ||
+      types.some(t => t.toLowerCase() === slugLower || t.toLowerCase() === textLower)
+    ) {
       matchIds.add(n.id)
     }
   })
@@ -67,15 +76,15 @@ function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; anc
       cur = store.getNode(cur.parentId)
     }
   })
-  // Eliminar nodos raíz del sistema para que no aparezcan en el árbol filtrado
-  // (los nodos con parentId=null y texto de sistema)
+  // Identificar los IDs de nodos raíz del sistema (para ocultarlos visualmente)
+  const systemRootIds = new Set<string>()
   ancestorIds.forEach(id => {
     const n = store.getNode(id)
     if (n && n.parentId === null && SYSTEM_ROOT_TEXTS.has(n.text)) {
-      ancestorIds.delete(id)
+      systemRootIds.add(id)
     }
   })
-  return { matchIds, ancestorIds }
+  return { matchIds, ancestorIds, systemRootIds }
 }
 
 export default function WFHomeView({ filterText, contextFilterId }: Props) {
@@ -141,6 +150,8 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   // Los ids activos (ya sea de contexto o de texto)
   const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
   const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
+  // IDs de nodos raíz del sistema a ocultar visualmente en resultados de contexto
+  const contextSystemRootIds = contextFilter?.systemRootIds
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
