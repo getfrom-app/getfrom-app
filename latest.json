@@ -1,0 +1,11 @@
+{
+  "version": "9.5.0",
+  "notes": "⌘K rediseñado, contextos en búsqueda, filtros con rename/delete, toast de confirmación, fix filtro de contexto",
+  "pub_date": "2026-06-02T10:04:13Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaUVSVVF3VXJoRGRjb1RzWnBCQi83RXRLOXg1cFVXclFQSGhHMnYvVUp6ZXc0YXdiTE1zZG0xbUhVQ1V5Q056Y21ucVhkaTZUWVBqdE5ybHBVQUNEUSthcVIwU1VrTGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMzk0NjQ3CWZpbGU6RnJvbS5hcHAudGFyLmd6Cm5DUkxQalVTcG51bDJEMi9VaHZoOWl2eFUxczhFcjUxUUNTbXJGQTRSVDhGY3N5Zm1XVEh5Sll5dU9EVnl1OThyS0lzRi9TR3lxL2pPaUZiTU1FRUNnPT0K",
+      "url": "https://github.com/getfrom-app/getfrom-app/releases/download/v9.5.0/From.app.tar.gz"
+    }
+  }
+}

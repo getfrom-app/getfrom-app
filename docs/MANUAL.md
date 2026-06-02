@@ -530,11 +530,13 @@ Los paneles son vistas dinámicas fijas en la sección PANELES del sidebar. Se a
 
 **Desde un nodo:** clic derecho sobre el nodo → "Añadir a paneles". El panel muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo.
 
-### Gestionar paneles
+### Gestionar filtros guardados
 
-- **Reordenar**: arrastra el panel con el handle `⠿` que aparece al pasar el cursor.
-- **Eliminar**: icono `×` al pasar el cursor. El nodo no se borra, solo el panel.
-- **Activar**: clic en el panel aplica el filtro en el árbol central. Escape lo desactiva.
+Pasa el ratón sobre un filtro en la columna de filtros para ver los botones de acción:
+
+- **✏ Renombrar**: edición inline del nombre. Enter confirma, Escape cancela.
+- **× Eliminar**: elimina el filtro permanentemente (se pone rojo en hover para evitar clics accidentales).
+- **Activar**: clic en el filtro lo aplica en el árbol central. Escape lo desactiva.
 - Se sincronizan entre todos tus dispositivos.
 
 ---
@@ -729,7 +731,47 @@ Si tienes Google Calendar conectado, los eventos del día aparecen en el nodo de
 
 ---
 
-## 16. Mover nodos
+## 16. Paleta de comandos (⌘K)
+
+Pulsa `⌘K` en cualquier momento para abrir la paleta de comandos. Desde aquí puedes navegar, crear, filtrar y buscar sin tocar el ratón.
+
+### Vista por defecto
+
+Al abrir ⌘K sin escribir nada aparecen cuatro opciones rápidas:
+
+| Opción | Acción |
+|---|---|
+| **📅 Hoy** | Navega a la nota del día de hoy |
+| **📅 Mañana** | Navega a la nota de mañana |
+| **◈ Filtros →** | Abre la lista de tus filtros guardados |
+| **🧠 Contextos →** | Abre la lista de todos tus contextos |
+
+### Buscar con texto
+
+Empieza a escribir y From busca:
+
+- **Nombre de una nota** → navega directamente al nodo
+- **Nombre de un contexto** (ej. "café olé") → abre el filtro de ese contexto + panel lateral
+- **"contextos"** → muestra todos los contextos para seleccionar con ↑↓ y Enter
+- **"filtros"** → muestra todos los filtros guardados
+- **"hoy" / "mañana"** → acceso rápido a esos días
+- **Texto libre** → si no hay coincidencias, aparece "Crear: [tu texto]" para crear un nodo
+
+### Subvistas de Filtros y Contextos
+
+Al entrar en Filtros → o Contextos → puedes seguir escribiendo para buscar dentro de esa lista. Enter selecciona, Escape vuelve al menú principal.
+
+### Crear con flags
+
+Al crear cualquier elemento, añade flags al final del texto:
+
+- `-t` → crea una tarea
+- `-e` → crea un evento
+- `-f` → marca como favorito
+
+---
+
+## 16b. Mover nodos
 
 Hay varias formas de mover un nodo a otro lugar:
 
@@ -756,7 +798,7 @@ Al mover un nodo a otro día, el nodo se traslada físicamente al destino y el s
 
 ---
 
-## 17. Backup y privacidad
+## 17b. Backup y privacidad
 
 ### Backup automático en el servidor
 

@@ -4,6 +4,24 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.5.46 — 2 junio 2026 · ⌘K rediseñado, contextos, filtros
+
+### ⌘K más limpio y potente
+La paleta de comandos tiene ahora una vista por defecto ordenada: **Hoy**, **Mañana**, **Filtros →** y **Contextos →**. Sin ruido. Al hacer clic en Filtros o Contextos se abre una subvista dedicada donde puedes navegar con ↑↓ y seleccionar con Enter. Escape vuelve siempre al menú principal.
+
+Para buscar un contexto específico escribe su nombre directamente — From lo detecta y lo abre. Al escribir "contextos" aparece la lista completa.
+
+### Filtros guardados: renombrar y eliminar
+En la columna de filtros puedes pasar el ratón sobre un filtro guardado y aparecen dos botones: un lápiz ✏ para renombrar (edición inline, Enter confirma) y una × para eliminar (se pone roja en hover).
+
+### Confirmación al crear notas
+Al guardar algo con la captura rápida (o desde ⌘K) aparece una tarjeta de confirmación en la esquina inferior derecha: "✓ Nota creada", "✓ Tarea creada" o "✓ Evento creado".
+
+### Filtro de contexto mejorado
+Al hacer clic en un contexto en la columna derecha, el filtro busca ahora dentro del árbol de Agenda (no en la propia rama de Contextos). Encuentra nodos que tienen el @contexto en su campo de tipos o que lo mencionan con @ en el texto. Mucho más rápido y sin bloqueos.
+
+---
+
 ## Web v9.5.17 — 2 junio 2026 · Rediseño UX completo
 
 ### Agenda como vista principal
