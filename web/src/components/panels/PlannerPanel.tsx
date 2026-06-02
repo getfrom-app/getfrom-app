@@ -480,6 +480,7 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Slot clic → nuevo bloque standalone ──────────────────────────────────
   function handleSlotClick(e: React.MouseEvent, day: Date, colEl: HTMLElement) {
+    if (justResized.current || justDragged.current) return
     if ((e.target as HTMLElement).closest('.pp-block') || (e.target as HTMLElement).closest('.pp-new-block')) return
     const rawY  = e.clientY - colEl.getBoundingClientRect().top
     const start = pxToTime(rawY, day)
