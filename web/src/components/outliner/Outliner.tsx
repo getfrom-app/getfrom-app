@@ -531,9 +531,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       stopDragSelect()
 
       if (!wasDrag) {
-        // Click simple: el browser ya colocó el cursor naturalmente (sin preventDefault).
-        // Solo limpiamos la selección de nodos si la había.
-        gClearSelected()
+        // Click simple: limpiar selección de nodos, EXCEPTO si el clic fue
+        // en el handle ⋮⋮ (que gestiona su propia lógica de toggle).
+        const upTarget = e.target as HTMLElement
+        if (!upTarget.closest?.('.node-drag-handle')) {
+          gClearSelected()
+        }
       }
     }
 
@@ -629,7 +632,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         gClearSelected()
       }
       if (e.key === 'Escape') {
-        gClearSelected()
+        if (_gSelectedIds.size > 0) {
+          // Hay selección activa: limpiarla y consumir el evento
+          // para que MainLayout no navegue hacia arriba
+          e.stopPropagation()
+          e.preventDefault()
+          gClearSelected()
+        }
       }
     }
     window.addEventListener('keydown', onKey, { capture: true })
