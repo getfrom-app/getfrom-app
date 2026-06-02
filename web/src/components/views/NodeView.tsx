@@ -1653,6 +1653,40 @@ export default function NodeView() {
               {/* content managed via useEffect — no React children to avoid cursor reset */}
             </h1>
 
+            {/* Badges de contexto — a la derecha del título, sin @ */}
+            {(() => {
+              const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
+              const ctxRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+              if (!ctxRoot) return null
+              const types = (node.types || []).filter(slug => !BUILTIN.has(slug))
+              if (!types.length) return null
+              return (
+                <>
+                  {types.map(slug => {
+                    const ctxNode = store.children(ctxRoot.id).find(n => {
+                      if (n.deletedAt) return false
+                      const s = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9\-\/]/g,'')
+                      return s === slug
+                    })
+                    if (!ctxNode) return null
+                    return (
+                      <span
+                        key={slug}
+                        style={{
+                          fontSize: 13, fontWeight: 500,
+                          color: 'var(--accent)', opacity: 0.7,
+                          marginLeft: 10, whiteSpace: 'nowrap',
+                          alignSelf: 'center',
+                        }}
+                      >
+                        {ctxNode.text}
+                      </span>
+                    )
+                  })}
+                </>
+              )
+            })()}
+
             {/* Badge inline del evento — a la derecha del título */}
             {node.isEvent && node.due && (() => {
               const due = node.due
