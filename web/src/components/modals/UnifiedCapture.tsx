@@ -264,6 +264,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
         // Eliminar el shortcut del DOM sin activar onInput
         skipNextInputRef.current = true
         inputRef.current.textContent = ct
+        setText(ct)  // ← CRÍTICO: actualizar text state al limpiar el DOM
         // Cursor al final
         const range = document.createRange()
         const sel = window.getSelection()
@@ -879,9 +880,15 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
         if (t) { saveAndClose(); return }
         onClose(); return
       }
-      // 3. Item activo de la lista
+      // 3. Tipo forzado activo (-t/-e/-b) → crear directamente, sin ejecutar items
+      if (lockedForceTypeRef.current !== null) {
+        const t = getCurrentText().trim()
+        if (t) { saveAndClose(); return }
+        onClose(); return
+      }
+      // 4. Item activo de la lista (solo si no hay tipo forzado)
       if (items[activeIdx]) { items[activeIdx].action(); return }
-      // 4. Texto → crear
+      // 5. Texto → crear
       const t = getCurrentText().trim()
       if (t) { saveAndClose(); return }
       // 5. Vacío → cerrar
