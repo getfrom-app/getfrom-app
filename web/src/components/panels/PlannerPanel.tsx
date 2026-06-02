@@ -558,7 +558,7 @@ export default function PlannerPanel({ onClose }: Props) {
       {/* GCal error */}
       {gcalError && (
         <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--warning)', background: 'rgba(239,68,68,0.06)', flexShrink: 0 }}>
-          ⚠️ {gcalError} — <button onClick={() => window.open('/settings?tab=google', '_self')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>Reconectar</button>
+          ⚠️ {gcalError} — <button onClick={() => navigate('/settings?tab=google')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>Reconectar</button>
         </div>
       )}
 
