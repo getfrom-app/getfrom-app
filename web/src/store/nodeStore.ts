@@ -1293,11 +1293,18 @@ export class NodeStore {
             if (this.dirtyIds.has(n.id)) {
               continue
             }
-            // Nodo enviado por este sync: solo sobreescribir si no hubo modificación durante el await
+            // Nodo enviado por este sync
             if (sentIds.has(n.id)) {
               const current = this.nodes.get(n.id)
+              // Modificado durante el await → conservar versión local más nueva
               if (current && current.updatedAt !== sentVersions.get(n.id)) {
-                // Modificado durante el await → conservar versión local más nueva
+                continue
+              }
+              // El servidor devuelve la misma versión o una más antigua (latencia de réplica,
+              // race condition, etc.) → conservar versión local que acabamos de enviar.
+              // Solo aplicar si el servidor devuelve algo MÁS NUEVO (otro cliente lo actualizó).
+              const sentTime = sentVersions.get(n.id) || ''
+              if (!n.updatedAt || n.updatedAt <= sentTime) {
                 continue
               }
             }
