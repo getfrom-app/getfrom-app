@@ -2638,6 +2638,38 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </svg>
                 </button>
               </>
+            ) : nodeResourceType === 'pdf' ? (
+              // Archivo PDF: icono PDF, click abre el nodo
+              <button
+                className="bullet-btn nota-btn"
+                onClick={() => navigate(`/node/${node.id}`)}
+                tabIndex={-1}
+                aria-label="Abrir PDF"
+                title="Clic para abrir PDF"
+              >
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#e53e3e', letterSpacing: '-0.5px' }}>PDF</span>
+              </button>
+            ) : nodeResourceType === 'image' ? (
+              // Archivo imagen: icono imagen, click abre el nodo
+              <button
+                className="bullet-btn nota-btn"
+                onClick={() => navigate(`/node/${node.id}`)}
+                tabIndex={-1}
+                aria-label="Abrir imagen"
+                title="Clic para abrir imagen"
+              >
+                <span style={{ fontSize: 12 }}>🖼</span>
+              </button>
+            ) : node.isResource ? (
+              // Archivo genérico: icono adjunto, click abre el nodo
+              <button
+                className="bullet-btn nota-btn"
+                onClick={() => navigate(`/node/${node.id}`)}
+                tabIndex={-1}
+                title="Clic para abrir archivo"
+              >
+                <span style={{ fontSize: 12 }}>📎</span>
+              </button>
             ) : isNota ? (
               // Nota hija: icono de página, click navega
               <button

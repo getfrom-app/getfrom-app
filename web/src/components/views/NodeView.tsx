@@ -27,7 +27,7 @@ import { createCalendarEvent, updateCalendarEvent, fromRecToRRule, type Calendar
 import { getGcalColor } from '../../utils/gcalNodesSync'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
-import { getPresignedUpload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
+import { getPresignedUpload, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
@@ -1080,12 +1080,25 @@ export default function NodeView() {
   const isLoggedIn = !store.isGuest
 
   // Recurso principal del nodo (imagen, PDF, URL)
+  // URL fresca del recurso (presigned URLs expiran en 1h — regenerar al abrir)
+  const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (!ed._resourceKey) return
+      getPresignedDownload(ed._resourceKey as string)
+        .then(url => setFreshResourceUrl(url))
+        .catch(() => {}) // silencioso — fallback a URL guardada
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.extraData])
+
   const nodeResourceMeta = (() => {
     try {
       const ed = JSON.parse(node.extraData || '{}')
       if (!ed._resource && !ed._resourceUrl) return null
       return {
-        url: (ed._resourceUrl || node.resourceUrl) as string | undefined,
+        url: (freshResourceUrl || ed._resourceUrl || node.resourceUrl) as string | undefined,
         type: (ed._resourceType || node.resourceType) as string | undefined,
       }
     } catch { return null }

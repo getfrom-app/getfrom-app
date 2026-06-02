@@ -410,11 +410,12 @@ export async function getPresignedUpload(filename: string, contentType: string):
   })
 }
 
-export async function getPresignedDownload(key: string): Promise<{ downloadUrl: string }> {
-  return apiRequest('/files/presign-download', {
+export async function getPresignedDownload(key: string): Promise<string> {
+  const res = await apiRequest<{ url: string }>('/files/presign-download', {
     method: 'POST',
     body: JSON.stringify({ key }),
   })
+  return res.url
 }
 
 export async function getFilesUsage(): Promise<{ usedBytes: number; limitBytes: number }> {
