@@ -431,11 +431,19 @@ export default function MainLayout() {
           }, 150)
         }
       }
-      // Espacio (sin input activo) → captura rápida
+      // Espacio → captura rápida si no hay input activo O si el input activo está vacío
+      // (no tiene sentido empezar un nodo/filtro/magic con un espacio)
       if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) { e.preventDefault(); setShowUnifiedCapture(true) }
+        const tag = active?.tagName
+        const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || active?.isContentEditable
+        const isEmpty = !isEditable || (() => {
+          if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            return !(active as HTMLInputElement).value.trim()
+          }
+          return !(active?.textContent || '').trim()
+        })()
+        if (isEmpty) { e.preventDefault(); setShowUnifiedCapture(true) }
       }
       // M (sin modificador) → toggle Magic Chat
       if (e.key === 'm' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
