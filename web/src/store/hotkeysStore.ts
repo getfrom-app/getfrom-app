@@ -38,7 +38,7 @@ export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   { id: 'toggle-magic',     category: 'Paneles',      label: 'Magic Chat',               description: 'Abrir / cerrar el asistente IA Magic Chat',        defaultKey: 'm',          modifiers: ['meta'], configurable: true },
   { id: 'toggle-planner',   category: 'Paneles',      label: 'Planificador',             description: 'Abrir / cerrar el planificador lateral',           defaultKey: 'p',          modifiers: ['meta'], configurable: true },
   { id: 'toggle-contexts',  category: 'Paneles',      label: 'Contextos',                description: 'Abrir / cerrar la lista de contextos',             defaultKey: 'c',          modifiers: ['meta', 'shift'], configurable: true },
-  { id: 'toggle-recorder',  category: 'Paneles',      label: 'Grabadora',                description: 'Abrir / cerrar el panel de grabación de voz',      defaultKey: 'r',          configurable: true },
+  { id: 'toggle-recorder',  category: 'Paneles',      label: 'Grabadora',                description: 'Abrir / cerrar el panel de grabación de voz',      defaultKey: 'r',          modifiers: ['meta'], configurable: true },
 
   // ── Navegación ─────────────────────────────────────────────────────────────
   { id: 'command-palette',  category: 'Navegación',   label: 'Paleta de comandos',       description: 'Búsqueda rápida, comandos, contextos',              defaultKey: 'k',          modifiers: ['meta'], configurable: true },

@@ -480,11 +480,10 @@ export default function MainLayout() {
           cyclePanel(e.key === 'ArrowRight' ? 'right' : 'left')
         }
       }
-      // Toggle grabadora — sin modificador, configurable (por defecto R)
-      if (e.key === getHotkeyKey('toggle-recorder') && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) { e.preventDefault(); togglePanel('recorder') }
+      // ⌘R → toggle grabadora (configurable)
+      if (e.key === getHotkeyKey('toggle-recorder') && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        togglePanel('recorder')
       }
       // ⌘⇧C → toggle lista de contextos (configurable)
       if (e.key === getHotkeyKey('toggle-contexts') && !e.repeat && (e.metaKey || e.ctrlKey) && e.shiftKey) {

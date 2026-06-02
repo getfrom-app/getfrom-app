@@ -366,12 +366,14 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
   // ── Space hold para grabar ─────────────────────────────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey) return
       const isEmpty = !(inputRef.current?.textContent || '').trim()
       if (!isEmpty) return
+      // Siempre prevenir espacio cuando el input está vacío (incluyendo repeat)
+      // para que el contentEditable no inserte espacios mientras se mantiene pulsado
       e.preventDefault()
       e.stopImmediatePropagation()
-      if (spaceIsRecordingRef.current) return
+      if (e.repeat || spaceIsRecordingRef.current) return
       spaceHoldTimerRef.current = setTimeout(() => {
         spaceIsRecordingRef.current = true
         if (recordingStore.phase === 'idle') recordingStore.startRecording()
