@@ -366,6 +366,22 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
+  // ── Interceptar TODOS los eventos de teclado mientras el modal esté abierto ─
+  // Se usa capture phase para que ningun listener del árbol o MainLayout los reciba.
+  useEffect(() => {
+    function captureAll(e: KeyboardEvent) {
+      // Dejar pasar solo los atajos del sistema (Cmd+C/V/Z etc.)
+      if (e.metaKey || e.ctrlKey) return
+      e.stopImmediatePropagation()
+    }
+    window.addEventListener('keydown', captureAll, true)
+    window.addEventListener('keyup', captureAll, true)
+    return () => {
+      window.removeEventListener('keydown', captureAll, true)
+      window.removeEventListener('keyup', captureAll, true)
+    }
+  }, [])
+
   // ── Reset activeIdx cuando cambia query o view ─────────────────────────────
   useEffect(() => { setActiveIdx(0) }, [text, view])
 
@@ -707,6 +723,10 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   // ── handleKeyDown ──────────────────────────────────────────────────────────
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    // Siempre capturar — ninguna tecla debe llegar al árbol ni a MainLayout
+    e.stopPropagation();
+    (e.nativeEvent as Event).stopImmediatePropagation()
+
     // @ picker toma prioridad
     if (atPicker) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setAtPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
@@ -721,7 +741,6 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     }
 
     if (e.key === 'Escape') {
-      e.stopPropagation(); (e.nativeEvent as Event).stopImmediatePropagation()
       if (view !== 'default') {
         setView('default')
         setText('')
