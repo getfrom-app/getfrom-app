@@ -558,10 +558,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       stopDragSelect()
 
       if (!wasDrag) {
-        // Click simple: limpiar selección de nodos, EXCEPTO si el clic fue
-        // en el handle ⋮⋮ (que gestiona su propia lógica de toggle).
+        // Click simple: limpiar selección, EXCEPTO:
+        // - handle ⋮⋮: gestiona su propio toggle
+        // - context-menu: las acciones del menú necesitan la selección activa
         const upTarget = e.target as HTMLElement
-        if (!upTarget.closest?.('.node-drag-handle')) {
+        if (!upTarget.closest?.('.node-drag-handle') && !upTarget.closest?.('.context-menu')) {
           gClearSelected()
         }
       }
