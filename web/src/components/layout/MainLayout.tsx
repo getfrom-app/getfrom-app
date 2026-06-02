@@ -95,6 +95,7 @@ export default function MainLayout() {
     (localStorage.getItem('from-right-panel') as RightPanel) ?? 'filter'
   )
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
+  const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
   const lastPanelRef = useRef<CyclablePanel>('planner')
 
   function openPanel(p: CyclablePanel) {
@@ -115,13 +116,27 @@ export default function MainLayout() {
       setContextNodeId(null)
       return
     }
-    // Siempre volver a home para que el filtro de contexto sea visible en el árbol
-    if (location.pathname !== '/' && !location.pathname.endsWith('/app/')) {
-      navigate('/', { replace: false })
+    // Determinar si estamos en home (ruta raíz del router)
+    const atHome = location.pathname === '/' || location.pathname === ''
+    if (!atHome) {
+      // Guardar en ref para aplicar después de que el navigate complete
+      pendingContextRef.current = nodeId
+      navigate('/')
+    } else {
+      setContextNodeId(nodeId)
+      setRightPanel('context')
     }
-    setContextNodeId(nodeId)
-    setRightPanel('context')
   }
+
+  // Aplicar contexto pendiente tras volver a home
+  useEffect(() => {
+    if (pendingContextRef.current && (location.pathname === '/' || location.pathname === '')) {
+      const nodeId = pendingContextRef.current
+      pendingContextRef.current = null
+      setContextNodeId(nodeId)
+      setRightPanel('context')
+    }
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
   function cyclePanel(dir: 'up' | 'down') {
     setPanelSlideDir(dir)
     setPanelKey(k => k + 1)
