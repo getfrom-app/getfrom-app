@@ -164,7 +164,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     const effective = normalizeSynonyms(filterText) ?? filterText
     if (!isSmartQuery(effective)) return null
     return applyWFFilter(s.nodes, effective)
-  }, [filterText, contextFilter, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filterText, contextFilter, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isFiltering = !!filterText?.trim() || !!contextFilter
   const matchCount = contextFilter?.matchIds.size ?? filterResult?.matchIds.size ?? 0

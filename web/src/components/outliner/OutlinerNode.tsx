@@ -326,6 +326,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return () => window.removeEventListener('from:open-task-props', handleOpenTaskProps)
   }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [dateAssignedMsg, setDateAssignedMsg] = useState<string | null>(null)
+  // Filter exit animation — delayed hide when node leaves active filter
+  // filterExiting: currently playing exit animation
+  // filterHidden:  animation complete, node should return null
+  const [filterExiting, setFilterExiting] = useState(false)
+  const [filterHidden, setFilterHidden] = useState(false)
+  const filterExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Quick-props inline popup (fecha/hora/repetición/prioridad)
   const [showQuickProps, setShowQuickProps] = useState(false)
   const [quickPropsPos, setQuickPropsPos] = useState<{ top: number; left: number } | null>(null)
@@ -2392,7 +2398,30 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     ? false  // match directo sin hijos-match → colapsar (ej: bucle sin sub-bucles)
     : (!isCollapsed || anyDescendantMatches || hasMatchingDescendants)
 
-  if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
+  // Filter exit animation — when node leaves active filter, animate out before hiding
+  const shouldFilterHide = !!(activeFilter && !matchesFilter && !anyDescendantMatches)
+  useEffect(() => {
+    if (shouldFilterHide && !filterHidden && !filterExiting) {
+      // Start exit animation; hide for real after it completes
+      setFilterExiting(true)
+      filterExitTimerRef.current = setTimeout(() => {
+        setFilterExiting(false)
+        setFilterHidden(true)
+      }, 320)
+    }
+    if (!shouldFilterHide) {
+      if (filterExitTimerRef.current) clearTimeout(filterExitTimerRef.current)
+      setFilterExiting(false)
+      setFilterHidden(false)
+    }
+    return () => {
+      if (filterExitTimerRef.current) clearTimeout(filterExitTimerRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldFilterHide])
+
+  // Hide node: only after animation completes
+  if (filterHidden) return null
 
   // moved-ref: NO hacer render custom — dejar que el nodo renderice normalmente
   // con la clase node-row--moved-ref aplicada vía nodeRowClass.
@@ -2411,6 +2440,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     ctxRef ? 'node-row--ctx-ref' : '',
     taskConverting ? 'node-row--task-converting' : '',
     mirrorOfId ? 'node-row--mirror' : '',
+    filterExiting ? 'node-row--filter-exit' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)

@@ -158,6 +158,7 @@ export class NodeStore {
   private readonly MAX_HISTORY = 50
   private batchDepth = 0
   private lastTextSnapshotTime = 0
+  nodesVersion = 0
 
   private snapshot() {
     if (this.batchDepth > 0) return
@@ -236,6 +237,7 @@ export class NodeStore {
   }
 
   private notify() {
+    this.nodesVersion++
     this.listeners.forEach(l => l())
   }
 
