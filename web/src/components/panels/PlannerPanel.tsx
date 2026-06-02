@@ -193,23 +193,16 @@ export default function PlannerPanel({ onClose }: Props) {
   , [centerDate.toDateString()]) // eslint-disable-line
 
   // ── Scroll ────────────────────────────────────────────────────────────────
-  const scrollHRef = useRef<HTMLDivElement>(null)
-  const headRef    = useRef<HTMLDivElement>(null)
-  const scrollVRef = useRef<HTMLDivElement>(null)
+  // Con scroll unificado en pp-timeline: un solo ref para ambos ejes
+  const scrollHRef = useRef<HTMLDivElement>(null)  // apunta a pp-timeline
+  const headRef    = useRef<HTMLDivElement>(null)   // pp-heads (ya no necesita sync manual)
+  const scrollVRef = useRef<HTMLDivElement>(null)   // alias de pp-timeline
 
   useLayoutEffect(() => {
     if (viewMode !== 'day' || !scrollHRef.current) return
     const pos = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
     scrollHRef.current.scrollLeft = pos
-    if (headRef.current) headRef.current.scrollLeft = pos
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
-
-  useEffect(() => {
-    const grid = scrollHRef.current; if (!grid) return
-    const sync = () => { if (headRef.current) headRef.current.scrollLeft = grid.scrollLeft }
-    grid.addEventListener('scroll', sync, {passive:true})
-    return () => grid.removeEventListener('scroll', sync)
-  }, [viewMode])
 
   useLayoutEffect(() => {
     if (!scrollVRef.current) return
@@ -562,9 +555,18 @@ export default function PlannerPanel({ onClose }: Props) {
         </button>
       </div>
 
-      {/* Timeline */}
+      {/* GCal error */}
+      {gcalError && (
+        <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--warning)', background: 'rgba(239,68,68,0.06)', flexShrink: 0 }}>
+          ⚠️ {gcalError} — <button onClick={() => window.open('/settings?tab=google', '_self')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>Reconectar</button>
+        </div>
+      )}
+
+      {/* Timeline — scroll unificado (un solo contenedor para vertical + horizontal) */}
       <div className="pp-timeline" ref={el => {
         (scrollVRef as any).current = el
+        ;(scrollHRef as any).current = el
+        ;(timelineRef as any).current = el
         // Shift+wheel → zoom Y. Rueda normal → scroll vertical estándar (no interceptar)
         if (el && !(el as any)._wheelBound) {
           (el as any)._wheelBound = true
@@ -588,8 +590,8 @@ export default function PlannerPanel({ onClose }: Props) {
             {/* Cabeceras sync */}
             <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
               title="Arrastra izq/der para ver más/menos días (2–7)">
-              {/* Espacio para alinear con el eje de horas */}
-              <div style={{width: AXIS_W, flexShrink:0}} />
+              {/* Spacer alineado con el eje — sticky left para seguir al axis */}
+              <div style={{width: AXIS_W, flexShrink:0, position:'sticky', left:0, background:'var(--bg-primary)', zIndex:10}} />
               {visibleDays.map(d => (
                 <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
                   style={{width:colW, flexShrink:0}}>
@@ -597,8 +599,8 @@ export default function PlannerPanel({ onClose }: Props) {
                 </div>
               ))}
             </div>
-            {/* Grid horizontal */}
-            <div className={`pp-grid ${viewMode==='day'?'pp-grid--scroll':''}`} ref={el => { (scrollHRef as any).current = el; (timelineRef as any).current = el }}>
+            {/* Grid horizontal — sin scroll propio (lo maneja pp-timeline) */}
+            <div className="pp-grid">
               <div className="pp-axis" style={{width:AXIS_W, height: TOTAL_HOURS*hourH}}
                 onMouseDown={handleAxisDrag} title="Arrastra arriba/abajo para hacer zoom">
                 {Array.from({length:TOTAL_HOURS+1},(_,i) => (
