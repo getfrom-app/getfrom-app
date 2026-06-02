@@ -88,51 +88,36 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)' }}>
-          Contextos
-        </span>
-        <button
-          onClick={() => setAddingCtx(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 18, lineHeight: 1, padding: '0 2px', borderRadius: 3 }}
-          title="Nuevo contexto"
-        >+</button>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '4px 0' }}>
+      {/* Lista de contextos */}
+      {contextos.map(c => renderCtx(c.id, 0))}
 
-      {/* Lista */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
-        {contextos.length === 0 && !addingCtx ? (
-          <div style={{ padding: '16px', fontSize: 13, color: 'var(--text-tertiary)' }}>
-            Sin contextos. Pulsa + para crear uno.
-          </div>
-        ) : (
-          contextos.map(c => renderCtx(c.id, 0))
-        )}
-
-        {/* Input nuevo contexto */}
-        {addingCtx && (
-          <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-tertiary)', flexShrink: 0 }}>›</span>
-            <input
-              ref={newCtxInputRef}
-              value={newCtxName}
-              onChange={e => setNewCtxName(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') { e.preventDefault(); createCtx() }
-                if (e.key === 'Escape') { setAddingCtx(false); setNewCtxName('') }
-              }}
-              onBlur={() => { if (newCtxName.trim()) createCtx(); else { setAddingCtx(false); setNewCtxName('') } }}
-              placeholder="Nombre del contexto…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
-            />
-          </div>
-        )}
-      </div>
+      {/* Nodo vacío al final — clic para crear nuevo contexto */}
+      {!addingCtx ? (
+        <div
+          style={{ padding: '5px 16px', fontSize: 13, color: 'var(--text-tertiary)', cursor: 'text', display: 'flex', alignItems: 'center', gap: 4 }}
+          onClick={() => { setAddingCtx(true); setTimeout(() => newCtxInputRef.current?.focus(), 30) }}
+        >
+          <span style={{ width: 18, display: 'inline-block', flexShrink: 0 }} />
+          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo contexto…</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', padding: '5px 16px', gap: 4 }}>
+          <span style={{ width: 18, flexShrink: 0, display: 'inline-block' }} />
+          <input
+            ref={newCtxInputRef}
+            value={newCtxName}
+            onChange={e => setNewCtxName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); createCtx() }
+              if (e.key === 'Escape') { setAddingCtx(false); setNewCtxName('') }
+            }}
+            onBlur={() => { if (newCtxName.trim()) createCtx(); else { setAddingCtx(false); setNewCtxName('') } }}
+            placeholder="Nombre del contexto…"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
+          />
+        </div>
+      )}
     </div>
   )
 }

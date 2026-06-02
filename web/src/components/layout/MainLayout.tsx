@@ -66,17 +66,8 @@ function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header — mismo padding, alineación y tamaño que los items de la lista */}
-      <div style={{
-        padding: '5px 16px', borderBottom: '1px solid var(--border)',
-        flexShrink: 0, display: 'flex', alignItems: 'center', minHeight: 28,
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-          {node.text || t('common.noTitle')}
-        </span>
-      </div>
-      {/* Outliner editable */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 4 }}>
+      {/* Sin header — el outliner arranca directamente con misma fuente/alineación que la lista */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, fontSize: 13 }}>
         <Outliner parentId={nodeId} autoFocusEmpty={true} />
       </div>
     </div>
