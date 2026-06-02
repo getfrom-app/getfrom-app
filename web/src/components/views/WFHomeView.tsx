@@ -3,7 +3,6 @@
  * Sin filtro: árbol normal. Con filtro: vista árbol / lista plana / calendario.
  */
 import { useMemo, useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -11,83 +10,7 @@ import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
 import { getPresignedUpload } from '../../api/client'
-import { AGENDA_ROOT_NAME, ensureDayPath } from '../../utils/agendaHelper'
-
-// ── Calendario anual inline ───────────────────────────────────────────────────
-const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-const MONTHS_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-const DOW = ['L','M','X','J','V','S','D']
-
-function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
-
-function InlineYearCalendar({ year, agendaId }: { year: number; agendaId: string }) {
-  const s = useStore()
-  const navigate = useNavigate()
-  const today = new Date()
-
-  // Nodos del año seleccionado
-  const yearNode = useMemo(() =>
-    s.children(agendaId).find(n => !n.deletedAt && n.text === String(year))
-  , [agendaId, year, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fechas que tienen contenido (nodo diario con hijos)
-  const datesWithContent = useMemo(() => {
-    const set = new Set<string>()
-    if (!yearNode) return set
-    s.children(yearNode.id).forEach(monthNode => {
-      if (monthNode.deletedAt) return
-      s.children(monthNode.id).forEach(dayNode => {
-        if (dayNode.deletedAt || !dayNode.diaryDate) return
-        if (s.children(dayNode.id).some(n => !n.deletedAt)) {
-          const d = new Date(dayNode.diaryDate)
-          set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
-        }
-      })
-    })
-    return set
-  }, [yearNode?.id, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="wf-year-cal">
-      {Array.from({ length: 12 }, (_, monthIdx) => {
-        const daysInMonth = new Date(year, monthIdx + 1, 0).getDate()
-        let startDow = new Date(year, monthIdx, 1).getDay() - 1
-        if (startDow < 0) startDow = 6
-        return (
-          <div key={monthIdx} className="wf-year-cal-month">
-            <div className="wf-year-cal-month-name">{MONTHS_S[monthIdx]}</div>
-            <div className="wf-year-cal-dow-row">
-              {DOW.map(d => <div key={d} className="wf-year-cal-dow">{d}</div>)}
-            </div>
-            <div className="wf-year-cal-days">
-              {Array.from({ length: startDow }, (_, i) => (
-                <div key={`e-${i}`} className="wf-year-cal-day wf-year-cal-day--empty" />
-              ))}
-              {Array.from({ length: daysInMonth }, (_, i) => {
-                const d = i + 1
-                const date = new Date(year, monthIdx, d)
-                const isToday = sameDay(date, today)
-                const hasContent = datesWithContent.has(`${year}-${monthIdx}-${d}`)
-                return (
-                  <div
-                    key={d}
-                    className={`wf-year-cal-day${isToday ? ' wf-year-cal-day--today' : ''}${hasContent ? ' wf-year-cal-day--has-content' : ''}`}
-                    onClick={() => { const node = ensureDayPath(date); navigate(`/node/${node.id}`) }}
-                    title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
-                  >{d}</div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -134,7 +57,6 @@ function buildContextFilter(contextNodeId: string): { matchIds: Set<string>; anc
 
 export default function WFHomeView({ filterText, contextFilterId }: Props) {
   const s = useStore()
-  const navigate = useNavigate()
 
   // ── Loading gate ──────────────────────────────────────────────────────────
   const [storeReady, setStoreReady] = useState(() => store.isLoaded)
@@ -160,16 +82,6 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   }, [storeReady, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const agendaId = agendaNode?.id ?? null
-
-  // ── Selector de año ────────────────────────────────────────────────────────
-  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear())
-
-  const yearNodes = useMemo(() => {
-    if (!agendaId) return []
-    return store.children(agendaId)
-      .filter(n => !n.deletedAt && /^\d{4}$/.test(n.text || ''))
-      .sort((a, b) => parseInt(a.text) - parseInt(b.text))
-  }, [agendaId, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Colapsar root nodes al primer arranque ─────────────────────────────────
   useEffect(() => {
@@ -285,24 +197,6 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       )}
       {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
         <CalendarView matchIds={filterResult.matchIds} />
-      )}
-
-      {/* Calendario anual inline — solo en vista raíz sin filtro */}
-      {!isFiltering && !contextFilter && agendaId && yearNodes.length > 0 && (
-        <div className="wf-home-year-section">
-          {/* Tabs de año */}
-          <div className="wf-home-year-tabs">
-            {yearNodes.map(y => (
-              <button
-                key={y.id}
-                className={`wf-home-year-tab${selectedYear === parseInt(y.text) ? ' active' : ''}`}
-                onClick={() => setSelectedYear(parseInt(y.text))}
-              >{y.text}</button>
-            ))}
-          </div>
-          {/* Calendario 12 meses */}
-          <InlineYearCalendar year={selectedYear} agendaId={agendaId} />
-        </div>
       )}
 
       {/* Árbol — vista lista (default) o sin filtro */}
