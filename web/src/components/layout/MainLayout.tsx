@@ -66,8 +66,8 @@ function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Outliner con misma fuente (13px) y alineación que la lista de contextos */}
-      <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      {/* Outliner con misma fuente (13px), mismo padding-top que el filtro */}
+      <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 32 }}>
         <Outliner parentId={nodeId} autoFocusEmpty={true} />
       </div>
     </div>

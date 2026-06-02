@@ -88,7 +88,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '8px 0 4px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '32px 0 4px' }}>
       {/* Lista de contextos */}
       {contextos.map(c => renderCtx(c.id, 0))}
 

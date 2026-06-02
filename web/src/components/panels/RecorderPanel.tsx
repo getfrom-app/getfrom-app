@@ -15,10 +15,10 @@ function fmt(s: number) {
 type MicPerm = 'unknown' | 'granted' | 'denied' | 'prompt'
 type State   = 'idle' | 'processing' | 'done' | 'error'
 
-// Primera línea — misma altura y padding que el input del filtro
+// Primera línea — mismo padding-top que el input del buscador (32px)
 const FIRST_ROW: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 8,
-  padding: '8px 12px', flexShrink: 0, minHeight: 36,
+  padding: '32px 12px 10px', flexShrink: 0,
 }
 
 interface Props { onClose: () => void }
