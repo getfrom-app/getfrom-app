@@ -28,9 +28,18 @@ function ctxTextToSlug(text: string) {
     .replace(/[^a-z0-9\-\/]/g, '')
 }
 
-// Nodos raíz del sistema — no se deben mostrar como raíces en resultados de contexto
+// Textos de nodos raíz del sistema — sus descendientes NUNCA deben aparecer en filtros de contexto
 const SYSTEM_ROOT_TEXTS = new Set([
-  AGENDA_ROOT_NAME,
+  AGENDA_ROOT_NAME,   // ← Agenda SÍ se puede traversar pero no aparece como nodo visible
+  '🧠 Contexto',
+  '📋 Plantillas',
+  '🗑 Papelera',
+  '🤖 Agentes',
+  '📁 Paneles',
+  '📁 Atajos',
+])
+// Textos de raíces NO-Agenda que nunca deben aparecer en resultados
+const NON_AGENDA_SYSTEM_TEXTS = new Set([
   '🧠 Contexto',
   '📋 Plantillas',
   '🗑 Papelera',
@@ -40,35 +49,75 @@ const SYSTEM_ROOT_TEXTS = new Set([
 ])
 
 // Construye filterMatchIds + ancestorIds para filtrar por contexto.
-// Los contextos pueden estar guardados como:
-//   1. ID del nodo contexto (vía @ picker en el outliner)
-//   2. Slug del texto (vía texto manual @Nombre → auto-sync)
-//   3. Texto crudo tal cual (@From → "From" en types via auto-sync de texto)
+// Busca SOLO dentro del árbol de Agenda — excluye 🧠 Contexto y demás ramas del sistema.
+// Matching por:
+//   1. node.types incluye el ID del nodo contexto (via @ picker)
+//   2. node.types incluye el slug o texto del contexto (via auto-sync de @mention en texto)
+//   3. El texto del nodo contiene @NombreContexto (case-insensitive)
+//   4. El texto del nodo menciona el nombre del contexto como palabra (case-insensitive)
 function buildContextFilter(contextNodeId: string): {
   matchIds: Set<string>
   ancestorIds: Set<string>
-  systemRootIds: Set<string>
 } | null {
   const ctxNode = store.getNode(contextNodeId)
   if (!ctxNode) return null
+
   const slug = ctxTextToSlug(ctxNode.text)
-  const matchIds = new Set<string>()
-  const ancestorIds = new Set<string>()
   const slugLower = slug.toLowerCase()
   const textLower = ctxNode.text.toLowerCase()
+
+  // Pre-computar IDs de raíces del sistema (no-Agenda) para excluirlas
+  const nonAgendaSystemIds = new Set<string>()
+  store.children(null).forEach(root => {
+    if (!root.deletedAt && NON_AGENDA_SYSTEM_TEXTS.has(root.text)) {
+      nonAgendaSystemIds.add(root.id)
+    }
+  })
+
+  // Helper: sube hasta la raíz y comprueba si es un sistema no-Agenda
+  function isUnderNonAgendaSystem(nodeId: string): boolean {
+    let cur = store.getNode(nodeId)
+    while (cur) {
+      if (cur.parentId === null) return nonAgendaSystemIds.has(cur.id)
+      cur = store.getNode(cur.parentId) ?? undefined
+    }
+    return false
+  }
+
+  // Regex para buscar @mention en texto: @From, @from, @café-olé etc.
+  const atMentionPattern = new RegExp(
+    `@${ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+    'i'
+  )
+  // Regex para coincidencia de palabra simple (sin @): "From", "café olé" etc.
+  const wordPattern = new RegExp(
+    `\\b${ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+    'i'
+  )
+
+  const matchIds = new Set<string>()
+  const ancestorIds = new Set<string>()
+
   store.allActive().forEach(n => {
     if (n.deletedAt) return
+    // Excluir nodos de ramas del sistema que no son Agenda
+    if (isUnderNonAgendaSystem(n.id)) return
+
     const types = n.types || []
-    // Buscar por ID del nodo (@ picker) O por slug O por texto crudo (case-insensitive)
-    // El auto-sync extrae el texto del @mention tal cual: @From → "From" en types
-    if (
+    const nodeText = n.text || ''
+
+    const matchByTypes =
       types.includes(contextNodeId) ||
       types.some(t => t.toLowerCase() === slugLower || t.toLowerCase() === textLower)
-    ) {
+    const matchByAtMention = atMentionPattern.test(nodeText)
+    const matchByWord = wordPattern.test(nodeText)
+
+    if (matchByTypes || matchByAtMention || matchByWord) {
       matchIds.add(n.id)
     }
   })
-  // Recoger todos los ancestros para que el árbol muestre el camino
+
+  // Recoger todos los ancestros para traversar el árbol correctamente
   matchIds.forEach(id => {
     let cur = store.getNode(id)
     while (cur?.parentId) {
@@ -76,15 +125,8 @@ function buildContextFilter(contextNodeId: string): {
       cur = store.getNode(cur.parentId)
     }
   })
-  // Identificar los IDs de nodos raíz del sistema (para ocultarlos visualmente)
-  const systemRootIds = new Set<string>()
-  ancestorIds.forEach(id => {
-    const n = store.getNode(id)
-    if (n && n.parentId === null && SYSTEM_ROOT_TEXTS.has(n.text)) {
-      systemRootIds.add(id)
-    }
-  })
-  return { matchIds, ancestorIds, systemRootIds }
+
+  return { matchIds, ancestorIds }
 }
 
 export default function WFHomeView({ filterText, contextFilterId }: Props) {
@@ -150,8 +192,6 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   // Los ids activos (ya sea de contexto o de texto)
   const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
   const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
-  // IDs de nodos raíz del sistema a ocultar visualmente en resultados de contexto
-  const contextSystemRootIds = contextFilter?.systemRootIds
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -236,7 +276,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       {/* Árbol — vista lista (default) o sin filtro */}
       <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
         <Outliner
-          parentId={contextFilter ? null : agendaId}
+          parentId={agendaId}
           autoFocusEmpty={false}
           placeholder={isFiltering ? ' ' : "Escribe algo… o pulsa Enter para crear un nodo"}
           filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
