@@ -1320,18 +1320,13 @@ export default function NodeView() {
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files)
     if (files.length === 0) return
-    if (files.length === 1) {
-      // Un solo archivo: va al nodo actual
-      uploadFileToNode(files[0], node.id)
-    } else {
-      // Varios archivos: crear un nodo hijo por cada uno
-      const siblings = store.children(node.id)
-      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
-      files.forEach(async (file, i) => {
-        const child = store.createNode({ text: file.name.replace(/\.[^.]+$/, ''), parentId: node!.id, siblingOrder: maxOrder + i + 1 })
-        await uploadFileToNode(file, child.id)
-      })
-    }
+    // Siempre crear un nodo hijo por cada archivo (no subir al nodo actual)
+    const siblings = store.children(node.id)
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
+    files.forEach(async (file, i) => {
+      const child = store.createNode({ text: file.name.replace(/\.[^.]+$/, ''), parentId: node!.id, siblingOrder: maxOrder + i + 1 })
+      await uploadFileToNode(file, child.id)
+    })
   }
 
   return (

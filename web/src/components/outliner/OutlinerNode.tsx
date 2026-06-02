@@ -1670,6 +1670,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    // Archivos del sistema operativo (Finder) → aceptar con cursor 'copy', no mover nodos
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+      return
+    }
     // Aceptar drag tanto del outliner interno como del agenda/timeline.
     const hasExternalId = !!e.dataTransfer.types.find(t => t === 'cal-node-id' || t === 'text/plain')
     if (!_draggedNodeId && !hasExternalId) return

@@ -186,16 +186,18 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       siblingOrder: maxOrder + 1,
     })
     try {
-      const { uploadUrl, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
+      const { uploadUrl, key, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
       await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
       const resourceType = file.type.startsWith('image/') ? 'image'
         : file.type === 'application/pdf' ? 'pdf' : 'file'
+      // Guardamos key + publicUrl. La publicUrl es presigned (1h) — se regenera al abrir.
       store.updateNode(newNode.id, {
         isResource: true,
-        extraData: JSON.stringify({ _resource: true, _resourceUrl: publicUrl, _resourceType: resourceType }),
+        extraData: JSON.stringify({ _resource: true, _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }),
       })
     } catch (e) {
       console.error('Upload failed', e)
+      store.deleteNode(newNode.id) // limpiar nodo vacío si el upload falla
     }
   }, [])
 
