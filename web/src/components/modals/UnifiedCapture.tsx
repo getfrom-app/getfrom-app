@@ -886,11 +886,14 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
           border: '1px solid var(--border)',
           borderRadius: 12,
           boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
-          padding: '14px 16px 12px',
+          padding: '14px 16px 0',
           width: 560,
           maxWidth: '90vw',
+          height: 440,
+          maxHeight: '80vh',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         }}>
 
         {/* Subview header */}
@@ -1001,7 +1004,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
         {atPicker && atPicker.items.length > 0 && (
           <div style={{
             marginTop: 4, borderTop: '1px solid var(--border)',
-            maxHeight: 180, overflowY: 'auto',
+            flex: 1, overflowY: 'auto',
           }}>
             {atPicker.items.map((item, idx) => (
               <div
@@ -1027,8 +1030,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
         {!atPicker && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            marginTop: 8, paddingLeft: 24,
-            minHeight: 22,
+            marginTop: 8, paddingLeft: 24, paddingBottom: 4,
+            minHeight: 22, flexShrink: 0,
             visibility: ghostLabel ? 'visible' : 'hidden',
           }}>
             {ghostLabel && (
@@ -1043,14 +1046,14 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
         {/* Separador */}
         {!atPicker && (
-          <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+          <div style={{ height: 1, background: 'var(--border)', margin: '4px 0', flexShrink: 0 }} />
         )}
 
-        {/* Lista de items */}
+        {/* Lista de items — ocupa todo el espacio restante del modal */}
         {!atPicker && items.length > 0 && (
           <div
             ref={listRef}
-            style={{ maxHeight: 280, overflowY: 'auto', marginTop: 2 }}
+            style={{ flex: 1, overflowY: 'auto', marginTop: 2, paddingBottom: 8 }}
           >
             {items.map((item, idx) => (
               <button
