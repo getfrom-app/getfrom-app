@@ -5,16 +5,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
-
-const PANELS_KEY = 'from_panels'
-function addPanel(name: string, query: string) {
-  try {
-    const panels = JSON.parse(localStorage.getItem(PANELS_KEY) || '[]')
-    panels.push({ id: Date.now().toString(), name, query, createdAt: new Date().toISOString() })
-    localStorage.setItem(PANELS_KEY, JSON.stringify(panels))
-    window.dispatchEvent(new Event('panels-updated'))
-  } catch { /* ignore */ }
-}
+import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
 
 interface Props {
   filterText: string
@@ -224,7 +215,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
             onChange={e => setPanelName(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter' && panelName.trim()) {
-                addPanel(panelName.trim(), filterText)
+                createFilterShortcut(panelName.trim(), filterText)
                 setSavingPanel(false)
                 setPanelName('')
               }
@@ -238,7 +229,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
             }}
           />
           <button
-            onClick={() => { if (panelName.trim()) { addPanel(panelName.trim(), filterText); setSavingPanel(false); setPanelName('') } }}
+            onClick={() => { if (panelName.trim()) { createFilterShortcut(panelName.trim(), filterText); setSavingPanel(false); setPanelName('') } }}
             style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
           >◈</button>
           <button
@@ -247,6 +238,68 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
           >×</button>
         </div>
       )}
+
+      {/* Lista de paneles guardados */}
+      <SavedPanelsList onApply={(q) => { onFilter(q); setSavingPanel(false) }} activeQuery={filterText} />
+    </div>
+  )
+}
+
+// ── Lista de paneles guardados ────────────────────────────────────────────────
+function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => void; activeQuery: string }) {
+  const s = useStore()
+
+  const panels = useMemo(() => {
+    const atajosNode = getAtajosNode()
+    if (!atajosNode) return []
+    return s.children(atajosNode.id)
+      .filter(n => !n.deletedAt)
+      .sort((a, b) => a.siblingOrder - b.siblingOrder)
+      .map(n => {
+        const sc = getShortcutData(n.id)
+        return sc?.query !== undefined ? { id: n.id, name: n.text, query: sc.query } : null
+      })
+      .filter(Boolean) as { id: string; name: string; query: string }[]
+  }, [s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (panels.length === 0) return null
+
+  function deletePanel(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    store.deleteNode(id)
+  }
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
+      <div style={{ padding: '8px 12px 4px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-tertiary)' }}>
+        Paneles
+      </div>
+      {panels.map(p => {
+        const isActive = activeQuery === p.query
+        return (
+          <div
+            key={p.id}
+            onClick={() => onApply(isActive ? '' : p.query)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '5px 12px', cursor: 'pointer', fontSize: 13,
+              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+              background: isActive ? 'var(--bg-hover)' : 'transparent',
+            }}
+            onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+            onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+          >
+            <span style={{ fontSize: 12, opacity: 0.6, flexShrink: 0 }}>◈</span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+            <button
+              onClick={e => deletePanel(p.id, e)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, padding: '0 2px', opacity: 0, flexShrink: 0 }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+            >×</button>
+          </div>
+        )
+      })}
     </div>
   )
 }
