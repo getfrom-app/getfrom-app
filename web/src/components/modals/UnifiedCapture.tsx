@@ -366,21 +366,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
-  // ── Interceptar TODOS los eventos de teclado mientras el modal esté abierto ─
-  // Se usa capture phase para que ningun listener del árbol o MainLayout los reciba.
-  useEffect(() => {
-    function captureAll(e: KeyboardEvent) {
-      // Dejar pasar solo los atajos del sistema (Cmd+C/V/Z etc.)
-      if (e.metaKey || e.ctrlKey) return
-      e.stopImmediatePropagation()
-    }
-    window.addEventListener('keydown', captureAll, true)
-    window.addEventListener('keyup', captureAll, true)
-    return () => {
-      window.removeEventListener('keydown', captureAll, true)
-      window.removeEventListener('keyup', captureAll, true)
-    }
-  }, [])
+  // (no global capture listener — MainLayout hace guard con showUnifiedCapture)
 
   // ── Reset activeIdx cuando cambia query o view ─────────────────────────────
   useEffect(() => { setActiveIdx(0) }, [text, view])

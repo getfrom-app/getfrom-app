@@ -401,6 +401,9 @@ export default function MainLayout() {
   // Escape → go home (if no modal/input focused)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // El modal UnifiedCapture gestiona su propio teclado — no interferir
+      if (showUnifiedCapture) return
+
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setShowUnifiedCapture(v => !v)
