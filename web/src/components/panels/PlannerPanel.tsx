@@ -493,7 +493,10 @@ export default function PlannerPanel({ onClose }: Props) {
                     <div
                       key={d}
                       className={`pp-year-day ${isTod ? 'pp-year-day--today' : ''}`}
-                      onClick={() => { setCenterDate(startOfDay(date)); setViewMode('day') }}
+                      onClick={() => {
+                        const dayNode = ensureDayPath(date)
+                        navigate(`/node/${dayNode.id}`)
+                      }}
                       title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
                     >
                       {d}
