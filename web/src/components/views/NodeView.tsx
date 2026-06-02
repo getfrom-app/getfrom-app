@@ -1572,6 +1572,8 @@ export default function NodeView() {
                 </div>
               )
             })()}
+            {/* Wrapper título + indicador bucle — flex:1 para que ocupen el espacio izquierdo */}
+            <div className="node-title-wrap">
             <h1
               ref={titleRef}
               className="node-title"
@@ -1712,10 +1714,11 @@ export default function NodeView() {
               </div>,
               document.body
             )}
-            {/* Bucle indicator en el título del nodo */}
+            {/* Indicador ⟲ junto al título (dentro del wrapper flex) */}
             {(node.types || []).includes('bucle') && (
               <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
             )}
+            </div>{/* /node-title-wrap */}
 
             <div className="node-title-actions">
               {/* View mode switcher — visible en todos los nodos incluidas notas diarias y mensuales */}
