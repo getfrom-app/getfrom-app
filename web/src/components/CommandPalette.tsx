@@ -356,36 +356,41 @@ export default function CommandPalette({ onClose }: Props) {
 
     const results: PaletteItem[] = []
 
-    // ── Paneles (📊 Paneles) — buscar en hijos del nodo sistema ─────────────
+    // ── Filtros guardados — buscar en hijos del nodo 📊 Paneles ─────────────
     const atajosRoot = getAtajosNode()
+    const allFilterNodes: { id: string; text: string; query: string }[] = []
     if (atajosRoot) {
-      const searchAtajosRecursive = (parentId: string) => {
+      const collectFilters = (parentId: string) => {
         for (const n of store.children(parentId).filter(c => !c.deletedAt)) {
-          const sc2 = scoreMatch(n.text || '', searchTerm)
-          if (sc2 > 0) {
-            const scData = getShortcutData(n.id)
-            results.push({
-              id: `atajo-${n.id}`,
-              label: n.text || t('common.noTitle'),
-              sublabel: scData?.query !== undefined ? `Filtro: ${scData.query}` : scData?.nodeId ? 'Ir al nodo' : 'Atajo',
-              type: 'wf-action' as const,
-              taskStatus: null,
-              score: sc2 + 10, // slight boost for shortcuts
-              action: () => {
-                if (scData?.query !== undefined) {
-                  window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: scData.query || '' } }))
-                } else if (scData?.nodeId) {
-                  navigate(`/node/${scData.nodeId}`)
-                }
-                onClose()
-              },
-            })
+          const scData = getShortcutData(n.id)
+          if (scData?.query !== undefined) {
+            allFilterNodes.push({ id: n.id, text: n.text || '', query: scData.query })
           }
-          // Buscar en hijos (carpetas de atajos)
-          searchAtajosRecursive(n.id)
+          collectFilters(n.id)
         }
       }
-      searchAtajosRecursive(atajosRoot.id)
+      collectFilters(atajosRoot.id)
+
+      // Añadir filtros que coincidan con la búsqueda
+      const qLower = searchTerm.toLowerCase()
+      const showAll = 'filtros'.startsWith(qLower) || qLower === 'filtro'
+      for (const f of allFilterNodes) {
+        const sc2 = showAll ? 20 : scoreMatch(f.text, searchTerm)
+        if (sc2 > 0) {
+          results.push({
+            id: `filtro-${f.id}`,
+            label: f.text || t('common.noTitle'),
+            sublabel: `◈ ${f.query}`,
+            type: 'wf-action' as const,
+            taskStatus: null,
+            score: sc2 + 10,
+            action: () => {
+              window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } }))
+              onClose()
+            },
+          })
+        }
+      }
     }
 
     for (const n of store.allActive()) {
@@ -457,10 +462,10 @@ export default function CommandPalette({ onClose }: Props) {
       })
     }
 
-    // "Guardar como panel" siempre al final cuando hay query
+    // "Guardar como filtro" siempre al final cuando hay query
     results.push({
       id: 'panel-save',
-      label: t('cmdpalette.saveAsPanel'),
+      label: 'Guardar como filtro',
       sublabel: `"${q}"`,
       type: 'panel-save',
       taskStatus: null,
@@ -498,7 +503,7 @@ export default function CommandPalette({ onClose }: Props) {
   function handleSavePanel() {
     if (!panelName.trim()) return
     addPanel(panelName.trim(), query)
-    showToast(`Panel "${panelName.trim()}" guardado`)
+    showToast(`Filtro "${panelName.trim()}" guardado`)
     onClose()
   }
 
@@ -506,14 +511,14 @@ export default function CommandPalette({ onClose }: Props) {
     <div className="cmdpalette-overlay" onClick={onClose}>
       <div className="cmdpalette-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
 
-        {/* Modo: crear panel */}
+        {/* Modo: guardar filtro */}
         {creatingPanel ? (
           <div className="cmdpalette-panel-create">
-            <span className="cmdpalette-panel-create-label">{t('cmdpalette.saveAsPanel')}</span>
+            <span className="cmdpalette-panel-create-label">Guardar como filtro</span>
             <input
               ref={panelNameRef}
               className="cmdpalette-panel-create-input"
-              placeholder={`${t('cmdpalette.panelNameLabel')} "${query}"`}
+              placeholder={`Nombre del filtro "${query}"`}
               value={panelName}
               onChange={e => setPanelName(e.target.value)}
               onKeyDown={e => {
@@ -522,7 +527,7 @@ export default function CommandPalette({ onClose }: Props) {
               }}
             />
             <div className="cmdpalette-panel-create-actions">
-              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>{t('cmdpalette.savePanelButton')}</button>
+              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>Guardar filtro</button>
               <button className="cmdpalette-panel-create-cancel" onClick={() => { setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }}>{t('common.cancel')}</button>
             </div>
           </div>

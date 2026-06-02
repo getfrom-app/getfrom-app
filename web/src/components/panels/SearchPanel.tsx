@@ -258,14 +258,14 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
         )
       })}
 
-      {/* Nodo vacío para guardar búsqueda activa como panel — igual que "Nuevo contexto…" */}
+      {/* Nodo vacío para guardar búsqueda activa como filtro — igual que "Nuevo contexto…" */}
       {activeQuery && !savingPanel && (
         <div
           onClick={startSaving}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', cursor: 'text', fontSize: 13, color: 'var(--text-tertiary)' }}
         >
           <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>◈</span>
-          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo panel…</span>
+          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo filtro…</span>
         </div>
       )}
       {activeQuery && savingPanel && (
@@ -280,7 +280,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
               if (e.key === 'Escape') { setSavingPanel(false); setPanelName('') }
             }}
             onBlur={() => { if (panelName.trim()) confirmSave(); else { setSavingPanel(false); setPanelName('') } }}
-            placeholder="Nombre del panel…"
+            placeholder="Nombre del filtro…"
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
           />
         </div>
