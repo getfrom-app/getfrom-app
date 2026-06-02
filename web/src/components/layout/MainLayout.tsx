@@ -233,7 +233,9 @@ export default function MainLayout() {
       setRightPanel('context-list')
       setContextNodeId(null)
     }
-    if (location.pathname.startsWith('/node/') || location.pathname === '/') {
+    // Limpiar filtro solo al ENTRAR a un nodo concreto — no al volver a home
+    // (al volver a home desde un nodo con filtro activo, el filtro debe mantenerse)
+    if (location.pathname.startsWith('/node/')) {
       setFilterText('')
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps

@@ -163,8 +163,10 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
       // @tag o #tag
       if (token.startsWith('@') || token.startsWith('#')) {
         const tagName = token.slice(1)
-        const hasType = (node.types || []).some(t => normalizeText(t).includes(tagName)) ||
-                        normalizeText(node.text || '').includes(token)
+        // Solo comprobar types[] — NO buscar en el texto del nodo.
+        // El filtro de contexto debe mostrar nodos con ese contexto asignado,
+        // no nodos que mencionen el nombre del contexto en su texto.
+        const hasType = (node.types || []).some(t => normalizeText(t).includes(tagName))
         const isStructuralChild = (() => {
           let contextNode: Node | null = null
           for (const [, n] of nodes) {

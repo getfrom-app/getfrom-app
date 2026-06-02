@@ -54,12 +54,11 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipBucles,   setChipBucles]   = useState<Set<string>>(new Set())
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
 
-  // Top 5 contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
+  // Todos los contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
   const contextRoot = s.allActive().find(n => n.text === '🧠 Contexto' && n.parentId === null)
   const contextChips = contextRoot
     ? s.children(contextRoot.id)
         .filter(n => !n.deletedAt && n.text?.trim())
-        .slice(0, 5)
         .map(n => {
           const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
           return { label: n.text, query: `@${slug}` }

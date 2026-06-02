@@ -2382,8 +2382,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Nodo es ancestro (da contexto) pero no coincide él mismo → estilo atenuado WF
   const isAncestorContext = anyDescendantMatches && !matchesFilter && !!filterMatchIds
 
-  // Filtro activo y este nodo es ancestro: forzar expansión para mostrar la cadena hasta el match
-  const showChildren = !isCollapsed || anyDescendantMatches
+  // Filtro activo y este nodo es ancestro: forzar expansión para mostrar la cadena hasta el match.
+  // Si el nodo ES el match directo (matchesFilter) y no tiene descendientes que también coincidan,
+  // mostrarlo colapsado — evita que bucles y contextos se expandan innecesariamente.
+  const showChildren = matchesFilter && !anyDescendantMatches
+    ? false  // nodo es match directo sin hijos-match → colapsar
+    : (!isCollapsed || anyDescendantMatches)
 
   if (activeFilter && !matchesFilter && !anyDescendantMatches) return null
 
