@@ -1315,6 +1315,8 @@ export default function NodeView() {
   }
   async function uploadFileToNode(file: File, targetNodeId: string) {
     setUploading(true)
+    // Mostrar toast de progreso
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `⬆ Subiendo ${file.name}…`, type: 'info' } }))
     try {
       const { uploadUrl, key, publicUrl } = await getPresignedUpload(file.name, file.type || 'application/octet-stream')
       await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
@@ -1324,7 +1326,13 @@ export default function NodeView() {
       try { ed = JSON.parse(store.getNode(targetNodeId)?.extraData || '{}') } catch {}
       ed._resource = true; ed._resourceUrl = publicUrl; ed._resourceType = resourceType; ed._resourceKey = key
       store.updateNode(targetNodeId, { extraData: JSON.stringify(ed), isResource: true })
-    } catch { setAttachmentsAvailable(false) }
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `✓ ${file.name} subido`, type: 'success' } }))
+    } catch (e) {
+      console.error('[uploadFileToNode] failed:', e)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `✗ Error subiendo ${file.name}`, type: 'error' } }))
+      // Limpiar nodo vacío si el upload falla
+      store.deleteNode(targetNodeId)
+    }
     finally { setUploading(false) }
   }
 
