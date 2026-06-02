@@ -228,11 +228,15 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:panelMode', handler)
   }, [])
 
-  // Cerrar panel contexto al navegar a otra ruta o al activar un panel/filtro
+  // Al navegar a cualquier ruta: cerrar panel contexto y limpiar filtro activo
   useEffect(() => {
     if (rightPanel === 'context') {
       setRightPanel(null)
       setContextNodeId(null)
+    }
+    // Si hay filtro de panel activo y el usuario navega a un nodo → limpiar
+    if (location.pathname.startsWith('/node/') || location.pathname === '/') {
+      setFilterText('')
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
