@@ -28,17 +28,7 @@ function ctxTextToSlug(text: string) {
     .replace(/[^a-z0-9\-\/]/g, '')
 }
 
-// Textos de nodos raíz del sistema — sus descendientes NUNCA deben aparecer en filtros de contexto
-const SYSTEM_ROOT_TEXTS = new Set([
-  AGENDA_ROOT_NAME,   // ← Agenda SÍ se puede traversar pero no aparece como nodo visible
-  '🧠 Contexto',
-  '📋 Plantillas',
-  '🗑 Papelera',
-  '🤖 Agentes',
-  '📁 Paneles',
-  '📁 Atajos',
-])
-// Textos de raíces NO-Agenda que nunca deben aparecer en resultados
+// Textos de raíces NO-Agenda que deben excluirse del filtro de contexto
 const NON_AGENDA_SYSTEM_TEXTS = new Set([
   '🧠 Contexto',
   '📋 Plantillas',
@@ -52,9 +42,8 @@ const NON_AGENDA_SYSTEM_TEXTS = new Set([
 // Busca SOLO dentro del árbol de Agenda — excluye 🧠 Contexto y demás ramas del sistema.
 // Matching por:
 //   1. node.types incluye el ID del nodo contexto (via @ picker)
-//   2. node.types incluye el slug o texto del contexto (via auto-sync de @mention en texto)
+//   2. node.types incluye el slug o texto del contexto (via auto-sync de @mention)
 //   3. El texto del nodo contiene @NombreContexto (case-insensitive)
-//   4. El texto del nodo menciona el nombre del contexto como palabra (case-insensitive)
 function buildContextFilter(contextNodeId: string): {
   matchIds: Set<string>
   ancestorIds: Set<string>
@@ -66,53 +55,44 @@ function buildContextFilter(contextNodeId: string): {
   const slugLower = slug.toLowerCase()
   const textLower = ctxNode.text.toLowerCase()
 
-  // Pre-computar IDs de raíces del sistema (no-Agenda) para excluirlas
-  const nonAgendaSystemIds = new Set<string>()
+  // ── Pre-computar IDs de todos los descendientes de raíces NO-Agenda ────────
+  // Traversal de arriba hacia abajo: O(n) total, no O(n×depth)
+  const excludedIds = new Set<string>()
+  const queue: string[] = []
   store.children(null).forEach(root => {
     if (!root.deletedAt && NON_AGENDA_SYSTEM_TEXTS.has(root.text)) {
-      nonAgendaSystemIds.add(root.id)
+      excludedIds.add(root.id)
+      queue.push(root.id)
     }
   })
-
-  // Helper: sube hasta la raíz y comprueba si es un sistema no-Agenda
-  function isUnderNonAgendaSystem(nodeId: string): boolean {
-    let cur = store.getNode(nodeId)
-    while (cur) {
-      if (cur.parentId === null) return nonAgendaSystemIds.has(cur.id)
-      cur = store.getNode(cur.parentId) ?? undefined
-    }
-    return false
+  while (queue.length > 0) {
+    const parentId = queue.pop()!
+    store.children(parentId).forEach(child => {
+      if (!child.deletedAt && !excludedIds.has(child.id)) {
+        excludedIds.add(child.id)
+        queue.push(child.id)
+      }
+    })
   }
 
-  // Regex para buscar @mention en texto: @From, @from, @café-olé etc.
-  const atMentionPattern = new RegExp(
-    `@${ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-    'i'
-  )
-  // Regex para coincidencia de palabra simple (sin @): "From", "café olé" etc.
-  const wordPattern = new RegExp(
-    `\\b${ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-    'i'
-  )
+  // Regex para @mention en texto: @From, @Café\ Olé, etc. — solo con @
+  const escapedName = ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const atMentionPattern = new RegExp(`@${escapedName}`, 'i')
 
   const matchIds = new Set<string>()
   const ancestorIds = new Set<string>()
 
   store.allActive().forEach(n => {
     if (n.deletedAt) return
-    // Excluir nodos de ramas del sistema que no son Agenda
-    if (isUnderNonAgendaSystem(n.id)) return
+    if (excludedIds.has(n.id)) return  // excluir ramas del sistema (O(1))
 
     const types = n.types || []
-    const nodeText = n.text || ''
-
     const matchByTypes =
       types.includes(contextNodeId) ||
       types.some(t => t.toLowerCase() === slugLower || t.toLowerCase() === textLower)
-    const matchByAtMention = atMentionPattern.test(nodeText)
-    const matchByWord = wordPattern.test(nodeText)
+    const matchByAtMention = atMentionPattern.test(n.text || '')
 
-    if (matchByTypes || matchByAtMention || matchByWord) {
+    if (matchByTypes || matchByAtMention) {
       matchIds.add(n.id)
     }
   })
