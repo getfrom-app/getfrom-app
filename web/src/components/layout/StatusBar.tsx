@@ -161,7 +161,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const syncLabel = isSyncing
     ? <><span className="footer-spinner" /> {t('statusbar.syncing')}</>
     : showSaved
-      ? `✓ ${t('statusbar.saved')}`
+      ? t('statusbar.saved')
       : null
 
   return (
