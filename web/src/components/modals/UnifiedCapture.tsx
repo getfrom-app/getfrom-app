@@ -399,6 +399,10 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
   }
 
   // ── Aceptar ghost text ─────────────────────────────────────────────────────
+  // Ref: tras aceptar sugerencia de contexto, el siguiente Enter debe crear
+  // (no ejecutar el resultado de búsqueda que queda seleccionado en activeIdx)
+  const justAcceptedCtxRef = useRef(false)
+
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
     const t = getCurrentText()
@@ -416,6 +420,7 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setCtxSuggestion(null)
     setDatePrediction(null)
     setTaskPrediction(false)
+    justAcceptedCtxRef.current = true  // próximo Enter → crear, no navegar
     analyze(newText)
   }
 
@@ -814,6 +819,13 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       // 1. @ picker (ya manejado arriba)
       // 2. ctx suggestion → aceptar ghost text
       if (ctxSuggestion) { acceptCtx(); return }
+      // 2b. Acabamos de aceptar un contexto → el siguiente Enter crea directamente
+      if (justAcceptedCtxRef.current) {
+        justAcceptedCtxRef.current = false
+        const t = getCurrentText().trim()
+        if (t) { saveAndClose(); return }
+        onClose(); return
+      }
       // 3. Item activo de la lista
       if (items[activeIdx]) { items[activeIdx].action(); return }
       // 4. Texto → crear
