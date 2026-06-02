@@ -9883,6 +9883,54 @@ textarea:focus-visible,
   box-sizing: border-box;
   transition: background 0.15s;
 }
+/* ── Selector de año + calendario inline ──────────────────────────────────── */
+.wf-home-year-section { margin-bottom: 32px; }
+
+.wf-home-year-tabs {
+  display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.wf-home-year-tab {
+  font-size: 12px; font-weight: 600; padding: 4px 12px;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: none; cursor: pointer; color: var(--text-secondary);
+  transition: all 0.12s;
+}
+.wf-home-year-tab:hover { border-color: var(--accent); color: var(--accent); }
+.wf-home-year-tab.active {
+  background: var(--accent); color: white; border-color: var(--accent);
+}
+
+.wf-year-cal {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 20px 16px;
+}
+.wf-year-cal-month { display: flex; flex-direction: column; gap: 2px; }
+.wf-year-cal-month-name {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 3px;
+}
+.wf-year-cal-dow-row {
+  display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 1px;
+}
+.wf-year-cal-dow {
+  font-size: 9px; color: var(--text-tertiary); text-align: center; padding: 1px 0;
+}
+.wf-year-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.wf-year-cal-day {
+  font-size: 10px; text-align: center; padding: 2px 1px; cursor: pointer;
+  border-radius: 3px; color: var(--text-secondary); line-height: 1.4;
+  transition: background 0.1s, color 0.1s;
+}
+.wf-year-cal-day:hover { background: var(--bg-hover); color: var(--accent); }
+.wf-year-cal-day--today {
+  background: var(--accent); color: white !important; border-radius: 50%;
+  font-weight: 700;
+}
+.wf-year-cal-day--today:hover { background: var(--accent); opacity: 0.85; }
+.wf-year-cal-day--has-content { color: var(--text-primary); font-weight: 600; }
+.wf-year-cal-day--empty { pointer-events: none; }
+
 .wf-home-view--drag-over {
   background: rgba(139, 92, 246, 0.04);
   outline: 2px dashed rgba(139, 92, 246, 0.3);
