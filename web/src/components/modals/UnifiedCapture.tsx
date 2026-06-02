@@ -434,9 +434,8 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     setText(newText)
     setCtxSuggestion(null)
     setAtPicker(null)
-    setDatePrediction(null)
-    setTaskPrediction(false)
     setJustAcceptedCtx(true)
+    // Mantener taskPrediction y datePrediction — son independientes del contexto asignado
     const { forceType: ft } = detectForceType(newText)
     setForceType(ft)
   }
