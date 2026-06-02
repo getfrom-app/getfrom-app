@@ -48,9 +48,6 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipTimes,    setChipTimes]    = useState<Set<string>>(new Set())
   const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
-  const [savingPanel, setSavingPanel]   = useState(false)
-  const [panelName,   setPanelName]     = useState('')
-  const panelInputRef = useRef<HTMLInputElement>(null)
 
   // Top 5 contextos del nodo 🧠 Contexto
   const contextChips = useMemo(() => {
@@ -187,60 +184,8 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
         )}
       </div>
 
-      {/* Guardar como panel — visible cuando hay filtro activo */}
-      {filterText && !savingPanel && (
-        <div style={{ padding: '8px 12px 4px' }}>
-          <button
-            onClick={() => {
-              setSavingPanel(true)
-              setPanelName(filterText)
-              setTimeout(() => { panelInputRef.current?.focus(); panelInputRef.current?.select() }, 30)
-            }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'none', border: '1px solid var(--border)', borderRadius: 6,
-              cursor: 'pointer', padding: '5px 10px', fontSize: 12,
-              color: 'var(--text-secondary)', width: '100%',
-            }}
-          >
-            <span style={{ fontSize: 14 }}>◈</span> Guardar como panel
-          </button>
-        </div>
-      )}
-      {filterText && savingPanel && (
-        <div style={{ padding: '8px 12px', display: 'flex', gap: 6, alignItems: 'center' }}>
-          <input
-            ref={panelInputRef}
-            value={panelName}
-            onChange={e => setPanelName(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && panelName.trim()) {
-                createFilterShortcut(panelName.trim(), filterText)
-                setSavingPanel(false)
-                setPanelName('')
-              }
-              if (e.key === 'Escape') { setSavingPanel(false); setPanelName('') }
-            }}
-            placeholder="Nombre del panel…"
-            style={{
-              flex: 1, border: '1px solid var(--border)', borderRadius: 6,
-              padding: '4px 8px', fontSize: 12, background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)', outline: 'none',
-            }}
-          />
-          <button
-            onClick={() => { if (panelName.trim()) { createFilterShortcut(panelName.trim(), filterText); setSavingPanel(false); setPanelName('') } }}
-            style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
-          >◈</button>
-          <button
-            onClick={() => { setSavingPanel(false); setPanelName('') }}
-            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 16, padding: '0 2px' }}
-          >×</button>
-        </div>
-      )}
-
-      {/* Lista de paneles guardados */}
-      <SavedPanelsList onApply={(q) => { onFilter(q); setSavingPanel(false) }} activeQuery={filterText} />
+      {/* Lista de paneles guardados + nodo vacío para crear nuevo */}
+      <SavedPanelsList onApply={(q) => onFilter(q)} activeQuery={filterText} />
     </div>
   )
 }
@@ -248,6 +193,9 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
 // ── Lista de paneles guardados ────────────────────────────────────────────────
 function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => void; activeQuery: string }) {
   const s = useStore()
+  const [savingPanel, setSavingPanel] = useState(false)
+  const [panelName, setPanelName] = useState('')
+  const panelInputRef = useRef<HTMLInputElement>(null)
 
   const panels = useMemo(() => {
     const atajosNode = getAtajosNode()
@@ -262,18 +210,27 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
       .filter(Boolean) as { id: string; name: string; query: string }[]
   }, [s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (panels.length === 0) return null
-
   function deletePanel(id: string, e: React.MouseEvent) {
     e.stopPropagation()
     store.deleteNode(id)
   }
 
+  function startSaving() {
+    setSavingPanel(true)
+    setPanelName(activeQuery)
+    setTimeout(() => { panelInputRef.current?.focus(); panelInputRef.current?.select() }, 30)
+  }
+
+  function confirmSave() {
+    if (panelName.trim()) createFilterShortcut(panelName.trim(), activeQuery)
+    setSavingPanel(false)
+    setPanelName('')
+  }
+
+  if (panels.length === 0 && !activeQuery) return null
+
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
-      <div style={{ padding: '8px 12px 4px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-tertiary)' }}>
-        Paneles
-      </div>
       {panels.map(p => {
         const isActive = activeQuery === p.query
         return (
@@ -300,6 +257,34 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
           </div>
         )
       })}
+
+      {/* Nodo vacío para guardar búsqueda activa como panel — igual que "Nuevo contexto…" */}
+      {activeQuery && !savingPanel && (
+        <div
+          onClick={startSaving}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', cursor: 'text', fontSize: 13, color: 'var(--text-tertiary)' }}
+        >
+          <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>◈</span>
+          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo panel…</span>
+        </div>
+      )}
+      {activeQuery && savingPanel && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px' }}>
+          <span style={{ fontSize: 12, opacity: 0.6, flexShrink: 0 }}>◈</span>
+          <input
+            ref={panelInputRef}
+            value={panelName}
+            onChange={e => setPanelName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); confirmSave() }
+              if (e.key === 'Escape') { setSavingPanel(false); setPanelName('') }
+            }}
+            onBlur={() => { if (panelName.trim()) confirmSave(); else { setSavingPanel(false); setPanelName('') } }}
+            placeholder="Nombre del panel…"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
+          />
+        </div>
+      )}
     </div>
   )
 }
