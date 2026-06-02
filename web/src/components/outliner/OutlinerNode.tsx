@@ -2448,9 +2448,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onClick={e => {
               e.stopPropagation()
               toggleNodeSelection(node.id, store)
-              // Abrir (o mantener) el menú flotante en la posición del handle
+              // Abrir el menú en la mitad derecha de la ventana para no tapar el texto del nodo
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-              openSelectionMenu({ x: rect.right + 8, y: rect.top })
+              const menuX = Math.max(window.innerWidth * 0.55, rect.right + 8)
+              openSelectionMenu({ x: menuX, y: rect.top })
             }}
             aria-label="Seleccionar nodo"
           >⋮⋮</span>
