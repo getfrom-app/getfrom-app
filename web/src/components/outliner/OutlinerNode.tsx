@@ -1145,6 +1145,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [node.id, node.isDiaryEntry])
 
+  function createSiblingBelow() {
+    const sibs = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const i = sibs.findIndex(n => n.id === node.id)
+    const next = sibs[i + 1]
+    const newOrder = next ? (node.siblingOrder + next.siblingOrder) / 2 : node.siblingOrder + 1
+    const newNode = store.createNode({ text: '', parentId: node.parentId, siblingOrder: newOrder })
+    onSelect(newNode.id)
+  }
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const text = contentRef.current?.textContent || ''
 
@@ -1185,6 +1194,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         setTaskPrediction(false)
         // Luego mover a la fecha (acceptDatePrediction ya maneja el resto)
         acceptDatePrediction()
+        // Crear hermano (la tarea quedó creada arriba)
+        createSiblingBelow()
         return
       }
     }
@@ -1481,8 +1492,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         return
       }
 
-      // Smart date parse FIRST
-      if (applySmartDate(text)) return
+      // Smart date parse FIRST — create sibling after assigning date
+      if (applySmartDate(text)) { createSiblingBelow(); return }
 
       // Detect inline shortcuts at end of text: -t (tarea), -b (bucle), -e (evento)
       const trimmed = text.trimEnd()
