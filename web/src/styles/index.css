@@ -5540,6 +5540,22 @@ body.outliner-drag-active {
   background: var(--border);
   margin: 3px 8px;
 }
+.cmdpalette-subview-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px 4px;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: left;
+}
+.cmdpalette-subview-back:hover { color: var(--text-secondary); }
 .cmdpalette-panel-icon {
   font-size: 13px;
   color: var(--text-tertiary);

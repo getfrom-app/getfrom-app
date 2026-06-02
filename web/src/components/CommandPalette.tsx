@@ -152,6 +152,8 @@ function parseQuery(raw: string): ParsedQuery {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+type PaletteView = 'default' | 'filtros' | 'contextos'
+
 export default function CommandPalette({ onClose, onSelectContext }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -163,6 +165,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
     return m ? m[1] : null
   })()
   const [query, setQuery] = useState('')
+  const [view, setView] = useState<PaletteView>('default')
   const [activeIdx, setActiveIdx] = useState(0)
   const [creatingPanel, setCreatingPanel] = useState(false)
   const [panelName, setPanelName] = useState('')
@@ -192,17 +195,78 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
     onClose()
   }, [parsed, query, showToast, onClose])
 
+  // ── Helpers para sub-vistas ─────────────────────────────────────────────────
+  const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto') ?? null
+  const atajosRoot = getAtajosNode()
+
+  const allFilterNodes = useCallback((): { id: string; text: string; query: string }[] => {
+    const out: { id: string; text: string; query: string }[] = []
+    if (!atajosRoot) return out
+    const collect = (parentId: string) => {
+      for (const n of store.children(parentId).filter(c => !c.deletedAt)) {
+        const sc = getShortcutData(n.id)
+        if (sc?.query !== undefined) out.push({ id: n.id, text: n.text || '', query: sc.query })
+        collect(n.id)
+      }
+    }
+    collect(atajosRoot.id)
+    return out
+  }, [atajosRoot])
+
   const buildItems = useCallback((): PaletteItem[] => {
     const q = query.trim()
+    const qNorm = normalizeText(q)
 
-    // ── Sin query: mostrar comandos rápidos fijos ──────────────────────────
+    // ══ Vista FILTROS ═══════════════════════════════════════════════════════
+    if (view === 'filtros') {
+      const filters = allFilterNodes()
+      const filtered = q ? filters.filter(f => normalizeText(f.text).includes(qNorm)) : filters
+      if (filtered.length === 0) return [{
+        id: 'no-filtros', label: q ? `Sin filtros para "${q}"` : 'No hay filtros guardados',
+        type: 'wf-action', taskStatus: null, score: 0, action: () => {},
+      }]
+      return filtered.map(f => ({
+        id: `filtro-${f.id}`,
+        label: f.text || t('common.noTitle'),
+        sublabel: f.query,
+        type: 'wf-action' as const,
+        taskStatus: null,
+        score: q ? scoreMatch(f.text, q) : 100,
+        action: () => {
+          window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } }))
+          onClose()
+        },
+      }))
+    }
+
+    // ══ Vista CONTEXTOS ═════════════════════════════════════════════════════
+    if (view === 'contextos') {
+      if (!contextoRoot) return []
+      const ctxAll = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text)
+      const filtered = q ? ctxAll.filter(n => normalizeText(n.text).includes(qNorm)) : ctxAll
+      if (filtered.length === 0) return [{
+        id: 'no-ctx', label: q ? `Sin contextos para "${q}"` : 'No hay contextos',
+        type: 'wf-action', taskStatus: null, score: 0, action: () => {},
+      }]
+      return filtered.map(n => ({
+        id: `ctx-${n.id}`,
+        label: n.text || '',
+        sublabel: 'Abrir contexto',
+        type: 'wf-action' as const,
+        taskStatus: null as null,
+        score: q ? scoreMatch(n.text || '', q) : 100,
+        action: () => { onSelectContext?.(n.id); onClose() },
+      }))
+    }
+
+    // ══ Vista DEFAULT sin query — categorías limpias ════════════════════════
     if (!q) {
       const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
       const tomorrowLabel = (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) })()
-      return [
+      const items: PaletteItem[] = [
         {
           id: 'quick-today',
-          label: t('common.today'),
+          label: 'Hoy',
           sublabel: todayLabel,
           type: 'wf-action',
           taskStatus: null,
@@ -211,284 +275,146 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         },
         {
           id: 'quick-tomorrow',
-          label: t('common.tomorrow'),
+          label: 'Mañana',
           sublabel: tomorrowLabel,
           type: 'wf-action',
           taskStatus: null,
           score: 190,
           action: () => {
             const d = new Date(); d.setDate(d.getDate()+1)
-            // importar ensureDayPath dinámicamente
             import('../utils/agendaHelper').then(({ ensureDayPath }) => {
               const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose()
             })
           },
         },
-        // Contextos de 🧠 Contexto
-        ...(() => {
-          const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
-          if (!contextoRoot) return []
-          return store.children(contextoRoot.id).filter(n => !n.deletedAt).map(n => ({
-            id: `ctx-${n.id}`,
-            label: n.text || '',
-            sublabel: 'Filtrar por este contexto',
-            type: 'wf-action' as const,
-            taskStatus: null as null,
-            score: 150,
-            action: () => {
-              onSelectContext?.(n.id)
-              onClose()
-            },
-          }))
-        })(),
-      ]
-    }
-
-    const qNorm = normalizeText(q)
-
-    // ── Comandos rápidos temporales (hoy, mañana...) ─────────────────────
-    if (['hoy', 'today', 'ho'].some(t => t.startsWith(qNorm) || qNorm.startsWith(t.slice(0,2)))) {
-      const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-      return [{
-        id: 'quick-today',
-        label: t('cmdpalette.todayNote'),
-        sublabel: todayLabel,
-        type: 'wf-action',
-        taskStatus: null,
-        score: 300,
-        action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() },
-      }]
-    }
-    if (['mañana', 'manana', 'tomorrow', 'ma'].some(t => qNorm.length >= 2 && (t.startsWith(qNorm) || qNorm.startsWith(t.slice(0,3))))) {
-      const d = new Date(); d.setDate(d.getDate()+1)
-      const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-      return [{
-        id: 'quick-tomorrow',
-        label: t('cmdpalette.tomorrowNote'),
-        sublabel: label,
-        type: 'wf-action',
-        taskStatus: null,
-        score: 300,
-        action: () => {
-          import('../utils/agendaHelper').then(({ ensureDayPath }) => {
-            const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose()
-          })
+        {
+          id: 'cat-filtros',
+          label: 'Filtros',
+          sublabel: (() => { const c = allFilterNodes().length; return c > 0 ? `${c} filtros guardados` : 'Sin filtros guardados' })(),
+          type: 'wf-action',
+          taskStatus: null,
+          score: 180,
+          action: () => { setView('filtros'); setActiveIdx(0) },
         },
-      }]
+        {
+          id: 'cat-contextos',
+          label: 'Contextos',
+          sublabel: (() => {
+            if (!contextoRoot) return 'Sin contextos'
+            const c = store.children(contextoRoot.id).filter(n => !n.deletedAt).length
+            return c > 0 ? `${c} contextos` : 'Sin contextos'
+          })(),
+          type: 'wf-action',
+          taskStatus: null,
+          score: 170,
+          action: () => { setView('contextos'); setActiveIdx(0) },
+        },
+      ]
+      return items
     }
 
-    // ── Contextos (🧠 Contexto): "contextos" muestra todos; cualquier nombre filtra ──
-    const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+    // ══ Con query: búsqueda normal ══════════════════════════════════════════
+    const qNormStr = qNorm
+
+    // Hoy / Mañana shortcuts
+    if (['hoy', 'today', 'ho'].some(kw => kw.startsWith(qNormStr) || qNormStr.startsWith(kw.slice(0, 2)))) {
+      const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      return [{ id: 'quick-today', label: t('cmdpalette.todayNote'), sublabel: todayLabel, type: 'wf-action', taskStatus: null, score: 300, action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() } }]
+    }
+    if (['mañana', 'manana', 'tomorrow'].some(kw => qNormStr.length >= 2 && (kw.startsWith(qNormStr) || qNormStr.startsWith(kw.slice(0, 3))))) {
+      const d = new Date(); d.setDate(d.getDate() + 1)
+      const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+      return [{ id: 'quick-tomorrow', label: t('cmdpalette.tomorrowNote'), sublabel: label, type: 'wf-action', taskStatus: null, score: 300, action: () => { import('../utils/agendaHelper').then(({ ensureDayPath }) => { const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose() }) } }]
+    }
+
+    // "filtros" → switch a vista filtros
+    if (['filtros', 'filtro', 'filter'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
+      return [{ id: 'cat-filtros', label: 'Filtros guardados', sublabel: 'Ver todos los filtros', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('filtros'); setQuery(''); setActiveIdx(0) } }]
+    }
+
+    // "contextos" → switch a vista contextos
+    if (['contextos', 'contexto', 'context'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
+      return [{ id: 'cat-contextos', label: 'Contextos', sublabel: 'Ver todos los contextos', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('contextos'); setQuery(''); setActiveIdx(0) } }]
+    }
+
+    // Búsqueda por nombre de contexto
     if (contextoRoot) {
-      const showAllCtx = ['contextos', 'contexto', 'context'].some(k => k.startsWith(qNorm) || qNorm === k)
-      const ctxNodes = store.children(contextoRoot.id).filter(n => {
-        if (n.deletedAt || !n.text) return false
-        if (showAllCtx) return true
-        return normalizeText(n.text).includes(qNorm)
-      })
+      const ctxNodes = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text && normalizeText(n.text).includes(qNormStr))
       if (ctxNodes.length > 0) {
         return ctxNodes.map(n => ({
-          id: `ctx-${n.id}`,
-          label: n.text || '',
-          sublabel: 'Abrir contexto',
-          type: 'wf-action' as const,
-          taskStatus: null as null,
-          score: showAllCtx ? 150 : scoreMatch(n.text || '', q),
-          action: () => {
-            onSelectContext?.(n.id)
-            onClose()
-          },
+          id: `ctx-${n.id}`, label: n.text || '', sublabel: 'Abrir contexto',
+          type: 'wf-action' as const, taskStatus: null as null,
+          score: scoreMatch(n.text || '', q),
+          action: () => { onSelectContext?.(n.id); onClose() },
         }))
       }
     }
 
-    // ── Modo tag: query empieza con # ──────────────────────────────────────
+    // Modo tag: query empieza con #
     if (q.startsWith('#')) {
       const tagQuery = q.slice(1).toLowerCase()
       const allTags = store.allUsedTags()
-
       if (!tagQuery) {
-        // Solo '#' → mostrar todos los tags disponibles
-        return allTags.map(tag => ({
-          id: `tag-${tag}`,
-          label: `#${tag}`,
-          type: 'tag' as const,
-          taskStatus: null,
-          score: 100,
-          action: () => {
-            const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag))
-            if (nodes.length === 1) { navigate(`/node/${nodes[0].id}`); onClose(); return }
-            navigate(`/tag/${tag}`); onClose()
-          },
-        }))
+        return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { navigate(`/node/${nodes[0].id}`); onClose(); return }; navigate(`/tag/${tag}`); onClose() } }))
       }
-
-      // '#foo' → tags que coincidan + notas con ese tag
       const matchingTags = allTags.filter(t => t.toLowerCase().includes(tagQuery))
-      const tagItems: PaletteItem[] = matchingTags.map(tag => ({
-        id: `tag-${tag}`,
-        label: `#${tag}`,
-        sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types||[]).includes(tag)).length} notas`,
-        type: 'tag' as const,
-        taskStatus: null,
-        score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60,
-        action: () => { navigate(`/tag/${tag}`); onClose() },
-      }))
-
-      // Notas con ese tag exacto (si hay un match exacto)
+      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { navigate(`/tag/${tag}`); onClose() } }))
       const exactTag = matchingTags.find(t => t.toLowerCase() === tagQuery)
-      const noteItems: PaletteItem[] = exactTag
-        ? store.allActive()
-            .filter(n => !n.deletedAt && (n.types || []).includes(exactTag))
-            .map(n => ({
-              id: `tagged-${n.id}`,
-              label: n.text || 'Sin título',
-              sublabel: `#${exactTag}`,
-              type: 'note' as const,
-              taskStatus: n.status as 'pending' | 'done' | null ?? null,
-              score: 50,
-              action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
-            }))
-        : []
-
+      const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || 'Sin título', sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: n.status as 'pending' | 'done' | null ?? null, score: 50, action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() } })) : []
       return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
     }
 
-    // ── Búsqueda estricta por texto ────────────────────────────────────────
+    // Búsqueda estricta por texto
     const searchTerm = parsed.cleanText || q
-
     const results: PaletteItem[] = []
 
-    // ── Filtros guardados — buscar en hijos del nodo 📊 Paneles ─────────────
-    const atajosRoot = getAtajosNode()
-    const allFilterNodes: { id: string; text: string; query: string }[] = []
-    if (atajosRoot) {
-      const collectFilters = (parentId: string) => {
-        for (const n of store.children(parentId).filter(c => !c.deletedAt)) {
-          const scData = getShortcutData(n.id)
-          if (scData?.query !== undefined) {
-            allFilterNodes.push({ id: n.id, text: n.text || '', query: scData.query })
-          }
-          collectFilters(n.id)
-        }
-      }
-      collectFilters(atajosRoot.id)
-
-      // Añadir filtros que coincidan con la búsqueda
-      const qLower = searchTerm.toLowerCase()
-      const showAll = 'filtros'.startsWith(qLower) || qLower === 'filtro'
-      for (const f of allFilterNodes) {
-        const sc2 = showAll ? 20 : scoreMatch(f.text, searchTerm)
-        if (sc2 > 0) {
-          results.push({
-            id: `filtro-${f.id}`,
-            label: f.text || t('common.noTitle'),
-            sublabel: `◈ ${f.query}`,
-            type: 'wf-action' as const,
-            taskStatus: null,
-            score: sc2 + 10,
-            action: () => {
-              window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } }))
-              onClose()
-            },
-          })
-        }
-      }
+    // Filtros guardados que coincidan
+    for (const f of allFilterNodes()) {
+      const sc2 = scoreMatch(f.text, searchTerm)
+      if (sc2 > 0) results.push({ id: `filtro-${f.id}`, label: f.text || t('common.noTitle'), sublabel: `◈ ${f.query}`, type: 'wf-action' as const, taskStatus: null, score: sc2 + 10, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } })); onClose() } })
     }
 
     for (const n of store.allActive()) {
       if (n.isDiaryEntry || n.deletedAt) continue
-      // Skip atajo nodes (already handled above) and the atajosRoot itself
       if (atajosRoot && (n.id === atajosRoot.id || n.parentId === atajosRoot.id)) continue
       const sc = scoreMatch(n.text || '', searchTerm)
       if (sc === 0) continue
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
-      results.push({
-        id: `note-${n.id}`,
-        label: n.text || t('common.noTitle'),
-        sublabel: parentText,
-        type: 'note' as const,
-        taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
-        score: sc,
-        action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
-      })
+      results.push({ id: `note-${n.id}`, label: n.text || t('common.noTitle'), sublabel: parentText, type: 'note' as const, taskStatus: (n.status as 'pending' | 'done' | null) ?? null, score: sc, action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() } })
     }
     results.sort((a, b) => b.score - a.score)
     results.splice(20)
 
-    // ── Comandos WF: colapsar/expandir todo ──────────────────────────────
-    const collapseTerms = ['colapsar', 'collapse', 'plegar', 'contraer']
-    const expandTerms = ['expandir', 'expand', 'desplegar', 'abrir todo']
+    // Colapsar / Expandir
     const qLow = q.toLowerCase()
-    if (collapseTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
-      results.unshift({
-        id: 'wf-collapse-all',
-        label: t('cmdpalette.collapseAll'),
-        sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz',
-        type: 'wf-action',
-        taskStatus: null,
-        score: 200,
-        action: () => {
-          store.collapseAll(currentNodeId)
-          onClose()
-          showToast('Todo colapsado', 'success')
-        },
-      })
+    if (['colapsar', 'collapse', 'plegar', 'contraer'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
+      results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast('Todo colapsado', 'success') } })
     }
-    if (expandTerms.some(t => t.includes(qLow) || qLow.includes(t.slice(0, 3)))) {
-      results.unshift({
-        id: 'wf-expand-all',
-        label: t('cmdpalette.expandAll'),
-        sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz',
-        type: 'wf-action',
-        taskStatus: null,
-        score: 200,
-        action: () => {
-          store.expandAll(currentNodeId)
-          onClose()
-          showToast('Todo expandido', 'success')
-        },
-      })
+    if (['expandir', 'expand', 'desplegar'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
+      results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast('Todo expandido', 'success') } })
     }
 
-    // "Crear nota" solo si no hay resultados
     if (results.length === 0) {
       const displayText = parsed.cleanText || q
       const label = parsed.isEvent ? 'Evento' : parsed.isTask ? 'Tarea' : 'Nota'
-      results.push({
-        id: 'create-item',
-        label: `Crear ${label.toLowerCase()}: ${displayText}`,
-        type: 'create',
-        taskStatus: null,
-        score: -1,
-        action: doCreate,
-      })
+      results.push({ id: 'create-item', label: `Crear ${label.toLowerCase()}: ${displayText}`, type: 'create', taskStatus: null, score: -1, action: doCreate })
     }
 
-    // "Guardar como filtro" siempre al final cuando hay query
-    results.push({
-      id: 'panel-save',
-      label: 'Guardar como filtro',
-      sublabel: `"${q}"`,
-      type: 'panel-save',
-      taskStatus: null,
-      score: -99,
-      action: () => {
-        setPanelName(q)
-        setCreatingPanel(true)
-        setTimeout(() => panelNameRef.current?.focus(), 0)
-      },
-    })
+    results.push({ id: 'panel-save', label: 'Guardar como filtro', sublabel: `"${q}"`, type: 'panel-save', taskStatus: null, score: -99, action: () => { setPanelName(q); setCreatingPanel(true); setTimeout(() => panelNameRef.current?.focus(), 0) } })
 
     return results
-  }, [query, parsed, doCreate, navigate, onClose, t])
+  }, [query, view, parsed, doCreate, navigate, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast])
 
   const items = buildItems()
 
   useEffect(() => { setActiveIdx(0) }, [query])
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); onClose(); return }
+    if (e.key === 'Escape') {
+      e.stopPropagation(); e.nativeEvent.stopImmediatePropagation()
+      if (view !== 'default') { setView('default'); setQuery(''); setActiveIdx(0); return }
+      onClose(); return
+    }
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, items.length - 1)) }
     if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)) }
     if (e.key === 'Enter') { e.preventDefault(); if (items[activeIdx]) items[activeIdx].action() }
@@ -536,16 +462,32 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
           </div>
         ) : (
         <>
+        {/* Subvista activa */}
+        {view !== 'default' && (
+          <button
+            className="cmdpalette-subview-back"
+            onClick={() => { setView('default'); setQuery(''); setActiveIdx(0) }}
+          >
+            ← {view === 'filtros' ? 'Filtros' : 'Contextos'}
+          </button>
+        )}
+
         <div className="cmdpalette-search-row">
-          <svg className="cmdpalette-search-icon" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="8" cy="8" r="6"/><path d="M14 14l4 4"/>
-          </svg>
+          {view === 'default' ? (
+            <svg className="cmdpalette-search-icon" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="8" cy="8" r="6"/><path d="M14 14l4 4"/>
+            </svg>
+          ) : (
+            <span className="cmdpalette-search-icon" style={{ fontSize: 14, display: 'flex', alignItems: 'center' }}>
+              {view === 'filtros' ? '◈' : '🧠'}
+            </span>
+          )}
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder={t('cmdpalette.searchPlaceholder')}
+            placeholder={view === 'filtros' ? 'Buscar filtro…' : view === 'contextos' ? 'Buscar contexto…' : t('cmdpalette.searchPlaceholder')}
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => { setQuery(e.target.value); setActiveIdx(0) }}
             onKeyDown={handleKeyDown}
           />
           {query && <button className="cmdpalette-clear" onClick={() => setQuery('')}>×</button>}
@@ -588,12 +530,22 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
                     ) : item.type === 'create' ? (
                       <span className="cmdpalette-create-icon">+</span>
                     ) : item.type === 'wf-action' ? (
-                      <span className="cmdpalette-create-icon">{item.id.startsWith('ctx-') ? '🧠' : item.id.startsWith('atajo-') ? '📊' : '⌘'}</span>
+                      <span className="cmdpalette-create-icon">
+                        {item.id.startsWith('ctx-') ? '🧠'
+                          : item.id.startsWith('filtro-') ? '◈'
+                          : item.id === 'cat-filtros' ? '◈'
+                          : item.id === 'cat-contextos' ? '🧠'
+                          : item.id.startsWith('quick-') ? '📅'
+                          : '⌘'}
+                      </span>
                     ) : null}
                     <div className="cmdpalette-item-info">
                       <span className={`cmdpalette-item-label ${item.taskStatus === 'done' ? 'done' : ''} ${isPanelSave ? 'panel-save' : ''}`}>{item.label}</span>
                       {item.sublabel && <span className="cmdpalette-item-sublabel">{item.sublabel}</span>}
                     </div>
+                    {(item.id === 'cat-filtros' || item.id === 'cat-contextos') && (
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 12, marginLeft: 'auto', paddingRight: 4 }}>→</span>
+                    )}
                   </button>
                 </div>
               )

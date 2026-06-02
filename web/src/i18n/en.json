@@ -470,7 +470,7 @@
   "backups.snapshotsHint": "The server creates a snapshot of all your nodes every 2 hours if there have been changes. Retention: last 12.",
   "backups.restoreLabel": "Restore",
   "backups.restoreHint": "Coming soon: snapshot list with a restore button (already available on Mac).",
-  "cmdpalette.searchPlaceholder": "Search... (# for tags, -t task, -e event, -a loop)",
+  "cmdpalette.searchPlaceholder": "Search or create anything…",
   "cmdpalette.todayLabel": "Today",
   "cmdpalette.tomorrowLabel": "Tomorrow",
   "cmdpalette.todayNote": "Today — daily note",
