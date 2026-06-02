@@ -149,22 +149,11 @@ export default function WFTopBar({
 
       <div className="wf-topbar-spacer" />
 
-      {/* Día (Hoy) */}
-      <button
-        className="wf-topbar-btn"
-        title={t('topbar.goToToday')}
-        onClick={() => { const dayNode = ensureDayPath(new Date()); navigate(`/node/${dayNode.id}`) }}
-      >
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-        </svg>
-      </button>
-
-      {/* Grabadora (R) */}
+      {/* Grabadora (⌘R) */}
       <button
         className={`wf-topbar-btn ${rightPanel === 'recorder' ? 'active' : ''}`}
         onClick={onToggleRecorder}
-        title="Grabadora (R)"
+        title="Grabadora (⌘R)"
       >
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
@@ -220,6 +209,17 @@ export default function WFTopBar({
           <rect x="7" y="10" width="12" height="4" rx="1" fill="currentColor" stroke="none"/>
           <line x1="3" y1="18" x2="21" y2="18"/>
           <rect x="3" y="16" width="6" height="4" rx="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+
+      {/* Día (Hoy) */}
+      <button
+        className="wf-topbar-btn"
+        title={t('topbar.goToToday')}
+        onClick={() => { const dayNode = ensureDayPath(new Date()); navigate(`/node/${dayNode.id}`) }}
+      >
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
         </svg>
       </button>
 
