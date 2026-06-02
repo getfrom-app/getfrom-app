@@ -2,7 +2,7 @@
  * SearchPanel — Panel de búsqueda lateral derecho
  * Reemplaza el buscador expandible del topbar con un panel tipo MagicChat
  */
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
@@ -49,19 +49,17 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
 
-  // Top 5 contextos del nodo 🧠 Contexto
-  const contextChips = useMemo(() => {
-    const root = s.allActive().find(n => n.text === '🧠 Contexto' && n.parentId === null)
-    if (!root) return []
-    return s.children(root.id)
-      .filter(n => !n.deletedAt && n.text?.trim())
-      .slice(0, 5)
-      .map(n => {
-        const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-        return { label: n.text, query: `@${slug}` }
-      })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.nodes.size])
+  // Top 5 contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
+  const contextRoot = s.allActive().find(n => n.text === '🧠 Contexto' && n.parentId === null)
+  const contextChips = contextRoot
+    ? s.children(contextRoot.id)
+        .filter(n => !n.deletedAt && n.text?.trim())
+        .slice(0, 5)
+        .map(n => {
+          const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
+          return { label: n.text, query: `@${slug}` }
+        })
+    : []
 
   // Focus on mount
   useEffect(() => {
@@ -201,18 +199,19 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
   const panelInputRef = useRef<HTMLInputElement>(null)
   const renameInputRef = useRef<HTMLInputElement>(null)
 
-  const panels = useMemo(() => {
-    const atajosNode = getAtajosNode()
-    if (!atajosNode) return []
-    return s.children(atajosNode.id)
-      .filter(n => !n.deletedAt)
-      .sort((a, b) => a.siblingOrder - b.siblingOrder)
-      .map(n => {
-        const sc = getShortcutData(n.id)
-        return sc?.query !== undefined ? { id: n.id, name: n.text, query: sc.query } : null
-      })
-      .filter(Boolean) as { id: string; name: string; query: string }[]
-  }, [s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Sin useMemo: nodes.size no cambia al marcar deletedAt (muta el Map),
+  // así que la lista se recalcula en cada re-render del store (ya garantizado por useStore)
+  const atajosNode = getAtajosNode()
+  const panels: { id: string; name: string; query: string }[] = atajosNode
+    ? s.children(atajosNode.id)
+        .filter(n => !n.deletedAt)
+        .sort((a, b) => a.siblingOrder - b.siblingOrder)
+        .map(n => {
+          const sc = getShortcutData(n.id)
+          return sc?.query !== undefined ? { id: n.id, name: n.text, query: sc.query } : null
+        })
+        .filter(Boolean) as { id: string; name: string; query: string }[]
+    : []
 
   function deletePanel(id: string, e: React.MouseEvent) {
     e.stopPropagation()
