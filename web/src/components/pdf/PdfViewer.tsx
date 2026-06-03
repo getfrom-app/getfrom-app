@@ -41,7 +41,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
   const [numPages,    setNumPages]    = useState(0)
   const [pageWidths,  setPageWidths]  = useState<number[]>([])
   const [pageHeights, setPageHeights] = useState<number[]>([])
-  const [scale,       setScale]       = useState(1.5)
+  const [scale,       setScale]       = useState(1.0)  // se recalcula al cargar la primera página
+  const scaleInitialized = useRef(false)
   const [tool,        setTool]        = useState<Tool>('pen')
   const [color,       setColor]       = useState('#e53e3e')
   const [penSize,     setPenSize]     = useState(3)
@@ -156,9 +157,24 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
       const doc = await pdfjsLib.getDocument(pdfSource).promise
       if (cancelled) return
       pdfDocRef.current = doc; setNumPages(doc.numPages)
+
+      // Calcular scale para ajustar al ancho del contenedor (igual que el iframe del navegador)
+      // Solo en el primer load — si el usuario ya ajustó el zoom, no sobreescribir
+      let effectiveScale = scale
+      if (!scaleInitialized.current) {
+        const firstPage = await doc.getPage(1)
+        const vpAt1 = firstPage.getViewport({ scale: 1 })
+        // Ancho disponible: ancho del visor ~800px menos padding
+        const containerW = document.querySelector('.pdf-viewer-pages')?.clientWidth || 780
+        const fitScale = Math.max(0.5, Math.min(2.5, (containerW - 48) / vpAt1.width))
+        effectiveScale = Math.round(fitScale * 4) / 4  // snap a 0.25
+        setScale(effectiveScale)
+        scaleInitialized.current = true
+      }
+
       const ws: number[] = []; const hs: number[] = []
       for (let i = 1; i <= doc.numPages; i++) {
-        const page = await doc.getPage(i); const vp = page.getViewport({scale})
+        const page = await doc.getPage(i); const vp = page.getViewport({scale: effectiveScale})
         ws.push(vp.width); hs.push(vp.height)
       }
       if (cancelled) return
