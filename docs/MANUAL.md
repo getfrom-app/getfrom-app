@@ -205,14 +205,21 @@ Un espejo es una referencia sincronizada a otro nodo. Muestra exactamente el mis
 
 Los espejos se identifican visualmente con el icono ⬡ junto al texto.
 
-### Recurso
+### Recurso / Enlace
 
-Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube, un podcast, una página web. From intenta extraer automáticamente el título del enlace al pegarlo.
+Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube, un podcast, una página web. From extrae automáticamente el título y el tipo de contenido al pegarlo.
 
 **Cómo crear un recurso:**
 
 - Slash menu → `/Recurso`.
-- Pega una URL directamente en un nodo vacío: From la detecta y ofrece convertirla en recurso.
+- **Pega una URL en un nodo vacío**: From la detecta automáticamente, hace unfurl (obtiene el título real de la página), y el nodo queda con el título de la web y el icono de enlace 🔗 en el bullet.
+
+**Comportamiento del nodo de enlace:**
+
+- El bullet cambia a un **icono de cadena** 🔗 (en lugar del punto normal).
+- Al hacer clic en el bullet → navega a la nota en From.
+- El botón **↗** inline (al lado del texto) → abre la URL en el navegador.
+- Al editar el texto del nodo, la URL se preserva aunque cambies el título.
 
 **Propiedades de un recurso (panel derecho):**
 
@@ -221,6 +228,38 @@ Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube,
 - Tipo detectado automáticamente (artículo, vídeo YouTube, podcast...).
 
 Los recursos aparecen en el bloque de recursos de la Agenda diaria para que recuerdes lo que tienes pendiente de revisar.
+
+### PDF
+
+Arrastra cualquier archivo PDF desde tu ordenador a un nodo en From. El PDF se sube a la nube y queda disponible en todos tus dispositivos.
+
+**Cómo adjuntar un PDF:**
+
+- Arrastra el archivo `.pdf` desde el Finder directamente a cualquier nodo. Se crea automáticamente un nodo hijo con el nombre del archivo y el badge **PDF** (rojo).
+
+**Visor y anotaciones:**
+
+Al abrir un nodo PDF, aparece el visor integrado con barra de herramientas:
+
+| Herramienta | Función |
+|---|---|
+| ✏️ Lápiz | Trazo libre. Elige color y grosor. |
+| 🖍 Subrayado | Pincel semitransparente amarillo. |
+| T Texto | Haz clic en el PDF para insertar texto flotante. |
+| ◻ Borrador | Elimina anotaciones. |
+
+Las anotaciones se guardan en From y se **incrustan permanentemente** en el PDF al salir. Si abres el PDF fuera de From, las anotaciones siguen ahí.
+
+### Pizarra
+
+Una pizarra es un canvas SVG de dibujo libre dentro de un nodo.
+
+**Cómo crear una pizarra:**
+
+- Slash menu → `/Pizarra`.
+- Escribe `pizarra` o `whiteboard` en cualquier parte del texto de un nodo: aparece un ghost text de confirmación. Pulsa `↵` para confirmar.
+
+La pizarra usa las mismas herramientas que el visor de PDF (lápiz, subrayado, texto, borrador). Las anotaciones se guardan automáticamente.
 
 ### Agente IA
 
