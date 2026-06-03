@@ -56,6 +56,12 @@ interface Attachment {
 // UUID regex — si el id es un UUID, es directo; si no, puede ser un slug
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Cache de anotaciones PDF a nivel de módulo — persiste toda la sesión del browser,
+// independiente del ciclo de vida de React (unmount/remount, navegación entre nodos).
+// Clave: nodeId  Valor: array de anotaciones
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pdfAnnotationsCache = new Map<string, any[]>()
+
 export default function NodeView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -1074,29 +1080,46 @@ export default function NodeView() {
   // Recurso principal del nodo (imagen, PDF, URL)
   // URL fresca del recurso (presigned URLs expiran en 1h — regenerar al abrir)
   const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
-  // Anotaciones del PDF — viven en NodeView para sobrevivir al unmount/remount de PdfViewer
-  const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>([])
-  const pdfNodeIdRef = useRef<string | null>(null)
-  // Callbacks estables para no recrear savePdfBackground en PdfViewer en cada render
+
+  // Anotaciones PDF — cargadas desde el cache de sesión (sobrevive navegación)
+  const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>(() =>
+    pdfAnnotationsCache.get(node?.id || '') || []
+  )
+
   const handlePdfAnnotationsChange = useCallback((anns: PdfAnnotation[]) => {
+    const nodeId = node?.id || ''
+    // 1. Cache de sesión — inmediato, nunca falla
+    pdfAnnotationsCache.set(nodeId, anns)
+    // 2. Estado React
     setPdfAnnotations(anns)
-    // Guardar en extraData sin leer node del closure (evita stale closure)
-    const nodeNow = store.getNode(pdfNodeIdRef.current || '')
+    // 3. extraData para persistencia en servidor
+    const nodeNow = store.getNode(nodeId)
     if (!nodeNow) return
     let ed: Record<string,unknown> = {}
     try { ed = JSON.parse(nodeNow.extraData || '{}') } catch {}
     ed._annotations = anns
-    store.updateNode(nodeNow.id, { extraData: JSON.stringify(ed) })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  // Cargar anotaciones del nodo actual cuando cambia el nodo
+    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id])
+
+  // Al montar: poblar el cache desde extraData si aún no está en cache
   useEffect(() => {
-    if (!node || pdfNodeIdRef.current === node.id) return
-    pdfNodeIdRef.current = node.id
+    const nodeId = node?.id || ''
+    if (!nodeId) return
+    if (pdfAnnotationsCache.has(nodeId)) {
+      // Ya en cache — usar esos (más fiables que extraData)
+      setPdfAnnotations(pdfAnnotationsCache.get(nodeId)!)
+      return
+    }
+    // Primera vez que se abre este nodo en esta sesión
     try {
       const ed = JSON.parse(node.extraData || '{}')
-      setPdfAnnotations(Array.isArray(ed._annotations) ? ed._annotations : [])
-    } catch { setPdfAnnotations([]) }
-  }, [node?.id, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
+      const anns = Array.isArray(ed._annotations) ? ed._annotations : []
+      pdfAnnotationsCache.set(nodeId, anns)
+      setPdfAnnotations(anns)
+    } catch { /* nada */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id])
   useEffect(() => {
     try {
       const ed = JSON.parse(node.extraData || '{}')
