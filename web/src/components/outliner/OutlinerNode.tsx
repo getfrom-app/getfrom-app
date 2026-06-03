@@ -2654,12 +2654,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 </button>
               </>
             ) : (nodeUrl && !['pdf','image','file'].includes(nodeResourceType||'')) ? (
-              // Enlace/URL: icono 🔗 como bullet
+              // Enlace/URL: icono 🔗 como bullet → navega a la nota (como cualquier otro bullet)
               <button
                 className="bullet-btn nota-btn"
-                onClick={e => { e.stopPropagation(); window.open(nodeUrl, '_blank') }}
+                onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                 tabIndex={-1}
-                title={nodeUrl}
+                title="Abrir nota"
               >
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 13H13a2 2 0 0 0 0-4h-1M6 3H3a2 2 0 0 0 0 4h1M8 8h0"/>
