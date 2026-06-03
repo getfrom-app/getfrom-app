@@ -4,6 +4,38 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.55 — 3 junio 2026 · Nodos de enlace, PDFs, Pizarras
+
+### Nodos de enlace / URL
+
+Pegar una URL en un nodo vacío lo convierte automáticamente en un **nodo de enlace**: el sistema hace unfurl de la página (obtiene título, favicon y tipo), y el nodo queda con el título real de la web y un icono de cadena (🔗) que sustituye al punto del bullet. En la vista de nodo, el icono de enlace aparece junto al título en lugar del checkbox.
+
+- El botón **↗** aparece inline al lado del texto para abrir la URL externa.
+- Al hacer clic en el bullet (icono de cadena) se navega a la nota, igual que cualquier otro bullet.
+- Al editar el texto del nodo, la URL se preserva en `extraData` y no se pierde.
+- Al pegar una URL sobre texto seleccionado, se aplica como `[texto](url)`.
+
+**Fix de encoding**: los títulos con tildes, ñ y otros caracteres especiales se decodifican correctamente. El bug anterior era que `TextDecoder` se creaba una vez por chunk; al estar un carácter multi-byte (como `ñ` = 0xC3 0xB1) partido entre dos chunks, se perdía. Ahora el decoder usa `stream: true` y se reutiliza entre chunks. También se decodifican entidades HTML del título (`&ntilde;` → `ñ`).
+
+**Fix de paste**: al copiar un enlace desde Chrome, el portapapeles a veces incluía atributos HTML en `text/plain` (ej: `https://url" target="_blank" rel=...`). Ahora el handler detecta ese patrón y extrae la URL limpia desde `text/html`.
+
+### PDFs arrastrables
+
+Arrastra un archivo PDF desde Finder a cualquier nodo para subirlo a la nube. Se crea un nodo hijo con badge **PDF** (rojo) que muestra el visor de PDF al abrirlo. Puedes anotar el PDF con:
+
+- **Lápiz** — trazo libre con selección de color y grosor
+- **Subrayado** — pincel semitransparente amarillo
+- **Texto** — clic para insertar texto flotante
+- **Borrador** — eliminar anotaciones
+
+Las anotaciones se guardan en From y se incrustan permanentemente en el PDF cuando sales.
+
+### Pizarras digitales
+
+Escribe `/Pizarra` en cualquier nodo para convertirlo en una pizarra digital SVG. También se activa si escribes `pizarra` o `whiteboard` en cualquier parte del texto (aparece ghost text de confirmación). Las pizarras usan las mismas herramientas que el visor de PDF.
+
+---
+
 ## Web v9.6.20 / Mac v9.5.2 — 2 junio 2026 · Planificador rediseñado y filtros en tiempo real
 
 ### Planificador — nuevo modelo de datos
