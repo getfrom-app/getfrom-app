@@ -717,6 +717,22 @@ export default function NodeView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.id])
 
+  // URL fresca del recurso (presigned URLs expiran en 1h)
+  const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      const ed = JSON.parse(store.getNode(node?.id || '')?.extraData || '{}')
+      if (!ed._resourceKey) return
+      getPresignedDownload(ed._resourceKey as string)
+        .then(url => setFreshResourceUrl(url))
+        .catch(() => {})
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id])
+
+  // Drag & drop de archivos
+  const [fileDragOver, setFileDragOver] = useState(false)
+
   if (!node || node.deletedAt) {
     // Si el store aún no ha cargado, mostrar loading en lugar del error
     if (!store.isLoaded) {
@@ -1109,19 +1125,6 @@ export default function NodeView() {
   const isLoggedIn = !store.isGuest
 
   // Recurso principal del nodo (imagen, PDF, URL)
-  // URL fresca del recurso (presigned URLs expiran en 1h — regenerar al abrir)
-  const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
-  useEffect(() => {
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (!ed._resourceKey) return
-      getPresignedDownload(ed._resourceKey as string)
-        .then(url => setFreshResourceUrl(url))
-        .catch(() => {}) // silencioso — fallback a URL guardada
-    } catch {}
-  // Solo depende de node.id — no de extraData (cambia en cada anotación, causaría reload del PDF)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id])
 
   const nodeResourceMeta = (() => {
     try {
@@ -1337,7 +1340,6 @@ export default function NodeView() {
   }
 
   // Drag & drop de archivos sobre toda la nota
-  const [fileDragOver, setFileDragOver] = useState(false)
   function handleViewDragOver(e: React.DragEvent) {
     if (e.dataTransfer.types.includes('Files')) {
       e.preventDefault()
