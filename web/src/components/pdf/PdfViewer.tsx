@@ -93,8 +93,9 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
 
     async function load() {
       const pdfjsLib = await import('pdfjs-dist')
-      // Worker necesario para PDF.js
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+      // Worker desde el paquete local (Vite lo sirve como asset estático)
+      const workerUrl = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
       const doc = await pdfjsLib.getDocument({ url }).promise
       if (cancelled) return
