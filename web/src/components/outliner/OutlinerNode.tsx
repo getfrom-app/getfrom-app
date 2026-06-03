@@ -1371,17 +1371,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
-    // Cmd+Shift+F → toggle shortcut (WF: unified star)
+    // Cmd+Shift+F → toggle favorito (atajo desacoplado)
     if (e.key === 'f' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
       e.preventDefault()
-      if (isShortcutState) {
-        removeNodeShortcut(node.id)
-        store.updateNode(node.id, { isFavorite: false })
-      } else {
-        createNodeShortcut(node.id, node.text || 'Sin título')
-        store.updateNode(node.id, { isFavorite: true })
-      }
-      window.dispatchEvent(new Event('wf:shortcuts-changed'))
+      store.updateNode(node.id, { isFavorite: !node.isFavorite })
       return
     }
 
@@ -2281,16 +2274,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Reescribe este contenido de forma más concisa y directa, sin perder información clave.' } }))
       return
     } else if (action === 'add-shortcut') {
-      if (isShortcutState) {
-        removeNodeShortcut(node.id)
-        store.updateNode(node.id, { isFavorite: false })
-        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Atajo eliminado', type: 'info' } }))
-      } else {
-        createNodeShortcut(node.id, node.text || 'Sin título')
-        store.updateNode(node.id, { isFavorite: true })
-        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Atajo añadido: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
-      }
-      window.dispatchEvent(new Event('wf:shortcuts-changed'))
+      // Atajo eliminado — solo togglear favorito
+      store.updateNode(node.id, { isFavorite: !node.isFavorite })
       return
     } else if (action === 'delete') {
       deleteWithCleanup()

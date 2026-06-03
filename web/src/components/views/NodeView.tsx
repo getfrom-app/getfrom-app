@@ -1825,26 +1825,7 @@ export default function NodeView() {
                   </>
                 )
               })()}
-              {/* ── Pin (Atajo) — añade/quita de 📌 Atajos ── */}
-              {(() => {
-                const atajosNode = getAtajosNode()
-                const isPinned = node.isFavorite || !!(atajosNode && store.children(atajosNode.id).find(n => {
-                  try { return JSON.parse(n.extraData || '{}')._shortcutNodeId === node.id } catch { return false }
-                }))
-                return (
-              <button
-                className={`node-action-icon-btn ${isPinned ? 'active' : ''}`}
-                onClick={toggleFavorite}
-                title={isPinned ? 'Quitar de atajos' : 'Añadir a atajos'}
-                style={{ color: isPinned ? 'var(--accent)' : undefined }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="17" x2="12" y2="22"/>
-                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
-                </svg>
-              </button>
-                )
-              })()}
+              {/* Pin/Atajo eliminado — favorito accesible vía ··· más opciones */}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>

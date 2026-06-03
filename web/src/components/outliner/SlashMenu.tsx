@@ -72,7 +72,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'IA', label: 'Corregir gramática', icon: '✏️', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
   { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
   // ── Gestión ───────────────────────────────────────────────────────────────
-  { group: 'Gestión', label: 'Añadir a atajos', icon: '⭐', prefix: '', description: 'Guardar como atajo en la barra lateral', action: 'add-shortcut' },
+  // Añadir a atajos eliminado — usar Favorito desde ··· más opciones
   { group: 'Gestión', label: 'Añadir fecha', icon: '🗓', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
   { group: 'Gestión', label: 'Eliminar', icon: '🗑', prefix: '', description: 'Eliminar este nodo', action: 'delete' },
 ]
