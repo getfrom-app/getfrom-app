@@ -709,7 +709,7 @@ export default function PlannerPanel({ onClose }: Props) {
                   return (
                     <div key={d}
                       className={`pp-year-day ${isTod?'pp-year-day--today':''}`}
-                      onClick={() => { const dayNode = ensureDayPath(date); navigate(`/node/${dayNode.id}`) }}
+                      onClick={() => { const dayNode = ensureDayPath(date); navigate(`/node/${dayNode.id}`); setCenterDate(date); setViewMode('day') }}
                       title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
                     >
                       {d}
