@@ -208,9 +208,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
     }
   }, [pageWidths, pageHeights])
 
+  // Re-dibujar anotaciones cuando cambian O cuando el PDF termina de cargar (numPages > 0).
+  // Sin numPages en deps, las anotaciones se dibujan cuando los SVG refs aún están vacíos.
   useEffect(() => {
-    for (const [page, svg] of svgRefs.current.entries()) renderSvg(svg, page, annotations)
-  }, [annotations, renderSvg])
+    if (numPages === 0) return
+    // Pequeño delay para asegurar que el DOM de las páginas está montado
+    const t = setTimeout(() => {
+      for (const [page, svg] of svgRefs.current.entries()) renderSvg(svg, page, annotations)
+    }, 50)
+    return () => clearTimeout(t)
+  }, [annotations, renderSvg, numPages])
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function getRelPos(e: React.MouseEvent|MouseEvent, el: Element): [number,number] {
