@@ -6104,6 +6104,7 @@ body.outliner-drag-active {
   transition: background .1s, color .1s;
 }
 .node-resource-pdf-open:hover { background: var(--bg-hover); color: var(--text-primary); }
+.node-resource-pdf-open--active { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
 .node-resource-pdf {
   width: 100%;
   height: 82vh;

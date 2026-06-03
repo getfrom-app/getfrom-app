@@ -1492,15 +1492,24 @@ export default function NodeView() {
               try {
                 const ed = JSON.parse(node.extraData || '{}')
                 const rType = (ed._resourceType || node.resourceType || '') as string
+                // Sustituye el icono del nodo con el badge del tipo de archivo
+                // Mismas dimensiones que el icono de nota (32x32px)
                 if (rType === 'pdf') return (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#e53e3e',
-                    padding: '2px 7px', borderRadius: 4, letterSpacing: '0.02em', flexShrink: 0, marginRight: 8 }}>PDF</span>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 32, height: 32, flexShrink: 0, marginRight: 4,
+                  }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, color: '#fff', background: '#e53e3e',
+                      padding: '3px 5px', borderRadius: 4, letterSpacing: '0.03em', lineHeight: 1,
+                    }}>PDF</span>
+                  </span>
                 )
                 if (rType === 'image') return (
-                  <span style={{ fontSize: 18, flexShrink: 0, marginRight: 8 }}>🖼</span>
+                  <span style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, marginRight: 4 }}>🖼</span>
                 )
                 if (rType === 'file') return (
-                  <span style={{ fontSize: 18, flexShrink: 0, marginRight: 8 }}>📎</span>
+                  <span style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, marginRight: 4 }}>📎</span>
                 )
               } catch {}
               return null
@@ -1977,30 +1986,17 @@ export default function NodeView() {
               ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
                 (() => {
                   const rKey = (() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()
-                  return pdfAnnotateMode ? (
-                    <PdfViewer
-                      url={nodeResourceMeta.url}
-                      nodeId={node.id}
-                      filename={node.text || 'documento'}
-                      resourceKey={rKey}
-                      onUrlUpdated={newUrl => {
-                        let ed: Record<string,unknown> = {}
-                        try { ed = JSON.parse(node.extraData||'{}') } catch {}
-                        ed._resourceUrl = newUrl
-                        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                        setFreshResourceUrl(newUrl)
-                      }}
-                    />
-                  ) : (
+                  return (
                     <div className="node-resource-pdf-wrap">
+                      {/* Barra de info — siempre visible */}
                       <div className="node-resource-pdf-toolbar">
                         <span className="node-resource-pdf-badge">PDF</span>
                         <span className="node-resource-pdf-name">{node.text}</span>
                         <button
-                          className="node-resource-pdf-open"
-                          onClick={() => setPdfAnnotateMode(true)}
-                          title="Anotar PDF"
-                        >✏️ Anotar</button>
+                          className={`node-resource-pdf-open${pdfAnnotateMode?' node-resource-pdf-open--active':''}`}
+                          onClick={() => setPdfAnnotateMode(m => !m)}
+                          title={pdfAnnotateMode ? 'Salir de modo anotación' : 'Anotar PDF'}
+                        >✏️ {pdfAnnotateMode ? 'Salir' : 'Anotar'}</button>
                         <a href={nodeResourceMeta.url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title="Abrir en nueva pestaña">
                           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
                           Abrir
@@ -2009,7 +2005,25 @@ export default function NodeView() {
                           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
                         </a>
                       </div>
-                      <iframe src={nodeResourceMeta.url} className="node-resource-pdf" title={node.text || 'PDF'} />
+                      {/* Modo anotación: barra de herramientas + visor PDF.js */}
+                      {pdfAnnotateMode ? (
+                        <PdfViewer
+                          url={nodeResourceMeta.url}
+                          nodeId={node.id}
+                          filename={node.text || 'documento'}
+                          resourceKey={rKey}
+                          onUrlUpdated={newUrl => {
+                            let ed: Record<string,unknown> = {}
+                            try { ed = JSON.parse(node.extraData||'{}') } catch {}
+                            ed._resourceUrl = newUrl
+                            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                            setFreshResourceUrl(newUrl)
+                          }}
+                        />
+                      ) : (
+                        /* Modo visualización: iframe nativo */
+                        <iframe src={nodeResourceMeta.url} className="node-resource-pdf" title={node.text || 'PDF'} />
+                      )}
                     </div>
                   )
                 })()

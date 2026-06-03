@@ -1,54 +1,42 @@
 /**
  * PdfViewer — Visor PDF con anotaciones persistentes.
- *
- * - Renderiza el PDF con PDF.js (canvas por página)
- * - Capa SVG para dibujar encima (pen, highlight, text)
- * - Anotaciones guardadas en el nodo (extraData._annotations)
- * - Botón "Guardar en PDF" incrusta anotaciones en el archivo con pdf-lib y sube a R2
+ * - PDF.js para renderizar en canvas
+ * - SVG overlay para anotaciones (pen, highlight, text, eraser)
+ * - Auto-guardado en extraData inmediato + re-subida a R2 con debounce 3s
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { store } from '../../store/nodeStore'
 import { uploadFile, fetchFileContent } from '../../api/client'
 
-// ── Tipos ────────────────────────────────────────────────────────────────────
 type Tool = 'pen' | 'highlight' | 'text' | 'eraser'
-type Color = string
 
 interface PathAnnotation {
-  type: 'path'
-  page: number
-  color: Color
-  width: number
-  opacity: number
-  points: [number, number][]  // coordenadas normalizadas [0-1] respecto a la página
+  type: 'path'; page: number; color: string; width: number; opacity: number
+  points: [number, number][]
 }
 interface TextAnnotation {
-  type: 'text'
-  page: number
-  color: Color
-  x: number; y: number      // normalizados
-  text: string
-  fontSize: number
+  type: 'text'; page: number; color: string; x: number; y: number; text: string; fontSize: number
 }
 type Annotation = PathAnnotation | TextAnnotation
 
 interface Props {
-  url: string
-  nodeId: string
-  filename: string
-  resourceKey?: string
+  url: string; nodeId: string; filename: string; resourceKey?: string
   onUrlUpdated?: (newUrl: string) => void
 }
 
-// ── Colores y tamaños ────────────────────────────────────────────────────────
-const COLORS = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','#000000','#ffffff']
+const COLORS    = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','#000000']
 const PEN_SIZES = [2, 4, 6, 10]
 
 export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpdated }: Props) {
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const canvasRefs    = useRef<Map<number, HTMLCanvasElement>>(new Map())
-  const svgRefs       = useRef<Map<number, SVGSVGElement>>(new Map())
+  const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
+  const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
+  const pdfDocRef    = useRef<any>(null)
+  const drawingRef   = useRef<PathAnnotation | null>(null)
+  const isDrawingRef = useRef(false)
+  const autoSaveTimer= useRef<ReturnType<typeof setTimeout>|null>(null)
+  const isSavingRef  = useRef(false)
+  const pendingSave  = useRef(false)
 
   const [numPages,    setNumPages]    = useState(0)
   const [pageWidths,  setPageWidths]  = useState<number[]>([])
@@ -58,16 +46,14 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
   const [color,       setColor]       = useState('#e53e3e')
   const [penSize,     setPenSize]     = useState(3)
   const [annotations, setAnnotations] = useState<Annotation[]>([])
-  const [saving,      setSaving]      = useState(false)
   const [loading,     setLoading]     = useState(true)
-  const [textInput,   setTextInput]   = useState<{page:number;x:number;y:number}|null>(null)
+  const [saveStatus,  setSaveStatus]  = useState<'idle'|'saving'|'saved'>('idle')
+  // Text tool
+  const [textInput,   setTextInput]   = useState<{page:number;x:number;y:number;pxX:number;pxY:number}|null>(null)
   const [textValue,   setTextValue]   = useState('')
+  const textInputRef  = useRef<HTMLInputElement>(null)
 
-  const pdfDocRef    = useRef<any>(null)
-  const drawingRef   = useRef<PathAnnotation | null>(null)
-  const isDrawingRef = useRef(false)
-
-  // ── Cargar anotaciones guardadas ─────────────────────────────────────────
+  // ── Cargar anotaciones guardadas ───────────────────────────────────────────
   useEffect(() => {
     try {
       const ed = JSON.parse(store.getNode(nodeId)?.extraData || '{}')
@@ -75,8 +61,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
     } catch {}
   }, [nodeId])
 
-  // ── Guardar anotaciones en el nodo ───────────────────────────────────────
-  const saveAnnotationsToNode = useCallback((anns: Annotation[]) => {
+  // ── Guardar anotaciones en el nodo (extraData) ─────────────────────────────
+  const saveToNode = useCallback((anns: Annotation[]) => {
     const node = store.getNode(nodeId)
     if (!node) return
     let ed: Record<string,unknown> = {}
@@ -85,410 +71,312 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
     store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
   }, [nodeId])
 
-  // ── Cargar PDF con PDF.js ────────────────────────────────────────────────
+  // ── Auto-guardar en PDF (debounce 3s) ──────────────────────────────────────
+  const savePdfBackground = useCallback(async (anns: Annotation[]) => {
+    if (isSavingRef.current) { pendingSave.current = true; return }
+    if (!resourceKey) return
+    isSavingRef.current = true
+    setSaveStatus('saving')
+    try {
+      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib')
+      const pdfBytes = await fetchFileContent(resourceKey)
+      const pdfDoc = await PDFDocument.load(pdfBytes)
+      const pages = pdfDoc.getPages()
+
+      for (const ann of anns) {
+        const pageIdx = ann.page - 1
+        if (pageIdx < 0 || pageIdx >= pages.length) continue
+        const page = pages[pageIdx]
+        const { width: pw, height: ph } = page.getSize()
+        const hexRgb = (hex: string) => {
+          const r = parseInt(hex.slice(1,3),16)/255
+          const g = parseInt(hex.slice(3,5),16)/255
+          const b = parseInt(hex.slice(5,7),16)/255
+          return rgb(r,g,b)
+        }
+        if (ann.type === 'path' && ann.points.length >= 2) {
+          for (let i = 1; i < ann.points.length; i++) {
+            const [x1,y1] = ann.points[i-1]; const [x2,y2] = ann.points[i]
+            page.drawLine({ start:{x:x1*pw,y:ph-y1*ph}, end:{x:x2*pw,y:ph-y2*ph},
+              thickness: ann.width/scale, color: hexRgb(ann.color), opacity: ann.opacity })
+          }
+        } else if (ann.type === 'text' && ann.text) {
+          const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+          page.drawText(ann.text, { x:ann.x*pw, y:ph-ann.y*ph,
+            size: ann.fontSize/scale, font, color: hexRgb(ann.color) })
+        }
+      }
+
+      const newBytes = await pdfDoc.save()
+      const blob = new Blob([newBytes.buffer as ArrayBuffer], { type:'application/pdf' })
+      const file = new File([blob], filename+'.pdf', { type:'application/pdf' })
+      const { key, publicUrl } = await uploadFile(file)
+      const node = store.getNode(nodeId)
+      if (node) {
+        let ed: Record<string,unknown> = {}; try { ed = JSON.parse(node.extraData||'{}') } catch {}
+        ed._resourceUrl = publicUrl; ed._resourceKey = key
+        store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+      }
+      onUrlUpdated?.(publicUrl)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (e) {
+      console.error('[PdfViewer] auto-save error:', e)
+      setSaveStatus('idle')
+    } finally {
+      isSavingRef.current = false
+      if (pendingSave.current) { pendingSave.current = false; savePdfBackground(anns) }
+    }
+  }, [resourceKey, nodeId, filename, scale, onUrlUpdated])
+
+  const scheduleAutoSave = useCallback((anns: Annotation[]) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => savePdfBackground(anns), 3000)
+  }, [savePdfBackground])
+
+  // Guardar al desmontar
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) { clearTimeout(autoSaveTimer.current); savePdfBackground(annotations) }
+    }
+  }, [annotations, savePdfBackground]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Cargar PDF ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!url) return
-    let cancelled = false
-    setLoading(true)
-
+    let cancelled = false; setLoading(true)
     async function load() {
       const pdfjsLib = await import('pdfjs-dist')
-      // Worker desde el paquete local
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url
-      ).href
-
-      // Cargar PDF via proxy del servidor (evita CORS de R2)
-      // Si tenemos resourceKey, usamos el proxy. Si no, intentamos con la URL directa.
-      let pdfSource: { data: Uint8Array } | { url: string }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
+      let pdfSource: {data:Uint8Array}|{url:string}
       if (resourceKey) {
         const bytes = await fetchFileContent(resourceKey)
         pdfSource = { data: new Uint8Array(bytes) }
-      } else {
-        pdfSource = { url }
-      }
+      } else { pdfSource = { url } }
       const doc = await pdfjsLib.getDocument(pdfSource).promise
       if (cancelled) return
-      pdfDocRef.current = doc
-      setNumPages(doc.numPages)
-
+      pdfDocRef.current = doc; setNumPages(doc.numPages)
       const ws: number[] = []; const hs: number[] = []
       for (let i = 1; i <= doc.numPages; i++) {
-        const page = await doc.getPage(i)
-        const vp = page.getViewport({ scale })
+        const page = await doc.getPage(i); const vp = page.getViewport({scale})
         ws.push(vp.width); hs.push(vp.height)
       }
       if (cancelled) return
-      setPageWidths(ws); setPageHeights(hs)
-      setLoading(false)
+      setPageWidths(ws); setPageHeights(hs); setLoading(false)
     }
     load().catch(console.error)
     return () => { cancelled = true }
-  }, [url, scale])
+  }, [url, scale]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Renderizar páginas ───────────────────────────────────────────────────
+  // ── Renderizar páginas ────────────────────────────────────────────────────
   useEffect(() => {
     if (!pdfDocRef.current || numPages === 0) return
     async function renderAll() {
-      const pdfjsLib = await import('pdfjs-dist')
       for (let i = 1; i <= numPages; i++) {
-        const canvas = canvasRefs.current.get(i)
-        if (!canvas) continue
+        const canvas = canvasRefs.current.get(i); if (!canvas) continue
         const page = await pdfDocRef.current.getPage(i)
-        const vp = page.getViewport({ scale })
+        const vp = page.getViewport({scale})
         canvas.width = vp.width; canvas.height = vp.height
-        const ctx = canvas.getContext('2d')!
-        await page.render({ canvasContext: ctx, viewport: vp }).promise
+        await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise
       }
     }
     renderAll().catch(console.error)
-  }, [numPages, pageWidths, scale])
+  }, [numPages, scale])
 
-  // ── Dibujar anotaciones SVG ──────────────────────────────────────────────
-  useEffect(() => {
-    for (const [page, svg] of svgRefs.current.entries()) {
-      renderSvgAnnotations(svg, page)
-    }
-  }, [annotations])
-
-  function renderSvgAnnotations(svg: SVGSVGElement, page: number) {
-    // Limpiar anotaciones (preservar el grupo de dibujo activo)
+  // ── Renderizar SVG ────────────────────────────────────────────────────────
+  const renderSvg = useCallback((svg: SVGSVGElement, page: number, anns: Annotation[]) => {
     while (svg.firstChild) svg.removeChild(svg.firstChild)
-
-    const w = pageWidths[page-1] || svg.clientWidth
-    const h = pageHeights[page-1] || svg.clientHeight
-
-    for (const ann of annotations.filter(a => a.page === page)) {
-      if (ann.type === 'path') {
-        if (ann.points.length < 2) continue
-        const d = ann.points.map((p, i) =>
-          `${i === 0 ? 'M' : 'L'} ${p[0]*w} ${p[1]*h}`
-        ).join(' ')
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-        path.setAttribute('d', d)
-        path.setAttribute('stroke', ann.color)
-        path.setAttribute('stroke-width', String(ann.width))
-        path.setAttribute('stroke-opacity', String(ann.opacity))
-        path.setAttribute('fill', 'none')
-        path.setAttribute('stroke-linecap', 'round')
-        path.setAttribute('stroke-linejoin', 'round')
-        svg.appendChild(path)
+    const w = pageWidths[page-1] || svg.clientWidth || 1
+    const h = pageHeights[page-1] || svg.clientHeight || 1
+    for (const ann of anns.filter(a => a.page === page)) {
+      if (ann.type === 'path' && ann.points.length >= 2) {
+        const d = ann.points.map((p,i) => `${i===0?'M':'L'} ${p[0]*w} ${p[1]*h}`).join(' ')
+        const el = document.createElementNS('http://www.w3.org/2000/svg','path')
+        el.setAttribute('d',d); el.setAttribute('stroke',ann.color)
+        el.setAttribute('stroke-width',String(ann.width))
+        el.setAttribute('stroke-opacity',String(ann.opacity))
+        el.setAttribute('fill','none'); el.setAttribute('stroke-linecap','round')
+        el.setAttribute('stroke-linejoin','round')
+        svg.appendChild(el)
       } else if (ann.type === 'text') {
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text')
-        text.setAttribute('x', String(ann.x * w))
-        text.setAttribute('y', String(ann.y * h))
-        text.setAttribute('fill', ann.color)
-        text.setAttribute('font-size', String(ann.fontSize))
-        text.setAttribute('font-family', 'system-ui, sans-serif')
-        text.textContent = ann.text
-        svg.appendChild(text)
+        const el = document.createElementNS('http://www.w3.org/2000/svg','text')
+        el.setAttribute('x',String(ann.x*w)); el.setAttribute('y',String(ann.y*h))
+        el.setAttribute('fill',ann.color); el.setAttribute('font-size',String(ann.fontSize))
+        el.setAttribute('font-family','system-ui,sans-serif'); el.textContent = ann.text
+        svg.appendChild(el)
       }
     }
+  }, [pageWidths, pageHeights])
+
+  useEffect(() => {
+    for (const [page, svg] of svgRefs.current.entries()) renderSvg(svg, page, annotations)
+  }, [annotations, renderSvg])
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function getRelPos(e: React.MouseEvent|MouseEvent, el: Element): [number,number] {
+    const r = el.getBoundingClientRect()
+    return [(e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height]
+  }
+  function getAbsPos(e: React.MouseEvent, el: Element): [number,number] {
+    const r = el.getBoundingClientRect()
+    return [e.clientX-r.left, e.clientY-r.top]
   }
 
-  // ── Dibujo con ratón ─────────────────────────────────────────────────────
-  function getRelativePos(e: React.MouseEvent | MouseEvent, el: Element): [number, number] {
-    const rect = el.getBoundingClientRect()
-    return [(e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height]
-  }
-
+  // ── Eventos de dibujo ─────────────────────────────────────────────────────
   function handleMouseDown(e: React.MouseEvent<SVGSVGElement>, page: number) {
     if (tool === 'text') {
-      const [x, y] = getRelativePos(e, e.currentTarget)
-      setTextInput({ page, x, y })
+      e.stopPropagation()
+      const [rx, ry] = getRelPos(e, e.currentTarget)
+      const [ax, ay] = getAbsPos(e, e.currentTarget)
+      setTextInput({ page, x: rx, y: ry, pxX: ax, pxY: ay })
       setTextValue('')
+      setTimeout(() => textInputRef.current?.focus(), 20)
       return
     }
     if (tool === 'eraser') {
-      // Borrar anotaciones cercanas
-      const [x, y] = getRelativePos(e, e.currentTarget)
-      eraseAt(page, x, y)
-      return
+      const [x,y] = getRelPos(e, e.currentTarget)
+      eraseAt(page, x, y); return
     }
     isDrawingRef.current = true
-    const [x, y] = getRelativePos(e, e.currentTarget)
-    const isHighlight = tool === 'highlight'
+    const [x,y] = getRelPos(e, e.currentTarget)
     drawingRef.current = {
-      type: 'path', page,
-      color: isHighlight ? (color === '#000000' ? '#fbbf24' : color) : color,
-      width: isHighlight ? penSize * 6 : penSize,
-      opacity: isHighlight ? 0.35 : 1,
-      points: [[x, y]],
+      type:'path', page, color, opacity: tool==='highlight'?0.35:1,
+      width: tool==='highlight'?penSize*5:penSize, points:[[x,y]]
     }
   }
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!isDrawingRef.current || !drawingRef.current) return
-    const [x, y] = getRelativePos(e, e.currentTarget)
-    drawingRef.current.points.push([x, y])
-    // Preview inline: renderizar solo el path activo
+    const [x,y] = getRelPos(e, e.currentTarget)
+    drawingRef.current.points.push([x,y])
+    // Preview en SVG
     const svg = e.currentTarget
-    const last = svg.querySelector('.drawing-preview')
-    if (last) svg.removeChild(last)
+    const prev = svg.querySelector('.pdf-preview'); if (prev) svg.removeChild(prev)
     const w = svg.clientWidth; const h = svg.clientHeight
-    const d = drawingRef.current.points.map((p, i) =>
-      `${i === 0 ? 'M' : 'L'} ${p[0]*w} ${p[1]*h}`
-    ).join(' ')
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    path.setAttribute('class', 'drawing-preview')
-    path.setAttribute('d', d)
-    path.setAttribute('stroke', drawingRef.current.color)
-    path.setAttribute('stroke-width', String(drawingRef.current.width))
-    path.setAttribute('stroke-opacity', String(drawingRef.current.opacity))
-    path.setAttribute('fill', 'none')
-    path.setAttribute('stroke-linecap', 'round')
-    path.setAttribute('stroke-linejoin', 'round')
-    svg.appendChild(path)
+    const d = drawingRef.current.points.map((p,i)=>`${i===0?'M':'L'} ${p[0]*w} ${p[1]*h}`).join(' ')
+    const el = document.createElementNS('http://www.w3.org/2000/svg','path')
+    el.setAttribute('class','pdf-preview'); el.setAttribute('d',d)
+    el.setAttribute('stroke',drawingRef.current.color)
+    el.setAttribute('stroke-width',String(drawingRef.current.width))
+    el.setAttribute('stroke-opacity',String(drawingRef.current.opacity))
+    el.setAttribute('fill','none'); el.setAttribute('stroke-linecap','round')
+    svg.appendChild(el)
   }
 
   function handleMouseUp() {
     if (!isDrawingRef.current || !drawingRef.current) return
     isDrawingRef.current = false
-    const ann = drawingRef.current
-    drawingRef.current = null
+    const ann = drawingRef.current; drawingRef.current = null
     if (ann.points.length < 2) return
     const next = [...annotations, ann]
-    setAnnotations(next)
-    saveAnnotationsToNode(next)
+    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
   }
 
   function eraseAt(page: number, x: number, y: number) {
-    const THRESHOLD = 0.04
-    const next = annotations.filter(ann => {
-      if (ann.page !== page) return true
-      if (ann.type === 'path') {
-        return !ann.points.some(([px, py]) =>
-          Math.abs(px - x) < THRESHOLD && Math.abs(py - y) < THRESHOLD
-        )
-      }
-      if (ann.type === 'text') {
-        return Math.abs(ann.x - x) > THRESHOLD || Math.abs(ann.y - y) > THRESHOLD
-      }
-      return true
+    const T = 0.05
+    const next = annotations.filter(a => {
+      if (a.page !== page) return true
+      if (a.type === 'path') return !a.points.some(([px,py])=>Math.abs(px-x)<T&&Math.abs(py-y)<T)
+      return Math.abs(a.x-x)>T||Math.abs(a.y-y)>T
     })
-    setAnnotations(next)
-    saveAnnotationsToNode(next)
+    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
   }
 
-  function confirmTextInput() {
-    if (!textInput || !textValue.trim()) { setTextInput(null); return }
+  function confirmText() {
+    if (!textInput || !textValue.trim()) { setTextInput(null); setTextValue(''); return }
     const ann: TextAnnotation = {
-      type: 'text', page: textInput.page,
-      color, x: textInput.x, y: textInput.y,
-      text: textValue, fontSize: 16,
+      type:'text', page:textInput.page, color,
+      x:textInput.x, y:textInput.y, text:textValue, fontSize:Math.round(16*scale)/scale
     }
     const next = [...annotations, ann]
-    setAnnotations(next)
-    saveAnnotationsToNode(next)
-    setTextInput(null)
-    setTextValue('')
+    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
+    setTextInput(null); setTextValue('')
   }
 
   function handleUndo() {
-    const next = annotations.slice(0, -1)
-    setAnnotations(next)
-    saveAnnotationsToNode(next)
+    const next = annotations.slice(0,-1)
+    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
   }
 
-  function handleClearPage(page: number) {
-    const next = annotations.filter(a => a.page !== page)
-    setAnnotations(next)
-    saveAnnotationsToNode(next)
-  }
-
-  // ── Guardar en PDF (pdf-lib incrusta anotaciones) ────────────────────────
-  async function handleSavePdf() {
-    if (!url) return
-    setSaving(true)
-    try {
-      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib')
-
-      // Descargar PDF original via proxy (sin CORS)
-      const pdfBytes = resourceKey
-        ? await fetchFileContent(resourceKey)
-        : await fetch(url).then(r => r.arrayBuffer())
-      const pdfDoc = await PDFDocument.load(pdfBytes)
-      const pages = pdfDoc.getPages()
-
-      // Para cada anotación tipo path: dibujar con pdf-lib
-      for (const ann of annotations) {
-        const pageIdx = ann.page - 1
-        if (pageIdx < 0 || pageIdx >= pages.length) continue
-        const page = pages[pageIdx]
-        const { width, height } = page.getSize()
-
-        if (ann.type === 'path' && ann.points.length >= 2) {
-          const hexToRgb = (hex: string) => {
-            const r = parseInt(hex.slice(1,3),16)/255
-            const g = parseInt(hex.slice(3,5),16)/255
-            const b = parseInt(hex.slice(5,7),16)/255
-            return rgb(r,g,b)
-          }
-          const c = hexToRgb(ann.color === '#ffffff' ? '#cccccc' : ann.color)
-          // Dibujar segmentos de línea
-          for (let i = 1; i < ann.points.length; i++) {
-            const [x1,y1] = ann.points[i-1]
-            const [x2,y2] = ann.points[i]
-            page.drawLine({
-              start: { x: x1*width, y: height - y1*height },
-              end:   { x: x2*width, y: height - y2*height },
-              thickness: ann.width / scale,
-              color: c,
-              opacity: ann.opacity,
-            })
-          }
-        } else if (ann.type === 'text') {
-          const hexToRgb = (hex: string) => {
-            const r = parseInt(hex.slice(1,3),16)/255
-            const g = parseInt(hex.slice(3,5),16)/255
-            const b = parseInt(hex.slice(5,7),16)/255
-            return rgb(r,g,b)
-          }
-          const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-          page.drawText(ann.text, {
-            x: ann.x * width,
-            y: height - ann.y * height,
-            size: ann.fontSize / scale,
-            font,
-            color: hexToRgb(ann.color),
-          })
-        }
-      }
-
-      // Serializar y subir a R2
-      const newBytes = await pdfDoc.save()
-      const blob = new Blob([newBytes.buffer as ArrayBuffer], { type: 'application/pdf' })
-      const file = new File([blob], filename + '.pdf', { type: 'application/pdf' })
-      const { key, publicUrl } = await uploadFile(file)
-
-      // Actualizar nodo con nueva URL y key
-      const node = store.getNode(nodeId)
-      if (node) {
-        let ed: Record<string,unknown> = {}
-        try { ed = JSON.parse(node.extraData || '{}') } catch {}
-        ed._resourceUrl = publicUrl
-        ed._resourceKey = key
-        store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-      }
-      onUrlUpdated?.(publicUrl)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '✓ PDF guardado con anotaciones', type: 'success' } }))
-    } catch (e) {
-      console.error('[PdfViewer] save error:', e)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '✗ Error guardando PDF', type: 'error' } }))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  // ── Render ───────────────────────────────────────────────────────────────
-  const cursorMap: Record<Tool, string> = {
-    pen: 'crosshair', highlight: 'crosshair', eraser: 'cell', text: 'text'
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
+  const cursorMap: Record<Tool,string> = { pen:'crosshair', highlight:'crosshair', eraser:'cell', text:'text' }
 
   return (
     <div className="pdf-viewer-root">
-      {/* Toolbar */}
+      {/* Barra de herramientas de anotación */}
       <div className="pdf-viewer-toolbar">
-        {/* Herramientas */}
         <div className="pdf-tb-group">
-          {(['pen','highlight','text','eraser'] as Tool[]).map(t => (
-            <button key={t} className={`pdf-tb-btn ${tool===t?'pdf-tb-btn--active':''}`}
-              onClick={() => setTool(t)} title={t}>
+          {(['pen','highlight','text','eraser'] as Tool[]).map(t=>(
+            <button key={t} className={`pdf-tb-btn${tool===t?' pdf-tb-btn--active':''}`}
+              onClick={()=>setTool(t)}
+              title={t==='pen'?'Bolígrafo':t==='highlight'?'Resaltador':t==='text'?'Texto':'Borrador'}>
               {t==='pen'?'✏️':t==='highlight'?'🖍':t==='text'?'T':'⌫'}
             </button>
           ))}
         </div>
-
-        {/* Colores */}
         <div className="pdf-tb-group">
-          {COLORS.map(c => (
-            <button key={c} className={`pdf-tb-color ${color===c?'pdf-tb-color--active':''}`}
-              style={{ background: c, border: c==='#ffffff'?'1px solid #ccc':undefined }}
-              onClick={() => setColor(c)} title={c} />
+          {COLORS.map(c=>(
+            <button key={c} className={`pdf-tb-color${color===c?' pdf-tb-color--active':''}`}
+              style={{background:c}} onClick={()=>setColor(c)} title={c} />
           ))}
         </div>
-
-        {/* Tamaño del trazo */}
-        {(tool === 'pen' || tool === 'highlight') && (
+        {(tool==='pen'||tool==='highlight') && (
           <div className="pdf-tb-group">
-            {PEN_SIZES.map(s => (
-              <button key={s} className={`pdf-tb-size ${penSize===s?'pdf-tb-size--active':''}`}
-                onClick={() => setPenSize(s)}>
-                <span style={{ width: s*1.5, height: s*1.5, background: '#666', borderRadius: '50%', display:'block' }} />
+            {PEN_SIZES.map(s=>(
+              <button key={s} className={`pdf-tb-size${penSize===s?' pdf-tb-size--active':''}`}
+                onClick={()=>setPenSize(s)}>
+                <span style={{width:s*1.5,height:s*1.5,background:'#666',borderRadius:'50%',display:'block'}}/>
               </button>
             ))}
           </div>
         )}
-
-        {/* Zoom */}
         <div className="pdf-tb-group">
-          <button className="pdf-tb-btn" onClick={() => setScale(s => Math.max(0.5, s-0.25))} title="Alejar">−</button>
-          <span style={{ fontSize: 11, color: 'var(--text-secondary)', padding: '0 4px' }}>{Math.round(scale*100)}%</span>
-          <button className="pdf-tb-btn" onClick={() => setScale(s => Math.min(3, s+0.25))} title="Acercar">+</button>
+          <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.max(0.5,s-0.25))}>−</button>
+          <span style={{fontSize:11,color:'var(--text-secondary)',padding:'0 4px'}}>{Math.round(scale*100)}%</span>
+          <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.min(3,s+0.25))}>+</button>
         </div>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Deshacer */}
-        {annotations.length > 0 && (
-          <button className="pdf-tb-btn" onClick={handleUndo} title="Deshacer">↩</button>
+        <div style={{flex:1}}/>
+        {annotations.length>0 && (
+          <button className="pdf-tb-btn" onClick={handleUndo} title="Deshacer última anotación">↩</button>
         )}
-
-        {/* Guardar en PDF */}
-        {annotations.length > 0 && (
-          <button className="pdf-tb-save" onClick={handleSavePdf} disabled={saving}>
-            {saving ? '⏳ Guardando…' : '💾 Guardar en PDF'}
-          </button>
-        )}
+        {/* Indicador de guardado automático */}
+        {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>Guardando…</span>}
+        {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ Guardado</span>}
       </div>
 
       {/* Páginas */}
-      <div className="pdf-viewer-pages" ref={containerRef}>
-        {loading && (
-          <div className="pdf-viewer-loading">
-            <div className="footer-spinner" /> Cargando PDF…
-          </div>
-        )}
-        {Array.from({ length: numPages }, (_, i) => {
-          const page = i + 1
-          const w = pageWidths[i] || 0
-          const h = pageHeights[i] || 0
+      <div className="pdf-viewer-pages">
+        {loading && <div className="pdf-viewer-loading"><div className="footer-spinner"/> Cargando PDF…</div>}
+        {Array.from({length:numPages},(_,i)=>{
+          const page = i+1
+          const w = pageWidths[i]||0; const h = pageHeights[i]||0
           return (
-            <div key={page} className="pdf-viewer-page" style={{ width: w, height: h }}>
-              <canvas
-                ref={el => { if (el) canvasRefs.current.set(page, el) }}
-                style={{ position: 'absolute', top: 0, left: 0 }}
-              />
-              <svg
-                ref={el => { if (el) { svgRefs.current.set(page, el); renderSvgAnnotations(el, page) } }}
-                className="pdf-viewer-svg"
-                style={{ cursor: cursorMap[tool] }}
-                onMouseDown={e => handleMouseDown(e, page)}
+            <div key={page} className="pdf-viewer-page" style={{width:w,height:h}}>
+              <canvas ref={el=>{if(el)canvasRefs.current.set(page,el)}}
+                style={{position:'absolute',top:0,left:0}}/>
+              <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
+                className="pdf-viewer-svg" style={{cursor:cursorMap[tool]}}
+                onMouseDown={e=>handleMouseDown(e,page)}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               />
-              {/* Input texto flotante */}
-              {textInput?.page === page && (
+              {/* Input texto flotante — posicionado en píxeles dentro de la página */}
+              {textInput?.page===page && (
                 <input
-                  autoFocus
+                  ref={textInputRef}
                   className="pdf-text-input"
-                  style={{
-                    left: textInput.x * w,
-                    top: textInput.y * h,
-                    color,
-                  }}
+                  style={{left:textInput.pxX, top:textInput.pxY, color}}
                   value={textValue}
-                  onChange={e => setTextValue(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') { e.preventDefault(); confirmTextInput() }
-                    if (e.key === 'Escape') { setTextInput(null); setTextValue('') }
+                  onChange={e=>setTextValue(e.target.value)}
+                  onKeyDown={e=>{
+                    if(e.key==='Enter'){e.preventDefault();confirmText()}
+                    if(e.key==='Escape'){setTextInput(null);setTextValue('')}
                   }}
-                  onBlur={confirmTextInput}
+                  onBlur={confirmText}
                   placeholder="Escribe…"
                 />
               )}
-              {/* Número de página */}
               <div className="pdf-page-num">Pág. {page} / {numPages}</div>
             </div>
           )
