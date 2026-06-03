@@ -32,9 +32,7 @@ import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
-import { lazy, Suspense } from 'react'
-const PdfViewer = lazy(() => import('../pdf/PdfViewer'))
-type PdfAnnotation = import('../pdf/PdfViewer').Annotation
+import PdfContainer from '../pdf/PdfContainer'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -56,11 +54,6 @@ interface Attachment {
 // UUID regex — si el id es un UUID, es directo; si no, puede ser un slug
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Cache de anotaciones PDF a nivel de módulo — persiste toda la sesión del browser,
-// independiente del ciclo de vida de React (unmount/remount, navegación entre nodos).
-// Clave: nodeId  Valor: array de anotaciones
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const pdfAnnotationsCache = new Map<string, any[]>()
 
 export default function NodeView() {
   const { id } = useParams<{ id: string }>()
@@ -686,36 +679,6 @@ export default function NodeView() {
     }
   }, [isAiStreaming, bodyValue, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Hooks de PDF — DEBEN ir antes de cualquier early return ───────────────
-  // Anotaciones PDF: cache de sesión (módulo) + estado React + extraData
-  const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>(() =>
-    pdfAnnotationsCache.get(node?.id || '') || []
-  )
-  const handlePdfAnnotationsChange = useCallback((anns: PdfAnnotation[]) => {
-    const nodeId = node?.id || ''
-    pdfAnnotationsCache.set(nodeId, anns)
-    setPdfAnnotations(anns)
-    const nodeNow = store.getNode(nodeId)
-    if (!nodeNow) return
-    let ed: Record<string,unknown> = {}
-    try { ed = JSON.parse(nodeNow.extraData || '{}') } catch {}
-    ed._annotations = anns
-    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id])
-  useEffect(() => {
-    const nodeId = node?.id || ''
-    if (!nodeId) return
-    if (pdfAnnotationsCache.has(nodeId)) {
-      setPdfAnnotations(pdfAnnotationsCache.get(nodeId)!); return
-    }
-    try {
-      const ed = JSON.parse(store.getNode(nodeId)?.extraData || '{}')
-      const anns = Array.isArray(ed._annotations) ? ed._annotations : []
-      pdfAnnotationsCache.set(nodeId, anns); setPdfAnnotations(anns)
-    } catch { /* nada */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id])
 
   // URL fresca del recurso (presigned URLs expiran en 1h)
   const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
@@ -2012,16 +1975,12 @@ export default function NodeView() {
                   onClick={() => window.open(nodeResourceMeta.url, '_blank')}
                 />
               ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
-                <Suspense fallback={<div style={{padding:24,color:'var(--text-secondary)',fontSize:13}}>Cargando visor PDF…</div>}>
-                <PdfViewer
+                <PdfContainer
                   url={nodeResourceMeta.url}
                   nodeId={node.id}
                   filename={node.text || 'documento'}
                   resourceKey={(() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()}
-                  annotations={pdfAnnotations}
-                  onAnnotationsChange={handlePdfAnnotationsChange}
                 />
-                </Suspense>
               ) : (
                 /* URL / enlace genérico */
                 <a
