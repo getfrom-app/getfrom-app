@@ -2353,7 +2353,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return { status: (ed._resourceStatus || 'pending') as string, url: ed._resourceUrl as string | undefined }
     } catch { return null }
   })()
+  // No mostrar checkbox de recurso pendiente para archivos (pdf, imagen, file) — solo para URLs
   const isResourcePending = !!resourceData && resourceData.status === 'pending'
+    && !['pdf','image','file'].includes(((() => { try { return JSON.parse(node.extraData||'{}')._resourceType } catch { return null } })()||''))
   // URL navegable del nodo (recurso o campo resourceUrl)
   const nodeUrl = resourceData?.url || node.resourceUrl || null
 

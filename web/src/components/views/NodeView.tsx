@@ -1485,7 +1485,24 @@ export default function NodeView() {
           )}
 
           <div className="node-title-row">
-            {/* Icono del nodo — evento=calendario, normal=emoji */}
+            {/* Icono del nodo — evento=calendario, PDF/imagen/archivo=badge, normal=emoji */}
+            {(() => {
+              try {
+                const ed = JSON.parse(node.extraData || '{}')
+                const rType = (ed._resourceType || node.resourceType || '') as string
+                if (rType === 'pdf') return (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: '#e53e3e',
+                    padding: '2px 7px', borderRadius: 4, letterSpacing: '0.02em', flexShrink: 0, marginRight: 8 }}>PDF</span>
+                )
+                if (rType === 'image') return (
+                  <span style={{ fontSize: 18, flexShrink: 0, marginRight: 8 }}>🖼</span>
+                )
+                if (rType === 'file') return (
+                  <span style={{ fontSize: 18, flexShrink: 0, marginRight: 8 }}>📎</span>
+                )
+              } catch {}
+              return null
+            })()}
             {node.isEvent ? (
               // Icono calendario para eventos
               <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
@@ -1501,7 +1518,9 @@ export default function NodeView() {
               // Recurso pendiente (sin tarea ni evento): checkbox cian
               try {
                 const ed = JSON.parse(node.extraData || '{}')
-                if (ed._resource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent) {
+                const resType = (ed._resourceType || node.resourceType || '') as string
+                const isFileResource = ['pdf','image','file'].includes(resType)
+                if (ed._resource && !isFileResource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent) {
                   return (
                     <button
                       className="bullet-btn task task-sq--resource"
