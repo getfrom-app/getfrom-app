@@ -57,7 +57,7 @@ function slugToDisplayName(slug: string): string {
 
 // Render text with colored hashtags and @context chips
 function renderWithTags(text: string, key: number): React.ReactNode {
-  const parts = text.split(/(#[\wÀ-ɏ/\-]+|@[\wÀ-ɏ][\w\sÀ-ɏ\-]*)/g)
+  const parts = text.split(/(#[\wÀ-ɏ/\-]+|(?<!\w)@[\wÀ-ɏ][\w\sÀ-ɏ\-]*)/g)
   if (parts.length === 1) return text
   return (
     <>
@@ -321,7 +321,7 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
       return `<span class="tag-inline" style="${tagStyle(hex)}">${match}</span>`
     })
     // @contextos \u2014 nombre limpio, sin @, sin guiones, sin fondo, underline punteado
-    .replace(/@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (_match, slug) => {
+    .replace(/(?<!\w)@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (_match, slug) => {
       const hex = '#7c3aed'
       // De-slug: tomar \u00FAltima parte del path y capitalizar
       const part = (slug.trim().split('/').pop() || slug.trim())
