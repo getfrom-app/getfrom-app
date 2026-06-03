@@ -366,8 +366,17 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       </div>
 
       {/* Páginas */}
-      <div className="pdf-viewer-pages">
-        {loading && <div className="pdf-viewer-loading"><div className="footer-spinner"/> Cargando PDF…</div>}
+      <div className="pdf-viewer-pages" style={{ position: 'relative' }}>
+        {/* Loading como overlay — no afecta al layout ni causa saltos */}
+        {loading && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#404040', borderRadius: 0,
+          }}>
+            <div className="pdf-viewer-loading"><div className="footer-spinner"/> Cargando PDF…</div>
+          </div>
+        )}
         {Array.from({length:numPages},(_,i)=>{
           const page = i+1
           const w = pageWidths[i]||0; const h = pageHeights[i]||0
