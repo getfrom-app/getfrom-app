@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
+import { deleteFile } from '../../api/client'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -55,14 +56,21 @@ export default function TrashView() {
     }
   }
 
-  function handlePermanentDelete(id: string) {
-    // Hard delete: remove from the local map and mark as dirty to sync
+  async function handlePermanentDelete(id: string) {
+    const node = store.getNode(id)
+    if (!node) return
+    // Eliminar archivo de R2 si el nodo tiene un archivo adjunto
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._resourceKey) await deleteFile(ed._resourceKey as string)
+    } catch { /* silencioso */ }
+    // Hard delete: marca con fecha muy futura para que el servidor lo elimine
     store.updateNode(id, { deletedAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString() })
   }
 
-  function handleClearTrash() {
+  async function handleClearTrash() {
     for (const n of deletedNodes) {
-      handlePermanentDelete(n.id)
+      await handlePermanentDelete(n.id)
     }
     setConfirmClear(false)
   }
@@ -132,6 +140,13 @@ export default function TrashView() {
                     title="Restaurar"
                   >
                     ↩ Restaurar
+                  </button>
+                  <button
+                    className="trash-delete-btn"
+                    onClick={() => handlePermanentDelete(node.id)}
+                    title="Eliminar permanentemente"
+                  >
+                    🗑 Eliminar
                   </button>
                 </div>
               </div>
