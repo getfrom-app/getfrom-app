@@ -32,6 +32,7 @@ import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
+import PdfViewer from '../pdf/PdfViewer'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1973,40 +1974,19 @@ export default function NodeView() {
                   onClick={() => window.open(nodeResourceMeta.url, '_blank')}
                 />
               ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
-                <div className="node-resource-pdf-wrap">
-                  <div className="node-resource-pdf-toolbar">
-                    <span className="node-resource-pdf-badge">PDF</span>
-                    <span className="node-resource-pdf-name">{node.text}</span>
-                    <a
-                      href={nodeResourceMeta.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="node-resource-pdf-open"
-                      title="Abrir en nueva pestaña"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/>
-                        <path d="M10 2h4v4"/><path d="M14 2L8 8"/>
-                      </svg>
-                      Abrir
-                    </a>
-                    <a
-                      href={nodeResourceMeta.url}
-                      download={node.text}
-                      className="node-resource-pdf-open"
-                      title="Descargar PDF"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/>
-                      </svg>
-                    </a>
-                  </div>
-                  <iframe
-                    src={nodeResourceMeta.url}
-                    className="node-resource-pdf"
-                    title={node.text || 'PDF'}
-                  />
-                </div>
+                <PdfViewer
+                  url={nodeResourceMeta.url}
+                  nodeId={node.id}
+                  filename={node.text || 'documento'}
+                  resourceKey={(() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string } catch { return undefined } })()}
+                  onUrlUpdated={newUrl => {
+                    let ed: Record<string,unknown> = {}
+                    try { ed = JSON.parse(node.extraData||'{}') } catch {}
+                    ed._resourceUrl = newUrl
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                    setFreshResourceUrl(newUrl)
+                  }}
+                />
               ) : (
                 /* URL / enlace genérico */
                 <a
