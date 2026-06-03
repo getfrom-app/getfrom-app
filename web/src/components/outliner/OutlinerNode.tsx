@@ -2948,7 +2948,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             data-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : "Escribe algo..."}
             data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : undefined}
             onPaste={e => {
-              const clipText = e.clipboardData.getData('text/plain')
+              // Siempre obtener text/plain limpio — sanitizar artefactos HTML que Chrome
+              // puede incluir en text/plain al copiar un enlace (ej: url" target="_blank" rel=...)
+              let clipText = e.clipboardData.getData('text/plain')
+              const htmlClip = e.clipboardData.getData('text/html')
+
+              // Detectar si text/plain tiene atributos HTML contaminados
+              // Patrón típico: https://url" target="_blank" rel="..." >texto
+              if (clipText && /"\s+(target|rel|class|id|style)=/.test(clipText) && htmlClip) {
+                // Extraer URL limpia desde text/html
+                const tmp = document.createElement('div')
+                tmp.innerHTML = htmlClip
+                const anchor = tmp.querySelector('a')
+                if (anchor?.href && /^https?:\/\//.test(anchor.href)) {
+                  clipText = anchor.href
+                } else {
+                  // Fallback: extraer solo la parte de URL antes de las comillas
+                  const urlMatch = clipText.match(/^(https?:\/\/[^\s"'<>]+)/)
+                  if (urlMatch) clipText = urlMatch[1]
+                }
+              }
+
               const urlRegex = /^https?:\/\/[^\s]+$/
 
               // Si hay texto seleccionado y el portapapeles es una URL → aplicar como enlace
@@ -2968,17 +2988,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 return
               }
 
-              // Detectar si el texto pegado es una URL y el nodo está vacío
+              // Detectar si el texto pegado es una URL y el nodo está vacío →
+              // pegar URL limpia para que el useEffect auto-detect la convierta en recurso
               const curContent = contentRef.current?.textContent || ''
               if (urlRegex.test(clipText.trim()) && curContent.trim() === '') {
                 e.preventDefault()
                 const url = clipText.trim()
-                let domain = url
-                try { domain = new URL(url).hostname } catch { /* ignore */ }
-                const linkText = `[${domain}](${url})`
-                nodeTextRef.current = linkText
-                store.updateNode(node.id, { text: linkText })
-                if (contentRef.current) contentRef.current.textContent = linkText
+                nodeTextRef.current = url
+                store.updateNode(node.id, { text: url })
+                if (contentRef.current) contentRef.current.textContent = url
                 return
               }
 
