@@ -2983,7 +2983,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
 
               const lines = clipText.split('\n').map(l => l.trimEnd()).filter(l => l.length > 0)
-              if (lines.length <= 1) return // Paste normal de una línea
+              if (lines.length <= 1) {
+                // Siempre prevenir paste del browser para evitar que pegue HTML rico
+                // (ej. <a href="..."> con atributos como texto plano)
+                e.preventDefault()
+                const sel = window.getSelection()
+                if (sel && sel.rangeCount && contentRef.current) {
+                  const range = sel.getRangeAt(0)
+                  range.deleteContents()
+                  const textNode = document.createTextNode(clipText)
+                  range.insertNode(textNode)
+                  range.setStartAfter(textNode)
+                  range.collapse(true)
+                  sel.removeAllRanges()
+                  sel.addRange(range)
+                  const newText = contentRef.current.textContent || ''
+                  nodeTextRef.current = newText
+                  store.updateNode(node.id, { text: newText })
+                }
+                return
+              }
               e.preventDefault()
 
               // Helper: detectar formato markdown de una línea y extraer texto + metadatos
