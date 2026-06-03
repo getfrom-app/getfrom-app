@@ -1119,8 +1119,9 @@ export default function NodeView() {
         .then(url => setFreshResourceUrl(url))
         .catch(() => {}) // silencioso — fallback a URL guardada
     } catch {}
+  // Solo depende de node.id — no de extraData (cambia en cada anotación, causaría reload del PDF)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, node.extraData])
+  }, [node.id])
 
   const nodeResourceMeta = (() => {
     try {
