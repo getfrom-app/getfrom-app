@@ -32,7 +32,9 @@ import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
-import PdfViewer, { type Annotation as PdfAnnotation } from '../pdf/PdfViewer'
+import { lazy, Suspense } from 'react'
+const PdfViewer = lazy(() => import('../pdf/PdfViewer'))
+type PdfAnnotation = import('../pdf/PdfViewer').Annotation
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1982,6 +1984,7 @@ export default function NodeView() {
                   onClick={() => window.open(nodeResourceMeta.url, '_blank')}
                 />
               ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
+                <Suspense fallback={<div style={{padding:24,color:'var(--text-secondary)',fontSize:13}}>Cargando visor PDF…</div>}>
                 <PdfViewer
                   url={nodeResourceMeta.url}
                   nodeId={node.id}
@@ -2003,6 +2006,7 @@ export default function NodeView() {
                     setFreshResourceUrl(newUrl)
                   }}
                 />
+                </Suspense>
               ) : (
                 /* URL / enlace genérico */
                 <a
