@@ -363,6 +363,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         {/* Indicador de guardado automático */}
         {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>Guardando…</span>}
         {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ Guardado</span>}
+        {/* Acciones del archivo */}
+        <div className="pdf-tb-group" style={{borderLeft:'1px solid var(--border)',paddingLeft:8,marginLeft:4,borderRight:'none'}}>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title="Abrir en nueva pestaña" style={{textDecoration:'none'}}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
+            Abrir
+          </a>
+          <a href={url} download={filename} className="node-resource-pdf-open" title="Descargar" style={{textDecoration:'none'}}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
+          </a>
+        </div>
       </div>
 
       {/* Páginas */}

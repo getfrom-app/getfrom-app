@@ -1072,7 +1072,6 @@ export default function NodeView() {
   // Recurso principal del nodo (imagen, PDF, URL)
   // URL fresca del recurso (presigned URLs expiran en 1h — regenerar al abrir)
   const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
-  const [pdfAnnotateMode, setPdfAnnotateMode] = useState(false)
   // Anotaciones del PDF — viven en NodeView para sobrevivir al unmount/remount de PdfViewer
   const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>([])
   const pdfNodeIdRef = useRef<string | null>(null)
@@ -1983,58 +1982,27 @@ export default function NodeView() {
                   onClick={() => window.open(nodeResourceMeta.url, '_blank')}
                 />
               ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
-                (() => {
-                  const rKey = (() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()
-                  return (
-                    <div className="node-resource-pdf-wrap">
-                      {/* Barra de info — siempre visible */}
-                      <div className="node-resource-pdf-toolbar">
-                        <span className="node-resource-pdf-badge">PDF</span>
-                        <span className="node-resource-pdf-name">{node.text}</span>
-                        <button
-                          className={`node-resource-pdf-open${pdfAnnotateMode?' node-resource-pdf-open--active':''}`}
-                          onClick={() => setPdfAnnotateMode(m => !m)}
-                          title={pdfAnnotateMode ? 'Salir de modo anotación' : 'Anotar PDF'}
-                        >✏️ {pdfAnnotateMode ? 'Salir' : 'Anotar'}</button>
-                        <a href={nodeResourceMeta.url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title="Abrir en nueva pestaña">
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
-                          Abrir
-                        </a>
-                        <a href={nodeResourceMeta.url} download={node.text} className="node-resource-pdf-open" title="Descargar">
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
-                        </a>
-                      </div>
-                      {/* Modo anotación: barra de herramientas + visor PDF.js */}
-                      {pdfAnnotateMode ? (
-                        <PdfViewer
-                          url={nodeResourceMeta.url}
-                          nodeId={node.id}
-                          filename={node.text || 'documento'}
-                          resourceKey={rKey}
-                          annotations={pdfAnnotations}
-                          onAnnotationsChange={anns => {
-                            setPdfAnnotations(anns)
-                            // también guardamos en extraData para persistencia en servidor
-                            let ed: Record<string,unknown> = {}
-                            try { ed = JSON.parse(node.extraData||'{}') } catch {}
-                            ed._annotations = anns
-                            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                          }}
-                          onUrlUpdated={newUrl => {
-                            let ed: Record<string,unknown> = {}
-                            try { ed = JSON.parse(node.extraData||'{}') } catch {}
-                            ed._resourceUrl = newUrl
-                            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                            setFreshResourceUrl(newUrl)
-                          }}
-                        />
-                      ) : (
-                        /* Modo visualización: iframe nativo */
-                        <iframe src={nodeResourceMeta.url} className="node-resource-pdf" title={node.text || 'PDF'} />
-                      )}
-                    </div>
-                  )
-                })()
+                <PdfViewer
+                  url={nodeResourceMeta.url}
+                  nodeId={node.id}
+                  filename={node.text || 'documento'}
+                  resourceKey={(() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()}
+                  annotations={pdfAnnotations}
+                  onAnnotationsChange={anns => {
+                    setPdfAnnotations(anns)
+                    let ed: Record<string,unknown> = {}
+                    try { ed = JSON.parse(node.extraData||'{}') } catch {}
+                    ed._annotations = anns
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                  }}
+                  onUrlUpdated={newUrl => {
+                    let ed: Record<string,unknown> = {}
+                    try { ed = JSON.parse(node.extraData||'{}') } catch {}
+                    ed._resourceUrl = newUrl
+                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                    setFreshResourceUrl(newUrl)
+                  }}
+                />
               ) : (
                 /* URL / enlace genérico */
                 <a
