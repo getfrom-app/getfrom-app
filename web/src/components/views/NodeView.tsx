@@ -32,7 +32,7 @@ import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
-import PdfViewer from '../pdf/PdfViewer'
+import PdfViewer, { type Annotation as PdfAnnotation } from '../pdf/PdfViewer'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1073,6 +1073,18 @@ export default function NodeView() {
   // URL fresca del recurso (presigned URLs expiran en 1h — regenerar al abrir)
   const [freshResourceUrl, setFreshResourceUrl] = useState<string | null>(null)
   const [pdfAnnotateMode, setPdfAnnotateMode] = useState(false)
+  // Anotaciones del PDF — viven en NodeView para sobrevivir al unmount/remount de PdfViewer
+  const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>([])
+  const pdfNodeIdRef = useRef<string | null>(null)
+  // Cargar anotaciones del nodo actual cuando cambia el nodo
+  useEffect(() => {
+    if (!node || pdfNodeIdRef.current === node.id) return
+    pdfNodeIdRef.current = node.id
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      setPdfAnnotations(Array.isArray(ed._annotations) ? ed._annotations : [])
+    } catch { setPdfAnnotations([]) }
+  }, [node?.id, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     try {
       const ed = JSON.parse(node.extraData || '{}')
@@ -1999,6 +2011,15 @@ export default function NodeView() {
                           nodeId={node.id}
                           filename={node.text || 'documento'}
                           resourceKey={rKey}
+                          annotations={pdfAnnotations}
+                          onAnnotationsChange={anns => {
+                            setPdfAnnotations(anns)
+                            // también guardamos en extraData para persistencia en servidor
+                            let ed: Record<string,unknown> = {}
+                            try { ed = JSON.parse(node.extraData||'{}') } catch {}
+                            ed._annotations = anns
+                            store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+                          }}
                           onUrlUpdated={newUrl => {
                             let ed: Record<string,unknown> = {}
                             try { ed = JSON.parse(node.extraData||'{}') } catch {}

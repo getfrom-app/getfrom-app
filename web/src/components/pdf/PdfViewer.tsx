@@ -22,13 +22,17 @@ type Annotation = PathAnnotation | TextAnnotation
 
 interface Props {
   url: string; nodeId: string; filename: string; resourceKey?: string
+  annotations: Annotation[]
+  onAnnotationsChange: (anns: Annotation[]) => void
   onUrlUpdated?: (newUrl: string) => void
 }
+
+export type { Annotation, PathAnnotation, TextAnnotation }
 
 const COLORS    = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','#000000']
 const PEN_SIZES = [2, 4, 6, 10]
 
-export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpdated }: Props) {
+export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, onAnnotationsChange, onUrlUpdated }: Props) {
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
   const pdfDocRef    = useRef<any>(null)
@@ -46,7 +50,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
   const [tool,        setTool]        = useState<Tool>('pen')
   const [color,       setColor]       = useState('#e53e3e')
   const [penSize,     setPenSize]     = useState(3)
-  const [annotations, setAnnotations] = useState<Annotation[]>([])
+  // annotations viene del padre (NodeView) — sobrevive al unmount/remount de PdfViewer
   const [loading,     setLoading]     = useState(true)
   const [saveStatus,  setSaveStatus]  = useState<'idle'|'saving'|'saved'>('idle')
   // Text tool
@@ -54,13 +58,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
   const [textValue,   setTextValue]   = useState('')
   const textInputRef  = useRef<HTMLInputElement>(null)
 
-  // ── Cargar anotaciones guardadas ───────────────────────────────────────────
-  useEffect(() => {
-    try {
-      const ed = JSON.parse(store.getNode(nodeId)?.extraData || '{}')
-      if (Array.isArray(ed._annotations)) setAnnotations(ed._annotations)
-    } catch {}
-  }, [nodeId])
+  // Las anotaciones vienen del padre (NodeView) — no se cargan aquí
 
   // ── Guardar anotaciones en el nodo (extraData) ─────────────────────────────
   const saveToNode = useCallback((anns: Annotation[]) => {
@@ -292,7 +290,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
     const ann = drawingRef.current; drawingRef.current = null
     if (ann.points.length < 2) return
     const next = [...annotations, ann]
-    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
+    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
   }
 
   function eraseAt(page: number, x: number, y: number) {
@@ -302,7 +300,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
       if (a.type === 'path') return !a.points.some(([px,py])=>Math.abs(px-x)<T&&Math.abs(py-y)<T)
       return Math.abs(a.x-x)>T||Math.abs(a.y-y)>T
     })
-    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
+    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
   }
 
   function confirmText() {
@@ -312,13 +310,13 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
       x:textInput.x, y:textInput.y, text:textValue, fontSize:Math.round(16*scale)/scale
     }
     const next = [...annotations, ann]
-    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
+    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
     setTextInput(null); setTextValue('')
   }
 
   function handleUndo() {
     const next = annotations.slice(0,-1)
-    setAnnotations(next); saveToNode(next); scheduleAutoSave(next)
+    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
