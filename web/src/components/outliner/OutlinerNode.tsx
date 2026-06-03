@@ -285,6 +285,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
+  // Predicción de pizarra — el texto es exactamente "pizarra"
+  const [whiteboardPrediction, setWhiteboardPrediction] = useState(false)
   // Predicción de tarea — el texto empieza por un verbo de acción
   const [taskPrediction, setTaskPrediction] = useState(false)
   // Animación "checkbox aparece" cuando el nodo se convierte en tarea
@@ -898,6 +900,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setTaskPrediction(false)
     }
 
+    // ── Detección "pizarra" → predicción de pizarra digital ─────────────────
+    const normedForWb = text.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    setWhiteboardPrediction(normedForWb === 'pizarra' || normedForWb === 'whiteboard')
+
     // ── Detección de fecha al final de cualquier nodo ──────────────────────
     if (text.length > 3) {
       setDatePrediction(extractDateFromEnd(text))
@@ -1196,6 +1202,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         acceptDatePrediction()
         // Crear hermano (la tarea quedó creada arriba)
         createSiblingBelow()
+        return
+      }
+    }
+
+    // ── Predicción pizarra: Tab/Enter convierte en pizarra y navega ──────────
+    if (whiteboardPrediction && !picker && !showSlash && !ctxCompletion) {
+      if (e.key === 'Escape') {
+        e.preventDefault(); setWhiteboardPrediction(false); return
+      }
+      if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey)) {
+        e.preventDefault()
+        setWhiteboardPrediction(false)
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node.extraData || '{}') } catch {}
+        ed._isWhiteboard = '1'
+        store.updateNode(node.id, { extraData: JSON.stringify(ed), text: 'Pizarra' })
+        if (contentRef.current) contentRef.current.textContent = 'Pizarra'
+        navigate(`/node/${node.id}`)
         return
       }
     }
@@ -2106,11 +2130,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
     } else if (action === 'whiteboard') {
       // Marcar como pizarra y navegar al nodo
+      // updates.text ya contiene el texto limpio (sin el /pizarra) calculado por handleSlashSelect
       let ed: Record<string, unknown> = {}
       try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
       ed._isWhiteboard = '1'
       updates.extraData = JSON.stringify(ed)
-      updates.text = node.text || prefix || 'Pizarra'
+      // Si no queda texto (el nodo solo tenía /pizarra), usar "Pizarra" como título
+      if (!updates.text) updates.text = 'Pizarra'
       store.updateNode(node.id, updates)
       navigate(`/node/${node.id}`)
       return
@@ -2650,6 +2676,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </svg>
                 </button>
               </>
+            ) : (() => { try { return JSON.parse(node.extraData||'{}')._isWhiteboard === '1' } catch { return false } })() ? (
+              // Pizarra digital: icono de pizarra, click abre el nodo
+              <button
+                className="bullet-btn nota-btn"
+                onClick={() => navigate(`/node/${node.id}`)}
+                tabIndex={-1}
+                title="Clic para abrir pizarra"
+              >
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#3182ce', letterSpacing: '-0.5px' }}>WB</span>
+              </button>
             ) : nodeResourceType === 'pdf' ? (
               // Archivo PDF: icono PDF, click abre el nodo
               <button
@@ -3248,6 +3284,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {taskPrediction && !datePrediction && isEditing && !ctxCompletion && (
               <span className="from-ghost from-ghost--task">
                 <span className="from-ghost-text">☐ tarea</span>
+                <span className="from-ghost-sep">·</span>
+                <span className="from-ghost-key">↵</span>
+              </span>
+            )}
+
+            {whiteboardPrediction && isEditing && !ctxCompletion && (
+              <span className="from-ghost" style={{ color: '#3182ce' }}>
+                <span className="from-ghost-text">🖊 pizarra</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">↵</span>
               </span>

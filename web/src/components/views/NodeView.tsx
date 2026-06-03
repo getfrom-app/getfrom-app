@@ -1591,6 +1591,12 @@ export default function NodeView() {
                     {(() => {
                       try {
                         const ed = JSON.parse(node.extraData || '{}')
+                        if (ed._isWhiteboard === '1') return (
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, color: '#fff', background: '#3182ce',
+                            padding: '3px 5px', borderRadius: 4, letterSpacing: '0.03em', lineHeight: 1,
+                          }}>WB</span>
+                        )
                         const rType = (ed._resourceType || node.resourceType || '') as string
                         if (rType === 'pdf') return (
                           <span style={{
