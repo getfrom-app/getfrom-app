@@ -65,8 +65,10 @@ export async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const makeRequest = async (token: string | null) => {
+    // Si el body es FormData, no poner Content-Type — el browser lo pone solo con el boundary correcto
+    const isFormData = options.body instanceof FormData
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers as Record<string, string> || {}),
     }
     if (token) headers['Authorization'] = `Bearer ${token}`

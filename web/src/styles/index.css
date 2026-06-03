@@ -4410,7 +4410,7 @@ body.outliner-drag-active {
 
 /* ── NodeContextPanel ───────────────────────────────────────────────────── */
 
-.node-view--with-context { display: flex; flex-direction: row; align-items: stretch; height: 100%; }
+.node-view--with-context { display: flex; flex-direction: row; align-items: stretch; height: 100%; position: relative; }
 .node-view--focus .view-header { max-width: 700px; margin: 0 auto; padding-right: 0; }
 .node-view--focus .view-body { max-width: 700px; margin: 0 auto; }
 .node-view--focus .node-context-panel { display: none; }
@@ -9939,6 +9939,34 @@ textarea:focus-visible,
   outline: 2px dashed rgba(139, 92, 246, 0.3);
   outline-offset: -12px;
   border-radius: 8px;
+}
+
+/* ── Drop overlay en NodeView ─────────────────────────────────────────────── */
+.node-view-file-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(139, 92, 246, 0.06);
+  border: 2px dashed rgba(139, 92, 246, 0.4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  margin: 8px;
+}
+.node-view-file-drop-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--bg-primary);
+  padding: 24px 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 /* ── Ocultar panel derecho en WF ─────────────────────────────────────────── */

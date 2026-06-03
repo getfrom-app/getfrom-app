@@ -1297,10 +1297,18 @@ export default function NodeView() {
   }
 
   // Drag & drop de archivos sobre toda la nota
+  const [fileDragOver, setFileDragOver] = useState(false)
   function handleViewDragOver(e: React.DragEvent) {
     if (e.dataTransfer.types.includes('Files')) {
       e.preventDefault()
       e.dataTransfer.dropEffect = 'copy'
+      setFileDragOver(true)
+    }
+  }
+  function handleViewDragLeave(e: React.DragEvent) {
+    // Solo limpiar si el cursor sale del contenedor completo (no entre hijos)
+    if (!e.currentTarget.contains(e.relatedTarget as globalThis.Node)) {
+      setFileDragOver(false)
     }
   }
   async function uploadFileToNode(file: File, targetNodeId: string) {
@@ -1324,11 +1332,11 @@ export default function NodeView() {
   }
 
   function handleViewDrop(e: React.DragEvent) {
+    setFileDragOver(false)
     if (!isLoggedIn || !node) return
     e.preventDefault()
     const files = Array.from(e.dataTransfer.files)
     if (files.length === 0) return
-    // Siempre crear un nodo hijo por cada archivo (no subir al nodo actual)
     const siblings = store.children(node.id)
     const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
     files.forEach(async (file, i) => {
@@ -1341,8 +1349,23 @@ export default function NodeView() {
     <div
       className={`view node-view node-view--with-context ${focusMode ? 'node-view--focus' : ''} ${nodeLayout === 'wide' ? 'node-view--wide' : ''} ${nodeLayout === 'small' ? 'node-view--small' : ''}`}
       onDragOver={handleViewDragOver}
+      onDragLeave={handleViewDragLeave}
       onDrop={handleViewDrop}
     >
+      {/* Drop zone overlay para archivos */}
+      {fileDragOver && (
+        <div className="node-view-file-drop-overlay">
+          <div className="node-view-file-drop-inner">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>Soltar para añadir como nodo</span>
+          </div>
+        </div>
+      )}
       <div className="node-view-main">
         {/* In-doc search bar (⌘F) */}
         {showInDocSearch && (
