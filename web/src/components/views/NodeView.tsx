@@ -443,10 +443,10 @@ export default function NodeView() {
     try { ed = JSON.parse(node.extraData || '{}') } catch {}
     // Solo auto-detectar si no está ya marcado como recurso
     if (ed._resource) return
-    // Marcar como recurso y hacer unfurl
+    // Marcar como recurso y hacer unfurl (quitar status de tarea)
     ed._resource = true
     ed._resourceUrl = text
-    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    store.updateNode(node.id, { extraData: JSON.stringify(ed), status: null })
     unfurlUrl(text)
       .then(meta => {
         let ed2: Record<string, unknown> = {}
@@ -1509,7 +1509,9 @@ export default function NodeView() {
                 const ed = JSON.parse(node.extraData || '{}')
                 const resType = (ed._resourceType || node.resourceType || '') as string
                 const isFileResource = ['pdf','image','file'].includes(resType)
-                if (ed._resource && !isFileResource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent) {
+                // Los nodos de enlace/URL no muestran checkbox — usan el icono de enlace
+                const isUrlResource = !isFileResource && !!ed._resourceUrl && /^https?:\/\//.test(String(ed._resourceUrl))
+                if (ed._resource && !isFileResource && !isUrlResource && (ed._resourceStatus || 'pending') === 'pending' && node.status === null && !node.isEvent) {
                   return (
                     <button
                       className="bullet-btn task task-sq--resource"

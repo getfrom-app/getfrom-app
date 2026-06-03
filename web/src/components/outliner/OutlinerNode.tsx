@@ -2415,12 +2415,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const ed = JSON.parse(node.extraData || '{}')
       if (ed._resource) return
     } catch {}
-    // Marcar como recurso
+    // Marcar como recurso (y quitar status de tarea para que muestre icono de enlace)
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch {}
     ed._resource = true
     ed._resourceUrl = text
-    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    store.updateNode(node.id, { extraData: JSON.stringify(ed), status: null })
     // Unfurl
     unfurlUrl(text).then(meta => {
       let ed2: Record<string, unknown> = {}
