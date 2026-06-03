@@ -191,7 +191,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         : file.type === 'application/pdf' ? 'pdf' : 'file'
       store.updateNode(newNode.id, {
         isResource: true,
-        extraData: JSON.stringify({ _resource: true, _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }),
+        extraData: JSON.stringify({ _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }),
       })
     } catch (e) {
       console.error('Upload failed', e)
