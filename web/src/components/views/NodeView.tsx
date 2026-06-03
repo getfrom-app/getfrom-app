@@ -33,6 +33,7 @@ import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 import PdfContainer from '../pdf/PdfContainer'
+import WhiteboardContainer from '../pdf/WhiteboardContainer'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1964,6 +1965,15 @@ export default function NodeView() {
         </div>
 
         <div className="view-body">
+          {/* ── Pizarra digital ── */}
+          {(() => {
+            try {
+              const ed = JSON.parse(node.extraData || '{}')
+              if (ed._isWhiteboard === '1') return <WhiteboardContainer nodeId={node.id} />
+            } catch {}
+            return null
+          })()}
+
           {/* ── Recurso principal (imagen / PDF / URL) ── */}
           {nodeResourceMeta?.url && (
             <div className="node-resource-preview">

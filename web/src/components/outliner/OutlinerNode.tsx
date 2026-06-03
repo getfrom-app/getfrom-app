@@ -2104,6 +2104,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       updates.isEvent = true
       updates.status = null
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    } else if (action === 'whiteboard') {
+      // Marcar como pizarra y navegar al nodo
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed._isWhiteboard = '1'
+      updates.extraData = JSON.stringify(ed)
+      updates.text = node.text || prefix || 'Pizarra'
+      store.updateNode(node.id, updates)
+      navigate(`/node/${node.id}`)
+      return
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
       const existingTypes = node.types || []
