@@ -366,6 +366,46 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
           />
         </div>
       )}
+
+      <FavoritesSection onApply={onApply} activeQuery={activeQuery} />
+    </div>
+  )
+}
+
+// ── Sección de Favoritos ─────────────────────────────────────────────────────
+
+function FavoritesSection({ onApply, activeQuery }: { onApply: (q: string) => void; activeQuery: string }) {
+  const s = useStore()
+  const favorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt && n.text)
+  if (favorites.length === 0) return null
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
+      <div style={{ padding: '4px 12px 2px', fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        Favoritos
+      </div>
+      {favorites.slice(0, 15).map(n => {
+        const q = `node:${n.id}`
+        const isActive = activeQuery === q
+        return (
+          <div
+            key={n.id}
+            onClick={() => onApply(isActive ? '' : q)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '4px 8px 4px 12px', cursor: 'pointer', fontSize: 13,
+              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <span style={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }}>★</span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {n.text}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }
