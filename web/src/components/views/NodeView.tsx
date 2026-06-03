@@ -1305,8 +1305,6 @@ export default function NodeView() {
   }
   async function uploadFileToNode(file: File, targetNodeId: string) {
     setUploading(true)
-    // Mostrar toast de progreso
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `⬆ Subiendo ${file.name}…`, type: 'info' } }))
     try {
       const { key, publicUrl } = await uploadFile(file)
       setAttachments(prev => [...prev, { key, filename: file.name, size: file.size, url: publicUrl }])
