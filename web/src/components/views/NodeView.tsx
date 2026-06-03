@@ -1487,33 +1487,6 @@ export default function NodeView() {
           )}
 
           <div className="node-title-row">
-            {/* Icono del nodo — evento=calendario, PDF/imagen/archivo=badge, normal=emoji */}
-            {(() => {
-              try {
-                const ed = JSON.parse(node.extraData || '{}')
-                const rType = (ed._resourceType || node.resourceType || '') as string
-                // Sustituye el icono del nodo con el badge del tipo de archivo
-                // Mismas dimensiones que el icono de nota (32x32px)
-                if (rType === 'pdf') return (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 32, height: 32, flexShrink: 0, marginRight: 4,
-                  }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 800, color: '#fff', background: '#e53e3e',
-                      padding: '3px 5px', borderRadius: 4, letterSpacing: '0.03em', lineHeight: 1,
-                    }}>PDF</span>
-                  </span>
-                )
-                if (rType === 'image') return (
-                  <span style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, marginRight: 4 }}>🖼</span>
-                )
-                if (rType === 'file') return (
-                  <span style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, marginRight: 4 }}>📎</span>
-                )
-              } catch {}
-              return null
-            })()}
             {node.isEvent ? (
               // Icono calendario para eventos
               <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
@@ -1609,8 +1582,22 @@ export default function NodeView() {
                     onClick={() => setShowEmojiPicker(v => !v)}
                     title="Cambiar icono"
                   >
-                    {/* Mostrar icono de extraData, o 📄 si no hay ninguno */}
-                    {iconSource === 'extra' ? nodeIcon : '📄'}
+                    {/* Mostrar badge de tipo de archivo, icono custom, o 📄 por defecto */}
+                    {(() => {
+                      try {
+                        const ed = JSON.parse(node.extraData || '{}')
+                        const rType = (ed._resourceType || node.resourceType || '') as string
+                        if (rType === 'pdf') return (
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, color: '#fff', background: '#e53e3e',
+                            padding: '3px 5px', borderRadius: 4, letterSpacing: '0.03em', lineHeight: 1,
+                          }}>PDF</span>
+                        )
+                        if (rType === 'image') return <span>🖼</span>
+                        if (rType === 'file') return <span>📎</span>
+                      } catch {}
+                      return iconSource === 'extra' ? nodeIcon : '📄'
+                    })()}
                   </button>
                   {showEmojiPicker && (
                     <EmojiPicker
