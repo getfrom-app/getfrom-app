@@ -1077,6 +1077,17 @@ export default function NodeView() {
   // Anotaciones del PDF — viven en NodeView para sobrevivir al unmount/remount de PdfViewer
   const [pdfAnnotations, setPdfAnnotations] = useState<PdfAnnotation[]>([])
   const pdfNodeIdRef = useRef<string | null>(null)
+  // Callbacks estables para no recrear savePdfBackground en PdfViewer en cada render
+  const handlePdfAnnotationsChange = useCallback((anns: PdfAnnotation[]) => {
+    setPdfAnnotations(anns)
+    // Guardar en extraData sin leer node del closure (evita stale closure)
+    const nodeNow = store.getNode(pdfNodeIdRef.current || '')
+    if (!nodeNow) return
+    let ed: Record<string,unknown> = {}
+    try { ed = JSON.parse(nodeNow.extraData || '{}') } catch {}
+    ed._annotations = anns
+    store.updateNode(nodeNow.id, { extraData: JSON.stringify(ed) })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // Cargar anotaciones del nodo actual cuando cambia el nodo
   useEffect(() => {
     if (!node || pdfNodeIdRef.current === node.id) return
@@ -1991,20 +2002,7 @@ export default function NodeView() {
                   filename={node.text || 'documento'}
                   resourceKey={(() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()}
                   annotations={pdfAnnotations}
-                  onAnnotationsChange={anns => {
-                    setPdfAnnotations(anns)
-                    let ed: Record<string,unknown> = {}
-                    try { ed = JSON.parse(node.extraData||'{}') } catch {}
-                    ed._annotations = anns
-                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                  }}
-                  onUrlUpdated={newUrl => {
-                    let ed: Record<string,unknown> = {}
-                    try { ed = JSON.parse(node.extraData||'{}') } catch {}
-                    ed._resourceUrl = newUrl
-                    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-                    setFreshResourceUrl(newUrl)
-                  }}
+                  onAnnotationsChange={handlePdfAnnotationsChange}
                 />
                 </Suspense>
               ) : (

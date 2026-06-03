@@ -24,7 +24,6 @@ interface Props {
   url: string; nodeId: string; filename: string; resourceKey?: string
   annotations: Annotation[]
   onAnnotationsChange: (anns: Annotation[]) => void
-  onUrlUpdated?: (newUrl: string) => void
 }
 
 export type { Annotation, PathAnnotation, TextAnnotation }
@@ -32,7 +31,7 @@ export type { Annotation, PathAnnotation, TextAnnotation }
 const COLORS    = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','#000000']
 const PEN_SIZES = [2, 4, 6, 10]
 
-export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, onAnnotationsChange, onUrlUpdated }: Props) {
+export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, onAnnotationsChange }: Props) {
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
   const pdfDocRef    = useRef<any>(null)
@@ -116,7 +115,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         ed._resourceUrl = publicUrl; ed._resourceKey = key
         store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
       }
-      onUrlUpdated?.(publicUrl)
+      // NO llamar onUrlUpdated — evita re-render de NodeView → re-creación de props → bucle de guardado
+      // La nueva URL/key ya está en extraData y se usará la próxima vez que se abra el nodo.
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (e) {
@@ -126,7 +126,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       isSavingRef.current = false
       if (pendingSave.current) { pendingSave.current = false; savePdfBackground(anns) }
     }
-  }, [resourceKey, nodeId, filename, scale, onUrlUpdated])
+  }, [resourceKey, nodeId, filename, scale]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scheduleAutoSave = useCallback((anns: Annotation[]) => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
