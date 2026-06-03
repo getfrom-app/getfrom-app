@@ -1598,6 +1598,13 @@ export default function NodeView() {
                           }}>WB</span>
                         )
                         const rType = (ed._resourceType || node.resourceType || '') as string
+                        // Enlace/URL: icono de enlace
+                        if (ed._resourceUrl && !['pdf','image','file'].includes(rType)) return (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 13H13a2 2 0 0 0 0-4h-1M6 3H3a2 2 0 0 0 0 4h1"/>
+                            <path d="M6 8h4"/>
+                          </svg>
+                        )
                         if (rType === 'pdf') return (
                           <span style={{
                             fontSize: 10, fontWeight: 800, color: '#fff', background: '#e53e3e',

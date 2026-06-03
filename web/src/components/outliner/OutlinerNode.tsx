@@ -901,8 +901,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
 
     // ── Detección "pizarra" → predicción de pizarra digital ─────────────────
-    const normedForWb = text.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    setWhiteboardPrediction(normedForWb === 'pizarra' || normedForWb === 'whiteboard')
+    const normedForWb = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    setWhiteboardPrediction(/\bpizarra\b|\bwhiteboard\b/.test(normedForWb))
 
     // ── Detección de fecha al final de cualquier nodo ──────────────────────
     if (text.length > 3) {
@@ -1217,8 +1217,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         let ed: Record<string, unknown> = {}
         try { ed = JSON.parse(node.extraData || '{}') } catch {}
         ed._isWhiteboard = '1'
-        store.updateNode(node.id, { extraData: JSON.stringify(ed), text: 'Pizarra' })
-        if (contentRef.current) contentRef.current.textContent = 'Pizarra'
+        // Quitar la palabra "pizarra/whiteboard" del texto, conservar el resto
+        const cleanWbText = (contentRef.current?.textContent || node.text || '')
+          .replace(/\s*\bpizarra\b|\s*\bwhiteboard\b/gi, '').trim() || 'Pizarra'
+        store.updateNode(node.id, { extraData: JSON.stringify(ed), text: cleanWbText })
+        if (contentRef.current) contentRef.current.textContent = cleanWbText
         navigate(`/node/${node.id}`)
         return
       }
@@ -2650,6 +2653,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   )}
                 </button>
               </>
+            ) : (nodeUrl && !['pdf','image','file'].includes(nodeResourceType||'')) ? (
+              // Enlace/URL: icono 🔗 como bullet
+              <button
+                className="bullet-btn nota-btn"
+                onClick={e => { e.stopPropagation(); window.open(nodeUrl, '_blank') }}
+                tabIndex={-1}
+                title={nodeUrl}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13H13a2 2 0 0 0 0-4h-1M6 3H3a2 2 0 0 0 0 4h1M8 8h0"/>
+                  <path d="M6 8h4"/>
+                </svg>
+              </button>
             ) : isResourcePending ? (
               // Recurso pendiente: nav-dot + checkbox cian
               <>
@@ -3330,20 +3346,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               />
             )}
 
-            {/* Botón ↗ para abrir el enlace guardado en el nodo */}
-            {nodeUrl && !isEditing && (
+            {/* Chip ↗ para abrir el enlace — siempre visible, pegado al texto */}
+            {nodeUrl && !['pdf','image','file'].includes(nodeResourceType||'') && !isEditing && (
               <a
                 href={nodeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="node-link-btn"
+                className="node-link-chip"
                 onClick={e => e.stopPropagation()}
                 title={nodeUrl}
               >
-                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/>
-                  <path d="M10 2h4v4"/>
-                  <path d="M14 2L8 8"/>
+                  <path d="M10 2h4v4"/><path d="M14 2L8 8"/>
                 </svg>
               </a>
             )}
