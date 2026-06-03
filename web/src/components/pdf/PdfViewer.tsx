@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { store } from '../../store/nodeStore'
-import { uploadFile } from '../../api/client'
+import { uploadFile, fetchFileContent } from '../../api/client'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 type Tool = 'pen' | 'highlight' | 'text' | 'eraser'
@@ -93,11 +93,21 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
 
     async function load() {
       const pdfjsLib = await import('pdfjs-dist')
-      // Worker desde el paquete local (Vite lo sirve como asset estático)
-      const workerUrl = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+      // Worker desde el paquete local
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url
+      ).href
 
-      const doc = await pdfjsLib.getDocument({ url }).promise
+      // Cargar PDF via proxy del servidor (evita CORS de R2)
+      // Si tenemos resourceKey, usamos el proxy. Si no, intentamos con la URL directa.
+      let pdfSource: { data: Uint8Array } | { url: string }
+      if (resourceKey) {
+        const bytes = await fetchFileContent(resourceKey)
+        pdfSource = { data: new Uint8Array(bytes) }
+      } else {
+        pdfSource = { url }
+      }
+      const doc = await pdfjsLib.getDocument(pdfSource).promise
       if (cancelled) return
       pdfDocRef.current = doc
       setNumPages(doc.numPages)
@@ -293,8 +303,10 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, onUrlUpd
     try {
       const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib')
 
-      // Descargar PDF original
-      const pdfBytes = await fetch(url).then(r => r.arrayBuffer())
+      // Descargar PDF original via proxy (sin CORS)
+      const pdfBytes = resourceKey
+        ? await fetchFileContent(resourceKey)
+        : await fetch(url).then(r => r.arrayBuffer())
       const pdfDoc = await PDFDocument.load(pdfBytes)
       const pages = pdfDoc.getPages()
 

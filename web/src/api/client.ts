@@ -416,6 +416,16 @@ export async function uploadFile(file: File): Promise<{ key: string; publicUrl: 
   })
 }
 
+/** Descarga el contenido de un archivo via proxy del servidor (sin CORS de R2) */
+export async function fetchFileContent(key: string): Promise<ArrayBuffer> {
+  const token = _accessToken
+  const res = await fetch(`${BASE}/files/content?key=${encodeURIComponent(key)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`fetchFileContent failed: ${res.status}`)
+  return res.arrayBuffer()
+}
+
 export async function getPresignedDownload(key: string): Promise<string> {
   const res = await apiRequest<{ url: string }>('/files/presign-download', {
     method: 'POST',
