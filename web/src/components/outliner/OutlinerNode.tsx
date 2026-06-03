@@ -1195,12 +1195,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
       if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
-        // Convertir a tarea primero
-        store.updateNode(node.id, { status: 'pending' })
+        // Si el datePrediction detectó evento (hora o keyword), acceptDatePrediction ya lo marca como isEvent
+        // Solo forzar tarea si NO es un evento detectado
+        if (!datePrediction?.isEvent) {
+          store.updateNode(node.id, { status: 'pending' })
+        }
         setTaskPrediction(false)
-        // Luego mover a la fecha (acceptDatePrediction ya maneja el resto)
+        // acceptDatePrediction maneja isEvent/status según la predicción
         acceptDatePrediction()
-        // Crear hermano (la tarea quedó creada arriba)
         createSiblingBelow()
         return
       }
@@ -1868,19 +1870,28 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   function acceptDatePrediction() {
     if (!datePrediction) return
-    const { cleanText, parsed, timeStr } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
+    const { cleanText, parsed, timeStr, isEvent: detectedAsEvent } = datePrediction as DateExtraction & { recurrence?: RecurrenceConfig }
     setDatePrediction(null)
     nodeTextRef.current = cleanText
     store.updateNode(node.id, { text: cleanText })
     if (contentRef.current) contentRef.current.textContent = cleanText
     const targetDate = new Date(parsed.date); targetDate.setHours(0,0,0,0)
-    const updates: Record<string, unknown> = { due: targetDate.toISOString(), status: node.status ?? 'pending' }
+    const updates: Record<string, unknown> = { due: targetDate.toISOString() }
     if (timeStr) {
       const h = parseInt(timeStr.split(':')[0]), m = parseInt(timeStr.split(':')[1])
       updates.due = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), h, m).toISOString()
     }
+    // Si la predicción detectó evento (tiene hora o keywords de evento) → marcar como evento, no tarea
+    if (detectedAsEvent || timeStr) {
+      updates.isEvent = true
+      updates.status = null
+    } else {
+      updates.status = node.status ?? 'pending'
+    }
     if (parsed.recurrence) updates.recurrence = recurrenceToString(parsed.recurrence)
     store.updateNode(node.id, updates)
+    // Sync a GCal si hay hora (falla silenciosamente si GCal no está conectado)
+    if (timeStr) scheduleGCalSync()
     const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 Fecha: ${label}`, type: 'success' } }))
   }
