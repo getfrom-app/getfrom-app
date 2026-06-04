@@ -81,9 +81,23 @@ export function FilterResultItem({
   const breadcrumb = useMemo(() => getBreadcrumb(node.id), [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-clasificación en "Sin clasificar": scheduleClassify al montar y mostrar badge
-  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(
-    () => enableAutoClassify ? (getCachedClassify(node.id) ?? null) : null
-  )
+  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(() => {
+    if (!enableAutoClassify) return null
+    // 1. Caché en memoria (más reciente)
+    const cached = getCachedClassify(node.id)
+    if (cached) return cached
+    // 2. Fallback: extraData persistido
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._autoContextId !== undefined) {
+        return {
+          contextId: ed._autoContextId || null,
+          confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0,
+        }
+      }
+    } catch { /* ignore */ }
+    return null
+  })
   const classifyScheduledRef = useRef(false)
 
   useEffect(() => {
@@ -111,7 +125,19 @@ export function FilterResultItem({
     const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
 
     scheduleClassify(node.id, text, contexts, (id, result) => {
-      if (id === node.id) setAutoCtxResult(result)
+      if (id !== node.id) return
+      setAutoCtxResult(result)
+      // Persistir en extraData para que sobreviva desmonte/remonte y recargas
+      try {
+        const currentNode = store.getNode(node.id)
+        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+        // No sobreescribir si ya se asignó manualmente entre medias
+        if (ed._contextManuallySet !== '1') {
+          ed._autoContextId = result.contextId ?? ''
+          ed._autoContextConfidence = result.confidence
+          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+        }
+      } catch { /* ignore */ }
     })
 
     return () => { cancelClassify(node.id) }

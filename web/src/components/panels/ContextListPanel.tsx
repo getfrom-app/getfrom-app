@@ -66,6 +66,8 @@ function assignContextToNode(nodeId: string, contextNodeId: string) {
   try {
     const ed = JSON.parse(node.extraData || '{}')
     ed._contextManuallySet = '1'
+    delete ed._autoContextId
+    delete ed._autoContextConfidence
     store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
   } catch { /* ignore */ }
 }

@@ -95,10 +95,12 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
           store.updateNode(node.id, { types: [...existingTypes, tagName] })
         }
       }
-      // Marcar como asignado manualmente en extraData
+      // Marcar como asignado manualmente en extraData y limpiar sugerencia IA
       try {
         const ed = JSON.parse(node.extraData || '{}')
         ed._contextManuallySet = '1'
+        delete ed._autoContextId
+        delete ed._autoContextConfidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
     }

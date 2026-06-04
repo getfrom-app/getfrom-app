@@ -314,9 +314,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [node.id])
 
   // Auto-clasificación de contexto — badge sutil con sugerencia IA
-  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(
-    () => getCachedClassify(node.id) ?? null
-  )
+  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(() => {
+    // 1. Primero: caché en memoria de la sesión actual (más reciente)
+    const cached = getCachedClassify(node.id)
+    if (cached) return cached
+    // 2. Fallback: extraData persistido (sobrevive desmonte/remonte y recargas)
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._autoContextId !== undefined) {
+        return {
+          contextId: ed._autoContextId || null,
+          confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0,
+        }
+      }
+    } catch { /* ignore */ }
+    return null
+  })
   // Guard: solo disparar scheduleClassify si el usuario ha editado este nodo en la sesión actual.
   // Evita que al montar 160 nodos en la vista "Sin clasificar" se disparen 160 clasificaciones simultáneas.
   const hasUserEditedRef = useRef(false)
@@ -359,17 +372,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setAutoCtxResult(null)
       return
     }
-    // No clasificar nodos de diario, headings, dividers
+    // No clasificar nodos de diario o dividers
     if (node.isDiaryEntry) {
       cancelClassify(node.id)
       setAutoCtxResult(null)
       return
     }
-    // Solo clasificar nodos contenedor (con hijos), tareas o bucles — no párrafos sueltos
+    // Determinar si el nodo es un heading (para incluirlo aunque no tenga hijos)
+    const nodeBlockType = detectBlockType(node.text || '')
+    const nodeIsHeading = nodeBlockType === 'h1' || nodeBlockType === 'h2' || nodeBlockType === 'h3'
+    // Solo clasificar nodos contenedor (con hijos), tareas, bucles o headings — no párrafos sueltos
     const hasChildren = store.children(node.id).some(c => !c.deletedAt)
     const isTask = node.status !== null
     const isLoop = (node.types || []).includes('bucle')
-    if (!hasChildren && !isTask && !isLoop) {
+    if (!hasChildren && !isTask && !isLoop && !nodeIsHeading) {
       cancelClassify(node.id)
       setAutoCtxResult(null)
       return
@@ -381,7 +397,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (contextNodes.length === 0) return
     const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
     scheduleClassify(node.id, text, contexts, (id, result) => {
-      if (id === node.id) setAutoCtxResult(result)
+      if (id !== node.id) return
+      setAutoCtxResult(result)
+      // Persistir el resultado en extraData para que sobreviva desmonte/remonte
+      try {
+        const currentNode = store.getNode(node.id)
+        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+        ed._autoContextId = result.contextId ?? ''
+        ed._autoContextConfidence = result.confidence
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text, nodeHasManualContext])
