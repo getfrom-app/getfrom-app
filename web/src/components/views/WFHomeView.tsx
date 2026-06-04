@@ -1,6 +1,11 @@
 /**
  * WFHomeView — Vista raíz estilo Workflowy
- * Sin filtro: árbol normal. Con filtro: vista árbol / lista plana / calendario.
+ * Sin filtro: árbol normal. Con filtro activo: raíces flotantes con breadcrumb (FilteredList).
+ *
+ * Comportamiento universal de filtro (Workflowy-style):
+ *   Cualquier filtro activo (contexto, tipo, texto, Sin clasificar) muestra los nodos resultado
+ *   como raíces flotantes independientes con breadcrumb de texto plano indicando su posición
+ *   real en el árbol. Nunca se expande el árbol real con ancestorIds.
  */
 import { useMemo, useEffect, useState, useCallback } from 'react'
 import Outliner from '../outliner/Outliner'
@@ -13,6 +18,7 @@ import { uploadFile } from '../../api/client'
 import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import UnclassifiedList from './UnclassifiedList'
+import FilteredList from './FilteredList'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -152,14 +158,12 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
   }, [storeReady, agendaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Filtro inteligente ─────────────────────────────────────────────────────
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
-  // Nota: UNCLASSIFIED_FILTER_ID usa UnclassifiedList (lista plana) en lugar del Outliner.
-  // No se calcula contextFilter para ese caso — se renderiza directamente en el JSX.
+  // UNCLASSIFIED_FILTER_ID se maneja con UnclassifiedList — no necesita buildContextFilter.
+  // El resto de filtros de contexto calculan matchIds, que se pasan a FilteredList.
 
   const contextFilter = useMemo(() => {
     if (!contextFilterId) return null
-    // El filtro "Sin clasificar" se maneja con UnclassifiedList, no con el Outliner
     if (contextFilterId === UNCLASSIFIED_FILTER_ID) return null
     return buildContextFilter(contextFilterId)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,12 +178,20 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     return applyWFFilter(s.nodes, effective)
   }, [filterText, contextFilter, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Estado general del filtro ──────────────────────────────────────────────
   const isFiltering = !!filterText?.trim() || !!contextFilter || contextFilterId === UNCLASSIFIED_FILTER_ID
-  const matchCount = contextFilter?.matchIds.size ?? filterResult?.matchIds.size ?? 0
 
-  // Los ids activos (ya sea de contexto o de texto)
-  const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
-  const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
+  // matchIds para FilteredList (contexto o texto en modo lista)
+  const contextMatchIds = contextFilter?.matchIds ?? null
+  const textMatchIds = filterResult?.matchIds ?? null
+  const matchCount = contextMatchIds?.size ?? textMatchIds?.size ?? 0
+
+  // Etiqueta para la cabecera de FilteredList cuando hay filtro de contexto activo
+  const contextLabel = useMemo(() => {
+    if (!contextFilterId || contextFilterId === UNCLASSIFIED_FILTER_ID) return undefined
+    const ctxNode = store.getNode(contextFilterId)
+    return ctxNode?.text ?? undefined
+  }, [contextFilterId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -233,20 +245,30 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Vista "Sin clasificar" — lista plana, sin Outliner ni ancestorIds */}
+      {/* ── Filtro "Sin clasificar" ── */}
       {contextFilterId === UNCLASSIFIED_FILTER_ID && (
         <UnclassifiedList onNavigate={undefined} />
       )}
 
-      {/* Barra de resultados con selector de vista — solo cuando NO es Sin clasificar */}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && isFiltering && matchCount === 0 && (
+      {/* ── Filtro por contexto — raíces flotantes con breadcrumb (Workflowy-style) ── */}
+      {contextMatchIds && matchCount === 0 && (
+        <div className="wf-filter-empty">Sin nodos con este contexto</div>
+      )}
+      {contextMatchIds && matchCount > 0 && (
+        <FilteredList
+          matchIds={contextMatchIds}
+          label={contextLabel}
+        />
+      )}
+
+      {/* ── Filtro por texto ── */}
+      {!contextMatchIds && filterResult?.hasFilter && matchCount === 0 && (
         <div className="wf-filter-empty">
-          {contextFilter
-            ? 'Sin nodos con este contexto'
-            : <>Sin resultados para <strong>"{filterText}"</strong></>}
+          Sin resultados para <strong>"{filterText}"</strong>
         </div>
       )}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && (
+      {/* Barra de vista (tabla/kanban/calendario/lista) — solo para filtro de texto */}
+      {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && (
         <FilterViewSwitcher
           view={filterView}
           onChange={changeFilterView}
@@ -255,30 +277,30 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         />
       )}
 
-      {/* Vistas alternativas cuando hay filtro de texto activo */}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
+      {/* Vistas alternativas para filtro de texto */}
+      {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
         <TableView matchIds={filterResult.matchIds} />
       )}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
+      {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
         <KanbanView matchIds={filterResult.matchIds} />
       )}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
+      {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
         <CalendarView matchIds={filterResult.matchIds} />
       )}
+      {/* Vista lista para filtro de texto — raíces flotantes con breadcrumb */}
+      {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && filterView === 'lista' && textMatchIds && (
+        <FilteredList
+          matchIds={textMatchIds}
+        />
+      )}
 
-      {/* Árbol — vista lista (default) o sin filtro — oculto cuando es Sin clasificar */}
-      {contextFilterId !== UNCLASSIFIED_FILTER_ID && (
-        <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
-          <Outliner
-            parentId={agendaId}
-            autoFocusEmpty={false}
-            placeholder={isFiltering ? ' ' : "Escribe algo… o pulsa Enter para crear un nodo"}
-            filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
-            filterMatchIds={activeMatchIds}
-            filterAncestorIds={activeAncestorIds}
-            disableLocalFilter
-          />
-        </div>
+      {/* ── Árbol normal — sin filtro activo ── */}
+      {!isFiltering && (
+        <Outliner
+          parentId={agendaId}
+          autoFocusEmpty={false}
+          placeholder="Escribe algo… o pulsa Enter para crear un nodo"
+        />
       )}
 
       {/* Hint — sólo en home sin filtro activo */}
