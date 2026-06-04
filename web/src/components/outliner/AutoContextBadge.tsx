@@ -300,7 +300,9 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 onClick={createSuggestedSubcontext}
               >
-                ✦ {t('autoCtx.createSubcontext', 'Crear subcontexto')} "{suggestedName}"
+                ✦ {suggestedParentNode
+                  ? t('autoCtx.createSubcontext', 'Crear subcontexto')
+                  : t('autoCtx.createContext', 'Crear')} "{suggestedName}"
                 {suggestedParentNode && (
                   <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, fontSize: 11 }}>
                     {t('autoCtx.under', 'en')} {suggestedParentNode.text}
