@@ -89,12 +89,8 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const [renameValue, setRenameValue]   = useState('')
   // ID del contexto sobre el que se está haciendo dragOver (feedback visual)
   const [dragOverId, setDragOverId]     = useState<string | null>(null)
-  // Padre bajo el que se está creando un subcontexto (inline)
-  const [addingChildOf, setAddingChildOf] = useState<string | null>(null)
-  const [childCtxName, setChildCtxName]   = useState('')
   const newCtxInputRef  = useRef<HTMLInputElement>(null)
   const renameInputRef  = useRef<HTMLInputElement>(null)
-  const childCtxInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (addingCtx) setTimeout(() => newCtxInputRef.current?.focus(), 30)
@@ -110,26 +106,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     const sibs = store.children(root.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
     const newNode = store.createNode({ text: name, parentId: root.id, siblingOrder: maxOrder + 1000 })
-    onSelectContext(newNode.id)
-  }
-
-  function startAddChild(parentId: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    setAddingChildOf(parentId)
-    setChildCtxName('')
-    // Asegurar que el padre esté expandido para ver el input
-    setExpandedIds(prev => { const next = new Set(prev); next.add(parentId); return next })
-    setTimeout(() => childCtxInputRef.current?.focus(), 30)
-  }
-
-  function createChildCtx(parentId: string) {
-    const name = childCtxName.trim()
-    setAddingChildOf(null)
-    setChildCtxName('')
-    if (!name) return
-    const sibs = store.children(parentId).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    const newNode = store.createNode({ text: name, parentId, siblingOrder: maxOrder + 1000 })
     onSelectContext(newNode.id)
   }
 
@@ -223,7 +199,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     // La asignación a contexto usa types[], no parentId — por tanto los únicos
     // hijos reales de un contexto son subcontextos o nodos 🧠 (excluidos).
     const kids = s.children(nodeId).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠'))
-    const isAddingChild = addingChildOf === nodeId
     const isActive    = selectedContextId === nodeId
     const expanded    = expandedIds.has(nodeId)
     const isHovered   = hoveredId === nodeId
@@ -290,13 +265,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
           {!isRenaming && (isHovered || isActive) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
               <button
-                title="Añadir subcontexto"
-                onClick={e => startAddChild(nodeId, e)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 15, padding: '2px 4px', borderRadius: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >+</button>
-              <button
                 title="Renombrar"
                 onClick={e => startRename(nodeId, node.text || '', e)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '2px 4px', borderRadius: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}
@@ -317,26 +285,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
             </div>
           )}
         </div>
-        {/* Input inline para crear subcontexto */}
-        {isAddingChild && (
-          <div style={{ display: 'flex', alignItems: 'center', padding: `5px 8px 5px ${16 + (depth + 1) * 16}px`, gap: 4 }}>
-            <span style={{ width: 18, flexShrink: 0, display: 'inline-block' }} />
-            <input
-              ref={childCtxInputRef}
-              value={childCtxName}
-              onChange={e => setChildCtxName(e.target.value)}
-              onClick={e => e.stopPropagation()}
-              onKeyDown={e => {
-                if (e.key === 'Enter') { e.preventDefault(); createChildCtx(nodeId) }
-                if (e.key === 'Escape') { setAddingChildOf(null); setChildCtxName('') }
-              }}
-              onBlur={() => { if (childCtxName.trim()) createChildCtx(nodeId); else { setAddingChildOf(null); setChildCtxName('') } }}
-              placeholder="Nombre del subcontexto…"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
-            />
-          </div>
-        )}
-        {(expanded || isAddingChild) && kids.map(k => renderCtx(k.id, depth + 1))}
+        {expanded && kids.map(k => renderCtx(k.id, depth + 1))}
       </div>
     )
   }
