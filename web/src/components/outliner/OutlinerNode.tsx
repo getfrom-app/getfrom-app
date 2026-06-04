@@ -137,6 +137,7 @@ interface Props {
   onSelectNext: (id: string, dir: 'up' | 'down') => void
   onShiftSelect?: (id: string) => void
   filterText?: string
+  highlightText?: string  // resalta coincidencias (subrayado amarillo) SIN ocultar hijos no coincidentes
   filterMatchIds?: Set<string>    // WF smart filter — IDs que coinciden
   filterAncestorIds?: Set<string> // ancestros de nodos coincidentes (precomputado, evita getAllDescendants)
   isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
@@ -276,7 +277,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
   const navigate = useNavigate()
   // Cada nodo calcula su propio estado de multi-selección desde el estado global,
   // en lugar de heredar el boolean del padre. Esto permite seleccionar nodos
@@ -966,11 +967,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const forced = (extraBlock === 'bullet' || extraBlock === 'h1' || extraBlock === 'h2' || extraBlock === 'h3')
       ? extraBlock as 'bullet' | 'h1' | 'h2' | 'h3'
       : undefined
-    const newHtml = renderInlineToHtml(displayNode.text, activeFilter ? filterText : undefined, forced)
+    const hl = (activeFilter ? filterText : undefined) ?? (highlightText?.trim() ? highlightText : undefined)
+    const newHtml = renderInlineToHtml(displayNode.text, hl, forced)
     if (contentRef.current.innerHTML !== newHtml) {
       contentRef.current.innerHTML = newHtml
     }
-  }, [displayNode.text, isEditing, filterText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [displayNode.text, isEditing, filterText, highlightText, extraBlock]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Animación cuando el nodo pasa de null → pending (se convierte en tarea)
   useEffect(() => {
@@ -4179,6 +4181,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             onSelectNext={onSelectNext}
             onShiftSelect={onShiftSelect}
             filterText={filterText}
+            highlightText={highlightText}
             filterMatchIds={filterMatchIds}
             filterAncestorIds={filterAncestorIds}
           />

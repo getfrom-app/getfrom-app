@@ -221,12 +221,14 @@ export function FilterResultItem({
   onSelect,
   onSelectNext,
   enableAutoClassify = false,
+  filterText,
 }: {
   node: FromNode
   selectedId: string | null
   onSelect: (id: string) => void
   onSelectNext: (id: string, dir: 'up' | 'down') => void
   enableAutoClassify?: boolean
+  filterText?: string
 }) {
   const selectedIds = useGlobalSelection()
   const breadcrumb = useMemo(() => getBreadcrumb(node.id), [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -407,6 +409,7 @@ export function FilterResultItem({
           onShiftSelect={(id) => {
             toggleNodeSelection(id, store)
           }}
+          highlightText={filterText}
         />
       </div>
     </div>
@@ -424,6 +427,8 @@ interface FilteredListProps {
   paginate?: boolean
   /** Si true, cada FilterResultItem programa clasificación al montar y muestra AutoContextBadge */
   enableAutoClassify?: boolean
+  /** Texto de búsqueda libre a resaltar en amarillo dentro de cada nodo resultado */
+  filterText?: string
 }
 
 /**
@@ -436,6 +441,7 @@ export default function FilteredList({
   emptyText,
   paginate = true,
   enableAutoClassify = false,
+  filterText,
 }: FilteredListProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
@@ -493,6 +499,7 @@ export default function FilteredList({
           onSelect={setSelectedId}
           onSelectNext={handleSelectNext}
           enableAutoClassify={enableAutoClassify}
+          filterText={filterText}
         />
       ))}
 

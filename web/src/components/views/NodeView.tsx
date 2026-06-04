@@ -1409,10 +1409,16 @@ export default function NodeView() {
       : `¿Eliminar "${node.text || 'esta nota'}"? Se moverá a la papelera.`
     if (!window.confirm(msg)) return
 
-    // Navegar primero para evitar re-render sobre nodo borrado
-    const today = store.todayDiary()
-    if (today) navigate(`/node/${today.id}`, { replace: true })
-    else navigate('/', { replace: true })
+    // Navegar primero para evitar re-render sobre nodo borrado.
+    // Preferir la nota padre; si no hay (raíz), caer a hoy / home.
+    const parent = node.parentId ? store.getNode(node.parentId) : null
+    if (parent && !parent.deletedAt) {
+      navigate(`/node/${parent.id}`, { replace: true })
+    } else {
+      const today = store.todayDiary()
+      if (today) navigate(`/node/${today.id}`, { replace: true })
+      else navigate('/', { replace: true })
+    }
 
     // Borrar nodo + todos sus descendientes
     const toDelete: string[] = []

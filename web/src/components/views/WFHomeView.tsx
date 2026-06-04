@@ -311,6 +311,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       {!contextMatchIds && filterResult?.hasFilter && matchCount > 0 && filterView === 'lista' && textMatchIds && (
         <FilteredList
           matchIds={textMatchIds}
+          filterText={filterText}
         />
       )}
 

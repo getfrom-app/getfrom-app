@@ -1568,6 +1568,10 @@ mark.search-highlight {
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
+  text-decoration: underline;
+  text-decoration-color: #f59e0b;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
 }
 mark.inline-highlight {
   background: rgba(251, 191, 36, 0.5);
