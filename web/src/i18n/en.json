@@ -711,5 +711,10 @@
   "autoCtx.badgeTooltip": "AI-suggested context ({{confidence}}% confidence). Click to confirm or correct.",
   "autoCtx.dropdownTitle": "Assign context",
   "autoCtx.noContext": "No context",
-  "autoCtx.unclassifiedFilter": "Unclassified"
+  "autoCtx.unclassifiedFilter": "Unclassified",
+  "autoCtx.batchClassifyAll": "✦ Classify all",
+  "autoCtx.batchRunning": "Classifying… {{processed}}/{{total}}",
+  "autoCtx.batchDone": "{{count}} nodes classified",
+  "autoCtx.batchCancel": "Cancel",
+  "autoCtx.batchNoContexts": "Define contexts first"
 }

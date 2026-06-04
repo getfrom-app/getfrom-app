@@ -144,3 +144,91 @@ async function classifyNode(
   })
   return data
 }
+
+// ── Clasificación batch de nodos históricos ───────────────────────────────────
+
+export interface BatchClassifyItem {
+  nodeId: string
+  text: string
+}
+
+export interface BatchClassifyOptions {
+  /** Nodos a clasificar */
+  items: BatchClassifyItem[]
+  /** Contextos disponibles */
+  contexts: ContextInfo[]
+  /** Confidence mínima para aplicar el resultado (default: 0.3) */
+  minConfidence?: number
+  /** Tamaño del lote (default: 5) */
+  batchSize?: number
+  /** Delay entre lotes en ms (default: 300) */
+  batchDelay?: number
+  /** Callback de progreso: (processed, total, lastResult?) */
+  onProgress?: (processed: number, total: number, lastNodeId?: string) => void
+  /** Callback cuando se clasifica un nodo con confidence suficiente */
+  onClassified?: (nodeId: string, result: ClassifyResult) => void
+  /** Signal para cancelar */
+  signal?: AbortSignal
+}
+
+/**
+ * Clasifica en background todos los nodos pasados en `items`.
+ * Procesa en lotes de `batchSize` con `batchDelay` ms entre lotes.
+ * No bloquea el UI — cada resultado se entrega vía `onClassified`.
+ *
+ * @returns Promesa que resuelve con el número de nodos clasificados (confidence >= minConfidence)
+ */
+export async function classifyBatch(opts: BatchClassifyOptions): Promise<number> {
+  const {
+    items,
+    contexts,
+    minConfidence = 0.3,
+    batchSize = 5,
+    batchDelay = 300,
+    onProgress,
+    onClassified,
+    signal,
+  } = opts
+
+  if (items.length === 0 || contexts.length === 0) return 0
+
+  const examples = loadExamples()
+  let processed = 0
+  let classified = 0
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    if (signal?.aborted) break
+
+    const batch = items.slice(i, i + batchSize)
+
+    // Procesar el lote en paralelo (máx. batchSize concurrentes)
+    await Promise.all(
+      batch.map(async item => {
+        if (signal?.aborted) return
+        try {
+          const result = await classifyNode(item.text, contexts, examples)
+          setCachedClassify(item.nodeId, result)
+          if (result.confidence >= minConfidence && result.contextId) {
+            classified++
+            onClassified?.(item.nodeId, result)
+          }
+        } catch {
+          // Silenciar errores individuales — el batch continúa
+        } finally {
+          processed++
+          onProgress?.(processed, items.length, item.nodeId)
+        }
+      })
+    )
+
+    // Delay entre lotes (no esperar tras el último)
+    if (i + batchSize < items.length && !signal?.aborted) {
+      await new Promise<void>(resolve => {
+        const t = setTimeout(resolve, batchDelay)
+        signal?.addEventListener('abort', () => { clearTimeout(t); resolve() }, { once: true })
+      })
+    }
+  }
+
+  return classified
+}
