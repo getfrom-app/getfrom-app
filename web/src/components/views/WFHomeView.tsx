@@ -153,14 +153,19 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
 
   // ── Filtro inteligente ─────────────────────────────────────────────────────
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
+  // Límite de nodos renderizados en la vista "Sin clasificar".
+  // Con 160+ nodos y sus ancestros, React monta miles de OutlinerNode y congela el UI thread.
+  // Mostramos los primeros UNCLASSIFIED_PAGE_SIZE nodos y el usuario puede cargar más.
+  const UNCLASSIFIED_PAGE_SIZE = 40
+  const [unclassifiedPage, setUnclassifiedPage] = useState(1)
+
   const contextFilter = useMemo(() => {
     if (!contextFilterId) return null
 
     // Filtro especial: nodos sin contexto asignado
     if (contextFilterId === UNCLASSIFIED_FILTER_ID) {
       const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-      const matchIds = new Set<string>()
-      const ancestorIds = new Set<string>()
+      const allMatchIds: string[] = []
       store.allActive().forEach(n => {
         if (n.deletedAt || n.isDiaryEntry) return
         const text = (n.text || '').trim()
@@ -180,8 +185,15 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
           const ed = JSON.parse(n.extraData || '{}')
           if (ed._contextManuallySet === '1') return
         } catch { /* ignore */ }
-        matchIds.add(n.id)
+        allMatchIds.push(n.id)
       })
+
+      // Limitar al número de páginas cargadas para evitar montar miles de OutlinerNode
+      const limit = UNCLASSIFIED_PAGE_SIZE * unclassifiedPage
+      const pagedIds = allMatchIds.slice(0, limit)
+
+      const matchIds = new Set<string>(pagedIds)
+      const ancestorIds = new Set<string>()
       matchIds.forEach(id => {
         let cur = store.getNode(id)
         while (cur?.parentId) {
@@ -189,11 +201,12 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
           cur = store.getNode(cur.parentId)
         }
       })
-      return { matchIds, ancestorIds }
+      return { matchIds, ancestorIds, totalUnclassified: allMatchIds.length }
     }
 
     return buildContextFilter(contextFilterId)
-  }, [contextFilterId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextFilterId, s.nodesVersion, unclassifiedPage])
 
   // ── Filtro por texto ───────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
@@ -207,9 +220,18 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   const isFiltering = !!filterText?.trim() || !!contextFilter
   const matchCount = contextFilter?.matchIds.size ?? filterResult?.matchIds.size ?? 0
 
+  // Para UNCLASSIFIED: total real de nodos sin clasificar (puede ser mayor que matchIds.size)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const totalUnclassified: number = (contextFilter as any)?.totalUnclassified ?? matchCount
+
   // Los ids activos (ya sea de contexto o de texto)
   const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
   const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
+
+  // Resetear página cuando cambia el filtro
+  useEffect(() => {
+    setUnclassifiedPage(1)
+  }, [contextFilterId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -303,6 +325,29 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
           disableLocalFilter
         />
       </div>
+
+      {/* Botón "Cargar más" para la vista Sin clasificar cuando hay más nodos de los mostrados */}
+      {contextFilterId === UNCLASSIFIED_FILTER_ID && totalUnclassified > matchCount && (
+        <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>
+            Mostrando {matchCount} de {totalUnclassified}
+          </span>
+          <button
+            onClick={() => setUnclassifiedPage(p => p + 1)}
+            style={{
+              background: 'var(--bg-hover)',
+              border: '1px solid var(--border)',
+              borderRadius: 5,
+              fontSize: 12,
+              padding: '4px 12px',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Cargar más
+          </button>
+        </div>
+      )}
 
       {/* Hint — sólo en home sin filtro activo */}
       {!isFiltering && (
