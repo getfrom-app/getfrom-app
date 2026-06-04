@@ -662,6 +662,7 @@ export function ClaudeMcpPane() {
 
 const RAYCAST_API_BASE = 'https://from-server-production.up.railway.app'
 const APPLE_SHORTCUT_URL = 'from://capture?text=[Texto]&silent=1'
+const APPLE_SHORTCUT_ICLOUD = 'https://www.icloud.com/shortcuts/d77a969efecf414bbb44a8e9bb05f52f'
 
 const isTauriDesktop = import.meta.env.VITE_TAURI === 'true'
 
@@ -727,20 +728,21 @@ export function CapturaRapidaPane() {
       {/* Atajo de Apple */}
       <SectionTitle>Atajo de Apple — tecla global</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Crea un Atajo (app Atajos de macOS) con la acción <strong style={{ color: 'var(--text)' }}>«Abrir URL»</strong>
-        usando la URL de abajo, y asígnale la tecla global que quieras desde
+        Instala nuestro Atajo listo para usar: te pide el texto y lo guarda en tu nota de hoy.
+        Después, asígnale la tecla global que quieras desde
         <strong style={{ color: 'var(--text)' }}> Atajos → Ajustes del atajo → Tecla rápida</strong>.
-        Con <code>silent=1</code> el texto se guarda directamente en tu nota de hoy, sin abrir nada.
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+      <a href={APPLE_SHORTCUT_ICLOUD} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12, display: 'inline-flex' }}>
+        ↓ Instalar atajo de Apple
+      </a>
+      <div className="st-row-hint" style={{ marginTop: 14 }}>
+        ¿Prefieres crearlo a mano? Usa una acción <strong style={{ color: 'var(--text)' }}>«Abrir URL»</strong> con:
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
         <code style={codeBox}>{APPLE_SHORTCUT_URL}</code>
         <button className="btn-secondary" onClick={() => copy(APPLE_SHORTCUT_URL, 'shortcut')} style={{ flexShrink: 0, fontSize: 12 }}>
           {copied === 'shortcut' ? '✓ Copiado' : 'Copiar URL'}
         </button>
-      </div>
-      <div className="st-row-hint">
-        Sustituye <code>[Texto]</code> por una acción de «Pedir texto» o «Texto del Portapapeles».
-        Quita <code>&amp;silent=1</code> si prefieres revisar antes de guardar.
       </div>
 
       {/* Raycast */}
