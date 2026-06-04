@@ -193,7 +193,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     }
 
     return buildContextFilter(contextFilterId)
-  }, [contextFilterId, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [contextFilterId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro por texto ───────────────────────────────────────────────────────
   const filterResult = useMemo(() => {

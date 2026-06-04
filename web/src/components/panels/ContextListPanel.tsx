@@ -4,7 +4,7 @@
  * Incluye sección "Sin clasificar" con nodos sin contexto asignado.
  * Incluye botón "Clasificar todos" para batch classification de nodos históricos.
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
@@ -140,7 +140,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
       // Limpiar mensaje de "completado" tras 4 segundos
       setTimeout(() => setBatch(null), 4000)
     }
-  }, [batch, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [batch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Limpiar abort al desmontar
   useEffect(() => () => { batchAbortRef.current?.abort() }, [])
@@ -271,30 +271,33 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
 
   // Calcular cuántos nodos están sin clasificar (sin user-tags en types[])
+  // Memoizado para evitar cálculo O(n²) en cada render — depende de nodesVersion
   // Solo se cuentan nodos que tienen sentido clasificar:
   // - nodos contenedor (tienen hijos) O nodos tarea (status !== null)
   // - los párrafos sueltos sin hijos no son candidatos a clasificación
-  const unclassifiedCount = s.allActive().filter(n => {
-    if (n.isDiaryEntry || n.deletedAt) return false
-    // Solo contar nodos con texto significativo
-    if ((n.text || '').trim().length < 4) return false
-    // Solo clasificar nodos contenedor (con hijos), tareas o bucles
-    const hasChildren = store.children(n.id).some(c => !c.deletedAt)
-    const isTask = n.status !== null
-    const isLoop = (n.types || []).includes('bucle')
-    if (!hasChildren && !isTask && !isLoop) return false
-    // ¿tiene contextos manuales?
-    const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
-    if (userTypes.length > 0) return false
-    // ¿tiene @mention de contexto?
-    if (/@\w/.test(n.text || '')) return false
-    // ¿fue asignado manualmente via badge?
-    try {
-      const ed = JSON.parse(n.extraData || '{}')
-      if (ed._contextManuallySet === '1') return false
-    } catch { /* ignore */ }
-    return true
-  }).length
+  const unclassifiedCount = useMemo(() => {
+    return s.allActive().filter(n => {
+      if (n.isDiaryEntry || n.deletedAt) return false
+      // Solo contar nodos con texto significativo
+      if ((n.text || '').trim().length < 4) return false
+      // Solo clasificar nodos contenedor (con hijos), tareas o bucles
+      const hasChildren = store.children(n.id).some(c => !c.deletedAt)
+      const isTask = n.status !== null
+      const isLoop = (n.types || []).includes('bucle')
+      if (!hasChildren && !isTask && !isLoop) return false
+      // ¿tiene contextos manuales?
+      const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
+      if (userTypes.length > 0) return false
+      // ¿tiene @mention de contexto?
+      if (/@\w/.test(n.text || '')) return false
+      // ¿fue asignado manualmente via badge?
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._contextManuallySet === '1') return false
+      } catch { /* ignore */ }
+      return true
+    }).length
+  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isUnclassifiedActive = selectedContextId === UNCLASSIFIED_FILTER_ID
 
