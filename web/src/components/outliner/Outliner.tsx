@@ -518,11 +518,16 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       }
 
       // NO llamamos e.preventDefault() — dejamos que el browser coloque el cursor
-      // naturalmente en clicks simples. Para drags, onSelectStart y user-select:none
-      // son suficientes para bloquear text-selection.
-      document.body.classList.add('outliner-drag-active')
-      document.body.style.userSelect = 'none'
-      ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
+      // naturalmente en clicks simples. El bloqueo de text-selection (clase
+      // outliner-drag-active + user-select:none + onSelectStart) SOLO se aplica cuando
+      // el gesto NO empieza sobre texto editable. Si empieza sobre texto, conservamos
+      // el comportamiento nativo: caret al hacer clic, doble-clic = palabra, y selección
+      // de texto al arrastrar. El drag-select de nodos se inicia desde bullets/gutter/vacío.
+      if (!dragFromText.current) {
+        document.body.classList.add('outliner-drag-active')
+        document.body.style.userSelect = 'none'
+        ;(document.body.style as unknown as Record<string,string>).webkitUserSelect = 'none'
+      }
       // Si había una drag-select activa de antes, limpiar al iniciar nuevo click
       if (_gSelectedIds.size > 0) gClearSelected()
     }
@@ -554,11 +559,16 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         return
       }
 
+      // Gesto iniciado sobre texto editable → selección de texto nativa del browser,
+      // NO drag-select de nodos. El usuario que arrastra sobre texto está seleccionando
+      // texto; el drag-select de nodos se hace desde bullet/gutter/espacio vacío.
+      if (dragFromText.current) return
+
       const anchorId = dragAnchorId.current!
 
-      // ── Drag unificado (texto y no-texto) ──────────────────────────────────
-      // Ya no hay distinción: siempre hicimos preventDefault en mousedown,
-      // así que el browser nunca inicia selección de texto nativa.
+      // ── Drag de nodos (bullet / gutter / espacio vacío) ─────────────────────
+      // El gesto NO empezó sobre texto, así que bloqueamos text-selection y
+      // convertimos el arrastre vertical en selección de nodos.
       // Umbral de 5px para distinguir clic de drag.
       if (!isDragSelectingRef.current && Math.abs(e.clientY - dragAnchorPos.current) <= 4) return
       if (!isDragSelectingRef.current) {
@@ -615,11 +625,12 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     }
 
     // ── selectstart — prevenir selección de texto nativa durante node-drag ──
-    // Bloqueamos siempre que haya un ancla activa para evitar que el browser
-    // robe los eventos de mousemove para text-selection (especialmente desde
-    // contenteditable). No hay distinción texto/no-texto.
+    // Bloqueamos SOLO cuando el gesto NO empezó sobre texto editable (ancla activa
+    // + !dragFromText). Así el drag-select de nodos (desde bullet/gutter/vacío) no
+    // deja que el browser robe los mousemove para text-selection, mientras que los
+    // gestos sobre texto conservan caret, doble-clic (palabra) y selección nativa.
     function onSelectStart(e: Event) {
-      if (dragAnchorId.current) e.preventDefault()
+      if (dragAnchorId.current && !dragFromText.current) e.preventDefault()
     }
 
     document.addEventListener('mousedown',   onDown, { capture: true })
