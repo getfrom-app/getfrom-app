@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
@@ -52,6 +52,7 @@ import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
+import { extractContextKnowledge } from '../../api/autoClassify'
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
@@ -64,6 +65,84 @@ function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   const s = useStore()
   const { t } = useTranslation()
   const node = s.getNode(nodeId)
+  const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
+
+  // Detectar si el nodo es un contexto (hijo directo de 🧠 Contexto)
+  const isContextNode = useMemo(() => {
+    if (!node) return false
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return false
+    return node.parentId === tagsRoot.id
+  }, [node?.id, node?.parentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-actualizar "Lo que From sabe" al abrir un contexto en el panel derecho ──
+  // Misma lógica que NodeView: si han pasado >30 min desde la última actualización, dispara en background.
+  useEffect(() => {
+    if (!node || !isContextNode || ctxKnowledgeLoading) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      const lastUpdated: number = ed._knowledgeUpdatedAt || 0
+      const thirtyMinutes = 30 * 60 * 1000
+      if (Date.now() - lastUpdated < thirtyMinutes) return
+    } catch { return }
+    const timer = setTimeout(async () => {
+      if (!node || ctxKnowledgeLoading) return
+      setCtxKnowledgeLoading(true)
+      try {
+        const directChildren = store.children(node.id).filter(n => !n.deletedAt)
+        const samples: string[] = []
+        for (const child of directChildren) {
+          if (child.text?.trim()) samples.push(child.text.trim())
+          if (samples.length >= 60) break
+          for (const grandchild of store.children(child.id).filter(n => !n.deletedAt)) {
+            if (grandchild.text?.trim()) samples.push(grandchild.text.trim())
+            if (samples.length >= 60) break
+          }
+        }
+        if (samples.length === 0) { setCtxKnowledgeLoading(false); return }
+        const knowledge = await extractContextKnowledge(node.text || '', '', samples)
+        const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
+        const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+        let knowledgeNodeId: string
+        if (existingKnowledgeNode) {
+          knowledgeNodeId = existingKnowledgeNode.id
+        } else {
+          const allSibs = store.children(node.id).filter(n => !n.deletedAt)
+          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+          const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: node.id, siblingOrder: maxOrder + 1000 })
+          knowledgeNodeId = newNode.id
+        }
+        const SUBNODE_TEXTS: Record<string, string> = {
+          keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
+          people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
+          topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
+        }
+        const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
+        let order = 1000
+        for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
+          const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
+          const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
+          if (existing) {
+            store.updateNode(existing.id, { text })
+          } else {
+            store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
+          }
+          order += 1000
+        }
+        // Guardar timestamp para evitar re-disparar antes de 30 min
+        try {
+          const currentNode = store.getNode(node.id)
+          const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+          ed._knowledgeUpdatedAt = Date.now()
+          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+        } catch { /* ignorar */ }
+      } catch { /* silenciar errores */ }
+      setCtxKnowledgeLoading(false)
+    }, 1500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id, isContextNode])
+
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
