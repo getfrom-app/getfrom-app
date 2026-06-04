@@ -841,6 +841,25 @@ export default function NodeView() {
   // Drag & drop de archivos
   const [fileDragOver, setFileDragOver] = useState(false)
 
+  // ── Auto-actualizar "Lo que From sabe" al abrir un contexto ─────────────────
+  // Si han pasado >30 min desde la última actualización, se dispara automáticamente en background.
+  // NOTA: usamos knowledgeUpdateTimestamps (Map local) en lugar de extraData del nodo para
+  // evitar que la actualización del nodo re-dispare este efecto (bucle infinito de renders).
+  // CRÍTICO: este efecto DEBE estar antes del early-return de abajo — si queda después,
+  // el conteo de hooks varía entre renders (store cargando vs nodo presente) → React #310.
+  useEffect(() => {
+    if (!node || !isContextNode) return
+    const lastUpdated = knowledgeUpdateTimestamps.get(node.id) ?? 0
+    const thirtyMinutes = 30 * 60 * 1000
+    if (Date.now() - lastUpdated < thirtyMinutes) return
+    // Disparar en background sin bloquear el render
+    const timer = setTimeout(() => {
+      handleUpdateContextKnowledge()
+    }, 1500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id, isContextNode])
+
   if (!node || node.deletedAt) {
     // Si el store aún no ha cargado, mostrar loading en lugar del error
     if (!store.isLoaded) {
@@ -1474,23 +1493,6 @@ export default function NodeView() {
     } catch { /* silenciar errores */ }
     setCtxKnowledgeLoading(false)
   }
-
-  // ── Auto-actualizar "Lo que From sabe" al abrir un contexto ─────────────────
-  // Si han pasado >30 min desde la última actualización, se dispara automáticamente en background.
-  // NOTA: usamos knowledgeUpdateTimestamps (Map local) en lugar de extraData del nodo para
-  // evitar que la actualización del nodo re-dispare este efecto (bucle infinito de renders).
-  useEffect(() => {
-    if (!node || !isContextNode) return
-    const lastUpdated = knowledgeUpdateTimestamps.get(node.id) ?? 0
-    const thirtyMinutes = 30 * 60 * 1000
-    if (Date.now() - lastUpdated < thirtyMinutes) return
-    // Disparar en background sin bloquear el render
-    const timer = setTimeout(() => {
-      handleUpdateContextKnowledge()
-    }, 1500)
-    return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id, isContextNode])
 
   function handlePrint() {
     const title = node!.text || 'Sin título'
