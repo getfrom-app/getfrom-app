@@ -396,32 +396,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [node.parentId])
 
   // Comprueba si el nodo está dentro de una estructura restringida donde no tiene
-  // sentido clasificar:
+  // sentido clasificar ni mostrar badge:
   //   1. Dentro de un nodo de contexto (hijo de 🧠 Contexto)
   //   2. Dentro del nodo de perfil (_perfilIA === '1')
-  //   3. Dentro de la estructura temporal de la Agenda (📅 Agenda → Año → Mes → Día)
-  //   4. Dentro de la Papelera
-  // Sube máximo 6 niveles para no ser costoso; memoizado por parentId.
+  //   3. Dentro de la Papelera
+  // NOTA: La Agenda NO está bloqueada — el usuario escribe contenido real en el diario
+  // que sí debe clasificarse. Solo bloqueamos los nodos de contexto y perfil porque
+  // ya tienen su contexto implícito por posición.
   const isInsideRestrictedAncestor = useMemo(() => {
-    // Identificar raíces especiales para comparar contra ellas
     const contextoRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-    const agendaRoot = store.children(null).find(n => !n.deletedAt && n.text === '📅 Agenda')
 
     let cur = store.getNode(node.parentId ?? '')
     let depth = 0
-    while (cur && depth < 6) {
-      // ¿Es el nodo de perfil?
+    while (cur && depth < 8) {
       try {
         const ed = JSON.parse(cur.extraData || '{}')
         if (ed._perfilIA === '1') return true
       } catch { /* ignore */ }
-      // ¿Es el nodo raíz de contextos?
       if (contextoRoot && cur.id === contextoRoot.id) return true
-      // ¿Es el nodo raíz de agenda?
-      if (agendaRoot && cur.id === agendaRoot.id) return true
-      // ¿Es la Papelera?
       if ((cur.text || '') === '🗑 Papelera') return true
-
       cur = store.getNode(cur.parentId ?? '')
       depth++
     }
@@ -3622,24 +3615,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 3) Placeholder "+ Contexto": el nodo es candidato a clasificación pero la IA
                    no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
                    Siempre visible para que el usuario pueda asignar contexto manualmente. */}
-            {!isContextNode && manuallySetContextId ? (
+            {/* Badge de contexto: no mostrar en nodos restringidos (dentro de contextos, perfil, papelera) */}
+            {!isContextNode && !isInsideRestrictedAncestor && manuallySetContextId ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
                 assignedContextId={manuallySetContextId}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!isContextNode && !nodeHasManualContext && autoCtxResult !== null) ? (
+            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult !== null) ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!isContextNode && !nodeHasManualContext && autoCtxResult === null && (() => {
-              // Mostrar "+ Contexto" solo en nodos candidatos a clasificación
-              const isLoopNode = (node.types || []).includes('bucle')
-              return (hasChildren || node.status !== null || isLoopNode || isHeading) && !node.isDiaryEntry
-            })()) ? (
+            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult === null && !node.isDiaryEntry && (node.text || '').trim().length >= 10) ? (
               <ContextPlaceholderBadge
                 node={node}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
