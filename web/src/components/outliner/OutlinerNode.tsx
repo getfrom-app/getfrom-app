@@ -464,7 +464,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       } catch { /* ignore */ }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, node.text, nodeHasManualContext])
+  }, [node.id, node.text, node.status, node.types, nodeHasManualContext])
 
   // Abrir panel de propiedades desde el context menu externo
   useEffect(() => {
