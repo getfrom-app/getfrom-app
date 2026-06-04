@@ -220,24 +220,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
             </span>
           )}
 
-          {/* Badge con contador de nodos clasificados en este contexto */}
-          {!isRenaming && (() => {
-            const count = contextCounts.get(nodeId) ?? 0
-            if (count === 0) return null
-            return (
-              <span style={{
-                background: isActive ? 'var(--accent)' : 'var(--bg-hover)',
-                color: isActive ? '#fff' : 'var(--text-tertiary)',
-                borderRadius: 10,
-                padding: '1px 7px',
-                fontSize: 11,
-                fontWeight: 600,
-                flexShrink: 0,
-                marginRight: (isHovered || isActive) ? 2 : 0,
-              }}>{count}</span>
-            )
-          })()}
-
           {/* Botones hover: lápiz + × */}
           {!isRenaming && (isHovered || isActive) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
@@ -272,64 +254,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
 
   // Set de IDs en la Papelera — excluir del contador "Sin clasificar"
   const papeleraIds = useMemo(() => buildPapeleraIds(), [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Calcular cuántos nodos activos (no en papelera) tienen cada contextId en types[]
-  // Memoizado con dep nodesVersion — mismo patrón que unclassifiedCount.
-  // Usa la misma lógica de matching que buildContextFilter en WFHomeView:
-  //   1. types[] incluye el ID directo del contexto
-  //   2. types[] incluye el slug o el texto del contexto (case-insensitive)
-  //   3. El texto del nodo contiene @NombreContexto (case-insensitive)
-  const contextCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    if (!contextoRoot) return counts
-
-    // Construir info de cada contexto: id, textLower, slugLower, atMentionPattern
-    interface CtxInfo { id: string; textLower: string; slugLower: string; atPattern: RegExp }
-    const ctxInfos: CtxInfo[] = []
-    const queue: string[] = [contextoRoot.id]
-    while (queue.length > 0) {
-      const pid = queue.pop()!
-      store.children(pid).forEach(child => {
-        if (!child.deletedAt) {
-          const txt = child.text || ''
-          const textLower = txt.toLowerCase()
-          const slugLower = textLower
-            .normalize('NFD').replace(/[̀-ͯ]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9\-\/]/g, '')
-          const escapedName = txt.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          ctxInfos.push({
-            id: child.id,
-            textLower,
-            slugLower,
-            atPattern: new RegExp(`@${escapedName}`, 'i'),
-          })
-          counts.set(child.id, 0)
-          queue.push(child.id)
-        }
-      })
-    }
-
-    s.allActive().forEach(n => {
-      if (n.isDiaryEntry || n.deletedAt) return
-      if (papeleraIds.has(n.id)) return
-      const types = n.types || []
-      const nodeText = n.text || ''
-      ctxInfos.forEach(ctx => {
-        const matchByTypes =
-          types.includes(ctx.id) ||
-          types.some(t => {
-            const tl = t.toLowerCase()
-            return tl === ctx.slugLower || tl === ctx.textLower
-          })
-        const matchByAtMention = ctx.atPattern.test(nodeText)
-        if (matchByTypes || matchByAtMention) {
-          counts.set(ctx.id, (counts.get(ctx.id) ?? 0) + 1)
-        }
-      })
-    })
-    return counts
-  }, [s.nodesVersion, papeleraIds, contextoRoot]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calcular cuántos nodos están sin clasificar (sin user-tags en types[])
   // Memoizado para evitar cálculo O(n²) en cada render — depende de nodesVersion
