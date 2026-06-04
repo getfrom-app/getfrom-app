@@ -167,7 +167,7 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     }
     case 'activo':      return !!node.isActive
     case 'bucle':
-    case 'loop':        return (node.types || []).includes('bucle')
+    case 'loop':        return (node.types || []).includes('bucle') && node.status !== 'done'
 
     default:
       // @tag o #tag
