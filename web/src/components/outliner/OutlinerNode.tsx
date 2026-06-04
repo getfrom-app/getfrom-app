@@ -1345,7 +1345,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setTimeout(() => setPicker(null), 150)
 
     // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
-    // Solo si el usuario editó el nodo en esta sesión y no lo hemos procesado ya.
+    // Se dispara para CUALQUIER nodo con texto ≥ 20 chars, sin importar tipo.
     // Debounce largo (10s) para no saturar. Se dispara una sola vez por nodo por sesión.
     const blurText = (contentRef.current?.textContent || '').trim()
     if (
@@ -1371,10 +1371,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             : []
           const existingProfile = existingProfileLines.join('. ')
 
-          const learned = await extractUserKnowledge(blurText, existingProfile || undefined)
-          if (!learned) return
+          const knowledge = await extractUserKnowledge(blurText, existingProfile || undefined)
+          if (!knowledge) return
+          const { people, facts } = knowledge
+          if (!people.length && !facts.length) return
 
-          // Añadir el dato aprendido al nodo "🧠 Lo que From sabe sobre ti" dentro del perfil
+          // Añadir los datos aprendidos al nodo "🧠 Lo que From sabe sobre ti" dentro del perfil
           const perfilNodeFresh = store.perfilIANode?.() ?? null
           if (!perfilNodeFresh) return
 
@@ -1386,13 +1388,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
           }
 
-          // Evitar duplicados: comprobar si ya hay un nodo con el mismo texto
-          const existingChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-          const isDuplicate = existingChildren.some(n => (n.text || '').toLowerCase() === learned.toLowerCase())
-          if (isDuplicate) return
+          const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
 
-          const maxOrder2 = existingChildren.length > 0 ? Math.max(...existingChildren.map(c => c.siblingOrder)) : 0
-          store.createNode({ text: learned, parentId: learnNode.id, siblingOrder: maxOrder2 + 1000 })
+          // Eliminar el subnodo "Palabras clave" si existe (estructura antigua)
+          const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
+          if (kwNode) store.deleteNode(kwNode.id)
+
+          // Helper: buscar o crear subnodo por prefijo, luego añadir items sin duplicar
+          const upsertSubnode = (prefix: string, items: string[], order: number) => {
+            if (!items.length) return
+            const freshChildren = store.children(learnNode!.id).filter(n => !n.deletedAt)
+            let subNode = freshChildren.find(n => (n.text || '').startsWith(prefix + ':'))
+            if (!subNode) {
+              subNode = store.createNode({ text: prefix + ': ' + items.join(', '), parentId: learnNode!.id, siblingOrder: order })
+            } else {
+              // Añadir items nuevos que no estén ya en el texto del subnodo
+              const existingText = (subNode.text || '').toLowerCase()
+              const newItems = items.filter(item => !existingText.includes(item.toLowerCase()))
+              if (newItems.length > 0) {
+                const currentText = (subNode.text || '').trimEnd()
+                const sep = currentText.endsWith(':') ? ' ' : ', '
+                store.updateNode(subNode.id, { text: currentText + sep + newItems.join(', ') })
+              }
+            }
+          }
+
+          const freshLearnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
+          const maxBase = freshLearnChildren.length > 0 ? Math.max(...freshLearnChildren.map(c => c.siblingOrder)) : 0
+
+          upsertSubnode('Personas', people, maxBase + 1000)
+          upsertSubnode('Hechos', facts, maxBase + 2000)
         } catch { /* silencioso */ }
       }, 10_000)
     }

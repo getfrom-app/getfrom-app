@@ -161,15 +161,21 @@ async function classifyNode(
  * Si detecta algo nuevo (persona, relación, dato personal), devuelve una frase corta.
  * Si no detecta nada nuevo o el texto es trivial, devuelve null.
  */
+export interface UserKnowledge {
+  people: string[]
+  facts: string[]
+}
+
 export async function extractUserKnowledge(
   nodeText: string,
   existingProfile?: string,
-): Promise<string | null> {
-  const data = await apiRequest<{ learned: string | null }>('/ai/extract-user-knowledge', {
+): Promise<UserKnowledge | null> {
+  const data = await apiRequest<UserKnowledge>('/ai/extract-user-knowledge', {
     method: 'POST',
     body: JSON.stringify({ nodeText, existingProfile }),
   })
-  return data.learned ?? null
+  if (!data.people?.length && !data.facts?.length) return null
+  return { people: data.people ?? [], facts: data.facts ?? [] }
 }
 
 /**
