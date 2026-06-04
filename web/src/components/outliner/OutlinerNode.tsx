@@ -24,6 +24,8 @@ import { ensureTagInTree } from '../../utils/tagsHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
+import AutoContextBadge from './AutoContextBadge'
+import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -310,6 +312,57 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     window.addEventListener('wf:shortcuts-changed', update)
     return () => window.removeEventListener('wf:shortcuts-changed', update)
   }, [node.id])
+
+  // Auto-clasificación de contexto — badge sutil con sugerencia IA
+  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(
+    () => getCachedClassify(node.id) ?? null
+  )
+
+  // Determina si el nodo ya tiene contexto asignado manualmente
+  // (bien vía badge de corrección, bien vía @mention en el texto)
+  const nodeHasManualContext = useMemo(() => {
+    // 1. Flag explícito en extraData
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._contextManuallySet === '1') return true
+    } catch { /* ignore */ }
+    // 2. ¿El nodo tiene @mentions de contexto en el texto?
+    if (/@\w/.test(node.text || '')) return true
+    // 3. ¿El nodo tiene user-tags en types[] (contextos del árbol)?
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota','bucle'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length > 0) return true
+    return false
+  }, [node.types, node.extraData, node.text])
+
+  // Disparar clasificación cuando el nodo cambia de texto y no tiene contexto manual
+  useEffect(() => {
+    // No clasificar nodos especiales o ya clasificados manualmente
+    if (nodeHasManualContext) {
+      cancelClassify(node.id)
+      setAutoCtxResult(null)
+      return
+    }
+    // No clasificar nodos sin texto significativo o nodos sistema
+    const text = (node.text || '').trim()
+    if (!text || text.length < 4) {
+      cancelClassify(node.id)
+      setAutoCtxResult(null)
+      return
+    }
+    // No clasificar nodos de diario, headings, dividers
+    if (node.isDiaryEntry) return
+    // Obtener contextos disponibles del usuario
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    if (contextNodes.length === 0) return
+    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    scheduleClassify(node.id, text, contexts, (id, result) => {
+      if (id === node.id) setAutoCtxResult(result)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.text, nodeHasManualContext])
 
   // Abrir panel de propiedades desde el context menu externo
   useEffect(() => {
@@ -3104,6 +3157,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const txt = n === 1 ? sing : `${n} ${plur}`
               return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
             })()}
+
+            {/* Auto-contexto badge — sugerencia IA (solo cuando no tiene contexto manual) */}
+            {!nodeHasManualContext && autoCtxResult && autoCtxResult.confidence > 0.3 && (
+              <AutoContextBadge
+                node={node}
+                result={autoCtxResult}
+                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
+              />
+            )}
 
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (

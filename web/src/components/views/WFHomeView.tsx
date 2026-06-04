@@ -11,6 +11,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './Filte
 import type { FilterView } from './FilterResultsView'
 import { uploadFile } from '../../api/client'
 import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
+import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -154,6 +155,38 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
   const contextFilter = useMemo(() => {
     if (!contextFilterId) return null
+
+    // Filtro especial: nodos sin contexto asignado
+    if (contextFilterId === UNCLASSIFIED_FILTER_ID) {
+      const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+      const matchIds = new Set<string>()
+      const ancestorIds = new Set<string>()
+      store.allActive().forEach(n => {
+        if (n.deletedAt || n.isDiaryEntry) return
+        const text = (n.text || '').trim()
+        if (text.length < 4) return
+        // ¿tiene contextos del usuario en types[]?
+        const userTypes = (n.types || []).filter(t => !builtinTags.has(t))
+        if (userTypes.length > 0) return
+        // ¿tiene @mention?
+        if (/@\w/.test(n.text || '')) return
+        // ¿fue asignado manualmente via badge?
+        try {
+          const ed = JSON.parse(n.extraData || '{}')
+          if (ed._contextManuallySet === '1') return
+        } catch { /* ignore */ }
+        matchIds.add(n.id)
+      })
+      matchIds.forEach(id => {
+        let cur = store.getNode(id)
+        while (cur?.parentId) {
+          ancestorIds.add(cur.parentId)
+          cur = store.getNode(cur.parentId)
+        }
+      })
+      return { matchIds, ancestorIds }
+    }
+
     return buildContextFilter(contextFilterId)
   }, [contextFilterId, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 

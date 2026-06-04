@@ -1,11 +1,16 @@
 /**
  * ContextListPanel — lista de contextos en panel derecho
  * Hover: lápiz (renombrar) + × (eliminar), igual que los filtros guardados
+ * Incluye sección "Sin clasificar" con nodos sin contexto asignado.
  */
 import React, { useState, useRef, useEffect } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
+import { getCachedClassify, CONFIDENCE_THRESHOLD } from '../../api/autoClassify'
+
+/** Constante especial para indicar el filtro "Sin clasificar" */
+export const UNCLASSIFIED_FILTER_ID = '__unclassified__'
 
 interface Props {
   onSelectContext: (nodeId: string) => void
@@ -153,8 +158,56 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
   const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
 
+  // Calcular cuántos nodos están sin clasificar (sin user-tags en types[])
+  const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+  const unclassifiedCount = s.allActive().filter(n => {
+    if (n.isDiaryEntry || n.deletedAt) return false
+    // ¿tiene contextos manuales?
+    const userTypes = (n.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length > 0) return false
+    // ¿tiene @mention de contexto?
+    if (/@\w/.test(n.text || '')) return false
+    // ¿fue asignado manualmente via badge?
+    try {
+      const ed = JSON.parse(n.extraData || '{}')
+      if (ed._contextManuallySet === '1') return false
+    } catch { /* ignore */ }
+    // Solo contar nodos con texto significativo
+    return (n.text || '').trim().length >= 4
+  }).length
+
+  const isUnclassifiedActive = selectedContextId === UNCLASSIFIED_FILTER_ID
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '8px 0 4px' }}>
+      {/* Filtro especial: Sin clasificar */}
+      {unclassifiedCount > 0 && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '5px 8px 5px 16px',
+            cursor: 'pointer', fontSize: 13,
+            color: isUnclassifiedActive ? 'var(--accent)' : 'var(--text-secondary)',
+            background: isUnclassifiedActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+            borderBottom: '1px solid var(--border)',
+            marginBottom: 4,
+          }}
+          onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
+        >
+          <span style={{ fontSize: 14, opacity: 0.5, width: 18, flexShrink: 0, textAlign: 'center' }}>✦</span>
+          <span style={{ flex: 1 }}>{t('autoCtx.unclassifiedFilter')}</span>
+          <span style={{
+            background: isUnclassifiedActive ? 'var(--accent)' : 'var(--bg-hover)',
+            color: isUnclassifiedActive ? '#fff' : 'var(--text-tertiary)',
+            borderRadius: 10,
+            padding: '1px 7px',
+            fontSize: 11,
+            fontWeight: 600,
+            flexShrink: 0,
+          }}>{unclassifiedCount}</span>
+        </div>
+      )}
+
       {contextos.map(c => renderCtx(c.id, 0))}
 
       {!addingCtx ? (

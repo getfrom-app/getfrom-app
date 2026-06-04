@@ -706,5 +706,9 @@
   "calendar.createBtn": "Crear",
   "calendar.cancelBtn": "Cancelar",
   "calendar.newTaskPlaceholder": "Nombre de la tarea…",
-  "calendar.openArrow": "Abrir →"
+  "calendar.openArrow": "Abrir →",
+  "autoCtx.badgeTooltip": "Contexto sugerido por IA ({{confidence}}% confianza). Haz clic para confirmar o corregir.",
+  "autoCtx.dropdownTitle": "Asignar contexto",
+  "autoCtx.noContext": "Sin contexto",
+  "autoCtx.unclassifiedFilter": "Sin clasificar"
 }

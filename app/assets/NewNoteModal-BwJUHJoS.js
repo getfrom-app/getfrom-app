@@ -1,4 +1,4 @@
-import{aA as g,ar as r,ab as n}from"./outliner-DXxWh_wb.js";import{c,d as f,r as w}from"./react-vendor-DZMOm95h.js";const b=[{id:"blank",name:"Nota en blanco",icon:"📄",text:"",body:""},{id:"meeting",name:"Reunión",icon:"🤝",text:"Reunión - ",body:`## Objetivo
+import{aA as g,ar as r,ab as n}from"./outliner-EDayM3lU.js";import{c,d as f,r as w}from"./react-vendor-DZMOm95h.js";const b=[{id:"blank",name:"Nota en blanco",icon:"📄",text:"",body:""},{id:"meeting",name:"Reunión",icon:"🤝",text:"Reunión - ",body:`## Objetivo
 
 ## Asistentes
 

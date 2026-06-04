@@ -8,7 +8,7 @@ import { userStore } from '../../store/userStore'
 import { getHotkeyKey } from '../../store/hotkeysStore'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
-import ContextListPanel from '../panels/ContextListPanel'
+import ContextListPanel, { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 
 import WFHomeView from '../views/WFHomeView'
@@ -114,6 +114,24 @@ export default function MainLayout() {
   function togglePanel(p: CyclablePanel) { setRightPanel(p) }
 
   function handleSelectContext(nodeId: string) {
+    // Filtro especial "Sin clasificar" — no abre panel de nodo, solo aplica filtro
+    if (nodeId === UNCLASSIFIED_FILTER_ID) {
+      if (contextNodeId === UNCLASSIFIED_FILTER_ID) {
+        setContextNodeId(null)
+        return
+      }
+      const normPath = location.pathname.replace(/^\/app\/?/, '') || '/'
+      const atHome = normPath === '/' || normPath === ''
+      if (!atHome) {
+        pendingContextRef.current = nodeId
+        navigate('/')
+      } else {
+        setContextNodeId(nodeId)
+        // Mantener panel context-list abierto para que el usuario vea los contextos
+      }
+      return
+    }
+
     if (contextNodeId === nodeId && rightPanel === 'context') {
       // Segundo clic → volver a la lista de contextos
       setRightPanel('context-list')
@@ -140,7 +158,8 @@ export default function MainLayout() {
       const nodeId = pendingContextRef.current
       pendingContextRef.current = null
       setContextNodeId(nodeId)
-      setRightPanel('context')
+      // "Sin clasificar" no abre panel de nodo — mantiene context-list
+      if (nodeId !== UNCLASSIFIED_FILTER_ID) setRightPanel('context')
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
