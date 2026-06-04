@@ -446,7 +446,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [node.parentId])
 
   // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
-  // lleva 15s estable (sin cambios) y cumple los criterios. Cubre el caso en que
+  // lleva 5s estable (sin cambios) y cumple los criterios. Cubre el caso en que
   // handleBlur no se dispara correctamente (notas normales sin interacción directa
   // o cuando contentRef no tiene el texto actualizado al blur).
   useEffect(() => {
@@ -519,7 +519,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         upsertSub2('Personas', people, maxBase + 1000)
         upsertSub2('Hechos', facts, maxBase + 2000)
       } catch { /* silencioso */ }
-    }, 15_000)
+    }, 5_000)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text, node.isDiaryEntry, isInsideKnowledgeRestricted])
 
@@ -1491,22 +1491,28 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
     // Se dispara para CUALQUIER nodo con texto ≥ 20 chars, sin importar tipo.
-    // Debounce largo (10s) para no saturar. Se dispara una sola vez por nodo por sesión.
+    // Al hacer blur: si hay un timer pendiente (del useEffect de 5s), se cancela y se
+    // ejecuta inmediatamente. Si no hay timer pero el nodo cumple criterios, también
+    // ejecuta inmediatamente. Así nunca se pierde lo aprendido al navegar.
     // Usa isInsideKnowledgeRestricted (no bloquea Agenda) — los nodos del diario SÍ alimentan el perfil.
     const blurText = (contentRef.current?.textContent || '').trim()
+
+    // Si hay un timer pendiente del useEffect (5s), cancelarlo — ejecutaremos inmediatamente
+    const hadPendingTimer = extractUserKnowledgeTimerRef.current !== null
+    if (extractUserKnowledgeTimerRef.current) {
+      clearTimeout(extractUserKnowledgeTimerRef.current)
+      extractUserKnowledgeTimerRef.current = null
+    }
+
     if (
-      hasUserEditedRef.current &&
+      (hasUserEditedRef.current || hadPendingTimer) &&
       !hasExtractedUserKnowledgeRef.current &&
       !isInsideKnowledgeRestricted &&
       blurText.length >= 20
     ) {
-      // Cancelar timer previo si existe
-      if (extractUserKnowledgeTimerRef.current) {
-        clearTimeout(extractUserKnowledgeTimerRef.current)
-      }
-      extractUserKnowledgeTimerRef.current = setTimeout(async () => {
-        extractUserKnowledgeTimerRef.current = null
-        hasExtractedUserKnowledgeRef.current = true
+      // Ejecutar inmediatamente (sin setTimeout) — el usuario ya salió del nodo
+      hasExtractedUserKnowledgeRef.current = true
+      ;(async () => {
         try {
           // Obtener el perfil existente como contexto
           const perfilNode = store.perfilIANode?.() ?? null
@@ -1578,7 +1584,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           upsertSubnode('Personas', people, maxBase + 1000)
           upsertSubnode('Hechos', facts, maxBase + 2000)
         } catch { /* silencioso */ }
-      }, 10_000)
+      })()
     }
 
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.

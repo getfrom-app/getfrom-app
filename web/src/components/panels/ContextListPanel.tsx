@@ -7,6 +7,7 @@
  * El nodo Perfil IA aparece siempre fijo encima de la lista de contextos.
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
@@ -76,6 +77,7 @@ function assignContextToNode(nodeId: string, contextNodeId: string) {
 export default function ContextListPanel({ onSelectContext, selectedContextId }: Props) {
   const s = useStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [expandedIds, setExpandedIds]   = useState<Set<string>>(new Set())
   const [addingCtx, setAddingCtx]       = useState(false)
   const [newCtxName, setNewCtxName]     = useState('')
@@ -315,7 +317,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               background: isPerfilActive ? 'rgba(139,92,246,0.08)' : 'transparent',
               fontWeight: isPerfilActive ? 600 : 500,
             }}
-            onClick={() => onSelectContext(perfilNode.id)}
+            onClick={() => navigate('/node/' + perfilNode.id)}
           >
             <span style={{ fontSize: 14, width: 18, flexShrink: 0, textAlign: 'center' }}>🧠</span>
             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
