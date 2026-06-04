@@ -25,7 +25,7 @@ import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToS
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, type ClassifyResult } from '../../api/autoClassify'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -333,6 +333,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Guard: solo disparar scheduleClassify si el usuario ha editado este nodo en la sesión actual.
   // Evita que al montar 160 nodos en la vista "Sin clasificar" se disparen 160 clasificaciones simultáneas.
   const hasUserEditedRef = useRef(false)
+  // Guard: solo extraer conocimiento del usuario una vez por nodo por sesión.
+  const hasExtractedUserKnowledgeRef = useRef(false)
+  // Timer de debounce para la extracción de conocimiento del usuario (10s).
+  const extractUserKnowledgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Cleanup del timer de extracción de conocimiento al desmontar el nodo.
+  useEffect(() => {
+    return () => {
+      if (extractUserKnowledgeTimerRef.current) {
+        clearTimeout(extractUserKnowledgeTimerRef.current)
+      }
+    }
+  }, [])
 
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
@@ -421,6 +433,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         .map(c => (c.text || '').trim()),
     }))
 
+    // Recoger muestras del perfil IA para mejorar la clasificación
+    const perfilNode = store.perfilIANode?.() ?? null
+    const userProfileSamples: string[] = perfilNode
+      ? store.children(perfilNode.id)
+          .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+          .slice(0, 50)
+          .map(n => (n.text || '').trim())
+      : []
+
     // Delay largo (3000ms en lugar de 800ms) para no saturar al cargar la vista con múltiples nodos.
     // Una vez clasificado y guardado en extraData, este bloque no vuelve a dispararse (hasPersistedAutoCtx=true).
     scheduleClassify(node.id, text, contexts, (id, result) => {
@@ -433,7 +454,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ed._autoContextConfidence = result.confidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
-    }, 3000)
+    }, 3000, userProfileSamples.length > 0 ? userProfileSamples : undefined)
     return () => cancelClassify(node.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -490,6 +511,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         .slice(0, 200)
         .map(c => (c.text || '').trim()),
     }))
+    // Recoger muestras del perfil IA para mejorar la clasificación
+    const perfilNodeEdit = store.perfilIANode?.() ?? null
+    const userProfileEdit: string[] | undefined = perfilNodeEdit
+      ? store.children(perfilNodeEdit.id)
+          .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+          .slice(0, 50)
+          .map(n => (n.text || '').trim())
+      : undefined
     scheduleClassify(node.id, text, contexts, (id, result) => {
       if (id !== node.id) return
       setAutoCtxResult(result)
@@ -501,7 +530,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ed._autoContextConfidence = result.confidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
-    })
+    }, 800, userProfileEdit?.length ? userProfileEdit : undefined)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text, node.status, node.types, nodeHasManualContext])
 
@@ -1314,6 +1343,60 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setTaskPrediction(false)
     // Delay picker hide to allow click
     setTimeout(() => setPicker(null), 150)
+
+    // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
+    // Solo si el usuario editó el nodo en esta sesión y no lo hemos procesado ya.
+    // Debounce largo (10s) para no saturar. Se dispara una sola vez por nodo por sesión.
+    const blurText = (contentRef.current?.textContent || '').trim()
+    if (
+      hasUserEditedRef.current &&
+      !hasExtractedUserKnowledgeRef.current &&
+      blurText.length >= 20
+    ) {
+      // Cancelar timer previo si existe
+      if (extractUserKnowledgeTimerRef.current) {
+        clearTimeout(extractUserKnowledgeTimerRef.current)
+      }
+      extractUserKnowledgeTimerRef.current = setTimeout(async () => {
+        extractUserKnowledgeTimerRef.current = null
+        hasExtractedUserKnowledgeRef.current = true
+        try {
+          // Obtener el perfil existente como contexto
+          const perfilNode = store.perfilIANode?.() ?? null
+          const existingProfileLines: string[] = perfilNode
+            ? store.children(perfilNode.id)
+                .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+                .slice(0, 50)
+                .map(n => (n.text || '').trim())
+            : []
+          const existingProfile = existingProfileLines.join('. ')
+
+          const learned = await extractUserKnowledge(blurText, existingProfile || undefined)
+          if (!learned) return
+
+          // Añadir el dato aprendido al nodo "🧠 Lo que From sabe sobre ti" dentro del perfil
+          const perfilNodeFresh = store.perfilIANode?.() ?? null
+          if (!perfilNodeFresh) return
+
+          const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+          let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+          if (!learnNode) {
+            const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
+            const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+            learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
+          }
+
+          // Evitar duplicados: comprobar si ya hay un nodo con el mismo texto
+          const existingChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
+          const isDuplicate = existingChildren.some(n => (n.text || '').toLowerCase() === learned.toLowerCase())
+          if (isDuplicate) return
+
+          const maxOrder2 = existingChildren.length > 0 ? Math.max(...existingChildren.map(c => c.siblingOrder)) : 0
+          store.createNode({ text: learned, parentId: learnNode.id, siblingOrder: maxOrder2 + 1000 })
+        } catch { /* silencioso */ }
+      }, 10_000)
+    }
+
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
     // Se ejecuta aquí (blur) y no en handleInput para no crear un nodo por cada tecla.
     const finalText = contentRef.current?.textContent || ''

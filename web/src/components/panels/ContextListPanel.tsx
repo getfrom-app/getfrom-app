@@ -4,6 +4,7 @@
  * Incluye sección "Sin clasificar" con nodos sin contexto asignado.
  * Soporta drag & drop: arrastrar un nodo desde la lista "Sin clasificar"
  * y soltarlo sobre un contexto para asignárselo.
+ * El nodo Perfil IA aparece siempre fijo encima de la lista de contextos.
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
@@ -250,7 +251,19 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   }
 
   const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-  const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
+
+  // Nodo perfil IA — identificado por extraData._perfilIA === '1'
+  const perfilNode = useMemo(() => {
+    return s.allActive().find(n => {
+      try { return JSON.parse(n.extraData || '{}')._perfilIA === '1' } catch { return false }
+    }) ?? null
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.nodesVersion])
+
+  // Contextos normales — excluir el nodo de perfil de la lista principal
+  const contextos = contextoRoot
+    ? s.children(contextoRoot.id).filter(n => !n.deletedAt && n.id !== perfilNode?.id)
+    : []
 
   // Set de IDs en la Papelera — excluir del contador "Sin clasificar"
   const papeleraIds = useMemo(() => buildPapeleraIds(), [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -286,8 +299,32 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
 
   const isUnclassifiedActive = selectedContextId === UNCLASSIFIED_FILTER_ID
 
+  const isPerfilActive = perfilNode ? selectedContextId === perfilNode.id : false
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '8px 0 4px' }}>
+      {/* Perfil IA — siempre fijo encima de la lista de contextos */}
+      {perfilNode && (
+        <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 4, paddingBottom: 4 }}>
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 8px 5px 16px',
+              cursor: 'pointer', fontSize: 13,
+              color: isPerfilActive ? 'var(--accent)' : 'var(--text-primary)',
+              background: isPerfilActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+              fontWeight: isPerfilActive ? 600 : 500,
+            }}
+            onClick={() => onSelectContext(perfilNode.id)}
+          >
+            <span style={{ fontSize: 14, width: 18, flexShrink: 0, textAlign: 'center' }}>🧠</span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {t('profile.panelLabel')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Filtro especial: Sin clasificar */}
       {unclassifiedCount > 0 && (
         <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 4 }}>

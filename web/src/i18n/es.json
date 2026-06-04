@@ -721,5 +721,6 @@
   "autoCtx.createContext": "Crear",
   "common.loadMore": "Cargar más",
   "ctxPanel.back": "← Contextos",
-  "ctxPanel.open": "Abrir"
+  "ctxPanel.open": "Abrir",
+  "profile.panelLabel": "Mi perfil"
 }

@@ -102,10 +102,11 @@ export function cancelClassify(nodeId: string) {
  * Clasifica un nodo tras un delay de 800ms.
  * Si ya hay una llamada pendiente para el mismo nodo, la cancela y reinicia.
  *
- * @param nodeId   — ID del nodo a clasificar
- * @param text     — Texto actual del nodo
- * @param contexts — Lista de contextos disponibles del usuario
- * @param onResult — Callback cuando llega el resultado (para forzar re-render)
+ * @param nodeId     — ID del nodo a clasificar
+ * @param text       — Texto actual del nodo
+ * @param contexts   — Lista de contextos disponibles del usuario
+ * @param onResult   — Callback cuando llega el resultado (para forzar re-render)
+ * @param userProfile — Líneas de contenido del perfil IA del usuario (opcional, siempre presente)
  */
 export function scheduleClassify(
   nodeId: string,
@@ -113,6 +114,7 @@ export function scheduleClassify(
   contexts: ContextInfo[],
   onResult: (nodeId: string, result: ClassifyResult) => void,
   delayMs = 800,
+  userProfile?: string[],
 ) {
   // Cancelar timer previo si existe
   const prev = pendingTimers.get(nodeId)
@@ -128,7 +130,7 @@ export function scheduleClassify(
     pendingTimers.delete(nodeId)
     try {
       const examples = loadExamples()
-      const result = await classifyNode(text, contexts, examples)
+      const result = await classifyNode(text, contexts, examples, userProfile)
       setCachedClassify(nodeId, result)
       onResult(nodeId, result)
     } catch {
@@ -145,12 +147,29 @@ async function classifyNode(
   nodeText: string,
   contexts: ContextInfo[],
   examples: ClassifyExample[],
+  userProfile?: string[],
 ): Promise<ClassifyResult> {
   const data = await apiRequest<ClassifyResult>('/ai/classify-context', {
     method: 'POST',
-    body: JSON.stringify({ nodeText, contexts, examples }),
+    body: JSON.stringify({ nodeText, contexts, examples, userProfile }),
   })
   return data
+}
+
+/**
+ * Extrae un dato relevante sobre el usuario a partir del texto de un nodo.
+ * Si detecta algo nuevo (persona, relación, dato personal), devuelve una frase corta.
+ * Si no detecta nada nuevo o el texto es trivial, devuelve null.
+ */
+export async function extractUserKnowledge(
+  nodeText: string,
+  existingProfile?: string,
+): Promise<string | null> {
+  const data = await apiRequest<{ learned: string | null }>('/ai/extract-user-knowledge', {
+    method: 'POST',
+    body: JSON.stringify({ nodeText, existingProfile }),
+  })
+  return data.learned ?? null
 }
 
 /**
