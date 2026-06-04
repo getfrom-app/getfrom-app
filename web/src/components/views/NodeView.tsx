@@ -1963,13 +1963,7 @@ export default function NodeView() {
               </div>,
               document.body
             )}
-            {/* Indicador ⟲ junto al título (dentro del wrapper flex) */}
-            {(node.types || []).includes('bucle') && (
-              <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
-            )}
-            </div>{/* /node-title-wrap */}
-
-            {/* Badge de contexto bajo el título — igual que en el outliner */}
+            {/* Badge de contexto — inline junto al título, alineado con el texto */}
             {!isContextNode && !node.isDiaryEntry && (() => {
               const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
               if (!tagsRoot || store.children(tagsRoot.id).filter(n => !n.deletedAt).length === 0) return null
@@ -1992,13 +1986,7 @@ export default function NodeView() {
                   />
                 )
               }
-              if (!nodeViewHasManualCtx && nodeViewCtxResult === null) {
-                const nodeBlockType = (() => { try { return (node.text || '').match(/^(# |## |### )/) ? 'heading' : '' } catch { return '' } })()
-                const hasChildren = store.children(node.id).some(c => !c.deletedAt)
-                const isTask = node.status !== null
-                const isLoop = (node.types || []).includes('bucle')
-                const isHeadingNode = nodeBlockType === 'heading'
-                if (!hasChildren && !isTask && !isLoop && !isHeadingNode) return null
+              if (!nodeViewHasManualCtx && nodeViewCtxResult === null && (node.text || '').trim().length >= 10) {
                 return (
                   <ContextPlaceholderBadge
                     node={node}
@@ -2008,6 +1996,11 @@ export default function NodeView() {
               }
               return null
             })()}
+            {/* Indicador ⟲ junto al título (dentro del wrapper flex) */}
+            {(node.types || []).includes('bucle') && (
+              <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
+            )}
+            </div>{/* /node-title-wrap */}
 
             <div className="node-title-actions">
               {/* View mode switcher — visible en todos los nodos incluidas notas diarias y mensuales */}
