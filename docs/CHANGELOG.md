@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.70 — 4 junio 2026 · Filtros como raíces flotantes (Workflowy-style)
+
+### Mejora: todos los filtros muestran resultados como raíces flotantes con breadcrumb
+
+Al activar cualquier filtro en From (contexto, tipo, búsqueda de texto o "Sin clasificar"), los nodos resultado ahora se muestran como **raíces flotantes independientes** con un breadcrumb de texto indicando su posición en el árbol.
+
+**Comportamiento anterior:**
+- El filtro por contexto expandía el árbol completo usando `ancestorIds`, montando miles de OutlinerNode simultáneamente → lentitud y freeze potencial.
+
+**Comportamiento nuevo:**
+- Cada nodo resultado aparece como raíz independiente en la vista filtrada.
+- Encima de cada resultado, un breadcrumb gris muestra el camino desde la raíz hasta el nodo (`Agenda › Trabajo › La Isla`).
+- Los ancestros son texto plano — sin coste de renderizado.
+- El nodo resultado y sus hijos son OutlinerNode normales, expandibles/colapsables.
+- Paginación automática (40 elementos por página) con botón "Cargar más".
+
+Esto afecta a **todos** los filtros:
+- Filtro por contexto (`@La Isla`, `@Personal`, etc.)
+- Filtro "Sin clasificar"
+- Búsqueda de texto (vista lista)
+- Cualquier filtro futuro
+
+---
+
 ## Web v9.6.63 — 4 junio 2026 · Fix filtro "Sin clasificar"
 
 ### Fix: el contador "Sin clasificar" ya no incluye párrafos sueltos
