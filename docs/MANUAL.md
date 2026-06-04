@@ -1,4 +1,4 @@
-# From — Manual de usuario v9.5
+# From — Manual de usuario v9.6
 
 > Web · Mac · iPhone · getfrom.app
 
@@ -38,7 +38,7 @@ También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa
 4. Si macOS advierte que no puede comprobar el desarrollador, ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
 5. Inicia sesión con tu cuenta.
 
-**Actualizaciones automáticas (desde v9.4.4):** cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión — Actualizar` en la barra inferior de From. Un clic instala la actualización sin salir de la app. No hace falta descargar nada manualmente.
+**Actualizaciones automáticas:** cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión — Actualizar` en la barra inferior de From. Un clic instala la actualización sin salir de la app. No hace falta descargar nada manualmente.
 
 ### Instalar en iPhone
 
@@ -99,9 +99,8 @@ Mientras arrastras, una línea de destino indica dónde caerá el nodo al soltar
 
 ### Selección multinodo
 
-Haz clic y arrastra el cursor sobre varios nodos para seleccionarlos (los nodos marcados quedan en azul). Puedes empezar el arrastre desde cualquier punto: el texto del nodo, el margen o el espacio en blanco entre nodos.
+Haz clic y arrastra el cursor sobre varios nodos para seleccionarlos (los nodos marcados quedan en azul). Con la selección activa:
 
-Con la selección activa:
 - **Backspace / Delete** — elimina los nodos seleccionados
 - **Escape** — cancela la selección
 - **⌘A** — selecciona todos los nodos visibles
@@ -133,7 +132,7 @@ Las notas también pueden tener un **body**: contenido largo, multilínea, con M
 **Bloques de texto** (desde el slash menu):
 
 - **Título** (H1, H2, H3): encabezados para estructurar el contenido.
-- **Lista**: un ítem con guión visual, mayor indentación. Diferente al bullet normal.
+- **Lista**: un ítem con guión visual, mayor indentación.
 - **Cita**: bloque con barra lateral izquierda.
 - **Código**: bloque con fuente monoespaciada y fondo diferenciado.
 - **Separador**: línea horizontal para dividir secciones.
@@ -154,7 +153,9 @@ Las tareas tienen un checkbox ☐/☑ a la izquierda del texto. Marcarla como he
 - Escribe `/tarea` en el slash menu.
 - Escribe `[ ] ` al inicio del texto del nodo.
 - Escribe `[x] ` para crear una tarea ya marcada como hecha.
-- Usa el atajo `⌘+Enter` sobre un nodo para convertirlo en tarea.
+- Usa el atajo `⌘Enter` sobre un nodo para convertirlo en tarea.
+
+Al convertir un nodo en tarea (con `-t` + Enter o `⌘Enter`), siempre se crea un nodo hermano vacío debajo para que puedas seguir escribiendo sin interrupciones.
 
 **Propiedades de tarea (panel derecho):**
 
@@ -164,7 +165,7 @@ Las tareas tienen un checkbox ☐/☑ a la izquierda del texto. Marcarla como he
   - `el lunes`, `el próximo viernes`
   - `en 3 días`, `en 2 semanas`
   - `15 junio`, `15/06`
-  - While escribes, aparece texto en gris (ghost text) con la fecha interpretada. Pulsa `Tab` para aceptarla.
+  - Mientras escribes, aparece texto en gris (ghost text) con la fecha interpretada. Pulsa `Tab` para aceptarla.
 - **Prioridad**: alta, media o baja. Aparece como badge junto al texto.
 - **Repetición**: diaria, semanal, mensual o personalizada (cada N días/semanas/meses/años).
 
@@ -180,6 +181,8 @@ Los eventos tienen hora de inicio y hora de fin. Aparecen en el Planificador y e
 
 - Escribe `/evento` en el slash menu.
 - Escribe `-e ` al inicio del texto.
+
+Al confirmar el tipo evento (con `-e` + Enter), se crea un nodo hermano vacío debajo para continuar capturando.
 
 El modal de creación de evento te permite:
 
@@ -212,13 +215,13 @@ Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube,
 **Cómo crear un recurso:**
 
 - Slash menu → `/Recurso`.
-- **Pega una URL en un nodo vacío**: From la detecta automáticamente, hace unfurl (obtiene el título real de la página), y el nodo queda con el título de la web y el icono de enlace 🔗 en el bullet.
+- **Pega una URL en un nodo vacío**: From la detecta automáticamente, hace unfurl (obtiene el título real de la página), y el nodo queda con el título de la web y el icono de enlace 🔗 en el bullet. La URL se preserva en los metadatos aunque cambies el título del nodo.
 
 **Comportamiento del nodo de enlace:**
 
 - El bullet cambia a un **icono de cadena** 🔗 (en lugar del punto normal).
-- Al hacer clic en el bullet → navega a la nota en From.
-- El botón **↗** inline (al lado del texto) → abre la URL en el navegador.
+- **Clic en el bullet** → navega a la nota del nodo en From.
+- El botón **↗** inline (al lado del texto) → abre la URL en el navegador externo.
 - Al editar el texto del nodo, la URL se preserva aunque cambies el título.
 
 **Propiedades de un recurso (panel derecho):**
@@ -257,7 +260,7 @@ Una pizarra es un canvas SVG de dibujo libre dentro de un nodo.
 **Cómo crear una pizarra:**
 
 - Slash menu → `/Pizarra`.
-- Escribe `pizarra` o `whiteboard` en cualquier parte del texto de un nodo: aparece un ghost text de confirmación. Pulsa `↵` para confirmar.
+- Escribe `pizarra` o `whiteboard` en cualquier parte del texto de un nodo: aparece un ghost text de confirmación. Pulsa `Enter` para confirmar.
 
 La pizarra usa las mismas herramientas que el visor de PDF (lápiz, subrayado, texto, borrador). Las anotaciones se guardan automáticamente.
 
@@ -331,16 +334,17 @@ Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Puedes s
 | Kanban inline | Muestra los hijos en tablero kanban por estado |
 | Calendario inline | Muestra los hijos en vista de calendario |
 
-### Mover
+### Mover a fecha
+
+Escribe `/mover a viernes` o `/mover a 15 junio` → el slash menu entra en modo fecha con ghost text predictivo que muestra la fecha interpretada. Pulsa `Tab` o `Enter` para aplicar la fecha. El nodo se mueve al día indicado en la Agenda y se deja un espejo en la posición original.
+
+También puedes usar los accesos rápidos:
 
 | Acción | Resultado |
 |---|---|
-| Mover a fecha… | Abre selector: escribe una fecha en lenguaje natural |
 | Mover a hoy | Mueve el nodo al día de hoy en la Agenda |
 | Mover a mañana | Mueve el nodo al día de mañana |
 | Mover a próxima semana | Mueve al primer día de la semana siguiente |
-
-Al mover un nodo a otro día, se deja un espejo ⬡ en la posición original para que no pierdas el rastro.
 
 ### Árbol
 
@@ -354,7 +358,58 @@ Al mover un nodo a otro día, se deja un espejo ⬡ en la posición original par
 
 ---
 
-## 6. El Sidebar
+## 6. Captura unificada — Espacio y búsqueda global
+
+Pulsar `Espacio` (con el foco en el árbol y ningún nodo en edición) o el botón `+` abre el **modal de captura unificada**. Este modal hace todo en un solo lugar: crea nodos, busca, navega y da acceso rápido a tus puntos de partida habituales.
+
+### Vista sin texto — accesos rápidos
+
+Al abrirse sin texto muestra cuatro accesos directos:
+
+| Opción | Acción |
+|---|---|
+| **📅 Hoy** | Navega a la nota del día de hoy |
+| **📅 Mañana** | Navega a la nota de mañana |
+| **◈ Filtros →** | Abre la lista de tus filtros guardados |
+| **🧠 Contextos →** | Abre la lista de todos tus contextos |
+
+También aparecen los nodos marcados como **Favoritos** para acceso rápido.
+
+### Buscar con texto
+
+Empieza a escribir y From busca en tiempo real:
+
+- **Nombre de una nota** → navega directamente al nodo
+- **Nombre de un contexto** (ej. "trabajo") → abre el filtro de ese contexto + panel lateral
+- **"contextos"** → muestra todos los contextos para seleccionar con ↑↓ y Enter
+- **"filtros"** → muestra todos los filtros guardados
+- **"hoy" / "mañana"** → acceso rápido a esos días
+- **Texto libre** → si no hay coincidencias, aparece "Crear: [tu texto]" para crear un nodo nuevo
+
+La búsqueda ignora tildes y mayúsculas.
+
+### Crear con flags
+
+Al crear cualquier elemento, añade flags al final del texto:
+
+- `-t` → crea una tarea
+- `-e` → crea un evento
+- `-f` → marca como favorito
+
+### Ghost text de predicciones
+
+Mientras escribes en el modal, el ghost text puede sugerir fechas, tipos de nodo o contextos basándose en lo que escribes. Pulsa `Tab` para aceptar la sugerencia.
+
+### Regla de activación de Espacio
+
+- Si el input activo en el árbol **está vacío**: `Espacio` abre el modal de captura.
+- Si el input activo **tiene texto**: `Espacio` inserta un espacio normal en el texto.
+
+El atajo `⌘K` es equivalente a `Espacio` y funciona como acceso alternativo siempre disponible, incluso si hay texto en edición.
+
+---
+
+## 7. El Sidebar
 
 El sidebar es el panel izquierdo de navegación. Contiene dos secciones principales:
 
@@ -364,7 +419,7 @@ Tus vistas dinámicas personalizadas. Cada panel es un filtro guardado o un acce
 
 - **Reordenar**: arrastra los paneles con el handle `⠿` que aparece al pasar el cursor.
 - **Eliminar**: icono `×` al pasar el cursor.
-- **Crear**: activa un filtro con ⌘F y pulsa el icono 📊 en la barra de resultados para guardarlo como panel.
+- **Crear**: activa un filtro con `⌘F` y pulsa el icono 📊 en la barra de resultados para guardarlo como panel.
 - **Seleccionar**: clic en el panel activa el filtro en la vista central. Escape lo desactiva y vuelve a la agenda.
 
 ### CONTEXTOS
@@ -388,18 +443,32 @@ Acceso a las herramientas del sistema que no viven en el árbol principal:
 
 ---
 
-## 7. La barra superior
+## 8. La barra superior y el panel derecho
+
+### Barra superior
 
 La barra superior muestra en todo momento dónde estás y te da acceso a los controles de la vista actual.
 
-- **Breadcrumb de navegación**: muestra la ruta desde el nodo raíz hasta el nodo actual. Cada elemento es clicable para volver a ese nivel. Ejemplo: `Árbol > Trabajo > Proyecto web > Reunión 27 mayo`.
-- **⌘F** — activa el filtro inteligente inline. El árbol se filtra en tiempo real según los operadores que escribas.
+- **Breadcrumb de navegación**: muestra la ruta desde el nodo raíz hasta el nodo actual. Cada elemento es clicable para volver a ese nivel. Ejemplo: `Árbol > Trabajo > Proyecto web > Reunión 4 junio`.
 - **Iconos de vista**: cambian entre lista, tabla, kanban o calendario para el nodo actual.
 - **Modo oscuro** (icono luna): alterna entre tema claro y oscuro.
 
+### Panel derecho — cuatro modos
+
+El panel derecho se activa con los iconos en la barra superior derecha:
+
+| Icono | Panel | Atajo |
+|---|---|---|
+| ✦ | **Magic** — asistente IA con chat y voz | `M` |
+| ⌘F | **Filtro** — filtros inteligentes con chips y resultados | `⌘F` |
+| P | **Planificador** — timeline diario y vista año | `P` |
+| (contexto) | **Contenido del contexto** — aparece al hacer clic en un contexto del sidebar | — |
+
+Cada modo ocupa el panel derecho. Para cerrar el panel, pulsa `Escape` o haz clic de nuevo en el icono activo.
+
 ---
 
-## 8. Sistema @ — Contextos
+## 9. Sistema @ — Contextos
 
 Los contextos son etiquetas que agrupan nodos relacionados más allá de la jerarquía del árbol. Imagina que tienes proyectos de trabajo repartidos en distintas ramas: con el contexto `@trabajo` los ves todos juntos de golpe sin reorganizar nada.
 
@@ -407,7 +476,7 @@ Los contextos son etiquetas que agrupan nodos relacionados más allá de la jera
 
 Escribe `@` en cualquier nodo. Se abre el picker con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
 
-Puedes asignar más de un contexto al mismo nodo. También funciona en el **Quick Capture** (Espacio): escribe el nombre del contexto y From lo sugiere como ghost text.
+Puedes asignar más de un contexto al mismo nodo. También funciona en la captura unificada (Espacio): escribe `@` y From sugiere contextos como ghost text.
 
 ### Crear y gestionar contextos
 
@@ -415,7 +484,7 @@ Puedes asignar más de un contexto al mismo nodo. También funciona en el **Quic
 
 **Desde el propio contexto (panel derecho)**: al seleccionar un contexto, se abre como outliner editable en la columna derecha. Añade hijos para describir el contexto, guardar instrucciones para la IA o crear sub-secciones.
 
-Los contextos viven internamente en el nodo **🧠 Contexto** del sistema (accesible desde ⌘K si lo necesitas).
+Los contextos son nodos raíz especiales con `_tagDefinition` internamente. No son carpetas del sistema: son nodos normales del árbol a los que From asigna función de etiqueta.
 
 ### Filtrar por contexto desde el sidebar
 
@@ -423,13 +492,13 @@ Haz clic en cualquier contexto del sidebar. El árbol central se filtra mostrand
 
 Pulsa **Escape** para desactivar el filtro y volver a la agenda.
 
-### Filtrar por @contexto desde el campo de búsqueda
+### Filtrar por @contexto en el campo de filtro
 
-En la barra de filtros (⌘F), escribe `@trabajo` (o el nombre de tu contexto) para ver todos los nodos con ese contexto asignado.
+En la barra de filtros (`⌘F`), escribe `@trabajo` (o el nombre de tu contexto) para ver todos los nodos con ese contexto asignado. En iOS, los chips morados de contexto en la pestaña Explorar hacen lo mismo con un toque.
 
 ### El Perfil de IA
 
-Dentro del contexto **Perfil IA** puedes escribir información personal que la IA carga siempre: quién eres, en qué trabajas, tus proyectos activos, preferencias de comunicación. La IA lo usa automáticamente en todas las conversaciones.
+Dentro del contexto **Perfil IA** puedes escribir información personal que la IA carga siempre: quién eres, en qué trabajas, tus proyectos activos, preferencias de comunicación. La IA lo usa automáticamente en todas las conversaciones sin que tengas que repetírselo.
 
 ### Por qué usar contextos
 
@@ -437,7 +506,21 @@ Los contextos te permiten cruzar el árbol por dimensión. Tus tareas de trabajo
 
 ---
 
-## 9. La Agenda y el sistema de nodos
+## 10. Favoritos
+
+Los favoritos son un marcador rápido para los nodos que usas con frecuencia.
+
+**Marcar como favorito:** pulsa `⌘⇧F` en cualquier nodo para hacer toggle favorito. El nodo queda marcado con una estrella dorada.
+
+**Acceder a favoritos:** abre la captura unificada (Espacio) sin escribir nada. Los favoritos aparecen en la sección **Favoritos** del estado vacío del modal.
+
+**Filtrar favoritos:** usa el operador `favorito` en el campo de filtro (`⌘F`) para ver todos tus nodos marcados.
+
+**Uso en iOS:** en la pestaña Buscar, el estado vacío muestra los favoritos directamente para acceso inmediato.
+
+---
+
+## 11. La Agenda y el sistema de nodos
 
 ### La Agenda — vista principal
 
@@ -451,15 +534,15 @@ La Agenda organiza el tiempo en la jerarquía: **Año → Mes → Día**. Cada d
 
 **Ir al día de hoy:** pulsa `H` o el icono de calendario en la barra superior.
 
-**Navegar a otro día:** expande el árbol de años/meses/días. También puedes navegar desde el Planificador (tecla `P`) haciendo clic en cualquier día.
+**Navegar a otro día:** expande el árbol de años/meses/días. También puedes navegar desde el Planificador (tecla `P`) haciendo clic en cualquier día en la Vista Año.
 
 **Mover tareas a otro día:** slash menu → `/Mover a hoy`, `/Mover a mañana` o `/Mover a fecha...`. From coloca el nodo en el día destino y deja un espejo en el origen.
 
-Los nodos con tareas pendientes en su interior muestran el icono 📁 (contenedor vivo) aunque estén colapsados.
+Los nodos con tareas pendientes en su interior muestran el icono 📁 (contenedor vivo) aunque estén colapsados, indicando que hay trabajo pendiente dentro.
 
 ### Nodos del sistema (menú ···)
 
-Los siguientes elementos son del sistema y se acceden desde el menú `···` (arriba a la derecha) o desde ⌘K. No aparecen en el árbol principal.
+Los siguientes elementos son del sistema y se acceden desde el menú `···` (arriba a la derecha):
 
 **🤖 Agentes** — agentes de IA autónomos. Al abrir un agente aparecen los controles: toggle Activo/Pausado y botón ▶ Ejecutar.
 
@@ -479,13 +562,13 @@ Los siguientes elementos son del sistema y se acceden desde el menú `···` (a
 
 ---
 
-## 10. Filtros inteligentes
+## 12. Filtros inteligentes
 
 Los filtros te permiten ver exactamente lo que necesitas en cada momento, sin reorganizar el árbol.
 
-Los filtros son **reactivos en tiempo real**: si mueves una tarea a mañana, cambia su estado o le asignas una fecha, el filtro se actualiza al instante sin necesidad de refrescar. Los nodos que dejan de cumplir el filtro salen con una animación de deslizamiento.
+Los filtros son **completamente reactivos en tiempo real**: si mueves una tarea a mañana, cambias su estado o le asignas una fecha, el filtro se actualiza al instante sin necesidad de refrescar. Los nodos que dejan de cumplir el filtro salen del resultado con una animación de deslizamiento hacia la derecha.
 
-**Activar:** ⌘F o clic en la barra de filtro superior.
+**Activar:** `⌘F` o el icono de filtro en la barra superior (panel derecho).
 
 ### Lenguaje natural
 
@@ -509,12 +592,17 @@ From usa IA (Haiku, gratuita para todos los usuarios) para interpretar la consul
 | `pasado` | Nodos con fecha anterior a hoy |
 | `futuro` | Nodos con fecha posterior a hoy |
 | `sin-fecha` | Nodos sin fecha de vencimiento asignada |
+| `con-fecha` | Nodos con cualquier fecha asignada |
 | `tarea` | Todos los nodos que son tareas |
 | `pendiente` | Tareas pendientes (no completadas) |
 | `hecho` | Tareas completadas |
 | `vencido` | Tareas cuya fecha ya pasó y no están hechas |
+| `bucle` | Notas/nodos con tareas pendientes en su interior (📁 contenedor vivo) |
+| `nota` | Todos los nodos de tipo nota |
 | `evento` | Todos los eventos |
 | `recurso` | Todos los recursos |
+| `archivo` | Nodos con archivos adjuntos (PDF u otros) |
+| `enlace` | Nodos de tipo enlace/URL |
 | `diario` | Nodos de tipo diario (notas de día) |
 | `favorito` | Nodos marcados como favorito |
 | `@contexto` | Nodos con ese contexto asignado |
@@ -522,7 +610,7 @@ From usa IA (Haiku, gratuita para todos los usuarios) para interpretar la consul
 | `[[nombre]]` | Nodos que referencian ese nodo por nombre (wiki-link) |
 | `node:ID` | Nodo concreto y todos sus descendientes o referencias |
 
-Los filtros son combinables. Escribe varios seguidos separados por espacio, o usa `y` (AND) y `o` (OR) en lenguaje natural:
+**Combinaciones:** los operadores son combinables. Separa varios operadores con espacio (AND implícito) o usa `o` para OR:
 
 - `hoy pendiente` → tareas pendientes con fecha de hoy.
 - `@trabajo pendiente` → tareas pendientes del contexto trabajo.
@@ -530,11 +618,19 @@ Los filtros son combinables. Escribe varios seguidos separados por espacio, o us
 - `vencido @personal` → tareas vencidas del contexto personal.
 - "tareas de hoy o mañana" → `tarea hoy o tarea mañana`.
 
-La búsqueda ignora tildes y mayúsculas. `trabajo` encuentra también `Trabajo` y `trabájo`.
+La búsqueda ignora tildes y mayúsculas.
+
+### El operador `bucle` — contenedores vivos
+
+El operador `bucle` filtra los nodos que tienen tareas pendientes en su interior. Estos nodos muestran el icono 📁 (contenedor vivo) en el árbol aunque estén colapsados.
+
+Es ideal para ver qué proyectos, áreas o notas tienen trabajo sin terminar: filtra por `bucle` y ves de un vistazo todos los contenedores activos. Un nodo sale del filtro `bucle` cuando todas sus tareas internas están marcadas como hechas.
+
+No se aplica a: eventos, recursos, diary entries ni nodos temporales.
 
 ### Filtrar desde Magic Chat
 
-Si abres Magic Chat y describes lo que quieres ver ("muéstrame las tareas vencidas", "filtra por recursos de esta semana"), Magic detecta la intención y aplica el filtro directamente sin que tengas que abrir ⌘F ni escribir operadores.
+Si abres Magic Chat y describes lo que quieres ver ("muéstrame las tareas vencidas", "filtra por recursos de esta semana"), Magic detecta la intención y aplica el filtro directamente sin que tengas que abrir `⌘F` ni escribir operadores.
 
 ### Chips de sugerencia
 
@@ -557,7 +653,7 @@ Cuando tienes un filtro útil, guárdalo en el sidebar con el botón 📊 de la 
 
 ---
 
-## 11. Paneles (📊)
+## 13. Paneles (📊)
 
 Los paneles son vistas dinámicas fijas en la sección PANELES del sidebar. Se actualizan automáticamente siempre que los abres. Hay dos tipos:
 
@@ -571,18 +667,20 @@ Los paneles son vistas dinámicas fijas en la sección PANELES del sidebar. Se a
 
 **Desde un nodo:** clic derecho sobre el nodo → "Añadir a paneles". El panel muestra ese nodo y todos sus descendientes junto con cualquier referencia al nodo.
 
-### Gestionar filtros guardados
+### Gestionar paneles
 
-Pasa el ratón sobre un filtro en la columna de filtros para ver los botones de acción:
+Pasa el ratón sobre un panel en la sección PANELES para ver los botones de acción:
 
 - **✏ Renombrar**: edición inline del nombre. Enter confirma, Escape cancela.
-- **× Eliminar**: elimina el filtro permanentemente (se pone rojo en hover para evitar clics accidentales).
-- **Activar**: clic en el filtro lo aplica en el árbol central. Escape lo desactiva.
-- Se sincronizan entre todos tus dispositivos.
+- **× Eliminar**: elimina el panel permanentemente.
+- **Reordenar**: arrastra con el handle `⠿`.
+- **Activar**: clic en el panel lo aplica en el árbol central. Escape lo desactiva.
+
+Los paneles se sincronizan entre todos tus dispositivos.
 
 ---
 
-## 12. Vistas inline
+## 14. Vistas inline
 
 Cualquier nodo que tenga hijos puede mostrar esos hijos en cuatro modos de visualización distintos. Las vistas inline no cambian cómo se almacenan los datos, solo cómo los ves.
 
@@ -618,11 +716,11 @@ Los hijos con fecha de vencimiento aparecen en el día correspondiente de un cal
 
 ### Multi-vistas: guarda más de una vista por nodo
 
-Puedes crear múltiples vistas para el mismo nodo (como las vistas de Notion). Pulsa el "+" junto a los tabs de vista para añadir una nueva. Cada vista guarda su tipo, configuración y nombre de forma independiente. Puedes renombrar, duplicar y eliminar vistas.
+Puedes crear múltiples vistas para el mismo nodo. Pulsa el "+" junto a los tabs de vista para añadir una nueva. Cada vista guarda su tipo, configuración y nombre de forma independiente. Puedes renombrar, duplicar y eliminar vistas.
 
 ---
 
-## 13. IA integrada — Magic
+## 15. IA integrada — Magic
 
 ### Magic Chat — asistente de voz y texto
 
@@ -649,11 +747,19 @@ Escribe en el campo y pulsa Enter para enviar.
 - Resumir el contenido de cualquier nodo
 - Buscar información en tus notas
 - Organizar, reescribir, priorizar
+- Aplicar filtros directamente al describir lo que quieres ver
 - Ejecutar acciones en masa
+
+**Contexto automático:** la IA carga automáticamente:
+- El nodo abierto con su título, body e hijos.
+- El diario de hoy con tus tareas y eventos.
+- Tus tareas pendientes.
+- Los contextos (@) activos con sus instrucciones.
+- Tu perfil de IA.
 
 ### Enseñar a Magic — aprendizaje continuo
 
-Magic aprende de tus correcciones y se adapta a ti progresivamente. El objetivo: que From entienda quién eres y qué necesitas sin que tengas que explicarlo cada vez.
+Magic aprende de tus correcciones y se adapta a ti progresivamente.
 
 **Cómo enseñar:** botón derecho en cualquier nodo → **Enseñar a Magic**. Opciones según el nodo:
 - "Esto no es una tarea / evento"
@@ -664,31 +770,15 @@ Magic aprende de tus correcciones y se adapta a ti progresivamente. El objetivo:
 
 **Ver lo aprendido:** Ajustes → Magic → sección "Lo que Magic ha aprendido de ti". Edita o borra cualquier elemento individualmente.
 
-**Qué puede hacer:**
-
-- Resumir el contenido del nodo actual y sus hijos.
-- Crear tareas, notas o eventos directamente en tu árbol.
-- Buscar en tus notas.
-- Redactar texto con el contexto de lo que estás haciendo.
-- Responder preguntas usando tus propias notas como fuente.
-- Ejecutar acciones en masa.
-
-**Contexto automático:** la IA carga automáticamente:
-- El nodo abierto con su título, body e hijos.
-- El diario de hoy con tus tareas y eventos.
-- Tus tareas pendientes.
-- Los contextos (@) activos con sus instrucciones.
-- Tu perfil de IA.
-
 ### Ghost text — predicciones mientras escribes
 
 Mientras escribes en cualquier nodo, From muestra sugerencias en gris claro (ghost text):
 
 - Si detecta un **verbo de acción** o una expresión que suena a tarea → sugiere convertir el nodo en tarea. Pulsa `Tab` para aceptar.
-- Si detecta una **fecha en lenguaje natural** (`mañana`, `el lunes`, `15 junio`) → sugiere esa fecha como vencimiento. Pulsa `Tab` para aceptar.
+- Si detecta una **fecha en lenguaje natural** (`mañana`, `el lunes`, `15 junio`) → sugiere esa fecha como vencimiento. Pulsa `Tab` para aceptar. Pulsar `Enter` después crea un nodo hermano debajo.
 - Si el texto parece un **evento** (hora, reunión, llamada) → sugiere tipo evento.
 
-Personaliza qué palabras activan estas sugerencias en **Ajustes → Predicciones**. Puedes añadir tus propios términos clave.
+Personaliza qué palabras activan estas sugerencias en **Ajustes → Predicciones**.
 
 ### Códigos de variables en prompts
 
@@ -697,8 +787,8 @@ Dentro de cualquier agente o prompt puedes usar variables que From resuelve ante
 | Código | Se reemplaza por |
 |---|---|
 | `{{fecha}}` | Fecha actual completa |
-| `{{fecha_corta}}` | Fecha en formato corto (27/05/2026) |
-| `{{dia}}` | Nombre del día (miércoles) |
+| `{{fecha_corta}}` | Fecha en formato corto (04/06/2026) |
+| `{{dia}}` | Nombre del día (jueves) |
 | `{{semana}}` | Número de semana del año |
 | `{{mes}}` | Nombre del mes |
 | `{{año}}` | Año actual |
@@ -726,22 +816,26 @@ Los agentes se configuran en su panel de propiedades:
 
 ---
 
-## 14. El Planificador
+## 16. El Planificador
 
 El Planificador es la vista de calendario de From. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
+### Dos vistas
+
 **Vista Día**: timeline de 24 horas con tus tareas y eventos dividido en dos zonas:
 
-- **Franja "Todo el día"** (parte superior): muestra las tareas del día sin hora asignada y los eventos de todo el día de Google Calendar. Es el punto de partida para planificar.
+- **Franja "Todo el día"** (parte superior): muestra las tareas del día con fecha pero sin hora asignada, y los eventos de todo el día de Google Calendar. Es el punto de partida para planificar: aquí tienes todo lo que queda por ubicar en el tiempo.
 - **Timeline de horas** (parte inferior): muestra las tareas y eventos con hora concreta. Los bloques indican su hora de inicio y pueden redimensionarse para ajustar la duración.
 
 **Vista Año**: los 12 meses del año en una grid responsive. Los días con tareas o eventos aparecen con un punto. Haz clic en cualquier día para navegar a la nota de ese día en la Agenda.
 
 **Navegación**: botones ‹ › para avanzar o retroceder. Botón **Hoy** para volver al día actual.
 
-### Planificar una tarea — asignar hora
+### Modelo de datos — el nodo nunca se mueve
 
-El Planificador no mueve ni duplica tus nodos. Simplemente les asigna una hora.
+El Planificador no mueve ni duplica tus nodos del árbol. **El nodo siempre permanece en su lugar original en el árbol.** Usar el planificador únicamente asigna o cambia la hora del nodo.
+
+### Planificar una tarea — asignar hora
 
 **Desde el árbol al timeline**: arrastra cualquier nodo desde el árbol central hacia el timeline del planificador. Se asigna la hora del punto donde sueltas. El nodo sigue en el mismo lugar del árbol — solo ha ganado una hora programada.
 
@@ -749,11 +843,11 @@ El Planificador no mueve ni duplica tus nodos. Simplemente les asigna una hora.
 
 **Desde "Todo el día" al timeline**: arrastra un elemento de la franja all-day hacia el timeline para asignarle una hora concreta. A partir de ese momento aparece en el grid de horas.
 
-**Clic en hora vacía**: crea un nuevo bloque directamente en esa hora. Escribe el título y pulsa Enter.
+**Clic en hora vacía**: crea un nuevo nodo directamente en esa hora. Escribe el título y pulsa Enter.
 
 **Redimensionar**: arrastra el borde inferior de cualquier bloque para cambiar su duración.
 
-**Mover un bloque**: arrastra el bloque a otra hora o día. La línea morada indica el inicio real del bloque al posicionarlo.
+**Mover un bloque**: arrastra el bloque a otra hora. La línea morada indica el inicio real del bloque al posicionarlo.
 
 ### Sincronización con Google Calendar al planificar
 
@@ -774,15 +868,15 @@ Los eventos de Google Calendar también se muestran en el planificador con su co
 
 ### Zoom
 
-- **Zoom vertical** (escala de horas): arrastra el eje de horas (columna con las horas) hacia arriba para hacer zoom in o hacia abajo para zoom out. También con Shift + rueda del ratón.
-- **Zoom horizontal** (columnas de días): arrastra la cabecera de días hacia la izquierda o derecha para ver más o menos días simultáneamente (entre 2 y 7).
+- **Zoom vertical** (escala de horas): arrastra el eje de horas hacia arriba para hacer zoom in o hacia abajo para zoom out. También con Shift + rueda del ratón.
+- **Zoom horizontal** (columnas de días): arrastra la cabecera de días para ver más o menos días simultáneamente (entre 2 y 7).
 - **Restablecer zoom**: botón ↺ en la barra del planificador.
 
-Pulsa **Escape** para cerrar el planificador (o centrar la vista si no está centrada).
+Pulsa **Escape** para cerrar el planificador.
 
 ---
 
-## 15. Google Calendar
+## 17. Google Calendar
 
 ### Conectar
 
@@ -802,47 +896,7 @@ Si tienes Google Calendar conectado, los eventos del día aparecen en el nodo de
 
 ---
 
-## 16. Paleta de comandos (⌘K)
-
-Pulsa `⌘K` en cualquier momento para abrir la paleta de comandos. Desde aquí puedes navegar, crear, filtrar y buscar sin tocar el ratón.
-
-### Vista por defecto
-
-Al abrir ⌘K sin escribir nada aparecen cuatro opciones rápidas:
-
-| Opción | Acción |
-|---|---|
-| **📅 Hoy** | Navega a la nota del día de hoy |
-| **📅 Mañana** | Navega a la nota de mañana |
-| **◈ Filtros →** | Abre la lista de tus filtros guardados |
-| **🧠 Contextos →** | Abre la lista de todos tus contextos |
-
-### Buscar con texto
-
-Empieza a escribir y From busca:
-
-- **Nombre de una nota** → navega directamente al nodo
-- **Nombre de un contexto** (ej. "café olé") → abre el filtro de ese contexto + panel lateral
-- **"contextos"** → muestra todos los contextos para seleccionar con ↑↓ y Enter
-- **"filtros"** → muestra todos los filtros guardados
-- **"hoy" / "mañana"** → acceso rápido a esos días
-- **Texto libre** → si no hay coincidencias, aparece "Crear: [tu texto]" para crear un nodo
-
-### Subvistas de Filtros y Contextos
-
-Al entrar en Filtros → o Contextos → puedes seguir escribiendo para buscar dentro de esa lista. Enter selecciona, Escape vuelve al menú principal.
-
-### Crear con flags
-
-Al crear cualquier elemento, añade flags al final del texto:
-
-- `-t` → crea una tarea
-- `-e` → crea un evento
-- `-f` → marca como favorito
-
----
-
-## 16b. Mover nodos
+## 18. Mover nodos
 
 Hay varias formas de mover un nodo a otro lugar:
 
@@ -853,7 +907,7 @@ Hay varias formas de mover un nodo a otro lugar:
 - `/Mover a hoy` → mueve al nodo del día de hoy en la Agenda.
 - `/Mover a mañana` → mueve al nodo de mañana.
 - `/Mover a próxima semana` → mueve al primer día de la semana siguiente.
-- `/Mover a fecha…` → escribe cualquier fecha en lenguaje natural.
+- `/Mover a fecha…` → escribe cualquier fecha en lenguaje natural con ghost text predictivo.
 
 **Clic derecho → "Mover a..."** → abre un buscador para elegir el destino.
 
@@ -863,13 +917,60 @@ Hay varias formas de mover un nodo a otro lugar:
 
 Al mover un nodo a otro día, el nodo se traslada físicamente al destino y el sistema crea espejos automáticamente para que no pierdas el rastro:
 
-- En el **origen** queda un espejo del nodo movido, con una referencia visual al día destino ("→ 30 mayo").
-- En el **destino** se crean espejos del padre y de los nodos hermanos del contexto original, para que el nodo llegue con su contexto preservado.
-- Los espejos muestran el mismo icono que el nodo original (checkbox si es tarea, icono de evento si es evento) con opacidad reducida para distinguirlos.
+- En el **origen** queda un espejo del nodo movido, con una referencia visual al día destino.
+- En el **destino** se crean espejos del contexto original para que el nodo llegue con su contexto preservado.
+- Los espejos muestran el mismo icono que el nodo original con opacidad reducida para distinguirlos.
 
 ---
 
-## 17b. Backup y privacidad
+## 19. From para iPhone
+
+La app de iPhone está disponible en el App Store. Organiza en cinco pestañas accesibles desde la barra inferior:
+
+### Pestaña 1 — Explorar
+
+Vista de filtrado rápido por chips multiselect. Selecciona combinaciones de chips para ver exactamente lo que necesitas:
+
+**Tipo:**
+- Nota, Tarea, Evento, Archivo, Enlace
+
+**Fecha:**
+- Hoy, Esta semana, Este mes, Pasado, Futuro
+
+**Estado:**
+- Pendiente, Hecho, Sin fecha, Bucle
+
+**Contextos** (chips morados): filtra por el contexto asignado a cada nodo.
+
+**Filtros guardados** (chips azules con 🔖): tus filtros personalizados guardados desde web o Mac, disponibles con un toque.
+
+Debajo de los chips aparece el resultado con el número de nodos encontrados y la lista completa. Al tocar cualquier resultado se abre la **vista de detalle del nodo** (IOSNodeDetailView) con el menú "..." para acciones: editar, mover, marcar como hecho, etc.
+
+### Pestaña 2 — Buscar
+
+Búsqueda full-text en tiempo real con auto-foco de teclado. Escribe cualquier término y From busca en todo tu árbol al instante.
+
+El estado vacío (antes de escribir) muestra tus **Favoritos** para acceso inmediato a los nodos que usas con más frecuencia.
+
+### Pestaña 3 — Agenda
+
+Vista diaria y semanal con las tareas y eventos del día. Navega entre días con swipe o los controles de la cabecera.
+
+### Pestaña 4 — Planner
+
+Planificador de tareas con timeline. Muestra las tareas del día con y sin hora, y permite reorganizar la jornada.
+
+### Pestaña 5 — Ajustes
+
+Gestión de cuenta, modelo de IA, integraciones (Google Calendar), apariencia e importación.
+
+### Sincronización
+
+Todo lo que capturas en iPhone aparece en web y Mac en tiempo real. Los cambios viajan solo como deltas (solo lo que cambia, no la base de datos completa).
+
+---
+
+## 20. Backup y privacidad
 
 ### Backup automático en el servidor
 
@@ -897,35 +998,37 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 
 ---
 
-## 18. Atajos de teclado
+## 21. Atajos de teclado
 
 | Acción | Atajo |
 |---|---|
+| Captura unificada / búsqueda global | `Espacio` |
+| Búsqueda global (alternativo) | `⌘K` |
 | Nuevo nodo hermano | `Enter` |
 | Indentar nodo | `Tab` |
 | Desindentar nodo | `Shift+Tab` |
+| Aceptar sugerencia ghost text | `Tab` |
+| Descartar sugerencia ghost text | `Esc` |
 | Mover nodo arriba entre hermanos | `⌘↑` |
 | Mover nodo abajo entre hermanos | `⌘↓` |
-| Colapsar/expandir nodo | Clic en ▶ |
-| Filtro inteligente inline | `⌘F` |
+| Toggle nodo ↔ tarea | `⌘Enter` |
+| Toggle favorito | `⌘⇧F` |
+| Filtro inteligente | `⌘F` |
 | Abrir/cerrar planificador | `P` |
 | Abrir/cerrar Magic | `M` |
+| Grabar con voz en Magic (mantener) | `R` |
 | Slash menu | `/` |
-| Paleta de comandos (búsqueda global) | `⌘K` |
 | Ir al día de hoy | `H` |
-| Deseleccionar contexto / limpiar filtro | `Escape` |
-| Toggle nodo ↔ tarea | `⌘Enter` |
+| Deseleccionar contexto / limpiar filtro / cerrar panel | `Escape` |
 | Negrita | `⌘B` |
 | Cursiva | `⌘I` |
 | Deshacer | `⌘Z` |
 | Rehacer | `⌘⇧Z` |
-| Aceptar sugerencia ghost text | `Tab` |
-| Descartar sugerencia ghost text | `Esc` |
-| Cerrar filtro / volver | `Esc` |
+| Seleccionar todos los nodos visibles | `⌘A` |
 
 ---
 
-## 19. Ajustes
+## 22. Ajustes
 
 ### Cuenta
 
@@ -939,8 +1042,6 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 From está disponible en español e inglés. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo.
 
 Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e English. El cambio se aplica de inmediato sin necesidad de recargar.
-
-Si tu navegador está configurado en cualquier idioma que no sea español, la interfaz se mostrará en inglés por defecto.
 
 ### Apariencia
 
@@ -987,7 +1088,7 @@ Ve a **Ajustes → Importar**, elige la fuente y sigue el proceso.
 
 ---
 
-## 20. Conexión con Claude (MCP)
+## 23. Conexión con Claude (MCP)
 
 From tiene integración nativa con Claude Desktop y Claude Code. Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
 
@@ -1024,7 +1125,7 @@ Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus con
 - **Guarda documentos y análisis** que genera durante la conversación.
 - **Crea tareas** cuando mencionas acciones pendientes.
 - **Guarda resúmenes de sesión** cuando dices "fin".
-- **Carga contexto de área** si mencionas La Isla, inversión, piloto, etc.
+- **Carga contexto de área** si mencionas proyectos configurados en tu Perfil IA.
 - **Busca en tu vault** antes de responder para darte contexto real.
 
 **Ejemplos:**
@@ -1032,13 +1133,13 @@ Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus con
 ```
 "¿Qué tareas tengo pendientes para hoy?"
 "Añade una tarea para llamar a Adrián mañana a las 10"
-"Busca en mis notas todo lo relacionado con La Isla"
+"Busca en mis notas todo lo relacionado con el proyecto X"
 fin  →  Claude guarda el resumen de la conversación en From automáticamente
 ```
 
 ---
 
-## 21. Planes y precios
+## 24. Planes y precios
 
 | Plan | Precio | Incluye |
 |---|---|---|
@@ -1064,7 +1165,7 @@ Si tienes código de beta o cupón, introdúcelo en el checkout al comprar. Los 
 
 ---
 
-## 22. Canal de Telegram — @FromMagicBot
+## 25. Canal de Telegram — @FromMagicBot
 
 Suscríbete al canal oficial de From en Telegram para recibir tips semanales sobre cómo sacar el máximo partido a la app: atajos, flujos de trabajo, casos de uso con Magic y novedades.
 
@@ -1108,6 +1209,12 @@ Desde **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing
 
 **¿Puedo usar mis propias claves de API de IA?**
 Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de From.
+
+**¿Qué es el filtro `bucle`?**
+El operador `bucle` muestra los nodos (proyectos, áreas, notas) que tienen tareas pendientes en su interior. Útil para ver de un vistazo qué contenedores tienen trabajo sin terminar. En el árbol, estos nodos muestran el icono 📁 aunque estén colapsados.
+
+**¿La captura con Espacio y ⌘K son lo mismo?**
+Sí. `Espacio` abre el modal de captura unificada cuando el cursor no está editando texto. `⌘K` hace lo mismo y funciona siempre, aunque haya texto en edición. Son sinónimos del mismo modal.
 
 ---
 

@@ -4,6 +4,53 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## iOS v2.2 / Web v9.6.60 — 4 junio 2026 · App iPhone renovada, favoritos y polish
+
+### iPhone — Tab "Explorar" rediseñado
+
+La pestaña Explorar del iPhone ahora muestra filtros reales, idénticos a los de la web:
+
+- **Tipo**: Nota, Tarea, Evento, Archivo, Enlace
+- **Fecha**: Hoy, Esta semana, Este mes, Pasado, Futuro
+- **Estado**: Pendiente, Hecho, Sin fecha, **Bucle** (notas con tareas pendientes en su interior)
+- **Contextos** (chips morados): filtra todos los nodos con ese contexto asignado — los mismos contextos que aparecen en la web
+- **Filtros guardados** (chips azules con 🔖): acceso directo a tus paneles personalizados
+
+Los chips son multiselect y combinan con AND. Al activar un filtro guardado, reemplaza la selección actual. Los resultados aparecen debajo con el count y la lista de nodos.
+
+### iPhone — Tab "Buscar" mejorado
+
+El teclado se abre automáticamente al entrar en Buscar. En el estado vacío (antes de escribir) se muestran los nodos marcados como **Favorito** para acceso rápido. La lista de resultados cierra el teclado al hacer scroll.
+
+### iPhone — Toolbar simplificado
+
+El panel de detalle de nodo (IOSNodeDetailView) solo muestra el botón `...` (más opciones) en la toolbar. El micrófono y el botón de IA estaban causando confusión y se han eliminado.
+
+### iPhone — Sin banner de "Plan caducado"
+
+Eliminado el banner que aparecía incorrectamente a usuarios Pro durante el arranque en frío mientras se cargaba la suscripción. La app nunca mostrará ese banner salvo que la suscripción esté realmente caducada.
+
+### Web — Favoritos en la búsqueda
+
+La columna de búsqueda/filtros ahora muestra una sección **Favoritos** al final de los paneles guardados. Los nodos marcados con ⭐ aparecen ahí para acceso de un clic. También puedes filtrar por `favorito` en el campo de filtros.
+
+El atajo `⌘⇧F` marca/desmarca cualquier nodo como favorito sin abrir menús.
+
+### Web — Limpieza de interfaz
+
+- **Botón pin eliminado** de la vista de nodo (NodeView). Ya no hay "Añadir a atajos" — los favoritos son el mecanismo estándar.
+- **"Añadir a atajos" eliminado** del slash menu.
+- **Emails con @** en el texto del nodo ya no se detectan incorrectamente como @contextos (fix del renderizador inline).
+- **Fix**: nodos con hora detectada automáticamente (reuniones, llamadas) se crean correctamente como eventos, no como tareas.
+
+### App Store — localización España y multiidioma
+
+From iOS ahora tiene localización en **6 idiomas**, con **Español (España) como idioma primario**. Esto corrige un bug que impedía que la app apareciera correctamente en búsquedas del App Store en España y otros países hispanohablantes.
+
+Idiomas disponibles: Español (España) · Inglés · Alemán · Francés · Italiano · Portugués (Brasil).
+
+---
+
 ## Web v9.6.55 — 3 junio 2026 · Nodos de enlace, PDFs, Pizarras
 
 ### Nodos de enlace / URL
