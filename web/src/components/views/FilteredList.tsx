@@ -156,7 +156,7 @@ function ContextPlaceholderBadge({ node, onContextAssigned }: { node: FromNode; 
             top: dropdownPos.top,
             left: dropdownPos.left,
             zIndex: 9999,
-            background: 'var(--bg-panel)',
+            background: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
             borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
