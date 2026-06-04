@@ -596,6 +596,39 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.parentId])
 
+  // ── Ancla de contexto ───────────────────────────────────────────────────────
+  // Un nodo es "ancla" (muestra chip "+ Contexto" y se autoclasifica) solo si:
+  //   · está por debajo de un día de la agenda (tiene ancestro diary), y
+  //   · NO es un heading (los headings se tratan como párrafo: heredan, no llevan contexto), y
+  //   · es hijo directo de un día (cada tema del diario)  O  tiene hijos (sección/contenedor).
+  // Todo lo demás —texto plano, headings, hojas sueltas— hereda el contexto de su
+  // ancestro y no muestra chip. El usuario siempre puede asignar contexto manualmente
+  // desde el menú contextual (override), aunque el nodo no sea ancla.
+  const isContextAnchor = useMemo(() => {
+    if (isContextNode || isInsideRestrictedAncestor) return false
+    // Headings = párrafo: nunca anclan contexto
+    const bt = detectBlockType(node.text || '')
+    if (bt === 'h1' || bt === 'h2' || bt === 'h3') return false
+    // Buscar ancestro día (diary entry). El padre inmediato siendo diary ⇒ hijo directo del día.
+    let cur = store.getNode(node.parentId ?? '')
+    let parentIsDay = false
+    let hasDayAncestor = false
+    let depth = 0
+    while (cur && depth < 12) {
+      if (cur.isDiaryEntry) {
+        hasDayAncestor = true
+        if (depth === 0) parentIsDay = true
+        break
+      }
+      cur = store.getNode(cur.parentId ?? '')
+      depth++
+    }
+    if (!hasDayAncestor) return false
+    const hasChildren = children.some(c => !c.deletedAt)
+    return parentIsDay || hasChildren
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.parentId, node.text, isContextNode, isInsideRestrictedAncestor, children.length])
+
   // Debounce sobre node.text — dispara extractUserKnowledge si el texto lleva 5s
   // estable (sin cambios) y cumple los criterios. Cubre nodos sin interacción directa.
   // Si el componente se desmonta antes de que expire el timer (navegación, remount rápido,
@@ -646,13 +679,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // No disparar para nodos de diario
     if (node.isDiaryEntry) return
 
-    // Solo nodos candidatos a clasificación (con hijos, tareas, bucles o headings)
-    const nodeBlockType = detectBlockType(node.text || '')
-    const nodeIsHeadingMount = nodeBlockType === 'h1' || nodeBlockType === 'h2' || nodeBlockType === 'h3'
-    const hasChildrenMount = store.children(node.id).some(c => !c.deletedAt)
-    const isTaskMount = node.status !== null
-    const isLoopMount = (node.types || []).includes('bucle')
-    if (!hasChildrenMount && !isTaskMount && !isLoopMount && !nodeIsHeadingMount) return
+    // Solo nodos ancla: hijo directo del día o nodo con hijos (no headings, no hojas sueltas).
+    // Los párrafos/headings/hojas heredan el contexto de su ancestro y no se clasifican.
+    if (!isContextAnchor) return
 
     // Obtener contextos disponibles (incl. subcontextos)
     const perfilNode = store.perfilIANode?.() ?? null
@@ -716,14 +745,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setAutoCtxResult(null)
       return
     }
-    // Determinar si el nodo es un heading (para incluirlo aunque no tenga hijos)
-    const nodeBlockType = detectBlockType(node.text || '')
-    const nodeIsHeading = nodeBlockType === 'h1' || nodeBlockType === 'h2' || nodeBlockType === 'h3'
-    // Solo clasificar nodos contenedor (con hijos), tareas, bucles o headings — no párrafos sueltos
-    const hasChildren = store.children(node.id).some(c => !c.deletedAt)
-    const isTask = node.status !== null
-    const isLoop = (node.types || []).includes('bucle')
-    if (!hasChildren && !isTask && !isLoop && !nodeIsHeading) {
+    // Solo clasificar nodos ancla: hijo directo del día o nodo con hijos.
+    // Headings, párrafos y hojas sueltas heredan el contexto de su ancestro — no se clasifican.
+    if (!isContextAnchor) {
       cancelClassify(node.id)
       setAutoCtxResult(null)
       return
@@ -766,7 +790,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       contextKnowledgePendingTimers.set(ctxIdForUpdate, timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, node.text, node.status, node.types, nodeHasManualContext])
+  }, [node.id, node.text, node.status, node.types, nodeHasManualContext, isContextAnchor])
 
   // Abrir panel de propiedades desde el context menu externo
   useEffect(() => {
@@ -3682,7 +3706,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 result={autoCtxResult}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult === null && !node.isDiaryEntry && (node.text || '').trim().length >= 10) ? (
+            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult === null && !node.isDiaryEntry && isContextAnchor) ? (
               <ContextPlaceholderBadge
                 node={node}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
