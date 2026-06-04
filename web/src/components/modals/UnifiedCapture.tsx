@@ -921,7 +921,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       style={{
         position: 'fixed', inset: 0, zIndex: 9000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: embedded ? 'transparent' : 'rgba(0,0,0,0.35)',
+        background: embedded ? 'var(--bg-primary)' : 'rgba(0,0,0,0.35)',
         backdropFilter: embedded ? 'none' : 'blur(2px)',
       }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
@@ -930,14 +930,16 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         onKeyDown={handleKeyDown as unknown as React.KeyboardEventHandler<HTMLDivElement>}
         style={{
           background: 'var(--bg-primary)',
-          border: '1px solid var(--border)',
-          borderRadius: 12,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
+          // En la ventana flotante del Mac, el panel ocupa toda la ventana
+          // (sin tarjeta centrada ni márgenes) → nada de marco gris alrededor.
+          border: embedded ? 'none' : '1px solid var(--border)',
+          borderRadius: embedded ? 0 : 12,
+          boxShadow: embedded ? 'none' : '0 8px 40px rgba(0,0,0,0.25)',
           padding: '14px 16px 0',
-          width: 560,
-          maxWidth: '90vw',
-          height: 440,
-          maxHeight: '80vh',
+          width: embedded ? '100%' : 560,
+          maxWidth: embedded ? '100%' : '90vw',
+          height: embedded ? '100%' : 440,
+          maxHeight: embedded ? '100%' : '80vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
