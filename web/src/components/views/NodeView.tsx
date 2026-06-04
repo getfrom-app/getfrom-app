@@ -184,6 +184,32 @@ export default function NodeView() {
   // Estado para extracción de conocimiento del contexto
   const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
 
+  // ID del contexto asignado manualmente al nodo (para badge en NodeView, igual que OutlinerNode)
+  const nodeViewManualCtxId = useMemo(() => {
+    if (!node) return null
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length === 0) return null
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return null
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    for (const typeName of userTypes) {
+      const ctxNode = contextNodes.find(n => n.text === typeName)
+      if (ctxNode) return ctxNode.id
+    }
+    return null
+  }, [node?.types, node?.extraData])
+
+  // ¿El nodo tiene contexto asignado manualmente? (para decidir si mostrar badge IA o placeholder)
+  const nodeViewHasManualCtx = useMemo(() => {
+    if (!node) return false
+    try { if (JSON.parse(node.extraData || '{}')._contextManuallySet === '1') return true } catch {}
+    if (/@\w/.test(node.text || '')) return true
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    return userTypes.length > 0
+  }, [node?.types, node?.extraData, node?.text])
+
   // Layout del contenido (wide / small / normal)
   const nodeLayout = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').layout || '' } catch { return '' }
@@ -1742,6 +1768,9 @@ export default function NodeView() {
               if (isContextNode) return null
               // Nodos especiales de From (🧠 Lo que From sabe sobre ti, etc.): no mostrar #
               if (node?.text?.startsWith('🧠')) return null
+              // Perfil IA: isContextNode lo excluye pero _perfilIA=1 fuerza isContextNode=false,
+              // así que hacemos el check explícito aquí también.
+              try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return null } catch {}
               // ¿Nodo de definición de tag? → mostrar # en color del tag
               try {
                 const ed = JSON.parse(node.extraData || '{}')
@@ -1939,6 +1968,46 @@ export default function NodeView() {
               <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
             )}
             </div>{/* /node-title-wrap */}
+
+            {/* Badge de contexto bajo el título — igual que en el outliner */}
+            {!isContextNode && !node.isDiaryEntry && (() => {
+              const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+              if (!tagsRoot || store.children(tagsRoot.id).filter(n => !n.deletedAt).length === 0) return null
+              if (nodeViewManualCtxId) {
+                return (
+                  <AutoContextBadge
+                    node={node}
+                    result={{ contextId: nodeViewManualCtxId, confidence: 1 }}
+                    assignedContextId={nodeViewManualCtxId}
+                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
+                  />
+                )
+              }
+              if (!nodeViewHasManualCtx && nodeViewCtxResult !== null) {
+                return (
+                  <AutoContextBadge
+                    node={node}
+                    result={nodeViewCtxResult}
+                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
+                  />
+                )
+              }
+              if (!nodeViewHasManualCtx && nodeViewCtxResult === null) {
+                const nodeBlockType = (() => { try { return (node.text || '').match(/^(# |## |### )/) ? 'heading' : '' } catch { return '' } })()
+                const hasChildren = store.children(node.id).some(c => !c.deletedAt)
+                const isTask = node.status !== null
+                const isLoop = (node.types || []).includes('bucle')
+                const isHeadingNode = nodeBlockType === 'heading'
+                if (!hasChildren && !isTask && !isLoop && !isHeadingNode) return null
+                return (
+                  <ContextPlaceholderBadge
+                    node={node}
+                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
+                  />
+                )
+              }
+              return null
+            })()}
 
             <div className="node-title-actions">
               {/* View mode switcher — visible en todos los nodos incluidas notas diarias y mensuales */}

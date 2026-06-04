@@ -243,6 +243,10 @@ export default function MainLayout() {
   })
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
+  // Guard para evitar race condition entre efecto "aplicar pending" y efecto "limpiar al navegar":
+  // cuando el efecto de pending consume el ref y setea contextNodeId, este flag evita que el
+  // efecto de limpieza lo borre inmediatamente (ambos se disparan con la misma dep location.pathname).
+  const pendingContextConsumedRef = useRef(false)
 
   function openPanel(p: CyclablePanel) { setRightPanel(p) }
   // togglePanel ahora solo cambia de panel — no cierra
@@ -292,6 +296,9 @@ export default function MainLayout() {
     if (atHome) {
       const nodeId = pendingContextRef.current
       pendingContextRef.current = null
+      // Marcar que el pending fue consumido ANTES de limpiar el ref, para que el efecto
+      // de limpieza (mismo location.pathname) no borre lo que acabamos de setear.
+      pendingContextConsumedRef.current = true
       setContextNodeId(nodeId)
       // "Sin clasificar" no abre panel de nodo — mantiene context-list
       if (nodeId !== UNCLASSIFIED_FILTER_ID) setRightPanel('context')
@@ -387,14 +394,14 @@ export default function MainLayout() {
       setRightPanel('context-list')
     }
     // Limpiar contextNodeId al ENTRAR a un nodo concreto — no al volver a home.
-    // Si pendingContextRef tiene un valor, significa que venimos de un clic en contexto
-    // estando fuera de home: el effect de pendingContextRef (más arriba) ya habrá
-    // consumido el pending y seteado contextNodeId + rightPanel correctamente.
-    // No limpiar en ese caso evita la condición de carrera donde este effect borraba
-    // lo que el otro acababa de setear (ambos se disparan con el mismo location.pathname).
+    // Si pendingContextConsumedRef es true, el efecto de pending (mismo location.pathname,
+    // ejecutado antes) ya seteó contextNodeId — no limpiar, solo resetear el flag.
     if (location.pathname.startsWith('/node/')) {
       setContextNodeId(null)
       setFilterText('')
+    } else if (pendingContextConsumedRef.current) {
+      // El pending fue procesado por el efecto anterior — no limpiar, solo resetear el flag.
+      pendingContextConsumedRef.current = false
     } else if (!pendingContextRef.current) {
       // Volvemos a home sin pending → limpiar contexto (navegación normal, ESC, etc.)
       setContextNodeId(null)

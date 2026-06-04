@@ -396,10 +396,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [node.parentId])
 
   // Comprueba si el nodo está dentro de una estructura restringida donde no tiene
-  // sentido clasificar ni extraer conocimiento del usuario:
+  // sentido clasificar:
   //   1. Dentro de un nodo de contexto (hijo de 🧠 Contexto)
   //   2. Dentro del nodo de perfil (_perfilIA === '1')
   //   3. Dentro de la estructura temporal de la Agenda (📅 Agenda → Año → Mes → Día)
+  //   4. Dentro de la Papelera
   // Sube máximo 6 niveles para no ser costoso; memoizado por parentId.
   const isInsideRestrictedAncestor = useMemo(() => {
     // Identificar raíces especiales para comparar contra ellas
@@ -428,13 +429,38 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.parentId])
 
+  // Comprueba si el nodo está dentro de estructuras donde NO debe extraerse conocimiento del usuario.
+  // Igual que isInsideRestrictedAncestor EXCEPTO que la Agenda no bloquea:
+  // los nodos escritos por el usuario dentro del diario SÍ alimentan el perfil IA.
+  // Solo bloqueamos: contextos, perfil IA, papelera.
+  const isInsideKnowledgeRestricted = useMemo(() => {
+    const contextoRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+
+    let cur = store.getNode(node.parentId ?? '')
+    let depth = 0
+    while (cur && depth < 6) {
+      try {
+        const ed = JSON.parse(cur.extraData || '{}')
+        if (ed._perfilIA === '1') return true
+      } catch { /* ignore */ }
+      if (contextoRoot && cur.id === contextoRoot.id) return true
+      if ((cur.text || '') === '🗑 Papelera') return true
+      cur = store.getNode(cur.parentId ?? '')
+      depth++
+    }
+    return false
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.parentId])
+
   // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
   // lleva 15s estable (sin cambios) y cumple los criterios. Cubre el caso en que
   // handleBlur no se dispara correctamente (notas normales sin interacción directa
   // o cuando contentRef no tiene el texto actualizado al blur).
   useEffect(() => {
     if (hasExtractedUserKnowledgeRef.current) return
-    if (isInsideRestrictedAncestor) return
+    // Para extractUserKnowledge usamos isInsideKnowledgeRestricted (no bloquea Agenda)
+    // porque los nodos escritos dentro del diario SÍ deben alimentar el perfil IA.
+    if (isInsideKnowledgeRestricted) return
     const text = (node.text || '').trim()
     if (text.length < 20) return
     if (node.isDiaryEntry) return
@@ -502,7 +528,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       } catch { /* silencioso */ }
     }, 15_000)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, node.text, node.isDiaryEntry, isInsideRestrictedAncestor])
+  }, [node.id, node.text, node.isDiaryEntry, isInsideKnowledgeRestricted])
 
   // Al montar: si el nodo no tiene _autoContextId en extraData (nunca clasificado o badge perdido
   // por desmonte/remonte), disparar clasificación con delay largo (3000ms) para no saturar.
@@ -1473,12 +1499,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
     // Se dispara para CUALQUIER nodo con texto ≥ 20 chars, sin importar tipo.
     // Debounce largo (10s) para no saturar. Se dispara una sola vez por nodo por sesión.
-    // No extraer de nodos dentro de contextos, perfil o estructura temporal.
+    // Usa isInsideKnowledgeRestricted (no bloquea Agenda) — los nodos del diario SÍ alimentan el perfil.
     const blurText = (contentRef.current?.textContent || '').trim()
     if (
       hasUserEditedRef.current &&
       !hasExtractedUserKnowledgeRef.current &&
-      !isInsideRestrictedAncestor &&
+      !isInsideKnowledgeRestricted &&
       blurText.length >= 20
     ) {
       // Cancelar timer previo si existe
