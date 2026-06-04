@@ -10,18 +10,26 @@
  */
 
 import { apiRequest } from './client'
+import { store } from '../store/nodeStore'
+import { TAGS_ROOT_NAME } from '../utils/tagsHelper'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
 export interface ClassifyResult {
   contextId: string | null
   confidence: number
+  /** Nombre sugerido para un subcontexto nuevo cuando la nota no encaja en ninguno existente (Fase 3). */
+  suggestedName?: string | null
+  /** ID del contexto padre bajo el que crear el subcontexto sugerido (null = nivel superior). */
+  suggestedParentId?: string | null
 }
 
 export interface ContextInfo {
   id: string
   name: string
   description?: string
+  /** ID del contexto padre (null = contexto de nivel superior). Permite que la IA prefiera el subcontexto más específico. */
+  parentId?: string | null
   /** Muestra de textos de nodos hijos del contexto (máx 200) para dar señales reales a la IA */
   samples?: string[]
 }
@@ -43,6 +51,47 @@ const EXAMPLES_KEY = 'from_ctx_examples'
 const MAX_EXAMPLES = 25
 /** Confidence mínima para mostrar el badge en color del contexto (vs gris) */
 export const CONFIDENCE_THRESHOLD = 0.6
+
+// ── Construcción de la lista de contextos (incl. subcontextos) ────────────────
+
+/**
+ * Recorre el árbol completo de contextos del usuario y devuelve la lista plana
+ * de ContextInfo, incluyendo subcontextos con su `parentId`. Los nodos de
+ * conocimiento (texto que empieza por 🧠) se excluyen como destinos pero su texto
+ * sí alimenta los `samples` del contexto al que pertenecen.
+ *
+ * @param excludeId — id del nodo de perfil IA u otro que no deba ser destino.
+ */
+export function buildClassifyContexts(excludeId?: string | null): ContextInfo[] {
+  const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === TAGS_ROOT_NAME || n.text === '🏷 Tags'))
+  if (!tagsRoot) return []
+  const out: ContextInfo[] = []
+  // Cola de [contextNodeId, parentContextId|null]
+  const queue: Array<[string, string | null]> = store
+    .children(tagsRoot.id)
+    .filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠'))
+    .map(n => [n.id, null] as [string, string | null])
+  while (queue.length > 0) {
+    const [id, parentId] = queue.shift()!
+    const node = store.getNode(id)
+    if (!node || node.deletedAt) continue
+    if (excludeId && id === excludeId) continue
+    out.push({
+      id,
+      name: node.text || '',
+      parentId,
+      samples: store.children(id)
+        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
+        .slice(0, 200)
+        .map(c => (c.text || '').trim()),
+    })
+    // Encolar subcontextos (hijos que no son nodos de conocimiento 🧠)
+    store.children(id)
+      .filter(c => !c.deletedAt && !(c.text || '').startsWith('🧠'))
+      .forEach(c => queue.push([c.id, id]))
+  }
+  return out
+}
 
 // ── Caché en memoria (nodeId → ClassifyResult) ───────────────────────────────
 // Persiste durante la sesión. Se invalida si el nodo recibe contexto manual.

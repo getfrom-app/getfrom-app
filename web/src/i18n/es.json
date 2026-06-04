@@ -713,6 +713,8 @@
   "autoCtx.noContext": "Sin contexto",
   "autoCtx.assigned": "asignado",
   "autoCtx.suggested": "sugerido",
+  "autoCtx.createSubcontext": "Crear subcontexto",
+  "autoCtx.under": "en",
   "autoCtx.unclassifiedFilter": "Sin clasificar",
   "autoCtx.unclassifiedEmpty": "Todos los nodos tienen contexto asignado",
   "autoCtx.showingOf": "Mostrando {{shown}} de {{total}}",

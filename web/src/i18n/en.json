@@ -714,6 +714,8 @@
   "autoCtx.noContext": "No context",
   "autoCtx.assigned": "assigned",
   "autoCtx.suggested": "suggested",
+  "autoCtx.createSubcontext": "Create subcontext",
+  "autoCtx.under": "under",
   "autoCtx.unclassifiedFilter": "Unclassified",
   "autoCtx.unclassifiedEmpty": "All nodes have a context assigned",
   "autoCtx.showingOf": "Showing {{shown}} of {{total}}",

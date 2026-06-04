@@ -69,6 +69,13 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
 
   const highConfidence = isConfirmedMode ? true : result.confidence >= CONFIDENCE_THRESHOLD
 
+  // Fase 3 — sugerencia de subcontexto nuevo cuando la nota no encaja en ninguno existente
+  const suggestedName = (!isConfirmedMode && !result.contextId) ? (result.suggestedName || '').trim() : ''
+  const hasSuggestion = suggestedName.length >= 2
+  const suggestedParentNode = hasSuggestion && result.suggestedParentId
+    ? store.getNode(result.suggestedParentId)
+    : null
+
   // Color del badge
   const badgeColor = (highConfidence || isConfirmedMode) && suggestedCtxNode
     ? (() => {
@@ -125,6 +132,19 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
     assignContext(newNode.id)
   }
 
+  function createSuggestedSubcontext() {
+    if (!hasSuggestion) return
+    let parentId: string | null = result.suggestedParentId ?? null
+    if (parentId && !store.getNode(parentId)) parentId = null
+    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const targetParent = parentId ?? root?.id
+    if (!targetParent) return
+    const sibs = store.children(targetParent).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    const newNode = store.createNode({ text: suggestedName, parentId: targetParent, siblingOrder: maxOrder + 1000 })
+    assignContext(newNode.id)
+  }
+
   function assignContext(contextNodeId: string | null) {
     setShowDropdown(false)
     setSearchText('')
@@ -138,10 +158,8 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
     // Quitar cualquier contexto de usuario que hubiera antes (solo uno a la vez)
     const typesWithoutUserCtx = existingTypes.filter(t => builtinTags.has(t))
     if (contextNodeId) {
-      // Leer directamente del store para incluir nodos recién creados
-      const currentTagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-      const currentContextNodes = currentTagsRoot ? store.children(currentTagsRoot.id).filter(n => !n.deletedAt) : contextNodes
-      const contextNode = currentContextNodes.find(n => n.id === contextNodeId)
+      // Leer directamente del store por ID — funciona para contextos y subcontextos recién creados
+      const contextNode = store.getNode(contextNodeId)
       const tagName = contextNode?.text || ''
       if (tagName) {
         const newTypes = typesWithoutUserCtx.includes(tagName)
@@ -179,7 +197,9 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
       ? suggestedCtxNode.text
       : result.confidence > 0 && suggestedCtxNode
         ? `? ${suggestedCtxNode.text}`
-        : '?'
+        : hasSuggestion
+          ? `+ ${suggestedName}`
+          : '?'
 
   const badgeTitle = isConfirmedMode
     ? t('autoCtx.badgeTooltipManual', { context: suggestedCtxNode?.text || '' })
@@ -267,6 +287,28 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
               }}
             />
           </div>
+          {/* Fase 3 — sugerencia de subcontexto nuevo (solo si no se está buscando otra cosa) */}
+          {hasSuggestion && !searchText.trim() && (
+            <div style={{ borderBottom: '1px solid var(--border)' }}>
+              <button
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '6px 12px',
+                  background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 13,
+                  color: 'var(--accent, #7c3aed)', textAlign: 'left', fontWeight: 600,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={createSuggestedSubcontext}
+              >
+                ✦ {t('autoCtx.createSubcontext', 'Crear subcontexto')} "{suggestedName}"
+                {suggestedParentNode && (
+                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, fontSize: 11 }}>
+                    {t('autoCtx.under', 'en')} {suggestedParentNode.text}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
           {/* Lista filtrada de contextos */}
           <div style={{ maxHeight: 200, overflowY: 'auto' }}>
             {filteredContextNodes.map(ctx => {

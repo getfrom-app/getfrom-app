@@ -25,7 +25,7 @@ import type { Node as FromNode } from '../../types'
 import OutlinerNode from '../outliner/OutlinerNode'
 import { useGlobalSelection, toggleNodeSelection } from '../outliner/Outliner'
 import AutoContextBadge from '../outliner/AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, saveExample, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, saveExample, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 
 /** Máximo de niveles de ancestro a mostrar en el breadcrumb */
@@ -290,11 +290,8 @@ export function FilterResultItem({
     const text = (node.text || '').trim()
     if (text.length < 4) return
 
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-    if (!tagsRoot) return
-    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-    if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    const contexts = buildClassifyContexts(store.perfilIANode?.()?.id)
+    if (contexts.length === 0) return
 
     scheduleClassify(node.id, text, contexts, (id, result) => {
       if (id !== node.id) return

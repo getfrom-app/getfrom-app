@@ -25,7 +25,7 @@ import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToS
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
 // Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
@@ -693,24 +693,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const isLoopMount = (node.types || []).includes('bucle')
     if (!hasChildrenMount && !isTaskMount && !isLoopMount && !nodeIsHeadingMount) return
 
-    // Obtener contextos disponibles
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-    if (!tagsRoot) return
-    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-    if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({
-      id: n.id,
-      name: n.text || '',
-      // Muestra de los primeros 200 nodos hijos (nivel 1-2) para señales reales a la IA
-      // Haiku tiene 200K tokens de contexto — 200 nodos por contexto es completamente viable.
-      samples: store.children(n.id)
-        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 200)
-        .map(c => (c.text || '').trim()),
-    }))
+    // Obtener contextos disponibles (incl. subcontextos)
+    const perfilNode = store.perfilIANode?.() ?? null
+    const contexts = buildClassifyContexts(perfilNode?.id)
+    if (contexts.length === 0) return
 
     // Recoger muestras del perfil IA para mejorar la clasificación
-    const perfilNode = store.perfilIANode?.() ?? null
     const userProfileSamples: string[] = perfilNode
       ? store.children(perfilNode.id)
           .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
@@ -779,21 +767,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setAutoCtxResult(null)
       return
     }
-    // Obtener contextos disponibles del usuario
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-    if (!tagsRoot) return
-    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-    if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({
-      id: n.id,
-      name: n.text || '',
-      samples: store.children(n.id)
-        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 200)
-        .map(c => (c.text || '').trim()),
-    }))
-    // Recoger muestras del perfil IA para mejorar la clasificación
+    // Obtener contextos disponibles del usuario (incl. subcontextos)
     const perfilNodeEdit = store.perfilIANode?.() ?? null
+    const contexts = buildClassifyContexts(perfilNodeEdit?.id)
+    if (contexts.length === 0) return
+    // Recoger muestras del perfil IA para mejorar la clasificación
     const userProfileEdit: string[] | undefined = perfilNodeEdit
       ? store.children(perfilNodeEdit.id)
           .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)

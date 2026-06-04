@@ -39,7 +39,7 @@ import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -364,19 +364,9 @@ export default function NodeView() {
     const text = (node.text || '').trim()
     if (!text || text.length < 4) return
     if (node.isDiaryEntry) return
-    // Obtener contextos disponibles
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-    if (!tagsRoot) return
-    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-    if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({
-      id: n.id,
-      name: n.text || '',
-      samples: store.children(n.id)
-        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 200)
-        .map(c => (c.text || '').trim()),
-    }))
+    // Obtener contextos disponibles (incl. subcontextos)
+    const contexts = buildClassifyContexts(store.perfilIANode?.()?.id)
+    if (contexts.length === 0) return
     scheduleClassify(node.id, text, contexts, (nid, result) => {
       if (nid !== node.id) return
       setNodeViewCtxResult(result)
