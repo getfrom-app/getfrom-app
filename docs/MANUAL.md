@@ -1169,6 +1169,47 @@ fin  →  Claude guarda el resumen de la conversación en From automáticamente
 
 ---
 
+## 23b. Accesorios — captura desde cualquier sitio
+
+From no te obliga a tener la app delante. Estos accesorios mandan lo que tengas a tu **nota de hoy**, y la inteligencia de From se encarga de clasificarlo (tipo, fecha, contexto). Todos —salvo la barra de menús— se conectan con el **token de API** de tu cuenta.
+
+### El token de API
+Es la llave que usan Raycast, Chrome y la extensión de Claude para hablar con tu From. Se genera y copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el anterior). Vive 1 año.
+
+### Barra de menús (Mac)
+From vive en la barra de menús del Mac con su icono (el árbol).
+- **Clic en el icono** (o menú → *Captura rápida*) → abre una ventana de captura tipo Spotlight: escribe una nota, tarea o evento y cae en tu nota de hoy. From detecta el tipo, la fecha y los `@contextos` que escribas.
+- Cerrar la ventana principal **no** cierra From: sigue disponible en la barra de menús.
+- **Ocultarlo**: Ajustes → Accesorios → desactiva "Mostrar icono en la barra de menús", o clic derecho en el icono → *Ocultar este icono*.
+
+### Atajo de Apple (tecla global)
+Para capturar desde **cualquier app** con una sola tecla.
+1. En **Ajustes → Accesorios → Atajo de Apple** pulsa **"Instalar atajo de Apple"** (abre el atajo listo en la app Atajos) y añádelo.
+2. En la app Atajos, abre los **Ajustes del atajo → Tecla rápida** y asígnale la combinación que quieras (por ejemplo ⌃⌥Espacio).
+3. Al pulsarla, te pide el texto y lo guarda directamente en tu nota de hoy.
+
+Por debajo usa el enlace `from://capture?text=…&silent=1`. Si prefieres montarlo a mano, crea un Atajo con la acción *"Abrir URL"* usando ese enlace y sustituye `[Texto]` por *"Pedir texto"* o *"Portapapeles"*.
+
+### Raycast
+Extensión de From para [Raycast](https://raycast.com):
+- **Create in From** — escribe y cae en tu nota de hoy (From decide si es nota, tarea o evento).
+- **Search From** — busca en todo tu vault y abre el resultado en la app o en la web.
+- **Open Today's Note** — abre tu nota diaria.
+
+Instálala desde la Raycast Store y pega tu token de API en sus preferencias (Ajustes → Accesorios → Raycast → copiar token).
+
+### Chrome
+Extensión de From para Chrome:
+- **Clic en el icono** → guarda la URL de la pestaña actual en tu nota de hoy (se convierte en enlace).
+- **Selecciona texto → clic derecho → "Enviar selección a From"** → lo guarda como nodo.
+
+Instálala desde la Chrome Web Store, abre sus **Opciones** y pega tu token de API.
+
+### Conexión con Claude (MCP)
+La integración con Claude Desktop/Code está descrita en la sección anterior — usa el mismo token de API.
+
+---
+
 ## 24. Planes y precios
 
 | Plan | Precio | Incluye |

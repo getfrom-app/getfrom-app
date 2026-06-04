@@ -4,6 +4,35 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.141 · Mac v9.5.13 — 5 junio 2026 · Accesorios: captura en From desde cualquier sitio
+
+From sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desde el sistema, desde Raycast o desde el navegador — y From lo entiende y lo coloca en su sitio.
+
+### Barra de menús (Mac)
+- From vive en la barra de menús con su icono. Clic → ventana de **captura rápida** (estilo Spotlight) para crear nota, tarea o evento al vuelo. From detecta el tipo, la fecha y los @contextos del texto.
+- Se puede **ocultar** el icono: en Ajustes → Accesorios, o con clic derecho en el icono → "Ocultar este icono".
+
+### Atajo de Apple (tecla global)
+- **Atajo listo para instalar** en un clic (enlace iCloud): te pide el texto y lo guarda en tu nota de hoy, desde cualquier app.
+- Asígnale la tecla global que quieras desde la app Atajos. Por debajo usa el enlace `from://capture?text=…&silent=1`.
+
+### Raycast
+- Extensión de From para Raycast: **Crear**, **Buscar** y **Abrir la nota de hoy**. Al crear, From decide nota/tarea/evento con su inteligencia.
+
+### Chrome
+- Extensión de From para Chrome: clic en el icono → guarda la URL de la pestaña en tu nota de hoy; selecciona texto + clic derecho → lo manda como nodo.
+
+### Dónde está todo
+- Nueva página **Accesorios** en la web (enlazada desde el menú) y nueva pestaña **Accesorios** en Ajustes de From. Todos usan el mismo **token de API** (Ajustes → Accesorios), el mismo que la integración con Claude.
+
+### Bajo el capó / fixes
+- Deep links nuevos: `from://capture` (captura) y `from://node/<id>` (abrir una nota).
+- **Icono oficial de From** (árbol azul) unificado en app, barra de menús y extensiones.
+- Fix: error "failed to unpack" del actualizador (el `.tar.gz` ahora se genera sin archivos AppleDouble).
+- Fix: borde fino alrededor de la ventana principal (desactivado el macOS private API) y ventana de captura sin marco.
+
+---
+
 ## Web v9.6.136 · Mac v9.5.8 — 4 junio 2026 · Captura rápida desde cualquier sitio
 
 From sale de su ventana. Ahora puedes capturar al vuelo sin cambiar de app, y abrir o buscar tus notas desde las herramientas que ya usas.

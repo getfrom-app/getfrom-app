@@ -629,4 +629,33 @@ Any folder with `.md` or `.txt` files can be imported into From, regardless of o
 
 ---
 
+## 21. Accessories — capture from anywhere
+
+You don't need to have From open. These accessories send whatever you have to your **daily note**, and From's intelligence files it (type, date, context). All of them — except the menu bar — connect using your account's **API token**.
+
+### The API token
+The key Raycast, Chrome and the Claude integration use to talk to your From. Generate and copy it in **Settings → Accessories** (it's the same token for all three; regenerating it invalidates the old one). Valid for 1 year.
+
+### Menu bar (Mac)
+From lives in the macOS menu bar with its icon.
+- **Click the icon** (or menu → *Quick capture*) → opens a Spotlight-style window: write a note, task or event and it lands in today's note. From detects the type, date and any `@contexts`.
+- Closing the main window does **not** quit From — it stays in the menu bar.
+- **Hide it**: Settings → Accessories → turn off "Show icon in the menu bar", or right-click the icon → *Hide this icon*.
+
+### Apple Shortcut (global hotkey)
+Capture from **any app** with a single key.
+1. In **Settings → Accessories → Apple Shortcut** click **"Install Apple Shortcut"** (opens the ready-made shortcut in the Shortcuts app) and add it.
+2. In Shortcuts, open the shortcut's settings → **Keyboard shortcut** and assign any combination.
+3. Press it: you're asked for text and it's saved straight into today's note.
+
+Under the hood it uses `from://capture?text=…&silent=1`.
+
+### Raycast
+The From extension for Raycast: **Create in From**, **Search From** and **Open Today's Note**. On create, From decides whether it's a note, task or event. Install it from the Raycast Store and paste your API token in its preferences.
+
+### Chrome
+The From extension for Chrome: click the icon → saves the current tab's URL to today's note; select text → right-click → "Send to From" → saved as a node. Install it from the Chrome Web Store and paste your API token in its options.
+
+---
+
 *getfrom.app*
