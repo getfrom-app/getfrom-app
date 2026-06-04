@@ -3114,8 +3114,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           }
         }}
         style={nodeColor
-          ? { borderLeft: `3px solid ${nodeColor}`, paddingLeft: depth * 22 + (isBullet ? 20 : 4) }
-          : { paddingLeft: depth * 22 + (isBullet ? 16 : 0) }
+          ? { boxShadow: `inset 3px 0 0 ${nodeColor}`, paddingLeft: depth * 22 }
+          : { paddingLeft: depth * 22 }
         }
       >
 
