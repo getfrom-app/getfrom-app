@@ -62,7 +62,7 @@ export const DRAG_NODE_ID_KEY = 'from/nodeId'
  * cuando la IA aún no ha sugerido un contexto (o la confianza es baja).
  * Al hacer clic abre el dropdown de contextos para asignación manual inmediata.
  */
-function ContextPlaceholderBadge({ node, onContextAssigned }: { node: FromNode; onContextAssigned: (nodeId: string) => void }) {
+export function ContextPlaceholderBadge({ node, onContextAssigned }: { node: FromNode; onContextAssigned: (nodeId: string) => void }) {
   const { t } = useTranslation()
   const [showDropdown, setShowDropdown] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })
@@ -251,6 +251,27 @@ export function FilterResultItem({
   })
   const classifyScheduledRef = useRef(false)
 
+  // ID del contexto asignado manualmente (cuando _contextManuallySet=1 en extraData).
+  // Se usa para mostrar AutoContextBadge en modo "confirmado" en la vista Sin clasificar.
+  const manuallySetContextId = useMemo<string | null>(() => {
+    if (!enableAutoClassify) return null
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._contextManuallySet !== '1') return null
+    } catch { return null }
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length === 0) return null
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    if (!tagsRoot) return null
+    const ctxNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    for (const typeName of userTypes) {
+      const ctxNode = ctxNodes.find(n => n.text === typeName)
+      if (ctxNode) return ctxNode.id
+    }
+    return null
+  }, [node.types, node.extraData, enableAutoClassify]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!enableAutoClassify) return
     if (classifyScheduledRef.current) return
@@ -339,27 +360,39 @@ export function FilterResultItem({
           ))}
 
           {/* Badge de auto-clasificación — siempre visible en vista "Sin clasificar":
-              · Con sugerencia IA si ya está disponible y confidence > 0.3
+              · Confirmado (manuallySetContextId): contexto asignado manualmente → AutoContextBadge modo confirmado
+              · Con sugerencia IA si ya está disponible y confidence > 0.3 → AutoContextBadge normal
               · Placeholder "+ Contexto" para asignación manual inmediata si no hay sugerencia */}
           {enableAutoClassify && (
-            autoCtxResult && autoCtxResult.confidence > 0.3
+            manuallySetContextId
               ? (
                 <AutoContextBadge
                   node={node}
-                  result={autoCtxResult}
+                  result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
+                  assignedContextId={manuallySetContextId}
                   onContextAssigned={(id) => {
                     if (id === node.id) setAutoCtxResult(null)
                   }}
                 />
               )
-              : (
-                <ContextPlaceholderBadge
-                  node={node}
-                  onContextAssigned={(id) => {
-                    if (id === node.id) setAutoCtxResult(null)
-                  }}
-                />
-              )
+              : autoCtxResult && autoCtxResult.confidence > 0.3
+                ? (
+                  <AutoContextBadge
+                    node={node}
+                    result={autoCtxResult}
+                    onContextAssigned={(id) => {
+                      if (id === node.id) setAutoCtxResult(null)
+                    }}
+                  />
+                )
+                : (
+                  <ContextPlaceholderBadge
+                    node={node}
+                    onContextAssigned={(id) => {
+                      if (id === node.id) setAutoCtxResult(null)
+                    }}
+                  />
+                )
           )}
         </div>
       )}

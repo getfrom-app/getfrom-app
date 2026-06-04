@@ -34,6 +34,8 @@ import SlashMenu from '../outliner/SlashMenu'
 import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
+import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
+import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -158,6 +160,23 @@ export default function NodeView() {
   // Export menu state
   const [showExportMenu, setShowExportMenu] = useState(false)
 
+  // Auto-clasificación de contexto — badge bajo el título del nodo abierto
+  const [nodeViewCtxResult, setNodeViewCtxResult] = useState<ClassifyResult | null>(() => {
+    if (!effectiveId) return null
+    // Primero: caché en memoria
+    const cached = getCachedClassify(effectiveId)
+    if (cached) return cached
+    // Fallback: extraData persistido
+    try {
+      const n = store.getNode(effectiveId)
+      const ed = JSON.parse(n?.extraData || '{}')
+      if (ed._autoContextId !== undefined) {
+        return { contextId: ed._autoContextId || null, confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0 }
+      }
+    } catch { /* ignore */ }
+    return null
+  })
+
   // Layout del contenido (wide / small / normal)
   const nodeLayout = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').layout || '' } catch { return '' }
@@ -248,6 +267,56 @@ export default function NodeView() {
       setBodyValue(node.body || '')
     }
   }, [node?.id, node?.body]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-clasificación de contexto al abrir un nodo
+  useEffect(() => {
+    if (!node) return
+    // Reset al cambiar de nodo
+    setNodeViewCtxResult(() => {
+      const cached = getCachedClassify(node.id)
+      if (cached) return cached
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        if (ed._autoContextId !== undefined) {
+          return { contextId: ed._autoContextId || null, confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0 }
+        }
+      } catch { /* ignore */ }
+      return null
+    })
+    // No clasificar nodos con contexto ya asignado manualmente
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._contextManuallySet === '1') return
+    } catch { /* ignore */ }
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length > 0) return
+    if (/@\w/.test(node.text || '')) return
+    // Solo nodos con texto significativo
+    const text = (node.text || '').trim()
+    if (!text || text.length < 4) return
+    if (node.isDiaryEntry) return
+    // Obtener contextos disponibles
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    if (contextNodes.length === 0) return
+    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    scheduleClassify(node.id, text, contexts, (nid, result) => {
+      if (nid !== node.id) return
+      setNodeViewCtxResult(result)
+      // Persistir en extraData
+      try {
+        const currentNode = store.getNode(node.id)
+        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+        ed._autoContextId = result.contextId ?? ''
+        ed._autoContextConfidence = result.confidence
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
+    }, 1000)
+    return () => cancelClassify(node.id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id, node?.text, node?.types, node?.extraData])
 
   // Auto-focus textarea when body editing starts
   useEffect(() => {
@@ -1925,6 +1994,59 @@ export default function NodeView() {
               </div>
             </div>
           </div>
+
+          {/* Badge de contexto bajo el título — mismo mecanismo que OutlinerNode */}
+          {node && !node.isDiaryEntry && (() => {
+            const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+            // Calcular si hay contexto asignado manualmente via badge (_contextManuallySet=1)
+            let manualCtxId: string | null = null
+            try {
+              const ed = JSON.parse(node.extraData || '{}')
+              if (ed._contextManuallySet === '1') {
+                const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+                const tagsRoot2 = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+                if (tagsRoot2 && userTypes.length > 0) {
+                  const ctxNodes2 = store.children(tagsRoot2.id).filter(n => !n.deletedAt)
+                  for (const typeName of userTypes) {
+                    const ctxNode2 = ctxNodes2.find(n => n.text === typeName)
+                    if (ctxNode2) { manualCtxId = ctxNode2.id; break }
+                  }
+                }
+              }
+            } catch { /* ignore */ }
+            // ¿Tiene contexto manual (vía @mention o types[])?
+            const hasManualCtx = manualCtxId !== null
+              || /@\w/.test(node.text || '')
+              || (node.types || []).filter(t => !builtinTags.has(t)).length > 0
+            if (hasManualCtx && !manualCtxId) return null  // tiene contexto pero no asignado vía badge — lo muestra el título ya
+            const tagsRoot3 = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+            if (!tagsRoot3) return null
+            const hasContextsDefined = store.children(tagsRoot3.id).some(n => !n.deletedAt)
+            if (!hasContextsDefined) return null
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, marginTop: -4 }}>
+                {manualCtxId ? (
+                  <AutoContextBadge
+                    node={node}
+                    result={nodeViewCtxResult ?? { contextId: manualCtxId, confidence: 1 }}
+                    assignedContextId={manualCtxId}
+                    onContextAssigned={() => setNodeViewCtxResult(null)}
+                  />
+                ) : nodeViewCtxResult !== null ? (
+                  <AutoContextBadge
+                    node={node}
+                    result={nodeViewCtxResult}
+                    onContextAssigned={() => setNodeViewCtxResult(null)}
+                  />
+                ) : (
+                  <ContextPlaceholderBadge
+                    node={node}
+                    onContextAssigned={() => setNodeViewCtxResult(null)}
+                  />
+                )}
+              </div>
+            )
+          })()}
 
           {/* Focus mode word counter */}
           {focusMode && (

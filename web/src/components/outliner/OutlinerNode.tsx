@@ -24,7 +24,7 @@ import { ensureTagInTree } from '../../utils/tagsHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
-import AutoContextBadge from './AutoContextBadge'
+import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
@@ -351,19 +351,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return false
   }, [node.types, node.extraData, node.text])
 
-  // ID del contexto asignado manualmente via badge (solo cuando _contextManuallySet=1 está en extraData).
+  // ID del contexto asignado al nodo (via badge o cualquier flujo que añade user-types[]).
+  // Cubre dos casos:
+  //   1. _contextManuallySet=1 en extraData (asignado via badge en v9.6.82+)
+  //   2. userTypes.length > 0 sin el flag (asignado por flujos anteriores: drag-to-context, etc.)
   // @mentions de texto no generan badge — el texto ya lo muestra visualmente.
-  // Se usa para mostrar el badge en modo "confirmado" incluso sin resultado IA.
   const manuallySetContextId = useMemo(() => {
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._contextManuallySet !== '1') return null
-    } catch { return null }
-    // Buscar el nodo de contexto que corresponde a alguno de los types[] del nodo
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota','bucle'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length === 0) return null
-    // Buscar el nodo en el árbol de contextos por nombre
+    // Solo mostrar badge si el contexto viene de una asignación explícita (no @mention en texto)
+    // → _contextManuallySet=1 (badge v9.6.82+) O userTypes presente (flujos anteriores)
+    // Excluir si el único "contexto" es un @mention en el texto (no aparece en types[] normalmente,
+    // pero nodeHasManualContext ya lo detecta vía /@\w/.test — aquí buscamos en types[])
     const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!tagsRoot) return null
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
@@ -3286,11 +3286,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
             })()}
 
-            {/* Contexto badge — dos modos:
+            {/* Contexto badge — tres modos:
                 1) Confirmado (manuallySetContextId): el usuario asignó contexto via badge.
                    Siempre visible, estilo sólido sin ✦. Click abre dropdown para cambiar.
                 2) Sugerencia IA (autoCtxResult): la IA clasificó el nodo. Solo cuando no
-                   hay contexto manual. Muestra ✦ y el nombre del contexto sugerido. */}
+                   hay contexto manual. Muestra ✦ y el nombre del contexto sugerido.
+                3) Placeholder "+ Contexto": el nodo es candidato a clasificación pero la IA
+                   no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
+                   Siempre visible para que el usuario pueda asignar contexto manualmente. */}
             {manuallySetContextId ? (
               <AutoContextBadge
                 node={node}
@@ -3298,13 +3301,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 assignedContextId={manuallySetContextId}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!nodeHasManualContext && autoCtxResult !== null && (
+            ) : (!nodeHasManualContext && autoCtxResult !== null) ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ))}
+            ) : (!nodeHasManualContext && autoCtxResult === null && (() => {
+              // Mostrar "+ Contexto" solo en nodos candidatos a clasificación
+              const isLoopNode = (node.types || []).includes('bucle')
+              return (hasChildren || node.status !== null || isLoopNode || isHeading) && !node.isDiaryEntry
+            })()) ? (
+              <ContextPlaceholderBadge
+                node={node}
+                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
+              />
+            ) : null}
 
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (
@@ -3450,14 +3462,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     return s === slug
                   })
                   if (!ctxNode) return null
+                  let ctxColor = '#7c3aed'
+                  try { const ed = JSON.parse(ctxNode.extraData || '{}'); if (ed._tagColor) ctxColor = ed._tagColor } catch { /* ignore */ }
                   return (
                     <span
                       key={`ctx-type-${slug}`}
                       className="context-inline"
                       data-slug={slug}
-                      style={{ color: 'var(--accent)', fontSize: '0.8em', fontWeight: 500, marginLeft: 4, opacity: 0.8 }}
+                      style={{
+                        background: ctxColor + '18',
+                        color: ctxColor,
+                        border: `1px solid ${ctxColor}40`,
+                        borderRadius: 4,
+                        fontSize: '0.8em',
+                        fontWeight: 500,
+                        padding: '0 5px',
+                        marginLeft: 4,
+                        cursor: 'pointer',
+                      }}
                     >
-                      @{ctxNode.text}
+                      {ctxNode.text}
                     </span>
                   )
                 })

@@ -4692,6 +4692,8 @@ body.outliner-drag-active {
 /* En títulos h1: tamaño relativo para que se vea pequeño respecto al título */
 .node-title .tag-inline { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 5px; vertical-align: middle; }
 .tag-inline:hover { opacity: 0.75; text-decoration: underline; }
+.context-inline { display: inline-block; vertical-align: middle; line-height: 1.6; margin: 0 2px; transition: opacity 0.1s; }
+.context-inline:hover { opacity: 0.75; }
 .mention-inline { color: var(--accent); font-weight: 500; cursor: pointer; border-bottom: 1px dotted var(--accent); }
 .mention-inline:hover { opacity: 0.8; }
 .inline-checkbox { font-size: 12px; vertical-align: middle; margin-right: 3px; }
