@@ -69,10 +69,11 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
       if (n.deletedAt || n.isDiaryEntry) return false
       const text = (n.text || '').trim()
       if (text.length < 4) return false
-      // Solo clasificar nodos contenedor (con hijos) o tareas
+      // Solo clasificar nodos contenedor (con hijos), tareas o bucles
       const hasChildren = store.children(n.id).some(c => !c.deletedAt)
       const isTask = n.status !== null
-      if (!hasChildren && !isTask) return false
+      const isLoop = (n.types || []).includes('bucle')
+      if (!hasChildren && !isTask && !isLoop) return false
       const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
       if (userTypes.length > 0) return false
       if (/@\w/.test(n.text || '')) return false
@@ -277,10 +278,11 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     if (n.isDiaryEntry || n.deletedAt) return false
     // Solo contar nodos con texto significativo
     if ((n.text || '').trim().length < 4) return false
-    // Solo clasificar nodos contenedor (con hijos) o tareas
+    // Solo clasificar nodos contenedor (con hijos), tareas o bucles
     const hasChildren = store.children(n.id).some(c => !c.deletedAt)
     const isTask = n.status !== null
-    if (!hasChildren && !isTask) return false
+    const isLoop = (n.types || []).includes('bucle')
+    if (!hasChildren && !isTask && !isLoop) return false
     // ¿tiene contextos manuales?
     const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
     if (userTypes.length > 0) return false

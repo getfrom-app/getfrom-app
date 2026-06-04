@@ -356,10 +356,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       setAutoCtxResult(null)
       return
     }
-    // Solo clasificar nodos contenedor (con hijos) o tareas — no párrafos sueltos
+    // Solo clasificar nodos contenedor (con hijos), tareas o bucles — no párrafos sueltos
     const hasChildren = store.children(node.id).some(c => !c.deletedAt)
     const isTask = node.status !== null
-    if (!hasChildren && !isTask) {
+    const isLoop = (node.types || []).includes('bucle')
+    if (!hasChildren && !isTask && !isLoop) {
       cancelClassify(node.id)
       setAutoCtxResult(null)
       return
