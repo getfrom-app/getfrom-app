@@ -19,6 +19,8 @@ import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { extractUserKnowledge } from '../api/autoClassify'
+import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 
 export interface UndoBundle {
   createdIds: string[]        // node IDs to delete on undo
@@ -330,6 +332,27 @@ class AIChatStore {
       window.dispatchEvent(new CustomEvent('from:onboarding-magic-confirmed'))
     }
     await this.maybeAutoRenameSession()
+    // Aprender del mensaje del usuario (personas/hechos) — integral, fire-and-forget.
+    this.learnFromUserMessage(trimmed)
+  }
+
+  /**
+   * Extrae personas y hechos del mensaje del usuario en el chat y los guarda en el
+   * perfil ("🧠 Lo que From sabe sobre ti"). Así Magic recuerda en futuras sesiones
+   * lo que el usuario le cuenta de forma natural conversando. Fire-and-forget.
+   */
+  private learnedFromChat = new Set<string>()
+  private async learnFromUserMessage(text: string) {
+    const trimmed = text.trim()
+    if (trimmed.length < 15) return
+    if (this.learnedFromChat.has(trimmed)) return
+    this.learnedFromChat.add(trimmed)
+    try {
+      const existingProfile = readProfileLines().join('. ')
+      const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined)
+      if (!knowledge) return
+      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
+    } catch { /* silencioso */ }
   }
 
   /** El usuario confirmó las acciones pendientes. Se ejecutan y la IA resume. */

@@ -96,17 +96,25 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     if (addingCtx) setTimeout(() => newCtxInputRef.current?.focus(), 30)
   }, [addingCtx])
 
+  function createNamedContext(name: string) {
+    const clean = name.trim()
+    if (!clean) return
+    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    if (!root) return
+    // Evitar duplicado por nombre
+    const existing = store.children(root.id).find(n => !n.deletedAt && (n.text || '').trim().toLowerCase() === clean.toLowerCase())
+    if (existing) { onSelectContext(existing.id); return }
+    const sibs = store.children(root.id).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    const newNode = store.createNode({ text: clean, parentId: root.id, siblingOrder: maxOrder + 1000 })
+    onSelectContext(newNode.id)
+  }
+
   function createCtx() {
     const name = newCtxName.trim()
     setAddingCtx(false)
     setNewCtxName('')
-    if (!name) return
-    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-    if (!root) return
-    const sibs = store.children(root.id).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    const newNode = store.createNode({ text: name, parentId: root.id, siblingOrder: maxOrder + 1000 })
-    onSelectContext(newNode.id)
+    createNamedContext(name)
   }
 
   function startRename(nodeId: string, currentText: string, e: React.MouseEvent) {
@@ -413,6 +421,39 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
       )}
 
       {contextos.map(c => renderCtx(c.id, 0))}
+
+      {/* Empty-state: sugerencias de contextos iniciales para empezar desde cero */}
+      {contextos.length === 0 && !addingCtx && (
+        <div style={{ padding: '8px 16px 6px' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5, marginBottom: 8 }}>
+            {t('ctx.starterHint', 'Los contextos agrupan tus notas por tema. Crea uno para empezar:')}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {[
+              t('ctx.starterPersonal', 'Personal'),
+              t('ctx.starterFamily', 'Familia y amigos'),
+              t('ctx.starterWork', 'Trabajo'),
+              t('ctx.starterHobbies', 'Aficiones'),
+              t('ctx.starterTravel', 'Viajes'),
+              t('ctx.starterIdeas', 'Ideas'),
+            ].map(name => (
+              <button
+                key={name}
+                onClick={() => createNamedContext(name)}
+                style={{
+                  background: 'var(--bg-hover)', border: '1px solid var(--border)', borderRadius: 14,
+                  padding: '4px 11px', fontSize: 12.5, color: 'var(--text-secondary)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = 'var(--accent)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              >
+                <span style={{ opacity: 0.7 }}>+</span> {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!addingCtx ? (
         <div

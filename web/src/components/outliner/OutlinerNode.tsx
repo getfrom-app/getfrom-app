@@ -26,6 +26,7 @@ import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
+import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
 // Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
@@ -369,47 +370,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const existingProfile = existingProfileLines.join('. ')
       const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined)
       if (!knowledge) return
-      const { people, facts } = knowledge
-      if (!people.length && !facts.length) return
-      let perfilNodeFresh = store.perfilIANode?.() ?? null
-      if (!perfilNodeFresh) {
-        try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
-      }
-      if (!perfilNodeFresh) return
-      const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
-      let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
-      if (!learnNode) {
-        const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
-        const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
-        learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
-      }
-      const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-      const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
-      if (kwNode) store.deleteNode(kwNode.id)
-      const upsertSub = (prefix: string, items: string[], order: number) => {
-        if (!items.length) return
-        const cleanItems = items
-          .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
-          .filter(Boolean)
-        if (!cleanItems.length) return
-        const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
-        const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
-        if (!sub) {
-          store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-        } else {
-          const existingText = (sub.text || '').toLowerCase()
-          const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
-          if (newItems.length > 0) {
-            const currentText = (sub.text || '').trimEnd()
-            const sep = currentText.endsWith(':') ? ' ' : ', '
-            store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
-          }
-        }
-      }
-      const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
-      const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
-      upsertSub('Personas', people, maxBase + 1000)
-      upsertSub('Hechos', facts, maxBase + 2000)
+      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
     } catch { /* silencioso */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
