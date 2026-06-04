@@ -3263,8 +3263,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
             })()}
 
-            {/* Auto-contexto badge — sugerencia IA (solo cuando no tiene contexto manual) */}
-            {!nodeHasManualContext && autoCtxResult && autoCtxResult.confidence > 0.3 && (
+            {/* Auto-contexto badge — sugerencia IA (solo cuando no tiene contexto manual).
+                Se muestra cuando la IA ha procesado el nodo (autoCtxResult !== null),
+                independientemente del nivel de confianza. Con alta confianza (>= 0.6) muestra
+                el nombre del contexto; con baja confianza muestra "? ContextName" o "?".
+                Esto garantiza que el badge aparezca incluso cuando la IA devuelve baja confianza,
+                manteniendo consistencia con la vista "Sin clasificar". */}
+            {!nodeHasManualContext && autoCtxResult !== null && (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult}
