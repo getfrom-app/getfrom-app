@@ -459,7 +459,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (!knowledge) return
         const { people, facts } = knowledge
         if (!people.length && !facts.length) return
-        const perfilNodeFresh = store.perfilIANode?.() ?? null
+        let perfilNodeFresh = store.perfilIANode?.() ?? null
+        if (!perfilNodeFresh) {
+          try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
+        }
         if (!perfilNodeFresh) return
         const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
         let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
