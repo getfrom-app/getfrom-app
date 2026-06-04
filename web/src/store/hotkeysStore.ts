@@ -29,7 +29,7 @@ export interface HotkeyDef {
 export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   // ── Captura ────────────────────────────────────────────────────────────────
   { id: 'quick-capture',    category: 'Captura',      label: 'Captura rápida',           description: 'Abrir captura rápida / buscador unificado',        defaultKey: 'Space',      configurable: false },
-  { id: 'go-today',         category: 'Captura',      label: 'Ir a hoy',                 description: 'Navegar a la nota del día de hoy',                 defaultKey: 'h',          configurable: true },
+  { id: 'go-today',         category: 'Captura',      label: 'Ir a hoy',                 description: 'Navegar a la nota del día de hoy (⌘H)',            defaultKey: 'h',          modifiers: ['meta'], configurable: true },
   { id: 'new-today',        category: 'Captura',      label: 'Nuevo nodo hoy',           description: 'Ir al diario de hoy y crear nodo vacío',           defaultKey: 'n',          configurable: true },
 
   // ── Paneles laterales ──────────────────────────────────────────────────────

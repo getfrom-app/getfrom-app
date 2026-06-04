@@ -595,15 +595,11 @@ export default function MainLayout() {
         e.preventDefault()
         setShowUnifiedCapture(v => !v)
       }
-      // Ir a hoy (por defecto H, sin modificador)
-      if (e.key === getHotkeyKey('go-today') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const active = document.activeElement as HTMLElement | null
-        const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
-        if (!isInputFocused) {
-          e.preventDefault()
-          const today = getTodayDiaryUnderAgenda()
-          navigate(`/node/${today.id}`)
-        }
+      // Ir a hoy (⌘H) — con modificador para no disparar al escribir texto
+      if (e.key.toLowerCase() === getHotkeyKey('go-today').toLowerCase() && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        const today = getTodayDiaryUnderAgenda()
+        navigate(`/node/${today.id}`)
       }
       // Nuevo nodo hoy (por defecto N, sin modificador)
       if (e.key === getHotkeyKey('new-today') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
