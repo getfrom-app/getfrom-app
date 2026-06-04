@@ -317,6 +317,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(
     () => getCachedClassify(node.id) ?? null
   )
+  // Guard: solo disparar scheduleClassify si el usuario ha editado este nodo en la sesión actual.
+  // Evita que al montar 160 nodos en la vista "Sin clasificar" se disparen 160 clasificaciones simultáneas.
+  const hasUserEditedRef = useRef(false)
 
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
@@ -335,8 +338,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return false
   }, [node.types, node.extraData, node.text])
 
-  // Disparar clasificación cuando el nodo cambia de texto y no tiene contexto manual
+  // Disparar clasificación cuando el nodo cambia de texto y no tiene contexto manual.
+  // GUARD: solo se ejecuta si el usuario ha editado el nodo en esta sesión (hasUserEditedRef.current).
+  // Esto evita que al montar N nodos en la vista "Sin clasificar" se disparen N clasificaciones
+  // simultáneas que congelen el hilo principal. La clasificación de nodos históricos se hace
+  // vía el botón "Clasificar todos", no mediante este efecto.
   useEffect(() => {
+    // Solo disparar si el usuario ha escrito en este nodo durante la sesión actual
+    if (!hasUserEditedRef.current) return
     // No clasificar nodos especiales o ya clasificados manualmente
     if (nodeHasManualContext) {
       cancelClassify(node.id)
@@ -801,6 +810,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   const handleInput = useCallback(() => {
+    // Marcar que el usuario ha editado este nodo en la sesión actual
+    // (habilita el trigger de auto-clasificación en el useEffect correspondiente)
+    hasUserEditedRef.current = true
     // Normalizar NBSP → espacio regular (el prefijo del slash menu usa NBSP
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
