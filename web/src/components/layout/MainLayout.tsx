@@ -595,7 +595,7 @@ export default function MainLayout() {
         e.preventDefault()
         setShowUnifiedCapture(v => !v)
       }
-      // Ir a hoy (⌘H) — con modificador para no disparar al escribir texto
+      // Ir a hoy (⌘D) — con modificador para no disparar al escribir texto
       if (e.key.toLowerCase() === getHotkeyKey('go-today').toLowerCase() && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         const today = getTodayDiaryUnderAgenda()
