@@ -717,5 +717,7 @@
   "autoCtx.unclassifiedEmpty": "Todos los nodos tienen contexto asignado",
   "autoCtx.showingOf": "Mostrando {{shown}} de {{total}}",
   "autoCtx.updateKnowledgeTooltip": "Actualizar resumen From — extrae palabras clave, personas y temas de este contexto",
+  "autoCtx.searchOrCreate": "Buscar o crear...",
+  "autoCtx.createContext": "Crear",
   "common.loadMore": "Cargar más"
 }

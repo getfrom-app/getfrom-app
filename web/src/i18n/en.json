@@ -718,5 +718,7 @@
   "autoCtx.unclassifiedEmpty": "All nodes have a context assigned",
   "autoCtx.showingOf": "Showing {{shown}} of {{total}}",
   "autoCtx.updateKnowledgeTooltip": "Update From summary — extracts keywords, people and topics from this context",
+  "autoCtx.searchOrCreate": "Search or create...",
+  "autoCtx.createContext": "Create",
   "common.loadMore": "Load more"
 }

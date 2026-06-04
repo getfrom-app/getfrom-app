@@ -413,10 +413,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const contexts = contextNodes.map(n => ({
       id: n.id,
       name: n.text || '',
-      // Muestra de los primeros 15 nodos hijos (nivel 1-2) para señales reales a la IA
+      // Muestra de los primeros 50 nodos hijos (nivel 1-2) para señales reales a la IA
+      // Haiku tiene 200K tokens de contexto — 50 nodos por contexto es completamente viable.
       samples: store.children(n.id)
         .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 15)
+        .slice(0, 50)
         .map(c => (c.text || '').trim()),
     }))
 
