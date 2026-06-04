@@ -6,6 +6,7 @@ import {
   AparienciaPane,
   IAPane,
   ClaudeMcpPane,
+  CapturaRapidaPane,
   AtajosPane,
   PlantillasPane,
   GooglePane,
@@ -26,7 +27,7 @@ type Tab =
   | 'ia' | 'magic'
   | 'atajos' | 'plantillas'
   | 'exportar' | 'importar' | 'backups'
-  | 'claude'
+  | 'claude' | 'captura'
 
 interface NavItem { id: Tab; label: string; icon: string }
 interface NavSection { title: string; items: NavItem[] }
@@ -63,6 +64,7 @@ const NAV: NavSection[] = [
   {
     title: 'Integraciones',
     items: [
+      { id: 'captura', label: 'Captura rápida', icon: '⚡' },
       { id: 'claude', label: 'Claude (MCP)', icon: '🤖' },
     ],
   },
@@ -90,6 +92,7 @@ const SUBTITLES: Partial<Record<Tab, string>> = {
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',
   claude: 'Conecta Claude Desktop con tu vault mediante MCP.',
+  captura: 'Captura rápida desde la barra de menús, el Atajo de Apple y Raycast.',
 }
 
 // ── Magic toggles ────────────────────────────────────────────────────────────
@@ -645,6 +648,7 @@ export default function SettingsView() {
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />
       case 'claude':      return <ClaudeMcpPane />
+      case 'captura':     return <CapturaRapidaPane />
     }
   }
 

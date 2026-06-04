@@ -4,6 +4,33 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.136 · Mac v9.5.8 — 4 junio 2026 · Captura rápida desde cualquier sitio
+
+From sale de su ventana. Ahora puedes capturar al vuelo sin cambiar de app, y abrir o buscar tus notas desde las herramientas que ya usas.
+
+### Icono en la barra de menús (Mac)
+
+- From vive en la barra de menús con el icono **⚡**. Un clic abre una **ventana flotante de captura** (estilo Spotlight) para crear una nota, tarea o evento al instante — con la misma inteligencia que dentro de From (detecta tipo, fecha y contexto).
+- Buscar cualquier nota desde esa ventana y abrirla en la app.
+- Cerrar la ventana principal ya no cierra From: sigue disponible en la barra de menús.
+
+### Atajo de Apple — tu tecla global
+
+- Nuevo esquema de enlace `from://capture?text=…&silent=1`: añade texto directamente a tu nota de hoy, sin abrir nada.
+- Crea un Atajo de macOS con «Abrir URL» y asígnale la tecla global que quieras. Así tienes captura global con la tecla que tú elijas — sin chocar con los atajos de From ni de otras apps.
+- Guía paso a paso en **Ajustes → Captura rápida**.
+
+### Integración con Raycast
+
+- Extensión de From para Raycast: **Crear en From**, **Buscar en From** y **Abrir nota de hoy**, sin salir de Raycast.
+- Se conecta con tu token de API (el mismo que usa la extensión de Claude). Genera y copia el token en **Ajustes → Captura rápida → Raycast**.
+
+### Enlaces profundos
+
+- `from://node/<id>` abre cualquier nota directamente en la app del Mac (lo usa Raycast y se puede usar desde Atajos).
+
+---
+
 ## Web v9.6.135 · Mac v9.5.7 — 4 junio 2026 · La capa de inteligencia de From
 
 Esta es la versión en la que From deja de ser "un outliner con IA" y pasa a ser un sistema que **te entiende, sabe lo que quieres y elimina la fricción**. No hablamos de IA genérica: hablamos de que escribes como piensas y From se encarga del resto, en segundo plano y sin que tengas que mantener nada.

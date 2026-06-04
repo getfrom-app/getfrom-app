@@ -19,6 +19,7 @@ import { getTodayDiaryUnderAgenda, findAgendaRoot } from '../../utils/agendaHelp
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
+import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 import { getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
 import type { DateExtraction } from '../../utils/naturalDate'
 
@@ -176,12 +177,19 @@ type PaletteView = 'default' | 'filtros' | 'contextos' | 'bucles'
 interface Props {
   onClose: () => void
   onSelectContext?: (nodeId: string) => void
+  /**
+   * Override de navegación. En la ventana flotante "capture" del Mac la
+   * navegación se redirige a la ventana principal en vez de navegar la
+   * propia ventana de captura. Por defecto usa el router de esta ventana.
+   */
+  onNavigate?: (path: string) => void
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
-  const navigate = useNavigate()
+export default function UnifiedCapture({ onClose, onSelectContext, onNavigate }: Props) {
+  const routerNavigate = useNavigate()
+  const navigate = onNavigate ?? routerNavigate
   const location = useLocation()
   const { t } = useTranslation()
   const { showToast } = useToast()
@@ -514,74 +522,20 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
     const rawText = getCurrentText().trim()
     if (!rawText) { onClose(); return }
 
-    const today = getTodayDiaryUnderAgenda()
-    const sibs = store.children(today.id)
-    const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(s => s.siblingOrder)) : 0
-
-    const { forceType: ft, cleanText: afterForce } = detectForceType(rawText)
-    // Si el shortcut ya fue eliminado del texto (lockedForceTypeRef), usarlo como fallback
-    const effective = ft ?? lockedForceTypeRef.current
-    const effectiveText = effective ? afterForce : rawText
-
-    const dp = extractDateFromEnd(effectiveText)
-    const cleanText = dp ? dp.cleanText : effectiveText
-    const isBucle = effective === 'bucle'
-    const isTask = !isBucle && (effective === 'task' || (effective !== 'note' && effective !== 'event' && (taskPrediction || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))))))
-    const isEvent = effective === 'event'
-
-    const types: string[] = []
-    if (isBucle) types.push('bucle')
-    // Contextos asignados como chips (sin @ en el texto)
-    for (const ctx of assignedCtx) {
-      if (ctx.slug && !types.includes(ctx.slug)) types.push(ctx.slug)
-    }
-    // @menciones en el texto → nodos referenciados (no contextos, siguen funcionando)
-    const atMentions = rawText.match(/@([\wÀ-ɏ\-]+)/g)
-    if (atMentions) {
-      for (const m of atMentions) {
-        const slug = m.slice(1).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-        if (slug && !types.includes(slug)) types.push(slug)
-      }
-    }
-
-    const node = store.createNode({
-      text: cleanText.trim(),
-      parentId: today.id,
-      siblingOrder: lastOrder + 1000,
-      ...(isTask ? { isTask: true } : {}),
-      ...(types.length > 0 ? { types } : {}),
+    // La lógica de creación vive en captureHelper (compartida con la ventana
+    // flotante del Mac y el deep-link silencioso). Aquí solo añadimos la UI.
+    const result = createNodeFromText(rawText, {
+      assignedCtx,
+      forceTypeLock: lockedForceTypeRef.current,
+      taskPredictionHint: taskPrediction,
     })
+    if (!result) { onClose(); return }
 
-    if (dp?.parsed.date) {
-      const updates: Record<string, unknown> = {}
-      if (dp.timeStr || isEvent) {
-        const [h, m] = (dp.timeStr || '00:00').split(':').map(Number)
-        const d = new Date(dp.parsed.date)
-        d.setHours(h, m, 0, 0)
-        updates.due = d.toISOString()
-        updates.isEvent = true
-      } else {
-        updates.due = dp.parsed.date.toISOString()
-        if (isTask) updates.status = 'pending'
-      }
-      if (dp.parsed.recurrence) {
-        updates.recurrence = recurrenceToString(dp.parsed.recurrence)
-      }
-      store.updateNode(node.id, updates)
-    } else if (isEvent) {
-      store.updateNode(node.id, { isEvent: true })
-    } else if (isTask) {
-      store.updateNode(node.id, { status: 'pending' })
-    }
-
-    store.sync(true).catch(() => {})
-
-    const label = isEvent ? 'Evento' : isBucle ? 'Bucle' : isTask ? 'Tarea' : 'Nota'
     setAssignedCtx([])
     lockedForceTypeRef.current = null
-    showToast(`✓ ${label} creado`)
+    showToast(`✓ ${labelForType(result.type)} creado`)
     onClose()
-    navigate(`/node/${node.id}`)
+    navigate(`/node/${result.node.id}`)
   }
 
   // ── buildItems (del CommandPalette, sin panel-save) ────────────────────────

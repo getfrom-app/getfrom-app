@@ -13,6 +13,7 @@ import RecorderPanel from '../panels/RecorderPanel'
 
 import WFHomeView from '../views/WFHomeView'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
+import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
@@ -580,6 +581,41 @@ export default function MainLayout() {
     }
     window.addEventListener('from:unauthorized', handler)
     return () => window.removeEventListener('from:unauthorized', handler)
+  }, [navigate])
+
+  // ── Eventos nativos del Mac: captura rápida y navegación desde tray/deep-link ──
+  // Solo la ventana principal escucha estos eventos (la ventana 'capture' no monta MainLayout).
+  useEffect(() => {
+    if (import.meta.env.VITE_TAURI !== 'true') return
+    const unlisteners: Array<() => void> = []
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      // Navegación pedida por la ventana de captura (resultado de búsqueda, etc.)
+      listen<string>('from:navigate-path', (e) => {
+        if (e.payload) navigate(e.payload)
+      }).then(fn => unlisteners.push(fn))
+      // Deep link from://node/<id>
+      listen<string>('from:navigate-node', (e) => {
+        if (e.payload) navigate(`/node/${e.payload}`)
+      }).then(fn => unlisteners.push(fn))
+      // Captura silenciosa a la nota diaria (Atajo de Apple: from://capture?silent=1)
+      listen<string>('from:deep-capture', async (e) => {
+        const text = (e.payload || '').trim()
+        if (!text) return
+        const run = () => {
+          const result = createNodeFromText(text)
+          if (!result) return
+          import('@tauri-apps/plugin-notification').then(async ({ isPermissionGranted, requestPermission, sendNotification }) => {
+            let granted = await isPermissionGranted()
+            if (!granted) granted = (await requestPermission()) === 'granted'
+            if (granted) sendNotification({ title: 'From', body: `✓ ${labelForType(result.type)} añadido a tu nota de hoy` })
+          }).catch(() => {})
+        }
+        // Si el store aún no está listo (app recién lanzada por el deep link), esperar.
+        if (store.isLoaded) run()
+        else window.addEventListener('from:store-loaded', run, { once: true })
+      }).then(fn => unlisteners.push(fn))
+    }).catch(() => {})
+    return () => { for (const u of unlisteners) u() }
   }, [navigate])
 
   // Cmd+K / Ctrl+K → command palette (única combinación global que no choca con Chrome)

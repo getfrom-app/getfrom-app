@@ -10,6 +10,7 @@ import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
 import ResetPasswordPage from './components/auth/ResetPasswordPage'
 import MainLayout from './components/layout/MainLayout'
 import PricingView from './components/views/PricingView'
+import CaptureWindow from './components/modals/CaptureWindow'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; didHardReload: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -213,7 +214,32 @@ function AppInner() {
   )
 }
 
+// Resuelve el label de la ventana Tauri actual ('main' | 'capture').
+// En web siempre es 'main'. En Tauri se lee de forma síncrona tras importar la API.
+function useWindowLabel(): string | null {
+  const [label, setLabel] = useState<string | null>(isTauriEnv ? null : 'main')
+  useEffect(() => {
+    if (!isTauriEnv) return
+    import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => {
+        try { setLabel(getCurrentWindow().label) } catch { setLabel('main') }
+      })
+      .catch(() => setLabel('main'))
+  }, [])
+  return label
+}
+
 export default function App() {
+  const windowLabel = useWindowLabel()
+  // En Tauri, esperar a resolver el label antes de montar nada (evita flash).
+  if (windowLabel === null) return null
+  if (windowLabel === 'capture') {
+    return (
+      <ErrorBoundary>
+        <CaptureWindow />
+      </ErrorBoundary>
+    )
+  }
   return (
     <ErrorBoundary>
       <AppInner />

@@ -660,6 +660,109 @@ export function ClaudeMcpPane() {
   )
 }
 
+const RAYCAST_API_BASE = 'https://from-server-production.up.railway.app'
+const APPLE_SHORTCUT_URL = 'from://capture?text=[Texto]&silent=1'
+
+export function CapturaRapidaPane() {
+  const [token, setToken] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!getToken()) { setLoaded(true); return }
+    getApiToken().then(d => { setToken(d.token); setLoaded(true) }).catch(() => setLoaded(true))
+  }, [])
+
+  async function handleGenerate() {
+    setGenerating(true)
+    try { const r = await generateApiToken(); setToken(r.token) }
+    catch (e) { console.error(e) }
+    finally { setGenerating(false) }
+  }
+
+  function copy(value: string, key: string) {
+    navigator.clipboard.writeText(value).catch(() => {})
+    setCopied(key); setTimeout(() => setCopied(c => (c === key ? null : c)), 2000)
+  }
+
+  const codeBox: React.CSSProperties = {
+    flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6,
+    fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    border: '1px solid var(--border)',
+  }
+
+  return (
+    <div className="st-pane">
+      {/* Barra de menús */}
+      <SectionTitle>Barra de menús</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        From vive en la barra de menús del Mac con el icono <strong style={{ color: 'var(--text)' }}>⚡</strong>.
+        Haz clic en él (o elige <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) para abrir
+        una ventana flotante y crear una nota, tarea o evento al vuelo — sin cambiar de app.
+        Cerrar la ventana principal no cierra From: sigue disponible en la barra de menús.
+      </div>
+
+      {/* Atajo de Apple */}
+      <SectionTitle>Atajo de Apple — tecla global</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Crea un Atajo (app Atajos de macOS) con la acción <strong style={{ color: 'var(--text)' }}>«Abrir URL»</strong>
+        usando la URL de abajo, y asígnale la tecla global que quieras desde
+        <strong style={{ color: 'var(--text)' }}> Atajos → Ajustes del atajo → Tecla rápida</strong>.
+        Con <code>silent=1</code> el texto se guarda directamente en tu nota de hoy, sin abrir nada.
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+        <code style={codeBox}>{APPLE_SHORTCUT_URL}</code>
+        <button className="btn-secondary" onClick={() => copy(APPLE_SHORTCUT_URL, 'shortcut')} style={{ flexShrink: 0, fontSize: 12 }}>
+          {copied === 'shortcut' ? '✓ Copiado' : 'Copiar URL'}
+        </button>
+      </div>
+      <div className="st-row-hint">
+        Sustituye <code>[Texto]</code> por una acción de «Pedir texto» o «Texto del Portapapeles».
+        Quita <code>&amp;silent=1</code> si prefieres revisar antes de guardar.
+      </div>
+
+      {/* Raycast */}
+      <SectionTitle>Raycast</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Instala la extensión <strong style={{ color: 'var(--text)' }}>From</strong> desde la Raycast Store y pega
+        tu token de API en sus preferencias. Podrás crear, buscar y abrir tu nota de hoy desde Raycast.
+      </div>
+      <div className="st-row-hint" style={{ marginBottom: 6 }}>Servidor (URL base):</div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+        <code style={codeBox}>{RAYCAST_API_BASE}</code>
+        <button className="btn-secondary" onClick={() => copy(RAYCAST_API_BASE, 'base')} style={{ flexShrink: 0, fontSize: 12 }}>
+          {copied === 'base' ? '✓ Copiado' : 'Copiar'}
+        </button>
+      </div>
+      <div className="st-row-hint" style={{ marginBottom: 6 }}>Tu token de API (válido 1 año):</div>
+      {loaded ? (
+        token ? (
+          <div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <code style={codeBox}>{token}</code>
+              <button className="btn-secondary" onClick={() => copy(token, 'token')} style={{ flexShrink: 0, fontSize: 12 }}>
+                {copied === 'token' ? '✓ Copiado' : 'Copiar'}
+              </button>
+            </div>
+            <button onClick={handleGenerate} disabled={generating} style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
+              {generating ? 'Regenerando...' : 'Regenerar token'}
+            </button>
+          </div>
+        ) : (
+          <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
+            {generating ? 'Generando...' : 'Generar token de API'}
+          </button>
+        )
+      ) : <div className="st-row-hint">Cargando...</div>}
+
+      <div className="st-row-hint" style={{ marginTop: 12, fontSize: 11 }}>
+        El mismo token sirve para Raycast y para la extensión de Claude (MCP). Regenerarlo invalida el anterior.
+      </div>
+    </div>
+  )
+}
+
 export function AtajosPane() {
   // ── Hotkeys configurables ────────────────────────────────────────────────
   // Renderizado por el componente separado HotkeysPane
