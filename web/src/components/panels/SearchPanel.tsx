@@ -3,6 +3,7 @@
  * Reemplaza el buscador expandible del topbar con un panel tipo MagicChat
  */
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
@@ -190,6 +191,9 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
 
       {/* Lista de paneles guardados + nodo vacío para crear nuevo */}
       <SavedPanelsList onApply={(q) => onFilter(q)} activeQuery={filterText} />
+
+      {/* Favoritos — siempre a mano, independientemente de los filtros */}
+      <FavoritesSection />
     </div>
   )
 }
@@ -260,6 +264,11 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
 
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
+      {panels.length > 0 && (
+        <div style={{ padding: '4px 12px 2px', fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          Filtros
+        </div>
+      )}
       {panels.map(p => {
         const isActive = activeQuery === p.query
         const isRenaming = renamingId === p.id
@@ -366,18 +375,47 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
           />
         </div>
       )}
-
-      <FavoritesSection onApply={onApply} activeQuery={activeQuery} />
     </div>
   )
 }
 
 // ── Sección de Favoritos ─────────────────────────────────────────────────────
 
-function FavoritesSection({ onApply, activeQuery }: { onApply: (q: string) => void; activeQuery: string }) {
+function FavoritesSection() {
   const s = useStore()
+  const navigate = useNavigate()
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
   const favorites = s.allActive().filter(n => n.isFavorite && !n.deletedAt && n.text)
   if (favorites.length === 0) return null
+
+  function startRename(n: { id: string; text: string }, e: React.MouseEvent) {
+    e.stopPropagation()
+    setRenamingId(n.id)
+    setRenameValue(n.text)
+    setTimeout(() => { renameInputRef.current?.focus(); renameInputRef.current?.select() }, 20)
+  }
+
+  function confirmRename() {
+    if (!renamingId) return
+    const trimmed = renameValue.trim()
+    if (trimmed) store.updateNode(renamingId, { text: trimmed })
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  function cancelRename() {
+    setRenamingId(null)
+    setRenameValue('')
+  }
+
+  function unfavorite(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    store.updateNode(id, { isFavorite: false })
+  }
 
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
@@ -385,24 +423,77 @@ function FavoritesSection({ onApply, activeQuery }: { onApply: (q: string) => vo
         Favoritos
       </div>
       {favorites.slice(0, 15).map(n => {
-        const q = `node:${n.id}`
-        const isActive = activeQuery === q
+        const isRenaming = renamingId === n.id
+        const isHovered = hoveredId === n.id
         return (
           <div
             key={n.id}
-            onClick={() => onApply(isActive ? '' : q)}
+            onClick={() => { if (!isRenaming) navigate(`/node/${n.id}`) }}
+            onMouseEnter={() => setHoveredId(n.id)}
+            onMouseLeave={() => setHoveredId(null)}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '4px 8px 4px 12px', cursor: 'pointer', fontSize: 13,
-              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+              padding: '4px 8px 4px 12px', cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
+              color: 'var(--text-secondary)',
+              background: isHovered && !isRenaming ? 'var(--bg-hover)' : 'transparent',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             <span style={{ fontSize: 11, opacity: 0.5, flexShrink: 0 }}>★</span>
-            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {n.text}
-            </span>
+
+            {isRenaming ? (
+              <input
+                ref={renameInputRef}
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); confirmRename() }
+                  if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+                }}
+                onBlur={confirmRename}
+                style={{
+                  flex: 1, border: 'none', outline: 'none',
+                  background: 'transparent', fontSize: 13,
+                  color: 'var(--text-primary)', fontFamily: 'inherit',
+                }}
+              />
+            ) : (
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {n.text}
+              </span>
+            )}
+
+            {!isRenaming && isHovered && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                <button
+                  title="Renombrar"
+                  onClick={e => startRename(n, e)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-tertiary)', fontSize: 12,
+                    padding: '2px 4px', borderRadius: 3, lineHeight: 1,
+                    display: 'flex', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13.25l-3 .75.75-3z"/>
+                  </svg>
+                </button>
+                <button
+                  title="Quitar de favoritos"
+                  onClick={e => unfavorite(n.id, e)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-tertiary)', fontSize: 14,
+                    padding: '2px 4px', borderRadius: 3, lineHeight: 1,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-error, #e53e3e)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >×</button>
+              </div>
+            )}
           </div>
         )
       })}

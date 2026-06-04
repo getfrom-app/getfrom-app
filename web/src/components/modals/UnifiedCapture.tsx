@@ -15,7 +15,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
 import { normalizeText } from '../../utils/normalize'
-import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { getTodayDiaryUnderAgenda, findAgendaRoot } from '../../utils/agendaHelper'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -790,9 +790,26 @@ export default function UnifiedCapture({ onClose, onSelectContext }: Props) {
       if (sc2 > 0) results.push({ id: `filtro-${f.id}`, label: f.text || t('common.noTitle'), sublabel: `◈ ${f.query}`, type: 'wf-action' as const, taskStatus: null, score: sc2 + 10, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } })); onClose() } })
     }
 
+    // Scope de búsqueda de nodos: SOLO dentro de 📅 Agenda (+ favoritos sueltos).
+    // Nunca dentro de contextos, papelera ni carpetas de sistema.
+    const agendaRoot = findAgendaRoot()
+    const agendaIds = new Set<string>()
+    if (agendaRoot) {
+      const queue = [agendaRoot.id]
+      while (queue.length) {
+        const pid = queue.shift()!
+        for (const c of store.children(pid).filter(c => !c.deletedAt)) {
+          agendaIds.add(c.id)
+          queue.push(c.id)
+        }
+      }
+    }
+
     for (const n of store.allActive()) {
       if (n.isDiaryEntry || n.deletedAt) continue
       if (atajosRoot && (n.id === atajosRoot.id || n.parentId === atajosRoot.id)) continue
+      // Fuera de Agenda solo se permiten favoritos
+      if (!agendaIds.has(n.id) && !n.isFavorite) continue
       const sc = scoreMatch(n.text || '', searchTerm)
       if (sc === 0) continue
       const isBucleNode = (n.types || []).includes('bucle')

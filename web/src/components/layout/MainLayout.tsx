@@ -240,10 +240,9 @@ export default function MainLayout() {
   type CyclablePanel = 'recorder' | 'context-list' | 'magic' | 'filter' | 'planner'
   // PANEL_ORDER coincide con el orden de los iconos en WFTopBar (izquierda → derecha)
   const PANEL_ORDER: CyclablePanel[] = ['recorder', 'context-list', 'magic', 'filter', 'planner']
-  const [rightPanel, setRightPanel] = useState<RightPanel>(() => {
-    const saved = localStorage.getItem('from-right-panel') as RightPanel
-    return PANEL_ORDER.includes(saved as CyclablePanel) ? saved : 'filter'
-  })
+  // El panel Filtrar es el de inicio SIEMPRE al abrir la app — escribir una
+  // palabra basta para buscar, y tiene filtros y favoritos a mano.
+  const [rightPanel, setRightPanel] = useState<RightPanel>('filter')
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
   // Guard para evitar race condition entre efecto "aplicar pending" y efecto "limpiar al navegar":

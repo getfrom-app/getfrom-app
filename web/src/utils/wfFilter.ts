@@ -258,41 +258,30 @@ export function applyWFFilter(
 
   const matchIds = new Set<string>()
 
-  // Detectar IDs de carpetas excluidas siempre de búsquedas:
-  // - Sistema: Agentes, Plantillas (solo en búsquedas semánticas)
-  // - Papelera: 🗑 Papelera (SIEMPRE excluida — son nodos eliminados)
-  const SYSTEM_FOLDER_TEXTS = new Set(['🤖 Agentes', '📋 Plantillas'])
-  const systemFolderIds = new Set<string>()
-  const papeleraIds = new Set<string>()
+  // El filtro SOLO busca dentro de 📅 Agenda. Todo lo demás (contextos,
+  // papelera, carpetas de sistema, perfil IA, atajos…) queda fuera del scope.
+  let agendaRootId: string | null = null
   for (const n of nodes.values()) {
-    if (!n.deletedAt && !n.parentId) {
-      if (SYSTEM_FOLDER_TEXTS.has(n.text || '')) systemFolderIds.add(n.id)
-      if ((n.text || '') === '🗑 Papelera') papeleraIds.add(n.id)
-    }
+    if (!n.deletedAt && !n.parentId && (n.text || '') === '📅 Agenda') { agendaRootId = n.id; break }
   }
 
-  // Precalcular si un nodo es descendiente de una carpeta excluida
-  function isExcludedDescendant(nodeId: string, excludedIds: Set<string>): boolean {
+  // Precalcular si un nodo desciende de un id concreto (subiendo por parentId)
+  function isDescendantOf(nodeId: string, ancestorId: string): boolean {
     let cur = nodes.get(nodeId)
     const visited = new Set<string>()
     while (cur?.parentId && !visited.has(cur.parentId)) {
       visited.add(cur.parentId)
-      if (excludedIds.has(cur.parentId)) return true
+      if (cur.parentId === ancestorId) return true
       cur = nodes.get(cur.parentId)
     }
     return false
   }
 
-  // Determinar si la query es semántica (usa operadores de estado/fecha)
-  // En ese caso excluir nodos de sistema
-  const isSemantic = isSmartQuery(text)
-
   for (const node of nodes.values()) {
     if (node.deletedAt) continue
-    // Papelera excluida siempre (en cualquier tipo de búsqueda)
-    if (papeleraIds.has(node.id) || isExcludedDescendant(node.id, papeleraIds)) continue
-    // Carpetas de sistema excluidas en búsquedas semánticas
-    if (isSemantic && (systemFolderIds.has(node.id) || isExcludedDescendant(node.id, systemFolderIds))) continue
+    // Scope: solo descendientes de 📅 Agenda (no el propio nodo Agenda).
+    // Si no existe Agenda, no hay nada que filtrar.
+    if (!agendaRootId || !isDescendantOf(node.id, agendaRootId)) continue
 
     // Un nodo coincide si CUALQUIER grupo OR coincide (OR entre grupos)
     // Un grupo coincide si TODOS sus tokens coinciden (AND dentro de grupo)

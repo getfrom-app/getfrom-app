@@ -10,7 +10,7 @@
 import { useMemo, useEffect, useState, useCallback } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
-import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
+import { applyWFFilter } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
@@ -195,7 +195,6 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     if (contextFilter) return null // el filtro de contexto tiene prioridad
     if (!filterText?.trim()) return null
     const effective = normalizeSynonyms(filterText) ?? filterText
-    if (!isSmartQuery(effective)) return null
     return applyWFFilter(s.nodes, effective)
   }, [filterText, contextFilter, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
