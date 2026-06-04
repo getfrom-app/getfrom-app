@@ -6206,9 +6206,11 @@ body.outliner-drag-active {
 /* Wrapper título + ⟲ en NodeView: toma el flex:1 del h1 anterior */
 .node-title-wrap {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex: 1;
   min-width: 0;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .node-title-wrap .node-title {
   flex: 0 1 auto;  /* no crecer, sí encoger, tamaño natural */

@@ -1748,15 +1748,15 @@ export default function NodeView() {
                     className={`bullet-btn task ${sqClass}`}
                     onClick={() => store.updateNode(node!.id, { status: node.status === 'done' ? 'pending' : 'done' })}
                     title={node.status === 'done' ? 'Completada — clic para reabrir' : 'Marcar como hecha'}
-                    style={{ flexShrink: 0, marginRight: 8, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ flexShrink: 0, marginRight: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}
                   >
                     {node.status === 'done' ? (
-                      <svg width="20" height="20" viewBox="0 0 14 14">
+                      <svg width="26" height="26" viewBox="0 0 14 14">
                         <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15"/>
                         <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 14 14">
+                      <svg width="26" height="26" viewBox="0 0 14 14">
                         <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
                       </svg>
                     )}
