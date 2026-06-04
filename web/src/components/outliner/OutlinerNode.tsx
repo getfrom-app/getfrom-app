@@ -351,6 +351,61 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return false
   }, [node.types, node.extraData, node.text])
 
+  // Al montar: si el nodo no tiene _autoContextId en extraData (nunca clasificado o badge perdido
+  // por desmonte/remonte), disparar clasificación con delay largo (3000ms) para no saturar.
+  // Esto cubre el caso: usuario crea nodo → escribe → Enter (desmonte) → remonte sin clasificar.
+  // El delay evita el freeze: no dispara para nodos ya clasificados (tienen _autoContextId en extraData).
+  useEffect(() => {
+    // Solo para nodos sin clasificación persistida en extraData
+    let hasPersistedAutoCtx = false
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      hasPersistedAutoCtx = ed._autoContextId !== undefined
+    } catch { /* ignore */ }
+    if (hasPersistedAutoCtx) return
+
+    // No disparar para nodos con contexto manual
+    if (nodeHasManualContext) return
+
+    // Texto mínimo
+    const text = (node.text || '').trim()
+    if (!text || text.length < 4) return
+
+    // No disparar para nodos de diario
+    if (node.isDiaryEntry) return
+
+    // Solo nodos candidatos a clasificación (con hijos, tareas, bucles o headings)
+    const nodeBlockType = detectBlockType(node.text || '')
+    const nodeIsHeadingMount = nodeBlockType === 'h1' || nodeBlockType === 'h2' || nodeBlockType === 'h3'
+    const hasChildrenMount = store.children(node.id).some(c => !c.deletedAt)
+    const isTaskMount = node.status !== null
+    const isLoopMount = (node.types || []).includes('bucle')
+    if (!hasChildrenMount && !isTaskMount && !isLoopMount && !nodeIsHeadingMount) return
+
+    // Obtener contextos disponibles
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    if (contextNodes.length === 0) return
+    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+
+    // Delay largo (3000ms en lugar de 800ms) para no saturar al cargar la vista con múltiples nodos.
+    // Una vez clasificado y guardado en extraData, este bloque no vuelve a dispararse (hasPersistedAutoCtx=true).
+    scheduleClassify(node.id, text, contexts, (id, result) => {
+      if (id !== node.id) return
+      setAutoCtxResult(result)
+      try {
+        const currentNode = store.getNode(node.id)
+        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+        ed._autoContextId = result.contextId ?? ''
+        ed._autoContextConfidence = result.confidence
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
+    }, 3000)
+    return () => cancelClassify(node.id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Disparar clasificación cuando el nodo cambia de texto y no tiene contexto manual.
   // GUARD: solo se ejecuta si el usuario ha editado el nodo en esta sesión (hasUserEditedRef.current).
   // Esto evita que al montar N nodos en la vista "Sin clasificar" se disparen N clasificaciones
