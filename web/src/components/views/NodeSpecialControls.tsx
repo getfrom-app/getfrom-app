@@ -7,7 +7,6 @@
 // Nodos soportados:
 //   · Agente (_agentDef="1")    — toggle, ejecutar, schedule, último run
 //   · Atajo  (_shortcutQuery)   — descripción del filtro + botón Aplicar
-//   · 🧠 Contexto (raíz)       — estado del perfil
 //   · 🗑 Papelera (raíz)       — contador + vaciar
 //
 // NO tienen controles especiales (se crean/gestionan como nodos normales):
@@ -325,38 +324,6 @@ function AtajoControls({ node }: Props) {
   )
 }
 
-// ── Raíz: 🧠 Contexto ────────────────────────────────────────────────────────
-
-function ContextoRootControls({ node }: Props) {
-  const navigate = useNavigate()
-  const s = useStore()
-  const perfil = s.perfilIANode()
-  const perfilOk = !!(perfil && (
-    s.children(perfil.id).filter(n => !n.deletedAt).some(n => n.text?.trim())
-    || perfil.body?.trim()
-  ))
-
-  return (
-    <div className="node-special-bar">
-      <span
-        className={`node-special-pill ${perfilOk ? 'node-special-pill--on' : 'node-special-pill--off'}`}
-        style={{ cursor: 'default' }}
-      >
-        <span className="node-special-pill-dot" />
-        Perfil {perfilOk ? 'configurado' : 'incompleto'}
-      </span>
-      {perfil && !perfilOk && (
-        <button
-          className="node-special-pill node-special-pill--action"
-          onClick={() => navigate(`/node/${perfil.id}`)}
-        >
-          Completar perfil →
-        </button>
-      )}
-    </div>
-  )
-}
-
 // ── Raíz: 🗑 Papelera ────────────────────────────────────────────────────────
 
 function PapeleraRootControls({ node }: Props) {
@@ -410,7 +377,6 @@ export default function NodeSpecialControls({ node }: Props) {
   // Nodos raíz especiales por nombre/emoji
   // (solo los que realmente necesitan controles; el resto se gestiona como nodos normales)
   const text = node.text || ''
-  if (text === '🧠 Contexto')  return <ContextoRootControls node={node} />
   if (text === '🗑 Papelera')  return <PapeleraRootControls node={node} />
 
   return null

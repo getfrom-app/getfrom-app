@@ -346,6 +346,83 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [])
 
+  // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
+  // lleva 15s estable (sin cambios) y cumple los criterios. Cubre el caso en que
+  // handleBlur no se dispara correctamente (notas normales que se crean/pegan sin
+  // interacción directa, o cuando contentRef no tiene el texto actualizado al blur).
+  useEffect(() => {
+    if (hasExtractedUserKnowledgeRef.current) return
+    if (isInsideRestrictedAncestor) return
+    const text = (node.text || '').trim()
+    if (text.length < 20) return
+    if (node.isDiaryEntry) return
+    // Reiniciar el timer cada vez que el texto cambie — solo disparar tras 15s de estabilidad
+    if (extractUserKnowledgeTimerRef.current) {
+      clearTimeout(extractUserKnowledgeTimerRef.current)
+    }
+    extractUserKnowledgeTimerRef.current = setTimeout(async () => {
+      extractUserKnowledgeTimerRef.current = null
+      if (hasExtractedUserKnowledgeRef.current) return
+      hasExtractedUserKnowledgeRef.current = true
+      try {
+        const perfilNode = store.perfilIANode?.() ?? null
+        const existingProfileLines: string[] = perfilNode
+          ? store.children(perfilNode.id)
+              .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+              .slice(0, 50)
+              .map(n => (n.text || '').trim())
+          : []
+        const existingProfile = existingProfileLines.join('. ')
+        const knowledge = await extractUserKnowledge(text, existingProfile || undefined)
+        if (!knowledge) return
+        const { people, facts } = knowledge
+        if (!people.length && !facts.length) return
+        const perfilNodeFresh = store.perfilIANode?.() ?? null
+        if (!perfilNodeFresh) return
+        const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+        let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+        if (!learnNode) {
+          const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
+          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+          learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
+        }
+        const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
+        const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
+        if (kwNode) store.deleteNode(kwNode.id)
+        // Fix 3: upsert con sanitización de prefijos espurios del modelo
+        const upsertSub = (prefix: string, items: string[], order: number) => {
+          if (!items.length) return
+          // Sanitizar: quitar posible "Prefix: " que el modelo incluya por error al inicio del item
+          const cleanItems = items
+            .map(item => {
+              const prefixPattern = new RegExp(`^${prefix}:\\s*`, 'i')
+              return item.replace(prefixPattern, '').trim()
+            })
+            .filter(Boolean)
+          if (!cleanItems.length) return
+          const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
+          const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
+          if (!sub) {
+            store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
+          } else {
+            const existingText = (sub.text || '').toLowerCase()
+            const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
+            if (newItems.length > 0) {
+              const currentText = (sub.text || '').trimEnd()
+              const sep = currentText.endsWith(':') ? ' ' : ', '
+              store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
+            }
+          }
+        }
+        const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
+        const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
+        upsertSub('Personas', people, maxBase + 1000)
+        upsertSub('Hechos', facts, maxBase + 2000)
+      } catch { /* silencioso */ }
+    }, 15_000)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.text, node.isDiaryEntry, isInsideRestrictedAncestor])
+
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
   const nodeHasManualContext = useMemo(() => {
@@ -385,6 +462,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
     return null
   }, [node.types, node.extraData])
+
+  // Determina si el nodo ES un contexto (hijo directo de 🧠 Contexto).
+  // Los contextos no deben mostrar badge de contexto — no tiene sentido preguntar
+  // "¿en qué contexto está este contexto?".
+  const isContextNode = useMemo(() => {
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return false
+    return node.parentId === tagsRoot.id
+  }, [node.parentId])
 
   // Comprueba si el nodo está dentro de una estructura restringida donde no tiene
   // sentido clasificar ni extraer conocimiento del usuario:
@@ -3461,20 +3547,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 3) Placeholder "+ Contexto": el nodo es candidato a clasificación pero la IA
                    no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
                    Siempre visible para que el usuario pueda asignar contexto manualmente. */}
-            {manuallySetContextId ? (
+            {!isContextNode && manuallySetContextId ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
                 assignedContextId={manuallySetContextId}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!nodeHasManualContext && autoCtxResult !== null) ? (
+            ) : (!isContextNode && !nodeHasManualContext && autoCtxResult !== null) ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            ) : (!nodeHasManualContext && autoCtxResult === null && (() => {
+            ) : (!isContextNode && !nodeHasManualContext && autoCtxResult === null && (() => {
               // Mostrar "+ Contexto" solo en nodos candidatos a clasificación
               const isLoopNode = (node.types || []).includes('bucle')
               return (hasChildren || node.status !== null || isLoopNode || isHeading) && !node.isDiaryEntry
