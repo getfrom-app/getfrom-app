@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.61 — 4 junio 2026 · Auto-clasificación de contextos con IA
+
+### Nueva feature: Auto-clasificación inteligente de contextos
+
+From ahora sugiere automáticamente el contexto más apropiado para cada nota o tarea que creas.
+
+**Cómo funciona:**
+
+- **Badge automático**: aproximadamente 1 segundo después de crear o editar un nodo (sin contexto asignado), aparece un badge pequeño `✦ NombreContexto` junto al texto.
+- **Alta confianza** (≥ 60%): el badge muestra el nombre del contexto en su color.
+- **Baja confianza** (< 60%): el badge aparece en gris con `?`.
+- **Asignación manual**: haz clic en el badge → se despliega la lista de contextos → selecciona el correcto. From aprende de tu corrección para mejorar futuras sugerencias.
+- **Opción "Sin contexto"**: si el nodo no pertenece a ningún contexto, puedes indicarlo desde el mismo dropdown.
+
+**Vista "Sin clasificar":**
+
+En el panel de contextos (columna derecha) aparece un filtro especial **"Sin clasificar"** con el número de nodos que no tienen contexto asignado. Al hacer clic, el árbol se filtra mostrando solo esos nodos para que puedas revisarlos y organizarlos.
+
+**Privacidad y coste:**
+
+La clasificación usa Claude Haiku (modelo rápido y económico), con el mismo presupuesto gratuito de micro-operaciones del sistema. No consume tokens de tu plan.
+
+---
+
 ## iOS v2.2 / Web v9.6.60 — 4 junio 2026 · App iPhone renovada, favoritos y polish
 
 ### iPhone — Tab "Explorar" rediseñado
