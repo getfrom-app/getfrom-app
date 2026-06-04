@@ -25,11 +25,18 @@ import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToS
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, type ClassifyResult } from '../../api/autoClassify'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
 // Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
 const extractedKnowledgeNodes = new Set<string>()
+
+// Timers pendientes de actualización de "Lo que From sabe" por contextId.
+// Garantiza un único timer por contexto — si varios nodos se clasifican en el mismo contexto
+// en <5 min, solo se dispara una actualización al final.
+const contextKnowledgePendingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+// Timestamps de la última actualización por contextId (cooldown 5 min).
+const contextKnowledgeLastUpdate = new Map<string, number>()
 
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
@@ -426,6 +433,59 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Dispara la actualización de "Lo que From sabe" del contexto dado.
+  // Fire-and-forget: no bloquea el UI. Replica la lógica de handleUpdateContextKnowledge en NodeView.
+  const doTriggerContextKnowledgeUpdate = useCallback(async (contextId: string) => {
+    const ctxNode = store.getNode(contextId)
+    if (!ctxNode || ctxNode.deletedAt) return
+    try {
+      // Recopilar hijos del nodo de contexto (nivel 1-2, máx 200 muestras)
+      const directChildren = store.children(contextId).filter(n => !n.deletedAt)
+      const samples: string[] = []
+      for (const child of directChildren) {
+        if (child.text?.trim()) samples.push(child.text.trim())
+        if (samples.length >= 200) break
+        for (const grandchild of store.children(child.id).filter(n => !n.deletedAt)) {
+          if (grandchild.text?.trim()) samples.push(grandchild.text.trim())
+          if (samples.length >= 200) break
+        }
+      }
+      if (samples.length === 0) return
+      const knowledge = await extractContextKnowledge(ctxNode.text || '', '', samples)
+      const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
+      const existingKnowledgeNode = store.children(contextId).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      let knowledgeNodeId: string
+      if (existingKnowledgeNode) {
+        knowledgeNodeId = existingKnowledgeNode.id
+      } else {
+        const allSibs = store.children(contextId).filter(n => !n.deletedAt)
+        const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+        const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: contextId, siblingOrder: maxOrder + 1000 })
+        knowledgeNodeId = newNode.id
+      }
+      const SUBNODE_TEXTS: Record<string, string> = {
+        keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
+        people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
+        topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
+      }
+      const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
+      let order = 1000
+      for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
+        const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
+        const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
+        if (existing) {
+          store.updateNode(existing.id, { text })
+        } else {
+          store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
+        }
+        order += 1000
+      }
+      // Registrar timestamp en Map local (evita re-renders)
+      contextKnowledgeLastUpdate.set(contextId, Date.now())
+    } catch { /* silencioso */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
   const nodeHasManualContext = useMemo(() => {
@@ -465,6 +525,31 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
     return null
   }, [node.types, node.extraData])
+
+  // Cuando se asigna un contexto a este nodo (IA o manual), disparar la actualización
+  // de "Lo que From sabe" para ese contexto con debounce de 5 min por contextId.
+  // Esto mantiene el conocimiento del contexto actualizado sin que el usuario tenga que abrirlo.
+  const effectiveContextId = autoCtxResult?.contextId ?? manuallySetContextId ?? null
+  useEffect(() => {
+    if (!effectiveContextId) return
+    // Cooldown: no programar si ya se actualizó en los últimos 5 minutos
+    const fiveMinutes = 5 * 60 * 1000
+    const lastUpdate = contextKnowledgeLastUpdate.get(effectiveContextId) ?? 0
+    if (Date.now() - lastUpdate < fiveMinutes) return
+    // Cancelar timer anterior para este contexto (deduplicación entre nodos)
+    const existing = contextKnowledgePendingTimers.get(effectiveContextId)
+    if (existing) clearTimeout(existing)
+    // Programar actualización en 5 minutos — si más nodos se clasifican en el mismo contexto
+    // antes de que expire, el timer se reinicia y solo se lanza una vez al final.
+    const timer = setTimeout(() => {
+      contextKnowledgePendingTimers.delete(effectiveContextId)
+      doTriggerContextKnowledgeUpdate(effectiveContextId)
+    }, fiveMinutes)
+    contextKnowledgePendingTimers.set(effectiveContextId, timer)
+    // No cancelamos el timer al desmontar — queremos que se ejecute aunque este nodo
+    // se desmonte. El Map persiste a nivel de módulo durante toda la sesión.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveContextId])
 
   // Determina si el nodo ES un contexto (hijo directo de 🧠 Contexto).
   // Los contextos no deben mostrar badge de contexto — no tiene sentido preguntar
