@@ -1715,6 +1715,17 @@ body.outliner-drag-active {
   flex-shrink: 0;
 }
 
+/* Gutter de bullet de ancho fijo — alinea SIEMPRE el inicio del texto en la
+   misma columna, tenga el nodo 1 marcador (nota/texto/enlace) o 2 (nav-dot +
+   checkbox en tareas/eventos/recursos). Los marcadores se pegan al texto. */
+.node-bullet-slot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  width: 44px;
+  flex-shrink: 0;
+}
+
 /* Bullet navegador — reemplaza el placeholder en texto normal */
 .bullet-nav-dot {
   width: 22px;

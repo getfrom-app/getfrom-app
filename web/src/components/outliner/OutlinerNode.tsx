@@ -3191,8 +3191,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         )}
 
         {/* Bullet / task checkbox / nota icon — hidden for headings and dividers */}
+        {/* node-bullet-slot: gutter de ancho fijo (44px) que alinea SIEMPRE el inicio del texto
+            en la misma columna, tenga el nodo 1 marcador (nota/texto) o 2 (nav-dot + checkbox en
+            tareas/eventos/recursos). Los marcadores se pegan al texto (justify-flex-end). */}
         {!isDivider && !isHeading && (
-          <>
+          <span className="node-bullet-slot">
             {effectiveNode.isEvent ? (
               // Evento: nav-dot + icono calendario (igual para espejos, el muted viene del CSS del row)
               <>
@@ -3336,7 +3339,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // Texto normal: dot navegador (igual para espejos)
               <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
             )}
-          </>
+          </span>
         )}
 
         {/* Text area + badges — divider shows hr */}
