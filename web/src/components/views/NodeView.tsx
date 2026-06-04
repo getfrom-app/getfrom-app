@@ -2100,15 +2100,34 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* ── Abrir/cerrar bucle (solo nodos bucle) ── */}
-              {(node.types || []).includes('bucle') && (() => {
-                const closed = node.status === 'done'
+              {/* ── Bucle: ciclo 3 estados (nodo → abierto → cerrado → nodo) ── */}
+              {(() => {
+                const isBucle = (node.types || []).includes('bucle')
+                const closed = isBucle && node.status === 'done'
+                const open = isBucle && !closed
+                // Estado actual y siguiente acción al hacer clic
+                const cycle = () => {
+                  if (!isBucle) {
+                    // nodo → bucle abierto
+                    store.updateNode(node!.id, { types: [...(node!.types || []), 'bucle'], status: null })
+                  } else if (open) {
+                    // abierto → cerrado
+                    store.updateNode(node!.id, { status: 'done' })
+                  } else {
+                    // cerrado → nodo normal
+                    store.updateNode(node!.id, { types: (node!.types || []).filter(t => t !== 'bucle'), status: null })
+                  }
+                }
+                const title = !isBucle ? 'Convertir en bucle'
+                  : open ? 'Bucle abierto — clic para cerrar'
+                  : 'Bucle cerrado — clic para volver a nodo'
+                const color = open ? '#8b5cf6' : closed ? 'var(--text-tertiary)' : undefined
                 return (
                   <button
-                    className={`node-action-icon-btn ${closed ? '' : 'active'}`}
-                    onClick={() => store.updateNode(node!.id, { status: closed ? null : 'done' })}
-                    title={closed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
-                    style={{ color: closed ? 'var(--text-tertiary)' : '#8b5cf6' }}
+                    className={`node-action-icon-btn ${open ? 'active' : ''}`}
+                    onClick={cycle}
+                    title={title}
+                    style={{ color }}
                   >
                     {closed ? (
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">

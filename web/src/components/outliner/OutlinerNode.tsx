@@ -3868,11 +3868,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               </div>
             )}
 
-            {/* Bucle indicator — derecha, junto a badges */}
-            {(node.types || []).includes('bucle') && (
-              <span className="node-bucle-indicator" title="Bucle abierto">⟲</span>
-            )}
-
             {/* Chips de contexto asignados vía types[] (sin @ en texto) */}
             {(() => {
               const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
