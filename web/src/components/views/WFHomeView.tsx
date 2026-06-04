@@ -12,6 +12,7 @@ import type { FilterView } from './FilterResultsView'
 import { uploadFile } from '../../api/client'
 import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
 import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
+import UnclassifiedList from './UnclassifiedList'
 
 const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
@@ -153,60 +154,16 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
 
   // ── Filtro inteligente ─────────────────────────────────────────────────────
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
-  // Límite de nodos renderizados en la vista "Sin clasificar".
-  // Con 160+ nodos y sus ancestros, React monta miles de OutlinerNode y congela el UI thread.
-  // Mostramos los primeros UNCLASSIFIED_PAGE_SIZE nodos y el usuario puede cargar más.
-  const UNCLASSIFIED_PAGE_SIZE = 40
-  const [unclassifiedPage, setUnclassifiedPage] = useState(1)
+  // Nota: UNCLASSIFIED_FILTER_ID usa UnclassifiedList (lista plana) en lugar del Outliner.
+  // No se calcula contextFilter para ese caso — se renderiza directamente en el JSX.
 
   const contextFilter = useMemo(() => {
     if (!contextFilterId) return null
-
-    // Filtro especial: nodos sin contexto asignado
-    if (contextFilterId === UNCLASSIFIED_FILTER_ID) {
-      const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-      const allMatchIds: string[] = []
-      store.allActive().forEach(n => {
-        if (n.deletedAt || n.isDiaryEntry) return
-        const text = (n.text || '').trim()
-        if (text.length < 4) return
-        // Solo mostrar nodos contenedor (con hijos), tareas o bucles — no párrafos sueltos
-        const hasChildren = store.children(n.id).some(c => !c.deletedAt)
-        const isTask = n.status !== null
-        const isLoop = (n.types || []).includes('bucle')
-        if (!hasChildren && !isTask && !isLoop) return
-        // ¿tiene contextos del usuario en types[]?
-        const userTypes = (n.types || []).filter(t => !builtinTags.has(t))
-        if (userTypes.length > 0) return
-        // ¿tiene @mention?
-        if (/@\w/.test(n.text || '')) return
-        // ¿fue asignado manualmente via badge?
-        try {
-          const ed = JSON.parse(n.extraData || '{}')
-          if (ed._contextManuallySet === '1') return
-        } catch { /* ignore */ }
-        allMatchIds.push(n.id)
-      })
-
-      // Limitar al número de páginas cargadas para evitar montar miles de OutlinerNode
-      const limit = UNCLASSIFIED_PAGE_SIZE * unclassifiedPage
-      const pagedIds = allMatchIds.slice(0, limit)
-
-      const matchIds = new Set<string>(pagedIds)
-      const ancestorIds = new Set<string>()
-      matchIds.forEach(id => {
-        let cur = store.getNode(id)
-        while (cur?.parentId) {
-          ancestorIds.add(cur.parentId)
-          cur = store.getNode(cur.parentId)
-        }
-      })
-      return { matchIds, ancestorIds, totalUnclassified: allMatchIds.length }
-    }
-
+    // El filtro "Sin clasificar" se maneja con UnclassifiedList, no con el Outliner
+    if (contextFilterId === UNCLASSIFIED_FILTER_ID) return null
     return buildContextFilter(contextFilterId)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextFilterId, s.nodesVersion, unclassifiedPage])
+  }, [contextFilterId, s.nodesVersion])
 
   // ── Filtro por texto ───────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
@@ -217,21 +174,12 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     return applyWFFilter(s.nodes, effective)
   }, [filterText, contextFilter, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isFiltering = !!filterText?.trim() || !!contextFilter
+  const isFiltering = !!filterText?.trim() || !!contextFilter || contextFilterId === UNCLASSIFIED_FILTER_ID
   const matchCount = contextFilter?.matchIds.size ?? filterResult?.matchIds.size ?? 0
-
-  // Para UNCLASSIFIED: total real de nodos sin clasificar (puede ser mayor que matchIds.size)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalUnclassified: number = (contextFilter as any)?.totalUnclassified ?? matchCount
 
   // Los ids activos (ya sea de contexto o de texto)
   const activeMatchIds = contextFilter?.matchIds ?? filterResult?.matchIds
   const activeAncestorIds = contextFilter?.ancestorIds ?? filterResult?.ancestorIds
-
-  // Resetear página cuando cambia el filtro
-  useEffect(() => {
-    setUnclassifiedPage(1)
-  }, [contextFilterId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag & drop de archivos desde el Finder → crear nodos ─────────────────
   const [isDragOver, setIsDragOver] = useState(false)
@@ -285,15 +233,20 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Barra de resultados con selector de vista */}
-      {isFiltering && matchCount === 0 && (
+      {/* Vista "Sin clasificar" — lista plana, sin Outliner ni ancestorIds */}
+      {contextFilterId === UNCLASSIFIED_FILTER_ID && (
+        <UnclassifiedList onNavigate={undefined} />
+      )}
+
+      {/* Barra de resultados con selector de vista — solo cuando NO es Sin clasificar */}
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && isFiltering && matchCount === 0 && (
         <div className="wf-filter-empty">
           {contextFilter
             ? 'Sin nodos con este contexto'
             : <>Sin resultados para <strong>"{filterText}"</strong></>}
         </div>
       )}
-      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && (
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && (
         <FilterViewSwitcher
           view={filterView}
           onChange={changeFilterView}
@@ -303,49 +256,28 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       )}
 
       {/* Vistas alternativas cuando hay filtro de texto activo */}
-      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'tabla' && (
         <TableView matchIds={filterResult.matchIds} />
       )}
-      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'kanban' && (
         <KanbanView matchIds={filterResult.matchIds} />
       )}
-      {!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && !contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView === 'calendario' && (
         <CalendarView matchIds={filterResult.matchIds} />
       )}
 
-      {/* Árbol — vista lista (default) o sin filtro */}
-      <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
-        <Outliner
-          parentId={agendaId}
-          autoFocusEmpty={false}
-          placeholder={isFiltering ? ' ' : "Escribe algo… o pulsa Enter para crear un nodo"}
-          filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
-          filterMatchIds={activeMatchIds}
-          filterAncestorIds={activeAncestorIds}
-          disableLocalFilter
-        />
-      </div>
-
-      {/* Botón "Cargar más" para la vista Sin clasificar cuando hay más nodos de los mostrados */}
-      {contextFilterId === UNCLASSIFIED_FILTER_ID && totalUnclassified > matchCount && (
-        <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginRight: 8 }}>
-            Mostrando {matchCount} de {totalUnclassified}
-          </span>
-          <button
-            onClick={() => setUnclassifiedPage(p => p + 1)}
-            style={{
-              background: 'var(--bg-hover)',
-              border: '1px solid var(--border)',
-              borderRadius: 5,
-              fontSize: 12,
-              padding: '4px 12px',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            Cargar más
-          </button>
+      {/* Árbol — vista lista (default) o sin filtro — oculto cuando es Sin clasificar */}
+      {contextFilterId !== UNCLASSIFIED_FILTER_ID && (
+        <div style={{ display: (!contextFilter && filterResult?.hasFilter && matchCount > 0 && filterView !== 'lista') ? 'none' : 'block' }}>
+          <Outliner
+            parentId={agendaId}
+            autoFocusEmpty={false}
+            placeholder={isFiltering ? ' ' : "Escribe algo… o pulsa Enter para crear un nodo"}
+            filterText={activeMatchIds ? undefined : (isFiltering ? filterText : undefined)}
+            filterMatchIds={activeMatchIds}
+            filterAncestorIds={activeAncestorIds}
+            disableLocalFilter
+          />
         </div>
       )}
 

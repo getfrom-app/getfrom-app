@@ -715,5 +715,8 @@
   "autoCtx.batchRunning": "Clasificando… {{processed}}/{{total}}",
   "autoCtx.batchDone": "{{count}} nodos clasificados",
   "autoCtx.batchCancel": "Cancelar",
-  "autoCtx.batchNoContexts": "Define contextos primero"
+  "autoCtx.batchNoContexts": "Define contextos primero",
+  "autoCtx.unclassifiedEmpty": "Todos los nodos tienen contexto asignado",
+  "autoCtx.showingOf": "Mostrando {{shown}} de {{total}}",
+  "common.loadMore": "Cargar más"
 }

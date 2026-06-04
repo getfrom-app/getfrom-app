@@ -716,5 +716,8 @@
   "autoCtx.batchRunning": "Classifying… {{processed}}/{{total}}",
   "autoCtx.batchDone": "{{count}} nodes classified",
   "autoCtx.batchCancel": "Cancel",
-  "autoCtx.batchNoContexts": "Define contexts first"
+  "autoCtx.batchNoContexts": "Define contexts first",
+  "autoCtx.unclassifiedEmpty": "All nodes have a context assigned",
+  "autoCtx.showingOf": "Showing {{shown}} of {{total}}",
+  "common.loadMore": "Load more"
 }
