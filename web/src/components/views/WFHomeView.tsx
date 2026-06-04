@@ -59,9 +59,26 @@ function buildContextFilter(contextNodeId: string): {
   const ctxNode = store.getNode(contextNodeId)
   if (!ctxNode) return null
 
-  const slug = ctxTextToSlug(ctxNode.text)
-  const slugLower = slug.toLowerCase()
-  const textLower = ctxNode.text.toLowerCase()
+  // ── Jerarquía: recoger el contexto + todos sus subcontextos descendientes ──
+  // Un nodo asignado a un subcontexto hereda el contexto padre: filtrar por el
+  // padre incluye los nodos de todos sus hijos. Excluir nodos de conocimiento (🧠).
+  const ctxIds = new Set<string>()
+  const ctxSlugs = new Set<string>()
+  const ctxTexts = new Set<string>()
+  const ctxNames: string[] = []
+  const ctxQueue: string[] = [contextNodeId]
+  while (ctxQueue.length > 0) {
+    const curId = ctxQueue.pop()!
+    const cur = store.getNode(curId)
+    if (!cur || cur.deletedAt) continue
+    ctxIds.add(cur.id)
+    ctxSlugs.add(ctxTextToSlug(cur.text).toLowerCase())
+    ctxTexts.add(cur.text.toLowerCase())
+    ctxNames.push(cur.text.trim())
+    store.children(cur.id).forEach(child => {
+      if (!child.deletedAt && !(child.text || '').startsWith('🧠')) ctxQueue.push(child.id)
+    })
+  }
 
   // ── Pre-computar IDs de todos los descendientes de raíces NO-Agenda ────────
   // Traversal de arriba hacia abajo: O(n) total, no O(n×depth)
@@ -83,9 +100,13 @@ function buildContextFilter(contextNodeId: string): {
     })
   }
 
-  // Regex para @mention en texto: @From, @Café\ Olé, etc. — solo con @
-  const escapedName = ctxNode.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const atMentionPattern = new RegExp(`@${escapedName}`, 'i')
+  // Regex para @mention en texto: @From, @Café\ Olé, etc. — cualquier contexto de la jerarquía
+  const escapedNames = ctxNames
+    .filter(Boolean)
+    .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const atMentionPattern = escapedNames.length > 0
+    ? new RegExp(`@(${escapedNames.join('|')})`, 'i')
+    : null
 
   const matchIds = new Set<string>()
   const ancestorIds = new Set<string>()
@@ -95,10 +116,10 @@ function buildContextFilter(contextNodeId: string): {
     if (excludedIds.has(n.id)) return  // excluir ramas del sistema (O(1))
 
     const types = n.types || []
-    const matchByTypes =
-      types.includes(contextNodeId) ||
-      types.some(t => t.toLowerCase() === slugLower || t.toLowerCase() === textLower)
-    const matchByAtMention = atMentionPattern.test(n.text || '')
+    const matchByTypes = types.some(t =>
+      ctxIds.has(t) || ctxSlugs.has(t.toLowerCase()) || ctxTexts.has(t.toLowerCase())
+    )
+    const matchByAtMention = !!atMentionPattern && atMentionPattern.test(n.text || '')
 
     if (matchByTypes || matchByAtMention) {
       matchIds.add(n.id)
