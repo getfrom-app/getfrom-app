@@ -618,6 +618,24 @@ export default function MainLayout() {
     return () => { for (const u of unlisteners) u() }
   }, [navigate])
 
+  // ── Visibilidad del icono de la barra de menús (Mac) ──────────────────────
+  // Sincroniza al arrancar según la preferencia, y persiste si el usuario lo
+  // oculta desde el menú contextual del propio icono.
+  useEffect(() => {
+    if (import.meta.env.VITE_TAURI !== 'true') return
+    const visible = localStorage.getItem('from_tray_visible') !== 'false'
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      invoke('set_tray_visible', { visible }).catch(() => {})
+    }).catch(() => {})
+    let unlisten: (() => void) | null = null
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('from:tray-hidden', () => {
+        localStorage.setItem('from_tray_visible', 'false')
+      }).then(fn => { unlisten = fn })
+    }).catch(() => {})
+    return () => { unlisten?.() }
+  }, [])
+
   // Cmd+K / Ctrl+K → command palette (única combinación global que no choca con Chrome)
   // Nota: Cmd+N, Cmd+T, Cmd+E, Cmd+R son comandos del navegador y se han eliminado
   // Escape → go home (if no modal/input focused)

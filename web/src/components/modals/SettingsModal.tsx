@@ -663,11 +663,22 @@ export function ClaudeMcpPane() {
 const RAYCAST_API_BASE = 'https://from-server-production.up.railway.app'
 const APPLE_SHORTCUT_URL = 'from://capture?text=[Texto]&silent=1'
 
+const isTauriDesktop = import.meta.env.VITE_TAURI === 'true'
+
 export function CapturaRapidaPane() {
   const [token, setToken] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [trayVisible, setTrayVisible] = useState(localStorage.getItem('from_tray_visible') !== 'false')
+
+  function toggleTray(visible: boolean) {
+    setTrayVisible(visible)
+    localStorage.setItem('from_tray_visible', visible ? 'true' : 'false')
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      invoke('set_tray_visible', { visible }).catch(() => {})
+    }).catch(() => {})
+  }
 
   useEffect(() => {
     if (!getToken()) { setLoaded(true); return }
@@ -697,11 +708,21 @@ export function CapturaRapidaPane() {
       {/* Barra de menús */}
       <SectionTitle>Barra de menús</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        From vive en la barra de menús del Mac con el icono <strong style={{ color: 'var(--text)' }}>⚡</strong>.
+        From vive en la barra de menús del Mac con su icono.
         Haz clic en él (o elige <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) para abrir
         una ventana flotante y crear una nota, tarea o evento al vuelo — sin cambiar de app.
         Cerrar la ventana principal no cierra From: sigue disponible en la barra de menús.
       </div>
+      {isTauriDesktop && (
+        <Row label="Mostrar icono en la barra de menús" hint="Si lo desactivas, From sigue funcionando pero el icono desaparece. También puedes ocultarlo desde el propio icono (clic derecho → Ocultar este icono).">
+          <input
+            type="checkbox"
+            checked={trayVisible}
+            onChange={e => toggleTray(e.target.checked)}
+            style={{ width: 16, height: 16, cursor: 'pointer' }}
+          />
+        </Row>
+      )}
 
       {/* Atajo de Apple */}
       <SectionTitle>Atajo de Apple — tecla global</SectionTitle>
