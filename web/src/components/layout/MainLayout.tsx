@@ -389,12 +389,18 @@ export default function MainLayout() {
     if (rightPanel === 'context') {
       setRightPanel('context-list')
     }
-    // Limpiar contextNodeId siempre al navegar — evita que quede activo si el panel
-    // fue ciclado a otro tipo (filter/magic) mientras el contexto seguía activo
-    setContextNodeId(null)
-    // Limpiar filtro solo al ENTRAR a un nodo concreto — no al volver a home
+    // Limpiar contextNodeId al ENTRAR a un nodo concreto — no al volver a home.
+    // Si pendingContextRef tiene un valor, significa que venimos de un clic en contexto
+    // estando fuera de home: el effect de pendingContextRef (más arriba) ya habrá
+    // consumido el pending y seteado contextNodeId + rightPanel correctamente.
+    // No limpiar en ese caso evita la condición de carrera donde este effect borraba
+    // lo que el otro acababa de setear (ambos se disparan con el mismo location.pathname).
     if (location.pathname.startsWith('/node/')) {
+      setContextNodeId(null)
       setFilterText('')
+    } else if (!pendingContextRef.current) {
+      // Volvemos a home sin pending → limpiar contexto (navegación normal, ESC, etc.)
+      setContextNodeId(null)
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
