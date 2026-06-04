@@ -348,7 +348,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const doExtractUserKnowledge = useCallback(async (text: string, nodeId: string) => {
     // Deduplicación: no procesar el mismo nodo dos veces en la misma sesión
     if (hasExtractedUserKnowledgeRef.current || extractedKnowledgeNodes.has(nodeId)) return
-    if (text.trim().length < 20) return
+    if (text.trim().length < 15) return
     extractedKnowledgeNodes.add(nodeId)
     hasExtractedUserKnowledgeRef.current = true
     try {
@@ -536,7 +536,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // porque los nodos escritos dentro del diario SÍ deben alimentar el perfil IA.
     if (isInsideKnowledgeRestricted) return
     const text = (node.text || '').trim()
-    if (text.length < 20) return
+    if (text.length < 15) return
     if (node.isDiaryEntry) return
     // Reiniciar el timer — solo disparar tras 5s de estabilidad
     if (extractUserKnowledgeTimerRef.current) {
