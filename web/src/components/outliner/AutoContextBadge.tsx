@@ -6,6 +6,10 @@
  * - Confidence < 0.6 → gris con "?"
  * - Click → dropdown con lista de contextos para corregir
  * - Al corregir → guarda ejemplo few-shot y asigna el contexto al nodo
+ *
+ * Modo "confirmado" (assignedContextId prop):
+ * - Muestra el contexto asignado manualmente por el usuario (sin prefijo ✦, opacidad plena)
+ * - Click sigue abriendo el dropdown para cambiar el contexto si se desea
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -20,9 +24,12 @@ interface Props {
   node: FromNode
   result: ClassifyResult
   onContextAssigned: (nodeId: string) => void
+  /** ID del contexto asignado manualmente. Cuando se pasa, el badge se muestra en modo "confirmado"
+   *  (sin ✦, opacidad plena) independientemente del resultado IA. */
+  assignedContextId?: string
 }
 
-export default function AutoContextBadge({ node, result, onContextAssigned }: Props) {
+export default function AutoContextBadge({ node, result, onContextAssigned, assignedContextId }: Props) {
   // node aquí es FromNode (del vault de From), no el DOM Node
   const { t } = useTranslation()
   const [showDropdown, setShowDropdown] = useState(false)
@@ -30,21 +37,25 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
 
+  // Modo confirmado: el usuario asignó el contexto manualmente
+  const isConfirmedMode = !!assignedContextId
+
   // Obtener la lista de contextos del usuario
   const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
   const contextNodes = tagsRoot
     ? store.children(tagsRoot.id).filter(n => !n.deletedAt)
     : []
 
-  // Nodo del contexto sugerido
-  const suggestedCtxNode = result.contextId
-    ? contextNodes.find(n => n.id === result.contextId)
+  // Nodo del contexto sugerido (IA) o asignado (manual)
+  const activeContextId = isConfirmedMode ? assignedContextId : result.contextId
+  const suggestedCtxNode = activeContextId
+    ? contextNodes.find(n => n.id === activeContextId)
     : null
 
-  const highConfidence = result.confidence >= CONFIDENCE_THRESHOLD
+  const highConfidence = isConfirmedMode ? true : result.confidence >= CONFIDENCE_THRESHOLD
 
   // Color del badge
-  const badgeColor = highConfidence && suggestedCtxNode
+  const badgeColor = (highConfidence || isConfirmedMode) && suggestedCtxNode
     ? (() => {
         try {
           const ed = JSON.parse(suggestedCtxNode.extraData || '{}')
@@ -85,20 +96,34 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
     if (contextNodeId && node.text?.trim()) {
       saveExample(node.text.trim(), contextNodeId)
     }
-    // Asignar el contexto al nodo vía types[]
+    // Construir el nuevo array de types[], removiendo el contexto anterior si era manual
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const existingTypes = node.types || []
+    // Quitar cualquier contexto de usuario que hubiera antes (solo uno a la vez)
+    const typesWithoutUserCtx = existingTypes.filter(t => builtinTags.has(t))
     if (contextNodeId) {
       const contextNode = contextNodes.find(n => n.id === contextNodeId)
       const tagName = contextNode?.text || ''
       if (tagName) {
-        const existingTypes = node.types || []
-        if (!existingTypes.includes(tagName)) {
-          store.updateNode(node.id, { types: [...existingTypes, tagName] })
-        }
+        const newTypes = typesWithoutUserCtx.includes(tagName)
+          ? typesWithoutUserCtx
+          : [...typesWithoutUserCtx, tagName]
+        store.updateNode(node.id, { types: newTypes })
       }
       // Marcar como asignado manualmente en extraData y limpiar sugerencia IA
       try {
         const ed = JSON.parse(node.extraData || '{}')
         ed._contextManuallySet = '1'
+        delete ed._autoContextId
+        delete ed._autoContextConfidence
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
+    } else {
+      // "Sin contexto": quitar todos los user-context types y limpiar flag
+      store.updateNode(node.id, { types: typesWithoutUserCtx })
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        delete ed._contextManuallySet
         delete ed._autoContextId
         delete ed._autoContextConfidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
@@ -109,11 +134,17 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
     onContextAssigned(node.id)
   }
 
-  const badgeLabel = highConfidence && suggestedCtxNode
-    ? suggestedCtxNode.text
-    : result.confidence > 0 && suggestedCtxNode
-      ? `? ${suggestedCtxNode.text}`
-      : '?'
+  const badgeLabel = isConfirmedMode
+    ? (suggestedCtxNode?.text || '?')
+    : highConfidence && suggestedCtxNode
+      ? suggestedCtxNode.text
+      : result.confidence > 0 && suggestedCtxNode
+        ? `? ${suggestedCtxNode.text}`
+        : '?'
+
+  const badgeTitle = isConfirmedMode
+    ? t('autoCtx.badgeTooltipManual', { context: suggestedCtxNode?.text || '' })
+    : t('autoCtx.badgeTooltip', { confidence: Math.round(result.confidence * 100) })
 
   return (
     <>
@@ -121,9 +152,9 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
         ref={btnRef}
         className="auto-ctx-badge"
         style={{
-          background: badgeColor + '18',
+          background: badgeColor + (isConfirmedMode ? '22' : '18'),
           color: badgeColor,
-          border: `1px solid ${badgeColor}40`,
+          border: `1px solid ${badgeColor}${isConfirmedMode ? '70' : '40'}`,
           borderRadius: 4,
           padding: '0 6px',
           fontSize: '0.78em',
@@ -132,15 +163,15 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
           lineHeight: '18px',
           whiteSpace: 'nowrap',
           flexShrink: 0,
-          opacity: highConfidence ? 0.9 : 0.65,
+          opacity: isConfirmedMode ? 1 : highConfidence ? 0.9 : 0.65,
           transition: 'opacity 0.2s',
         }}
-        title={t('autoCtx.badgeTooltip', { confidence: Math.round(result.confidence * 100) })}
+        title={badgeTitle}
         onMouseDown={e => e.preventDefault()}
         onClick={openDropdown}
         tabIndex={-1}
       >
-        ✦ {badgeLabel}
+        {isConfirmedMode ? badgeLabel : `✦ ${badgeLabel}`}
       </button>
 
       {showDropdown && createPortal(
@@ -166,7 +197,7 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
             {t('autoCtx.dropdownTitle')}
           </div>
           {contextNodes.map(ctx => {
-            const isSelected = ctx.id === result.contextId
+            const isSelected = ctx.id === activeContextId
             let ctxColor = '#7c3aed'
             try {
               const ed = JSON.parse(ctx.extraData || '{}')
@@ -194,7 +225,7 @@ export default function AutoContextBadge({ node, result, onContextAssigned }: Pr
               >
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: ctxColor, flexShrink: 0 }} />
                 {ctx.text}
-                {isSelected && <span style={{ marginLeft: 'auto', fontSize: 10, opacity: 0.6 }}>✓ sugerido</span>}
+                {isSelected && <span style={{ marginLeft: 'auto', fontSize: 10, opacity: 0.6 }}>✓ {isConfirmedMode ? t('autoCtx.assigned') : t('autoCtx.suggested')}</span>}
               </button>
             )
           })}

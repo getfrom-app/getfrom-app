@@ -351,6 +351,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return false
   }, [node.types, node.extraData, node.text])
 
+  // ID del contexto asignado manualmente via badge (solo cuando _contextManuallySet=1 está en extraData).
+  // @mentions de texto no generan badge — el texto ya lo muestra visualmente.
+  // Se usa para mostrar el badge en modo "confirmado" incluso sin resultado IA.
+  const manuallySetContextId = useMemo(() => {
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._contextManuallySet !== '1') return null
+    } catch { return null }
+    // Buscar el nodo de contexto que corresponde a alguno de los types[] del nodo
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota','bucle'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length === 0) return null
+    // Buscar el nodo en el árbol de contextos por nombre
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return null
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    for (const typeName of userTypes) {
+      const ctxNode = contextNodes.find(n => n.text === typeName)
+      if (ctxNode) return ctxNode.id
+    }
+    return null
+  }, [node.types, node.extraData])
+
   // Al montar: si el nodo no tiene _autoContextId en extraData (nunca clasificado o badge perdido
   // por desmonte/remonte), disparar clasificación con delay largo (3000ms) para no saturar.
   // Esto cubre el caso: usuario crea nodo → escribe → Enter (desmonte) → remonte sin clasificar.
@@ -3263,19 +3286,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
             })()}
 
-            {/* Auto-contexto badge — sugerencia IA (solo cuando no tiene contexto manual).
-                Se muestra cuando la IA ha procesado el nodo (autoCtxResult !== null),
-                independientemente del nivel de confianza. Con alta confianza (>= 0.6) muestra
-                el nombre del contexto; con baja confianza muestra "? ContextName" o "?".
-                Esto garantiza que el badge aparezca incluso cuando la IA devuelve baja confianza,
-                manteniendo consistencia con la vista "Sin clasificar". */}
-            {!nodeHasManualContext && autoCtxResult !== null && (
+            {/* Contexto badge — dos modos:
+                1) Confirmado (manuallySetContextId): el usuario asignó contexto via badge.
+                   Siempre visible, estilo sólido sin ✦. Click abre dropdown para cambiar.
+                2) Sugerencia IA (autoCtxResult): la IA clasificó el nodo. Solo cuando no
+                   hay contexto manual. Muestra ✦ y el nombre del contexto sugerido. */}
+            {manuallySetContextId ? (
+              <AutoContextBadge
+                node={node}
+                result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
+                assignedContextId={manuallySetContextId}
+                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
+              />
+            ) : (!nodeHasManualContext && autoCtxResult !== null && (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult}
                 onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
               />
-            )}
+            ))}
 
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (
