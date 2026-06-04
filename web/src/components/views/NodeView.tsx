@@ -317,7 +317,7 @@ export default function NodeView() {
       name: n.text || '',
       samples: store.children(n.id)
         .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 15)
+        .slice(0, 50)
         .map(c => (c.text || '').trim()),
     }))
     scheduleClassify(node.id, text, contexts, (nid, result) => {
@@ -1412,9 +1412,34 @@ export default function NodeView() {
         }
         order += 1000
       }
+      // Guardar timestamp de última actualización para evitar re-disparar antes de 30 min
+      try {
+        const currentNode = store.getNode(node.id)
+        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
+        ed._knowledgeUpdatedAt = Date.now()
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+      } catch { /* ignorar */ }
     } catch { /* silenciar errores */ }
     setCtxKnowledgeLoading(false)
   }
+
+  // ── Auto-actualizar "Lo que From sabe" al abrir un contexto ─────────────────
+  // Si han pasado >30 min desde la última actualización, se dispara automáticamente en background.
+  useEffect(() => {
+    if (!node || !isContextNode || ctxKnowledgeLoading) return
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      const lastUpdated: number = ed._knowledgeUpdatedAt || 0
+      const thirtyMinutes = 30 * 60 * 1000
+      if (Date.now() - lastUpdated < thirtyMinutes) return
+    } catch { return }
+    // Disparar en background sin bloquear el render
+    const timer = setTimeout(() => {
+      handleUpdateContextKnowledge()
+    }, 1500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id, isContextNode])
 
   function handlePrint() {
     const title = node!.text || 'Sin título'
@@ -1938,22 +1963,7 @@ export default function NodeView() {
               })()}
               {/* Pin/Atajo eliminado — favorito accesible vía ··· más opciones */}
 
-              {/* ── Botón "Actualizar resumen From" — solo en nodos de contexto ── */}
-              {isContextNode && (
-                <button
-                  className="node-action-icon-btn"
-                  onClick={handleUpdateContextKnowledge}
-                  disabled={ctxKnowledgeLoading}
-                  title="✦ Actualizar resumen From — extrae palabras clave, personas y temas de este contexto"
-                  style={{ opacity: ctxKnowledgeLoading ? 0.5 : 1, fontSize: 13, padding: '4px 8px', gap: 4, display: 'flex', alignItems: 'center' }}
-                >
-                  {ctxKnowledgeLoading ? (
-                    <span style={{ fontSize: 11 }}>...</span>
-                  ) : (
-                    <span>✦</span>
-                  )}
-                </button>
-              )}
+              {/* Botón ✦ eliminado — "Lo que From sabe" se actualiza automáticamente al abrir el contexto */}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>

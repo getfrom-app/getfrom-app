@@ -487,7 +487,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       name: n.text || '',
       samples: store.children(n.id)
         .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 15)
+        .slice(0, 50)
         .map(c => (c.text || '').trim()),
     }))
     scheduleClassify(node.id, text, contexts, (id, result) => {
