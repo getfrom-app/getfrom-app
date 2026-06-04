@@ -43,6 +43,21 @@ export default function CaptureWindow() {
   // Cambiar la key remonta UnifiedCapture → limpia el texto y re-enfoca el input.
   const [openKey, setOpenKey] = useState(0)
 
+  // Ventana transparente: quitar el fondo opaco de la app para que solo
+  // se vea la tarjeta de captura flotando (sin "marco gris").
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.background
+    const prevBody = document.body.style.background
+    document.documentElement.style.background = 'transparent'
+    document.body.style.background = 'transparent'
+    const root = document.getElementById('root')
+    if (root) root.style.background = 'transparent'
+    return () => {
+      document.documentElement.style.background = prevHtml
+      document.body.style.background = prevBody
+    }
+  }, [])
+
   // Cargar el store una vez (comparte snapshot de localStorage con la main).
   useEffect(() => {
     if (didInitialLoad) { setReady(true); return }
@@ -101,6 +116,7 @@ export default function CaptureWindow() {
         key={openKey}
         onClose={hideSelf}
         onNavigate={routeToMain}
+        embedded
       />
     </ToastProvider>
   )

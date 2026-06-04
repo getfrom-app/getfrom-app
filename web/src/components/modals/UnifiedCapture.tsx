@@ -183,11 +183,16 @@ interface Props {
    * propia ventana de captura. Por defecto usa el router de esta ventana.
    */
   onNavigate?: (path: string) => void
+  /**
+   * Modo ventana flotante del Mac: sin backdrop oscuro (la propia ventana ya
+   * es el contenedor, transparente). Evita el "marco gris" alrededor.
+   */
+  embedded?: boolean
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function UnifiedCapture({ onClose, onSelectContext, onNavigate }: Props) {
+export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, embedded }: Props) {
   const routerNavigate = useNavigate()
   const navigate = onNavigate ?? routerNavigate
   const location = useLocation()
@@ -916,8 +921,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate }:
       style={{
         position: 'fixed', inset: 0, zIndex: 9000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.35)',
-        backdropFilter: 'blur(2px)',
+        background: embedded ? 'transparent' : 'rgba(0,0,0,0.35)',
+        backdropFilter: embedded ? 'none' : 'blur(2px)',
       }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
     >
