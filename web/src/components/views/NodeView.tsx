@@ -211,12 +211,14 @@ export default function NodeView() {
   }
 
   // Detectar si el nodo actual es un nodo de contexto (hijo directo de 🧠 Contexto)
+  // Excluye el nodo de perfil (_perfilIA === '1') — tiene su propio mecanismo de aprendizaje (extractUserKnowledge)
   const isContextNode = useMemo(() => {
     if (!node) return false
+    try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return false } catch { /* ignore */ }
     const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!tagsRoot) return false
     return node.parentId === tagsRoot.id
-  }, [node?.id, node?.parentId])
+  }, [node?.id, node?.parentId, node?.extraData])
 
   // ── Vistas múltiples (Notion-style) ─────────────────────────────────────
   // activeViewId = id de la vista activa entre las del padre

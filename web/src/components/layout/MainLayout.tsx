@@ -69,12 +69,14 @@ function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => 
   const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
 
   // Detectar si el nodo es un contexto (hijo directo de 🧠 Contexto)
+  // Excluye el nodo de perfil (_perfilIA === '1') — tiene su propio mecanismo de aprendizaje (extractUserKnowledge)
   const isContextNode = useMemo(() => {
     if (!node) return false
+    try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return false } catch { /* ignore */ }
     const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!tagsRoot) return false
     return node.parentId === tagsRoot.id
-  }, [node?.id, node?.parentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node?.id, node?.parentId, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-actualizar "Lo que From sabe" al abrir un contexto en el panel derecho ──
   // Misma lógica que NodeView: si han pasado >30 min desde la última actualización, dispara en background.
