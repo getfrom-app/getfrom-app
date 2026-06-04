@@ -12,6 +12,7 @@
 import { apiRequest } from './client'
 import { store } from '../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../utils/tagsHelper'
+import { learningsStore } from '../store/learningsStore'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ async function classifyNode(
 ): Promise<ClassifyResult> {
   const data = await apiRequest<ClassifyResult>('/ai/classify-context', {
     method: 'POST',
-    body: JSON.stringify({ nodeText, contexts, examples, userProfile }),
+    body: JSON.stringify({ nodeText, contexts, examples, userProfile, learnings: learningsStore.buildPromptBlock() ?? undefined }),
   })
   return data
 }

@@ -44,6 +44,7 @@ const NewTaskModal = lazy(() => import('../modals/NewTaskModal'))
 const NewNoteModal = lazy(() => import('../modals/NewNoteModal'))
 const NewEventModal = lazy(() => import('../modals/NewEventModal'))
 const VoiceCaptureModal = lazy(() => import('../modals/VoiceCaptureModal'))
+const TeachMagicModal = lazy(() => import('../modals/TeachMagicModal'))
 const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsModal'))
 const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
 const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
@@ -461,6 +462,7 @@ export default function MainLayout() {
   const [slugModal, setSlugModal] = useState<{ nodeId: string; currentSlug: string } | null>(null)
   const [slugInput, setSlugInput] = useState('')
   const slugModalInputRef = useRef<HTMLInputElement>(null)
+  const [teachNodeId, setTeachNodeId] = useState<string | null>(null)
 
   // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
   useEffect(() => {
@@ -807,6 +809,16 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:open-slug-modal', handleOpenSlugModal)
   }, [])
 
+  // Listener del modal "Enseñar a Magic" — disparado desde NodeContextMenu
+  useEffect(() => {
+    function handleTeach(e: Event) {
+      const detail = (e as CustomEvent).detail as { nodeId: string }
+      if (detail?.nodeId) setTeachNodeId(detail.nodeId)
+    }
+    window.addEventListener('from:teach-magic', handleTeach)
+    return () => window.removeEventListener('from:teach-magic', handleTeach)
+  }, [])
+
   // Polling automático: sync cada 15s para recoger cambios de Mac/iOS sin refrescar
   useEffect(() => {
     const id = setInterval(() => {
@@ -998,6 +1010,7 @@ export default function MainLayout() {
         {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
         {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
         {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
+        {teachNodeId && <TeachMagicModal nodeId={teachNodeId} onClose={() => setTeachNodeId(null)} />}
         {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </Suspense>
       {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}

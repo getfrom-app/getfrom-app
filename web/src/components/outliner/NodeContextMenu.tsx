@@ -120,7 +120,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showTeach, setShowTeach] = useState(false)
-  const [teachFreeText, setTeachFreeText] = useState('')
 
   const COLOR_SWATCHES = [
     '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b',
@@ -715,60 +714,15 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">✓</span> Esta interpretación es correcta
             </button>
 
-            {/* Corrección libre */}
-            <div style={{ padding: '4px 8px 6px' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>Corrección libre</div>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <input
-                  autoFocus
-                  type="text"
-                  value={teachFreeText}
-                  onChange={e => setTeachFreeText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && teachFreeText.trim()) {
-                      const added = learningsStore.add({
-                        text: teachFreeText.trim(),
-                        category: 'behavior',
-                        nodeText: node.text || undefined,
-                        source: 'manual',
-                      })
-                      window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                        message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
-                      }}))
-                      setTeachFreeText('')
-                      onClose()
-                    }
-                  }}
-                  placeholder="Magic, recuerda que..."
-                  style={{
-                    flex: 1, fontSize: 11, padding: '4px 6px',
-                    background: 'var(--bg-primary)', border: '1px solid var(--border)',
-                    borderRadius: 5, color: 'var(--text-primary)', outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (!teachFreeText.trim()) return
-                    const added = learningsStore.add({
-                      text: teachFreeText.trim(),
-                      category: 'behavior',
-                      nodeText: node.text || undefined,
-                      source: 'manual',
-                    })
-                    window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                      message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
-                    }}))
-                    setTeachFreeText('')
-                    onClose()
-                  }}
-                  style={{
-                    background: 'var(--accent)', color: 'white', border: 'none',
-                    borderRadius: 5, padding: '4px 8px', fontSize: 11, cursor: 'pointer',
-                    opacity: teachFreeText.trim() ? 1 : 0.4,
-                  }}
-                >✦</button>
-              </div>
-            </div>
+            <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
+
+            {/* Escribir o grabar corrección en lenguaje natural → abre modal */}
+            <button className="context-menu-item context-menu-item--sub"
+              onClick={run(() => {
+                window.dispatchEvent(new CustomEvent('from:teach-magic', { detail: { nodeId: node.id } }))
+              })}>
+              <span className="context-menu-icon">✎</span> Escribir o grabar corrección…
+            </button>
           </div>
         )}
       </div>
