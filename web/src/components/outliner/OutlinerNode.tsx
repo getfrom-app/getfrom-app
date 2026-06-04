@@ -410,7 +410,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (!tagsRoot) return
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    const contexts = contextNodes.map(n => ({
+      id: n.id,
+      name: n.text || '',
+      // Muestra de los primeros 15 nodos hijos (nivel 1-2) para señales reales a la IA
+      samples: store.children(n.id)
+        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
+        .slice(0, 15)
+        .map(c => (c.text || '').trim()),
+    }))
 
     // Delay largo (3000ms en lugar de 800ms) para no saturar al cargar la vista con múltiples nodos.
     // Una vez clasificado y guardado en extraData, este bloque no vuelve a dispararse (hasPersistedAutoCtx=true).
@@ -473,7 +481,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (!tagsRoot) return
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    const contexts = contextNodes.map(n => ({
+      id: n.id,
+      name: n.text || '',
+      samples: store.children(n.id)
+        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
+        .slice(0, 15)
+        .map(c => (c.text || '').trim()),
+    }))
     scheduleClassify(node.id, text, contexts, (id, result) => {
       if (id !== node.id) return
       setAutoCtxResult(result)

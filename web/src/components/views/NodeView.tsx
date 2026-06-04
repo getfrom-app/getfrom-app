@@ -35,7 +35,7 @@ import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, type ClassifyResult } from '../../api/autoClassify'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -177,6 +177,9 @@ export default function NodeView() {
     return null
   })
 
+  // Estado para extracción de conocimiento del contexto
+  const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
+
   // Layout del contenido (wide / small / normal)
   const nodeLayout = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}').layout || '' } catch { return '' }
@@ -206,6 +209,14 @@ export default function NodeView() {
     else ed.viewBlock = mode
     store.updateNode(node.id, { extraData: JSON.stringify(ed) })
   }
+
+  // Detectar si el nodo actual es un nodo de contexto (hijo directo de 🧠 Contexto)
+  const isContextNode = useMemo(() => {
+    if (!node) return false
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    if (!tagsRoot) return false
+    return node.parentId === tagsRoot.id
+  }, [node?.id, node?.parentId])
 
   // ── Vistas múltiples (Notion-style) ─────────────────────────────────────
   // activeViewId = id de la vista activa entre las del padre
@@ -301,7 +312,14 @@ export default function NodeView() {
     if (!tagsRoot) return
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     if (contextNodes.length === 0) return
-    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+    const contexts = contextNodes.map(n => ({
+      id: n.id,
+      name: n.text || '',
+      samples: store.children(n.id)
+        .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
+        .slice(0, 15)
+        .map(c => (c.text || '').trim()),
+    }))
     scheduleClassify(node.id, text, contexts, (nid, result) => {
       if (nid !== node.id) return
       setNodeViewCtxResult(result)
@@ -1341,6 +1359,63 @@ export default function NodeView() {
     toDelete.forEach(id => store.deleteNode(id))
   }
 
+  // ── Extraer conocimiento del contexto ──────────────────────────────────────
+  async function handleUpdateContextKnowledge() {
+    if (!node || !isContextNode || ctxKnowledgeLoading) return
+    setCtxKnowledgeLoading(true)
+    try {
+      // Recopilar nodos hijos (nivel 1 y 2, máximo 60 muestras)
+      const directChildren = store.children(node.id).filter(n => !n.deletedAt)
+      const samples: string[] = []
+      for (const child of directChildren) {
+        if (child.text?.trim()) samples.push(child.text.trim())
+        if (samples.length >= 60) break
+        // Nivel 2
+        for (const grandchild of store.children(child.id).filter(n => !n.deletedAt)) {
+          if (grandchild.text?.trim()) samples.push(grandchild.text.trim())
+          if (samples.length >= 60) break
+        }
+      }
+      if (samples.length === 0) {
+        setCtxKnowledgeLoading(false)
+        return
+      }
+      const knowledge = await extractContextKnowledge(node.text || '', '', samples)
+      // Buscar o crear el nodo "🧠 Lo que From sabe" dentro del contexto
+      const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
+      const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      let knowledgeNodeId: string
+      if (existingKnowledgeNode) {
+        knowledgeNodeId = existingKnowledgeNode.id
+      } else {
+        const allSibs = store.children(node.id).filter(n => !n.deletedAt)
+        const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+        const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: node.id, siblingOrder: maxOrder + 1000 })
+        knowledgeNodeId = newNode.id
+      }
+      // Definir los tres subnodos
+      const SUBNODE_TEXTS: Record<string, string> = {
+        keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
+        people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
+        topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
+      }
+      const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
+      let order = 1000
+      for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
+        // Buscar por prefijo para actualizar en lugar de duplicar
+        const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
+        const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
+        if (existing) {
+          store.updateNode(existing.id, { text })
+        } else {
+          store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
+        }
+        order += 1000
+      }
+    } catch { /* silenciar errores */ }
+    setCtxKnowledgeLoading(false)
+  }
+
   function handlePrint() {
     const title = node!.text || 'Sin título'
     const body = node!.body || ''
@@ -1862,6 +1937,23 @@ export default function NodeView() {
                 )
               })()}
               {/* Pin/Atajo eliminado — favorito accesible vía ··· más opciones */}
+
+              {/* ── Botón "Actualizar resumen From" — solo en nodos de contexto ── */}
+              {isContextNode && (
+                <button
+                  className="node-action-icon-btn"
+                  onClick={handleUpdateContextKnowledge}
+                  disabled={ctxKnowledgeLoading}
+                  title="✦ Actualizar resumen From — extrae palabras clave, personas y temas de este contexto"
+                  style={{ opacity: ctxKnowledgeLoading ? 0.5 : 1, fontSize: 13, padding: '4px 8px', gap: 4, display: 'flex', alignItems: 'center' }}
+                >
+                  {ctxKnowledgeLoading ? (
+                    <span style={{ fontSize: 11 }}>...</span>
+                  ) : (
+                    <span>✦</span>
+                  )}
+                </button>
+              )}
 
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>

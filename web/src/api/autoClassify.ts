@@ -22,6 +22,14 @@ export interface ContextInfo {
   id: string
   name: string
   description?: string
+  /** Muestra de textos de nodos hijos del contexto (máx 15) para dar señales reales a la IA */
+  samples?: string[]
+}
+
+export interface ContextKnowledge {
+  keywords: string[]
+  people: string[]
+  topics: string[]
 }
 
 export interface ClassifyExample {
@@ -141,6 +149,22 @@ async function classifyNode(
   const data = await apiRequest<ClassifyResult>('/ai/classify-context', {
     method: 'POST',
     body: JSON.stringify({ nodeText, contexts, examples }),
+  })
+  return data
+}
+
+/**
+ * Extrae conocimiento estructurado de los nodos de un contexto.
+ * Devuelve palabras clave, personas y temas frecuentes.
+ */
+export async function extractContextKnowledge(
+  contextName: string,
+  contextDescription: string,
+  nodeSamples: string[],
+): Promise<ContextKnowledge> {
+  const data = await apiRequest<ContextKnowledge>('/ai/extract-context-knowledge', {
+    method: 'POST',
+    body: JSON.stringify({ contextName, contextDescription, nodeSamples }),
   })
   return data
 }
