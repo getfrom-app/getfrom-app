@@ -27,6 +27,10 @@ import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, type ClassifyResult } from '../../api/autoClassify'
 
+// Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
+// Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
+const extractedKnowledgeNodes = new Set<string>()
+
 // ── Smart Dates ───────────────────────────────────────────────────────────────
 function parseInlineDate(text: string): { text: string; due: string | null } {
   const now = new Date()
@@ -335,15 +339,91 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const hasUserEditedRef = useRef(false)
   // Guard: solo extraer conocimiento del usuario una vez por nodo por sesión.
   const hasExtractedUserKnowledgeRef = useRef(false)
-  // Timer de debounce para la extracción de conocimiento del usuario (10s).
+  // Timer de debounce para la extracción de conocimiento del usuario (5s).
   const extractUserKnowledgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Lógica de extracción de conocimiento extraída como función independiente.
+  // Se puede llamar fire-and-forget incluso después del desmonte del componente,
+  // porque store es un singleton de Zustand que persiste mientras el bundle esté cargado.
+  const doExtractUserKnowledge = useCallback(async (text: string, nodeId: string) => {
+    // Deduplicación: no procesar el mismo nodo dos veces en la misma sesión
+    if (hasExtractedUserKnowledgeRef.current || extractedKnowledgeNodes.has(nodeId)) return
+    if (text.trim().length < 20) return
+    extractedKnowledgeNodes.add(nodeId)
+    hasExtractedUserKnowledgeRef.current = true
+    try {
+      const perfilNode = store.perfilIANode?.() ?? null
+      const existingProfileLines: string[] = perfilNode
+        ? store.children(perfilNode.id)
+            .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+            .slice(0, 50)
+            .map(n => (n.text || '').trim())
+        : []
+      const existingProfile = existingProfileLines.join('. ')
+      const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined)
+      if (!knowledge) return
+      const { people, facts } = knowledge
+      if (!people.length && !facts.length) return
+      let perfilNodeFresh = store.perfilIANode?.() ?? null
+      if (!perfilNodeFresh) {
+        try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
+      }
+      if (!perfilNodeFresh) return
+      const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+      let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+      if (!learnNode) {
+        const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
+        const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+        learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
+      }
+      const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
+      const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
+      if (kwNode) store.deleteNode(kwNode.id)
+      const upsertSub = (prefix: string, items: string[], order: number) => {
+        if (!items.length) return
+        const cleanItems = items
+          .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
+          .filter(Boolean)
+        if (!cleanItems.length) return
+        const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
+        const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
+        if (!sub) {
+          store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
+        } else {
+          const existingText = (sub.text || '').toLowerCase()
+          const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
+          if (newItems.length > 0) {
+            const currentText = (sub.text || '').trimEnd()
+            const sep = currentText.endsWith(':') ? ' ' : ', '
+            store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
+          }
+        }
+      }
+      const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
+      const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
+      upsertSub('Personas', people, maxBase + 1000)
+      upsertSub('Hechos', facts, maxBase + 2000)
+    } catch { /* silencioso */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Cleanup del timer de extracción de conocimiento al desmontar el nodo.
+  // IMPORTANTE: si había un timer pendiente al desmontar (p.ej. navegación, remount rápido,
+  // nodo creado por agente), lo cancelamos pero disparamos la extracción fire-and-forget.
+  // store es singleton — puede usarse después del desmonte sin problema.
   useEffect(() => {
     return () => {
       if (extractUserKnowledgeTimerRef.current) {
         clearTimeout(extractUserKnowledgeTimerRef.current)
+        extractUserKnowledgeTimerRef.current = null
+        // Fire-and-forget: capturamos node.id y node.text del closure del efecto de montaje.
+        // El texto actual se lee desde store para evitar stale closure.
+        const currentNode = store.getNode(node.id)
+        const text = (currentNode?.text || node.text || '').trim()
+        doExtractUserKnowledge(text, node.id)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Determina si el nodo ya tiene contexto asignado manualmente
@@ -445,10 +525,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.parentId])
 
-  // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
-  // lleva 5s estable (sin cambios) y cumple los criterios. Cubre el caso en que
-  // handleBlur no se dispara correctamente (notas normales sin interacción directa
-  // o cuando contentRef no tiene el texto actualizado al blur).
+  // Debounce sobre node.text — dispara extractUserKnowledge si el texto lleva 5s
+  // estable (sin cambios) y cumple los criterios. Cubre nodos sin interacción directa.
+  // Si el componente se desmonta antes de que expire el timer (navegación, remount rápido,
+  // nodo creado por agente), el cleanup cancela el timer Y dispara la extracción fire-and-forget
+  // usando doExtractUserKnowledge (ver useEffect de cleanup más arriba).
   useEffect(() => {
     if (hasExtractedUserKnowledgeRef.current) return
     // Para extractUserKnowledge usamos isInsideKnowledgeRestricted (no bloquea Agenda)
@@ -457,68 +538,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const text = (node.text || '').trim()
     if (text.length < 20) return
     if (node.isDiaryEntry) return
-    // Reiniciar el timer — solo disparar tras 15s de estabilidad
+    // Reiniciar el timer — solo disparar tras 5s de estabilidad
     if (extractUserKnowledgeTimerRef.current) {
       clearTimeout(extractUserKnowledgeTimerRef.current)
     }
-    extractUserKnowledgeTimerRef.current = setTimeout(async () => {
+    extractUserKnowledgeTimerRef.current = setTimeout(() => {
       extractUserKnowledgeTimerRef.current = null
-      if (hasExtractedUserKnowledgeRef.current) return
-      hasExtractedUserKnowledgeRef.current = true
-      try {
-        const perfilNode = store.perfilIANode?.() ?? null
-        const existingProfileLines: string[] = perfilNode
-          ? store.children(perfilNode.id)
-              .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
-              .slice(0, 50)
-              .map(n => (n.text || '').trim())
-          : []
-        const existingProfile = existingProfileLines.join('. ')
-        const knowledge = await extractUserKnowledge(text, existingProfile || undefined)
-        if (!knowledge) return
-        const { people, facts } = knowledge
-        if (!people.length && !facts.length) return
-        let perfilNodeFresh = store.perfilIANode?.() ?? null
-        if (!perfilNodeFresh) {
-          try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
-        }
-        if (!perfilNodeFresh) return
-        const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
-        let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
-        if (!learnNode) {
-          const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
-          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
-          learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
-        }
-        const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-        const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
-        if (kwNode) store.deleteNode(kwNode.id)
-        // Fix 3 inline: sanitizar prefijos espurios + upsert
-        const upsertSub2 = (prefix: string, items: string[], order: number) => {
-          if (!items.length) return
-          const cleanItems = items
-            .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
-            .filter(Boolean)
-          if (!cleanItems.length) return
-          const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
-          const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
-          if (!sub) {
-            store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-          } else {
-            const existingText = (sub.text || '').toLowerCase()
-            const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
-            if (newItems.length > 0) {
-              const currentText = (sub.text || '').trimEnd()
-              const sep = currentText.endsWith(':') ? ' ' : ', '
-              store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
-            }
-          }
-        }
-        const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
-        const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
-        upsertSub2('Personas', people, maxBase + 1000)
-        upsertSub2('Hechos', facts, maxBase + 2000)
-      } catch { /* silencioso */ }
+      doExtractUserKnowledge(text, node.id)
     }, 5_000)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text, node.isDiaryEntry, isInsideKnowledgeRestricted])
@@ -1492,10 +1518,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
     // Se dispara para CUALQUIER nodo con texto ≥ 20 chars, sin importar tipo.
     // Al hacer blur: si hay un timer pendiente (del useEffect de 5s), se cancela y se
-    // ejecuta inmediatamente. Si no hay timer pero el nodo cumple criterios, también
-    // ejecuta inmediatamente. Así nunca se pierde lo aprendido al navegar.
-    // Usa isInsideKnowledgeRestricted (no bloquea Agenda) — los nodos del diario SÍ alimentan el perfil.
-    const blurText = (contentRef.current?.textContent || '').trim()
+    // ejecuta inmediatamente vía doExtractUserKnowledge. La deduplicación (extractedKnowledgeNodes
+    // + hasExtractedUserKnowledgeRef) evita doble extracción si el nodo también procesó el timer.
+    const blurText = (contentRef.current?.textContent || node.text || '').trim()
 
     // Si hay un timer pendiente del useEffect (5s), cancelarlo — ejecutaremos inmediatamente
     const hadPendingTimer = extractUserKnowledgeTimerRef.current !== null
@@ -1506,85 +1531,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     if (
       (hasUserEditedRef.current || hadPendingTimer) &&
-      !hasExtractedUserKnowledgeRef.current &&
       !isInsideKnowledgeRestricted &&
       blurText.length >= 20
     ) {
-      // Ejecutar inmediatamente (sin setTimeout) — el usuario ya salió del nodo
-      hasExtractedUserKnowledgeRef.current = true
-      ;(async () => {
-        try {
-          // Obtener el perfil existente como contexto
-          const perfilNode = store.perfilIANode?.() ?? null
-          const existingProfileLines: string[] = perfilNode
-            ? store.children(perfilNode.id)
-                .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
-                .slice(0, 50)
-                .map(n => (n.text || '').trim())
-            : []
-          const existingProfile = existingProfileLines.join('. ')
-
-          const knowledge = await extractUserKnowledge(blurText, existingProfile || undefined)
-          if (!knowledge) return
-          const { people, facts } = knowledge
-          if (!people.length && !facts.length) return
-
-          // Añadir los datos aprendidos al nodo "🧠 Lo que From sabe sobre ti" dentro del perfil
-          // Si no existe el perfil, crearlo automáticamente (primera vez que From aprende algo)
-          let perfilNodeFresh = store.perfilIANode?.() ?? null
-          if (!perfilNodeFresh) {
-            try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
-          }
-          if (!perfilNodeFresh) return
-
-          const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
-          let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
-          if (!learnNode) {
-            const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
-            const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
-            learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
-          }
-
-          const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-
-          // Eliminar el subnodo "Palabras clave" si existe (estructura antigua)
-          const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
-          if (kwNode) store.deleteNode(kwNode.id)
-
-          // Helper: buscar o crear subnodo por prefijo, luego añadir items sin duplicar
-          // Fix 3: sanitizar items para quitar prefijo "Prefix: " que el modelo pueda incluir por error
-          const upsertSubnode = (prefix: string, items: string[], order: number) => {
-            if (!items.length) return
-            const cleanItems = items
-              .map(item => {
-                const prefixPattern = new RegExp(`^${prefix}:\\s*`, 'i')
-                return item.replace(prefixPattern, '').trim()
-              })
-              .filter(Boolean)
-            if (!cleanItems.length) return
-            const freshChildren = store.children(learnNode!.id).filter(n => !n.deletedAt)
-            let subNode = freshChildren.find(n => (n.text || '').startsWith(prefix + ':'))
-            if (!subNode) {
-              subNode = store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-            } else {
-              // Añadir items nuevos que no estén ya en el texto del subnodo
-              const existingText = (subNode.text || '').toLowerCase()
-              const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
-              if (newItems.length > 0) {
-                const currentText = (subNode.text || '').trimEnd()
-                const sep = currentText.endsWith(':') ? ' ' : ', '
-                store.updateNode(subNode.id, { text: currentText + sep + newItems.join(', ') })
-              }
-            }
-          }
-
-          const freshLearnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-          const maxBase = freshLearnChildren.length > 0 ? Math.max(...freshLearnChildren.map(c => c.siblingOrder)) : 0
-
-          upsertSubnode('Personas', people, maxBase + 1000)
-          upsertSubnode('Hechos', facts, maxBase + 2000)
-        } catch { /* silencioso */ }
-      })()
+      // Fire-and-forget — doExtractUserKnowledge aplica deduplicación interna
+      doExtractUserKnowledge(blurText, node.id)
     }
 
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
