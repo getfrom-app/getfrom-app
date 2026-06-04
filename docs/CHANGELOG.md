@@ -4,6 +4,53 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.135 · Mac v9.5.7 — 4 junio 2026 · La capa de inteligencia de From
+
+Esta es la versión en la que From deja de ser "un outliner con IA" y pasa a ser un sistema que **te entiende, sabe lo que quieres y elimina la fricción**. No hablamos de IA genérica: hablamos de que escribes como piensas y From se encarga del resto, en segundo plano y sin que tengas que mantener nada.
+
+### Contextos automáticos con jerarquía
+
+- From clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto) mientras escribes, **entendiendo la jerarquía** de contextos y subcontextos.
+- Si una nota necesita un contexto que aún no existe, From puede **crear el subcontexto** automáticamente en el lugar correcto del árbol.
+- El clasificador es consciente de la jerarquía: una nota de "La Isla" va dentro de "Trabajo › La Isla", no en una etiqueta plana.
+- El badge de contexto aparece junto a cada nodo con la sugerencia de From; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Año/Mes/Agenda) nunca muestran badge — no se preguntan a sí mismos en qué contexto están.
+- Clasificación en bloque: "Clasificar todos" procesa de una vez todos los nodos antiguos sin contexto, con barra de progreso y cancelación.
+
+### "Lo que From sabe" — conocimiento por contexto
+
+- Cada contexto acumula su propio conocimiento vivo: **Palabras clave**, **Personas** y **Temas frecuentes**.
+- From lo extrae solo a partir de las notas que clasificas en ese contexto y lo **mantiene al día**: cuando añades algo nuevo, fusiona la información nueva con la que ya había (sin duplicar) en lugar de reescribirlo todo.
+- La actualización es proactiva: al clasificar nodos en un contexto, From programa una actualización del conocimiento de ese contexto (con deduplicación y cooldown para no recalcular de más).
+- Si sigues editando un nodo ya clasificado durante horas o días, From vuelve a aprender del nuevo contenido (re-disparo con debounce de 30 min).
+- El servidor solo extrae **información nueva** que no estuviera ya en el contexto: si no hay nada que añadir, no toca nada.
+
+### Tu perfil — From te recuerda
+
+- From construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo.
+- Filtra el ruido: **solo retiene lo que perdura**, no las tareas del día ni los problemas temporales. Y sintetiza en vez de copiar literal ("Me voy a casar" → "Tiene planes de matrimonio con su pareja").
+- El aprendizaje se guarda aunque salgas del nodo, navegues a otra página o el nodo lo cree un agente (extracción en el desmonte, sin perder nada).
+- "Mi perfil" abre el nodo de tu perfil en el área central, no como un filtro.
+
+### Enseñar a Magic
+
+- Clic derecho en cualquier nodo → **Enseñar a Magic**. Le corriges: "esto no es una tarea", "va en este contexto". From aprende de la corrección y la aplica desde ese momento en toda clasificación posterior.
+- Los aprendizajes y los ejemplos del clasificador se **guardan como nodos** dentro de tu árbol (respaldados, migrados desde el almacenamiento local), así viajan con tu cuenta y sobreviven entre dispositivos.
+
+### Búsqueda y navegación sin fricción
+
+- **Resaltado de coincidencias**: al buscar texto libre, From subraya en amarillo las palabras que coinciden dentro de cada nodo, para que las encuentres de un vistazo aunque haya mucho texto.
+- **Al eliminar una nota, From navega a la nota padre** en vez de dejarte mirando una nota que ya no existe.
+- Buscador de la columna Filtrar: cualquier palabra filtra al instante por el texto de cualquier nodo de la Agenda.
+- Filtros y captura rápida acotados a la Agenda (no rebuscan en contextos, papelera ni sistema).
+- Favoritos: clic para navegar a la nota, con editar y eliminar al pasar el ratón.
+
+### Estabilidad
+
+- Corregido a fondo el bucle de renders (React #310) al abrir páginas `/node/…`: claves estables de tipos, updaters que no crean objetos nuevos si nada cambió, y cooldowns fuera de `extraData`.
+- Corregido el doble-clic (seleccionar palabra) y el reposicionado del cursor dentro de un nodo, sin tocar la colocación del cursor (regla sagrada v9.4.57).
+
+---
+
 ## Web v9.6.70 — 4 junio 2026 · Filtros como raíces flotantes (Workflowy-style)
 
 ### Mejora: todos los filtros muestran resultados como raíces flotantes con breadcrumb

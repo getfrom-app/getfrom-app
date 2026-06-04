@@ -732,11 +732,29 @@ Puedes crear múltiples vistas para el mismo nodo. Pulsa el "+" junto a los tabs
 
 ---
 
-## 15. IA integrada — Magic
+## 15. Magic — la inteligencia de From
+
+Magic es la capa de inteligencia de From. La idea no es "tener IA": es que **From te entienda**. Escribes como piensas y From se encarga de lo demás — entiende qué es cada cosa, la ordena, recuerda quién eres y se anticipa. Todo en segundo plano, sin menús y sin que tengas que mantener nada. El objetivo es eliminar la fricción entre lo que piensas y lo que queda escrito, y hacerlo rápido.
+
+Magic tiene tres caras:
+
+1. **Te entiende mientras escribes** — clasifica, fecha y detecta el tipo de cada nota sin que toques un menú (ver más abajo y la sección 9).
+2. **Te recuerda** — construye un perfil tuyo y un conocimiento por contexto a partir de lo que escribes ("Lo que From sabe").
+3. **Actúa por ti** — Magic Chat, grabadora, agentes programados.
+
+### Cómo From te entiende — la capa de inteligencia
+
+**Contextos automáticos con jerarquía.** Mientras escribes, From clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto), entendiendo la **jerarquía** de contextos y subcontextos. Una nota de "La Isla" va a "Trabajo › La Isla", no a una etiqueta plana. Si hace falta un contexto que no existe, From puede crear el subcontexto en el lugar correcto. El badge de contexto aparece junto al nodo con la sugerencia; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Agenda/Año/Mes) nunca muestran badge.
+
+**"Lo que From sabe" por contexto.** Cada contexto acumula su propio conocimiento vivo, en tres apartados: **Palabras clave**, **Personas** y **Temas frecuentes**. From lo extrae solo de las notas que clasificas ahí y lo mantiene al día: cuando añades algo nuevo, **fusiona** la información nueva con la que ya había, sin duplicar, en lugar de reescribirlo todo. La actualización es proactiva (al clasificar nodos) y vuelve a aprender si sigues editando un nodo ya clasificado. Solo guarda información nueva: si no hay nada que añadir, no toca nada. Abres un contexto y From ya sabe de qué va.
+
+**Tu perfil — From te recuerda.** From construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo. Filtra el ruido — **solo retiene lo que perdura**, no las tareas del día ni los problemas temporales — y sintetiza en vez de copiar literal ("Me voy a casar" → "Tiene planes de matrimonio con su pareja"). El aprendizaje se guarda aunque salgas del nodo, navegues a otra página o el nodo lo cree un agente. Abre tu perfil desde **CONTEXTOS → Mi perfil**.
+
+**Clasificar todo lo antiguo.** En el panel de contextos, bajo "Sin clasificar", el botón **"Clasificar todos"** procesa de una vez todos los nodos antiguos sin contexto, con barra de progreso y posibilidad de cancelar.
 
 ### Magic Chat — asistente de voz y texto
 
-Magic es el asistente de IA de From. No es un chatbot genérico: conoce tu árbol, tus tareas, tus contextos y tu perfil personal.
+Magic Chat conoce tu árbol, tus tareas, tus contextos y tu perfil personal.
 
 **Abrir Magic:**
 - Icono ✦ en la barra superior derecha

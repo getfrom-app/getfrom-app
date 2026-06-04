@@ -285,7 +285,21 @@ From includes a **persistent recording bar** at the bottom of the left column. I
 
 ---
 
-## 13. Integrated AI
+## 13. Magic — From's intelligence
+
+Magic is From's intelligence layer. The point isn't "having AI": it's that **From understands you**. You write the way you think and From handles the rest — it understands what each thing is, organizes it, remembers who you are and anticipates. All in the background, no menus, nothing for you to maintain. The goal is to remove the friction between what you think and what gets written — and to do it fast.
+
+**Automatic contexts with hierarchy.** As you write, From classifies each note into the context it belongs to (work, family, a specific project), understanding the **hierarchy** of contexts and subcontexts. A "La Isla" note goes under "Work › La Isla", not into a flat tag. If a context that doesn't exist is needed, From can create the subcontext in the right place. A context badge appears next to the node with the suggestion; one click confirms or changes it.
+
+**"What From knows" per context.** Each context builds up its own living knowledge: **Keywords**, **People** and **Recurring topics**. From extracts it on its own from the notes you classify there and keeps it current: when you add something new, it **merges** the new information with what was already there, without duplicating, instead of rewriting everything. Open a context and From already knows what it's about.
+
+**Your profile — From remembers you.** From builds a profile of you from what you write: your projects, the stable people in your life, your goals and long-term assets. It filters out the noise — it **keeps only what lasts**, not the day's tasks or temporary problems — and synthesizes instead of copying verbatim. The learning is saved even if you leave the node, navigate away, or the node was created by an agent. Open it from **CONTEXTS → My profile**.
+
+**Teach Magic.** Right-click any node → **Teach Magic**. Correct it: "this isn't a task", "this goes in this context". From learns from the correction and applies it from then on in every later classification. Learnings and classifier examples are stored as nodes in your tree, so they travel with your account across devices.
+
+**Classify everything old.** In the contexts panel, under "Unclassified", the **"Classify all"** button processes all your old nodes without a context at once, with a progress bar and the option to cancel.
+
+### Magic Chat & node assistant
 
 **Right column — diary notes:**
 A 3-view control at the top of the right column:
