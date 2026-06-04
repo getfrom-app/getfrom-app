@@ -52,6 +52,7 @@ export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
       matchIds={unclassifiedIds}
       label={t('autoCtx.unclassifiedFilter')}
       emptyText={t('autoCtx.unclassifiedEmpty', 'Todos los nodos tienen contexto asignado')}
+      enableAutoClassify={true}
     />
   )
 }

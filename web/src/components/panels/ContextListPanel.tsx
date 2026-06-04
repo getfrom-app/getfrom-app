@@ -2,13 +2,11 @@
  * ContextListPanel — lista de contextos en panel derecho
  * Hover: lápiz (renombrar) + × (eliminar), igual que los filtros guardados
  * Incluye sección "Sin clasificar" con nodos sin contexto asignado.
- * Incluye botón "Clasificar todos" para batch classification de nodos históricos.
  */
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
-import { classifyBatch, type ContextInfo, type ClassifyResult } from '../../api/autoClassify'
 
 /** Constante especial para indicar el filtro "Sin clasificar" */
 export const UNCLASSIFIED_FILTER_ID = '__unclassified__'
@@ -21,15 +19,6 @@ interface Props {
   selectedContextId?: string | null
 }
 
-/** Estado de la clasificación batch */
-interface BatchState {
-  running: boolean
-  processed: number
-  total: number
-  classified: number
-  done: boolean
-}
-
 export default function ContextListPanel({ onSelectContext, selectedContextId }: Props) {
   const s = useStore()
   const { t } = useTranslation()
@@ -39,111 +28,12 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const [hoveredId, setHoveredId]       = useState<string | null>(null)
   const [renamingId, setRenamingId]     = useState<string | null>(null)
   const [renameValue, setRenameValue]   = useState('')
-  const [batch, setBatch]               = useState<BatchState | null>(null)
-  const batchAbortRef                   = useRef<AbortController | null>(null)
   const newCtxInputRef  = useRef<HTMLInputElement>(null)
   const renameInputRef  = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (addingCtx) setTimeout(() => newCtxInputRef.current?.focus(), 30)
   }, [addingCtx])
-
-  // ── Clasificación batch ────────────────────────────────────────────────────
-
-  /** Recoge los nodos sin contexto asignado y dispara la clasificación batch */
-  const handleClassifyAll = useCallback(async () => {
-    // Cancelar si ya está corriendo
-    if (batch?.running) {
-      batchAbortRef.current?.abort()
-      setBatch(null)
-      return
-    }
-
-    const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-    const contextNodes = contextoRoot ? store.children(contextoRoot.id).filter(n => !n.deletedAt) : []
-    if (contextNodes.length === 0) return
-
-    // Nodos sin contexto (misma lógica que el filtro "Sin clasificar")
-    // Solo nodos contenedor (con hijos) o tareas — los párrafos sueltos se excluyen
-    const unclassifiedNodes = store.allActive().filter(n => {
-      if (n.deletedAt || n.isDiaryEntry) return false
-      const text = (n.text || '').trim()
-      if (text.length < 4) return false
-      // Solo clasificar nodos contenedor (con hijos), tareas o bucles
-      const hasChildren = store.children(n.id).some(c => !c.deletedAt)
-      const isTask = n.status !== null
-      const isLoop = (n.types || []).includes('bucle')
-      if (!hasChildren && !isTask && !isLoop) return false
-      const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
-      if (userTypes.length > 0) return false
-      if (/@\w/.test(n.text || '')) return false
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._contextManuallySet === '1') return false
-      } catch { /* ignore */ }
-      return true
-    })
-
-    if (unclassifiedNodes.length === 0) return
-
-    const items = unclassifiedNodes.map(n => ({ nodeId: n.id, text: n.text || '' }))
-    const contexts: ContextInfo[] = contextNodes.map(n => ({
-      id: n.id,
-      name: n.text || '',
-    }))
-
-    const ctrl = new AbortController()
-    batchAbortRef.current = ctrl
-
-    setBatch({ running: true, processed: 0, total: items.length, classified: 0, done: false })
-
-    let classifiedCount = 0
-
-    const classified = await classifyBatch({
-      items,
-      contexts,
-      minConfidence: 0.3,
-      batchSize: 5,
-      batchDelay: 300,
-      signal: ctrl.signal,
-      onProgress: (processed, total) => {
-        setBatch(prev => prev ? { ...prev, processed, total } : null)
-      },
-      onClassified: (nodeId, result: ClassifyResult) => {
-        classifiedCount++
-        // Aplicar el contexto al nodo — igual que hace AutoContextBadge
-        const contextNode = contextNodes.find(n => n.id === result.contextId)
-        if (!contextNode) return
-        const tagName = contextNode.text || ''
-        if (!tagName) return
-        const node = store.getNode(nodeId)
-        if (!node) return
-        const existingTypes = node.types || []
-        if (!existingTypes.includes(tagName)) {
-          store.updateNode(nodeId, { types: [...existingTypes, tagName] })
-        }
-        // Marcar como asignado por IA (no manualmente — si el usuario lo cambia, lo sobreescribe)
-        try {
-          const ed = JSON.parse(node.extraData || '{}')
-          // No ponemos _contextManuallySet=1 aquí — fue IA, no el usuario
-          // Solo actualizamos si no estaba ya seteado manualmente
-          if (ed._contextManuallySet !== '1') {
-            // Nada más que añadir al extraData
-            store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-          }
-        } catch { /* ignore */ }
-      },
-    })
-
-    if (!ctrl.signal.aborted) {
-      setBatch({ running: false, processed: items.length, total: items.length, classified: classified, done: true })
-      // Limpiar mensaje de "completado" tras 4 segundos
-      setTimeout(() => setBatch(null), 4000)
-    }
-  }, [batch]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Limpiar abort al desmontar
-  useEffect(() => () => { batchAbortRef.current?.abort() }, [])
 
   function createCtx() {
     const name = newCtxName.trim()
@@ -330,60 +220,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
             }}>{unclassifiedCount}</span>
           </div>
 
-          {/* Botón "Clasificar todos" + progreso */}
-          {contextos.length > 0 && (
-            <div style={{ padding: '3px 16px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {/* Barra de progreso — solo cuando está corriendo */}
-              {batch?.running && (
-                <div style={{ width: '100%', height: 2, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    background: 'var(--accent)',
-                    borderRadius: 2,
-                    width: `${Math.round((batch.processed / batch.total) * 100)}%`,
-                    transition: 'width 0.2s',
-                  }} />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  onClick={e => { e.stopPropagation(); handleClassifyAll() }}
-                  disabled={batch?.done}
-                  title={contextos.length === 0 ? t('autoCtx.batchNoContexts') : undefined}
-                  style={{
-                    background: batch?.running ? 'rgba(139,92,246,0.08)' : 'var(--bg-hover)',
-                    color: batch?.running ? 'var(--accent)' : 'var(--text-secondary)',
-                    border: `1px solid ${batch?.running ? 'var(--accent)' : 'var(--border)'}`,
-                    borderRadius: 5,
-                    fontSize: 11,
-                    padding: '3px 8px',
-                    cursor: batch?.done ? 'default' : 'pointer',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    opacity: batch?.done ? 0.6 : 1,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {batch?.running
-                    ? t('autoCtx.batchRunning', { processed: batch.processed, total: batch.total })
-                    : batch?.done
-                      ? t('autoCtx.batchDone', { count: batch.classified })
-                      : t('autoCtx.batchClassifyAll')}
-                </button>
-
-                {batch?.running && (
-                  <button
-                    onClick={e => { e.stopPropagation(); batchAbortRef.current?.abort(); setBatch(null) }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text-tertiary)', padding: '3px 4px' }}
-                    title={t('autoCtx.batchCancel')}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

@@ -712,11 +712,6 @@
   "autoCtx.dropdownTitle": "Assign context",
   "autoCtx.noContext": "No context",
   "autoCtx.unclassifiedFilter": "Unclassified",
-  "autoCtx.batchClassifyAll": "✦ Classify all",
-  "autoCtx.batchRunning": "Classifying… {{processed}}/{{total}}",
-  "autoCtx.batchDone": "{{count}} nodes classified",
-  "autoCtx.batchCancel": "Cancel",
-  "autoCtx.batchNoContexts": "Define contexts first",
   "autoCtx.unclassifiedEmpty": "All nodes have a context assigned",
   "autoCtx.showingOf": "Showing {{shown}} of {{total}}",
   "common.loadMore": "Load more"

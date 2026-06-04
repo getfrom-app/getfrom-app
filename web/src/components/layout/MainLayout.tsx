@@ -593,7 +593,8 @@ export default function MainLayout() {
         if (hasFloatingMenu) return
 
         // Prioridad 2.5: volver a lista de contextos (no cerrar el panel)
-        if (rightPanel === 'context') {
+        // También cubre el filtro "Sin clasificar" que no abre panel 'context' sino que queda en 'context-list'
+        if (rightPanel === 'context' || contextNodeId === UNCLASSIFIED_FILTER_ID) {
           setRightPanel('context-list')
           setContextNodeId(null)  // limpia filtro del árbol
           return
@@ -646,7 +647,7 @@ export default function MainLayout() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [navigate, showUnifiedCapture, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, rightPanel])
+  }, [navigate, showUnifiedCapture, showNewTask, showNewEvent, showVoiceCapture, showShortcuts, rightPanel, contextNodeId])
 
   // Listener del modal de URL corta (slug) — disparado desde NodeContextMenu vía CustomEvent
   useEffect(() => {

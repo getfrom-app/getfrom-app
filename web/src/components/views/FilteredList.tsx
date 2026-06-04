@@ -17,12 +17,15 @@
  * Esto evita el freeze que ocurría al pasar ancestorIds al Outliner, lo que montaba
  * miles de OutlinerNode simultáneamente (cada uno con ~30 hooks).
  */
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
 import OutlinerNode from '../outliner/OutlinerNode'
 import { useGlobalSelection, toggleNodeSelection } from '../outliner/Outliner'
+import AutoContextBadge from '../outliner/AutoContextBadge'
+import { scheduleClassify, cancelClassify, getCachedClassify, type ClassifyResult } from '../../api/autoClassify'
+import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 
 /** Máximo de niveles de ancestro a mostrar en el breadcrumb */
 const MAX_BREADCRUMB_DEPTH = 4
@@ -50,29 +53,83 @@ export function getBreadcrumb(nodeId: string): string[] {
   return parts
 }
 
+/** Constante para el data transfer del drag de nodo a contexto */
+export const DRAG_NODE_ID_KEY = 'from/nodeId'
+
 /**
  * FilterResultItem — Muestra un nodo resultado de filtro como raíz flotante.
  * El breadcrumb es texto plano (sin OutlinerNode). El nodo resultado sí es OutlinerNode.
  * Exportado para que UnclassifiedList pueda reutilizarlo.
+ *
+ * enableAutoClassify: si true, programa clasificación inmediata al montar y muestra
+ *   AutoContextBadge junto al breadcrumb (vista "Sin clasificar").
  */
 export function FilterResultItem({
   node,
   selectedId,
   onSelect,
   onSelectNext,
+  enableAutoClassify = false,
 }: {
   node: FromNode
   selectedId: string | null
   onSelect: (id: string) => void
   onSelectNext: (id: string, dir: 'up' | 'down') => void
+  enableAutoClassify?: boolean
 }) {
   const selectedIds = useGlobalSelection()
   const breadcrumb = useMemo(() => getBreadcrumb(node.id), [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-clasificación en "Sin clasificar": scheduleClassify al montar y mostrar badge
+  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(
+    () => enableAutoClassify ? (getCachedClassify(node.id) ?? null) : null
+  )
+  const classifyScheduledRef = useRef(false)
+
+  useEffect(() => {
+    if (!enableAutoClassify) return
+    if (classifyScheduledRef.current) return
+    classifyScheduledRef.current = true
+
+    // No clasificar si ya tiene contexto manual o @mention
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._contextManuallySet === '1') return
+    } catch { /* ignore */ }
+    if (/@\w/.test(node.text || '')) return
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+    if (userTypes.length > 0) return
+
+    const text = (node.text || '').trim()
+    if (text.length < 4) return
+
+    const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    if (!tagsRoot) return
+    const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+    if (contextNodes.length === 0) return
+    const contexts = contextNodes.map(n => ({ id: n.id, name: n.text || '' }))
+
+    scheduleClassify(node.id, text, contexts, (id, result) => {
+      if (id === node.id) setAutoCtxResult(result)
+    })
+
+    return () => { cancelClassify(node.id) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.setData(DRAG_NODE_ID_KEY, node.id)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
   return (
-    <div style={{ marginBottom: 4 }}>
-      {/* Breadcrumb — texto plano, sin OutlinerNode → 0 coste de renderizado de árbol */}
-      {breadcrumb.length > 0 && (
+    <div
+      style={{ marginBottom: 4 }}
+      draggable={true}
+      onDragStart={handleDragStart}
+    >
+      {/* Breadcrumb + badge de auto-clasificación en la misma fila */}
+      {(breadcrumb.length > 0 || (enableAutoClassify && autoCtxResult && autoCtxResult.confidence > 0.3)) && (
         <div
           style={{
             padding: '2px 16px 0',
@@ -103,6 +160,17 @@ export function FilterResultItem({
               </span>
             </span>
           ))}
+
+          {/* Badge de auto-clasificación — visible inmediatamente en vista "Sin clasificar" */}
+          {enableAutoClassify && autoCtxResult && autoCtxResult.confidence > 0.3 && (
+            <AutoContextBadge
+              node={node}
+              result={autoCtxResult}
+              onContextAssigned={(id) => {
+                if (id === node.id) setAutoCtxResult(null)
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -134,6 +202,8 @@ interface FilteredListProps {
   emptyText?: string
   /** Mostrar paginación (por defecto true) */
   paginate?: boolean
+  /** Si true, cada FilterResultItem programa clasificación al montar y muestra AutoContextBadge */
+  enableAutoClassify?: boolean
 }
 
 /**
@@ -145,6 +215,7 @@ export default function FilteredList({
   label,
   emptyText,
   paginate = true,
+  enableAutoClassify = false,
 }: FilteredListProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
@@ -201,6 +272,7 @@ export default function FilteredList({
           selectedId={selectedId}
           onSelect={setSelectedId}
           onSelectNext={handleSelectNext}
+          enableAutoClassify={enableAutoClassify}
         />
       ))}
 
