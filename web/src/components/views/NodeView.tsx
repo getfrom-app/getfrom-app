@@ -317,7 +317,7 @@ export default function NodeView() {
       name: n.text || '',
       samples: store.children(n.id)
         .filter(c => !c.deletedAt && (c.text || '').trim().length > 2)
-        .slice(0, 50)
+        .slice(0, 200)
         .map(c => (c.text || '').trim()),
     }))
     scheduleClassify(node.id, text, contexts, (nid, result) => {
@@ -1734,6 +1734,8 @@ export default function NodeView() {
                 )
               })()
             ) : null) || (() => {
+              // Nodos de contexto (hijo directo de 🧠 Contexto): no mostrar icono de tipo
+              if (isContextNode) return null
               // ¿Nodo de definición de tag? → mostrar # en color del tag
               try {
                 const ed = JSON.parse(node.extraData || '{}')

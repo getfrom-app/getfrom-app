@@ -22,7 +22,7 @@ export interface ContextInfo {
   id: string
   name: string
   description?: string
-  /** Muestra de textos de nodos hijos del contexto (máx 50) para dar señales reales a la IA */
+  /** Muestra de textos de nodos hijos del contexto (máx 200) para dar señales reales a la IA */
   samples?: string[]
 }
 
