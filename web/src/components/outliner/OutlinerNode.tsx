@@ -812,6 +812,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
     }, 800, userProfileEdit?.length ? userProfileEdit : undefined)
+    // Si el nodo ya tiene un contexto asignado, re-programar actualización del conocimiento
+    // con debounce largo (30 min) para capturar ediciones prolongadas a lo largo del tiempo.
+    // El usuario puede seguir editando el nodo durante horas o días — este trigger garantiza
+    // que el contexto aprende del nuevo contenido aunque la clasificación ya esté confirmada.
+    const ctxIdForUpdate = autoCtxResult?.contextId ?? manuallySetContextId ?? null
+    if (ctxIdForUpdate && hasUserEditedRef.current) {
+      const existingTimer = contextKnowledgePendingTimers.get(ctxIdForUpdate)
+      if (existingTimer) clearTimeout(existingTimer)
+      const timer = setTimeout(() => {
+        contextKnowledgePendingTimers.delete(ctxIdForUpdate)
+        doTriggerContextKnowledgeUpdate(ctxIdForUpdate)
+      }, 1_800_000) // 30 minutos
+      contextKnowledgePendingTimers.set(ctxIdForUpdate, timer)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text, node.status, node.types, nodeHasManualContext])
 
