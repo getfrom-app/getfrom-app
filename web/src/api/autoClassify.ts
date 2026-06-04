@@ -13,6 +13,7 @@ import { apiRequest } from './client'
 import { store } from '../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../utils/tagsHelper'
 import { learningsStore } from '../store/learningsStore'
+import { getProfileContainer } from './userKnowledge'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,9 @@ export interface ClassifyExample {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const EXAMPLES_KEY = 'from_ctx_examples'
+const EXAMPLES_KEY = 'from_ctx_examples'            // legacy — solo migración
+const EXAMPLES_MIGRATED_KEY = 'from_ctx_examples_migrated'
+const EXAMPLES_SECTION = '🧠 Ejemplos de contexto'
 const MAX_EXAMPLES = 25
 /** Confidence mínima para mostrar el badge en color del contexto (vs gris) */
 export const CONFIDENCE_THRESHOLD = 0.6
@@ -111,28 +114,67 @@ export function clearCachedClassify(nodeId: string) {
   cache.delete(nodeId)
 }
 
-// ── Ejemplos few-shot en localStorage ────────────────────────────────────────
+// ── Ejemplos few-shot (respaldados en nodos → sincronizan por cuenta) ─────────
+// Cada ejemplo es un nodo hijo de "🧠 Ejemplos de contexto" bajo el perfil.
+// text = texto del ejemplo, extraData = { _ctxExample:'1', ctxId }.
+
+interface ExampleMeta { _ctxExample: '1'; ctxId: string }
+
+function parseExample(node: { text?: string | null; extraData?: string | null }): ClassifyExample | null {
+  let meta: Partial<ExampleMeta> = {}
+  try { meta = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+  if (meta._ctxExample !== '1' || !meta.ctxId) return null
+  const text = (node.text || '').trim()
+  if (!text) return null
+  return { text, contextId: meta.ctxId }
+}
+
+/** Migración única desde localStorage → nodos. */
+function migrateExamples() {
+  try {
+    if (localStorage.getItem(EXAMPLES_MIGRATED_KEY)) return
+    const legacy: ClassifyExample[] = JSON.parse(localStorage.getItem(EXAMPLES_KEY) || '[]')
+    if (!Array.isArray(legacy) || legacy.length === 0) { localStorage.setItem(EXAMPLES_MIGRATED_KEY, '1'); return }
+    const container = getProfileContainer(EXAMPLES_SECTION)
+    if (!container) return // reintenta en próxima carga
+    const existing = store.children(container.id).filter(n => !n.deletedAt).map(parseExample).filter(Boolean) as ClassifyExample[]
+    let order = 1000
+    for (const ex of legacy) {
+      if (!ex.text?.trim() || !ex.contextId) continue
+      if (existing.some(e => e.text === ex.text && e.contextId === ex.contextId)) continue
+      store.createNode({ text: ex.text.trim(), parentId: container.id, siblingOrder: order, extraData: { _ctxExample: '1', ctxId: ex.contextId } })
+      order += 1000
+    }
+    localStorage.setItem(EXAMPLES_MIGRATED_KEY, '1')
+    localStorage.removeItem(EXAMPLES_KEY)
+  } catch { /* reintenta en próxima carga */ }
+}
 
 export function loadExamples(): ClassifyExample[] {
-  try {
-    const raw = localStorage.getItem(EXAMPLES_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  migrateExamples()
+  const container = getProfileContainer(EXAMPLES_SECTION, false)
+  if (!container) return []
+  return store.children(container.id)
+    .filter(n => !n.deletedAt)
+    .map(parseExample)
+    .filter((e): e is ClassifyExample => e !== null)
 }
 
 export function saveExample(text: string, contextId: string) {
-  const examples = loadExamples()
+  const clean = text.trim()
+  if (!clean || !contextId) return
+  const container = getProfileContainer(EXAMPLES_SECTION)
+  if (!container) return
+  const nodes = store.children(container.id).filter(n => !n.deletedAt)
   // Evitar duplicados exactos
-  const exists = examples.some(e => e.text === text && e.contextId === contextId)
-  if (exists) return
-  examples.push({ text, contextId })
-  // Mantener solo los últimos MAX_EXAMPLES
-  if (examples.length > MAX_EXAMPLES) examples.splice(0, examples.length - MAX_EXAMPLES)
-  try {
-    localStorage.setItem(EXAMPLES_KEY, JSON.stringify(examples))
-  } catch { /* ignore */ }
+  if (nodes.some(n => (n.text || '').trim() === clean && parseExample(n)?.contextId === contextId)) return
+  const maxOrder = nodes.length > 0 ? Math.max(...nodes.map(c => c.siblingOrder)) : 0
+  store.createNode({ text: clean, parentId: container.id, siblingOrder: maxOrder + 1000, extraData: { _ctxExample: '1', ctxId: contextId } })
+  // Mantener solo los últimos MAX_EXAMPLES (borrar los más antiguos por orden)
+  const after = store.children(container.id).filter(n => !n.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
+  if (after.length > MAX_EXAMPLES) {
+    after.slice(0, after.length - MAX_EXAMPLES).forEach(n => store.deleteNode(n.id))
+  }
 }
 
 // ── Timers de debounce por nodo ───────────────────────────────────────────────

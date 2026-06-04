@@ -2,17 +2,24 @@
  * learningsStore — Sistema de aprendizaje de Magic (From AI)
  *
  * Almacena correcciones y preferencias que el usuario enseña a From.
- * Se persiste en localStorage y se inyecta en el prompt del sistema de IA
- * para que Magic mejore progresivamente su comprensión del usuario.
+ *
+ * Persistencia: cada regla es un NODO hijo del contenedor "🧠 Reglas de Magic"
+ * bajo el perfil IA. Así el aprendizaje sincroniza por cuenta (web, Mac, móvil)
+ * a través del sistema de nodos existente — NO depende del dispositivo.
+ * Se migra automáticamente lo que hubiera en localStorage (versiones antiguas).
  *
  * Fuentes de aprendizaje:
  *  · Manual: "Enseñar a Magic" en el menú contextual del nodo
- *  · Automático: detección de cambios en nodos creados por Magic (futuro)
+ *  · Chat: correcciones interpretadas por /ai/teach
  */
 
 import { useEffect, useState } from 'react'
+import { store } from './nodeStore'
+import { getProfileContainer } from '../api/userKnowledge'
 
-const STORAGE_KEY = 'from_magic_learnings'
+const STORAGE_KEY = 'from_magic_learnings'        // legacy — solo migración
+const MIGRATED_KEY = 'from_magic_learnings_migrated'
+const RULES_SECTION = '🧠 Reglas de Magic'
 
 export type LearningCategory = 'type' | 'context' | 'behavior' | 'positive'
 
@@ -25,21 +32,70 @@ export interface Learning {
   source: 'manual' | 'auto'
 }
 
-// ── Persistencia ────────────────────────────────────────────────────────────
-
-function load(): Learning[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
+interface LearningMeta {
+  _magicLearning: string
+  cat: LearningCategory
+  src: 'manual' | 'auto'
+  nodeText?: string
 }
 
-function save(items: Learning[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+function buildMeta(category: LearningCategory, source: 'manual' | 'auto', nodeText?: string): Record<string, string> {
+  const meta: Record<string, string> = { _magicLearning: '1', cat: category, src: source }
+  if (nodeText) meta.nodeText = nodeText
+  return meta
 }
 
-// ── Store singleton ──────────────────────────────────────────────────────────
+function parseLearning(node: { id: string; text?: string | null; extraData?: string | null; createdAt?: string | null }): Learning | null {
+  let meta: Partial<LearningMeta> = {}
+  try { meta = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+  if (meta._magicLearning !== '1') return null
+  return {
+    id: node.id,
+    createdAt: node.createdAt || new Date().toISOString(),
+    text: (node.text || '').trim(),
+    category: meta.cat || 'behavior',
+    nodeText: meta.nodeText,
+    source: meta.src || 'manual',
+  }
+}
+
+// ── Store singleton (respaldado en nodos) ─────────────────────────────────────
 
 class LearningsStore {
-  private items: Learning[] = load()
   private listeners = new Set<() => void>()
+
+  constructor() {
+    // Migración única desde localStorage → nodos.
+    try {
+      if (!localStorage.getItem(MIGRATED_KEY)) {
+        const legacy: Learning[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+        if (Array.isArray(legacy) && legacy.length > 0) {
+          // Diferida: el store de nodos puede no estar hidratado al construir.
+          setTimeout(() => this.migrate(legacy), 1500)
+        } else {
+          localStorage.setItem(MIGRATED_KEY, '1')
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  private migrate(legacy: Learning[]) {
+    try {
+      const container = getProfileContainer(RULES_SECTION)
+      if (!container) return // reintenta en la próxima carga
+      const existing = new Set(store.children(container.id).filter(n => !n.deletedAt).map(n => (n.text || '').trim()))
+      let order = 1000
+      for (const l of legacy) {
+        const text = (l.text || '').trim()
+        if (!text || existing.has(text)) continue
+        store.createNode({ text, parentId: container.id, siblingOrder: order, extraData: buildMeta(l.category, l.source, l.nodeText) })
+        order += 1000
+      }
+      localStorage.setItem(MIGRATED_KEY, '1')
+      localStorage.removeItem(STORAGE_KEY)
+      this.notify()
+    } catch { /* reintenta en la próxima carga */ }
+  }
 
   private notify() { this.listeners.forEach(fn => fn()) }
 
@@ -49,40 +105,45 @@ class LearningsStore {
   }
 
   getAll(): Learning[] {
-    return [...this.items].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    const container = getProfileContainer(RULES_SECTION, false)
+    if (!container) return []
+    return store.children(container.id)
+      .filter(n => !n.deletedAt)
+      .map(parseLearning)
+      .filter((l): l is Learning => l !== null)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }
 
-  /** Añade una nueva corrección. Evita duplicados exactos. */
+  /** Añade una nueva corrección. Evita duplicados exactos por texto. */
   add(item: Omit<Learning, 'id' | 'createdAt'>): Learning | null {
-    // Evitar duplicados por texto exacto
-    if (this.items.some(i => i.text === item.text)) return null
-
-    const newItem: Learning = {
-      id: `l_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      createdAt: new Date().toISOString(),
-      ...item,
-    }
-    this.items = [newItem, ...this.items]
-    save(this.items)
+    const text = item.text.trim()
+    if (!text) return null
+    const container = getProfileContainer(RULES_SECTION)
+    if (!container) return null
+    const siblings = store.children(container.id).filter(n => !n.deletedAt)
+    if (siblings.some(n => (n.text || '').trim() === text)) return null
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(c => c.siblingOrder)) : 0
+    const node = store.createNode({ text, parentId: container.id, siblingOrder: maxOrder + 1000, extraData: buildMeta(item.category, item.source, item.nodeText) })
     this.notify()
-    return newItem
+    return parseLearning(node)
   }
 
   update(id: string, text: string) {
-    this.items = this.items.map(i => i.id === id ? { ...i, text } : i)
-    save(this.items)
+    const clean = text.trim()
+    if (!clean) return
+    store.updateNode(id, { text: clean })
     this.notify()
   }
 
   remove(id: string) {
-    this.items = this.items.filter(i => i.id !== id)
-    save(this.items)
+    store.deleteNode(id)
     this.notify()
   }
 
   clear() {
-    this.items = []
-    save(this.items)
+    const container = getProfileContainer(RULES_SECTION, false)
+    if (!container) return
+    store.children(container.id).filter(n => !n.deletedAt).forEach(n => store.deleteNode(n.id))
     this.notify()
   }
 
@@ -91,9 +152,8 @@ class LearningsStore {
    * Devuelve null si no hay nada que inyectar.
    */
   buildPromptBlock(): string | null {
-    const items = this.items.filter(i => i.category !== 'positive').slice(0, 40)
+    const items = this.getAll().filter(i => i.category !== 'positive').slice(0, 40)
     if (items.length === 0) return null
-
     const lines = items.map(i => `- ${i.text}`)
     return `Lo que el usuario ha enseñado a Magic:\n${lines.join('\n')}`
   }
@@ -103,7 +163,13 @@ export const learningsStore = new LearningsStore()
 
 export function useLearningsStore() {
   const [, rerender] = useState(0)
-  useEffect(() => learningsStore.subscribe(() => rerender(n => n + 1)), [])
+  // Reactivo tanto a cambios propios como a cambios del store de nodos
+  // (p.ej. reglas que llegan por sync desde otro dispositivo).
+  useEffect(() => {
+    const unsubLs = learningsStore.subscribe(() => rerender(n => n + 1))
+    const unsubStore = store.subscribe(() => rerender(n => n + 1))
+    return () => { unsubLs(); unsubStore() }
+  }, [])
   return learningsStore
 }
 

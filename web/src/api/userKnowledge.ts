@@ -10,8 +10,37 @@
  */
 
 import { store } from '../store/nodeStore'
+import type { Node } from '../types'
 
 const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+
+/**
+ * Devuelve el nodo perfil IA, creándolo de forma SÍNCRONA si no existe.
+ * Replica getOrCreatePerfilIA (que no realiza ninguna espera real) para poder
+ * usarse en rutas síncronas (learningsStore.add, saveExample) sin romper su API.
+ */
+export function ensurePerfilSync(): Node {
+  const existing = store.perfilIANode?.() ?? null
+  if (existing) return existing
+  const contexto = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto') ?? null
+  return store.createNode({ text: '🧠 Perfil de IA', parentId: contexto?.id ?? null, extraData: { _perfilIA: '1' } })
+}
+
+/**
+ * Devuelve (creando si falta) un contenedor hijo del perfil con el nombre dado.
+ * Los contenedores 🧠 quedan excluidos de listas de contexto y "Sin clasificar".
+ * Es la base para persistir aprendizaje como nodos → sincroniza por cuenta.
+ */
+export function getProfileContainer(name: string, create = true): Node | null {
+  const perfil = create ? ensurePerfilSync() : (store.perfilIANode?.() ?? null)
+  if (!perfil) return null
+  const existing = store.children(perfil.id).find(n => !n.deletedAt && n.text === name)
+  if (existing) return existing
+  if (!create) return null
+  const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
+  const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+  return store.createNode({ text: name, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
+}
 
 /** Líneas actuales del perfil IA (hijos directos) — para dar contexto al extractor. */
 export function readProfileLines(): string[] {
