@@ -53,6 +53,9 @@ import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
 import { extractContextKnowledge } from '../../api/autoClassify'
+
+// Cooldown para extractContextKnowledge en ContextNodePanel — sin extraData
+const ctxPanelKnowledgeTimestamps = new Map<string, number>()
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
@@ -80,14 +83,13 @@ function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => 
 
   // ── Auto-actualizar "Lo que From sabe" al abrir un contexto en el panel derecho ──
   // Misma lógica que NodeView: si han pasado >30 min desde la última actualización, dispara en background.
+  // NOTA: usamos ctxPanelKnowledgeTimestamps (Map local) en lugar de extraData del nodo para
+  // evitar que la actualización del nodo re-dispare este efecto (bucle infinito de renders).
   useEffect(() => {
     if (!node || !isContextNode || ctxKnowledgeLoading) return
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      const lastUpdated: number = ed._knowledgeUpdatedAt || 0
-      const thirtyMinutes = 30 * 60 * 1000
-      if (Date.now() - lastUpdated < thirtyMinutes) return
-    } catch { return }
+    const lastUpdated = ctxPanelKnowledgeTimestamps.get(node.id) ?? 0
+    const thirtyMinutes = 30 * 60 * 1000
+    if (Date.now() - lastUpdated < thirtyMinutes) return
     const timer = setTimeout(async () => {
       if (!node || ctxKnowledgeLoading) return
       setCtxKnowledgeLoading(true)
@@ -132,13 +134,8 @@ function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => 
           }
           order += 1000
         }
-        // Guardar timestamp para evitar re-disparar antes de 30 min
-        try {
-          const currentNode = store.getNode(node.id)
-          const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
-          ed._knowledgeUpdatedAt = Date.now()
-          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-        } catch { /* ignorar */ }
+        // Guardar timestamp en Map local (sin tocar extraData — evita re-renders)
+        ctxPanelKnowledgeTimestamps.set(node.id, Date.now())
       } catch { /* silenciar errores */ }
       setCtxKnowledgeLoading(false)
     }, 1500)

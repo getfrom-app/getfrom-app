@@ -5,6 +5,10 @@ import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+
+// Cooldown para extractContextKnowledge — almacena timestamps por nodeId
+// sin causar re-renders (no usa extraData del nodo).
+const knowledgeUpdateTimestamps = new Map<string, number>()
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
@@ -282,6 +286,8 @@ export default function NodeView() {
   }, [node?.id, node?.body]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-clasificación de contexto al abrir un nodo
+  // NOTA: no incluimos node?.extraData en las deps para evitar bucles: la callback
+  // de scheduleClassify llama store.updateNode({ extraData }) lo que re-dispararía el efecto.
   useEffect(() => {
     if (!node) return
     // Reset al cambiar de nodo
@@ -296,10 +302,12 @@ export default function NodeView() {
       } catch { /* ignore */ }
       return null
     })
-    // No clasificar nodos con contexto ya asignado manualmente
+    // No clasificar nodos con contexto ya asignado manualmente o ya clasificado
     try {
       const ed = JSON.parse(node.extraData || '{}')
       if (ed._contextManuallySet === '1') return
+      // Si ya tiene _autoContextId persistido, no re-clasificar (evita bucle extraData→effect)
+      if (ed._autoContextId !== undefined) return
     } catch { /* ignore */ }
     const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
@@ -336,7 +344,7 @@ export default function NodeView() {
     }, 1000)
     return () => cancelClassify(node.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id, node?.text, node?.types, node?.extraData])
+  }, [node?.id, node?.text, node?.types])
 
   // Auto-focus textarea when body editing starts
   useEffect(() => {
@@ -431,7 +439,7 @@ export default function NodeView() {
       } catch { /* sin conexión GCal — silencioso */ }
     }, 1200)
     return () => clearTimeout(timer)
-  }, [node?.isEvent, node?.text, node?.due, node?.dueEnd, node?.body, node?.extraData, node?.recurrence, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [node?.isEvent, node?.text, node?.due, node?.dueEnd, node?.body, node?.recurrence, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load attachments on mount / node change
   useEffect(() => {
@@ -1414,27 +1422,21 @@ export default function NodeView() {
         }
         order += 1000
       }
-      // Guardar timestamp de última actualización para evitar re-disparar antes de 30 min
-      try {
-        const currentNode = store.getNode(node.id)
-        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
-        ed._knowledgeUpdatedAt = Date.now()
-        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-      } catch { /* ignorar */ }
+      // Guardar timestamp en Map local (sin tocar extraData — evita re-renders)
+      knowledgeUpdateTimestamps.set(node.id, Date.now())
     } catch { /* silenciar errores */ }
     setCtxKnowledgeLoading(false)
   }
 
   // ── Auto-actualizar "Lo que From sabe" al abrir un contexto ─────────────────
   // Si han pasado >30 min desde la última actualización, se dispara automáticamente en background.
+  // NOTA: usamos knowledgeUpdateTimestamps (Map local) en lugar de extraData del nodo para
+  // evitar que la actualización del nodo re-dispare este efecto (bucle infinito de renders).
   useEffect(() => {
-    if (!node || !isContextNode || ctxKnowledgeLoading) return
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      const lastUpdated: number = ed._knowledgeUpdatedAt || 0
-      const thirtyMinutes = 30 * 60 * 1000
-      if (Date.now() - lastUpdated < thirtyMinutes) return
-    } catch { return }
+    if (!node || !isContextNode) return
+    const lastUpdated = knowledgeUpdateTimestamps.get(node.id) ?? 0
+    const thirtyMinutes = 30 * 60 * 1000
+    if (Date.now() - lastUpdated < thirtyMinutes) return
     // Disparar en background sin bloquear el render
     const timer = setTimeout(() => {
       handleUpdateContextKnowledge()
