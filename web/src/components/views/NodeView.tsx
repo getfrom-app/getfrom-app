@@ -1962,61 +1962,6 @@ export default function NodeView() {
             </div>
           </div>
 
-          {/* Badge de contexto bajo el título — mismo mecanismo que OutlinerNode */}
-          {node && !node.isDiaryEntry && (() => {
-            const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-            const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-            if (!tagsRoot) return null
-            const hasContextsDefined = store.children(tagsRoot.id).some(n => !n.deletedAt)
-            if (!hasContextsDefined) return null
-            // Detectar contexto asignado: primero por _contextManuallySet, luego por cualquier user-type en types[]
-            let manualCtxId: string | null = null
-            try {
-              const ed = JSON.parse(node.extraData || '{}')
-              const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
-              if (userTypes.length > 0) {
-                const ctxNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-                for (const typeName of userTypes) {
-                  const ctxNode = ctxNodes.find(n => n.text === typeName)
-                  if (ctxNode) { manualCtxId = ctxNode.id; break }
-                }
-                // Fallback: buscar por slug si no se encontró por texto exacto
-                if (!manualCtxId) {
-                  for (const typeName of userTypes) {
-                    const ctxNode = ctxNodes.find(n => {
-                      const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9\-\/]/g,'')
-                      return slug === typeName
-                    })
-                    if (ctxNode) { manualCtxId = ctxNode.id; break }
-                  }
-                }
-                void ed // suppress unused warning
-              }
-            } catch { /* ignore */ }
-            return (
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, marginTop: -4 }}>
-                {manualCtxId ? (
-                  <AutoContextBadge
-                    node={node}
-                    result={nodeViewCtxResult ?? { contextId: manualCtxId, confidence: 1 }}
-                    assignedContextId={manualCtxId}
-                    onContextAssigned={() => setNodeViewCtxResult(null)}
-                  />
-                ) : nodeViewCtxResult !== null ? (
-                  <AutoContextBadge
-                    node={node}
-                    result={nodeViewCtxResult}
-                    onContextAssigned={() => setNodeViewCtxResult(null)}
-                  />
-                ) : (
-                  <ContextPlaceholderBadge
-                    node={node}
-                    onContextAssigned={() => setNodeViewCtxResult(null)}
-                  />
-                )}
-              </div>
-            )
-          })()}
 
           {/* Focus mode word counter */}
           {focusMode && (
