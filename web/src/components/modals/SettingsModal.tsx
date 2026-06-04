@@ -777,8 +777,19 @@ export function CapturaRapidaPane() {
         )
       ) : <div className="st-row-hint">Cargando...</div>}
 
-      <div className="st-row-hint" style={{ marginTop: 12, fontSize: 11 }}>
-        El mismo token sirve para Raycast y para la extensión de Claude (MCP). Regenerarlo invalida el anterior.
+      {/* Chrome */}
+      <SectionTitle>Chrome</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Instala la extensión <strong style={{ color: 'var(--text)' }}>From</strong> en Chrome: clic en el icono
+        guarda la URL de la pestaña en tu nota de hoy, y seleccionando texto + clic derecho lo envías como nodo.
+        En sus opciones, pega el mismo token de API de arriba.
+      </div>
+      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
+        Cómo instalar la extensión de Chrome →
+      </a>
+
+      <div className="st-row-hint" style={{ marginTop: 16, fontSize: 11 }}>
+        El mismo token sirve para Raycast, Chrome y la extensión de Claude (MCP). Regenerarlo invalida el anterior.
       </div>
     </div>
   )

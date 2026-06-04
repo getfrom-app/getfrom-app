@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accesorios — From</title>
+    <meta name="description" content="Captura en From desde cualquier sitio: Atajo de Apple, Raycast y Chrome. From entiende lo que guardas y lo coloca en tu nota de hoy.">
+    <link rel="alternate" hreflang="es" href="https://getfrom.app/accesorios.html" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="i18n.js"></script>
+</head>
+<body data-page="accesorios">
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+            </svg>
+            From
+        </a>
+        <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links">
+            <a href="index.html#features">Funciones</a>
+            <a href="accesorios.html">Accesorios</a>
+            <a href="pricing.html">Precios</a>
+            <a href="changelog.html">Novedades</a>
+            <a href="support.html">Soporte</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option></select>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
+            <a href="index.html#download" class="btn-nav">Descargar gratis</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="page-hero">
+    <span class="section-label" style="display:inline-block;margin-bottom:10px;">Arsenal</span>
+    <h1>Captura en From desde cualquier sitio</h1>
+    <p>Da igual dónde estés trabajando: manda lo que tengas a tu nota de hoy con una tecla, un comando o un clic. From entiende lo que guardas —tipo, fecha, contexto— y lo coloca en su sitio.</p>
+</div>
+
+<!-- Accesorios -->
+<section class="section" style="padding-top: 0;">
+    <div class="support-grid support-grid--3">
+
+        <!-- Atajo de Apple -->
+        <div class="support-card">
+            <div class="card-icon" style="background: rgba(88,86,214,0.12); color: var(--indigo);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 9h6v6H9z"/></svg>
+            </div>
+            <h3>Atajo de Apple</h3>
+            <p>Una tecla global desde cualquier app del Mac. Pulsa, escribe y cae en tu nota de hoy — sin abrir nada.</p>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">
+                Crea un Atajo con la acción <strong>«Abrir URL»</strong>:
+                <code>from://capture?text=[Texto]&amp;silent=1</code>, y asígnale la tecla que quieras.
+                Guía completa en el Manual.
+            </p>
+            <a href="docs/index.html" style="font-size:13px;color:var(--accent);font-weight:600;">Ver guía →</a>
+        </div>
+
+        <!-- Raycast -->
+        <div class="support-card">
+            <div class="card-icon" style="background: rgba(255,45,85,0.1); color: var(--pink);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l9-9 9 9"/><path d="M12 4v16"/></svg>
+            </div>
+            <h3>Raycast</h3>
+            <p>Crea, busca y abre tu nota de hoy desde Raycast. La inteligencia de From decide si es nota, tarea o evento.</p>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">
+                Instala la extensión <strong>From</strong> desde la Raycast Store y pega tu token de API
+                (Ajustes → Accesorios → Raycast).
+            </p>
+            <a href="https://www.raycast.com/store" target="_blank" rel="noopener" style="font-size:13px;color:var(--accent);font-weight:600;">Raycast Store →</a>
+        </div>
+
+        <!-- Chrome -->
+        <div class="support-card">
+            <div class="card-icon" style="background: rgba(74,144,217,0.1); color: var(--accent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 9h9M5 6l4 7M11 21l4-9"/></svg>
+            </div>
+            <h3>Chrome</h3>
+            <p>Clic en el icono y guarda la página actual en tu nota de hoy. Selecciona texto y mándalo como nodo con el menú contextual.</p>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:10px;">
+                Instala la extensión <strong>From</strong> desde la Chrome Web Store y pega tu token de API
+                en sus opciones (Ajustes → Accesorios → Chrome).
+            </p>
+            <a href="https://chromewebstore.google.com/" target="_blank" rel="noopener" style="font-size:13px;color:var(--accent);font-weight:600;">Chrome Web Store →</a>
+        </div>
+
+    </div>
+
+    <p style="text-align:center;max-width:620px;margin:36px auto 0;font-size:14px;color:var(--text-secondary);">
+        Todos usan el mismo <strong>token de API</strong> de tu cuenta (Ajustes → Accesorios). Lo generas una vez y sirve para Raycast, Chrome y la extensión de Claude.
+    </p>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a href="/" class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V8"/><path d="M12 8C12 8 8 4 8 2"/><path d="M12 8C12 8 16 4 16 2"/>
+                    <path d="M12 14C12 14 8 10 6 9"/><path d="M12 14C12 14 16 10 18 9"/>
+                </svg>
+                From
+            </a>
+            <p>Tu segundo cerebro. En tu Mac. Solo tuyo.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Producto</h4>
+            <a href="index.html#features">Funciones</a>
+            <a href="accesorios.html">Accesorios</a>
+            <a href="pricing.html">Precios</a>
+            <a href="changelog.html">Novedades</a>
+        </div>
+        <div class="footer-col">
+            <h4>Soporte</h4>
+            <a href="support.html">Centro de ayuda</a>
+            <a href="mailto:hola@getfrom.app">Contacto</a>
+            <a href="account.html">Mi cuenta</a>
+        </div>
+        <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="privacy.html">Privacidad</a>
+            <a href="terms.html">Términos</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        © 2026 Alberto Lezaun. All rights reserved. — <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>
+    </div>
+</footer>
+
+</body>
+</html>
