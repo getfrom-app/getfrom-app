@@ -242,13 +242,17 @@ export default function NodeView() {
 
   // Detectar si el nodo actual es un nodo de contexto (hijo directo de 🧠 Contexto)
   // Excluye el nodo de perfil (_perfilIA === '1') — tiene su propio mecanismo de aprendizaje (extractUserKnowledge)
+  // NOTA: node?.extraData se elimina de deps para evitar que cada write a extraData re-dispare el
+  // useEffect de actualización de conocimiento (que tiene isContextNode en sus deps).
+  // _perfilIA es un valor que se escribe una sola vez al crear el perfil — no cambia tras el montaje.
   const isContextNode = useMemo(() => {
     if (!node) return false
     try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return false } catch { /* ignore */ }
     const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!tagsRoot) return false
     return node.parentId === tagsRoot.id
-  }, [node?.id, node?.parentId, node?.extraData])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id, node?.parentId])
 
   // ── Vistas múltiples (Notion-style) ─────────────────────────────────────
   // activeViewId = id de la vista activa entre las del padre
@@ -311,19 +315,36 @@ export default function NodeView() {
     }
   }, [node?.id, node?.body]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clave estable de tipos: evita que applyNode (que crea un nuevo array por JSON.parse)
+  // re-dispare el efecto de clasificación cuando los tipos no cambiaron en contenido.
+  // Array.sort().join es O(n log n) pero los tipos son siempre pocos (<10).
+  const nodeTypesKey = (node?.types || []).slice().sort().join(',')
+
   // Auto-clasificación de contexto al abrir un nodo
-  // NOTA: no incluimos node?.extraData en las deps para evitar bucles: la callback
-  // de scheduleClassify llama store.updateNode({ extraData }) lo que re-dispararía el efecto.
+  // NOTAS:
+  //  1. No incluimos node?.extraData en las deps para evitar bucles: la callback
+  //     de scheduleClassify llama store.updateNode({ extraData }) lo que re-dispararía el efecto.
+  //  2. Usamos nodeTypesKey (string estable) en lugar de node?.types (array nueva ref cada sync)
+  //     para evitar que applyNode cree un bucle: applyNode hace JSON.parse → nueva ref de array →
+  //     efecto re-dispara → setNodeViewCtxResult crea nuevo objeto → re-render → etc.
   useEffect(() => {
     if (!node) return
-    // Reset al cambiar de nodo
-    setNodeViewCtxResult(() => {
+    // Sincronizar estado local con lo que hay en caché/extraData.
+    // Usar functional updater que devuelve la referencia anterior si el contenido no cambió
+    // (evita re-render innecesario cuando se llama con el mismo valor).
+    setNodeViewCtxResult(prev => {
       const cached = getCachedClassify(node.id)
-      if (cached) return cached
+      if (cached) {
+        if (prev && prev.contextId === cached.contextId && prev.confidence === cached.confidence) return prev
+        return cached
+      }
       try {
         const ed = JSON.parse(node.extraData || '{}')
         if (ed._autoContextId !== undefined) {
-          return { contextId: ed._autoContextId || null, confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0 }
+          const newCtxId = ed._autoContextId || null
+          const newConf = typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0
+          if (prev && prev.contextId === newCtxId && prev.confidence === newConf) return prev
+          return { contextId: newCtxId, confidence: newConf }
         }
       } catch { /* ignore */ }
       return null
@@ -370,7 +391,7 @@ export default function NodeView() {
     }, 1000)
     return () => cancelClassify(node.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id, node?.text, node?.types])
+  }, [node?.id, node?.text, nodeTypesKey])
 
   // Auto-focus textarea when body editing starts
   useEffect(() => {
