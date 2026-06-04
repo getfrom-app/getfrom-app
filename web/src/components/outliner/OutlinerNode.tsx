@@ -386,6 +386,39 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return null
   }, [node.types, node.extraData])
 
+  // Comprueba si el nodo está dentro de una estructura restringida donde no tiene
+  // sentido clasificar ni extraer conocimiento del usuario:
+  //   1. Dentro de un nodo de contexto (hijo de 🧠 Contexto)
+  //   2. Dentro del nodo de perfil (_perfilIA === '1')
+  //   3. Dentro de la estructura temporal de la Agenda (📅 Agenda → Año → Mes → Día)
+  // Sube máximo 6 niveles para no ser costoso; memoizado por parentId.
+  const isInsideRestrictedAncestor = useMemo(() => {
+    // Identificar raíces especiales para comparar contra ellas
+    const contextoRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const agendaRoot = store.children(null).find(n => !n.deletedAt && n.text === '📅 Agenda')
+
+    let cur = store.getNode(node.parentId ?? '')
+    let depth = 0
+    while (cur && depth < 6) {
+      // ¿Es el nodo de perfil?
+      try {
+        const ed = JSON.parse(cur.extraData || '{}')
+        if (ed._perfilIA === '1') return true
+      } catch { /* ignore */ }
+      // ¿Es el nodo raíz de contextos?
+      if (contextoRoot && cur.id === contextoRoot.id) return true
+      // ¿Es el nodo raíz de agenda?
+      if (agendaRoot && cur.id === agendaRoot.id) return true
+      // ¿Es la Papelera?
+      if ((cur.text || '') === '🗑 Papelera') return true
+
+      cur = store.getNode(cur.parentId ?? '')
+      depth++
+    }
+    return false
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.parentId])
+
   // Al montar: si el nodo no tiene _autoContextId en extraData (nunca clasificado o badge perdido
   // por desmonte/remonte), disparar clasificación con delay largo (3000ms) para no saturar.
   // Esto cubre el caso: usuario crea nodo → escribe → Enter (desmonte) → remonte sin clasificar.
@@ -398,6 +431,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       hasPersistedAutoCtx = ed._autoContextId !== undefined
     } catch { /* ignore */ }
     if (hasPersistedAutoCtx) return
+
+    // No clasificar si el nodo está dentro de una estructura restringida
+    if (isInsideRestrictedAncestor) return
 
     // No disparar para nodos con contexto manual
     if (nodeHasManualContext) return
@@ -467,6 +503,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   useEffect(() => {
     // Solo disparar si el usuario ha escrito en este nodo durante la sesión actual
     if (!hasUserEditedRef.current) return
+    // No clasificar si el nodo está dentro de una estructura restringida (contexto, perfil, agenda)
+    if (isInsideRestrictedAncestor) {
+      cancelClassify(node.id)
+      return
+    }
     // No clasificar nodos especiales o ya clasificados manualmente
     if (nodeHasManualContext) {
       cancelClassify(node.id)
@@ -1347,10 +1388,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // ── Aprendizaje del usuario: extraer datos relevantes del nodo al perder el foco ──
     // Se dispara para CUALQUIER nodo con texto ≥ 20 chars, sin importar tipo.
     // Debounce largo (10s) para no saturar. Se dispara una sola vez por nodo por sesión.
+    // No extraer de nodos dentro de contextos, perfil o estructura temporal.
     const blurText = (contentRef.current?.textContent || '').trim()
     if (
       hasUserEditedRef.current &&
       !hasExtractedUserKnowledgeRef.current &&
+      !isInsideRestrictedAncestor &&
       blurText.length >= 20
     ) {
       // Cancelar timer previo si existe
