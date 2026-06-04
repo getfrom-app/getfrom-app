@@ -346,83 +346,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [])
 
-  // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
-  // lleva 15s estable (sin cambios) y cumple los criterios. Cubre el caso en que
-  // handleBlur no se dispara correctamente (notas normales que se crean/pegan sin
-  // interacción directa, o cuando contentRef no tiene el texto actualizado al blur).
-  useEffect(() => {
-    if (hasExtractedUserKnowledgeRef.current) return
-    if (isInsideRestrictedAncestor) return
-    const text = (node.text || '').trim()
-    if (text.length < 20) return
-    if (node.isDiaryEntry) return
-    // Reiniciar el timer cada vez que el texto cambie — solo disparar tras 15s de estabilidad
-    if (extractUserKnowledgeTimerRef.current) {
-      clearTimeout(extractUserKnowledgeTimerRef.current)
-    }
-    extractUserKnowledgeTimerRef.current = setTimeout(async () => {
-      extractUserKnowledgeTimerRef.current = null
-      if (hasExtractedUserKnowledgeRef.current) return
-      hasExtractedUserKnowledgeRef.current = true
-      try {
-        const perfilNode = store.perfilIANode?.() ?? null
-        const existingProfileLines: string[] = perfilNode
-          ? store.children(perfilNode.id)
-              .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
-              .slice(0, 50)
-              .map(n => (n.text || '').trim())
-          : []
-        const existingProfile = existingProfileLines.join('. ')
-        const knowledge = await extractUserKnowledge(text, existingProfile || undefined)
-        if (!knowledge) return
-        const { people, facts } = knowledge
-        if (!people.length && !facts.length) return
-        const perfilNodeFresh = store.perfilIANode?.() ?? null
-        if (!perfilNodeFresh) return
-        const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
-        let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
-        if (!learnNode) {
-          const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
-          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
-          learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
-        }
-        const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
-        const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
-        if (kwNode) store.deleteNode(kwNode.id)
-        // Fix 3: upsert con sanitización de prefijos espurios del modelo
-        const upsertSub = (prefix: string, items: string[], order: number) => {
-          if (!items.length) return
-          // Sanitizar: quitar posible "Prefix: " que el modelo incluya por error al inicio del item
-          const cleanItems = items
-            .map(item => {
-              const prefixPattern = new RegExp(`^${prefix}:\\s*`, 'i')
-              return item.replace(prefixPattern, '').trim()
-            })
-            .filter(Boolean)
-          if (!cleanItems.length) return
-          const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
-          const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
-          if (!sub) {
-            store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-          } else {
-            const existingText = (sub.text || '').toLowerCase()
-            const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
-            if (newItems.length > 0) {
-              const currentText = (sub.text || '').trimEnd()
-              const sep = currentText.endsWith(':') ? ' ' : ', '
-              store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
-            }
-          }
-        }
-        const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
-        const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
-        upsertSub('Personas', people, maxBase + 1000)
-        upsertSub('Hechos', facts, maxBase + 2000)
-      } catch { /* silencioso */ }
-    }, 15_000)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, node.text, node.isDiaryEntry, isInsideRestrictedAncestor])
-
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
   const nodeHasManualContext = useMemo(() => {
@@ -504,6 +427,79 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return false
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.parentId])
+
+  // Fix 2: debounce sobre node.text — dispara extractUserKnowledge si el texto
+  // lleva 15s estable (sin cambios) y cumple los criterios. Cubre el caso en que
+  // handleBlur no se dispara correctamente (notas normales sin interacción directa
+  // o cuando contentRef no tiene el texto actualizado al blur).
+  useEffect(() => {
+    if (hasExtractedUserKnowledgeRef.current) return
+    if (isInsideRestrictedAncestor) return
+    const text = (node.text || '').trim()
+    if (text.length < 20) return
+    if (node.isDiaryEntry) return
+    // Reiniciar el timer — solo disparar tras 15s de estabilidad
+    if (extractUserKnowledgeTimerRef.current) {
+      clearTimeout(extractUserKnowledgeTimerRef.current)
+    }
+    extractUserKnowledgeTimerRef.current = setTimeout(async () => {
+      extractUserKnowledgeTimerRef.current = null
+      if (hasExtractedUserKnowledgeRef.current) return
+      hasExtractedUserKnowledgeRef.current = true
+      try {
+        const perfilNode = store.perfilIANode?.() ?? null
+        const existingProfileLines: string[] = perfilNode
+          ? store.children(perfilNode.id)
+              .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
+              .slice(0, 50)
+              .map(n => (n.text || '').trim())
+          : []
+        const existingProfile = existingProfileLines.join('. ')
+        const knowledge = await extractUserKnowledge(text, existingProfile || undefined)
+        if (!knowledge) return
+        const { people, facts } = knowledge
+        if (!people.length && !facts.length) return
+        const perfilNodeFresh = store.perfilIANode?.() ?? null
+        if (!perfilNodeFresh) return
+        const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+        let learnNode = store.children(perfilNodeFresh.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+        if (!learnNode) {
+          const allSibs = store.children(perfilNodeFresh.id).filter(n => !n.deletedAt)
+          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
+          learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfilNodeFresh.id, siblingOrder: maxOrder + 1000 })
+        }
+        const learnChildren = store.children(learnNode.id).filter(n => !n.deletedAt)
+        const kwNode = learnChildren.find(n => (n.text || '').startsWith('Palabras clave:'))
+        if (kwNode) store.deleteNode(kwNode.id)
+        // Fix 3 inline: sanitizar prefijos espurios + upsert
+        const upsertSub2 = (prefix: string, items: string[], order: number) => {
+          if (!items.length) return
+          const cleanItems = items
+            .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
+            .filter(Boolean)
+          if (!cleanItems.length) return
+          const fc = store.children(learnNode!.id).filter(n => !n.deletedAt)
+          const sub = fc.find(n => (n.text || '').startsWith(prefix + ':'))
+          if (!sub) {
+            store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
+          } else {
+            const existingText = (sub.text || '').toLowerCase()
+            const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
+            if (newItems.length > 0) {
+              const currentText = (sub.text || '').trimEnd()
+              const sep = currentText.endsWith(':') ? ' ' : ', '
+              store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
+            }
+          }
+        }
+        const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
+        const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
+        upsertSub2('Personas', people, maxBase + 1000)
+        upsertSub2('Hechos', facts, maxBase + 2000)
+      } catch { /* silencioso */ }
+    }, 15_000)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.text, node.isDiaryEntry, isInsideRestrictedAncestor])
 
   // Al montar: si el nodo no tiene _autoContextId en extraData (nunca clasificado o badge perdido
   // por desmonte/remonte), disparar clasificación con delay largo (3000ms) para no saturar.
@@ -1506,7 +1502,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           if (!people.length && !facts.length) return
 
           // Añadir los datos aprendidos al nodo "🧠 Lo que From sabe sobre ti" dentro del perfil
-          const perfilNodeFresh = store.perfilIANode?.() ?? null
+          // Si no existe el perfil, crearlo automáticamente (primera vez que From aprende algo)
+          let perfilNodeFresh = store.perfilIANode?.() ?? null
+          if (!perfilNodeFresh) {
+            try { perfilNodeFresh = await store.getOrCreatePerfilIA() } catch { return }
+          }
           if (!perfilNodeFresh) return
 
           const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
@@ -1524,16 +1524,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           if (kwNode) store.deleteNode(kwNode.id)
 
           // Helper: buscar o crear subnodo por prefijo, luego añadir items sin duplicar
+          // Fix 3: sanitizar items para quitar prefijo "Prefix: " que el modelo pueda incluir por error
           const upsertSubnode = (prefix: string, items: string[], order: number) => {
             if (!items.length) return
+            const cleanItems = items
+              .map(item => {
+                const prefixPattern = new RegExp(`^${prefix}:\\s*`, 'i')
+                return item.replace(prefixPattern, '').trim()
+              })
+              .filter(Boolean)
+            if (!cleanItems.length) return
             const freshChildren = store.children(learnNode!.id).filter(n => !n.deletedAt)
             let subNode = freshChildren.find(n => (n.text || '').startsWith(prefix + ':'))
             if (!subNode) {
-              subNode = store.createNode({ text: prefix + ': ' + items.join(', '), parentId: learnNode!.id, siblingOrder: order })
+              subNode = store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
             } else {
               // Añadir items nuevos que no estén ya en el texto del subnodo
               const existingText = (subNode.text || '').toLowerCase()
-              const newItems = items.filter(item => !existingText.includes(item.toLowerCase()))
+              const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
               if (newItems.length > 0) {
                 const currentText = (subNode.text || '').trimEnd()
                 const sep = currentText.endsWith(':') ? ' ' : ', '
@@ -2882,9 +2890,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // anyDescendantMatches solo es true cuando !matchesFilter, así que para nodos que
   // coinciden Y tienen hijos-match usamos filterAncestorIds directamente.
   const hasMatchingDescendants = !!(filterAncestorIds?.has(node.id))
-  const showChildren = matchesFilter && !hasMatchingDescendants
-    ? false  // match directo sin hijos-match → colapsar (ej: bucle sin sub-bucles)
-    : (!isCollapsed || anyDescendantMatches || hasMatchingDescendants)
+  // Sin filtro activo: comportamiento normal (respetar isCollapsed del usuario).
+  // Con filtro activo: si es match directo sin hijos-match, ocultar hijos; si es
+  //   ancestro de match o está expandido, mostrarlos.
+  const showChildren = !(activeFilter || filterMatchIds)
+    ? !isCollapsed  // sin filtro: respetar el estado de colapso del chevron
+    : matchesFilter && !hasMatchingDescendants
+      ? false  // filtro activo, match directo sin hijos-match → colapsar
+      : (!isCollapsed || anyDescendantMatches || hasMatchingDescendants)
 
   // Filter exit animation — when node leaves active filter, animate out before hiding
   const shouldFilterHide = !!(activeFilter && !matchesFilter && !anyDescendantMatches)

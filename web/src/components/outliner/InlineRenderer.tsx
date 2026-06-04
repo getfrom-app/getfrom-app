@@ -287,11 +287,11 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
   let wrapClass = ''
 
   if (type === 'divider') return '<hr class="block-divider" />'
-  // v8.25: headings y bullet vienen siempre por forcedBlock (extraData._block).
-  // El text NO lleva prefijo "# "/"- ". Sin stripping necesario.
-  if (type === 'h1') { wrapClass = 'block-h1' }
-  else if (type === 'h2') { wrapClass = 'block-h2' }
-  else if (type === 'h3') { wrapClass = 'block-h3' }
+  // Headings: cuando vienen por forcedBlock (extraData._block) el text ya no lleva prefijo "# ".
+  // Cuando se detectan del texto (nodos creados externamente sin _block), hay que stripear el prefijo.
+  if (type === 'h1') { wrapClass = 'block-h1'; if (!forcedBlock) content = getBlockContent(text, 'h1') }
+  else if (type === 'h2') { wrapClass = 'block-h2'; if (!forcedBlock) content = getBlockContent(text, 'h2') }
+  else if (type === 'h3') { wrapClass = 'block-h3'; if (!forcedBlock) content = getBlockContent(text, 'h3') }
   else if (type === 'quote') { content = text.replace(/^>\s*/, ''); wrapClass = 'block-quote' }
   else if (type === 'numbered') { content = text.replace(/^\d+\.\s/, ''); wrapClass = 'block-numbered' }
   else if (type === 'code') { content = text.slice(2); wrapClass = 'block-code' }
