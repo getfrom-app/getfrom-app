@@ -1,12 +1,18 @@
 /**
- * UnclassifiedList — Lista plana de nodos sin contexto asignado.
+ * UnclassifiedList — Lista de nodos sin contexto asignado en estilo "raíces flotantes".
  *
- * Completamente independiente del Outliner y de OutlinerNode.
- * No calcula ancestorIds, no expande árboles. Solo itera los nodos directamente.
- * Esto evita el freeze que ocurría cuando el Outliner montaba miles de componentes
- * al intentar expandir los ancestros de 160 nodos distribuidos por todo el árbol.
+ * Cada nodo resultado se muestra con:
+ *   1. Un breadcrumb de texto (gris, pequeño) mostrando el path hasta el nodo en el árbol real.
+ *   2. El OutlinerNode del nodo resultado como raíz flotante — el usuario puede expandir/colapsar
+ *      sus hijos normalmente.
  *
- * Incluye paginación con "Cargar más" para evitar renders pesados.
+ * Los ANCESTROS son texto plano (breadcrumb) → 0 coste de renderizado de OutlinerNode.
+ * Solo el nodo resultado y sus HIJOS son OutlinerNode normales → coste habitual.
+ *
+ * Esto evita el freeze que ocurría al montar miles de OutlinerNode al expandir
+ * los ancestros de 160 nodos distribuidos por todo el árbol.
+ *
+ * Incluye paginación con "Cargar más" (40 items por página).
  */
 import { useState, useMemo, useCallback } from 'react'
 import { useStore, store } from '../../store/nodeStore'
@@ -15,105 +21,123 @@ import { scheduleClassify, type ClassifyResult } from '../../api/autoClassify'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
+import OutlinerNode from '../outliner/OutlinerNode'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, openSelectionMenu } from '../outliner/Outliner'
 
 /** Tags de sistema — no cuentan como contexto de usuario */
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
 
 const PAGE_SIZE = 40
+/** Máximo de niveles de ancestro a mostrar en el breadcrumb */
+const MAX_BREADCRUMB_DEPTH = 4
 
 interface Props {
   onNavigate?: (nodeId: string) => void
 }
 
-/** Una fila de la lista plana */
-function UnclassifiedRow({ node, onNavigate }: { node: FromNode; onNavigate?: (id: string) => void }) {
-  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(null)
-  const [ctxAssigned, setCtxAssigned] = useState(false)
-  const s = useStore()
+/**
+ * getBreadcrumb — recorre los ancestros de un nodo hacia arriba y devuelve
+ * un array de strings con los textos. Máximo MAX_BREADCRUMB_DEPTH niveles.
+ * Si hay más niveles, el primero del array es "…".
+ */
+function getBreadcrumb(nodeId: string): string[] {
+  const parts: string[] = []
+  let cur = store.getNode(nodeId)
+  // Subir por los ancestros (sin incluir el nodo mismo)
+  cur = cur?.parentId ? store.getNode(cur.parentId) : undefined
+  while (cur && parts.length < MAX_BREADCRUMB_DEPTH) {
+    const text = (cur.text || '').trim()
+    if (text) parts.unshift(text)
+    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
+  }
+  // Si hay más ancestros sin mostrar, indicar truncado al inicio
+  if (cur?.parentId) {
+    parts.unshift('…')
+  }
+  return parts
+}
 
-  // Lanzar clasificación automática al montar la fila
-  // Solo si el nodo todavía está sin contexto
-  useMemo(() => {
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-    const contextNodes = tagsRoot ? store.children(tagsRoot.id).filter(n => !n.deletedAt) : []
-    if (contextNodes.length === 0) return
-
-    scheduleClassify(
-      node.id,
-      node.text || '',
-      contextNodes.map(n => ({ id: n.id, name: n.text || '' })),
-      (_nodeId, result) => {
-        if (result.contextId) setAutoCtxResult(result)
-      }
-    )
-  }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Tipo de nodo para mostrar badge secundario
-  const nodeTypes = node.types || []
-  const isTask = node.status !== null
-  const isLoop = nodeTypes.includes('bucle')
-  const hasChildren = s.children(node.id).some(c => !c.deletedAt)
-
-  const typeLabel = isTask ? '✓' : isLoop ? '↺' : hasChildren ? '▸' : '·'
-  const typeColor = isTask ? 'var(--accent)' : isLoop ? '#f59e0b' : 'var(--text-tertiary)'
-
-  if (ctxAssigned) return null // Ocultar fila tras asignar contexto
+/**
+ * FilterResultItem — Muestra un nodo resultado de filtro como raíz flotante.
+ * El breadcrumb es texto plano (sin OutlinerNode). El nodo resultado sí es OutlinerNode.
+ */
+function FilterResultItem({
+  node,
+  selectedId,
+  onSelect,
+  onSelectNext,
+}: {
+  node: FromNode
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onSelectNext: (id: string, dir: 'up' | 'down') => void
+}) {
+  const selectedIds = useGlobalSelection()
+  const breadcrumb = useMemo(() => getBreadcrumb(node.id), [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '6px 16px',
-        borderRadius: 6,
-        cursor: 'pointer',
-        transition: 'background 0.1s',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-      onClick={() => onNavigate?.(node.id)}
-    >
-      {/* Tipo badge */}
-      <span style={{ fontSize: 12, color: typeColor, flexShrink: 0, width: 14, textAlign: 'center' }}>
-        {typeLabel}
-      </span>
-
-      {/* Texto del nodo */}
-      <span
-        style={{
-          flex: 1,
-          fontSize: 13,
-          color: 'var(--text-primary)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-        title={node.text || ''}
-      >
-        {node.text || <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Sin título</span>}
-      </span>
-
-      {/* Badge de auto-contexto si hay sugerencia */}
-      {autoCtxResult && !ctxAssigned && (
-        <div onClick={e => e.stopPropagation()}>
-          <AutoContextBadge
-            node={node}
-            result={autoCtxResult}
-            onContextAssigned={() => setCtxAssigned(true)}
-          />
+    <div style={{ marginBottom: 4 }}>
+      {/* Breadcrumb — texto plano, sin OutlinerNode → 0 coste de renderizado de árbol */}
+      {breadcrumb.length > 0 && (
+        <div
+          style={{
+            padding: '2px 16px 0',
+            fontSize: 11,
+            color: 'var(--text-tertiary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            lineHeight: 1.4,
+            userSelect: 'none',
+          }}
+        >
+          {breadcrumb.map((segment, i) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {i > 0 && (
+                <span style={{ opacity: 0.5, fontSize: 10 }}>›</span>
+              )}
+              <span
+                style={{
+                  maxWidth: 160,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                title={segment}
+              >
+                {segment}
+              </span>
+            </span>
+          ))}
         </div>
       )}
+
+      {/* Nodo resultado como OutlinerNode raíz flotante — con sus hijos expandibles */}
+      <div style={{ paddingLeft: 4 }}>
+        <OutlinerNode
+          node={node}
+          depth={0}
+          isSelected={selectedId === node.id}
+          selectedId={selectedId}
+          isMultiSelected={selectedIds.has(node.id)}
+          onSelect={onSelect}
+          onSelectNext={onSelectNext}
+          onShiftSelect={(id) => {
+            toggleNodeSelection(id, store)
+          }}
+        />
+      </div>
     </div>
   )
 }
 
-export default function UnclassifiedList({ onNavigate }: Props) {
+export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
   const s = useStore()
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  // Calcular todos los nodos sin clasificar — SIN ancestorIds, sin Outliner
+  // Calcular todos los nodos sin clasificar — SIN ancestorIds, sin Outliner padre
   const allUnclassified = useMemo(() => {
     const result: FromNode[] = []
     s.allActive().forEach(n => {
@@ -146,6 +170,13 @@ export default function UnclassifiedList({ onNavigate }: Props) {
 
   const loadMore = useCallback(() => setPage(p => p + 1), [])
 
+  // Navegación con flechas entre nodos resultado
+  const handleSelectNext = useCallback((id: string, dir: 'up' | 'down') => {
+    const idx = visible.findIndex(n => n.id === id)
+    if (dir === 'up' && idx > 0) setSelectedId(visible[idx - 1].id)
+    if (dir === 'down' && idx < visible.length - 1) setSelectedId(visible[idx + 1].id)
+  }, [visible])
+
   if (total === 0) {
     return (
       <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
@@ -162,9 +193,15 @@ export default function UnclassifiedList({ onNavigate }: Props) {
         <span>{t('autoCtx.unclassifiedFilter')} · {total}</span>
       </div>
 
-      {/* Lista plana — sin OutlinerNode, sin ancestorIds */}
+      {/* Lista de nodos como raíces flotantes con breadcrumb */}
       {visible.map(node => (
-        <UnclassifiedRow key={node.id} node={node} onNavigate={onNavigate} />
+        <FilterResultItem
+          key={node.id}
+          node={node}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onSelectNext={handleSelectNext}
+        />
       ))}
 
       {/* Botón cargar más */}
