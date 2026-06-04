@@ -152,5 +152,67 @@ export async function relocateRootDiariesToAgenda(): Promise<void> {
   await store.sync(true)
 }
 
+// ── Limpieza de contexto en nodos estructurales (año/mes) ──────────────────────
+
+function isYearText(text: string | null | undefined): boolean {
+  return /^\d{4}$/.test((text || '').trim())
+}
+
+function isMonthText(text: string | null | undefined): boolean {
+  const t = (text || '').trim().toLowerCase()
+  return MONTHS_ES.some(m => m.toLowerCase() === t)
+}
+
+/**
+ * cleanupYearMonthContexts — quita contexto y chip de los nodos de Año y Mes.
+ *
+ * Los nodos estructurales de la Agenda (Año → Mes) nunca deben llevar contexto,
+ * pero versiones anteriores podían asignárselo (clasificación IA o arrastre).
+ * Esta migración recorre 📅 Agenda → Año → Mes y elimina:
+ *   - tipos de contexto en types[] (los que coinciden con un nodo de 🧠 Contexto)
+ *   - flags de extraData: _autoContextId, _autoContextConfidence, _contextManuallySet
+ */
+export function cleanupYearMonthContexts(): void {
+  const agenda = findAgendaRoot()
+  if (!agenda) return
+
+  // Conjunto de nombres de contexto válidos (para distinguir de tags builtin)
+  const ctxRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+  const contextNames = new Set(
+    ctxRoot ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text).map(n => n.text) : []
+  )
+
+  const strip = (node: Node) => {
+    let changed = false
+    const patch: Partial<Node> = {}
+
+    // Quitar de types[] los que sean contextos
+    const types = node.types || []
+    const cleanTypes = types.filter(t => !contextNames.has(t))
+    if (cleanTypes.length !== types.length) { patch.types = cleanTypes; changed = true }
+
+    // Limpiar flags de contexto en extraData
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._autoContextId !== undefined || ed._autoContextConfidence !== undefined || ed._contextManuallySet !== undefined) {
+        delete ed._autoContextId
+        delete ed._autoContextConfidence
+        delete ed._contextManuallySet
+        patch.extraData = JSON.stringify(ed)
+        changed = true
+      }
+    } catch { /* extraData no parseable — ignorar */ }
+
+    if (changed) store.updateNode(node.id, patch)
+  }
+
+  for (const year of store.children(agenda.id).filter(n => !n.deletedAt && isYearText(n.text))) {
+    strip(year)
+    for (const month of store.children(year.id).filter(n => !n.deletedAt && isMonthText(n.text))) {
+      strip(month)
+    }
+  }
+}
+
 // Mantener para compatibilidad con imports existentes
 export { getOrCreateYear as getOrCreateYearNode, getOrCreateMonth as getOrCreateMonthNode, getOrCreateDay as getOrCreateDayNode }

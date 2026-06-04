@@ -12,7 +12,7 @@ import ContextListPanel, { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListP
 import RecorderPanel from '../panels/RecorderPanel'
 
 import WFHomeView from '../views/WFHomeView'
-import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
+import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
 function DiaryRedirect() {
@@ -534,6 +534,7 @@ export default function MainLayout() {
         ensurePapeleraNode()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
+        cleanupYearMonthContexts()
         cleanupSpuriousTags()
         syncTagDefinitions()
         // Forzar sync inmediato para que todos los cambios de inicialización
