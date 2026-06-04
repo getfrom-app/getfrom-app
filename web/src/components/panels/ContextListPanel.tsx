@@ -2,11 +2,15 @@
  * ContextListPanel — lista de contextos en panel derecho
  * Hover: lápiz (renombrar) + × (eliminar), igual que los filtros guardados
  * Incluye sección "Sin clasificar" con nodos sin contexto asignado.
+ * Soporta drag & drop: arrastrar un nodo desde la lista "Sin clasificar"
+ * y soltarlo sobre un contexto para asignárselo.
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
+import { getPapeleraNode } from '../../utils/papeleraHelper'
+import { DRAG_NODE_ID_KEY } from '../views/FilteredList'
 
 /** Constante especial para indicar el filtro "Sin clasificar" */
 export const UNCLASSIFIED_FILTER_ID = '__unclassified__'
@@ -19,6 +23,53 @@ interface Props {
   selectedContextId?: string | null
 }
 
+/**
+ * Construye el set de IDs que están dentro de la Papelera (inclusive).
+ * O(n) traversal desde el nodo Papelera hacia abajo.
+ */
+function buildPapeleraIds(): Set<string> {
+  const ids = new Set<string>()
+  const papelera = getPapeleraNode()
+  if (!papelera) return ids
+  ids.add(papelera.id)
+  const queue: string[] = [papelera.id]
+  while (queue.length > 0) {
+    const parentId = queue.pop()!
+    store.children(parentId).forEach(child => {
+      if (!ids.has(child.id)) {
+        ids.add(child.id)
+        queue.push(child.id)
+      }
+    })
+  }
+  return ids
+}
+
+/**
+ * Asigna un contexto a un nodo usando el mismo mecanismo que AutoContextBadge.
+ * Añade el tagName a types[] y marca _contextManuallySet=1 en extraData.
+ */
+function assignContextToNode(nodeId: string, contextNodeId: string) {
+  const node = store.getNode(nodeId)
+  if (!node) return
+  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  if (!tagsRoot) return
+  const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+  const contextNode = contextNodes.find(n => n.id === contextNodeId)
+  if (!contextNode) return
+  const tagName = contextNode.text || ''
+  if (!tagName) return
+  const existingTypes = node.types || []
+  if (!existingTypes.includes(tagName)) {
+    store.updateNode(nodeId, { types: [...existingTypes, tagName] })
+  }
+  try {
+    const ed = JSON.parse(node.extraData || '{}')
+    ed._contextManuallySet = '1'
+    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  } catch { /* ignore */ }
+}
+
 export default function ContextListPanel({ onSelectContext, selectedContextId }: Props) {
   const s = useStore()
   const { t } = useTranslation()
@@ -28,6 +79,8 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const [hoveredId, setHoveredId]       = useState<string | null>(null)
   const [renamingId, setRenamingId]     = useState<string | null>(null)
   const [renameValue, setRenameValue]   = useState('')
+  // ID del contexto sobre el que se está haciendo dragOver (feedback visual)
+  const [dragOverId, setDragOverId]     = useState<string | null>(null)
   const newCtxInputRef  = useRef<HTMLInputElement>(null)
   const renameInputRef  = useRef<HTMLInputElement>(null)
 
@@ -77,14 +130,39 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     })
   }
 
+  // ── Drag & drop de nodo a contexto ────────────────────────────────────────
+
+  function handleDragOver(e: React.DragEvent, contextId: string) {
+    if (!e.dataTransfer.types.includes(DRAG_NODE_ID_KEY)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverId(contextId)
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // Solo limpiar si salimos del elemento (no de un hijo)
+    if (!e.currentTarget.contains(e.relatedTarget as Element)) {
+      setDragOverId(null)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent, contextId: string) {
+    e.preventDefault()
+    setDragOverId(null)
+    const nodeId = e.dataTransfer.getData(DRAG_NODE_ID_KEY)
+    if (!nodeId) return
+    assignContextToNode(nodeId, contextId)
+  }
+
   function renderCtx(nodeId: string, depth: number): React.ReactNode {
     const node = s.getNode(nodeId)
     if (!node || node.deletedAt) return null
     const kids = s.children(nodeId).filter(n => !n.deletedAt && s.children(n.id).filter(k => !k.deletedAt).length > 0)
-    const isActive   = selectedContextId === nodeId
-    const expanded   = expandedIds.has(nodeId)
-    const isHovered  = hoveredId === nodeId
-    const isRenaming = renamingId === nodeId
+    const isActive    = selectedContextId === nodeId
+    const expanded    = expandedIds.has(nodeId)
+    const isHovered   = hoveredId === nodeId
+    const isRenaming  = renamingId === nodeId
+    const isDragOver  = dragOverId === nodeId
 
     return (
       <div key={nodeId}>
@@ -94,11 +172,23 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
             padding: `5px 8px 5px ${16 + depth * 16}px`,
             cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
             color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-            background: isActive ? 'rgba(139,92,246,0.08)' : isHovered ? 'var(--bg-hover)' : 'transparent',
+            background: isDragOver
+              ? 'rgba(139,92,246,0.18)'
+              : isActive
+                ? 'rgba(139,92,246,0.08)'
+                : isHovered
+                  ? 'var(--bg-hover)'
+                  : 'transparent',
+            outline: isDragOver ? '2px solid var(--accent)' : 'none',
+            borderRadius: isDragOver ? 5 : 0,
+            transition: 'background 0.1s, outline 0.1s',
           }}
           onMouseEnter={() => setHoveredId(nodeId)}
           onMouseLeave={() => setHoveredId(null)}
           onClick={() => { if (!isRenaming) onSelectContext(nodeId) }}
+          onDragOver={e => handleDragOver(e, nodeId)}
+          onDragLeave={handleDragLeave}
+          onDrop={e => handleDrop(e, nodeId)}
         >
           {kids.length > 0 ? (
             <span
@@ -127,6 +217,24 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               {node.text || t('common.noTitle')}
             </span>
           )}
+
+          {/* Badge con contador de nodos clasificados en este contexto */}
+          {!isRenaming && (() => {
+            const count = contextCounts.get(nodeId) ?? 0
+            if (count === 0) return null
+            return (
+              <span style={{
+                background: isActive ? 'var(--accent)' : 'var(--bg-hover)',
+                color: isActive ? '#fff' : 'var(--text-tertiary)',
+                borderRadius: 10,
+                padding: '1px 7px',
+                fontSize: 11,
+                fontWeight: 600,
+                flexShrink: 0,
+                marginRight: (isHovered || isActive) ? 2 : 0,
+              }}>{count}</span>
+            )
+          })()}
 
           {/* Botones hover: lápiz + × */}
           {!isRenaming && (isHovered || isActive) && (
@@ -160,14 +268,49 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
   const contextos = contextoRoot ? s.children(contextoRoot.id).filter(n => !n.deletedAt) : []
 
+  // Set de IDs en la Papelera — excluir del contador "Sin clasificar"
+  const papeleraIds = useMemo(() => buildPapeleraIds(), [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Calcular cuántos nodos activos (no en papelera) tienen cada contextId en types[]
+  // Memoizado con dep nodesVersion — mismo patrón que unclassifiedCount
+  const contextCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    if (!contextoRoot) return counts
+    // Construir set de nombres de contexto válidos → map nombre→nodeId
+    const ctxNameToId = new Map<string, string>()
+    const queue: string[] = [contextoRoot.id]
+    while (queue.length > 0) {
+      const pid = queue.pop()!
+      store.children(pid).forEach(child => {
+        if (!child.deletedAt) {
+          ctxNameToId.set(child.text || '', child.id)
+          counts.set(child.id, 0)
+          queue.push(child.id)
+        }
+      })
+    }
+    s.allActive().forEach(n => {
+      if (n.isDiaryEntry || n.deletedAt) return
+      if (papeleraIds.has(n.id)) return
+      const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
+      userTypes.forEach(typeName => {
+        const ctxId = ctxNameToId.get(typeName)
+        if (ctxId !== undefined) {
+          counts.set(ctxId, (counts.get(ctxId) ?? 0) + 1)
+        }
+      })
+    })
+    return counts
+  }, [s.nodesVersion, papeleraIds, contextoRoot]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Calcular cuántos nodos están sin clasificar (sin user-tags en types[])
   // Memoizado para evitar cálculo O(n²) en cada render — depende de nodesVersion
-  // Solo se cuentan nodos que tienen sentido clasificar:
-  // - nodos contenedor (tienen hijos) O nodos tarea (status !== null)
-  // - los párrafos sueltos sin hijos no son candidatos a clasificación
+  // Excluye nodos en la Papelera.
   const unclassifiedCount = useMemo(() => {
     return s.allActive().filter(n => {
       if (n.isDiaryEntry || n.deletedAt) return false
+      // Excluir nodos en la Papelera
+      if (papeleraIds.has(n.id)) return false
       // Solo contar nodos con texto significativo
       if ((n.text || '').trim().length < 4) return false
       // Solo clasificar nodos contenedor (con hijos), tareas o bucles
@@ -187,7 +330,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
       } catch { /* ignore */ }
       return true
     }).length
-  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.nodesVersion, papeleraIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isUnclassifiedActive = selectedContextId === UNCLASSIFIED_FILTER_ID
 
@@ -219,7 +362,6 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               flexShrink: 0,
             }}>{unclassifiedCount}</span>
           </div>
-
         </div>
       )}
 

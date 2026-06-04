@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import FilteredList from './FilteredList'
+import { getPapeleraNode } from '../../utils/papeleraHelper'
 
 /** Tags de sistema — no cuentan como contexto de usuario */
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
@@ -20,11 +21,33 @@ export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
   const s = useStore()
   const { t } = useTranslation()
 
+  // Pre-computar IDs de la Papelera para exclusión en O(1)
+  const papeleraIds = useMemo(() => {
+    const ids = new Set<string>()
+    const papelera = getPapeleraNode()
+    if (!papelera) return ids
+    ids.add(papelera.id)
+    const queue: string[] = [papelera.id]
+    while (queue.length > 0) {
+      const parentId = queue.pop()!
+      store.children(parentId).forEach(child => {
+        if (!ids.has(child.id)) {
+          ids.add(child.id)
+          queue.push(child.id)
+        }
+      })
+    }
+    return ids
+  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Calcular todos los nodos sin clasificar — SIN ancestorIds, sin Outliner padre
+  // Excluye nodos en la Papelera.
   const unclassifiedIds = useMemo(() => {
     const ids = new Set<string>()
     s.allActive().forEach(n => {
       if (n.deletedAt || n.isDiaryEntry) return
+      // Excluir nodos en la Papelera
+      if (papeleraIds.has(n.id)) return
       const text = (n.text || '').trim()
       if (text.length < 4) return
       // Solo nodos contenedor (con hijos), tareas o bucles
@@ -45,7 +68,7 @@ export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
       ids.add(n.id)
     })
     return ids
-  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.nodesVersion, papeleraIds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <FilteredList
