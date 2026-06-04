@@ -1768,39 +1768,6 @@ export default function NodeView() {
               {/* content managed via useEffect — no React children to avoid cursor reset */}
             </h1>
 
-            {/* Badges de contexto — a la derecha del título, sin @ */}
-            {(() => {
-              const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
-              const ctxRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
-              if (!ctxRoot) return null
-              const types = (node.types || []).filter(slug => !BUILTIN.has(slug))
-              if (!types.length) return null
-              return (
-                <>
-                  {types.map(slug => {
-                    const ctxNode = store.children(ctxRoot.id).find(n => {
-                      if (n.deletedAt) return false
-                      const s = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9\-\/]/g,'')
-                      return s === slug
-                    })
-                    if (!ctxNode) return null
-                    return (
-                      <span
-                        key={slug}
-                        style={{
-                          fontSize: 13, fontWeight: 500,
-                          color: 'var(--accent)', opacity: 0.7,
-                          marginLeft: 10, whiteSpace: 'nowrap',
-                          alignSelf: 'center',
-                        }}
-                      >
-                        {ctxNode.text}
-                      </span>
-                    )
-                  })}
-                </>
-              )
-            })()}
 
             {/* Badge inline del evento — a la derecha del título */}
             {node.isEvent && node.due && (() => {
@@ -1998,31 +1965,34 @@ export default function NodeView() {
           {/* Badge de contexto bajo el título — mismo mecanismo que OutlinerNode */}
           {node && !node.isDiaryEntry && (() => {
             const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-            // Calcular si hay contexto asignado manualmente via badge (_contextManuallySet=1)
+            const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+            if (!tagsRoot) return null
+            const hasContextsDefined = store.children(tagsRoot.id).some(n => !n.deletedAt)
+            if (!hasContextsDefined) return null
+            // Detectar contexto asignado: primero por _contextManuallySet, luego por cualquier user-type en types[]
             let manualCtxId: string | null = null
             try {
               const ed = JSON.parse(node.extraData || '{}')
-              if (ed._contextManuallySet === '1') {
-                const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
-                const tagsRoot2 = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-                if (tagsRoot2 && userTypes.length > 0) {
-                  const ctxNodes2 = store.children(tagsRoot2.id).filter(n => !n.deletedAt)
+              const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
+              if (userTypes.length > 0) {
+                const ctxNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
+                for (const typeName of userTypes) {
+                  const ctxNode = ctxNodes.find(n => n.text === typeName)
+                  if (ctxNode) { manualCtxId = ctxNode.id; break }
+                }
+                // Fallback: buscar por slug si no se encontró por texto exacto
+                if (!manualCtxId) {
                   for (const typeName of userTypes) {
-                    const ctxNode2 = ctxNodes2.find(n => n.text === typeName)
-                    if (ctxNode2) { manualCtxId = ctxNode2.id; break }
+                    const ctxNode = ctxNodes.find(n => {
+                      const slug = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9\-\/]/g,'')
+                      return slug === typeName
+                    })
+                    if (ctxNode) { manualCtxId = ctxNode.id; break }
                   }
                 }
+                void ed // suppress unused warning
               }
             } catch { /* ignore */ }
-            // ¿Tiene contexto manual (vía @mention o types[])?
-            const hasManualCtx = manualCtxId !== null
-              || /@\w/.test(node.text || '')
-              || (node.types || []).filter(t => !builtinTags.has(t)).length > 0
-            if (hasManualCtx && !manualCtxId) return null  // tiene contexto pero no asignado vía badge — lo muestra el título ya
-            const tagsRoot3 = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-            if (!tagsRoot3) return null
-            const hasContextsDefined = store.children(tagsRoot3.id).some(n => !n.deletedAt)
-            if (!hasContextsDefined) return null
             return (
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, marginTop: -4 }}>
                 {manualCtxId ? (
