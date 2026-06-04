@@ -61,9 +61,10 @@ import { invalidatePredictionCache } from '../../store/predictionStore'
 // ── Panel derecho: nodo contexto — outliner editable completo (lazy) ─────────
 const Outliner = lazy(() => import('../outliner/Outliner'))
 
-function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
+function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
   const s = useStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const node = s.getNode(nodeId)
   const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
 
@@ -143,9 +144,65 @@ function ContextNodePanel({ nodeId }: { nodeId: string; onClose: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.id, isContextNode])
 
+  // Color del contexto desde extraData (_tagColor) con fallback al accent
+  const ctxColor = useMemo(() => {
+    if (!node) return 'var(--accent)'
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      return ed._tagColor || 'var(--accent)'
+    } catch { return 'var(--accent)' }
+  }, [node?.id, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!node) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Cabecera: ← Atrás · Título · ↗ Abrir */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '0 8px', height: 40, flexShrink: 0,
+        borderBottom: '1px solid var(--border-subtle, rgba(0,0,0,0.08))',
+      }}>
+        {/* Botón ← Atrás */}
+        <button
+          onClick={onClose}
+          title={t('ctxPanel.back')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12, color: 'var(--text-secondary)',
+            padding: '3px 6px', borderRadius: 4, flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 3,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+        >
+          {t('ctxPanel.back')}
+        </button>
+        {/* Título con color del contexto */}
+        <span style={{
+          flex: 1, fontSize: 13, fontWeight: 500,
+          color: ctxColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {node.text}
+        </span>
+        {/* Botón ↗ Abrir */}
+        <button
+          onClick={() => { navigate(`/node/${nodeId}`); onClose() }}
+          title={t('ctxPanel.open')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12, color: 'var(--text-secondary)',
+            padding: '3px 6px', borderRadius: 4, flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 3,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+        >
+          {t('ctxPanel.open')}
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M7 1h4v4M11 1L6 6M2 4H1v7h7v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
       {/* Outliner con misma fuente (13px), mismo padding-top que el filtro */}
       <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 8 }}>
         <Outliner parentId={nodeId} autoFocusEmpty={true} />

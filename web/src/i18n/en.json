@@ -720,5 +720,7 @@
   "autoCtx.updateKnowledgeTooltip": "Update From summary — extracts keywords, people and topics from this context",
   "autoCtx.searchOrCreate": "Search or create...",
   "autoCtx.createContext": "Create",
-  "common.loadMore": "Load more"
+  "common.loadMore": "Load more",
+  "ctxPanel.back": "← Contexts",
+  "ctxPanel.open": "Open"
 }
