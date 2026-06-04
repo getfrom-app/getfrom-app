@@ -935,6 +935,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
   const isNota = (node.types || []).includes('nota')
+  const isBucle = (node.types || []).includes('bucle')
+  const isBucleClosed = isBucle && node.status === 'done'
   const nodeIcon = meta.icon ?? null
   // Color: deriva del primer tag que tenga color asignado (sin contar tags built-in)
   const nodeColor = (() => {
@@ -2554,6 +2556,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }
 
+  function toggleBucle(e: React.MouseEvent) {
+    e.stopPropagation()
+    store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
+  }
+
   function openNode() {
     navigate(`/node/${node.id}`)
   }
@@ -3069,7 +3076,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     'node-row',
     isSelected ? 'selected' : '',
     isMultiSelected ? 'multi-selected' : '',
-    node.status === 'done' ? 'done' : '',
+    node.status === 'done' && !isBucle ? 'done' : '',
     isHeading ? `node-row--${blockType}` : '',
     isBullet ? 'node-row--bullet' : '',
     isDragOver ? 'drag-over' : '',
@@ -3210,6 +3217,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     <rect x="1" y="2" width="14" height="13" rx="2"/>
                     <path d="M1 6h14M5 1v3M11 1v3"/>
                   </svg>
+                </button>
+              </>
+            ) : isBucle ? (
+              // Bucle: nav-dot + icono de bucle. Abierto = arco violeta; cerrado = círculo gris.
+              <>
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
+                <button
+                  className={`bullet-btn bullet-btn--bucle ${isBucleClosed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
+                  onClick={toggleBucle}
+                  tabIndex={-1}
+                  aria-label="Abrir/cerrar bucle"
+                  title={isBucleClosed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
+                >
+                  {isBucleClosed ? (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="7" cy="7" r="4.5"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
+                      <path d="M11.5 1.8v2.7H8.8"/>
+                    </svg>
+                  )}
                 </button>
               </>
             ) : effectiveNode.status !== null ? (

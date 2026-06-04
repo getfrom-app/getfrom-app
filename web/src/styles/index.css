@@ -8571,6 +8571,11 @@ textarea:focus-visible,
 .bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro */
 .bullet-btn.task.task-sq--resource { color: #06b6d4; } /* cian — recurso pendiente */
 .bullet-btn.task:hover { opacity: 0.75; }
+/* Bucle: icono de loop. Abierto = violeta; cerrado = gris */
+.bullet-btn--bucle { cursor: pointer; }
+.bullet-btn--bucle-open   { color: #8b5cf6; }
+.bullet-btn--bucle-closed { color: var(--text-tertiary); }
+.bullet-btn--bucle:hover  { opacity: 0.75; }
 /* Evento: icono calendario azul como bullet */
 .bullet-btn--event {
   display: flex; align-items: center; justify-content: center;

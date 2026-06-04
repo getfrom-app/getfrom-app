@@ -1725,6 +1725,30 @@ export default function NodeView() {
                   <circle cx="16" cy="14" r="0.8" fill="#3b82f6"/>
                 </svg>
               </div>
+            ) : (node.types || []).includes('bucle') ? (
+              // Bucle: icono de loop que sustituye al de nota. Abierto = violeta; cerrado = gris.
+              (() => {
+                const closed = node.status === 'done'
+                return (
+                  <button
+                    className={`bullet-btn bullet-btn--bucle ${closed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
+                    onClick={() => store.updateNode(node!.id, { status: closed ? null : 'done' })}
+                    title={closed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
+                    style={{ flexShrink: 0, marginRight: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}
+                  >
+                    {closed ? (
+                      <svg width="26" height="26" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="7" cy="7" r="4.5"/>
+                      </svg>
+                    ) : (
+                      <svg width="26" height="26" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
+                        <path d="M11.5 1.8v2.7H8.8"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })()
             ) : (() => {
               // Recurso pendiente (sin tarea ni evento): checkbox cian
               try {
@@ -2019,10 +2043,6 @@ export default function NodeView() {
               }
               return null
             })()}
-            {/* Indicador ⟲ junto al título (dentro del wrapper flex) */}
-            {(node.types || []).includes('bucle') && (
-              <span className="node-bucle-indicator node-bucle-indicator--title" title="Bucle abierto">⟲</span>
-            )}
             </div>{/* /node-title-wrap */}
 
             <div className="node-title-actions">
@@ -2080,9 +2100,29 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* (Antes había un ● para abrir/cerrar bucle aquí. Movido al
-                  panel derecho como botón "Bucle" para evitar confusión con
-                  tareas y para que no se pueda agendar). */}
+              {/* ── Abrir/cerrar bucle (solo nodos bucle) ── */}
+              {(node.types || []).includes('bucle') && (() => {
+                const closed = node.status === 'done'
+                return (
+                  <button
+                    className={`node-action-icon-btn ${closed ? '' : 'active'}`}
+                    onClick={() => store.updateNode(node!.id, { status: closed ? null : 'done' })}
+                    title={closed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
+                    style={{ color: closed ? 'var(--text-tertiary)' : '#8b5cf6' }}
+                  >
+                    {closed ? (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="7" cy="7" r="4.5"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
+                        <path d="M11.5 1.8v2.7H8.8"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })()}
 
               {/* ── ··· Más opciones ── */}
               <div style={{ position: 'relative' }}>
