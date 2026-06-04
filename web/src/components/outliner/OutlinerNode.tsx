@@ -434,26 +434,37 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [])
 
   // Dispara la actualización de "Lo que From sabe" del contexto dado.
-  // Fire-and-forget: no bloquea el UI. Replica la lógica de handleUpdateContextKnowledge en NodeView.
+  // Fire-and-forget: no bloquea el UI.
+  // Usa el nodo actual + sus hijos directos como nueva información a aprender,
+  // y el conocimiento existente en "🧠 Lo que From sabe" para deduplicar.
   const doTriggerContextKnowledgeUpdate = useCallback(async (contextId: string) => {
     const ctxNode = store.getNode(contextId)
     if (!ctxNode || ctxNode.deletedAt) return
     try {
-      // Recopilar hijos del nodo de contexto (nivel 1-2, máx 200 muestras)
-      const directChildren = store.children(contextId).filter(n => !n.deletedAt)
-      const samples: string[] = []
-      for (const child of directChildren) {
-        if (child.text?.trim()) samples.push(child.text.trim())
-        if (samples.length >= 200) break
-        for (const grandchild of store.children(child.id).filter(n => !n.deletedAt)) {
-          if (grandchild.text?.trim()) samples.push(grandchild.text.trim())
-          if (samples.length >= 200) break
-        }
-      }
-      if (samples.length === 0) return
-      const knowledge = await extractContextKnowledge(ctxNode.text || '', '', samples)
+      // 1. Recoger el nodo actual + sus hijos directos (hasta 30) como nueva información
+      const newSamples: string[] = [
+        (node.text || '').trim(),
+        ...store.children(node.id).filter(c => !c.deletedAt).slice(0, 30).map(c => (c.text || '').trim()),
+      ].filter(s => s.length > 2)
+      if (newSamples.length === 0) return
+
+      // 2. Leer conocimiento existente en "🧠 Lo que From sabe" para deduplicar
       const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
       const existingKnowledgeNode = store.children(contextId).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      const existingKnowledge = existingKnowledgeNode
+        ? store.children(existingKnowledgeNode.id).filter(n => !n.deletedAt).map(n => n.text || '').join('. ')
+        : ''
+
+      // 3. Llamar a la IA pasando newSamples y existingKnowledge para deduplicar
+      const knowledge = await extractContextKnowledge(ctxNode.text || '', existingKnowledge, newSamples)
+
+      // 4. Si no hay nada nuevo, no tocar el árbol
+      if (knowledge.keywords.length === 0 && knowledge.people.length === 0 && knowledge.topics.length === 0) {
+        contextKnowledgeLastUpdate.set(contextId, Date.now())
+        return
+      }
+
+      // 5. Obtener o crear el nodo "🧠 Lo que From sabe"
       let knowledgeNodeId: string
       if (existingKnowledgeNode) {
         knowledgeNodeId = existingKnowledgeNode.id
@@ -463,28 +474,42 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: contextId, siblingOrder: maxOrder + 1000 })
         knowledgeNodeId = newNode.id
       }
-      const SUBNODE_TEXTS: Record<string, string> = {
-        keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
-        people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
-        topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
-      }
+
+      // 6. Fusionar nueva información con lo ya existente (append, no reemplazar)
       const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
-      let order = 1000
-      for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
-        const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
-        const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
-        if (existing) {
-          store.updateNode(existing.id, { text })
+      let maxOrder = existingChildren.length > 0 ? Math.max(...existingChildren.map(c => c.siblingOrder)) : 0
+
+      const PREFIXES: Array<{ prefix: string; key: keyof typeof knowledge }> = [
+        { prefix: 'Palabras clave:', key: 'keywords' },
+        { prefix: 'Personas:', key: 'people' },
+        { prefix: 'Temas frecuentes:', key: 'topics' },
+      ]
+      for (const { prefix, key } of PREFIXES) {
+        const newItems = knowledge[key] as string[]
+        if (newItems.length === 0) continue
+        const existingNode = existingChildren.find(n => (n.text || '').startsWith(prefix))
+        if (existingNode) {
+          // Extraer items ya presentes y añadir solo los nuevos
+          const currentText = existingNode.text || ''
+          const currentItems = currentText.replace(prefix, '').split(',').map(s => s.trim()).filter(s => s && s !== '—')
+          const merged = [...currentItems]
+          for (const item of newItems) {
+            if (!merged.some(existing => existing.toLowerCase() === item.toLowerCase())) {
+              merged.push(item)
+            }
+          }
+          store.updateNode(existingNode.id, { text: `${prefix} ${merged.join(', ')}` })
         } else {
-          store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
+          maxOrder += 1000
+          store.createNode({ text: `${prefix} ${newItems.join(', ')}`, parentId: knowledgeNodeId, siblingOrder: maxOrder })
         }
-        order += 1000
       }
-      // Registrar timestamp en Map local (evita re-renders)
+
+      // 7. Registrar timestamp en Map local (evita re-renders)
       contextKnowledgeLastUpdate.set(contextId, Date.now())
     } catch { /* silencioso */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [node.id, node.text])
 
   // Determina si el nodo ya tiene contexto asignado manualmente
   // (bien vía badge de corrección, bien vía @mention en el texto)
