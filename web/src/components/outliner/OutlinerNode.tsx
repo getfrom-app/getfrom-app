@@ -2485,6 +2485,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     setCodeQuery('')
   }
 
+  /**
+   * Cuando un nodo con hijos se convierte en heading, sus hijos "suben" al mismo
+   * nivel que el heading: dejan de ser hijos del heading y pasan a ser hermanos
+   * inmediatamente después de él. Resultado: heading + contenido al mismo nivel
+   * (estilo documento).
+   */
+  function liftChildrenAfterHeading(headingNodeId: string) {
+    const headingNode = store.getNode(headingNodeId)
+    if (!headingNode) return
+    const children = store.children(headingNodeId).filter(c => !c.deletedAt)
+    if (children.length === 0) return
+
+    const grandParentId = headingNode.parentId
+    const siblings = store.children(grandParentId).filter(c => !c.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    const headingIdx = siblings.findIndex(s => s.id === headingNodeId)
+    const nextSibling = headingIdx >= 0 ? siblings[headingIdx + 1] : undefined
+
+    // Calcular rango de siblingOrder para insertar los hijos entre el heading y su siguiente hermano.
+    const baseOrder = headingNode.siblingOrder
+    const endOrder = nextSibling ? nextSibling.siblingOrder : baseOrder + children.length * 1000 + 1000
+    const step = (endOrder - baseOrder) / (children.length + 1)
+
+    children.forEach((child, i) => {
+      store.updateNode(child.id, {
+        parentId: grandParentId,
+        siblingOrder: baseOrder + step * (i + 1),
+      })
+    })
+  }
+
   function handleSlashSelect(payload: SlashSelectPayload) {
     const { prefix, action } = payload
 
@@ -2550,6 +2580,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       updates.extraData = JSON.stringify(ed)
       nodeTextRef.current = existingContent as string
       store.updateNode(node.id, updates)
+      // Si el nodo tiene hijos, subirlos al padre del heading como hermanos inmediatamente después.
+      // Resultado: heading seguido de su contenido al mismo nivel (estilo documento).
+      liftChildrenAfterHeading(node.id)
       if (contentRef.current) {
         contentRef.current.textContent = existingContent
         contentRef.current.focus()

@@ -41,6 +41,37 @@ function setNodeBlock(node: Node, block: string | null) {
   if (block) ed._block = block
   else delete ed._block
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+  // Si se convierte a heading y el nodo tiene hijos, subirlos al mismo nivel
+  // que el heading (hermanos inmediatamente después). Estilo documento.
+  if (block === 'h1' || block === 'h2' || block === 'h3') {
+    liftChildrenAfterHeading(node)
+  }
+}
+
+/**
+ * Cuando un nodo con hijos se convierte en heading, sus hijos "suben" al mismo
+ * nivel que el heading: dejan de ser hijos del heading y pasan a ser hermanos
+ * inmediatamente después de él.
+ */
+function liftChildrenAfterHeading(headingNode: Node) {
+  const children = store.children(headingNode.id).filter(c => !c.deletedAt)
+  if (children.length === 0) return
+
+  const grandParentId = headingNode.parentId
+  const siblings = store.children(grandParentId).filter(c => !c.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
+  const headingIdx = siblings.findIndex(s => s.id === headingNode.id)
+  const nextSibling = headingIdx >= 0 ? siblings[headingIdx + 1] : undefined
+
+  const baseOrder = headingNode.siblingOrder
+  const endOrder = nextSibling ? nextSibling.siblingOrder : baseOrder + children.length * 1000 + 1000
+  const step = (endOrder - baseOrder) / (children.length + 1)
+
+  children.forEach((child, i) => {
+    store.updateNode(child.id, {
+      parentId: grandParentId,
+      siblingOrder: baseOrder + step * (i + 1),
+    })
+  })
 }
 
 interface Props {
