@@ -4,6 +4,39 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.63 — 4 junio 2026 · Fix filtro "Sin clasificar"
+
+### Fix: el contador "Sin clasificar" ya no incluye párrafos sueltos
+
+El filtro **"Sin clasificar"** del panel de contextos ahora solo muestra nodos que realmente tienen sentido clasificar:
+
+- **Nodos contenedor** (con hijos) — por ejemplo, una nota de proyecto con bullets dentro
+- **Tareas** (con checkbox) — pendientes o completadas
+
+Los párrafos sueltos (bullets simples sin hijos y sin checkbox) quedan excluidos automáticamente. No tiene sentido asignarles un contexto ya que son contenido dentro de otros nodos, no entidades independientes.
+
+**Impacto:** el contador puede pasar de cientos/miles de nodos a un número mucho más manejable y representativo.
+
+---
+
+## Web v9.6.62 — 4 junio 2026 · Clasificación batch de nodos históricos
+
+### Nueva feature: "Clasificar todos" en el panel de contextos
+
+Ahora puedes clasificar de un solo clic todos los nodos que ya existían antes y no tienen contexto asignado.
+
+**Cómo funciona:**
+
+- En el panel de contextos (columna derecha), bajo el filtro **"Sin clasificar"**, aparece el botón **"✦ Clasificar todos"**.
+- Al pulsarlo, From analiza en background todos los nodos sin contexto usando IA (Claude Haiku).
+- Se procesan en lotes de 5, con una **barra de progreso** que muestra "Clasificando… X/Y nodos".
+- Puedes **cancelar** en cualquier momento con el botón ✕.
+- Al terminar, muestra "X nodos clasificados" durante unos segundos.
+- Los nodos con confianza ≥ 30% reciben el contexto sugerido automáticamente (umbral más permisivo que el badge en tiempo real).
+- A diferencia del badge, estos nodos NO quedan marcados como "asignados manualmente" — si la IA se equivoca, el usuario puede corregir sin restricciones.
+
+---
+
 ## Web v9.6.61 — 4 junio 2026 · Auto-clasificación de contextos con IA
 
 ### Nueva feature: Auto-clasificación inteligente de contextos

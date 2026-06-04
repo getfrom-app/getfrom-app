@@ -351,7 +351,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
     // No clasificar nodos de diario, headings, dividers
-    if (node.isDiaryEntry) return
+    if (node.isDiaryEntry) {
+      cancelClassify(node.id)
+      setAutoCtxResult(null)
+      return
+    }
+    // Solo clasificar nodos contenedor (con hijos) o tareas — no párrafos sueltos
+    const hasChildren = store.children(node.id).some(c => !c.deletedAt)
+    const isTask = node.status !== null
+    if (!hasChildren && !isTask) {
+      cancelClassify(node.id)
+      setAutoCtxResult(null)
+      return
+    }
     // Obtener contextos disponibles del usuario
     const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (!tagsRoot) return

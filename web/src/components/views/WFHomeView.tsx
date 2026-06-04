@@ -165,6 +165,10 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         if (n.deletedAt || n.isDiaryEntry) return
         const text = (n.text || '').trim()
         if (text.length < 4) return
+        // Solo mostrar nodos contenedor (con hijos) o tareas — no párrafos sueltos
+        const hasChildren = store.children(n.id).some(c => !c.deletedAt)
+        const isTask = n.status !== null
+        if (!hasChildren && !isTask) return
         // ¿tiene contextos del usuario en types[]?
         const userTypes = (n.types || []).filter(t => !builtinTags.has(t))
         if (userTypes.length > 0) return

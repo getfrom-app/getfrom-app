@@ -64,10 +64,15 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     if (contextNodes.length === 0) return
 
     // Nodos sin contexto (misma lógica que el filtro "Sin clasificar")
+    // Solo nodos contenedor (con hijos) o tareas — los párrafos sueltos se excluyen
     const unclassifiedNodes = store.allActive().filter(n => {
       if (n.deletedAt || n.isDiaryEntry) return false
       const text = (n.text || '').trim()
       if (text.length < 4) return false
+      // Solo clasificar nodos contenedor (con hijos) o tareas
+      const hasChildren = store.children(n.id).some(c => !c.deletedAt)
+      const isTask = n.status !== null
+      if (!hasChildren && !isTask) return false
       const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
       if (userTypes.length > 0) return false
       if (/@\w/.test(n.text || '')) return false

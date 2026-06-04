@@ -500,6 +500,18 @@ En la barra de filtros (`⌘F`), escribe `@trabajo` (o el nombre de tu contexto)
 
 Dentro del contexto **Perfil IA** puedes escribir información personal que la IA carga siempre: quién eres, en qué trabajas, tus proyectos activos, preferencias de comunicación. La IA lo usa automáticamente en todas las conversaciones sin que tengas que repetírselo.
 
+### Auto-clasificación con IA
+
+From puede sugerir automáticamente el contexto más apropiado para cada nota o tarea.
+
+**Badge en tiempo real:** al crear o editar un nodo sin contexto asignado, aparece un badge pequeño `✦ NombreContexto` junto al texto. Haz clic para confirmar el contexto sugerido o seleccionar otro. From aprende de tus correcciones.
+
+**Filtro "Sin clasificar":** en la lista de contextos aparece una entrada especial **"Sin clasificar"** con el número de nodos pendientes. Al hacer clic, el árbol se filtra para mostrar solo esos nodos.
+
+**Clasificar todos de golpe:** bajo el filtro "Sin clasificar" aparece el botón **"✦ Clasificar todos"**. Púlsalo para que From analice en background todos los nodos históricos sin contexto. El progreso se muestra en una barra con "Clasificando… X/Y". Puedes cancelar en cualquier momento con el botón ✕.
+
+La clasificación usa IA (Claude Haiku) sin consumir tokens de tu plan.
+
 ### Por qué usar contextos
 
 Los contextos te permiten cruzar el árbol por dimensión. Tus tareas de trabajo están repartidas por proyectos en distintas ramas, pero con `@trabajo` las ves todas juntas. Sin mover nada, sin duplicar nada.
