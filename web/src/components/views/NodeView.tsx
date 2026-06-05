@@ -226,9 +226,16 @@ export default function NodeView() {
 
   // Legacy: viewBlock single-view (retrocompatible). Si existe sin _views
   // moderno, se sintetiza una vista única.
+  // Para nodos de Agenda (día/mes/año) forzamos siempre 'lista' —
+  // las vistas tabla/kanban/calendario no tienen sentido en la estructura temporal.
   const viewBlock = useMemo(() => {
+    if (node?.isDiaryEntry) return 'lista'
+    const parentNode = node?.parentId ? store.getNode(node.parentId) : null
+    const isAgendaNode = /^\d{4}$/.test(node?.text || '') ||
+      (parentNode && /^\d{4}$/.test(parentNode.text || ''))
+    if (isAgendaNode) return 'lista'
     try { return JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { return 'lista' }
-  }, [node?.extraData])
+  }, [node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setViewBlock(mode: string) {
     if (!node) return
