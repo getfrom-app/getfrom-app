@@ -568,107 +568,46 @@ AL TERMINAR ("fin"):
 - Confirma: "Guardado en From (cuenta: X) — [título sesión]".`
 
 export function ClaudeMcpPane() {
-  const { t } = useTranslation()
-  const [mcpToken, setMcpToken] = useState<string | null>(null)
-  const [mcpCopied, setMcpCopied] = useState(false)
-  const [promptCopied, setPromptCopied] = useState(false)
-  const [generatingMcp, setGeneratingMcp] = useState(false)
-  const [mcpLoaded, setMcpLoaded] = useState(false)
-
-  useEffect(() => {
-    if (!getToken()) { setMcpLoaded(true); return }
-    getApiToken().then(d => { setMcpToken(d.token); setMcpLoaded(true) }).catch(() => setMcpLoaded(true))
-  }, [])
-
-  async function handleGenerateMcpToken() {
-    setGeneratingMcp(true)
-    try { const r = await generateApiToken(); setMcpToken(r.token) }
-    catch (e) { console.error(e) }
-    finally { setGeneratingMcp(false) }
-  }
-
-  function copyMcpToken() {
-    if (!mcpToken) return
-    navigator.clipboard.writeText(mcpToken).catch(() => {})
-    setMcpCopied(true); setTimeout(() => setMcpCopied(false), 2000)
-  }
-
-  function copyPrompt() {
-    navigator.clipboard.writeText(CLAUDE_CUSTOM_INSTRUCTIONS).catch(() => {})
-    setPromptCopied(true); setTimeout(() => setPromptCopied(false), 3000)
-  }
+  const steps = [
+    'Abre Claude (claude.ai, iPhone, Android o Desktop)',
+    'Ve a Ajustes → Conectores',
+    'Busca "From" y pulsa Conectar',
+    'Inicia sesión con tu cuenta de From',
+    'Listo — Claude puede guardar notas y tareas en tu vault desde cualquier dispositivo',
+  ]
 
   return (
     <div className="st-pane">
-
-      {/* Paso 1: Descargar extensión */}
-      <SectionTitle>Paso 1 — Instala la extensión en Claude Desktop</SectionTitle>
-      <Row label="From.dxt" hint="Descarga e instala haciendo doble clic. Claude Desktop te pedirá el token.">
-        <a href="https://getfrom.app/From.dxt" download className="btn-primary" style={{ fontSize: 12 }}>
-          ↓ Descargar From.dxt
-        </a>
-      </Row>
-
-      {/* Paso 2: Token */}
-      <SectionTitle>Paso 2 — Tu token de API</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Genera tu token y pégalo en Claude Desktop cuando te lo pida al instalar la extensión.
+      <SectionTitle>From para Claude — ya disponible en el directorio</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 16 }}>
+        From está en el directorio oficial de conectores de Claude. No necesitas instalar nada ni copiar tokens.
       </div>
-      {mcpLoaded ? (
-        mcpToken ? (
-          <div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-              <code style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: '1px solid var(--border)' }}>
-                {mcpToken}
-              </code>
-              <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12 }}>
-                {mcpCopied ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
-            <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-              {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
-            </button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+        {steps.map((step, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)',
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1,
+            }}>{i + 1}</div>
+            <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 3 }}>{step}</div>
           </div>
-        ) : (
-          <button className="btn-primary" onClick={handleGenerateMcpToken} disabled={generatingMcp}>
-            {generatingMcp ? 'Generando...' : 'Generar token de API'}
-          </button>
-        )
-      ) : <div className="st-row-hint">Cargando...</div>}
-
-      {/* Paso 3: Custom Instructions — solo si hay token */}
-      {mcpToken && <>
-        <SectionTitle>Paso 3 — Activa el guardado automático</SectionTitle>
-        <div className="st-row-hint" style={{ marginBottom: 10 }}>
-          Copia el bloque y pégalo en <strong style={{ color: 'var(--text)' }}>Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas</strong>. Solo hay que hacerlo una vez.
-        </div>
-        <pre style={{ margin: '0 0 8px', padding: '10px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 130, overflow: 'hidden', maskImage: 'linear-height(to bottom, black 60%, transparent 100%)' }}>
-          {CLAUDE_CUSTOM_INSTRUCTIONS}
-        </pre>
-        <button className="btn-primary" onClick={copyPrompt} style={{ width: '100%', justifyContent: 'center', fontSize: 13 }}>
-          {promptCopied ? '✓ Copiado — pégalo en Claude Desktop → Ajustes → Perfil' : 'Copiar instrucciones'}
-        </button>
-      </>}
-
-      {/* iPhone / Android / Web */}
-      <div style={{ marginTop: 24 }} />
-      <SectionTitle>También en iPhone, Android y web</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Claude para iOS, Android y Claude.ai admiten conectores MCP remotos. Añade From como conector personalizado con el mismo token de arriba — funciona desde cualquier dispositivo porque Anthropic se conecta a los servidores de From directamente.
+        ))}
       </div>
-      {mcpToken && (
-        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 12, lineHeight: 1.7 }}>
-          <div><strong>URL del conector:</strong> <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code></div>
-          <div style={{ marginTop: 4 }}><strong>Auth:</strong> Bearer → pega el token del paso 2</div>
-          <div style={{ marginTop: 4, color: 'var(--text-secondary)' }}>Claude → Ajustes → Conectores personalizados → Añadir</div>
-        </div>
-      )}
 
-      {/* Más info */}
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 8 }}>
         <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
           Ver documentación completa →
         </a>
+      </div>
+
+      {/* Claude Code (CLI) — opción avanzada */}
+      <div style={{ marginTop: 28, padding: '12px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Para Claude Code (CLI)</div>
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          Añade From a <code style={{ fontSize: 11 }}>~/.claude.json</code> con tipo <code style={{ fontSize: 11 }}>http</code> y URL <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code>. El token lo encuentras en Ajustes → Accesorios.
+        </div>
       </div>
     </div>
   )

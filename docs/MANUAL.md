@@ -1093,7 +1093,7 @@ Añade palabras clave propias para que From las reconozca como señal de tarea o
 ### Integraciones
 
 - **Google Calendar**: conectar, desconectar, ver estado de sincronización.
-- **Claude (MCP)**: genera tu token de API para conectar From con Claude Desktop o Claude Code. Ver instrucciones detalladas más abajo.
+- **Claude (MCP)**: conecta From con Claude desde el directorio oficial de conectores de Anthropic. Ver instrucciones detalladas más abajo.
 
 ### Datos / Backup
 
@@ -1120,22 +1120,23 @@ Ve a **Ajustes → Importar**, elige la fuente y sigue el proceso.
 
 ## 23. Conexión con Claude (MCP)
 
-From tiene integración nativa con Claude Desktop y Claude Code. Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
+From está en el **directorio oficial de conectores de Claude** (Anthropic). Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
 
-### Cómo conectar — Claude Desktop (recomendado)
+### Cómo conectar — directorio de Claude (recomendado)
 
-1. Ve a **Ajustes → Integraciones → Claude (MCP)**.
-2. Pulsa **"Generar token de API"**. El token dura 1 año.
-3. Descarga **From.dxt** con el botón que aparece en la misma pantalla.
-4. Haz doble clic en el archivo. Claude Desktop lo instala y pide el token — pégalo.
-5. En la misma pantalla de ajustes aparece el **Paso 3**: copia el bloque de instrucciones y pégalo en **Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas**.
+Funciona desde cualquier dispositivo: claude.ai, iPhone, Android y Claude Desktop.
 
-Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus conversaciones.
+1. Abre Claude (claude.ai, app de iPhone/Android o Claude Desktop).
+2. Ve a **Ajustes → Conectores**.
+3. Busca **"From"** en el directorio.
+4. Pulsa **Conectar** e inicia sesión con tu cuenta de From mediante OAuth.
+5. Listo — Claude puede guardar notas y tareas en tu vault desde ese momento.
+
+No necesitas instalar extensiones, copiar tokens ni introducir URLs manualmente.
 
 ### Cómo conectar — Claude Code (CLI)
 
-1. Genera tu token en **Ajustes → Integraciones → Claude (MCP)**.
-2. Añade la entrada `from` a `~/.claude.json` bajo la clave `mcpServers`:
+Para Claude Code (la CLI de terminal), configura la conexión manualmente. Primero genera tu token en **From → Ajustes → Accesorios**. Luego añade la entrada `from` a `~/.claude.json` bajo la clave `mcpServers`:
 
 ```json
 "mcpServers": {
@@ -1147,21 +1148,7 @@ Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus con
 }
 ```
 
-3. Copia el bloque de instrucciones de Ajustes y pégalo en tu `~/.claude/CLAUDE.md`.
-4. Reinicia Claude Code.
-
-### Cómo conectar — iPhone, Android y Claude.ai web
-
-From funciona también como conector remoto en Claude para iOS, Android y en Claude.ai desde el navegador. El servidor MCP de From es público — Anthropic se conecta a él desde su propia nube, no desde tu dispositivo, así que no importa qué uses.
-
-1. Genera tu token en **Ajustes → Integraciones → Claude (MCP)** (mismo token que para Desktop).
-2. En Claude (iOS, Android o claude.ai): **Ajustes → Conectores personalizados → Añadir conector**.
-3. Introduce:
-   - **URL:** `https://from-server-production.up.railway.app/mcp`
-   - **Autenticación:** Bearer → pega tu token de API
-4. Copia el bloque de instrucciones personalizadas de Ajustes y pégalo en el perfil de Claude.
-
-Desde ese momento From funciona igual desde el iPhone que desde el Mac — sin que el Mac tenga que estar encendido.
+Reinicia Claude Code. From funciona automáticamente desde ese momento.
 
 ### Qué hace Claude con From automáticamente
 
@@ -1187,7 +1174,7 @@ fin  →  Claude guarda el resumen de la conversación en From automáticamente
 From no te obliga a tener la app delante. Estos accesorios mandan lo que tengas a tu **nota de hoy**, y la inteligencia de From se encarga de clasificarlo (tipo, fecha, contexto). Todos —salvo la barra de menús— se conectan con el **token de API** de tu cuenta.
 
 ### El token de API
-Es la llave que usan Raycast, Chrome y la extensión de Claude para hablar con tu From. Se genera y copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el anterior). Vive 1 año.
+Es la llave que usan Raycast, Chrome y Claude Code (CLI) para hablar con tu From. Se genera y copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el anterior). Vive 1 año. Para Claude en web, iPhone, Android y Desktop, no necesitas el token — usa el directorio de conectores (ver sección 23).
 
 ### Barra de menús (Mac)
 From vive en la barra de menús del Mac con su icono (el árbol).
