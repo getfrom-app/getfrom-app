@@ -912,10 +912,18 @@ export class NodeStore {
     types?: string[]
     extraData?: Record<string, string>
     isAtomic?: boolean
+    /** ID determinista para nodos únicos (raíces, Perfil, diario…). Si el nodo
+     *  ya existe con ese id, se devuelve el existente (no se duplica). */
+    predefinedId?: string
   }): Node {
+    // Singleton determinista: si ya existe un nodo (activo) con ese id, reutilizarlo.
+    if (params.predefinedId) {
+      const existing = this.nodes.get(params.predefinedId)
+      if (existing && !existing.deletedAt) return existing
+    }
     const workspaceId = this.workspaces[0]?.id || '00000000-0000-0000-0000-000000000001'
     const now = new Date().toISOString()
-    const id = generateId()
+    const id = params.predefinedId ?? generateId()
     const node: Node = {
       id,
       parentId: params.parentId,

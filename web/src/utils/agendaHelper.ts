@@ -5,6 +5,7 @@
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
+import { structuralId, diaryId } from './deterministicId'
 
 const MONTHS_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -20,19 +21,20 @@ export function findAgendaRoot(): Node | undefined {
 }
 
 export function getOrCreateAgendaRoot(): Node {
-  return findAgendaRoot() ?? store.createNode({ text: AGENDA_ROOT_NAME, parentId: null })
+  return findAgendaRoot() ?? store.createNode({ text: AGENDA_ROOT_NAME, parentId: null, predefinedId: structuralId('agenda') ?? undefined })
 }
 
 function getOrCreateYear(year: number, agendaId: string): Node {
   const yearText = String(year)
   return store.children(agendaId).find(c => !c.deletedAt && c.text === yearText)
-    ?? store.createNode({ text: yearText, parentId: agendaId })
+    ?? store.createNode({ text: yearText, parentId: agendaId, predefinedId: structuralId(`year-${year}`) ?? undefined })
 }
 
 function getOrCreateMonth(monthIdx: number, yearId: string): Node {
   const monthText = MONTHS_ES[monthIdx]
+  const yearText = store.getNode(yearId)?.text ?? ''
   return store.children(yearId).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
-    ?? store.createNode({ text: monthText, parentId: yearId })
+    ?? store.createNode({ text: monthText, parentId: yearId, predefinedId: structuralId(`month-${yearText}-${monthIdx}`) ?? undefined })
 }
 
 function getOrCreateDay(date: Date, monthId: string): Node {
@@ -53,6 +55,7 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     isDiaryEntry: true,
     diaryDate: dayDate.toISOString(),
     siblingOrder: d,   // día del mes (1-31) como orden → siempre cronológico
+    predefinedId: diaryId(dayDate) ?? undefined,  // canónico (idéntico a iOS) → no duplica
   })
 }
 

@@ -13,6 +13,7 @@
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
+import { structuralId } from './deterministicId'
 
 const PAPELERA_NAME = '🗑 Papelera'
 
@@ -27,6 +28,7 @@ export function ensurePapeleraNode(): Node {
     text: PAPELERA_NAME,
     parentId: null,
     siblingOrder: 10000,  // siempre al final del árbol
+    predefinedId: structuralId('papelera') ?? undefined,
   })
   return store.getNode(node.id)!
 }

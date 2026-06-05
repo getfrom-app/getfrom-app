@@ -18,6 +18,7 @@
  */
 
 import { store } from '../store/nodeStore'
+import { structuralId } from './deterministicId'
 import type { Node } from '../types'
 
 const AGENTES_NAME = '🤖 Agentes'
@@ -164,6 +165,7 @@ export function ensureAgentesNode(): void {
       text: AGENTES_NAME,
       parentId: null,
       siblingOrder: 9999,
+      predefinedId: structuralId('agentes') ?? undefined,
     })
     agentesNode = store.getNode(created.id)!
   }

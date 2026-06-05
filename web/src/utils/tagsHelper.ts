@@ -14,6 +14,7 @@
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
+import { structuralId } from './deterministicId'
 
 export const TAGS_ROOT_NAME = '🧠 Contexto'
 
@@ -58,7 +59,7 @@ export function findTagsRoot(): Node | undefined {
 }
 
 export function getOrCreateTagsRoot(): Node {
-  return findTagsRoot() ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null })
+  return findTagsRoot() ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
 }
 
 // ── Buscar tag por slug ───────────────────────────────────────────────────────
@@ -255,7 +256,7 @@ Profesión / actividad principal:
 export function ensurePerfilInsideContexto(): void {
   // Obtener o crear el nodo raíz 🧠 Contexto
   const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
-    ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null })
+    ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
 
   const perfil = store.perfilIANode?.() ?? null
 
@@ -265,6 +266,7 @@ export function ensurePerfilInsideContexto(): void {
       text: '🧠 Perfil de IA',
       parentId: contextoRoot.id,
       extraData: { _perfilIA: '1' },
+      predefinedId: structuralId('perfil') ?? undefined,
     })
     // Las secciones como nodos hijos — el usuario rellena en el outliner normal
     const sections = [
@@ -358,7 +360,7 @@ export function ensurePlantillasNode(): void {
 
   if (remaining.length === 0) {
     // No existe ninguno → crear en root con orden fijo
-    store.createNode({ text: PLANTILLAS_NAME, parentId: null, siblingOrder: 9997 })
+    store.createNode({ text: PLANTILLAS_NAME, parentId: null, siblingOrder: 9997, predefinedId: structuralId('plantillas') ?? undefined })
   } else {
     const keeper = remaining[0]
     // Asegurar nombre correcto Y que esté en root (parentId === null)

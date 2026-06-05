@@ -1,4 +1,5 @@
 import { store } from '../store/nodeStore'
+import { structuralId } from './deterministicId'
 
 const ATAJOS_NAME = '📊 Paneles'
 
@@ -27,7 +28,7 @@ export function ensureAtajosNode() {
     return null as unknown as ReturnType<typeof store.getNode> extends null ? never : NonNullable<ReturnType<typeof store.getNode>>
   }
 
-  const node = store.createNode({ text: ATAJOS_NAME, parentId: null, siblingOrder: 9998 })
+  const node = store.createNode({ text: ATAJOS_NAME, parentId: null, siblingOrder: 9998, predefinedId: structuralId('paneles') ?? undefined })
   return store.getNode(node.id)!
 }
 

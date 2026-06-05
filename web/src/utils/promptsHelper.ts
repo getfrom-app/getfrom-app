@@ -24,6 +24,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { aiInlineStream, getToken } from '../api/client'
+import { structuralId } from './deterministicId'
 
 export const PROMPTS_ROOT_NAME = '⚡ Prompts'
 
@@ -58,7 +59,7 @@ export function getPromptsRoot(): Node | undefined {
 }
 
 export function getOrCreatePromptsRoot(): Node {
-  return getPromptsRoot() ?? store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996 })
+  return getPromptsRoot() ?? store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996, predefinedId: structuralId('prompts') ?? undefined })
 }
 
 // ── Listado ───────────────────────────────────────────────────────────────────
@@ -337,7 +338,7 @@ export function ensurePromptsNode(): void {
   const existing = getPromptsRoot()
   if (existing) return  // ya existe — no tocar el contenido del usuario
 
-  const root = store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996 })
+  const root = store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996, predefinedId: structuralId('prompts') ?? undefined })
 
   // Prompt de ejemplo 1 — Diario del día (activación automática en notas diarias)
   const diario = store.createNode({ text: 'Diario del día', parentId: root.id })
