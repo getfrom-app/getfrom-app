@@ -29,15 +29,18 @@
             <span></span><span></span><span></span>
         </button>
         <div class="nav-links">
-            <a href="index.html#features">Funciones</a>
+            <a href="index.html#features" data-i18n="nav.features">Funciones</a>
+            <a href="index.html#magic">Magic AI</a>
             <a href="accesorios.html">Accesorios</a>
-            <a href="pricing.html">Precios</a>
-            <a href="changelog.html">Novedades</a>
+            <a href="index.html#ai" data-i18n="nav.ai">Agentes</a>
             <a href="blog/index.html">Blog</a>
-            <a href="support.html">Soporte</a>
+            <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
+            <a href="changelog.html">Novedades</a>
+            <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
+            <a href="support.html" data-i18n="nav.support">Soporte</a>
             <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option></select>
             <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
-            <a href="index.html#download" class="btn-nav">Descargar gratis</a>
+            <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/From.dmg" class="btn-nav">Descargar para Mac</a>
         </div>
     </div>
 </nav>
@@ -97,8 +100,22 @@
 
     </div>
 
+    <!-- Claude (MCP) — destacado -->
+    <div style="margin-top:36px;background:linear-gradient(135deg,rgba(124,58,237,.05),rgba(88,86,214,.05));border:1px solid rgba(124,58,237,.2);border-radius:16px;padding:28px 32px;display:grid;grid-template-columns:56px 1fr;gap:24px;align-items:start;">
+        <div class="card-icon" style="background:rgba(124,58,237,.12);color:var(--purple);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+            <div style="display:inline-block;font-size:11px;font-weight:700;color:var(--purple);background:rgba(124,58,237,.1);padding:3px 10px;border-radius:99px;margin-bottom:12px;letter-spacing:.04em;">DIRECTORIO OFICIAL DE CLAUDE · ANTHROPIC</div>
+            <h3 style="margin-bottom:8px;font-size:17px;">Claude (MCP)</h3>
+            <p style="margin-bottom:10px;">Conecta Claude con tu vault de From. Guarda notas desde una conversación, crea tareas y consulta tu información directamente en Claude Desktop, Claude.ai o Claude Code — sin salir del chat.</p>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Abre Claude → Conectores → busca From. Sin tokens ni configuración manual.</p>
+            <a href="claude.html" style="font-size:13px;color:var(--accent);font-weight:600;">Ver instrucciones de conexión →</a>
+        </div>
+    </div>
+
     <p style="text-align:center;max-width:620px;margin:36px auto 0;font-size:14px;color:var(--text-secondary);">
-        Todos usan el mismo <strong>token de API</strong> de tu cuenta (Ajustes → Accesorios). Lo generas una vez y sirve para Raycast, Chrome y la extensión de Claude.
+        Los accesorios de captura (Raycast, Chrome, Atajo) usan el mismo <strong>token de API</strong> de tu cuenta (Ajustes → Accesorios). Lo generas una vez.
     </p>
 </section>
 
