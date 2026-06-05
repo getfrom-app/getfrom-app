@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.149 — 5 junio 2026 · Planificador: eliminar evento sincroniza con Google Calendar
+
+- Nuevo botón **"Eliminar evento"** en el menú contextual del planificador: elimina la tarea de From Y borra el evento en Google Calendar. Antes "Quitar del planificador" solo quitaba la hora sin borrar nada; ahora coexisten las dos opciones según lo que quieras hacer.
+- Fix: eventos GCal creados por From ya no aparecen duplicados en el planificador (se filtra por `gcalEventId`).
+- Fix: "Eliminar bloque" renombrado a "Eliminar evento" para eventos nativos de GCal; ahora llama correctamente a la API de Google Calendar para borrarlos.
+
+---
+
+## Web v9.6.147 — 5 junio 2026 · Política de privacidad y Google OAuth
+
+- Eliminado el scope `drive.file` de la integración Google (no se usaba).
+- Política de privacidad (ES + EN) actualizada: sección Google Calendar más precisa, añadido el texto de cumplimiento "Limited Use" exigido por Google.
+
+---
+
 ## Web v9.6.145 — 5 junio 2026 · Blog, distribución y emails
 
 ### Blog
