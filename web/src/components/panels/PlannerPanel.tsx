@@ -879,13 +879,22 @@ export default function PlannerPanel({ onClose }: Props) {
               </div>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
-              <button className="pp-ctx-danger" style={{marginTop:6}} onClick={()=>{
-                // "Eliminar del planificador" = quitar due por completo
+              <button onClick={()=>{
                 store.updateNode(ctxMenu.b.nodeId!, { due: null, dueEnd: null })
                 removeNodeFromGcal(ctxMenu.b.nodeId!)
                 setCtxMenu(null)
               }}>
                 Quitar del planificador
+              </button>
+            )}
+            {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
+              <button className="pp-ctx-danger" style={{marginTop:4}} onClick={()=>{
+                const nodeId = ctxMenu.b.nodeId!
+                removeNodeFromGcal(nodeId)
+                store.deleteNode(nodeId)
+                setCtxMenu(null)
+              }}>
+                Eliminar evento
               </button>
             )}
             {ctxMenu.b.kind === 'gcal' && (
