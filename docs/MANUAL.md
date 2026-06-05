@@ -1150,6 +1150,19 @@ Hecho. Desde ese momento Claude guarda automáticamente en From en todas tus con
 3. Copia el bloque de instrucciones de Ajustes y pégalo en tu `~/.claude/CLAUDE.md`.
 4. Reinicia Claude Code.
 
+### Cómo conectar — iPhone, Android y Claude.ai web
+
+From funciona también como conector remoto en Claude para iOS, Android y en Claude.ai desde el navegador. El servidor MCP de From es público — Anthropic se conecta a él desde su propia nube, no desde tu dispositivo, así que no importa qué uses.
+
+1. Genera tu token en **Ajustes → Integraciones → Claude (MCP)** (mismo token que para Desktop).
+2. En Claude (iOS, Android o claude.ai): **Ajustes → Conectores personalizados → Añadir conector**.
+3. Introduce:
+   - **URL:** `https://from-server-production.up.railway.app/mcp`
+   - **Autenticación:** Bearer → pega tu token de API
+4. Copia el bloque de instrucciones personalizadas de Ajustes y pégalo en el perfil de Claude.
+
+Desde ese momento From funciona igual desde el iPhone que desde el Mac — sin que el Mac tenga que estar encendido.
+
 ### Qué hace Claude con From automáticamente
 
 - **Guarda documentos y análisis** que genera durante la conversación.

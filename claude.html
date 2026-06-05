@@ -518,12 +518,13 @@
 
 <!-- Requisitos -->
 <div class="req-section">
-    <h2>Requisitos</h2>
+    <h2>Dónde funciona</h2>
     <p>
-        Necesitas <a href="/">From</a> (Mac, iPhone o web) con una cuenta activa y al menos una sincronización realizada.<br>
-        Compatible con <strong>Claude Desktop</strong> (instalación con .dxt, recomendada) y <strong>Claude Code</strong> (configuración manual).<br><br>
-        El token de API se genera desde la app y dura 1 año.<br>
-        Todos los datos se guardan en tu vault de From.
+        From se conecta con Claude desde <strong>cualquier dispositivo</strong> — el servidor MCP de From es público y Anthropic se conecta a él desde su nube, no desde tu teléfono o Mac.<br><br>
+        <strong>Claude Desktop</strong> — instala <code>From.dxt</code> (recomendado, un clic).<br>
+        <strong>Claude Code</strong> — configura <code>~/.claude.json</code> con la URL y el token.<br>
+        <strong>iPhone · Android · Claude.ai web</strong> — añade From como conector personalizado: Claude → Ajustes → Conectores personalizados → URL <code>https://from-server-production.up.railway.app/mcp</code> + token Bearer.<br><br>
+        El token de API se genera desde From (Ajustes → Integraciones) y dura 1 año. Todos los datos se guardan en tu vault de From.
     </p>
 </div>
 

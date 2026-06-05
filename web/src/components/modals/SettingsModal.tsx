@@ -650,6 +650,20 @@ export function ClaudeMcpPane() {
         </button>
       </>}
 
+      {/* iPhone / Android / Web */}
+      <div style={{ marginTop: 24 }} />
+      <SectionTitle>También en iPhone, Android y web</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Claude para iOS, Android y Claude.ai admiten conectores MCP remotos. Añade From como conector personalizado con el mismo token de arriba — funciona desde cualquier dispositivo porque Anthropic se conecta a los servidores de From directamente.
+      </div>
+      {mcpToken && (
+        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 12, lineHeight: 1.7 }}>
+          <div><strong>URL del conector:</strong> <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code></div>
+          <div style={{ marginTop: 4 }}><strong>Auth:</strong> Bearer → pega el token del paso 2</div>
+          <div style={{ marginTop: 4, color: 'var(--text-secondary)' }}>Claude → Ajustes → Conectores personalizados → Añadir</div>
+        </div>
+      )}
+
       {/* Más info */}
       <div style={{ marginTop: 20 }}>
         <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
