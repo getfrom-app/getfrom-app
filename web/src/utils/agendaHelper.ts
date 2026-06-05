@@ -27,14 +27,16 @@ export function getOrCreateAgendaRoot(): Node {
 function getOrCreateYear(year: number, agendaId: string): Node {
   const yearText = String(year)
   return store.children(agendaId).find(c => !c.deletedAt && c.text === yearText)
-    ?? store.createNode({ text: yearText, parentId: agendaId, predefinedId: structuralId(`year-${year}`) ?? undefined })
+    ?? store.createNode({ text: yearText, parentId: agendaId, predefinedId: structuralId(`year-${year}`) ?? undefined,
+        extraData: { viewBlock: 'calendario', temporalType: 'year', temporalKey: yearText, calScale: 'Año' } })
 }
 
 function getOrCreateMonth(monthIdx: number, yearId: string): Node {
   const monthText = MONTHS_ES[monthIdx]
   const yearText = store.getNode(yearId)?.text ?? ''
   return store.children(yearId).find(c => !c.deletedAt && c.text?.toLowerCase() === monthText.toLowerCase())
-    ?? store.createNode({ text: monthText, parentId: yearId, predefinedId: structuralId(`month-${yearText}-${monthIdx}`) ?? undefined })
+    ?? store.createNode({ text: monthText, parentId: yearId, predefinedId: structuralId(`month-${yearText}-${monthIdx}`) ?? undefined,
+        extraData: { viewBlock: 'calendario', temporalType: 'month', temporalKey: `${yearText}-${monthIdx + 1}`, calScale: 'Mes' } })
 }
 
 function getOrCreateDay(date: Date, monthId: string): Node {
