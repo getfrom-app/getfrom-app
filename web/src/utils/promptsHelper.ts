@@ -23,6 +23,7 @@
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
+import { aiInlineStream, getToken } from '../api/client'
 
 export const PROMPTS_ROOT_NAME = '⚡ Prompts'
 
@@ -283,6 +284,42 @@ export function substituteVariables(text: string, ctx: VariableContext = {}): st
 /** Instrucciones finales de un prompt: contenido + variables sustituidas. */
 export function resolvePrompt(promptNodeId: string, ctx: VariableContext = {}): string {
   return substituteVariables(getPromptInstructions(promptNodeId), ctx)
+}
+
+// ── Sugerencia por IA (modo 3) ────────────────────────────────────────────────
+
+/**
+ * Dado el texto que escribe el usuario, pregunta a la IA (micro-op gratuita Haiku)
+ * cuál de los prompts disponibles encaja mejor. Devuelve el id del prompt o null.
+ * No consume tokens del usuario (systemBudget). Cancelable con signal.
+ */
+export async function suggestPromptForText(text: string, signal?: AbortSignal): Promise<string | null> {
+  if (!getToken()) return null
+  const prompts = listPrompts()
+  if (prompts.length === 0) return null
+  const names = prompts.map(p => (p.text || '').trim()).filter(Boolean)
+  if (names.length === 0) return null
+
+  const system = `Eres un clasificador silencioso. El usuario tiene estos "prompts" (modos de conversación) en su app de notas:
+${names.map((n, i) => `${i + 1}. ${n}`).join('\n')}
+
+Dado el mensaje del usuario, decide si encaja CLARAMENTE con alguno de esos prompts.
+Responde SOLO con el nombre EXACTO del prompt que mejor encaje, o exactamente "NONE" si ninguno encaja con claridad.
+Sin comillas, sin explicaciones, sin puntuación extra. Ante la duda, responde NONE.`
+
+  let out = ''
+  try {
+    out = await aiInlineStream(text, undefined, undefined, { systemBudget: true, systemOverride: system, signal })
+  } catch { return null }
+
+  const ans = out.trim().toLowerCase().replace(/^["'`.\s]+|["'`.\s]+$/g, '')
+  if (!ans || ans === 'none' || ans.includes('none')) return null
+  const match = prompts.find(p => (p.text || '').trim().toLowerCase() === ans)
+    ?? prompts.find(p => {
+      const name = (p.text || '').trim().toLowerCase()
+      return name.length > 0 && (ans.includes(name) || name.includes(ans))
+    })
+  return match ? match.id : null
 }
 
 // ── Inicialización ────────────────────────────────────────────────────────────

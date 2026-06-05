@@ -782,5 +782,6 @@
   "ctxProps.updateKnowledge": "Actualizar conocimiento",
   "ctxProps.updating": "Actualizando…",
   "ctxProps.knowledgeUpdated": "Conocimiento actualizado",
-  "ctxProps.knowledgeHint": "From resume las palabras clave, personas y temas de este contexto para entender mejor tus notas."
+  "ctxProps.knowledgeHint": "From resume las palabras clave, personas y temas de este contexto para entender mejor tus notas.",
+  "prompts.variablesHint2": "Escríbelas en el prompt y From las rellena al usarlo. Clic para insertarla donde tengas el cursor."
 }

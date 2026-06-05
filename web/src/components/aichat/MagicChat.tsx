@@ -15,7 +15,7 @@ import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
 import { ensureDayPath } from '../../utils/agendaHelper'
-import { listPrompts, findAutoPromptForNode } from '../../utils/promptsHelper'
+import { listPrompts, findAutoPromptForNode, suggestPromptForText } from '../../utils/promptsHelper'
 
 interface Props {
   onClose: () => void
@@ -75,21 +75,28 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
   const activePromptNode = chat.activePromptId ? store.getNode(chat.activePromptId) : null
 
-  // Auto-activación por palabra clave (modo 3): mientras escribes, si el texto encaja
-  // con el nombre de un prompt y no hay ninguno activo, se activa solo. Quitable con ×.
+  // Auto-activación por IA (modo 3): cuando pausas de escribir, una micro-op gratuita
+  // (Haiku) decide si el texto encaja con algún prompt y lo activa solo. Quitable con ×.
+  const suggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSuggestTextRef = useRef('')
+  const suggestAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
-    if (slashQuery !== null) return
-    if (chat.activePromptId) return
-    if (input.trim().length < 6) return
-    const lower = input.toLowerCase()
-    for (const p of allPrompts) {
-      if (dismissedSuggestRef.current.has(p.id)) continue
-      const words = (p.text || '').toLowerCase().split(/\s+/).filter(w => w.length >= 4)
-      if (words.length > 0 && words.some(w => lower.includes(w))) {
-        chat.setActivePrompt(p.id, true)
-        break
+    if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current)
+    if (slashQuery !== null || chat.activePromptId) return
+    const trimmed = input.trim()
+    if (trimmed.length < 12 || trimmed === lastSuggestTextRef.current) return
+    suggestTimerRef.current = setTimeout(async () => {
+      if (chat.activePromptId || chat.isStreaming) return
+      lastSuggestTextRef.current = trimmed
+      suggestAbortRef.current?.abort()
+      const ac = new AbortController()
+      suggestAbortRef.current = ac
+      const id = await suggestPromptForText(trimmed, ac.signal)
+      if (id && !chat.activePromptId && !dismissedSuggestRef.current.has(id)) {
+        chat.setActivePrompt(id, true)
       }
-    }
+    }, 800)
+    return () => { if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input])
 

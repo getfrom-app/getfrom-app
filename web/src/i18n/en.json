@@ -783,5 +783,6 @@
   "ctxProps.updateKnowledge": "Update knowledge",
   "ctxProps.updating": "Updating…",
   "ctxProps.knowledgeUpdated": "Knowledge updated",
-  "ctxProps.knowledgeHint": "From summarizes the keywords, people and topics of this context to better understand your notes."
+  "ctxProps.knowledgeHint": "From summarizes the keywords, people and topics of this context to better understand your notes.",
+  "prompts.variablesHint2": "Write them in the prompt and From fills them in. Click to insert one where your cursor is."
 }

@@ -37,7 +37,25 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
 
   if (!node) return null
 
-  function copyVar(key: string) {
+  // Inserta la variable directamente en el nodo enfocado del centro (manteniendo
+  // el foco gracias a preventDefault en mousedown). Si no hay nada enfocado, copia.
+  function insertVar(key: string) {
+    const el = document.activeElement as HTMLElement | null
+    const isInput = el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA'
+    const isEditable = !!el && (el.isContentEditable || isInput)
+    if (isEditable) {
+      if (isInput) {
+        const input = el as HTMLInputElement | HTMLTextAreaElement
+        const start = input.selectionStart ?? input.value.length
+        const end = input.selectionEnd ?? input.value.length
+        input.setRangeText(key, start, end, 'end')
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      } else {
+        // contenteditable (outliner): execCommand inserta en el caret y dispara input
+        document.execCommand('insertText', false, key)
+      }
+      return
+    }
     navigator.clipboard.writeText(key).catch(() => {})
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('prompts.varCopied', { v: key, defaultValue: `${key} copiada — pégala en el prompt` }), type: 'success' } }))
   }
@@ -131,13 +149,13 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
             {t('prompts.variablesTitle', 'Variables disponibles')}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.45, marginBottom: 8 }}>
-            {t('prompts.variablesHint', 'Escríbelas en el prompt y From las rellena al usarlo. Clic para copiar.')}
+            {t('prompts.variablesHint2', 'Escríbelas en el prompt y From las rellena al usarlo. Clic para insertarla donde tengas el cursor.')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {AVAILABLE_VARIABLES.map(v => (
               <button
                 key={v.key}
-                onClick={() => copyVar(v.key)}
+                onMouseDown={e => { e.preventDefault(); insertVar(v.key) }}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 9px', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
