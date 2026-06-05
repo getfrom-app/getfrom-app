@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Captura rápida desde la barra de menús: sin abrir la app — From Blog</title>
+  <meta name="description" content="From lives in your menu bar. One click and what you think lands in today's note.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #ea580c; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #ea580c; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fff7ed 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #ea580c; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fff7ed, #fff); border: 2px solid #ea580c; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #ea580c; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #c2410c; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Accesorios</span>
+  <h1>Captura rápida desde la barra de menús: sin abrir la app</h1>
+  <p class="subtitle">From lives in your menu bar. One click and what you think lands in today's note.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>El momento en que una idea se escapa</h2>
+
+<p>Estás en medio de algo. Una reunión, una llamada, o simplemente pensando mientras preparas un café. De repente aparece una idea, una tarea que no puedes olvidar, algo que tienes que apuntar <strong>ahora mismo</strong>. Abres el ordenador, buscas la aplicación, esperas a que cargue, navegas hasta el sitio correcto… y ya la has perdido. O peor: la apuntas en un post-it que desaparece al día siguiente.</p>
+
+<p>Este problema no es de organización. Es de fricción. Cuantos más pasos hay entre el pensamiento y el papel, más ideas se pierden por el camino.</p>
+
+<h2>La barra de menús como atajo mental</h2>
+
+<p>From vive en tu barra de menús de Mac. Siempre visible, siempre a un clic. No tienes que cambiar de ventana, no tienes que buscar la app, no tienes que pensar dónde va lo que quieres escribir.</p>
+
+<p>Un clic en el icono de la barra de menús y aparece una ventana compacta. Escribes lo que tienes en la cabeza. Pulsas Enter. Ya está. From lo ha capturado y lo ha colocado directamente en tu nota de hoy.</p>
+
+<div class="callout"><p>La captura rápida no es una función extra de From. Es la filosofía central: lo que piensas tiene que aterrizar sin fricción, sin que tengas que decidir nada en el momento.</p></div>
+
+<div class="img-block"><img src="/img/screenshots/diario-hoy.png" alt="Nota de hoy en From"><p class="img-caption">Todo lo que capturas desde la barra de menús aterriza automáticamente en la nota del día de hoy.</p></div>
+
+<h2>Sin abrir la app. Sin decidir dónde va.</h2>
+
+<p>Eso es lo que lo hace diferente. En la mayoría de herramientas de captura, tienes que tomar decisiones: ¿es una tarea? ¿es una nota? ¿en qué proyecto va? ¿qué fecha tiene? Esas preguntas frenan el flujo y convierten la captura en un proceso.</p>
+
+<p>From resuelve esto de forma distinta: <strong>entiende lo que escribes</strong>. Si escribes "Llamar a Marcos mañana a las 10", From detecta que es una tarea con fecha y hora sin que tengas que configurar nada. Si escribes "Recordar revisar el contrato antes del viernes", lo reconoce como tarea con límite temporal. Si simplemente escribes una idea suelta, la guarda como nota en tu diario del día.</p>
+
+<p>No hace falta etiquetar, no hace falta categorizar. Capturas y sigues con lo que estabas haciendo.</p>
+
+<h2>Cómo funciona en la práctica</h2>
+
+<ol>
+  <li><strong>Haz clic en el icono de From en la barra de menús</strong> — o usa el atajo de teclado que hayas configurado.</li>
+  <li><strong>Escribe lo que quieras</strong> — una tarea, una idea, una cosa que no puedes olvidar.</li>
+  <li><strong>Pulsa Enter</strong> — From lo guarda. Sin preguntas, sin pantallas adicionales.</li>
+</ol>
+
+<p>Después, cuando abres From, todo está donde tiene que estar. Las tareas aparecen en tu lista de pendientes, las notas en el diario del día, los eventos con fecha en tu vista de agenda. From ya ha interpretado cada entrada por ti.</p>
+
+<div class="img-block"><img src="/img/screenshots/sidebar-atajos.png" alt="Sidebar con atajos en From"><p class="img-caption">Desde el sidebar puedes ver rápidamente todo lo que has capturado durante el día y dónde ha aterrizado cada cosa.</p></div>
+
+<h2>El atajo de teclado: ni siquiera el ratón</h2>
+
+<p>Si quieres ir un paso más allá, puedes activar la captura rápida sin tocar el ratón. From permite configurar un atajo de teclado global que abre el panel de captura desde cualquier aplicación, en cualquier momento, aunque From esté en segundo plano.</p>
+
+<p>Estás trabajando en un documento de texto, o revisando un email, o con el navegador abierto. Pulsas el atajo. Escribes. Pulsas Enter. Vuelves a lo que estabas. <strong>Cero interrupciones. Cero pérdida de contexto.</strong></p>
+
+<h2>Para quién es imprescindible</h2>
+
+<p>La captura rápida desde la barra de menús es especialmente útil en estos casos:</p>
+
+<ul>
+  <li>Trabajas con muchas aplicaciones abiertas y cambiar de contexto tiene un coste.</li>
+  <li>Tienes reuniones frecuentes y necesitas apuntar cosas mientras escuchas.</li>
+  <li>Tus mejores ideas aparecen en los momentos más inoportunos.</li>
+  <li>Ya has probado otras herramientas y siempre acabas en notas del iPhone o en texto plano porque "abrir la app" era demasiado.</li>
+</ul>
+
+<h3>El coste oculto de la fricción</h3>
+
+<p>Cada vez que no capturas algo porque "ya lo recordaré" o "lo apunto luego", estás pagando un coste que no se ve pero se acumula. Ideas perdidas, tareas olvidadas, cosas que aparecen en el peor momento porque no tenías un sistema fiable donde aterrizaran al instante.</p>
+
+<p>From elimina ese coste. No porque sea una app más completa o más potente, sino porque <strong>reduce el número de decisiones que tienes que tomar</strong> para capturar algo.</p>
+
+<h2>Conclusión</h2>
+
+<p>La captura rápida de From no es un accesorio: es el punto de entrada a todo tu sistema de trabajo. Un clic, una frase, Enter. Lo que piensas queda registrado y ordenado sin que hayas tenido que abrir la app, navegar hasta la vista correcta ni decidir nada. Si todavía pierdes ideas por el camino, empieza por aquí.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

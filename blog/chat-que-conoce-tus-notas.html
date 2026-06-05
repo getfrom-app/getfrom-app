@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El chat que conoce tus notas: pregunta y From busca en tu árbol — From Blog</title>
+  <meta name="description" content=""What did I decide about project X?" From finds the exact bullet — not a hallucination.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #7c3aed; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f5f3ff; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 2px solid #7c3aed; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #7c3aed; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #6d28d9; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Magic IA</span>
+  <h1>El chat que conoce tus notas: pregunta y From busca en tu árbol</h1>
+  <p class="subtitle">"What did I decide about project X?" From finds the exact bullet — not a hallucination.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>Tu árbol de notas como memoria consultable</h2>
+
+<p>Llevas semanas tomando notas, organizando proyectos, capturando ideas. El árbol crece. Y entonces llega el momento en que necesitas algo específico: ¿qué decidiste sobre el proveedor de pagos? ¿cuál era el precio que acordaste con ese cliente? ¿dónde apuntaste ese enlace importante?</p>
+
+<p>Abres el buscador. Escribes una palabra. Obtienes veinte resultados que no son lo que buscas. Empiezas a navegar nodo por nodo. Pierdes tres minutos. Encuentras algo parecido, pero no exacto.</p>
+
+<p>Ese proceso tiene un nombre: fricción. Y From lo elimina.</p>
+
+<div class="callout"><p><strong>Magic Chat no busca palabras clave. Entiende lo que preguntas y encuentra el nodo exacto dentro de tu árbol.</strong></p></div>
+
+<h2>El problema real con los buscadores clásicos</h2>
+
+<p>Los buscadores de texto buscan coincidencias literales. Si escribiste "reunión con proveedor" y ahora preguntas "¿qué acordé con el proveedor de pagos?", el buscador no conecta esos conceptos. Tú sí sabes lo que buscas. La herramienta, no.</p>
+
+<p>El resultado es que terminas haciendo el trabajo dos veces: una cuando capturas la información y otra cuando intentas recuperarla. Y en ese segundo momento, pierdes el hilo, el tiempo y a veces la información directamente.</p>
+
+<p>From funciona de otra manera.</p>
+
+<h2>Magic Chat: pregunta como si le hablaras a alguien que leyó tus notas</h2>
+
+<div class="img-block"><img src="/img/screenshots/magic-chat-respuesta.png" alt="Magic respondiendo a una pregunta sobre notas"><p class="img-caption">Magic encuentra la respuesta exacta dentro de tu árbol, con referencia al nodo original.</p></div>
+
+<p>Magic Chat es el chat integrado en From que tiene acceso directo a tu árbol de notas. No es un asistente genérico que improvisa respuestas. Es un lector que conoce tu contenido y te lo devuelve cuando lo necesitas.</p>
+
+<p>El flujo es simple:</p>
+
+<ol>
+  <li>Abres Magic Chat desde cualquier punto de From.</li>
+  <li>Escribes tu pregunta en lenguaje natural.</li>
+  <li>From localiza el nodo relevante y te responde con la información exacta, no con una interpretación libre.</li>
+</ol>
+
+<p>La diferencia crítica es que From no alucina. Si la información está en tu árbol, te la muestra. Si no está, te lo dice. No inventa nada.</p>
+
+<h2>Ejemplos concretos de lo que puedes preguntar</h2>
+
+<p>El valor real se entiende mejor con casos reales:</p>
+
+<ul>
+  <li><strong>"¿Qué decidí sobre el proyecto X?"</strong> — From localiza el nodo donde tomaste esa decisión, no una lista de resultados relacionados.</li>
+  <li><strong>"¿Cuáles son mis tareas pendientes de esta semana?"</strong> — From cruza tu árbol y agrupa lo que tienes abierto en los próximos días.</li>
+  <li><strong>"¿Qué dije sobre el presupuesto de marketing?"</strong> — Devuelve el bullet exacto donde lo anotaste, aunque no recuerdes bajo qué proyecto lo guardaste.</li>
+  <li><strong>"¿Qué tengo pendiente con ese cliente?"</strong> — Extrae todas las referencias al cliente dispersas por tu árbol.</li>
+</ul>
+
+<p>No necesitas recordar dónde lo guardaste. Solo necesitas saber lo que buscas.</p>
+
+<div class="img-block"><img src="/img/screenshots/magic-chat-escribiendo.png" alt="Magic Chat mientras el usuario escribe una consulta"><p class="img-caption">Escribe en lenguaje natural. From interpreta la intención, no solo las palabras.</p></div>
+
+<h2>Cómo funciona por dentro</h2>
+
+<p>From no indexa palabras sueltas. Analiza el contenido semántico de tus nodos: el contexto de cada bullet, su posición en el árbol, sus relaciones con nodos padre e hijo. Cuando preguntas algo, From entiende la intención y la cruza con esa estructura de significado.</p>
+
+<p>Esto significa que puedes preguntar con tus propias palabras, no con las palabras exactas que usaste cuando escribiste la nota. From conecta los dos extremos: lo que escribiste entonces y lo que recuerdas ahora.</p>
+
+<h3>El árbol como base de conocimiento personal</h3>
+
+<p>From parte de una premisa diferente a la mayoría de herramientas de notas: tu árbol no es un archivo de texto, es una base de conocimiento estructurada. Cada nodo tiene contexto, jerarquía y relaciones. Magic Chat aprovecha exactamente eso para darte respuestas precisas, no aproximaciones.</p>
+
+<div class="callout"><p>Cuando preguntas "¿qué decidí sobre el proyecto X?", From no improvisa. Busca en tu árbol, encuentra el nodo donde está esa decisión y te la devuelve. Sin suposiciones.</p></div>
+
+<h2>Cómo sacarle partido desde el primer día</h2>
+
+<p>Para que Magic Chat funcione bien, la clave está en capturar con intención. No hace falta que seas metódico al milímetro, pero sí que seas consistente:</p>
+
+<ul>
+  <li>Usa nodos específicos para decisiones: "Decidido: usaremos Stripe como pasarela de pago".</li>
+  <li>Nombra proyectos y clientes de forma consistente en todo el árbol.</li>
+  <li>Captura el contexto junto al dato: no solo "reunión aplazada" sino "reunión con Carlos aplazada a la semana del 15".</li>
+</ul>
+
+<p>Con esa base, Magic Chat se convierte en algo muy concreto: el colega que leyó todas tus notas y puede contestarte en segundos.</p>
+
+<h2>Conclusión</h2>
+
+<p>From no te ayuda a recordar más. Te ayuda a recuperar lo que ya sabes, exactamente cuando lo necesitas, sin fricción. Si capturas con intención, Magic Chat te devuelve esa información en segundos, con el nodo exacto, sin alucinaciones ni resultados irrelevantes. Tu árbol deja de ser un archivo y se convierte en una memoria consultable.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

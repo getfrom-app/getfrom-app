@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La extensión de Chrome que guarda cualquier página o texto en tu nota — From Blog</title>
+  <meta name="description" content="Click the icon or select text → right-click → Send to From. Done.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #ea580c; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #ea580c; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fff7ed 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #ea580c; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fff7ed, #fff); border: 2px solid #ea580c; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #ea580c; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #c2410c; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Accesorios</span>
+  <h1>La extensión de Chrome que guarda cualquier página o texto en tu nota</h1>
+  <p class="subtitle">Click the icon or select text → right-click → Send to From. Done.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>El problema de guardar cosas de internet</h2>
+
+<p>Encuentras un artículo interesante. Un párrafo que quieres recordar. Una URL que necesitas guardar para más tarde. ¿Qué haces? Copias el texto, abres otra pestaña, buscas dónde pegarlo, escribes el título a mano, intentas recordar en qué contexto lo necesitabas...</p>
+
+<p>Ese proceso se repite decenas de veces al día. Y cada vez, roba segundos que se convierten en minutos y en frustración acumulada. La información que encuentras en la web debería llegar a tu sistema de notas sin fricción. Eso es exactamente lo que hace la extensión de Chrome de From.</p>
+
+<div class="callout"><p><strong>La extensión de From convierte cualquier página web o texto seleccionado en una nota dentro de tu sistema, con un solo clic o dos toques del ratón.</strong></p></div>
+
+<h2>Cómo funciona: dos formas, ninguna fricción</h2>
+
+<p>La extensión opera de dos maneras distintas según lo que necesites capturar:</p>
+
+<h3>Guardar una página completa</h3>
+
+<p>Haz clic en el icono de From en la barra de extensiones de Chrome. From captura el título, la URL y la descripción de la página y crea un recurso en tu nota del día. En menos de dos segundos, esa página existe en tu sistema. Puedes añadir contexto después, organizarla, vincularla con otras notas. Pero la captura ya está hecha.</p>
+
+<h3>Guardar texto seleccionado</h3>
+
+<p>Selecciona cualquier fragmento de texto en la página. Clic derecho. Verás la opción <strong>Enviar a From</strong> en el menú contextual. Al hacer clic, ese fragmento llega a tu nota con la referencia de la fuente incluida. No pierdes de dónde viene.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/menu-contextual.png" alt="Menú contextual con opción Enviar a From">
+  <p class="img-caption">El menú contextual muestra la opción de enviar texto directamente a From</p>
+</div>
+
+<p>No hay formularios. No hay ventanas emergentes que te piden que elijas una carpeta o etiqueta. From sabe dónde poner las cosas porque conoce tu flujo de trabajo.</p>
+
+<h2>Por qué esto importa más de lo que parece</h2>
+
+<p>El verdadero coste de no tener esta extensión no es el tiempo que tardas en guardar algo. Es el tiempo que pierdes cuando <em>no</em> guardas cosas porque el proceso es engorroso. La información que deberías haber capturado y no capturaste, los recursos que desaparecen entre pestañas cerradas, los párrafos que relees dos veces porque no los anotaste la primera.</p>
+
+<p>Cuando guardar algo cuesta menos de tres segundos, empiezas a guardar todo lo que merece guardarse. Y eso cambia cómo construyes conocimiento con el tiempo.</p>
+
+<h3>Ejemplos concretos de uso</h3>
+
+<ul>
+  <li>Lees un hilo de Twitter con datos relevantes para un proyecto. Seleccionas los puntos clave, clic derecho, <strong>Enviar a From</strong>. Están en tu nota vinculados al proyecto.</li>
+  <li>Encuentras el artículo perfecto para citar en un informe. Clic en el icono. La URL y el título están en tu sistema antes de que puedas abrir otra pestaña.</li>
+  <li>Un párrafo de una web te da la respuesta exacta que buscabas. Lo seleccionas y lo envías. From añade la fuente automáticamente para que no pierdas la referencia.</li>
+  <li>Navegas en el móvil y encuentras algo interesante. Cuando llegas al ordenador, ya está en tu nota esperándote.</li>
+</ul>
+
+<div class="img-block">
+  <img src="/img/screenshots/sidebar-atajos.png" alt="Sidebar de From con atajos y recursos capturados">
+  <p class="img-caption">Los recursos capturados desde Chrome aparecen organizados en el sidebar de From</p>
+</div>
+
+<h2>Cómo instalarla y empezar</h2>
+
+<ol>
+  <li>Ve a la Chrome Web Store y busca la extensión de From, o accede directamente desde <strong>getfrom.app</strong>.</li>
+  <li>Instálala y conéctala con tu cuenta de From. Un solo paso de autorización.</li>
+  <li>A partir de ahí, el icono aparece en tu barra de Chrome siempre disponible.</li>
+</ol>
+
+<p>No hay configuración adicional. No hay que elegir carpetas de destino ni crear estructuras previas. From organiza lo que capturas dentro de tu flujo natural: si tienes una tarea activa o un contexto abierto, los recursos van ahí. Si no, van a tu nota del día.</p>
+
+<h2>From entiende el contexto, no solo el contenido</h2>
+
+<p>Lo que diferencia la extensión de From de un simple «guardar marcador» es que From no almacena un enlace muerto. Cuando capturas algo desde Chrome, esa información entra en un sistema que sabe relacionarla con lo que ya tienes. From detecta si ese recurso es relevante para algo en lo que estás trabajando. Puedes preguntarle después qué guardaste sobre un tema y te lo trae, con la fuente.</p>
+
+<p>No estás añadiendo a una lista que nunca revisas. Estás alimentando un sistema que recuerda por ti.</p>
+
+<div class="callout"><p><strong>La extensión no es un complemento de From. Es la puerta de entrada de toda la información que encuentras fuera de From y que necesita estar dentro.</strong></p></div>
+
+<h2>Conclusión</h2>
+
+<p>Si navegas con Chrome y usas From, instalar la extensión es lo primero que deberías hacer. Elimina el paso más lento de capturar información de la web y lo convierte en un reflejo automático. Menos fricción, más información útil en tu sistema, menos cosas perdidas entre pestañas.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Chrome extension that saves any page or text to your outline — From Blog</title>
+  <meta name="description" content="Click the icon or select text → right-click → Send to From. Done.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #ea580c; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #ea580c; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fff7ed 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #ea580c; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fff7ed; border-left: 4px solid #ea580c; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fff7ed, #fff); border: 2px solid #ea580c; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #ea580c; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #c2410c; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Chrome extension</span>
+  <h1>The Chrome extension that saves any page or text to your outline</h1>
+  <p class="subtitle">Click the icon or select text → right-click → Send to From. Any page or selection lands in your outline in two seconds, with source URL attached and ready to act on.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>Saving anything from the web shouldn't take three steps</h2>
+
+<p>You're reading an article. There's a paragraph that's exactly what you needed — a stat, a quote, a reference. What do you do? Copy it, switch apps, open a note, paste it, try to remember where you found it, maybe add the URL manually. By the time you're done, you've lost the thread of what you were doing.</p>
+
+<p>This is the tax most tools charge you for capturing information. From doesn't.</p>
+
+<p>The From Chrome extension brings that zero-friction capture directly into your browser. Two gestures, and it's in your outline — with context, with the source, without breaking your flow.</p>
+
+<h2>The two ways it works</h2>
+
+<h3>Save an entire page</h3>
+
+<p>Click the From icon in your Chrome toolbar. The extension creates a new node in your From outline with the page title and URL already filled in. No copying, no pasting, no switching windows. One click and the resource is saved.</p>
+
+<div class="img-block"><img src="/img/screenshots/menu-contextual.png" alt="From context menu in action"><p class="img-caption">Right-click on any selection to send it directly to From</p></div>
+
+<h3>Save a specific selection</h3>
+
+<p>Highlight any text on any page. Right-click. You'll see <strong>Send to From</strong> in the context menu. Click it. From saves the selected text as a note, with the source URL attached. You don't even open From to do it.</p>
+
+<p>That's it. Those are the two interactions. There's no form to fill out, no folder to choose, no tag to assign. From figures out where to put it and how to structure it.</p>
+
+<h2>Why this matters more than it sounds</h2>
+
+<p>Capture tools fail at the last step. They're fast to save but slow to retrieve. You end up with a pile of bookmarks you never open, a "read later" list that grows forever, a notes app full of context-free snippets.</p>
+
+<p>From is different because what you save doesn't just sit there. It becomes part of a living outline that From already understands. When you save a resource, From knows it's a resource. When you capture a paragraph from a research article, From treats it as a note with a source — not a random text dump.</p>
+
+<div class="callout"><p>From doesn't store clippings. It stores meaning. The difference is what you can do with them later: filter, link, connect to tasks, surface in context when you need them.</p></div>
+
+<h2>Concrete examples of how people use it</h2>
+
+<ul>
+  <li><strong>Research and reading:</strong> You're reading a long report. You highlight three separate paragraphs across different sections — each goes into From as its own node, all tagged with the source URL. Later you find them filtered under your research context, not buried in a single giant clipping.</li>
+  <li><strong>Saving tools and references:</strong> You find a new tool you want to try. Click the extension icon. The page is saved as a resource node. When you open From later, it's right there — title, URL, ready to action.</li>
+  <li><strong>Quick task capture:</strong> You're on a product page and realize you need to compare it with something else. Right-click → Send to From → that note becomes the start of a task. From sees the intent.</li>
+  <li><strong>Meeting prep:</strong> You pull three pages about a company before a call. Click three times. By the time you open From, your context is already built.</li>
+</ul>
+
+<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="From task detail view"><p class="img-caption">Captured content becomes actionable — tasks, notes, resources — all in one place</p></div>
+
+<h2>How to set it up</h2>
+
+<ol>
+  <li>Install the From extension from the Chrome Web Store.</li>
+  <li>Log in with your From account — same credentials, no separate setup.</li>
+  <li>Pin the icon to your toolbar for one-click access.</li>
+  <li>That's the entire setup process.</li>
+</ol>
+
+<p>From the moment it's installed, every page and every selection in Chrome becomes something you can save in under two seconds. The extension works on any site — articles, documentation, YouTube pages, Twitter threads, PDFs opened in Chrome, anything.</p>
+
+<h2>What happens inside From after you save</h2>
+
+<p>The captured content lands in your outline as a structured node. The source URL is preserved. If you saved a text selection, it appears as the node content. If you saved a full page, the title becomes the node title and the URL is linked.</p>
+
+<p>From then treats it like any other node — you can add subtasks under it, link it to a project, surface it with a filter, or let Magic reference it when you ask a question later. Your capture isn't isolated. It's connected.</p>
+
+<div class="callout"><p>Most capture tools stop at saving. From starts there. What you clip from the browser can become a task, a reference, a context node — whatever you need it to be.</p></div>
+
+<h2>A note on what this replaces</h2>
+
+<p>If you use bookmarks, Pocket, Notion Web Clipper, or a "save to app" shortcut — the From extension replaces all of them for anything you actually want to <em>do something with</em>. Bookmarks are passive. From is active. The moment something lands in your outline, it's part of your system, not a separate archive you have to go check.</p>
+
+<p>The extension doesn't try to do everything. It does one thing with zero friction: get the right content from the web into From, fast. From handles the rest.</p>
+
+<h2>Bottom line</h2>
+
+<p>Install it once, and the web becomes an input layer for your work. Anything worth keeping — an article, a quote, a tool, a page — takes two seconds to capture and ends up exactly where you can act on it. No more context-switching, no more lost references, no more "I saved that somewhere" moments.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

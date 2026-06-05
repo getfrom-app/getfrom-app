@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasks with natural language dates: "meeting with Ana on Monday" — From Blog</title>
+  <meta name="description" content="From reads "next Tuesday" and sets the date. No pickers, no menus.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #16a34a; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #16a34a; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #16a34a; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f0fdf4, #fff); border: 2px solid #16a34a; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #16a34a; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #15803d; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Natural language scheduling</span>
+  <h1>Tasks with natural language dates: "meeting with Ana on Monday"</h1>
+  <p class="subtitle">From reads "next Tuesday" and sets the date. No pickers, no menus — just write your task naturally and it's scheduled.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>The date picker problem nobody talks about</h2>
+
+<p>You're in the middle of a thought. You type "call Ana on Thursday" and then everything stops. You open a date picker, click the right month, find Thursday, confirm. Three seconds gone. Focus broken. You're no longer capturing — you're managing a UI.</p>
+
+<p>Multiply that by every task you create in a day. It adds up fast. And the worst part? The information was already there, in plain English, when you typed "Thursday."</p>
+
+<p>From skips the picker entirely. It reads what you write.</p>
+
+<div class="callout"><p>From understands natural language dates as you type — no menus, no clicks, no extra steps. Write "meeting with Ana on Monday" and the date is set. Done.</p></div>
+
+<h2>How From reads your words</h2>
+
+<p>When you type a note or task in From, it doesn't just store text. It reads it. Expressions like "next Tuesday," "tomorrow morning," "in two weeks," or "end of the month" are parsed automatically and converted into a real scheduled date on your task.</p>
+
+<p>You don't trigger anything. You don't press a shortcut or wait for a suggestion. From detects the date reference as part of understanding what you wrote, and sets it silently in the background.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="Task detail in From showing scheduled date"><p class="img-caption">From sets the date from the text — no picker needed.</p></div>
+
+<p>This works across a wide range of formats:</p>
+
+<ul>
+  <li><strong>"Send the report by Friday"</strong> → scheduled for this Friday</li>
+  <li><strong>"Call the accountant next Monday"</strong> → scheduled for next Monday</li>
+  <li><strong>"Review the contract in 3 days"</strong> → scheduled 3 days from now</li>
+  <li><strong>"Team meeting on June 12"</strong> → scheduled for June 12</li>
+  <li><strong>"Dentist appointment tomorrow at 10"</strong> → scheduled for tomorrow</li>
+</ul>
+
+<p>No special syntax. No tags. No brackets. Just write like you normally would, and From handles the rest.</p>
+
+<h2>Why this matters more than it seems</h2>
+
+<p>Most productivity tools separate two things that naturally go together: what you need to do, and when. You write the task, then you schedule it. That's two steps, two modes, two moments of friction.</p>
+
+<p>From treats the date as part of the task description — because in natural language, it always is. "Meeting with Ana on Monday" is one thought. From captures it as one action.</p>
+
+<p>This is especially useful when you're capturing fast: during a call, after a quick conversation, while reviewing your inbox. You don't want to slow down to fiddle with a calendar widget. You want to get the thought out and move on.</p>
+
+<div class="img-block"><img src="/img/screenshots/planificador.png" alt="From planner showing tasks with dates"><p class="img-caption">Tasks appear in the planner automatically once a date is set from your text.</p></div>
+
+<h2>What happens after the date is set</h2>
+
+<p>Once From reads the date from your text, the task flows naturally into the rest of the system. It appears in the planner on the right day. It shows up in your agenda view. It's filterable by date. Nothing extra needed from you.</p>
+
+<p>If you wrote "meeting with Ana on Monday," that task will be waiting for you on Monday — not floating in some unscheduled backlog. From took care of placing it where it belongs.</p>
+
+<p>The planner in From gives you a day-by-day view of everything scheduled. Tasks that came in through natural language sit alongside tasks scheduled manually — they're identical to the system. The only difference is how little effort it took to create them.</p>
+
+<h3>What about ambiguous dates?</h3>
+
+<p>From makes reasonable assumptions based on context. "Friday" means this coming Friday, not the one three weeks out. "Next Monday" means the Monday of next week, not this one. These are the same assumptions a human assistant would make.</p>
+
+<p>If you need to adjust, you can. Tap the task, change the date. But in practice, From gets it right the vast majority of the time — because it's applying the same logic you'd apply if someone asked you what "next Monday" means.</p>
+
+<h2>Using it in practice</h2>
+
+<p>The best way to get value from this feature is to stop thinking about it as a feature. Just write your tasks naturally, the way you'd describe them to someone. Don't change your language to fit the tool — let the tool fit your language.</p>
+
+<ol>
+  <li>Capture the task as a full sentence: <em>"Send invoice to client by Thursday"</em></li>
+  <li>From reads it and schedules it for Thursday</li>
+  <li>It appears in your planner on Thursday</li>
+  <li>You move on</li>
+</ol>
+
+<p>That's it. No extra steps. No switching contexts. The capture is the scheduling.</p>
+
+<div class="callout"><p>The fastest way to schedule a task is to write it the way you'd say it out loud. From does the translation from language to date automatically.</p></div>
+
+<h2>Conclusion</h2>
+
+<p>Date pickers exist because most tools can't read. From can. When you write "call Ana on Monday," that's already complete information — and From treats it that way. The result is a capture flow that's genuinely fast, low-friction, and built around how you actually think.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

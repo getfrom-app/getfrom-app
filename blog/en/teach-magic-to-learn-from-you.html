@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teach Magic: how From learns from your corrections — From Blog</title>
+  <meta name="description" content="Right-click any node → Teach Magic. From applies it from that moment on.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #7c3aed; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f5f3ff; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 2px solid #7c3aed; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #7c3aed; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #6d28d9; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">magic</span>
+  <h1>Teach Magic: how From learns from your corrections</h1>
+  <p class="subtitle">Right-click any node → Teach Magic. From applies it from that moment on.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>The problem with tools that don't adapt</h2>
+
+<p>Every productivity app has its own logic. Its own way of interpreting what you write, what it considers a task versus a note, what it treats as urgent versus someday. And most of the time, that logic doesn't match yours.</p>
+
+<p>You write "call the accountant" and the app does nothing. You write "→ send invoice" and it doesn't know if that's a task or a reminder. You end up bending your language to fit the tool instead of the tool bending to fit you.</p>
+
+<p>From works differently. And Teach Magic is the feature that makes that difference concrete.</p>
+
+<h2>What Teach Magic actually does</h2>
+
+<p>Teach Magic is a correction mechanism. When From interprets a node in a way you don't agree with — wrong type, wrong date, wrong classification — you right-click and select <strong>Teach Magic</strong>. You tell From what that node should be. From applies the correction immediately and remembers it.</p>
+
+<p>From that moment on, similar nodes get interpreted the same way you showed it. Not through a settings panel. Not through a rules editor. Just by correcting it once, naturally, in context.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/menu-contextual.png" alt="Context menu with Teach Magic option">
+  <p class="img-caption">Right-click any node to access Teach Magic directly from the context menu.</p>
+</div>
+
+<p>This is not about training a generic model. This is From learning <em>your</em> patterns — the way you phrase things, the shortcuts you use, the structures that make sense to your brain.</p>
+
+<h2>A concrete example</h2>
+
+<p>Say you always write your tasks with a dash and a verb: <em>- review proposal</em>, <em>- send contract</em>, <em>- call client</em>. From picks most of them up correctly. But one day you write <em>- check numbers</em> and From treats it as a plain note instead of a task.</p>
+
+<p>You right-click. Teach Magic. You mark it as a task. Done.</p>
+
+<p>Next time you write <em>- check something</em>, From already knows. It classifies it correctly without you having to do anything. The correction propagates forward.</p>
+
+<h2>Why this matters more than you think</h2>
+
+<p>Most tools give you configuration options. You go into settings, define rules, set up filters, map your terminology to their terminology. It takes time, it feels like work, and it still doesn't cover every edge case.</p>
+
+<p>Teach Magic flips that. The configuration happens <em>in the moment</em>, at the point of friction, without leaving your flow. You see something wrong, you fix it, From learns. The overhead is near zero.</p>
+
+<div class="callout">
+  <p><strong>The key insight:</strong> From doesn't ask you to adapt upfront. It adapts to you over time, correction by correction, until its understanding of your language matches yours.</p>
+</div>
+
+<p>This is especially powerful for people who use non-standard phrasing. If you write tasks in Spanish but dates in English. If you use symbols to mean specific things. If your shorthand doesn't follow any convention. From can learn all of it — because you're teaching it directly, not hoping it figures it out from a manual.</p>
+
+<h2>How to use it: step by step</h2>
+
+<ol>
+  <li><strong>Write normally.</strong> Don't adjust your language to match what you think From expects. Write the way you think.</li>
+  <li><strong>Notice when something's off.</strong> Wrong node type, wrong classification, missing date detection — anything that doesn't match your intent.</li>
+  <li><strong>Right-click the node.</strong> Select Teach Magic from the context menu.</li>
+  <li><strong>Set the correct interpretation.</strong> Tell From what that node actually is.</li>
+  <li><strong>Move on.</strong> From applies it immediately and carries the learning forward.</li>
+</ol>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-magic.png" alt="Magic detail view showing node interpretation">
+  <p class="img-caption">From shows you how it interprets each node — Teach Magic lets you correct that interpretation directly.</p>
+</div>
+
+<p>There's no batch process, no training session, no configuration wizard. Each correction is a single action that takes two seconds. Over days and weeks, those corrections accumulate into a version of From that understands your specific way of working.</p>
+
+<h2>What From detects — and can learn to detect better</h2>
+
+<p>From already handles a lot out of the box. It detects tasks, notes, events, and resources. It picks up dates and times from natural language. It understands hierarchy from indentation and structure.</p>
+
+<p>But your edge cases are yours. The way you write a recurring commitment. The abbreviation you use for a specific project. The format you've used for years that no app has ever understood correctly. Teach Magic is the bridge between From's defaults and your actual patterns.</p>
+
+<ul>
+  <li>A node written as a question that you always mean as a task</li>
+  <li>A date format you prefer that differs from the standard</li>
+  <li>A specific phrase that always means a specific type of event</li>
+  <li>A resource link pattern that From doesn't recognize automatically</li>
+</ul>
+
+<p>All of these are teachable. All of them become part of how From works for you specifically.</p>
+
+<h2>The result: less friction, more flow</h2>
+
+<p>The goal of Teach Magic isn't to make From perfect on day one. It's to make From get better every day you use it, without extra work on your part. Each correction is invisible overhead that pays forward indefinitely. Within a few weeks of normal use, From stops surprising you with wrong interpretations — because it's had enough corrections to understand your language.</p>
+
+<p>Write the way you think. Correct what's wrong when you see it. From handles the rest.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

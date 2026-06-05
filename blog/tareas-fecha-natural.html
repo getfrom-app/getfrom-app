@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tareas con fecha en lenguaje natural: "reunión con Ana el lunes" — From Blog</title>
+  <meta name="description" content="From reads "next Tuesday" and sets the date. No pickers, no menus.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #16a34a; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #16a34a; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #16a34a; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f0fdf4, #fff); border: 2px solid #16a34a; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #16a34a; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #15803d; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Productividad</span>
+  <h1>Tareas con fecha en lenguaje natural: "reunión con Ana el lunes"</h1>
+  <p class="subtitle">From reads "next Tuesday" and sets the date. No pickers, no menus.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>El problema de las fechas en los gestores de tareas</h2>
+
+<p>Abres tu gestor de tareas. Quieres añadir "reunión con Ana el lunes". Escribes el texto, luego tienes que abrir un calendario emergente, navegar hasta el lunes, hacer clic, cerrar el selector, y entonces ya sí, la tarea queda guardada con fecha.</p>
+
+<p>Ese proceso, repetido decenas de veces al día, consume más energía mental de la que parece. No es el clic en sí: es la interrupción. Sales del flujo de pensamiento para operar una interfaz.</p>
+
+<p>From funciona de otra manera.</p>
+
+<h2>From lee lo que escribes</h2>
+
+<p>Cuando escribes <strong>"reunión con Ana el lunes"</strong> en From, la herramienta detecta automáticamente que hay una fecha implícita y la asigna. Sin selector de fechas. Sin menú. Sin pasos extra.</p>
+
+<p>Lo mismo ocurre con expresiones como:</p>
+
+<ul>
+  <li><strong>"llamar a Pedro el próximo martes"</strong> → fecha asignada al martes siguiente</li>
+  <li><strong>"entregar informe el viernes"</strong> → vencimiento el viernes</li>
+  <li><strong>"revisar propuesta mañana"</strong> → fecha de mañana</li>
+  <li><strong>"cita con el médico en dos semanas"</strong> → cálculo desde hoy</li>
+</ul>
+
+<p>From entiende el lenguaje natural en español y lo convierte en datos estructurados. No tienes que aprender ningún formato especial ni usar atajos de teclado crípticos.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-tareas.png" alt="Tareas con fechas detectadas automáticamente en From">
+  <p class="img-caption">From detecta la fecha en el texto y la asigna sin interrumpir el flujo</p>
+</div>
+
+<h2>Por qué esto cambia el flujo de trabajo</h2>
+
+<p>La fricción en la captura de tareas tiene un coste real: cuando el proceso de añadir algo es engorroso, simplemente no lo añades. Confías en la memoria, te acuerdas tarde, o acabas con un sistema de captura desordenado.</p>
+
+<p>From elimina esa fricción en el punto más crítico: el momento en que piensas algo y lo quieres registrar. Puedes escribir exactamente lo que se te pasa por la cabeza, en lenguaje natural, y From se encarga de extraer la información estructurada.</p>
+
+<div class="callout">
+  <p>La captura perfecta es la que no interrumpe el pensamiento. Si tienes que parar a operar una interfaz, ya has perdido algo de lo que ibas a escribir.</p>
+</div>
+
+<h2>Cómo funciona en la práctica</h2>
+
+<p>No hay nada que configurar. Escribes en el outliner como siempre, y From detecta las referencias temporales de forma automática. El proceso es este:</p>
+
+<ol>
+  <li>Escribes tu tarea o nota en lenguaje natural</li>
+  <li>From identifica la expresión de fecha en el texto</li>
+  <li>La fecha queda asignada y visible junto a la tarea</li>
+  <li>La tarea aparece en los filtros correctos: hoy, esta semana, próximos días</li>
+</ol>
+
+<p>Una vez la tarea tiene fecha, From la incorpora automáticamente a las vistas temporales. Si dijiste "el lunes", aparecerá en tu vista del lunes sin que tengas que hacer nada más.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/planificador.png" alt="Planificador de From con tareas organizadas por fecha">
+  <p class="img-caption">Las tareas con fecha aparecen automáticamente en el planificador en el día correcto</p>
+</div>
+
+<h2>Expresiones que From reconoce</h2>
+
+<p>From maneja tanto fechas relativas como absolutas. Algunos ejemplos de lo que detecta:</p>
+
+<ul>
+  <li><strong>Días de la semana:</strong> "el lunes", "el próximo jueves", "este viernes"</li>
+  <li><strong>Referencias relativas:</strong> "mañana", "pasado mañana", "en tres días"</li>
+  <li><strong>Semanas:</strong> "la semana que viene", "en dos semanas"</li>
+  <li><strong>Fechas concretas:</strong> "el 15 de junio", "el 3 de julio"</li>
+  <li><strong>Períodos:</strong> "a finales de mes", "a principios de la semana próxima"</li>
+</ul>
+
+<p>No tienes que memorizar una lista de comandos. Si la expresión tiene sentido en español, From la entiende.</p>
+
+<h2>Lo que no tienes que hacer nunca más</h2>
+
+<p>Con From, desaparecen estas fricciones habituales:</p>
+
+<ul>
+  <li>Abrir selectores de fecha con el ratón</li>
+  <li>Navegar por un calendario para buscar el día correcto</li>
+  <li>Escribir la tarea y luego volver a editarla para añadir la fecha por separado</li>
+  <li>Usar formatos de fecha específicos que exigen los sistemas más rígidos</li>
+</ul>
+
+<p>El resultado es que el acto de capturar una tarea con fecha es igual de rápido que escribir una nota libre. No hay penalización por añadir estructura.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/filtro-pendiente.png" alt="Filtro de tareas pendientes con fechas en From">
+  <p class="img-caption">Los filtros muestran automáticamente las tareas según su fecha asignada</p>
+</div>
+
+<h2>Un sistema que no te pone obstáculos</h2>
+
+<p>La mayoría de herramientas de productividad te piden que adaptes tu forma de pensar a su modelo. From hace lo contrario: detecta la estructura en lo que ya escribes de forma natural.</p>
+
+<p>Cuando una herramienta deja de ponerte obstáculos, la usas más y mejor. Las tareas se capturan cuando surgen, con la información completa, y aparecen donde deben cuando llega el momento.</p>
+
+<p>Escribe como piensas. From se encarga del resto.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How From automatically classifies your notes without touching a menu — From Blog</title>
+  <meta name="description" content="Escribes y From detecta el contexto al instante. Sin etiquetas, sin carpetas, sin configuración.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #7c3aed; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f5f3ff; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 2px solid #7c3aed; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #7c3aed; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #6d28d9; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">magic</span>
+  <h1>How From automatically classifies your notes without touching a menu</h1>
+  <p class="subtitle">You write and From detects the context instantly. No tags, no folders, no configuration.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<p>Most note-taking apps make you do the organizing. You write something, then you stop, open a menu, pick a tag, choose a folder, assign a date. The act of capturing an idea gets interrupted by the act of filing it. That friction adds up, and eventually you stop capturing things altogether.</p>
+
+<p>From works differently. You write. From figures out the rest.</p>
+
+<h2>The problem with manual organization</h2>
+
+<p>The promise of productivity tools has always been that structure helps you think. And it does — but only when the structure emerges naturally from what you're doing, not when you're forced to impose it before you're even done thinking.</p>
+
+<p>When you have to decide <em>where</em> something goes before you finish writing it, you break your own train of thought. You interrupt the creative or analytical process to perform a clerical one. And the more detailed your organizational system, the worse this gets.</p>
+
+<p>Tags, folders, categories, projects, labels — they're all ways of describing what something <em>is</em> after the fact. But you already knew what it was when you wrote it. The system just didn't.</p>
+
+<div class="callout"><p>From reads what you write and classifies it automatically — as a task, a note, an event, a resource. No menus, no tags, no extra steps.</p></div>
+
+<h2>How From detects what you mean</h2>
+
+<p>When you type something in From, it doesn't wait for you to label it. It reads the content and determines the type based on what you actually wrote.</p>
+
+<p>Write "Call Marco tomorrow at 3pm" and From knows it's an event. Write "Remember to review the contract before sending" and it registers as a pending task. Write a URL or paste an article title and it becomes a resource. Write a thought, a reflection, an idea — it stays a note.</p>
+
+<p>This happens immediately, without any action on your part. There's no classification step. The moment you finish typing, From has already understood.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-magic.png" alt="From Magic detecting content type"><p class="img-caption">From reads your text and understands its type — task, event, note, or resource — the moment you write it.</p></div>
+
+<h3>It's not generic AI — it's From understanding your workflow</h3>
+
+<p>This isn't about plugging a general-purpose language model into a text field and hoping for the best. From's detection is built around the specific patterns of how people actually write when they're working: dates, verbs, intentions, references. It understands the difference between "buy milk" (a task) and "thinking about switching suppliers" (a note), even though both are short sentences without any explicit label.</p>
+
+<p>The result is a system that feels like it already knows what you're trying to do, because it's been trained on exactly that kind of content.</p>
+
+<h2>What this looks like in practice</h2>
+
+<p>Here's a concrete example. You open From first thing in the morning and start typing:</p>
+
+<ul>
+  <li><strong>"Team sync at 10am"</strong> — appears in your calendar view automatically</li>
+  <li><strong>"Follow up with the agency on the proposal"</strong> — flagged as a pending task</li>
+  <li><strong>"Interesting read: how remote teams handle async communication"</strong> — saved as a resource</li>
+  <li><strong>"Feeling like the current approach to onboarding isn't working"</strong> — stored as a note</li>
+</ul>
+
+<p>You didn't open four different sections of the app. You didn't assign anything to a category. You just wrote what was on your mind, and From sorted it without asking.</p>
+
+<div class="img-block"><img src="/img/screenshots/filtro-chips.png" alt="From filter chips showing classified content"><p class="img-caption">Filters in From reflect what you've written — tasks, events, notes — without you having to assign them manually.</p></div>
+
+<h2>Filters that work because classification is already done</h2>
+
+<p>The practical payoff of automatic classification shows up when you want to focus. Because From already knows what type everything is, the filters are instant and accurate. Want to see only your tasks for today? One tap. Only your notes from this week? Done. Only events with a date attached? Already there.</p>
+
+<p>None of this works well in systems where classification is manual and inconsistent. If you sometimes tag things and sometimes don't, your filters become unreliable. From's approach removes that inconsistency entirely — everything gets classified, every time, because you never have to remember to do it.</p>
+
+<h3>Your daily note as a capture layer</h3>
+
+<p>From's daily note is the natural home for this kind of frictionless capture. You open it, you write whatever's happening — tasks, thoughts, reminders, links — and From handles the rest. By the end of the day, you have a structured record of everything without having done any explicit organizing.</p>
+
+<p>It's a fundamentally different relationship with your notes: you're the one thinking, From is the one filing.</p>
+
+<h2>No configuration required</h2>
+
+<p>There's nothing to set up. From doesn't ask you to define your taxonomy, create your tag system, or configure detection rules. It works out of the box, on the first note you write.</p>
+
+<p>That's the point. The best organizational system is one you never have to think about. From's classification is invisible precisely because it's automatic — you only notice it when you go looking for something and it's exactly where you'd expect it to be.</p>
+
+<h2>The result: a system that stays current</h2>
+
+<p>Manual organization fails over time because it requires ongoing maintenance. Folders get stale. Tags get forgotten. Systems that seemed elegant in January become confusing by March. From doesn't have that problem because there's nothing to maintain — classification happens at the moment of writing, not as a separate ongoing chore.</p>
+
+<p>Your notes stay organized because From keeps organizing them, continuously, without effort on your part.</p>
+
+<p>Write what you need to write. From handles the structure. That's the deal — and it's one that actually holds up in daily use.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>"Lo que From sabe": el conocimiento vivo de cada contexto — From Blog</title>
+  <meta name="description" content="Each context builds its own knowledge. Keywords, people, recurring topics — updated automatically.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #7c3aed; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f5f3ff; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 2px solid #7c3aed; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #7c3aed; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #6d28d9; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Magic IA</span>
+  <h1>"Lo que From sabe": el conocimiento vivo de cada contexto</h1>
+  <p class="subtitle">Each context builds its own knowledge. Keywords, people, recurring topics — updated automatically.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>El problema de empezar desde cero cada vez</h2>
+
+<p>Hay algo frustrante en abrir una herramienta de notas y tener que explicarle quién es Juan, qué significa "Squad", o a qué te refieres cuando escribes "reunión de seguimiento". Cada vez. En cada sesión.</p>
+
+<p>La mayoría de los sistemas de productividad te tratan como si fuera la primera vez que os conocéis. Tú sabes lo que estás haciendo. La herramienta, no.</p>
+
+<p>From funciona de otra manera.</p>
+
+<h2>Qué significa que un contexto "sabe" algo</h2>
+
+<p>En From, cada contexto acumula conocimiento propio. No es una base de datos que rellenas manualmente. Es un sistema que observa lo que escribes, detecta patrones y construye una comprensión interna del área de trabajo a la que pertenece ese contexto.</p>
+
+<p>Cuando llevas semanas trabajando en un proyecto —llamémosle "Lanzamiento Mayo"— From ha visto menciones a las mismas personas, los mismos términos técnicos, los mismos temas recurrentes. Eso queda registrado. No como etiquetas que tú añades, sino como conocimiento que From infiere solo.</p>
+
+<div class="callout"><p>El contexto de "Lanzamiento Mayo" sabe que Carlos es el responsable de diseño, que "v2" se refiere a la segunda versión del producto y que "revisión" suele aparecer los lunes. Tú no le dijiste nada de esto. Lo aprendió solo.</p></div>
+
+<div class="img-block"><img src="/img/screenshots/detalle-magic.png" alt="Detalle Magic en From"><p class="img-caption">Magic accede al conocimiento acumulado del contexto para responder con precisión.</p></div>
+
+<h2>Cómo se construye ese conocimiento</h2>
+
+<p>El proceso es automático y continuo. From presta atención a tres tipos de señales:</p>
+
+<ul>
+  <li><strong>Personas mencionadas:</strong> nombres propios que aparecen de forma recurrente en las notas y tareas de ese contexto.</li>
+  <li><strong>Términos clave:</strong> palabras o frases que se repiten con frecuencia y que parecen tener significado específico en ese espacio.</li>
+  <li><strong>Temas recurrentes:</strong> hilos temáticos que aparecen una y otra vez, aunque se expresen con palabras distintas.</li>
+</ul>
+
+<p>No necesitas estructurar tus notas de ninguna manera especial para que esto funcione. Escribe como escribes. From se encarga de extraer la señal del ruido.</p>
+
+<h2>Lo que cambia cuando Magic responde desde ese conocimiento</h2>
+
+<p>La diferencia se nota en cuanto haces una pregunta dentro de un contexto que tiene historial.</p>
+
+<p>Sin conocimiento acumulado, si preguntas "¿qué falta por hacer en el lanzamiento?", obtienes una respuesta genérica basada en lo que has escrito en los últimos minutos. Con conocimiento de contexto, From sabe qué es el lanzamiento, quién está involucrado, qué se ha hecho antes y qué ha quedado pendiente a lo largo de semanas.</p>
+
+<p>La respuesta no es más larga. Es más precisa. Más útil.</p>
+
+<div class="img-block"><img src="/img/screenshots/magic-chat-respuesta.png" alt="Magic respondiendo en From"><p class="img-caption">Magic responde usando el conocimiento acumulado del contexto, no solo lo que está visible en pantalla.</p></div>
+
+<h2>Ejemplos concretos de uso</h2>
+
+<h3>Trabajo por proyectos</h3>
+
+<p>Si gestionas varios proyectos simultáneos, cada uno en su propio contexto, From mantiene separados sus respectivos conocimientos. Las personas, términos y temas del proyecto A no contaminan al proyecto B. Cuando cambias de contexto, cambias de universo de conocimiento.</p>
+
+<h3>Notas personales y diario</h3>
+
+<p>En un contexto de uso personal, From aprende tus hábitos de escritura, las personas de tu entorno que mencionas con frecuencia y los temas que te preocupan. Con el tiempo, puede ayudarte a identificar patrones que tú mismo no habías notado: que siempre que mencionas a cierta persona aparece tensión, o que los viernes escribes sobre temas muy diferentes a los lunes.</p>
+
+<h3>Equipos y colaboración</h3>
+
+<p>En un contexto compartido, el conocimiento se construye a partir de las contribuciones de todos los miembros. From entiende el lenguaje interno del equipo —los apodos, las abreviaturas, los nombres de procesos propios— sin que nadie tenga que crear un glosario.</p>
+
+<h2>Cómo sacarle partido desde el primer día</h2>
+
+<ol>
+  <li><strong>Agrupa por contexto real, no por formato.</strong> En lugar de tener "notas" y "tareas" separadas, agrupa todo lo relacionado con un proyecto o área de vida en el mismo contexto. Así el conocimiento se construye más rápido y de forma más coherente.</li>
+  <li><strong>Escribe con naturalidad.</strong> No uses etiquetas artificiales ni estructuras forzadas pensando en "ayudar" a From. Cuanto más natural sea tu escritura, mejor funciona la detección de patrones.</li>
+  <li><strong>Dale tiempo.</strong> El conocimiento de contexto mejora con el uso. En las primeras sesiones, From tiene poco historial. Después de unas semanas, la diferencia es notable.</li>
+</ol>
+
+<h2>Conclusión</h2>
+
+<p>From no necesita que le expliques tu mundo cada vez que lo abres. Aprende de lo que escribes, construye una comprensión real de cada contexto y la usa para darte respuestas que realmente encajan con tu trabajo. Eso es lo que significa que una herramienta te entienda: no que sea genérica, sino que sea tuya.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>
