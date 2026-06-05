@@ -324,8 +324,9 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         />
       )}
 
-      {/* Hint — sólo en home sin filtro activo Y sin contenido en la agenda */}
-      {!isFiltering && agendaId && store.children(agendaId).filter(n => !n.deletedAt).length === 0 && (
+      {/* Hint — sólo en home sin filtro activo Y sin contenido visible en la agenda.
+           storeReady garantiza que el árbol ya se cargó. Si hay años/meses/notas, se oculta. */}
+      {!isFiltering && storeReady && agendaId && store.children(agendaId).filter(n => !n.deletedAt).length === 0 && (
         <div className="wf-home-space-hint">
           <span>Espacio</span> · crea o busca cualquier cosa
         </div>
