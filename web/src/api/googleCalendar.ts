@@ -20,7 +20,6 @@ const GOOGLE_SCOPES = [
   'email',
   'profile',
   'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/drive.file',
 ].join(' ')
 
 export async function getGoogleStatus(): Promise<{ connected: boolean; email: string | null }> {
