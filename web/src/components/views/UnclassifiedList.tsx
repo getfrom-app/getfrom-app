@@ -5,13 +5,10 @@
  * El comportamiento de raíces flotantes con breadcrumb lo provee FilteredList.
  */
 import { useMemo } from 'react'
-import { useStore, store } from '../../store/nodeStore'
+import { useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import FilteredList from './FilteredList'
-import { getPapeleraNode } from '../../utils/papeleraHelper'
-
-/** Tags de sistema — no cuentan como contexto de usuario */
-const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+import { getUnclassifiedIds } from '../../utils/unclassified'
 
 interface Props {
   onNavigate?: (nodeId: string) => void
@@ -21,54 +18,8 @@ export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
   const s = useStore()
   const { t } = useTranslation()
 
-  // Pre-computar IDs de la Papelera para exclusión en O(1)
-  const papeleraIds = useMemo(() => {
-    const ids = new Set<string>()
-    const papelera = getPapeleraNode()
-    if (!papelera) return ids
-    ids.add(papelera.id)
-    const queue: string[] = [papelera.id]
-    while (queue.length > 0) {
-      const parentId = queue.pop()!
-      store.children(parentId).forEach(child => {
-        if (!ids.has(child.id)) {
-          ids.add(child.id)
-          queue.push(child.id)
-        }
-      })
-    }
-    return ids
-  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Calcular todos los nodos sin clasificar — SIN ancestorIds, sin Outliner padre
-  // Excluye nodos en la Papelera.
-  const unclassifiedIds = useMemo(() => {
-    const ids = new Set<string>()
-    s.allActive().forEach(n => {
-      if (n.deletedAt || n.isDiaryEntry) return
-      // Excluir nodos en la Papelera
-      if (papeleraIds.has(n.id)) return
-      const text = (n.text || '').trim()
-      if (text.length < 4) return
-      // Solo nodos contenedor (con hijos), tareas o bucles
-      const hasChildren = store.children(n.id).some(c => !c.deletedAt)
-      const isTask = n.status !== null
-      const isLoop = (n.types || []).includes('bucle')
-      if (!hasChildren && !isTask && !isLoop) return
-      // ¿tiene contextos del usuario en types[]?
-      const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
-      if (userTypes.length > 0) return
-      // ¿tiene @mention?
-      if (/@\w/.test(n.text || '')) return
-      // ¿fue asignado manualmente via badge?
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._contextManuallySet === '1') return
-      } catch { /* ignore */ }
-      ids.add(n.id)
-    })
-    return ids
-  }, [s.nodesVersion, papeleraIds]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Fuente única de verdad: solo Agenda, excluye system roots y nodos ya clasificados.
+  const unclassifiedIds = useMemo(() => getUnclassifiedIds(), [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <FilteredList

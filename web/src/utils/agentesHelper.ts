@@ -28,88 +28,83 @@ export interface AgentDef {
   icon: string
   systemPrompt: string
   userMessage: string | (() => string)
+  /** Programación por defecto (ej. "daily:08:00", "weekly:1:09:00"). '' = manual. */
+  schedule?: string
 }
 
-// Agentes predefinidos — fuente de verdad de agentes predefinidos
+// Instrucción compartida: cómo navegar la web y cómo entregar el resultado.
+// El servidor resuelve los bloques `from-action` con action: fetch_url.
+const WEB_AGENT_INSTRUCTIONS = `Tienes acceso a internet. Para leer una página web, emite EXACTAMENTE este bloque y espera el resultado antes de seguir:
+\`\`\`from-action
+action: fetch_url
+url: https://la-url-exacta.com
+\`\`\`
+Puedes consultar varias páginas (un bloque por página). Cuando ya tengas la información, escribe el RESULTADO FINAL sin más bloques de acción.
+
+Formato del resultado: en español, directo, una idea por línea (sin Markdown de encabezados). Cada línea debe poder leerse suelta dentro de una nota. No incluyas saludos ni "aquí tienes". El resultado se guarda automáticamente en la nota del día.`
+
+const WRITE_AGENT_INSTRUCTIONS = `Responde en español, directo y conciso, una idea por línea (sin encabezados Markdown). El resultado se guarda en la nota del día, así que cada línea debe entenderse suelta. Sin saludos ni "aquí tienes".`
+
+// Agentes predefinidos — agentes "de verdad": producen un entregable concreto,
+// algunos navegan la web, tienen horario sugerido y guardan el resultado en la
+// nota diaria. El usuario los edita y crea los suyos.
 export const PREDEFINED_AGENTS: AgentDef[] = [
   {
-    id: 'resumir-dia',
-    label: 'Resumir el día',
-    icon: '📋',
-    systemPrompt: 'Eres un asistente que resume el diario del usuario de forma concisa y clara en español.',
-    userMessage: 'Resume los puntos clave del día: logros, aprendizajes y acciones pendientes.',
+    id: 'informe-mercado',
+    label: 'Informe de mercado',
+    icon: '📈',
+    schedule: 'daily:08:00',
+    systemPrompt: `Eres un analista de mercados que prepara cada mañana un informe breve y accionable para un trader e inversor particular. ${WEB_AGENT_INSTRUCTIONS}`,
+    userMessage: `Prepara el informe de mercado de hoy. Consulta estas fuentes y resume lo relevante:
+- https://www.investing.com/
+- https://www.cnbc.com/world-markets/
+- https://www.coindesk.com/
+Entrega: 1) cómo abren/están los índices clave (S&P 500, Nasdaq, IBEX 35), 2) materias primas y cripto destacadas (BTC, oro, petróleo), 3) 2-3 titulares macro del día, 4) una idea o nivel a vigilar. Máximo 10 líneas.`,
   },
   {
-    id: 'extraer-tareas',
-    label: 'Extraer tareas',
-    icon: '✅',
-    systemPrompt: 'Eres un asistente de productividad experto en identificar tareas accionables. Respondes en español.',
-    userMessage: 'Identifica todas las tareas y acciones pendientes. Devuélvelas como lista con prioridad (alta/media/baja) y fecha sugerida.',
+    id: 'resumen-prensa',
+    label: 'Resumen de prensa',
+    icon: '📰',
+    schedule: 'daily:07:30',
+    systemPrompt: `Eres un editor que prepara un resumen de prensa matutino, claro y sin ruido. ${WEB_AGENT_INSTRUCTIONS}`,
+    userMessage: `Haz el resumen de prensa de hoy. Consulta estas portadas y destaca lo importante:
+- https://www.elmundo.es/
+- https://www.expansion.com/
+- https://www.reuters.com/
+Entrega los 5 titulares más relevantes, cada uno en una línea con una frase de contexto. Prioriza economía, mercados y tecnología.`,
   },
   {
-    id: 'planificar-semana',
-    label: 'Planificar semana',
-    icon: '🗓',
-    systemPrompt: 'Eres un coach de productividad especializado en planificación semanal. Respondes en español.',
-    userMessage: 'Sugiere una estructura de semana productiva con bloques de tiempo para trabajo profundo, reuniones, revisión y descanso.',
+    id: 'investigar-tema',
+    label: 'Investigar un tema',
+    icon: '🔎',
+    schedule: '',
+    systemPrompt: `Eres un investigador que prepara un briefing estructurado sobre el tema que te pidan. ${WEB_AGENT_INSTRUCTIONS}`,
+    userMessage: `Investiga el tema que te indique (escríbelo aquí o pásame enlaces). Consulta las fuentes necesarias con fetch_url y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos. Si te paso enlaces, básate en ellos.`,
   },
   {
-    id: 'revisar-pendientes',
-    label: 'Revisar pendientes',
-    icon: '🔍',
-    systemPrompt: 'Eres un asistente que analiza tareas y prioriza con metodología GTD. Respondes en español.',
-    userMessage: 'Analiza las tareas vencidas y pendientes. ¿Cuáles hay que hacer ya, delegar, posponer o eliminar? Da una recomendación clara.',
+    id: 'resumen-enlace',
+    label: 'Resumen de un enlace',
+    icon: '🧾',
+    schedule: '',
+    systemPrompt: `Eres un asistente que resume páginas web de forma fiel y útil. ${WEB_AGENT_INSTRUCTIONS}`,
+    userMessage: `Pega aquí la URL que quieres resumir. Léela con fetch_url y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden. No inventes nada que no esté en la página.`,
   },
   {
-    id: 'brainstorming',
-    label: 'Brainstorming',
-    icon: '💡',
-    systemPrompt: 'Eres un facilitador creativo experto en técnicas de ideación. Respondes en español.',
-    userMessage: 'Genera 10 ideas diversas y creativas. Incluye ideas convencionales, disruptivas y combinaciones inesperadas.',
-  },
-  {
-    id: 'mejorar-texto',
-    label: 'Mejorar texto',
-    icon: '✍️',
-    systemPrompt: 'Eres un editor profesional experto en escritura clara y persuasiva en español.',
-    userMessage: 'Mejora el texto manteniendo el significado original: hazlo más claro, conciso y con mejor flujo. Muestra el antes/después.',
-  },
-  {
-    id: 'reflexion-diaria',
-    label: 'Reflexión diaria',
-    icon: '🧘',
-    systemPrompt: 'Eres un coach personal que facilita la reflexión y el autoconocimiento. Respondes en español.',
-    userMessage: '¿Qué fue lo mejor del día? ¿Qué aprendí? ¿Qué haría diferente? Dame 3 preguntas de reflexión profunda para responder.',
-  },
-  {
-    id: 'resumen-ejecutivo',
-    label: 'Resumen ejecutivo',
-    icon: '📊',
-    systemPrompt: 'Eres un asistente especializado en comunicación ejecutiva concisa. Respondes en español.',
-    userMessage: 'Crea un resumen ejecutivo de máximo 5 bullet points con lo más importante. Para una audiencia directiva que tiene 30 segundos.',
-  },
-  {
-    id: 'proximos-pasos',
-    label: 'Próximos pasos',
-    icon: '🚀',
-    systemPrompt: 'Eres un asistente de acción orientado a resultados. Respondes en español.',
-    userMessage: 'Define los 3-5 próximos pasos concretos y accionables para avanzar en el proyecto o situación.',
-  },
-  {
-    id: 'email-profesional',
-    label: 'Email profesional',
-    icon: '📧',
-    systemPrompt: 'Eres un especialista en comunicación profesional escrita en español.',
-    userMessage: 'Redacta un email profesional, claro y efectivo sobre el tema indicado. Incluye asunto, cuerpo y cierre apropiado.',
-  },
-  {
-    id: 'revision-semanal',
+    id: 'revision-semanal-v2',
     label: 'Revisión semanal',
-    icon: '📅',
-    systemPrompt: 'Eres un asistente de productividad experto en revisiones semanales. Respondes en español.',
-    userMessage: 'Haz una revisión semanal: logros, puntos de mejora y prioridades para la próxima semana. Da 3 acciones concretas para el lunes.',
+    icon: '🗓',
+    schedule: 'weekly:1:09:00',
+    systemPrompt: `Eres un coach de productividad que conduce una revisión semanal enfocada en resultados. ${WRITE_AGENT_INSTRUCTIONS}`,
+    userMessage: `Condúceme una revisión semanal. Entrega: 3 preguntas para revisar logros y aprendizajes de la semana, 3 preguntas sobre lo que mejoraría, y propón las 3 prioridades concretas para empezar el lunes. Deja espacio para que yo conteste debajo de cada pregunta.`,
   },
 ]
+
+// IDs de los agentes-ejemplo antiguos (v1) — se eliminan en la migración v2.
+const LEGACY_AGENT_IDS = new Set([
+  'resumir-dia', 'extraer-tareas', 'planificar-semana', 'revisar-pendientes',
+  'brainstorming', 'mejorar-texto', 'reflexion-diaria', 'resumen-ejecutivo',
+  'proximos-pasos', 'email-profesional', 'revision-semanal',
+])
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -199,13 +194,52 @@ export function ensureAgentesNode(): void {
         _agentSystemPrompt: def.systemPrompt,
         _agentUserMessage:  userMsg,
         _agentEnabled:      'true',
-        _agentSchedule:     '',
+        _agentSchedule:     def.schedule ?? '',
       }),
       isCollapsed: false,
     })
 
-    // Nodos hijos con las propiedades visibles y editables
-    store.createNode({ text: `Prompt: ${def.systemPrompt.slice(0, 60)}…`, parentId: node.id })
-    store.createNode({ text: `Mensaje: ${userMsg.slice(0, 80)}…`,          parentId: node.id })
+    // Nodos hijos visibles/editables: el mensaje (instrucción) y cuándo se ejecuta.
+    store.createNode({ text: `📨 ${userMsg}`, parentId: node.id })
+    if (def.schedule) {
+      store.createNode({ text: `⏰ Se ejecuta: ${describeSchedule(def.schedule)} · guarda el resultado en la nota del día`, parentId: node.id })
+    } else {
+      store.createNode({ text: '⏰ Manual · pulsa Ejecutar cuando lo necesites', parentId: node.id })
+    }
   }
+}
+
+/** Texto legible de un schedule ("daily:08:00" → "cada día a las 08:00"). */
+function describeSchedule(schedule: string): string {
+  const parts = schedule.split(':')
+  if (parts[0] === 'daily' && parts[1]) return `cada día a las ${parts[1]}:${parts[2] ?? '00'}`
+  if (parts[0] === 'weekly' && parts.length >= 3) {
+    const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado']
+    const d = days[parseInt(parts[1])] ?? 'lunes'
+    return `cada ${d} a las ${parts[2]}:${parts[3] ?? '00'}`
+  }
+  return schedule
+}
+
+/**
+ * migrateAgentsV2 — elimina los agentes-ejemplo antiguos (v1) una sola vez.
+ * Solo borra nodos cuyo _agentId está en LEGACY_AGENT_IDS (ejemplos de fábrica),
+ * nunca agentes creados por el usuario. Tras esto, ensureAgentesNode añade los
+ * nuevos. Guard idempotente con un flag en localStorage.
+ */
+export function migrateAgentsV2(): void {
+  try { if (localStorage.getItem('from_agents_v2') === '1') return } catch { /* */ }
+  const agentesNode = getAgentesNode()
+  if (agentesNode) {
+    for (const child of store.children(agentesNode.id)) {
+      if (child.deletedAt) continue
+      try {
+        const ed = JSON.parse(child.extraData || '{}')
+        if (ed._agentDef === '1' && LEGACY_AGENT_IDS.has(ed._agentId)) {
+          store.deleteNode(child.id)
+        }
+      } catch { /* ignore */ }
+    }
+  }
+  try { localStorage.setItem('from_agents_v2', '1') } catch { /* */ }
 }

@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
 import { useTranslation } from 'react-i18next'
-import { getPapeleraNode } from '../../utils/papeleraHelper'
+import { getUnclassifiedIds } from '../../utils/unclassified'
 import { DRAG_NODE_ID_KEY } from '../views/FilteredList'
 
 /** Constante especial para indicar el filtro "Sin clasificar" */
@@ -20,34 +20,9 @@ export const UNCLASSIFIED_FILTER_ID = '__unclassified__'
 /** Clave dataTransfer para arrastrar un contexto sobre otro (anidar) */
 export const DRAG_CONTEXT_ID_KEY = 'application/x-from-context-id'
 
-/** Tags de sistema — no cuentan como contexto de usuario */
-const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-
 interface Props {
   onSelectContext: (nodeId: string) => void
   selectedContextId?: string | null
-}
-
-/**
- * Construye el set de IDs que están dentro de la Papelera (inclusive).
- * O(n) traversal desde el nodo Papelera hacia abajo.
- */
-function buildPapeleraIds(): Set<string> {
-  const ids = new Set<string>()
-  const papelera = getPapeleraNode()
-  if (!papelera) return ids
-  ids.add(papelera.id)
-  const queue: string[] = [papelera.id]
-  while (queue.length > 0) {
-    const parentId = queue.pop()!
-    store.children(parentId).forEach(child => {
-      if (!ids.has(child.id)) {
-        ids.add(child.id)
-        queue.push(child.id)
-      }
-    })
-  }
-  return ids
 }
 
 /**
@@ -313,55 +288,8 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     ? s.children(contextoRoot.id).filter(n => !n.deletedAt && n.id !== perfilNode?.id)
     : []
 
-  // Set de IDs en la Papelera — excluir del contador "Sin clasificar"
-  const papeleraIds = useMemo(() => buildPapeleraIds(), [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Set de IDs del subárbol de contextos (root + subcontextos + nodos 🧠) —
-  // son nodos organizativos, nunca cuentan como "Sin clasificar".
-  const contextoSubtreeIds = useMemo(() => {
-    const ids = new Set<string>()
-    if (!contextoRoot) return ids
-    const queue: string[] = [contextoRoot.id]
-    ids.add(contextoRoot.id)
-    while (queue.length > 0) {
-      const pid = queue.pop()!
-      store.children(pid).forEach(child => {
-        if (!child.deletedAt && !ids.has(child.id)) { ids.add(child.id); queue.push(child.id) }
-      })
-    }
-    return ids
-  }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Calcular cuántos nodos están sin clasificar (sin user-tags en types[])
-  // Memoizado para evitar cálculo O(n²) en cada render — depende de nodesVersion
-  // Excluye nodos en la Papelera.
-  const unclassifiedCount = useMemo(() => {
-    return s.allActive().filter(n => {
-      if (n.isDiaryEntry || n.deletedAt) return false
-      // Excluir nodos en la Papelera
-      if (papeleraIds.has(n.id)) return false
-      // Excluir el subárbol de contextos (contextos, subcontextos, nodos 🧠)
-      if (contextoSubtreeIds.has(n.id)) return false
-      // Solo contar nodos con texto significativo
-      if ((n.text || '').trim().length < 4) return false
-      // Solo clasificar nodos contenedor (con hijos), tareas o bucles
-      const hasChildren = store.children(n.id).some(c => !c.deletedAt)
-      const isTask = n.status !== null
-      const isLoop = (n.types || []).includes('bucle')
-      if (!hasChildren && !isTask && !isLoop) return false
-      // ¿tiene contextos manuales?
-      const userTypes = (n.types || []).filter(t => !BUILTIN_TAGS.has(t))
-      if (userTypes.length > 0) return false
-      // ¿tiene @mention de contexto?
-      if (/@\w/.test(n.text || '')) return false
-      // ¿fue asignado manualmente via badge?
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._contextManuallySet === '1') return false
-      } catch { /* ignore */ }
-      return true
-    }).length
-  }, [s.nodesVersion, papeleraIds, contextoSubtreeIds]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Contador coherente con la lista (mismo util: solo Agenda, sin clasificados)
+  const unclassifiedCount = useMemo(() => getUnclassifiedIds().size, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isUnclassifiedActive = selectedContextId === UNCLASSIFIED_FILTER_ID
 

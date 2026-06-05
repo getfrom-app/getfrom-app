@@ -62,7 +62,7 @@ import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
-import { ensureAgentesNode } from '../../utils/agentesHelper'
+import { ensureAgentesNode, migrateAgentsV2 } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
@@ -402,6 +402,7 @@ export default function MainLayout() {
         // Nodo de sistema: 📌 Atajos
         ensureAtajosNode()
         migrateLocalStorageShortcuts()
+        migrateAgentsV2()   // elimina agentes-ejemplo v1 (una vez) antes de añadir los v2
         ensureAgentesNode()
         ensurePromptsNode()
         ensurePapeleraNode()
