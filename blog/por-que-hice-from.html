@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Por qué hice From — Alberto Lezaun</title>
-  <meta name="description" content="Diez años probando Notion, Obsidian, Roam, Bear... y ninguna duró más de seis meses. Esta es la historia de por qué acabé construyendo mi propia app de notas.">
+  <meta name="description" content="Diez años probando Notion, Obsidian, Roam, Bear... y ninguna duró más de seis meses. Estos son los seis problemas que ninguna app de notas resolvía, y cómo construí la mía.">
   <meta name="keywords" content="por qué From, historia From, alternativa Notion, alternativa Obsidian, app notas productividad, Alberto Lezaun, From app">
-  <meta property="og:title" content="Por qué hice From">
-  <meta property="og:description" content="Diez años probando apps de notas y ninguna duró más de seis meses. Esta es la historia de cómo eso me llevó a construir From.">
-  <meta property="og:image" content="https://getfrom.app/img/blog/outliner/01-outliner-arbol-completo.png">
+  <meta property="og:title" content="Por qué hice From — Alberto Lezaun">
+  <meta property="og:description" content="Seis problemas concretos que ninguna app de notas resolvía. Esta es la historia de cómo eso me llevó a construir From.">
+  <meta property="og:image" content="https://getfrom.app/img/blog/nota-diaria/04-nota-rica-linkedin.png">
   <meta property="og:url" content="https://getfrom.app/blog/por-que-hice-from">
   <meta property="og:type" content="article">
   <meta name="twitter:card" content="summary_large_image">
@@ -26,26 +26,32 @@
     nav.blog-nav .back:hover { color: #333; }
     .blog-hero { background: #fff; border-bottom: 1px solid #f0f0f0; padding: 80px 24px 60px; text-align: center; }
     .blog-hero .tag { display: inline-block; background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
-    .blog-hero h1 { font-size: clamp(32px, 6vw, 58px); font-weight: 800; color: #1a1a1a; max-width: 720px; margin: 0 auto 20px; line-height: 1.1; letter-spacing: -1px; }
-    .blog-hero .subtitle { font-size: 20px; color: #555; max-width: 580px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-hero h1 { font-size: clamp(32px, 6vw, 58px); font-weight: 800; color: #1a1a1a; max-width: 780px; margin: 0 auto 20px; line-height: 1.1; letter-spacing: -1px; }
+    .blog-hero .subtitle { font-size: 20px; color: #555; max-width: 600px; margin: 0 auto 32px; line-height: 1.6; }
     .blog-meta { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 13px; color: #aaa; }
     .blog-meta .author { color: #333; font-weight: 500; }
-    .blog-body { max-width: 680px; margin: 0 auto; padding: 64px 24px 96px; }
+    .blog-body { max-width: 700px; margin: 0 auto; padding: 64px 24px 96px; }
     .blog-body p { font-size: 18px; line-height: 1.85; color: #222; margin: 0 0 24px; }
-    .blog-body h2 { font-size: 28px; font-weight: 700; margin: 64px 0 20px; color: #111; letter-spacing: -.3px; }
+    .blog-body h2 { font-size: 28px; font-weight: 700; margin: 72px 0 20px; color: #111; letter-spacing: -.3px; }
     .blog-body h3 { font-size: 20px; font-weight: 600; margin: 40px 0 14px; color: #222; }
     .blog-body ul, .blog-body ol { font-size: 18px; line-height: 1.85; color: #222; padding-left: 24px; margin: 0 0 24px; }
     .blog-body li { margin-bottom: 10px; }
     .blog-body strong { color: #111; }
     .blog-body em { color: #444; font-style: italic; }
-    .blog-body blockquote { border-left: 3px solid #1a1a1a; padding: 4px 0 4px 24px; margin: 32px 0; }
-    .blog-body blockquote p { font-size: 20px; color: #333; font-style: italic; margin: 0; }
+    .blog-body blockquote { border-left: 3px solid #1a1a1a; padding: 4px 0 4px 24px; margin: 36px 0; }
+    .blog-body blockquote p { font-size: 21px; color: #333; font-style: italic; margin: 0; line-height: 1.6; }
     .screenshot { margin: 48px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06); }
     .screenshot img { width: 100%; display: block; }
     .screenshot figcaption { font-size: 13px; color: #999; text-align: center; padding: 12px 16px; }
-    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 48px 0; }
-    .cta-box { border: 2px solid #1a1a1a; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 72px 0 0; }
-    .cta-box h3 { font-size: 26px; font-weight: 800; margin: 0 0 12px; letter-spacing: -.3px; }
+    .problem-label { display: inline-block; background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #666; padding: 4px 10px; margin-bottom: 12px; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 56px 0; }
+    .summary-box { background: #f9f9f9; border-radius: 12px; padding: 32px 36px; margin: 48px 0; }
+    .summary-box h3 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #888; margin: 0 0 20px; }
+    .summary-row { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; font-size: 17px; line-height: 1.5; color: #222; }
+    .summary-row .arrow { flex-shrink: 0; color: #888; margin-top: 2px; }
+    .summary-row strong { color: #111; }
+    .cta-box { border: 2px solid #1a1a1a; border-radius: 16px; padding: 48px 40px; text-align: center; margin: 80px 0 0; }
+    .cta-box h3 { font-size: 28px; font-weight: 800; margin: 0 0 12px; letter-spacing: -.3px; }
     .cta-box p { font-size: 17px; color: #555; margin: 0 0 28px; }
     .cta-box a { display: inline-block; background: #1a1a1a; color: #fff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
     footer { text-align: center; padding: 48px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
@@ -54,6 +60,7 @@
       .blog-hero { padding: 60px 16px 40px; }
       .blog-body { padding: 40px 16px 64px; }
       .cta-box { padding: 32px 20px; }
+      .summary-box { padding: 24px 20px; }
     }
   </style>
 </head>
@@ -65,15 +72,15 @@
 </nav>
 
 <header class="blog-hero">
-  <span class="tag">Historia</span>
+  <span class="tag">Historia · Fundador</span>
   <h1>Por qué hice From</h1>
-  <p class="subtitle">Diez años probando Notion, Obsidian, Roam, Bear... y ninguna duró más de seis meses. Esta es la historia de lo que salió mal, lo que aprendí, y cómo eso llevó a construir algo propio.</p>
+  <p class="subtitle">Diez años probando Notion, Obsidian, Roam, Bear, Apple Notes... y ninguna duró más de seis meses. Estos son los seis problemas que ninguna resolvía, y cómo eso me llevó a construir la mía.</p>
   <div class="blog-meta">
     <span class="author">Alberto Lezaun</span>
     <span>·</span>
     <span>5 junio 2026</span>
     <span>·</span>
-    <span>10 min de lectura</span>
+    <span>15 min de lectura</span>
   </div>
 </header>
 
@@ -81,141 +88,202 @@
 
 <p>Soy Alberto. Construí From.</p>
 
-<p>Esta es la historia de por qué lo hice. No la versión de marketing — la real.</p>
+<p>Esta es la historia real de por qué lo hice. No la versión de marketing — la historia completa, con los nombres de las apps que probé, el dinero que gasté, y los momentos exactos en que cada una me falló.</p>
 
-<hr class="divider">
+<p>Hay un momento que recuerdo especialmente. Era domingo por la tarde. Miré el cargo de $15 en mi tarjeta de crédito. Abrí Roam Research y me di cuenta de que llevaba tres semanas sin usarlo.</p>
+
+<p>Quince dólares por nada.</p>
+
+<p>No era la primera vez. Había pasado lo mismo con Notion, con Obsidian, con Bear. El ciclo siempre era el mismo: entusiasmo inicial, sistema perfecto construido en fin de semana, dos semanas de uso intenso, y luego... silencio. El sistema vacío mirándome desde la pantalla.</p>
+
+<p>Durante años pensé que el problema era yo. Que me faltaba disciplina. Que si encontraba el sistema correcto, lo mantendría.</p>
+
+<p>No era yo. Tenía seis problemas muy concretos con todas las apps que probé. Y ninguna los resolvía.</p>
+
+<figure class="screenshot">
+  <img src="/img/blog/nota-diaria/04-nota-rica-linkedin.png" alt="From: nota del día con tareas, subnodos y badges de contexto automático — la app que construí después de que todas las demás fallaran">
+  <figcaption>From: lo que construí después de diez años probando alternativas.</figcaption>
+</figure>
 
 <h2>El cementerio de apps</h2>
 
 <p>Notion, versión 1. Monté una base de datos perfecta para gestionar proyectos. Tardé tres horas en configurarla. Duré dos semanas usándola.</p>
 
-<p>Obsidian. Los plugins eran increíbles — también eran un agujero sin fondo. Pasaba más tiempo instalando plugins que escribiendo notas. Después de un mes de configuración, el sistema estaba «listo». Y entonces lo usé muy poco.</p>
+<p>Obsidian. Los plugins eran increíbles — también eran un agujero sin fondo. Pasaba más tiempo instalando plugins que escribiendo notas. Después de un mes de configuración, el sistema estaba listo. Y entonces lo usé muy poco.</p>
 
 <p>Roam Research. Quince dólares al mes. La sintaxis de bloques me costó una semana entender. Cuando la entendí, me di cuenta de que no era para mí.</p>
 
-<p>Bear. Bonito. Markdown limpio. Pero sin sync real entre dispositivos sin pagar. Adiós. Apple Notes. Simple y gratis — y completamente inútil cuando tienes más de veinte notas que encontrar.</p>
+<p>Bear. Bonito, Markdown limpio, y sin sync real entre dispositivos sin pagar. Adiós. Apple Notes. Simple y gratuito, e inútil en cuanto tienes más de veinte notas que necesitas encontrar rápido.</p>
 
-<p>La historia se repite siempre igual. Empiezo con entusiasmo, configuro el sistema «perfecto», lo uso dos semanas, y luego dejo de usarlo. El sistema vacío me mira desde la pantalla como un recordatorio de que fallé otra vez.</p>
+<p>Craft, Logseq, Evernote. La lista sigue.</p>
 
-<p>Durante años pensé que el problema era yo. Que no tenía disciplina suficiente, que no había encontrado el sistema correcto, que si me esforzaba más conseguiría mantenerlo.</p>
+<p>La pregunta que me fui haciendo: ¿por qué apps tan bien construidas, con tanta inversión detrás, no consiguen que la gente las use de forma consistente? Al final llegué a seis respuestas.</p>
 
-<p>No era yo. Era otra cosa.</p>
+<hr class="divider">
 
-<h2>El problema real: pensar antes de capturar</h2>
+<h2>Problema 1: me pedían pensar antes de escribir</h2>
 
-<p>Notion tiene bases de datos, vistas, plantillas, fórmulas, relaciones entre tablas. Es un producto increíble. Y eso es exactamente el problema.</p>
+<span class="problem-label">Fricción</span>
 
-<p>Cada vez que quería escribir una nota, tenía que decidir: ¿es una tarea o una nota? ¿Va en la base de datos de proyectos o en el diario? ¿Qué propiedades necesita? ¿Le pongo fecha de vencimiento?</p>
+<p>Notion tiene bases de datos, vistas, plantillas, fórmulas y relaciones entre tablas. Es un producto increíble de ingeniería. Y eso es exactamente el problema.</p>
 
-<p>Ese momento de fricción — el segundo que tardas en decidir dónde va lo que quieres escribir — es suficiente para que el pensamiento se pierda. La idea vuela antes de aterrizarla.</p>
+<p>Cada vez que quería anotar algo, tenía que tomar decisiones: ¿Es una tarea o una nota? ¿Va en la base de datos de proyectos o en el diario? ¿Qué propiedades necesita? ¿Le pongo fecha de vencimiento? ¿Qué etiqueta le corresponde?</p>
+
+<p>Ese momento de fricción — el segundo que tardas en decidir dónde va lo que quieres escribir — es suficiente para que el pensamiento se pierda. La idea vuela antes de aterrizar.</p>
 
 <blockquote>
   <p>El problema no era la potencia de las apps. Era que me pedían pensar antes de capturar.</p>
 </blockquote>
 
-<p>El cerebro no funciona así. Las ideas no vienen con etiquetas ni con propiedades asignadas. Llegan en mitad de una reunión, mientras conduces, en la ducha. Y cualquier sistema que te pida organizarlas antes de guardarlas va a perder contra el momento.</p>
+<p>El cerebro no funciona así. Las ideas no llegan con etiquetas ni con propiedades asignadas. Las mejores llegan en mitad de una reunión, mientras conduces, en la ducha. Y cualquier sistema que te pida organizarlas antes de guardarlas va a perder siempre contra el pensamiento sin filtrar.</p>
 
-<h2>El precio que no sale</h2>
+<p>La solución que encontré: From no te pide decidir nada antes de escribir. Capturas, y From clasifica solo.</p>
 
-<p>Hay un momento muy concreto que tuve con Roam Research.</p>
+<h2>Problema 2: pagaba por algo que no usaba</h2>
 
-<p>Era domingo por la tarde. Miré mi tarjeta de crédito y vi el cargo de $15. Abrí Roam y vi que llevaba tres semanas sin usarlo.</p>
+<span class="problem-label">Precio</span>
 
-<p>$15 por nada. Y lo que me molestó no fue el dinero — fue el ciclo. Pagar, usar dos semanas, abandonar, sentirme culpable, cancelar, encontrar otra app, repetir. Notion: $12. Obsidian Sync: $10. Craft: $5. Si cambias con frecuencia, la suma duele. Y lo peor es que pagas por algo que no usas porque requiere demasiado esfuerzo para mantenerse.</p>
+<p>Notion: $12 al mes. Obsidian Sync: $10. Roam Research: $15. Craft: $5.</p>
 
-<h2>El sistema que había que mantener</h2>
+<p>Si usas una sola y de forma consistente, puede tener sentido. Pero cuando el ciclo se repite — prueba, abandona, busca la siguiente — la suma acaba doliendo. Y lo más frustrante no es el dinero: es el ciclo de culpa. Pagar, usar dos semanas, abandonar, sentirte mal, cancelar, encontrar otra app, repetir.</p>
 
-<p>El problema más insidioso no es que las apps sean complicadas de aprender. Es que son complicadas de mantener.</p>
+<p>El problema de fondo es que pagas por algo que no usas porque es demasiado complicado o pesado de mantener. La app no consiguió que la usaras de forma consistente, pero ya te cobró.</p>
 
-<p>Notion necesita que actualices las bases de datos cuando cambia un proyecto. Que archives lo que ya no es relevante. Que mantengas las plantillas al día. Obsidian necesita que gestiones los plugins cuando se actualizan. Que revises los enlaces rotos. Que decidas qué hacer con las notas huérfanas.</p>
+<p>Cuando diseñé el modelo de precios de From quería romper ese ciclo. Plan gratuito con mil nodos reales — sin límite de tiempo y sin funciones arbitrariamente bloqueadas. Si no te convence en uso real, no pagas. Y si pagas, que sea porque la estás usando.</p>
 
-<p>En algún punto, el sistema se convierte en el problema. No solo te pide tiempo para organizarte — te pide tiempo adicional para mantener la herramienta que supuestamente debía ahorrarte tiempo.</p>
+<h2>Problema 3: el sistema que había que mantener</h2>
 
-<h2>Tus notas son rehenes</h2>
+<span class="problem-label">Mantenimiento</span>
 
-<p>Un día decidí salir de Notion. Había tenido suficiente.</p>
+<p>El problema más insidioso no es aprender a usar la app. Es que una vez aprendida, hay que mantenerla.</p>
 
-<p>Exporté todo. Me encontré con una carpeta llena de archivos Markdown con frontmatter de Notion, imágenes con URLs rotas a sus servidores, y una estructura de carpetas que no tenía ningún sentido fuera de Notion. Dos horas intentando limpiar eso. Al final importé una fracción de lo que tenía.</p>
+<p>Notion necesita que actualices las bases de datos cuando cambia un proyecto. Que añadas propiedades cuando aparece un nuevo tipo de elemento. Que archives lo que ya no es relevante. Que mantengas las plantillas al día cuando cambias de flujo de trabajo.</p>
 
-<p>Es el lock-in: tus notas son tuyas en teoría, pero en la práctica están atadas a la plataforma. El formato es suyo, las imágenes están en sus servidores, los links internos no funcionan en ningún otro sitio.</p>
+<p>Obsidian necesita que gestiones los plugins cuando se actualizan. Que revises los enlaces rotos. Que decidas qué hacer con las notas huérfanas. Que reorganices la estructura cuando la carpeta principal queda obsoleta.</p>
 
-<h2>La IA que no sirvió</h2>
+<p>Todos los sistemas que probé tenían el mismo defecto: eran un segundo trabajo. No solo capturaban tu tiempo para organizarte — te pedían tiempo adicional para mantener la herramienta que supuestamente debía ahorrarte tiempo. Una ironía perfecta.</p>
 
-<p>Cuando llegaron las apps «con IA» pensé que por fin había una solución.</p>
+<p>En algún punto, el sistema se convierte en el problema. Y lo dejas de usar exactamente por eso.</p>
 
-<p>Notion AI. Obsidian con plugins de GPT. Apps nuevas que prometían «tu segundo cerebro con IA». Las probé todas.</p>
+<p>From no tiene un sistema que mantener. No hay bases de datos que actualizar, ni plantillas que gestionar, ni estructura que diseñar. El árbol se construye solo mientras usas la app.</p>
 
-<p>El patrón era siempre el mismo: seleccionas un texto, pulsas un botón, la IA propone algo. Resume, expande, reformula. Funciona. Pero no resuelve el problema real.</p>
+<h2>Problema 4: tus notas eran rehenes</h2>
 
-<p>El problema real no es que necesite que la IA escriba por mí. El problema es que tengo cientos de notas y no encuentro lo que busco. Que capturé algo hace tres semanas y no sé dónde está. Que mis tareas están dispersas en diez sitios diferentes.</p>
+<span class="problem-label">Lock-in</span>
 
-<p>No quería ChatGPT encima de mis notas. Quería algo que <em>conociera</em> mis notas. Que supiera qué tengo escrito sobre el proyecto X sin que yo tuviera que buscarlo. Que clasificara automáticamente. Que recordara quién soy.</p>
+<p>Un día decidí salir de Notion. Había tenido suficiente de las bases de datos, de la lentitud en móvil, de pagar por algo que usaba cada vez menos.</p>
 
-<h2>Mis notas en siete sitios distintos</h2>
+<p>Exporté todo. Me encontré con una carpeta llena de archivos Markdown con frontmatter de Notion, imágenes con URLs rotas a sus servidores, y una estructura de carpetas que no tenía ningún sentido fuera de la plataforma.</p>
 
-<p>En un momento dado tenía: Apple Notes para cosas rápidas del móvil, Notion para proyectos de trabajo, Bear para notas personales, un doc de Google para cosas compartidas, notas de voz que nunca volvía a escuchar, WhatsApp conmigo mismo para ideas del momento, y libretas físicas para reuniones.</p>
+<p>Dos horas intentando limpiar eso. Al final importé una fracción de lo que tenía.</p>
+
+<p>Esto es el lock-in: tus notas son tuyas en teoría, pero en la práctica están atadas a la plataforma. El formato es suyo. Las imágenes están en sus servidores. Los links internos no funcionan en ningún otro sitio. Llevas años construyendo algo que en realidad es de ellos.</p>
+
+<p>Con From tomé una decisión desde el principio: tus datos son tuyos de verdad. Backup automático cada dos horas en Markdown estándar, en tu Mac. Cualquier editor puede abrirlo. Si mañana decides irte, te llevas todo. Sin fricciones, sin URLs rotas, sin sorpresas.</p>
+
+<h2>Problema 5: la IA que no servía</h2>
+
+<span class="problem-label">IA genérica</span>
+
+<p>Cuando llegaron las apps "con IA", pensé que por fin había una solución.</p>
+
+<p>Notion AI. Obsidian con plugins de GPT. Apps nuevas que prometían "tu segundo cerebro con IA". Las probé todas con expectativas altas.</p>
+
+<p>El patrón era siempre el mismo: seleccionas un texto, pulsas un botón, la IA propone algo. Resume, expande, reformula. Funciona técnicamente bien. Pero no resuelve el problema real.</p>
+
+<p>El problema real no es que necesite que la IA escriba por mí. El problema es que tengo cientos de notas y no encuentro lo que busco. Que capturé algo hace tres semanas y no sé dónde está. Que mis tareas están dispersas en diez sitios distintos y no tengo una vista unificada.</p>
+
+<p>Una IA que reformula texto no resuelve ninguno de esos problemas.</p>
+
+<p>Lo que quería era una IA que <em>conociera</em> mis notas. Que supiera qué tengo escrito sobre el proyecto X sin que yo tuviera que buscarlo. Que clasificara automáticamente cada cosa en su contexto. Que recordara quién soy, qué proyectos llevo, qué personas mencionas con frecuencia.</p>
+
+<p>No quería ChatGPT encima de mis notas. Quería algo construido desde dentro.</p>
+
+<figure class="screenshot">
+  <img src="/img/blog/chat-notas/01-magic-chat-pregunta.png" alt="Magic Chat en From: la IA que conoce tus notas y busca en semanas de contenido para darte la respuesta exacta">
+  <figcaption>Magic tiene acceso a todo tu vault. Le preguntas "¿qué decidí sobre el proyecto X?" y busca en semanas de notas para darte el bullet exacto.</figcaption>
+</figure>
+
+<h2>Problema 6: mis notas en siete sitios distintos</h2>
+
+<span class="problem-label">Fragmentación</span>
+
+<p>En un momento dado tenía esto:</p>
+
+<ul>
+  <li>Apple Notes para cosas rápidas del móvil</li>
+  <li>Notion para proyectos de trabajo</li>
+  <li>Bear para notas personales</li>
+  <li>Un doc de Google para cosas compartidas con el equipo</li>
+  <li>Notas de voz en el iPhone que nunca volvía a escuchar</li>
+  <li>WhatsApp conmigo mismo para ideas del momento</li>
+  <li>Libretas físicas para reuniones</li>
+</ul>
 
 <p>Siete sitios distintos. Ninguno completo. Todo fragmentado.</p>
 
-<p>Si no sabes dónde está algo, es como si no lo tuvieras. Y yo no sabía dónde estaba casi nada.</p>
+<p>El problema de la fragmentación es sutil pero devastador: si no sabes dónde está algo, es como si no lo tuvieras. Y si tienes que buscar en siete sitios distintos cada vez que necesitas algo, el sistema deja de ser útil.</p>
 
-<figure class="screenshot">
-  <img src="/img/blog/outliner/01-outliner-arbol-completo.png" alt="From: árbol de notas con contextos automáticos y nota del día">
-  <figcaption>Un árbol único para todo. La nota de hoy, los proyectos, los contextos — todo en el mismo sitio.</figcaption>
-</figure>
+<p>La premisa de From es un árbol único para todo. No una app para el trabajo y otra para lo personal. No notas rápidas en un sitio y proyectos en otro. Un solo lugar donde todo convive, con contextos que separan lo que necesitas separar sin romper el sistema.</p>
 
-<h2>El momento en que lo vi claro</h2>
-
-<p>El insight llegó de forma muy simple: el problema no era yo. Era que todas las apps me pedían tomar decisiones antes de dejarme escribir.</p>
-
-<p>¿De qué tipo es esto? ¿Dónde va? ¿Qué propiedades tiene? ¿En qué carpeta?</p>
-
-<p>El cerebro no captura así. Las ideas llegan sin estructura. Y si el primer paso del sistema es decidir la estructura, el sistema pierde siempre contra el pensamiento sin filtrar.</p>
-
-<p>Quería una herramienta que funcionara al revés: escribe primero, organiza después. Que entienda lo que escribes sin que tengas que explicárselo. Que clasifique sola. Que recuerde. Que actúe.</p>
-
-<h2>Cómo nació From</h2>
-
-<p>La primera versión de From era horrible. Un outliner simple sin IA, sin contextos, sin sync. Solo un árbol de notas en el Mac.</p>
-
-<p>Lo usé durante tres meses para ver si aguantaba. Aguantó. El outliner — la idea de que todo vive en un árbol jerárquico que puedes expandir y colapsar — resultó ser el formato correcto para cómo pienso.</p>
-
-<p>Fui añadiendo cosas: el diario automático (una nota por día, sin crearla), el sync entre dispositivos, la búsqueda, y finalmente la IA — construida desde dentro, no pegada por fuera.</p>
-
-<p>Lo más importante que aprendí en el proceso: la IA tiene que entender el contexto del usuario, no solo el texto actual. Por eso From construye un perfil a partir de lo que escribes, aprende los proyectos y las personas que aparecen con frecuencia, y clasifica automáticamente cada nota en el contexto que le corresponde.</p>
-
-<p>Sin menús. Sin decisiones. Solo escribes.</p>
-
-<figure class="screenshot">
-  <img src="/img/blog/clasificacion-contextos/01-badges-contexto.png" alt="Badges de contexto automático en los nodos de From">
-  <figcaption>From clasifica cada nota en el contexto correcto mientras escribes. Sin tocar un menú.</figcaption>
-</figure>
-
-<h2>Lo que From resuelve</h2>
-
-<p><strong>La fricción:</strong> en From no decides dónde va algo antes de escribirlo. Va al diario de hoy, y From lo clasifica automáticamente en el contexto correcto. Si mencionas un proyecto, lo vincula. Si escribes una fecha, la detecta.</p>
-
-<p><strong>El precio:</strong> plan gratuito con mil nodos de verdad — sin límite de tiempo, sin funciones arbitrariamente bloqueadas. Si decides pagar, son 7€ al mes. Sin permanencia.</p>
-
-<p><strong>El mantenimiento:</strong> no hay bases de datos que actualizar ni plantillas que gestionar. El árbol se construye solo mientras usas la app.</p>
-
-<p><strong>El lock-in:</strong> backup automático cada dos horas en Markdown estándar en tu Mac. Cualquier editor puede abrirlo. Si mañana decides irte, te llevas todo.</p>
-
-<p><strong>La IA inútil:</strong> Magic tiene acceso a todo tu vault. No reformula texto — busca en semanas de notas, clasifica sin pedírselo, recuerda quien eres.</p>
-
-<p><strong>La fragmentación:</strong> un árbol único para todo. Mac, iPhone y web sincronizados en tiempo real.</p>
+<p>Capturas en el iPhone, aparece en el Mac en segundos. Apuntas en el diario de hoy, From lo clasifica en el contexto correcto. Un sistema, siempre al día, sin configurar nada.</p>
 
 <hr class="divider">
 
-<p>Llevo más de un año usando From a diario. Es la primera app de notas que me dura más de seis meses.</p>
+<h2>El insight que lo cambió todo</h2>
 
-<p>No porque sea perfecta — hay mucho que mejorar. Sino porque no me pide nada antes de dejarme escribir.</p>
+<p>El problema no era yo. Y no era exactamente que las apps fueran malas — muchas son productos excelentes.</p>
 
-<p>Si pruebas From y hay algo que no funciona como esperas, escríbeme directamente a <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>. Lo leo yo.</p>
+<p>El problema era que todas partían del mismo principio equivocado: <strong>decidir la estructura antes de capturar el contenido</strong>.</p>
+
+<p>Bases de datos, plantillas, carpetas, tipos de nota. Todo ese andamiaje sirve para organizar — pero solo tiene sentido una vez que ya tienes el contenido. Si lo pones delante de la captura, se convierte en un filtro que deja fuera exactamente las ideas más valiosas: las que llegan sin aviso y necesitan un hogar inmediato.</p>
+
+<blockquote>
+  <p>Quería una herramienta que funcionara al revés: escribe primero, organiza después. Que entienda lo que escribes sin que tengas que explicárselo.</p>
+</blockquote>
+
+<p>Que clasifique sola. Que recuerde. Que actúe. Sin que tú tengas que decidir nada antes de abrir el teclado.</p>
+
+<h2>Cómo nació From</h2>
+
+<p>La primera versión era horrible. Un outliner simple: sin IA, sin contextos, sin sync. Solo un árbol de notas en el Mac.</p>
+
+<p>Lo usé durante tres meses para ver si aguantaba el día a día. Aguantó. El outliner — la idea de que todo vive en un árbol jerárquico que puedes expandir y colapsar — resultó ser el formato correcto para cómo pienso y trabajo.</p>
+
+<p>Fui añadiendo capas: el diario automático (una nota por día, sin crearla manualmente), el sync entre dispositivos, la búsqueda con resaltado, y finalmente la IA — construida desde dentro, no pegada por fuera.</p>
+
+<p>Lo más importante que aprendí en el proceso: la IA tiene que entender el contexto del usuario, no solo el texto actual. Por eso From construye un perfil a partir de lo que escribes, aprende los proyectos y las personas que aparecen con frecuencia, y clasifica automáticamente cada nota en el contexto que le corresponde. Sin menús. Sin decisiones previas.</p>
+
+<p>Cada contexto acumula su propio conocimiento: las palabras clave, las personas, los temas frecuentes. From lo extrae y lo mantiene al día a medida que escribes más.</p>
+
+<figure class="screenshot">
+  <img src="/img/blog/clasificacion-contextos/01-badges-contexto.png" alt="Badges de contexto automático en From — From clasifica cada nota mientras escribes, sin que toques un menú">
+  <figcaption>From clasifica cada nota en el contexto correcto mientras escribes. Sin tocar un menú. Los badges morados aparecen solos.</figcaption>
+</figure>
+
+<p>Llevo más de un año usando From a diario. Es la primera app de notas que me dura más de seis meses. No porque sea perfecta — hay mucho que mejorar y lo sé — sino porque no me pide nada antes de dejarme escribir.</p>
+
+<hr class="divider">
+
+<h2>Lo que From resuelve</h2>
+
+<div class="summary-box">
+  <h3>Los seis problemas → las seis soluciones</h3>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>Fricción:</strong> From no te pide decidir dónde va algo antes de escribirlo. Va a la nota de hoy y se clasifica automáticamente en el contexto correcto.</div></div>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>Precio:</strong> Plan gratuito con mil nodos reales, sin límite de tiempo. Si pagas, son 7€/mes. Sin permanencia, cancelas cuando quieras.</div></div>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>Mantenimiento:</strong> No hay bases de datos que actualizar ni estructura que gestionar. El árbol se construye solo mientras usas la app.</div></div>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>Lock-in:</strong> Backup automático cada 2 horas en Markdown estándar en tu Mac. Cualquier editor puede abrirlo. Tus datos son siempre tuyos.</div></div>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>IA inútil:</strong> Magic tiene acceso a todo tu vault. Busca en semanas de notas, clasifica sin pedírselo, recuerda quién eres, actúa directamente. No reformula texto.</div></div>
+  <div class="summary-row"><span class="arrow">→</span><div><strong>Fragmentación:</strong> Un árbol único para todo. Mac, iPhone y web sincronizados en tiempo real, sin iCloud Drive.</div></div>
+</div>
+
+<p>Si te has reconocido en alguno de estos problemas — si llevas años probando apps y abandonándolas — te invito a probarlo.</p>
+
+<p>Y si quieres contarme tu historia: con qué app te quedaste más tiempo, qué fue lo que hizo que la abandonaras, o qué te gustaría que From hiciera y todavía no hace — escríbeme directamente a <a href="mailto:hola@getfrom.app">hola@getfrom.app</a>. Lo leo yo.</p>
 
 <div class="cta-box">
   <h3>Prueba From gratis</h3>
-  <p>Sin tarjeta de crédito. Sin límite de tiempo. Mil nodos de verdad para empezar.</p>
+  <p>Sin tarjeta de crédito. Sin límite de tiempo. Mil nodos reales para empezar hoy.</p>
   <a href="/app/register">Crear cuenta gratis →</a>
 </div>
 
