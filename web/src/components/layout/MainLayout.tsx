@@ -17,6 +17,7 @@ import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import { aiChatStore } from '../../store/aiChatStore'
 import { ensurePromptsNode } from '../../utils/promptsHelper'
+import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
@@ -753,6 +754,8 @@ export default function MainLayout() {
       if (!store.isSyncing) {
         store.sync().catch(() => {/* silencioso */})
       }
+      // Backup a iCloud (solo Mac, auto-throttle a 2h, no hace nada en web)
+      void maybeICloudBackup()
     }, 15_000)
     return () => clearInterval(id)
   }, [])

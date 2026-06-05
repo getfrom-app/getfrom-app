@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSelector from '../settings/LanguageSelector'
+import { isICloudBackupEnabled, setICloudBackupEnabled } from '../../utils/icloudBackup'
 import {
   updateMe, deleteAccount, cancelSubscription, changePlan,
   clearTokens, exportNodes, getToken, getApiToken, generateApiToken,
@@ -625,6 +626,12 @@ export function CapturaRapidaPane() {
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [trayVisible, setTrayVisible] = useState(localStorage.getItem('from_tray_visible') !== 'false')
+  const [icloud, setIcloud] = useState(isICloudBackupEnabled())
+
+  function toggleICloud(on: boolean) {
+    setIcloud(on)
+    setICloudBackupEnabled(on)
+  }
 
   function toggleTray(visible: boolean) {
     setTrayVisible(visible)
@@ -676,6 +683,21 @@ export function CapturaRapidaPane() {
             style={{ width: 16, height: 16, cursor: 'pointer' }}
           />
         </Row>
+      )}
+
+      {/* Backup a iCloud */}
+      {isTauriDesktop && (
+        <>
+          <SectionTitle>Backup en iCloud</SectionTitle>
+          <Row label="Copia automática a iCloud Drive" hint="From guarda cada ~2h una copia de tu vault en iCloud Drive (carpeta «From Backups»). Backup offsite en tu cuenta, además del backup del servidor. Recomendado durante la beta.">
+            <input
+              type="checkbox"
+              checked={icloud}
+              onChange={e => toggleICloud(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+          </Row>
+        </>
       )}
 
       {/* Atajo de Apple */}
