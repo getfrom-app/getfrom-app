@@ -1365,11 +1365,15 @@ export class NodeStore {
     // Limpieza silenciosa: nodo vacío = no existe.
     // Período de gracia de 60s — no borrar nodos recién creados donde el cursor
     // puede estar (el servidor ya aplica la misma lógica en el sync).
+    // SALVAGUARDA (jun 2026): solo borrar HOJAS vacías. Nunca un contenedor con
+    // hijos activos cuyo texto esté momentáneamente vacío — borrarlo arrastraría
+    // su contenido vía cascada. Esta era una de las fuentes de pérdida.
     const graceCutoff = Date.now() - 60_000
     for (const node of this.nodes.values()) {
       if (!node.deletedAt && !node.isDiaryEntry && !(node.text || '').trim()) {
         const createdMs = node.createdAt ? new Date(node.createdAt).getTime() : 0
-        if (createdMs < graceCutoff) {
+        const hasActiveChildren = this.children(node.id).some(c => !c.deletedAt)
+        if (createdMs < graceCutoff && !hasActiveChildren) {
           this.deleteNode(node.id)
         }
       }
