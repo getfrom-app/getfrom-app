@@ -130,9 +130,13 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     })
   }
 
-  // GCal timed
+  // GCal timed — excluir eventos creados por From (ya aparecen como bloque 'task')
+  const fromGcalIds = new Set(
+    store.allActive().map(n => n.gcalEventId).filter(Boolean)
+  )
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
+    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque From
     const start = new Date(ev.start)
     if (!sameDay(start, day)) continue
     blocks.push({
@@ -885,8 +889,12 @@ export default function PlannerPanel({ onClose }: Props) {
               </button>
             )}
             {ctxMenu.b.kind === 'gcal' && (
-              <button className="pp-ctx-danger" onClick={()=>{ store.deleteNode(ctxMenu.b.id); setCtxMenu(null) }}>
-                Eliminar bloque
+              <button className="pp-ctx-danger" onClick={async ()=>{
+                try { await deleteCalendarEvent(ctxMenu.b.id) } catch {}
+                setGcalEvents(p => p.filter(x => x.id !== ctxMenu.b.id))
+                setCtxMenu(null)
+              }}>
+                Eliminar evento
               </button>
             )}
           </div>
