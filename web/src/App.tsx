@@ -8,6 +8,7 @@ import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
 import ResetPasswordPage from './components/auth/ResetPasswordPage'
+import ClaudeConnectPage from './components/auth/ClaudeConnectPage'
 import MainLayout from './components/layout/MainLayout'
 import PricingView from './components/views/PricingView'
 import CaptureWindow from './components/modals/CaptureWindow'
@@ -208,6 +209,8 @@ function AppInner() {
       <Route path="/pricing" element={<PricingView />} />
       {/* Google OAuth callback — accesible sin estar en MainLayout pero requiere token */}
       <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
+      {/* Claude OAuth consent — maneja su propio estado de auth */}
+      <Route path="/claude-connect" element={<ClaudeConnectPage />} />
       {/* Toda la app requiere cuenta */}
       <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
     </Routes>
