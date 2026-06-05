@@ -4,6 +4,25 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.152 — 5 junio 2026 · From disponible en el directorio oficial de conectores de Claude
+
+From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes conectar Claude con tu vault desde cualquier dispositivo sin instalar nada ni copiar tokens.
+
+- **Directorio de Claude**: busca "From" en Claude → Ajustes → Conectores, pulsa Conectar e inicia sesión con tu cuenta. Funciona en claude.ai, Claude Desktop, iPhone y Android.
+- **OAuth 2.0**: la autenticación es automática — Claude te redirige a From para que inicies sesión, sin tokens manuales.
+- **Streamable HTTP**: el servidor MCP de From ahora soporta el transporte Streamable HTTP/SSE requerido por el directorio de Anthropic.
+- **UI actualizada**: eliminado el flujo antiguo (.dxt, token manual, URL personalizada) en web, iPhone y documentación. Solo se mantiene como opción avanzada para Claude Code (CLI).
+
+---
+
+## Web v9.6.151 — 5 junio 2026 · OAuth 2.0 para Claude + página de consentimiento
+
+- Implementado flujo OAuth 2.0 completo para el conector de Claude: endpoints `/auth/claude/authorize`, `/auth/claude/token` (PKCE S256) y discovery `/.well-known/oauth-authorization-server`.
+- Nueva página `/app/claude-connect` — pantalla de consentimiento "Conectar From con Claude".
+- Servidor MCP: herramientas actualizadas con `title` y anotaciones `readOnlyHint`/`destructiveHint` en todas las tools.
+
+---
+
 ## Web v9.6.149 — 5 junio 2026 · Planificador: eliminar evento sincroniza con Google Calendar
 
 - Nuevo botón **"Eliminar evento"** en el menú contextual del planificador: elimina la tarea de From Y borra el evento en Google Calendar. Antes "Quitar del planificador" solo quitaba la hora sin borrar nada; ahora coexisten las dos opciones según lo que quieras hacer.
