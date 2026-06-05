@@ -4,6 +4,33 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.145 — 5 junio 2026 · Blog, distribución y emails
+
+### Blog
+- 22 artículos nuevos (ES+EN): Magic, Accesorios, Núcleo, Avanzado, Confianza/Comparativas. Todos con capturas reales de la app y CTA a registro.
+- Artículo fundador "Por qué hice From" (~2500 palabras, ES+EN): historia personal de los 6 problemas con apps de notas que llevaron a construir From.
+
+### Distribución
+- Artículo fundador publicado en LinkedIn (ES+EN, artículos nativos con imagen de portada real).
+- Enviado a Hacker News con comentario del fundador.
+
+### Capturas reales
+- 15 screenshots nuevas de la app v9.6.145 integradas en el blog y la landing.
+- Hero carousel actualizado con capturas que muestran badges de contexto, clasificación automática, subnodos.
+
+### Emails (52 templates ES+EN)
+- Todos los emails actualizados a la nueva realidad: detección automática de tipo/fecha/contexto, sin sintaxis manual.
+- Serie fundador nueva: 10 emails en FREE + 3 en PRO (historia personal, objeciones, CTA a conversación directa).
+- Cadencia mensual evergreen: 6 emails que se enolan automáticamente al terminar la secuencia principal.
+- +22 tips en Telegram (total 62), cada uno vinculado a un artículo del blog.
+
+### Fixes
+- Hint "Espacio · crea o busca" ocultado cuando la agenda tiene contenido (solo aparece en cuentas nuevas vacías).
+- Iconos de vista (tabla/kanban/calendario) eliminados de nodos de Agenda (día, mes, año).
+- Vista forzada a lista en notas diarias — no se puede activar calendario en el propio día.
+
+---
+
 ## Web v9.6.141 · Mac v9.5.13 — 5 junio 2026 · Accesorios: captura en From desde cualquier sitio
 
 From sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desde el sistema, desde Raycast o desde el navegador — y From lo entiende y lo coloca en su sitio.
