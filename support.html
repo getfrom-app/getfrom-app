@@ -151,14 +151,93 @@
     </section>
 </div>
 
-<!-- CTA -->
-<section class="cta">
+<!-- Contact Form -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<section class="cta" id="contact" style="max-width:560px;">
     <h2 data-i18n="support.cta_title">¿No encuentras lo que buscas?</h2>
     <p data-i18n="support.cta_body">Escríbenos y te ayudaremos personalmente.</p>
-    <a href="mailto:hola@getfrom.app" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        hola@getfrom.app
-    </a>
+
+    <form id="contact-form" style="text-align:left;margin-top:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+                <label for="cf-name" style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Nombre</label>
+                <input id="cf-name" type="text" placeholder="Tu nombre"
+                    style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;font-family:inherit;">
+            </div>
+            <div>
+                <label for="cf-email" style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Email *</label>
+                <input id="cf-email" type="email" placeholder="tu@email.com" required
+                    style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;font-family:inherit;">
+            </div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label for="cf-subject" style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Asunto</label>
+            <input id="cf-subject" type="text" placeholder="¿En qué podemos ayudarte?"
+                style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;font-family:inherit;">
+        </div>
+        <div style="margin-bottom:16px;">
+            <label for="cf-message" style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;">Mensaje *</label>
+            <textarea id="cf-message" rows="4" placeholder="Cuéntanos qué necesitas..." required
+                style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;font-family:inherit;resize:vertical;"></textarea>
+        </div>
+
+        <!-- Cloudflare Turnstile -->
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAA_SITEKEY_PLACEHOLDER" style="margin-bottom:16px;"></div>
+
+        <button type="submit" id="cf-submit" class="btn-primary" style="width:100%;justify-content:center;">
+            Enviar mensaje
+        </button>
+
+        <p id="cf-success" style="display:none;margin-top:14px;padding:12px 16px;background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.3);border-radius:8px;color:#34c759;font-size:14px;text-align:center;">
+            ✓ Mensaje enviado. Te respondemos en breve.
+        </p>
+        <p id="cf-error" style="display:none;margin-top:14px;padding:12px 16px;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.25);border-radius:8px;color:#ff3b30;font-size:14px;text-align:center;">
+            Error al enviar. Inténtalo de nuevo.
+        </p>
+    </form>
+
+    <script>
+    (function() {
+        var API = 'https://from-server-production.up.railway.app'
+        var form = document.getElementById('contact-form')
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault()
+            var btn = document.getElementById('cf-submit')
+            var ok  = document.getElementById('cf-success')
+            var err = document.getElementById('cf-error')
+            ok.style.display = 'none'; err.style.display = 'none'
+            btn.disabled = true; btn.textContent = 'Enviando...'
+
+            var token = (form.querySelector('[name="cf-turnstile-response"]') || {}).value || ''
+
+            try {
+                var r = await fetch(API + '/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name:    document.getElementById('cf-name').value.trim(),
+                        email:   document.getElementById('cf-email').value.trim(),
+                        subject: document.getElementById('cf-subject').value.trim(),
+                        message: document.getElementById('cf-message').value.trim(),
+                        turnstileToken: token,
+                    })
+                })
+                var d = await r.json()
+                if (r.ok && d.ok) {
+                    ok.style.display = 'block'
+                    form.reset()
+                    if (window.turnstile) window.turnstile.reset()
+                } else {
+                    err.textContent = d.error || 'Error al enviar. Inténtalo de nuevo.'
+                    err.style.display = 'block'
+                }
+            } catch(_) {
+                err.style.display = 'block'
+            }
+            btn.disabled = false; btn.textContent = 'Enviar mensaje'
+        })
+    })()
+    </script>
 </section>
 
 <!-- Footer -->
