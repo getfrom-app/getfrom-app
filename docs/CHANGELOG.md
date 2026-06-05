@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.155–162 / Mac v9.5.18 — 6 junio 2026 · Prompts para Magic + robustez de datos
+
+**Nuevo: Prompts para Magic.** Crea modos de conversación (⚡ Prompts) que cambian cómo te responde Magic. Variables (`{{fecha}}`, `{{nombre}}`…), activación con `/`, automática por contexto, o sugerida. De ejemplo: "Diario del día" y "Brainstorming".
+
+**Paneles unificados.** Contextos, Prompts y Agentes ahora funcionan igual: clic abre el contenido en el centro y sus propiedades a la derecha.
+
+**Agentes de verdad.** Nuevos agentes que producen entregables y navegan la web: 📈 Informe de mercado, 📰 Resumen de prensa, 🔎 Investigar un tema, 🧾 Resumen de un enlace, 🗓 Revisión semanal. Con horario y resultado en tu nota diaria.
+
+**Robustez e integridad de datos (bajo el capó).** IDs deterministas para los nodos únicos (Agenda, Perfil, diario…) → la duplicación de estructura es imposible. Jerarquía temporal unificada entre web, Mac y iPhone. Cortacircuitos que hace un backup automático antes de cualquier borrado masivo. Más historia de backups (50) + copia redundante. **Backup automático a iCloud Drive en Mac** (Ajustes → Accesorios). El contador de backups ahora muestra tus nodos reales (activos).
+
+---
+
 ## Web v9.6.152 — 5 junio 2026 · From disponible en el directorio oficial de conectores de Claude
 
 From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes conectar Claude con tu vault desde cualquier dispositivo sin instalar nada ni copiar tokens.

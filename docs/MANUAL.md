@@ -771,6 +771,21 @@ Escribe en el campo y pulsa Enter para enviar.
 
 **Navegar directamente:** di "ver las tareas de mañana" o "ábreme la nota de proyectos" — Magic navega directamente sin texto intermedio.
 
+### Prompts — modos de conversación para Magic
+
+Los **Prompts** (icono ⚡ en la barra superior) son modos de conversación que tú creas y que cambian cómo te responde Magic. Un prompt es un nodo: su **contenido son sus hijos**, donde escribes las instrucciones (lo editas como cualquier nota).
+
+**Crear y editar:** abre el panel ⚡ Prompts, pulsa "Nuevo prompt…" y escribe sus instrucciones dentro. From trae dos de ejemplo: **Diario del día** y **Brainstorming**.
+
+**Variables** (From las rellena al usar el prompt): `{{fecha}}`, `{{nombre}}`, `{{contexto_actual}}`, `{{notas_hoy}}`, `{{perfil}}`. En el panel de propiedades del prompt, clic en una variable la inserta donde tengas el cursor.
+
+**Cómo se activa en Magic (tres formas):**
+- **Manual**: escribe `/` en Magic y elige el prompt; o el botón ✨ en iPhone.
+- **Automático por contexto**: en las propiedades del prompt eliges "activar en la nota diaria / en tareas / en un contexto". Al abrir Magic desde ahí, se activa solo (chip con etiqueta "auto").
+- **Sugerencia**: mientras escribes, si el texto encaja con un prompt, Magic lo activa solo. Siempre puedes quitarlo con la **×** del chip.
+
+Ejemplo del prompt "Diario del día": al abrir Magic desde tu nota de hoy, Magic se vuelve tu compañero de diario — escucha, responde con calma y, si lo pides, te resume el día.
+
 **Qué puede hacer:**
 - Crear tareas, notas y eventos en tu árbol
 - Navegar directamente a cualquier nota o día del diario
