@@ -7,32 +7,37 @@
   <meta name="description" content="Guides, tips, and use cases for From. Learn to organize your digital life with AI, automatic daily notes, and smart filters.">
   <link rel="canonical" href="https://getfrom.app/blog/en">
   <link rel="alternate" hreflang="es" href="https://getfrom.app/blog" />
-  <link rel="stylesheet" href="../../styles.css">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #1a1a1a; }
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid #f0f0f0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; background: #fff; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
     nav a { text-decoration: none; }
     .logo { font-weight: 800; font-size: 18px; color: #7c3aed; }
     .nav-home { font-size: 13px; color: #888; }
     .hero { background: #f5f3ff; padding: 64px 40px 48px; text-align: center; }
-    .hero h1 { font-size: 36px; font-weight: 800; margin: 0 0 12px; }
+    .hero h1 { font-size: clamp(28px, 5vw, 36px); font-weight: 800; margin: 0 0 12px; }
     .hero p { font-size: 17px; color: #555; max-width: 500px; margin: 0 auto; }
-    .grid { max-width: 1100px; margin: 60px auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px; }
+    .grid { max-width: 1200px; margin: 60px auto; padding: 0 24px 80px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
     .card { border: 1px solid #f0f0f0; border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: box-shadow .15s; }
     .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.08); }
-    .card-img { background: linear-gradient(135deg, #ede9fe, #ddd6fe); height: 200px; overflow: hidden; }
+    .card-thumb { height: 180px; display: flex; align-items: center; justify-content: center; font-size: 56px; }
+    .card-img { height: 180px; overflow: hidden; background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
     .card-img img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
     .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
-    .card-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #7c3aed; margin-bottom: 8px; }
-    .card-title { font-size: 18px; font-weight: 700; line-height: 1.3; margin: 0 0 10px; }
+    .card-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .card-title { font-size: 17px; font-weight: 700; line-height: 1.35; margin: 0 0 10px; }
     .card-desc { font-size: 14px; color: #666; line-height: 1.6; flex: 1; margin: 0 0 16px; }
     .card-meta { font-size: 12px; color: #aaa; }
-    footer { text-align: center; padding: 40px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; margin-top: 60px; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
     footer a { color: #aaa; }
     @media (max-width: 600px) {
       nav { padding: 16px 20px; }
       .hero { padding: 48px 20px 32px; }
-      .grid { padding: 0 16px; gap: 20px; }
+      .grid { padding: 0 16px 60px; gap: 20px; }
     }
   </style>
 </head>
@@ -50,97 +55,245 @@
 
 <div class="grid">
 
+  <a href="/blog/en/chat-that-knows-your-notes.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">💬</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">The chat that knows your notes: ask and From searches your tree</div>
+      <div class="card-desc">A chat that doesn't make things up — it searches your real notes and gives you answers based on what you've actually written.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/automatic-context-classification.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">🧠</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">How From automatically classifies your notes without touching a menu</div>
+      <div class="card-desc">Write and From detects the right context. No folders, no manual tags, no friction.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/what-from-knows-about-your-context.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">📚</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">"What From knows": the living knowledge of every context</div>
+      <div class="card-desc">Each context has its own memory. From remembers what matters in every project or area of your life.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/ai-profile-from-remembers-you.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">👤</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">Your AI profile: From remembers you without you having to explain anything</div>
+      <div class="card-desc">Your preferences, habits, and working style are learned on their own. The AI improves the more you use it.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/teach-magic-to-learn-from-you.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">✏️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">Teach Magic: how From learns from your corrections</div>
+      <div class="card-desc">Every time you correct Magic, From learns. The assistant adapts to your vocabulary, tone, and way of working.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/hierarchical-contexts-in-from.html" class="card">
+    <div class="card-thumb" style="background:#ede9fe;">🗂️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Magic</div>
+      <div class="card-title">Hierarchical contexts: organize your life without lifting a finger</div>
+      <div class="card-desc">Work, Personal, Projects — From groups your information in contexts that maintain themselves.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/quick-capture-menu-bar.html" class="card">
+    <div class="card-thumb" style="background:#fed7aa;">⚡</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#ea580c;">Accessories</div>
+      <div class="card-title">Quick capture from the menu bar: without opening the app</div>
+      <div class="card-desc">One click in the menu bar and your idea is captured. From doesn't need to be open to receive your notes.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/apple-shortcut-global-capture.html" class="card">
+    <div class="card-thumb" style="background:#fed7aa;">⌨️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#ea580c;">Accessories</div>
+      <div class="card-title">The Apple Shortcut that turns any key into a global capture</div>
+      <div class="card-desc">Configure a shortcut in Apple Shortcuts and capture to From from any app, with any key combination.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/from-in-raycast.html" class="card">
+    <div class="card-thumb" style="background:#fed7aa;">🚀</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#ea580c;">Accessories</div>
+      <div class="card-title">From in Raycast: create, search, and open today's note without leaving</div>
+      <div class="card-desc">The Raycast extension for From: access your daily note, search, and create notes without breaking your workflow.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/from-chrome-extension.html" class="card">
+    <div class="card-thumb" style="background:#fed7aa;">🌐</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#ea580c;">Accessories</div>
+      <div class="card-title">The Chrome extension that saves any page or text to your note</div>
+      <div class="card-desc">Select text, right-click and save to From. Or save the entire page with one button from the browser bar.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/intelligent-daily-note.html" class="card">
+    <div class="card-thumb" style="background:#bbf7d0;">📅</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#16a34a;">Core</div>
+      <div class="card-title">The intelligent daily note: your entire day in one place</div>
+      <div class="card-desc">Every day From automatically generates your note with pending tasks, calendar events, and space for your ideas.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/tasks-natural-language-dates.html" class="card">
+    <div class="card-thumb" style="background:#bbf7d0;">✅</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#16a34a;">Core</div>
+      <div class="card-title">Tasks with dates in natural language: "meeting with Ana on Monday"</div>
+      <div class="card-desc">Write the way you talk and From understands the date, time, and context. No forms, no pickers, no friction.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/intelligent-filters-from.html" class="card">
+    <div class="card-thumb" style="background:#bbf7d0;">🔍</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#16a34a;">Core</div>
+      <div class="card-title">Smart filters: find anything in seconds</div>
+      <div class="card-desc">One-click chips, natural language search, and saved views. Your information always less than 5 seconds away.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/unlimited-outliner.html" class="card">
+    <div class="card-thumb" style="background:#bbf7d0;">🌳</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#16a34a;">Core</div>
+      <div class="card-title">The unlimited outliner: nest, move, and reorganize at the speed of thought</div>
+      <div class="card-desc">Drag and drop, keyboard shortcuts, and infinite nesting. From's outliner is as fast as your mind.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/planner-google-calendar.html" class="card">
+    <div class="card-thumb" style="background:#bfdbfe;">📆</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Advanced</div>
+      <div class="card-title">Planner + Google Calendar: your tasks and events on one timeline</div>
+      <div class="card-desc">Press P and see your Google Calendar events alongside your pending tasks. Visual week plan without leaving From.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/autonomous-agents-from.html" class="card">
+    <div class="card-thumb" style="background:#bfdbfe;">🤖</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Advanced</div>
+      <div class="card-title">Autonomous agents: From works while you sleep</div>
+      <div class="card-desc">Schedule tasks that From executes on its own: search, summarize, notify, update notes. Automation without code.</div>
+      <div class="card-meta">June 5, 2026 · 7 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/meeting-recorder-from.html" class="card">
+    <div class="card-thumb" style="background:#bfdbfe;">🎙️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Advanced</div>
+      <div class="card-title">Record a meeting, From transcribes it and extracts the tasks</div>
+      <div class="card-desc">Activate the built-in recorder, speak normally, and From turns the meeting into structured notes and actionable tasks.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/annotatable-pdfs-from.html" class="card">
+    <div class="card-thumb" style="background:#bfdbfe;">📄</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Advanced</div>
+      <div class="card-title">Annotatable PDFs integrated in your note tree</div>
+      <div class="card-desc">Attach PDFs to any node, open them directly in From, annotate them, and extract text with one click. All in the same place.</div>
+      <div class="card-meta">June 5, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/backup-privacy-from.html" class="card">
+    <div class="card-thumb" style="background:#f5d0fe;">🔒</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#9333ea;">Trust</div>
+      <div class="card-title">Automatic backup every 2 hours: your notes never disappear</div>
+      <div class="card-desc">From makes automatic backups without you having to remember. Your knowledge is always protected.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/sync-without-icloud.html" class="card">
+    <div class="card-thumb" style="background:#f5d0fe;">☁️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#9333ea;">Trust</div>
+      <div class="card-title">Instant sync without iCloud: web, Mac, and iPhone always up to date</div>
+      <div class="card-desc">From's sync is its own, instant, and doesn't depend on iCloud. It works the same on any network.</div>
+      <div class="card-meta">June 5, 2026 · 4 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/from-vs-obsidian.html" class="card">
+    <div class="card-thumb" style="background:#f5d0fe;">⚖️</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#9333ea;">Trust</div>
+      <div class="card-title">From vs Obsidian: which one do you need in 2026?</div>
+      <div class="card-desc">An honest comparison between Obsidian's power and From's simplicity. Which tool fits you better?</div>
+      <div class="card-meta">June 5, 2026 · 7 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/from-vs-apple-notes.html" class="card">
+    <div class="card-thumb" style="background:#f5d0fe;">🍎</div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#9333ea;">Trust</div>
+      <div class="card-title">From vs Apple Notes: when the native app is no longer enough</div>
+      <div class="card-desc">Apple Notes is fine to start. But when your notes grow, you need structure, AI, and filters that Apple doesn't offer.</div>
+      <div class="card-meta">June 5, 2026 · 6 min</div>
+    </div>
+  </a>
+
   <a href="/blog/en/organize-your-day-with-from.html" class="card">
     <div class="card-img">
       <img src="/img/blog/organizar-dia/01-diario-hoy.png" alt="Daily note in From" loading="lazy">
     </div>
     <div class="card-body">
-      <div class="card-tag">Productivity</div>
+      <div class="card-tag" style="color:#16a34a;">Productivity</div>
       <div class="card-title">How to organize your day with From: the smart journal that remembers everything</div>
       <div class="card-desc">Tasks, notes, and meetings in one place. No separate apps. Your day, organized in seconds with integrated AI.</div>
       <div class="card-meta">May 28, 2026 · 5 min</div>
     </div>
   </a>
 
-  <a href="/blog/en/second-brain.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/segundo-cerebro/01-arbol-raiz.png" alt="From's node tree for a digital second brain" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Personal Knowledge</div>
-      <div class="card-title">How to build your digital second brain with From in 10 minutes</div>
-      <div class="card-desc">A PKM system that captures everything you learn, connects your ideas, and surfaces them when you need them. No setup required.</div>
-      <div class="card-meta">May 28, 2026 · 7 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/from-vs-notion.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/from-vs-notion/02-filtros-chips.png" alt="From's filter system compared to Notion" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Comparison</div>
-      <div class="card-title">From vs Notion: which is better for personal knowledge management in 2026</div>
-      <div class="card-desc">An honest comparison: capture speed, integrated AI, filters, and pricing. Which one is right for personal use?</div>
-      <div class="card-meta">May 28, 2026 · 8 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/ai-notes-app.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/app-notas-ia/03-magic-chat-confirmacion.png" alt="From's Magic AI creating content in real time" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Artificial Intelligence</div>
-      <div class="card-title">The notes app with AI that actually understands what you need</div>
-      <div class="card-desc">Magic AI knows your full tree and acts on it. Not a generic chatbot — an assistant with access to your real information.</div>
-      <div class="card-meta">May 28, 2026 · 6 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/personal-project-management.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/gestion-proyectos/01-tareas-filtradas.png" alt="Personal project management in From with nested tasks" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Projects</div>
-      <div class="card-title">Personal project management: forget Trello and use From</div>
-      <div class="card-desc">Natural hierarchy, unlimited subtasks, and smart filters to see only what matters at any given moment.</div>
-      <div class="card-meta">May 28, 2026 · 6 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/meeting-notes.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/tomar-notas-reunion/01-nota-reunion.png" alt="Structured meeting note in From with tasks and context" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Work</div>
-      <div class="card-title">How to take meeting notes you actually use afterwards</div>
-      <div class="card-desc">The system for capturing, organizing, and acting on the decisions from every meeting. Notes connected to the tasks they generate.</div>
-      <div class="card-meta">May 28, 2026 · 6 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/time-planner.html" class="card">
-    <div class="card-img">
-      <img src="/img/blog/planificador-tiempo/01-planificador-semana.png" alt="From's visual weekly planner with Google Calendar" loading="lazy">
-    </div>
-    <div class="card-body">
-      <div class="card-tag">Planning</div>
-      <div class="card-title">Visual time planner: organize your week in From</div>
-      <div class="card-desc">Time blocking integrated with Google Calendar. Press P and your full week appears alongside your notes and tasks.</div>
-      <div class="card-meta">May 28, 2026 · 5 min</div>
-    </div>
-  </a>
-
-  <a href="/blog/en/productivity-without-friction.html" class="card">
+  <a href="/blog/en/frictionless-productivity.html" class="card">
     <div class="card-img">
       <img src="/img/blog/productividad-sin-friccion/01-nota-dia.png" alt="Frictionless quick capture in From with keyboard shortcuts" loading="lazy">
     </div>
     <div class="card-body">
-      <div class="card-tag">Productivity</div>
-      <div class="card-title">Productivity without friction: why capture speed changes everything</div>
+      <div class="card-tag" style="color:#16a34a;">Productivity</div>
+      <div class="card-title">Frictionless productivity: why capture speed changes everything</div>
       <div class="card-desc">If capturing an idea takes more than 5 seconds, the system fails. Here's how From eliminates every friction point.</div>
       <div class="card-meta">May 28, 2026 · 6 min</div>
     </div>
@@ -151,9 +304,21 @@
       <img src="/img/blog/agenda-digital/01-planificador-gcal.png" alt="From's smart digital agenda with integrated Google Calendar" loading="lazy">
     </div>
     <div class="card-body">
-      <div class="card-tag">Agenda</div>
+      <div class="card-tag" style="color:#16a34a;">Agenda</div>
       <div class="card-title">Smart digital agenda: how From replaces your paper planner</div>
       <div class="card-desc">Notes, tasks, and events in one place. With Google Calendar integrated and AI that knows your complete schedule.</div>
+      <div class="card-meta">May 28, 2026 · 6 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/ai-notes-app.html" class="card">
+    <div class="card-img">
+      <img src="/img/blog/app-notas-ia/03-magic-chat-confirmacion.png" alt="From's Magic AI creating content in real time" loading="lazy">
+    </div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#7c3aed;">Artificial Intelligence</div>
+      <div class="card-title">The notes app with AI that actually understands what you need</div>
+      <div class="card-desc">Magic AI knows your full tree and acts on it. Not a generic chatbot — an assistant with access to your real information.</div>
       <div class="card-meta">May 28, 2026 · 6 min</div>
     </div>
   </a>
@@ -163,10 +328,34 @@
       <img src="/img/blog/filtros-busqueda/02-panel-filtros-chips.png" alt="From's filter panel with quick-select chips" loading="lazy">
     </div>
     <div class="card-body">
-      <div class="card-tag">Search</div>
+      <div class="card-tag" style="color:#16a34a;">Search</div>
       <div class="card-title">Find any note in seconds: From's filter system</div>
       <div class="card-desc">Three levels of filters: one-click chips, natural language, and saved panels. Any note is less than 5 seconds away.</div>
       <div class="card-meta">May 28, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/from-vs-notion.html" class="card">
+    <div class="card-img">
+      <img src="/img/blog/from-vs-notion/02-filtros-chips.png" alt="From's filter system compared to Notion" loading="lazy">
+    </div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#9333ea;">Comparison</div>
+      <div class="card-title">From vs Notion: which is better for personal knowledge management in 2026</div>
+      <div class="card-desc">An honest comparison: capture speed, integrated AI, filters, and pricing. Which one is right for personal use?</div>
+      <div class="card-meta">May 28, 2026 · 8 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/personal-project-management.html" class="card">
+    <div class="card-img">
+      <img src="/img/blog/gestion-proyectos/01-tareas-filtradas.png" alt="Personal project management in From with nested tasks" loading="lazy">
+    </div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Projects</div>
+      <div class="card-title">Personal project management: forget Trello and use From</div>
+      <div class="card-desc">Natural hierarchy, unlimited subtasks, and smart filters to see only what matters at any given moment.</div>
+      <div class="card-meta">May 28, 2026 · 6 min</div>
     </div>
   </a>
 
@@ -175,10 +364,22 @@
       <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="From on web, Mac, and iPhone with real-time sync" loading="lazy">
     </div>
     <div class="card-body">
-      <div class="card-tag">Cross-platform</div>
+      <div class="card-tag" style="color:#9333ea;">Cross-platform</div>
       <div class="card-title">One app for Mac, iPhone, and web: how From keeps everything in sync</div>
       <div class="card-desc">Start on Mac, review on iPhone, continue in the browser. Sync is instant and requires no configuration.</div>
       <div class="card-meta">May 28, 2026 · 5 min</div>
+    </div>
+  </a>
+
+  <a href="/blog/en/meeting-notes.html" class="card">
+    <div class="card-img">
+      <img src="/img/blog/tomar-notas-reunion/01-nota-reunion.png" alt="Structured meeting note in From with tasks and context" loading="lazy">
+    </div>
+    <div class="card-body">
+      <div class="card-tag" style="color:#2563eb;">Work</div>
+      <div class="card-title">How to take meeting notes you actually use afterwards</div>
+      <div class="card-desc">The system for capturing, organizing, and acting on the decisions from every meeting. Notes connected to the tasks they generate.</div>
+      <div class="card-meta">May 28, 2026 · 6 min</div>
     </div>
   </a>
 

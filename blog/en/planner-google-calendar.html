@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planner + Google Calendar: your tasks and events in one timeline — From Blog</title>
+  <meta name="description" content="Drag a task to a time slot. Google Calendar events appear alongside. One view, zero friction.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #2563eb; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #2563eb; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #eff6ff, #fff); border: 2px solid #2563eb; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #2563eb; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #1d4ed8; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">advanced</span>
+  <h1>Planner + Google Calendar: your tasks and events in one timeline</h1>
+  <p class="subtitle">Drag a task to a time slot. Google Calendar events appear alongside. One view, zero friction.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<p>Most productivity setups require you to live in two places at once: a task manager for your to-dos, and a calendar for your meetings. You spend more time reconciling the two than actually working. From eliminates that gap.</p>
+
+<p>With the Planner connected to Google Calendar, your tasks and events share a single timeline. You see exactly what you've committed to and what you need to do — without switching apps, copying events, or doing mental math about where your time went.</p>
+
+<h2>The problem with split systems</h2>
+
+<p>Here's a typical scenario: you have a 10am call, a 2pm review, and somewhere in between you need to finish a deliverable, respond to three people, and prep for tomorrow. Your calendar shows the calls. Your task list shows the rest. Neither tells you whether the day is actually feasible.</p>
+
+<p>The result is constant context-switching. You check the calendar, switch to tasks, try to mentally slot things in, and end up either over-committing or forgetting something important. The system doesn't reflect reality — you're managing two separate models of your day.</p>
+
+<div class="callout"><p><strong>From treats time as structure, not metadata.</strong> When you drag a task to a time block, you're not adding a due date — you're making a commitment on your actual schedule.</p></div>
+
+<h2>How From's Planner works</h2>
+
+<p>The Planner is a time-based view inside From. It displays your day in slots, and your Google Calendar events appear directly inside it — no import, no sync delay. When a meeting lands on your calendar, From already knows about it.</p>
+
+<div class="img-block"><img src="/img/screenshots/planificador.png" alt="From Planner view"><p class="img-caption">The Planner shows your time blocks and calendar events side by side in a single view.</p></div>
+
+<p>On top of that, any task you've created in From — whether it's a simple to-do, a node inside a project, or something you captured in a quick note — can be dragged directly onto a time slot. The moment you do, From knows you've scheduled that task for that time. No due date field. No form to fill out. Just drag.</p>
+
+<h3>What gets shown in the Planner</h3>
+
+<ul>
+  <li><strong>Google Calendar events:</strong> All your connected calendars appear in the timeline automatically. Meetings, reminders, personal blocks — everything.</li>
+  <li><strong>Scheduled tasks:</strong> Any task you drag to a slot becomes a time block on your Planner.</li>
+  <li><strong>Today's note:</strong> The daily note surfaces alongside your schedule so context is always at hand.</li>
+</ul>
+
+<h2>Using the Planner in practice</h2>
+
+<p>Start your morning in the Planner. You'll immediately see your meetings for the day — the 9:30 standup, the 12:00 lunch block, the 4pm client call. Between those events are open slots. That's your real available time.</p>
+
+<p>Now pull up your task list and start dragging. The deliverable that needs to go out before noon? Drag it to the 10:30 slot. The email you've been putting off? Slot it at 11:15. You're not estimating — you're deciding.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-planificador.png" alt="Planner detail view with tasks and events"><p class="img-caption">Tasks sit next to calendar events. Drag to schedule. The day becomes concrete.</p></div>
+
+<p>From doesn't require you to set durations manually. You decide how much space each task takes by how you place it. The visual layout gives you immediate feedback: if you've stacked five tasks into two hours of real time, you'll see it — and you can adjust before the day starts.</p>
+
+<h3>Working with calendar events</h3>
+
+<p>Calendar events from Google appear as blocks in the timeline. From reads them as real commitments — not decorations. If you have a 90-minute meeting, that space is visually occupied and From treats it as unavailable for task placement.</p>
+
+<p>This matters because From understands your actual capacity. It's not showing you a list and hoping you do the math. The Planner makes the math visual and immediate.</p>
+
+<h3>Tasks that move with you</h3>
+
+<p>If something doesn't get done, you don't lose it. Unfinished tasks stay in your list. You can drag them to tomorrow's Planner, reschedule them, or leave them pending — From keeps track without requiring you to manually clean up a schedule that didn't survive contact with reality.</p>
+
+<div class="callout"><p><strong>One view is enough.</strong> You don't need a separate app for scheduling. The Planner is where your notes, tasks, and calendar converge — and From keeps them in sync automatically.</p></div>
+
+<h2>Setting it up</h2>
+
+<ol>
+  <li>Connect your Google account from From's settings. Calendar events will appear in the Planner immediately.</li>
+  <li>Open the Planner from the sidebar or the keyboard shortcut.</li>
+  <li>Find a task in your list or in any note — From recognizes tasks anywhere in your outline.</li>
+  <li>Drag the task to the time slot where you want to work on it.</li>
+  <li>Repeat until your available time is accounted for.</li>
+</ol>
+
+<p>That's the full setup. No configuration files. No integration layers. From detects your calendar, understands your tasks, and gives you one place to plan.</p>
+
+<h2>The result</h2>
+
+<p>Planning your day stops being a chore and becomes a two-minute ritual. You open the Planner, see what's fixed, fill the gaps with what matters, and start. From handles the connection between your commitments and your intentions — so you don't have to.</p>
+
+<p>Stop managing two systems. Let From hold both, and get back to doing the actual work.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

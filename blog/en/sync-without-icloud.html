@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant sync without iCloud: web, Mac and iPhone always up to date — From Blog</title>
+  <meta name="description" content="Write on Mac, open iPhone: it's there. From's private server. No iCloud Drive dependency.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #9333ea; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #9333ea; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fdf4ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #9333ea; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fdf4ff; border-left: 4px solid #9333ea; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fdf4ff, #fff); border: 2px solid #9333ea; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #9333ea; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #7e22ce; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">reliability</span>
+  <h1>Instant sync without iCloud: web, Mac and iPhone always up to date</h1>
+  <p class="subtitle">Write on Mac, open iPhone: it's there. From runs on its own private server — no iCloud Drive dependency, no sync delays, no conflicts.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>The sync problem nobody talks about</h2>
+
+<p>You write a task on your Mac. You grab your iPhone on the way out. The note isn't there. You try iCloud Drive. It's syncing. You wait. Or worse — it conflicts, splits, or silently overwrites what you wrote.</p>
+
+<p>This is the invisible tax of apps that rely on iCloud Drive for sync. It works fine when everything is calm. It breaks exactly when you need it most: on the go, switching devices fast, working in a spotty connection.</p>
+
+<p><strong>From doesn't use iCloud Drive.</strong> It runs on its own private server. That changes everything.</p>
+
+<h2>Why iCloud Drive sync fails when it matters</h2>
+
+<p>iCloud Drive is a file synchronization layer. It was built to sync documents between Apple devices — not to power real-time, structured data across platforms. When apps bolt their database on top of it, they inherit its limitations:</p>
+
+<ul>
+  <li>Sync delays of seconds or minutes in poor network conditions</li>
+  <li>Merge conflicts when you edit the same note on two devices</li>
+  <li>No access from non-Apple platforms (no web, no Windows, no browser)</li>
+  <li>Total dependency on Apple infrastructure for something that has nothing to do with Apple</li>
+</ul>
+
+<p>Most people accept this as the cost of doing business with a notes app. From rejects that assumption entirely.</p>
+
+<div class="callout"><p>From stores your data on its own server. Every write is committed server-side immediately. Every read pulls the latest state. There is no file. There is no sync queue. There is just your data, always current.</p></div>
+
+<h2>How From's private server works</h2>
+
+<p>When you type something in From — a task, a note, a quick capture — it's sent directly to From's server. Not to a local file waiting to be uploaded. Not to a sync queue hoping for a good connection. Directly.</p>
+
+<p>When you open From on your iPhone a second later, it fetches the latest state from the same server. No waiting. No "syncing…" spinner. No conflicts.</p>
+
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="From outliner node tree"><p class="img-caption">Everything you write in From lives in a node tree — accessible instantly from any device</p></div>
+
+<p>This is the same architecture used by tools like Notion, Linear, and Figma. The difference is that From brings it to a personal productivity tool — lightweight, fast, and opinionated about structure.</p>
+
+<h3>What this means in practice</h3>
+
+<ol>
+  <li><strong>Write on Mac, open iPhone:</strong> it's there. Instantly. No waiting.</li>
+  <li><strong>Open the web app from any browser:</strong> same state, same data, same structure.</li>
+  <li><strong>Work offline:</strong> From queues changes locally and commits them the moment you reconnect. No data loss.</li>
+  <li><strong>No Apple lock-in:</strong> your data doesn't live inside iCloud Drive. From works on any device with a browser.</li>
+</ol>
+
+<h2>Cross-platform without compromise</h2>
+
+<p>From runs natively on Mac (as a Tauri app), on iPhone (native iOS), and on any browser as a full web app. All three talk to the same server. All three show the same data.</p>
+
+<div class="img-block"><img src="/img/screenshots/sidebar-atajos.png" alt="From sidebar with shortcuts"><p class="img-caption">The same structure — contexts, shortcuts, filters — available across Mac, web, and iPhone</p></div>
+
+<p>This matters for how you actually work. Your morning planning session on Mac. A quick capture on iPhone during a meeting. Reviewing your task list on the web from a client's office. From handles all three without you thinking about sync at all.</p>
+
+<p>That's not a feature. That's the baseline you should expect from any tool that calls itself reliable.</p>
+
+<h3>No configuration required</h3>
+
+<p>There's no "enable sync" setting in From. There's no iCloud toggle, no Dropbox folder to point at, no local database to back up. You log in. Your data is there. You log in on another device. Your data is there too.</p>
+
+<p>From knows where your data is because it manages it directly. You don't have to.</p>
+
+<div class="callout"><p>From doesn't ask you to manage sync. It manages it for you, invisibly, so you can focus on what you were actually trying to write.</p></div>
+
+<h2>What about privacy and ownership?</h2>
+
+<p>Running on a private server raises a fair question: who controls the data? From is built around a clear principle — your notes, tasks, and structure are yours. The server is infrastructure, not a walled garden.</p>
+
+<p>From doesn't sell your data, doesn't analyze it for advertising, and doesn't share it with third parties. The server exists to make sync reliable. Nothing more.</p>
+
+<h2>The apps that get this right</h2>
+
+<p>The best productivity tools don't make you think about where your data lives. You just open them and they work. From is built on that principle from the ground up — not as an afterthought bolted onto a file-sync layer.</p>
+
+<p>If you've been frustrated by notes that arrive late, tasks that conflict, or the general unreliability of iCloud Drive sync in productivity apps, From is worth trying. Write on your Mac. Pick up your iPhone. It's there. That's it.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

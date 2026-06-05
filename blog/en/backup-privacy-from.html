@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automatic backup every 2 hours: your notes never disappear — From Blog</title>
+  <meta name="description" content="Local Markdown backup every 2h. Zero lock-in. Your data is yours even if you cancel.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #9333ea; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #9333ea; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fdf4ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #9333ea; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fdf4ff; border-left: 4px solid #9333ea; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fdf4ff, #fff); border: 2px solid #9333ea; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #9333ea; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #7e22ce; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">trust</span>
+  <h1>Automatic backup every 2 hours: your notes never disappear</h1>
+  <p class="subtitle">Local Markdown backup every 2h. Zero lock-in. Your data is yours even if you cancel.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<p>You write a note at 9 AM. You work through the morning. By noon, the app crashes, your subscription lapses, or you simply decide to switch tools. How much of that morning's work survives?</p>
+
+<p>With most productivity apps, the honest answer is: you don't know. Your data lives in some proprietary format on a remote server you don't control. If the service disappears, your notes go with it.</p>
+
+<p>From was built on a different assumption: <strong>your notes belong to you, always</strong> — not just when you're a paying customer.</p>
+
+<h2>The problem with cloud-only note apps</h2>
+
+<p>The productivity app market is full of tools that store your data in opaque formats, behind paywalls, with no clear export path. You build years of knowledge inside them, and then you're stuck. Switching costs are artificially high — not because your data is complex, but because the format is locked.</p>
+
+<p>There's a secondary problem too: cloud sync can fail silently. A conflict here, a missed sync there. You don't notice until you open a note on your phone and half of it is missing.</p>
+
+<p>These aren't edge cases. They're the everyday reality of tools that prioritize retention over reliability.</p>
+
+<div class="callout"><p>From runs automatic local backups every 2 hours. No setup required. No cloud dependency. Your notes are saved to plain Markdown files on your own machine — readable by any text editor on the planet.</p></div>
+
+<h2>How From's backup system works</h2>
+
+<p>Every 2 hours, From silently writes a full backup of your notes to a local folder in Markdown format. This happens in the background, without interrupting your work, without asking for confirmation.</p>
+
+<p>The result is a folder of plain <code>.md</code> files — your notes, your tasks, your daily entries — structured and readable without From installed. Open them in Obsidian, Notion, Bear, iA Writer, or a basic text editor. They're yours.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="From task detail view"><p class="img-caption">Your notes and tasks in From — backed up locally every 2 hours in plain Markdown.</p></div>
+
+<p>This approach solves two problems at once:</p>
+
+<ul>
+  <li><strong>Data loss from app failures.</strong> If From crashes or your device loses power, you're at most 2 hours behind — not months.</li>
+  <li><strong>Vendor lock-in.</strong> Because backups are plain Markdown, you can leave From at any moment without losing access to your work history.</li>
+</ul>
+
+<h2>Zero lock-in is a feature, not a marketing line</h2>
+
+<p>Most apps say they support export. What they mean is: buried in settings, there's a button that generates a zip file of questionable completeness, in a format that doesn't map cleanly to anything else.</p>
+
+<p>From's approach is different. The backup isn't a one-time export — it's an ongoing, automatic process. Every 2 hours, without action on your part, your data exists in a format that any tool can read.</p>
+
+<p>If you cancel your From subscription today, your Markdown files don't disappear. They're already on your machine. You already have them.</p>
+
+<div class="callout"><p>Zero lock-in means: the decision to stay with From is always yours to make freely, without fear of losing years of work.</p></div>
+
+<h2>Your daily notes, always safe</h2>
+
+<p>From's daily note system — where you capture what's happening today, what you're thinking, what you need to do — is one of the most-used features. It's also one of the most personal. Losing a day's worth of capture is frustrating in a way that's hard to recover from.</p>
+
+<div class="img-block"><img src="/img/screenshots/diario-hoy.png" alt="From daily note view"><p class="img-caption">Today's note in From — every daily entry is included in the automatic local backup.</p></div>
+
+<p>With automatic backups running every 2 hours, your daily notes are protected throughout the day. Even if something goes wrong at 5 PM, your 3 PM snapshot is already sitting safely on your disk.</p>
+
+<h2>How to make sure your backups are running</h2>
+
+<p>From handles this automatically from the moment you install the Mac app. But there are a few things worth knowing:</p>
+
+<ol>
+  <li><strong>Check your backup folder location.</strong> From saves backups to a configurable local path. Open Settings to confirm where files are being written.</li>
+  <li><strong>Back up your backup folder.</strong> If you use Time Machine or any local backup tool, make sure it covers the From backup folder. This gives you a complete historical archive.</li>
+  <li><strong>Spot-check occasionally.</strong> Once a month, open your backup folder and confirm recent files are there. It takes 30 seconds and removes all doubt.</li>
+</ol>
+
+<h2>What Markdown backup actually means for your workflow</h2>
+
+<p>Markdown is a nearly universal format. It's human-readable without any software at all — open a <code>.md</code> file in any text editor and you'll see exactly what's in it. Headings, lists, tasks, links — all visible as plain text.</p>
+
+<p>This means your From backup isn't just a safety net. It's a portable archive of your thinking, your projects, your daily notes — in a format that will be readable in 20 years regardless of what happens to any particular app.</p>
+
+<p>That's a fundamentally different promise than "we store your data in the cloud."</p>
+
+<h2>Conclusion</h2>
+
+<p>Automatic local backup every 2 hours isn't a premium feature or a technical footnote — it's a baseline commitment to treating your data with respect. From backs up silently, continuously, and in a format that gives you complete independence. Start using From knowing that your notes are yours from day one, no matter what happens next.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

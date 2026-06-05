@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sync instantáneo sin iCloud: web, Mac e iPhone siempre al día — From Blog</title>
+  <meta name="description" content="Write on Mac, open iPhone: it's there. From's private server. No iCloud Drive dependency.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #9333ea; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #9333ea; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fdf4ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #9333ea; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fdf4ff; border-left: 4px solid #9333ea; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fdf4ff, #fff); border: 2px solid #9333ea; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #9333ea; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #7e22ce; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Privacidad</span>
+  <h1>Sync instantáneo sin iCloud: web, Mac e iPhone siempre al día</h1>
+  <p class="subtitle">Write on Mac, open iPhone: it's there. From's private server. No iCloud Drive dependency.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>Escribes en Mac. Lo abres en iPhone. Está ahí.</h2>
+
+<p>No hay botón de sincronizar. No hay spinner girando mientras esperas. No hay mensaje de "actualizando desde iCloud". Lo escribiste hace diez segundos en el Mac y ya está en el iPhone, exactamente como lo dejaste.</p>
+
+<p>Así funciona From. Y no es magia: es infraestructura propia.</p>
+
+<h2>El problema con iCloud Drive</h2>
+
+<p>Si has usado cualquier app de notas o productividad basada en archivos, conoces el dolor. iCloud Drive sincroniza cuando puede: cuando hay buena conexión, cuando el sistema decide que es momento, cuando los astros se alinean. A veces tarda segundos. A veces minutos. A veces te encuentras editando una versión antigua sin saber que hay otra más reciente en otro dispositivo.</p>
+
+<p>El problema de fondo es que iCloud Drive está diseñado para archivos, no para datos estructurados en tiempo real. Las apps que lo usan como backend están limitadas por esas restricciones desde el primer día.</p>
+
+<p>From no usa iCloud Drive. Tiene su propio servidor.</p>
+
+<h2>Servidor privado: qué significa en la práctica</h2>
+
+<p>Cuando guardas algo en From —una nota, una tarea, un cambio en el outliner— ese cambio va directamente al servidor de From. Cuando abres From en otro dispositivo, el servidor ya tiene esa información. No hay intermediarios, no hay sistemas de archivos locales que sincronizar, no hay dependencia del estado de iCloud en ese momento concreto.</p>
+
+<div class="callout"><p><strong>El resultado es predecible:</strong> lo que escribes en un dispositivo aparece en los demás en segundos, sin importar si tienes iCloud activado, sin importar el estado de tu cuenta de Apple.</p></div>
+
+<p>Esto tiene implicaciones concretas para el trabajo real:</p>
+
+<ul>
+  <li>Capturas una idea en el iPhone durante el desayuno. Al sentarte en el Mac, está ahí.</li>
+  <li>Reorganizas el árbol de notas en web desde el trabajo. En casa, en el Mac, ves la estructura actualizada.</li>
+  <li>Un colega con acceso compartido modifica algo. Lo ves reflejado sin tener que recargar manualmente.</li>
+</ul>
+
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Árbol de nodos en From"><p class="img-caption">El árbol de nodos se mantiene sincronizado en todos los dispositivos en tiempo real.</p></div>
+
+<h2>La sincronización como parte de la experiencia, no como feature separada</h2>
+
+<p>En la mayoría de apps, la sincronización es algo que ocurre "por detrás" y que notas cuando falla. En From, está integrada en el núcleo del producto. No es un sistema añadido; es la razón por la que la app existe de la forma en que existe.</p>
+
+<p>From es un outliner web-first con apps nativas para Mac e iPhone. Las tres versiones comparten el mismo backend. No hay archivos locales que reconciliar. No hay conflictos de versión. No hay decisiones que tomar sobre qué copia es la "buena".</p>
+
+<h3>Web, Mac e iPhone: tres formas de acceder al mismo lugar</h3>
+
+<p>Puedes usar From desde el navegador en cualquier ordenador, desde la app nativa en Mac y desde el iPhone. Las tres son ventanas al mismo árbol de información. Cambias algo en una y las otras lo reflejan.</p>
+
+<p>Esto tiene un valor específico si trabajas en varios contextos a lo largo del día: en casa, en la oficina, en movilidad. No necesitas pensar en qué dispositivo tiene la versión más actualizada. Siempre es la misma versión.</p>
+
+<div class="img-block"><img src="/img/screenshots/diario-hoy.png" alt="Nota del día en From"><p class="img-caption">La nota de hoy siempre actualizada, sin importar desde dónde la hayas editado por última vez.</p></div>
+
+<h2>Cómo usarlo sin pensar en ello</h2>
+
+<p>La sincronización de From no requiere configuración. Creas una cuenta, instalas la app en los dispositivos que uses y listo. A partir de ahí, From se encarga de mantener todo alineado.</p>
+
+<ol>
+  <li><strong>Instala From en Mac e iPhone</strong> (y accede desde web cuando estés en otro ordenador).</li>
+  <li><strong>Usa el dispositivo que tengas a mano</strong> en cada momento. No hay jerarquía entre plataformas.</li>
+  <li><strong>Confía en que está ahí.</strong> No necesitas buscar botones de sincronizar ni revisar si iCloud está funcionando.</li>
+</ol>
+
+<p>El objetivo de From no es que pienses en cómo funciona la sincronización. Es que no tengas que pensar en ella en absoluto.</p>
+
+<h2>Por qué importa la confianza en la herramienta</h2>
+
+<p>Hay una diferencia entre usar una herramienta y confiar en una herramienta. Cuando confías en que tus datos están donde los dejaste, dejas de dedicar energía mental a verificarlo. Dejas de tener esa pequeña duda al abrir una nota: "¿es la última versión?".</p>
+
+<p>Esa fricción acumulada —pequeña en cada instancia, significativa a lo largo del tiempo— es lo que From elimina con su arquitectura de servidor propio. No es un detalle técnico menor. Es la base sobre la que se construye una herramienta de productividad en la que puedas confiar de verdad.</p>
+
+<div class="callout"><p>From no depende de iCloud Drive. Tiene su propio servidor. Tus notas, tareas y árbol de trabajo están siempre sincronizados entre web, Mac e iPhone. Sin esperas. Sin fricción. Sin pensar en ello.</p></div>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

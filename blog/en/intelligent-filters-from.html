@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligent filters: find anything in seconds — From Blog</title>
+  <meta name="description" content="Filter by type, date, context, status. Combine chips. Save as a panel.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #16a34a; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #16a34a; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #16a34a; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f0fdf4, #fff); border: 2px solid #16a34a; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #16a34a; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #15803d; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Filters</span>
+  <h1>Intelligent filters: find anything in seconds</h1>
+  <p class="subtitle">Filter by type, date, context, and status. Stack chips to narrow results instantly. Save any combination as a persistent panel in your sidebar.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>The search problem no one talks about</h2>
+
+<p>You know the information is in there. You added it. Three weeks ago, or maybe two days ago — somewhere in your notes, your tasks, your projects. So you scroll. You search by keyword. You get seventeen results, most of them irrelevant. You spend more time looking than the task was worth.</p>
+
+<p>Most tools treat search as a last resort. From treats it as a first-class feature — one that understands what kind of thing you're looking for, not just what word you typed.</p>
+
+<h2>Filters that think in categories, not keywords</h2>
+
+<p>From knows the difference between a task and a note. Between something due today and something with no date. Between items inside a specific project context and items floating at the top level. That structural awareness is what makes its filter system genuinely fast.</p>
+
+<p>Instead of a search bar that returns a wall of matches, From gives you <strong>chips</strong> — small, composable filters you stack together. Each chip narrows the view. You're not searching; you're describing what you want to see.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/filtro-chips.png" alt="Filter chips in From">
+  <p class="img-caption">Stack chips to narrow results instantly — type, date, context, status.</p>
+</div>
+
+<p>The available dimensions cover the full shape of your work:</p>
+
+<ul>
+  <li><strong>Type</strong> — show only tasks, only notes, only events, only resources</li>
+  <li><strong>Date</strong> — today, this week, overdue, has a date, no date</li>
+  <li><strong>Status</strong> — pending, done, in progress</li>
+  <li><strong>Context</strong> — items tagged to a specific area of your life or work</li>
+</ul>
+
+<p>Each of these works alone. They also work together. A filter for <em>tasks + overdue + work context</em> gives you exactly what's blocking you right now — nothing else.</p>
+
+<h2>Concrete examples: what this actually looks like</h2>
+
+<p>Here's where the difference becomes clear. Say it's Monday morning and you want to triage everything that slipped last week. You tap <strong>Type: Task</strong>, then <strong>Date: Overdue</strong>. Done. That's your triage list, pulled instantly from everything inside From — regardless of which project it lives under.</p>
+
+<p>Or you're preparing for a meeting and need to pull up all the notes and resources you've tagged to a specific client context. Tap <strong>Context: [client name]</strong>, then <strong>Type: Note</strong>. Two chips. A clean, relevant view in under three seconds.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-filtro.png" alt="Detailed filter view in From">
+  <p class="img-caption">Filters apply across your entire tree — across projects, dates, and contexts.</p>
+</div>
+
+<p>Or maybe you're reviewing what you actually got done this week. <strong>Status: Done</strong> + <strong>Date: This week</strong>. That's your weekly review, no manual log required.</p>
+
+<div class="callout"><p>From doesn't just search text — it filters by structure. That's the difference between a tool that finds words and a tool that finds things.</p></div>
+
+<h2>Save any filter as a panel</h2>
+
+<p>The part that turns a useful feature into a workflow change: <strong>any filter combination you build can be saved as a panel</strong>.</p>
+
+<p>A panel is a persistent view that lives in your sidebar. You name it, you pin it, and it's always there — already filtered, already focused, no setup required each time you open it.</p>
+
+<p>This is how you build your actual workspace in From. Not by organizing folders or moving things around — by defining the views that matter to your specific work and making them permanent.</p>
+
+<ul>
+  <li>A <strong>Today panel</strong>: tasks + pending + due today</li>
+  <li>A <strong>Deep work panel</strong>: tasks + a specific context + no date (unscheduled backlog)</li>
+  <li>A <strong>Weekly review panel</strong>: tasks + done + this week</li>
+  <li>A <strong>Resource library panel</strong>: type resource + a project context</li>
+</ul>
+
+<p>Each one is a lens. You're not managing different files or views manually. From holds everything in one tree, and panels let you see it exactly the way you need to at any given moment.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/sidebar-atajos.png" alt="Sidebar with saved panels in From">
+  <p class="img-caption">Saved panels in the sidebar — each one a filter combination you use regularly.</p>
+</div>
+
+<h2>How to use it: the practical workflow</h2>
+
+<ol>
+  <li><strong>Start with the chip bar.</strong> Every view in From has access to the filter chips at the top. Click any chip to activate it. Click another to combine. The view updates instantly.</li>
+  <li><strong>Stack chips until the result is exactly what you want.</strong> There's no search button, no loading. The filter is live.</li>
+  <li><strong>When you find a combination you use often, save it.</strong> Give it a name that matches the workflow it serves. It becomes a panel in your sidebar.</li>
+  <li><strong>Open panels directly.</strong> Your saved views are one click away. You don't rebuild the filter each time.</li>
+</ol>
+
+<p>The entire system is designed to be low-friction. You're not configuring a database view or writing a filter query. You're picking from a small set of dimensions that map directly to how you already think about your work.</p>
+
+<h2>No search anxiety</h2>
+
+<p>The practical outcome of all this is that you stop second-guessing where you put things. From's filters work across your entire tree — across every project, every context, every date range — in a single, instant operation. You stop scrolling and start trusting the system. That's the difference between a tool you use and a tool you rely on.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

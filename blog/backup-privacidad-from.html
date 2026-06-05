@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup automático cada 2 horas: tus notas nunca desaparecen — From Blog</title>
+  <meta name="description" content="Local Markdown backup every 2h. Zero lock-in. Your data is yours even if you cancel.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #9333ea; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #9333ea; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #fdf4ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #9333ea; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #fdf4ff; border-left: 4px solid #9333ea; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #fdf4ff, #fff); border: 2px solid #9333ea; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #9333ea; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #7e22ce; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Privacidad</span>
+  <h1>Backup automático cada 2 horas: tus notas nunca desaparecen</h1>
+  <p class="subtitle">Local Markdown backup every 2h. Zero lock-in. Your data is yours even if you cancel.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>Tus notas son tuyas. Siempre.</h2>
+
+<p>Hay una pregunta que muy poca gente se hace hasta que es demasiado tarde: ¿qué pasa con mis notas si el servicio cierra, si cancelo la suscripción o si simplemente algo falla? La mayoría de herramientas de productividad guardan tus datos en sus servidores, en formatos propietarios, sin darte acceso real a lo que has escrito durante meses o años.</p>
+
+<p>From toma una posición diferente desde el principio: <strong>tus datos son tuyos</strong>. No como promesa de marketing, sino como comportamiento automático del sistema. Cada dos horas, From exporta una copia local de todo tu contenido en formato Markdown legible. Sin que tengas que hacer nada.</p>
+
+<h2>El problema del lock-in invisible</h2>
+
+<p>El lock-in en herramientas de productividad es silencioso. No lo notas hasta que quieres salir. Has escrito cientos de notas, has estructurado proyectos enteros, has capturado ideas durante meses. Y de repente descubres que exportar todo eso es un proceso manual, tedioso, o que el formato resultante es tan específico que no sirve para nada fuera de esa herramienta.</p>
+
+<p>Notion exporta en un formato fragmentado. Roam genera JSON que hay que procesar. Evernote tiene su propio formato legacy. El resultado práctico es el mismo: <strong>acabas atrapado</strong> aunque no quieras estarlo.</p>
+
+<div class="callout"><p>El backup automático de From no es una función secundaria. Es una declaración de principios: puedes irte cuando quieras, con todo lo que es tuyo.</p></div>
+
+<h2>Cómo funciona el backup en From</h2>
+
+<p>From guarda automáticamente una copia local de tu contenido en formato Markdown cada dos horas. Archivos de texto plano, legibles con cualquier editor, exportables a cualquier sistema. Sin pasos manuales, sin tener que recordar hacerlo.</p>
+
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Árbol de nodos en From"><p class="img-caption">Toda tu estructura jerárquica de nodos se exporta fiel a como la tienes organizada.</p></div>
+
+<p>Lo que se exporta incluye:</p>
+
+<ul>
+  <li><strong>Todas tus notas</strong>, con su estructura de nodos y jerarquía completa</li>
+  <li><strong>Tareas y estados</strong> (pendiente, completada, pospuesta)</li>
+  <li><strong>Eventos y fechas</strong> asociados a cada nodo</li>
+  <li><strong>Recursos y enlaces</strong> que hayas guardado</li>
+  <li><strong>Contextos y etiquetas</strong> que uses para organizar tu sistema</li>
+</ul>
+
+<p>El resultado es una carpeta de archivos Markdown que puedes abrir con Obsidian, iA Writer, Bear, o cualquier editor de texto. Tu sistema de productividad completo, en el formato más portable que existe.</p>
+
+<h2>Por qué Markdown y no otro formato</h2>
+
+<p>Markdown es texto plano con convenciones simples para dar formato. Lleva décadas siendo el estándar para escribir en la web, en herramientas de documentación, en repositorios de código. No pertenece a ninguna empresa y cualquier aplicación puede leerlo.</p>
+
+<p>Elegir Markdown para el backup no es un detalle técnico menor. Es la diferencia entre un backup que realmente puedes usar y uno que existe solo para decir que existe.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="Detalle de tareas en From"><p class="img-caption">Tus tareas, con todos sus estados y jerarquías, forman parte del backup automático.</p></div>
+
+<h2>Qué significa "zero lock-in" en la práctica</h2>
+
+<p>Imagina que decides cancelar tu cuenta de From mañana. ¿Qué pierdes? Nada que sea tuyo. Tienes la última copia local generada hace menos de dos horas. Tienes todos tus archivos en Markdown, organizados, legibles. Puedes abrirlos directamente en cualquier otra herramienta o simplemente guardarlos como referencia.</p>
+
+<p>No hay formulario de exportación que rellenar. No hay proceso de recuperación. No hay emails de soporte. Solo abres la carpeta y están ahí.</p>
+
+<div class="callout"><p>Zero lock-in significa que la confianza que depositas en From no está basada en no poder irte. Está basada en que quieres quedarte.</p></div>
+
+<h2>La confianza como infraestructura</h2>
+
+<p>Hay herramientas que ganan usuarios atrapándolos. Y hay herramientas que ganan usuarios porque funcionan bien y generan confianza real. From apuesta por lo segundo.</p>
+
+<p>El backup automático cada dos horas es parte de una filosofía más amplia: From sabe lo que tienes, lo detecta, lo organiza, y lo protege. Cuando capturas una tarea o escribes una nota, From entiende el contexto sin que tengas que clasificar nada manualmente. Y cuando llega el momento de hacer una copia de seguridad, lo hace solo, en segundo plano, sin interrumpirte.</p>
+
+<p>Eso es lo que significa que una herramienta te entienda: no solo procesar lo que escribes, sino anticiparse a lo que necesitas, incluida la tranquilidad de saber que tus datos están seguros.</p>
+
+<h2>Cómo verificar tu backup</h2>
+
+<p>Puedes consultar la ubicación de tu carpeta de backup desde las preferencias de From. El proceso es directo:</p>
+
+<ol>
+  <li>Abre From en Mac</li>
+  <li>Ve a Preferencias → Backup local</li>
+  <li>Verás la ruta de la carpeta y la fecha del último backup generado</li>
+  <li>Puedes abrir la carpeta directamente desde ahí para ver los archivos</li>
+</ol>
+
+<p>No necesitas activar nada. Por defecto, el backup automático está siempre activo.</p>
+
+<h2>Conclusión</h2>
+
+<p>Si usas una herramienta para gestionar tu trabajo y tu vida, mereces saber que lo que escribes es tuyo de verdad. From hace eso concreto: copia local cada dos horas, Markdown portable, sin fricción. Es la forma más honesta de ganarse la confianza de alguien.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

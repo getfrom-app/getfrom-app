@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Record a meeting, From transcribes it and extracts the tasks — From Blog</title>
+  <meta name="description" content="Hold R, speak, release. Or use the long recorder for meetings. Summary, transcript and tasks — automatic.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #2563eb; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #2563eb; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #eff6ff, #fff); border: 2px solid #2563eb; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #2563eb; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #1d4ed8; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">advanced</span>
+  <h1>Record a meeting, From transcribes it and extracts the tasks</h1>
+  <p class="subtitle">Hold R, speak, release. Or use the long recorder for meetings. Summary, transcript and tasks — automatic.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>The meeting ended. Now what?</h2>
+
+<p>You just finished a 45-minute call. You have a rough idea of what was decided, a few things scribbled in a notebook, and three browser tabs you opened during the conversation. Somewhere in there are four action items — you're just not sure whose they are or when they're due.</p>
+
+<p>This is the gap between every meeting and every project: the moment where information exists only in your head, and the cost of losing it is measured in dropped tasks and forgotten commitments.</p>
+
+<p>From closes that gap. Not with a complicated workflow. With a single key.</p>
+
+<h2>Two ways to record — same result</h2>
+
+<p>From gives you two recording modes depending on the situation:</p>
+
+<ul>
+  <li><strong>Quick voice note:</strong> Hold <strong>R</strong>, speak, release. From transcribes what you said and places it directly in your outline as a note or task.</li>
+  <li><strong>Long recorder:</strong> For meetings, calls, or anything extended. Start it, let the conversation run, stop it when you're done.</li>
+</ul>
+
+<p>Both modes produce the same output: a transcript, a summary, and extracted tasks — all structured and ready to work with inside From.</p>
+
+<div class="callout"><p>You don't configure anything. You don't pick a language or a model or a format. From handles all of that. Your only job is to speak.</p></div>
+
+<h2>What From actually does with your recording</h2>
+
+<p>When you stop recording, From doesn't just dump a wall of text into a note. It processes the audio and produces three distinct outputs:</p>
+
+<ol>
+  <li><strong>Transcript:</strong> A clean, readable version of everything said. Useful if you need to search for a specific quote or share what was discussed.</li>
+  <li><strong>Summary:</strong> A concise overview of the key points. One paragraph, no noise.</li>
+  <li><strong>Tasks:</strong> Extracted action items, already formatted as tasks inside From. If someone said "I'll send you the proposal by Friday," that becomes a task.</li>
+</ol>
+
+<p>From doesn't just transcribe — it understands context. It knows the difference between a decision made, a question raised, and a commitment given. The tasks it extracts are the ones that actually need to happen, not every sentence that sounded vaguely actionable.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-magic.png" alt="From Magic responding with extracted content">
+  <p class="img-caption">From surfaces the information that matters — tasks, summaries, structured notes.</p>
+</div>
+
+<h2>Where the tasks land</h2>
+
+<p>Once From extracts your tasks, they appear in your outline as regular From nodes — which means they're immediately part of your system. You can:</p>
+
+<ul>
+  <li>Assign them a date and have them show up in the Planner</li>
+  <li>Nest them under the project or context they belong to</li>
+  <li>Filter them with the pending tasks view to see only what needs action</li>
+  <li>Mark them done as you work through them</li>
+</ul>
+
+<p>There's no import step, no copy-paste, no reformatting. The meeting ends, the tasks exist. That's the complete workflow.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-tareas.png" alt="Task detail view in From">
+  <p class="img-caption">Extracted tasks slot into your existing structure — no friction, no extra steps.</p>
+</div>
+
+<h2>The quick recorder for everyday moments</h2>
+
+<p>You don't need a full meeting to get value from From's voice recording. The quick recorder — hold <strong>R</strong>, speak, release — is designed for the moments between meetings:</p>
+
+<ul>
+  <li>A thought while walking to your next call</li>
+  <li>A task someone mentioned in the hallway</li>
+  <li>A decision you made alone that needs to be captured before it evaporates</li>
+</ul>
+
+<p>Hold R, say "remind me to follow up with Carlos about the invoice next Tuesday," release. From transcribes it, detects the task, sets the date. You keep walking.</p>
+
+<h2>The long recorder for structured sessions</h2>
+
+<p>For meetings, client calls, or team syncs, the long recorder is the right tool. Start it before the call begins. Stop it when you're done. From processes the full audio and returns a structured summary with tasks pulled from the entire conversation — not just the last thing that was said.</p>
+
+<p>This is particularly useful for calls where commitments are spread throughout: someone says they'll handle something at minute 5, someone else volunteers at minute 32, and you make a decision together at minute 41. From tracks all of it.</p>
+
+<div class="callout"><p>The long recorder works well even in imperfect audio conditions — background noise, multiple speakers, overlapping voices. From focuses on extracting meaning, not just words.</p></div>
+
+<h2>Integrated, not bolted on</h2>
+
+<p>Most tools that offer meeting transcription exist as separate apps you have to open, configure, and then copy information out of. From's recorder is built into the same space where you plan your day, manage your projects, and write your notes.</p>
+
+<p>When a task comes out of a recording, it lives next to your other tasks. When a summary is generated, it becomes a note in your outline — searchable, nestable, linkable. Nothing exists in a silo.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-planificador.png" alt="From Planner showing scheduled tasks">
+  <p class="img-caption">Tasks extracted from meetings show up in the Planner alongside everything else you need to do.</p>
+</div>
+
+<h2>How to use it — the short version</h2>
+
+<ol>
+  <li>For quick captures: hold <strong>R</strong>, speak naturally, release.</li>
+  <li>For meetings: open the long recorder before the call, stop it after.</li>
+  <li>Review the extracted tasks, adjust dates or contexts if needed.</li>
+  <li>Done.</li>
+</ol>
+
+<h2>The meeting doesn't end when the call drops</h2>
+
+<p>The real end of a meeting is when all its tasks are captured and assigned. From makes that moment happen automatically — so you can close the tab, open the next one, and trust that nothing slipped through. Speak once. From handles the rest.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

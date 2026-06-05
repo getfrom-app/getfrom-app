@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planificador + Google Calendar: tus tareas y eventos en un solo timeline — From Blog</title>
+  <meta name="description" content="Drag a task to a time slot. Google Calendar events appear alongside. One view, zero friction.">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #2563eb; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #2563eb; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #eff6ff, #fff); border: 2px solid #2563eb; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #2563eb; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #1d4ed8; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">From</a>
+  <a href="/blog/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Avanzado</span>
+  <h1>Planificador + Google Calendar: tus tareas y eventos en un solo timeline</h1>
+  <p class="subtitle">Drag a task to a time slot. Google Calendar events appear alongside. One view, zero friction.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min de lectura</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>El problema de tener tus tareas en un sitio y tu calendario en otro</h2>
+
+<p>Abres la app de tareas. Revisas qué tienes pendiente. Luego cambias a Google Calendar para ver a qué hora tienes reuniones. Vuelves a las tareas. Intentas encajar una cosa con la otra mentalmente. Calculas cuánto tiempo libre tienes. Y todo eso antes de haber hecho nada.</p>
+
+<p>Este salto constante entre herramientas no es un problema menor. Es uno de los mayores generadores de fricción en la jornada de trabajo. No porque las aplicaciones sean malas, sino porque están separadas cuando tu realidad no lo está: tus tareas y tus eventos conviven en el mismo día, compiten por el mismo tiempo y necesitan verse juntos.</p>
+
+<p>From resuelve esto con una sola vista.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/planificador.png" alt="Planificador de From con tareas y eventos">
+  <p class="img-caption">El planificador de From muestra tus tareas y eventos de Google Calendar en un único timeline.</p>
+</div>
+
+<h2>Un timeline unificado: tareas y eventos juntos</h2>
+
+<p>El planificador de From muestra tu día como un timeline continuo. A la izquierda, los bloques de tiempo. A la derecha, lo que tienes pendiente. Los eventos de Google Calendar aparecen integrados directamente en esa línea de tiempo, sin pasos adicionales, sin sincronización manual.</p>
+
+<p>From se conecta con tu Google Calendar y sabe qué tienes programado. Cuando abres el planificador, ya están ahí: la reunión de las 10, el bloqueo de foco de las 12, la llamada de las 16. No como un widget aparte. Como parte del mismo espacio donde gestionas tus tareas.</p>
+
+<p>El resultado es que puedes ver de un vistazo cuánto tiempo real tienes disponible en el día. No el tiempo teórico entre tarea y tarea, sino el tiempo entre reunión y reunión, con tus compromisos reales ya bloqueados.</p>
+
+<h2>Arrastra una tarea al hueco que tiene sentido</h2>
+
+<p>Cuando tienes el timeline completo delante, planificar el día se convierte en algo físico y directo. Ves que tienes 90 minutos libres entre las 9 y las 10:30. Arrastras la tarea que requiere concentración a ese bloque. Sin abrir calendarios. Sin hacer cálculos. Sin copiar y pegar.</p>
+
+<p>From detecta la duración estimada de cada tarea si la has especificado, y la coloca en el slot de forma coherente. Si una tarea tiene fecha y hora asignadas, aparece fijada en su posición. Si no las tiene, está disponible en tu lista para que la muevas cuando tengas claro dónde encaja.</p>
+
+<div class="callout">
+  <p><strong>Clave:</strong> No estás gestionando un calendario por un lado y una lista de tareas por otro. Estás gestionando tu día entero desde un único sitio, con toda la información visible al mismo tiempo.</p>
+</div>
+
+<h2>Cómo usarlo en la práctica</h2>
+
+<h3>1. Conecta Google Calendar</h3>
+<p>Desde los ajustes de From, vincula tu cuenta de Google Calendar. En segundos, todos tus eventos empiezan a aparecer en el planificador. No necesitas migrar nada ni duplicar información: tus eventos siguen viviendo en Google Calendar, From simplemente los muestra donde los necesitas.</p>
+
+<h3>2. Revisa el día al empezar la jornada</h3>
+<p>Abre el planificador por la mañana. Tienes una foto completa de tu día: reuniones bloqueadas, huecos disponibles y tareas pendientes. Ese momento de revisión, que antes requería abrir dos o tres aplicaciones, ahora ocurre en segundos y en un solo lugar.</p>
+
+<h3>3. Planifica arrastrando</h3>
+<p>Toma las tareas de tu lista y asígnalas a los bloques libres del timeline. From entiende qué está ocupado y qué no. Puedes ajustar el orden, mover cosas a otro hueco o simplemente dejar tareas sin asignar para el día siguiente si el tiempo no da.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/detalle-planificador.png" alt="Detalle del planificador con tarea asignada a un bloque horario">
+  <p class="img-caption">Arrastra cualquier tarea a un bloque de tiempo. From muestra tus eventos de Google Calendar integrados en el mismo espacio.</p>
+</div>
+
+<h3>4. Trabaja desde el planificador</h3>
+<p>No necesitas saltar a otra vista para ejecutar. Desde el planificador puedes marcar tareas como completadas, abrirlas para ver sus notas o subtareas, o ajustar su posición si el día cambia. El plan y la ejecución ocurren en el mismo espacio.</p>
+
+<h2>Por qué esto cambia la forma de planificar</h2>
+
+<p>La mayoría de las herramientas de productividad asumen que puedes planificar en abstracto: una lista de tareas desconectada del tiempo real que tienes. Pero la planificación real requiere ver los dos planos a la vez: qué tienes que hacer y cuándo tienes hueco para hacerlo.</p>
+
+<p>From parte de esa realidad. Sabe que una tarea sin un hueco en el que encajar es solo un deseo. Por eso integra los eventos de calendario directamente en el planificador: para que puedas tomar decisiones con información real, no estimaciones.</p>
+
+<ul>
+  <li><strong>Sin duplicar información:</strong> los eventos siguen en Google Calendar, las tareas en From.</li>
+  <li><strong>Sin cambiar de app:</strong> todo lo que necesitas para planificar el día está en una sola pantalla.</li>
+  <li><strong>Sin fricción:</strong> arrastras, asignas y ejecutas desde el mismo sitio.</li>
+</ul>
+
+<h2>Conclusión</h2>
+
+<p>Separar tareas y calendario es una fuente de fricción que se acumula día a día. From elimina esa separación sin pedirte que cambies cómo usas Google Calendar: tus eventos siguen donde están, pero ahora conviven con tus tareas en un timeline único que te da una visión real de tu día. Planificar deja de ser un ejercicio mental para convertirse en algo directo, visual y sin pasos de más.</p>
+  <div class="cta-box">
+    <h3>Prueba From gratis</h3>
+    <p>Empieza en 60 segundos. Sin tarjeta.</p>
+    <a href="/app/register">Crear cuenta gratis →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>

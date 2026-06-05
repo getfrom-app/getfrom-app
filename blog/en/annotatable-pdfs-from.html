@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Annotatable PDFs integrated into your note tree — From Blog</title>
+  <meta name="description" content="Drag a PDF to a node. Annotate with pen, highlight or text. Everything synced across devices.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #2563eb; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #2563eb; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .blog-body code { background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 15px; font-family: monospace; }
+    .img-block { margin: 40px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .img-block img { width: 100%; display: block; }
+    .img-caption { font-size: 13px; color: #999; text-align: center; margin-top: 10px; }
+    .callout { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #eff6ff, #fff); border: 2px solid #2563eb; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #2563eb; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #1d4ed8; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/en/" class="logo">From</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">advanced</span>
+  <h1>Annotatable PDFs integrated into your note tree</h1>
+  <p class="subtitle">Drag a PDF to a node. Annotate with pen, highlight or text. Everything synced across devices.</p>
+  <div class="blog-meta">
+    <span>From Blog</span>
+    <span>·</span>
+    <span>5 junio 2026</span>
+    <span>·</span>
+    <span>5 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+<h2>PDFs belong in your notes — not in a separate app</h2>
+
+<p>Most tools force you to choose: either you work in your note tree, or you open a PDF reader. You annotate in one place, write in another, and then spend time trying to connect the dots. The context lives in two different apps, and something always gets lost.</p>
+
+<p>From collapses that gap. A PDF is just another node in your tree — you drag it in, it sits exactly where it makes sense, and you annotate it without ever leaving your workspace.</p>
+
+<h2>The real problem with PDF workflows</h2>
+
+<p>Think about how you actually use PDFs. A contract arrives. A research paper you need to review. A client brief. A scanned receipt. You open it in Preview or Acrobat, add some highlights, maybe type a note somewhere — and then that annotation lives inside the PDF file, disconnected from everything else you know about that project.</p>
+
+<p>Later, you're looking at your notes on that project and you can't remember what you highlighted. You have to open the file again, scroll through it, find the annotation. That's friction that compounds over time.</p>
+
+<div class="callout"><p>The annotation is only useful when it's next to the context that makes it meaningful. From keeps both in the same place.</p></div>
+
+<h2>How From handles PDFs</h2>
+
+<p>Drag a PDF to any node in your tree. From recognizes it, stores it, and displays it inline — no export step, no separate viewer, no app switching. The PDF becomes a child node of whatever context you dropped it into.</p>
+
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Node tree in From"><p class="img-caption">PDFs attach directly to the node where they matter — inside the project, meeting, or topic they belong to.</p></div>
+
+<p>From supports three annotation modes:</p>
+
+<ul>
+  <li><strong>Pen</strong> — freehand drawing directly on the page. Useful for circling figures, marking diagrams, or leaving visual emphasis that text can't capture.</li>
+  <li><strong>Highlight</strong> — select text and highlight it. From preserves the highlight as part of the document, not as a separate layer that breaks when the PDF changes.</li>
+  <li><strong>Text annotations</strong> — add typed notes anchored to specific parts of the page. These stay positioned relative to the content, not floating somewhere arbitrary.</li>
+</ul>
+
+<p>Everything syncs across your devices. Open the same node on your Mac in the morning and on your iPad in the afternoon — the annotations are there, exactly as you left them.</p>
+
+<h2>Concrete example: reviewing a client contract</h2>
+
+<p>You receive a contract for a new project. Instead of opening it in a PDF reader and keeping notes somewhere else, you drag it directly into the node you already have for that client. It lands as a child item, right below your meeting notes and above the task list you created for onboarding.</p>
+
+<p>You highlight the payment terms clause. You draw a question mark next to a liability paragraph. You add a text note: <em>"Ask legal to review this before signing."</em></p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="Task detail in From"><p class="img-caption">Annotations connect directly to the tasks and notes in the same project node — no context switching.</p></div>
+
+<p>Now that annotation isn't just a mark on a file. It's part of your client context. When you come back to that node next week, you see the contract, the annotation, the task you created based on it, and the meeting notes — all in one place, all in order.</p>
+
+<h2>How to use annotatable PDFs in From</h2>
+
+<ol>
+  <li><strong>Drag the PDF</strong> to the node where it belongs. From accepts any standard PDF file.</li>
+  <li><strong>Open the PDF view</strong> by clicking the node. The document renders inline in the panel.</li>
+  <li><strong>Select your annotation tool</strong> from the toolbar: pen, highlight, or text.</li>
+  <li><strong>Annotate directly</strong> on the page. All marks are saved automatically.</li>
+  <li><strong>Return to your tree</strong> — the node shows a visual indicator that the PDF has annotations, so you know at a glance that there's content worth reviewing.</li>
+</ol>
+
+<p>No save button. No export step. From handles persistence automatically, the same way it handles everything else in your tree.</p>
+
+<h2>Why this matters for advanced users</h2>
+
+<p>If you work with documents regularly — contracts, research, proposals, reports — the cost of context switching is real and it compounds. Every time you leave your note environment to open a PDF reader, you break your flow. Every annotation that lives inside a file instead of inside your project costs you time when you need to find it again.</p>
+
+<p>From's approach is to treat PDFs as first-class nodes, not attachments. The document is part of your thinking, not a file you reference externally. That's a meaningful difference in how you actually work.</p>
+
+<div class="callout"><p>Annotations are only valuable when they're retrievable in context. From makes that automatic — not something you have to organize manually.</p></div>
+
+<h2>Conclusion</h2>
+
+<p>Annotatable PDFs in From eliminate the split between where you keep documents and where you do your thinking. Drag the file in, annotate it where it lives, and let From keep everything synced and in place. Your PDF is part of your tree — and that's exactly where it should be.</p>
+  <div class="cta-box">
+    <h3>Try From for free</h3>
+    <p>Start in 60 seconds. No credit card required.</p>
+    <a href="/app/register">Create free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 From · <a href="/en/privacy.html">Privacy</a> · <a href="/en/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>
