@@ -743,8 +743,23 @@ export function CapturaRapidaPane() {
         Cómo instalar la extensión de Chrome →
       </a>
 
+      {/* Claude (MCP) */}
+      <SectionTitle>Claude (MCP)</SectionTitle>
+      <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,.06), rgba(88,86,214,.06))', border: '1px solid rgba(124,58,237,.18)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '.05em', marginBottom: 6 }}>DIRECTORIO OFICIAL · ANTHROPIC</div>
+        <div className="st-row-hint" style={{ marginBottom: 0 }}>
+          From está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>. No necesitas tokens ni configuración manual. Abre Claude → Conectores → busca <strong style={{ color: 'var(--text)' }}>From</strong> y conecta con un clic.
+        </div>
+      </div>
+      <div className="st-row-hint" style={{ marginBottom: 8 }}>
+        Funciona en Claude Desktop, Claude.ai y Claude Code. Guarda notas, crea tareas y consulta tu vault desde cualquier conversación.
+      </div>
+      <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
+        Ver instrucciones completas →
+      </a>
+
       <div className="st-row-hint" style={{ marginTop: 16, fontSize: 11 }}>
-        El mismo token sirve para Raycast, Chrome y la extensión de Claude (MCP). Regenerarlo invalida el anterior.
+        El token de API sirve para Raycast, Chrome y Claude Code (CLI avanzado). Regenerarlo invalida el anterior.
       </div>
     </div>
   )
