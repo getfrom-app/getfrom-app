@@ -66,25 +66,32 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     setTimeout(() => taRef.current?.focus(), 30)
   }
   function clearActivePrompt() {
+    // Al quitarlo a mano: no re-activarlo automáticamente (ni por contexto ni por
+    // palabra clave) mientras el usuario siga en este nodo / escribiendo.
+    if (chat.activePromptId) dismissedSuggestRef.current.add(chat.activePromptId)
     chat.setActivePrompt(null)
-    // Si lo quitamos manualmente, no re-activar el auto en este nodo
     autoPromptHandledRef.current = currentNodeId ?? '∅'
   }
 
   const activePromptNode = chat.activePromptId ? store.getNode(chat.activePromptId) : null
 
-  // Sugerencia reactiva (modo 3): mientras escribes, si el texto encaja claramente
-  // con el nombre de un prompt y no hay ninguno activo, se ofrece discretamente.
-  const suggestPromptNode = (() => {
-    if (slashQuery !== null || activePromptNode || input.trim().length < 10) return null
+  // Auto-activación por palabra clave (modo 3): mientras escribes, si el texto encaja
+  // con el nombre de un prompt y no hay ninguno activo, se activa solo. Quitable con ×.
+  useEffect(() => {
+    if (slashQuery !== null) return
+    if (chat.activePromptId) return
+    if (input.trim().length < 6) return
     const lower = input.toLowerCase()
     for (const p of allPrompts) {
       if (dismissedSuggestRef.current.has(p.id)) continue
       const words = (p.text || '').toLowerCase().split(/\s+/).filter(w => w.length >= 4)
-      if (words.length > 0 && words.some(w => lower.includes(w))) return p
+      if (words.length > 0 && words.some(w => lower.includes(w))) {
+        chat.setActivePrompt(p.id, true)
+        break
+      }
     }
-    return null
-  })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input])
 
   // Refs para evitar closures stale
   const inputRef        = useRef('')
@@ -437,17 +444,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
             <button onClick={clearActivePrompt} title={t('prompts.removeActive', 'Quitar')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 1 }}>×</button>
           </div>
-        </div>
-      )}
-
-      {/* Sugerencia reactiva (modo 3) */}
-      {suggestPromptNode && !activePromptNode && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px 0', fontSize: 11.5, color: 'var(--text-secondary)' }}>
-          <span>{promptIcon(suggestPromptNode)} {t('prompts.suggestUse', '¿Usar prompt')} «{suggestPromptNode.text}»?</span>
-          <button onClick={() => chat.setActivePrompt(suggestPromptNode.id, false)}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '2px 9px', fontSize: 11, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>{t('common.yes', 'Sí')}</button>
-          <button onClick={() => { dismissedSuggestRef.current.add(suggestPromptNode.id); setInput(input + ' ') }}
-            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: 11, cursor: 'pointer' }}>{t('common.no', 'No')}</button>
         </div>
       )}
 
