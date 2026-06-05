@@ -15,6 +15,7 @@ import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { listPrompts, findAutoPromptForNode } from '../../utils/promptsHelper'
 
 interface Props {
   onClose: () => void
@@ -30,6 +31,60 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const [isRecording, setIsRecording] = useState(false)
   // nodeId override desde el onboarding — prevalece sobre currentNodeId del prop
   const onboardingNodeIdRef = useRef<string | undefined>(undefined)
+
+  // ── Sistema de Prompts ────────────────────────────────────────────────────
+  const allPrompts = listPrompts()
+  // Slash: el popup de prompts se abre cuando el input empieza por '/'
+  const slashQuery = input.startsWith('/') ? input.slice(1).toLowerCase() : null
+  const slashMatches = slashQuery !== null
+    ? allPrompts.filter(p => (p.text || '').toLowerCase().includes(slashQuery))
+    : []
+  const [slashIdx, setSlashIdx] = useState(0)
+  useEffect(() => { setSlashIdx(0) }, [slashQuery])
+  // Sugerencias (modo 3) descartadas por el usuario — no volver a proponerlas.
+  const dismissedSuggestRef = useRef<Set<string>>(new Set())
+  // Evita re-activar automáticamente un prompt que el usuario quitó a mano.
+  const autoPromptHandledRef = useRef<string | undefined>(undefined)
+
+  // Activación contextual (modo 2): al abrir Magic sobre un nodo que encaja con
+  // un prompt (diario, tarea, contexto), se activa solo si no hay otro activo.
+  useEffect(() => {
+    if (chat.messages.length > 0) return            // conversación en curso — no tocar
+    if (chat.activePromptId && !chat.activePromptAuto) return  // el usuario eligió uno
+    const key = currentNodeId ?? '∅'
+    if (autoPromptHandledRef.current === key) return
+    autoPromptHandledRef.current = key
+    const auto = findAutoPromptForNode(currentNodeId)
+    if (auto) chat.setActivePrompt(auto.id, true)
+    else if (chat.activePromptAuto) chat.setActivePrompt(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNodeId, chat.messages.length])
+
+  function activatePromptFromSlash(id: string) {
+    chat.setActivePrompt(id, false)
+    setInput('')
+    setTimeout(() => taRef.current?.focus(), 30)
+  }
+  function clearActivePrompt() {
+    chat.setActivePrompt(null)
+    // Si lo quitamos manualmente, no re-activar el auto en este nodo
+    autoPromptHandledRef.current = currentNodeId ?? '∅'
+  }
+
+  const activePromptNode = chat.activePromptId ? store.getNode(chat.activePromptId) : null
+
+  // Sugerencia reactiva (modo 3): mientras escribes, si el texto encaja claramente
+  // con el nombre de un prompt y no hay ninguno activo, se ofrece discretamente.
+  const suggestPromptNode = (() => {
+    if (slashQuery !== null || activePromptNode || input.trim().length < 10) return null
+    const lower = input.toLowerCase()
+    for (const p of allPrompts) {
+      if (dismissedSuggestRef.current.has(p.id)) continue
+      const words = (p.text || '').toLowerCase().split(/\s+/).filter(w => w.length >= 4)
+      if (words.length > 0 && words.some(w => lower.includes(w))) return p
+    }
+    return null
+  })()
 
   // Refs para evitar closures stale
   const inputRef        = useRef('')
@@ -342,6 +397,18 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   }
 
   function onTextareaKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Popup de slash abierto → navegar/activar prompts
+    if (slashQuery !== null && slashMatches.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setSlashIdx(i => (i + 1) % slashMatches.length); return }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setSlashIdx(i => (i - 1 + slashMatches.length) % slashMatches.length); return }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        const picked = slashMatches[slashIdx] ?? slashMatches[0]
+        if (picked) activatePromptFromSlash(picked.id)
+        return
+      }
+      if (e.key === 'Escape') { e.preventDefault(); setInput(''); return }
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend(input)
@@ -353,9 +420,59 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // hasExpanded jamás vuelve a false → tamaño fijo, sin redimensionado por mensaje.
   const isCompact = !hasExpanded && !isRecording
 
+  function promptIcon(p: { extraData?: string | null }): string {
+    try { return JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { return '⚡' }
+  }
+
   // Bloque compartido: input + botones (usado tanto en compacto como en expandido)
   const inputBlock = (
-    <div className="magic-chat-input-wrap">
+    <div className="magic-chat-input-wrap" style={{ position: 'relative' }}>
+      {/* Chip del prompt activo */}
+      {activePromptNode && slashQuery === null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 0' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, color: 'var(--accent)', fontWeight: 500, maxWidth: '100%' }}>
+            <span>{promptIcon(activePromptNode)}</span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activePromptNode.text}</span>
+            {chat.activePromptAuto && <span style={{ fontSize: 9.5, opacity: 0.65 }}>{t('prompts.autoTag', 'auto')}</span>}
+            <button onClick={clearActivePrompt} title={t('prompts.removeActive', 'Quitar')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 1 }}>×</button>
+          </div>
+        </div>
+      )}
+
+      {/* Sugerencia reactiva (modo 3) */}
+      {suggestPromptNode && !activePromptNode && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px 0', fontSize: 11.5, color: 'var(--text-secondary)' }}>
+          <span>{promptIcon(suggestPromptNode)} {t('prompts.suggestUse', '¿Usar prompt')} «{suggestPromptNode.text}»?</span>
+          <button onClick={() => chat.setActivePrompt(suggestPromptNode.id, false)}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '2px 9px', fontSize: 11, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>{t('common.yes', 'Sí')}</button>
+          <button onClick={() => { dismissedSuggestRef.current.add(suggestPromptNode.id); setInput(input + ' ') }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: 11, cursor: 'pointer' }}>{t('common.no', 'No')}</button>
+        </div>
+      )}
+
+      {/* Popup de slash: lista de prompts */}
+      {slashQuery !== null && (
+        <div style={{ position: 'absolute', bottom: '100%', left: 8, right: 8, marginBottom: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 12px 40px rgba(0,0,0,0.18)', overflow: 'hidden', zIndex: 30, maxHeight: 260, overflowY: 'auto' }}>
+          <div style={{ padding: '6px 12px', fontSize: 10.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+            {t('prompts.slashTitle', 'Activar un prompt')}
+          </div>
+          {slashMatches.length === 0 ? (
+            <div style={{ padding: '8px 12px', fontSize: 12.5, color: 'var(--text-tertiary)' }}>{t('prompts.slashNone', 'Sin prompts. Créalos en el panel de Prompts.')}</div>
+          ) : slashMatches.map((p, i) => (
+            <button
+              key={p.id}
+              onMouseDown={e => { e.preventDefault(); activatePromptFromSlash(p.id) }}
+              onMouseEnter={() => setSlashIdx(i)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: i === slashIdx ? 'var(--bg-hover)' : 'transparent', border: 'none', padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
+            >
+              <span style={{ flexShrink: 0 }}>{promptIcon(p)}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.text}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="magic-chat-node-input">
         <textarea
           ref={taRef}

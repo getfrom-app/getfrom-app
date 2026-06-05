@@ -19,6 +19,7 @@ import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { resolvePrompt } from '../utils/promptsHelper'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 
@@ -107,8 +108,21 @@ class AIChatStore {
   /** Acciones de escritura pendientes de confirmación. null = nada pendiente. */
   pendingActions: PendingAction[] | null = null
 
+  /** Prompt activo (sistema de Prompts). null = ninguno. Se inyecta en buildPayload. */
+  activePromptId: string | null = null
+  /** true si el prompt activo se activó automáticamente (por contexto), no por el usuario. */
+  activePromptAuto = false
+
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
+
+  /** Activa (o desactiva con null) un prompt para la conversación actual. */
+  setActivePrompt(promptId: string | null, auto = false) {
+    if (this.activePromptId === promptId && this.activePromptAuto === auto) return
+    this.activePromptId = promptId
+    this.activePromptAuto = auto
+    this.notify()
+  }
 
   subscribe(fn: Listener): () => void {
     this.listeners.add(fn)
@@ -790,8 +804,21 @@ class AIChatStore {
     const nowStr = new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     const dateBlock = `Fecha y hora actual: ${nowStr}`
 
+    // ── Prompt activo (sistema de Prompts) ─────────────────────────────────
+    // Instrucción de máxima prioridad: define cómo debe comportarse Magic en
+    // esta conversación. Se antepone al perfil. Las variables {{…}} se resuelven.
+    let activePromptBlock: string | undefined
+    if (this.activePromptId) {
+      try {
+        const resolved = resolvePrompt(this.activePromptId, { currentNodeId })
+        if (resolved.trim()) {
+          activePromptBlock = `INSTRUCCIÓN ACTIVA (sigue esto por encima de todo en esta conversación):\n${resolved.trim()}`
+        }
+      } catch { /* prompt inválido — ignorar */ }
+    }
+
     // Combinar con el perfil de usuario
-    const combinedProfile = [dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    const combinedProfile = [activePromptBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,

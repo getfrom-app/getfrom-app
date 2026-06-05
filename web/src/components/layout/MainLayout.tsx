@@ -9,7 +9,14 @@ import { getHotkeyKey } from '../../store/hotkeysStore'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
 import ContextListPanel, { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
+import ContextPropertiesPanel from '../panels/ContextPropertiesPanel'
+import PromptListPanel from '../panels/PromptListPanel'
+import PromptPropertiesPanel from '../panels/PromptPropertiesPanel'
+import AgentListPanel from '../panels/AgentListPanel'
+import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
+import { aiChatStore } from '../../store/aiChatStore'
+import { ensurePromptsNode } from '../../utils/promptsHelper'
 
 import WFHomeView from '../views/WFHomeView'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
@@ -54,165 +61,10 @@ import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
-import { extractContextKnowledge } from '../../api/autoClassify'
-
-// Cooldown para extractContextKnowledge en ContextNodePanel — sin extraData
-const ctxPanelKnowledgeTimestamps = new Map<string, number>()
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { ensureAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
-
-// ── Panel derecho: nodo contexto — outliner editable completo (lazy) ─────────
-const Outliner = lazy(() => import('../outliner/Outliner'))
-
-function ContextNodePanel({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
-  const s = useStore()
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const node = s.getNode(nodeId)
-  const [ctxKnowledgeLoading, setCtxKnowledgeLoading] = useState(false)
-
-  // Detectar si el nodo es un contexto (hijo directo de 🧠 Contexto)
-  // Excluye el nodo de perfil (_perfilIA === '1') — tiene su propio mecanismo de aprendizaje (extractUserKnowledge)
-  // NOTA: node?.extraData se elimina de deps — _perfilIA se escribe una sola vez y no cambia.
-  const isContextNode = useMemo(() => {
-    if (!node) return false
-    try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return false } catch { /* ignore */ }
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
-    if (!tagsRoot) return false
-    return node.parentId === tagsRoot.id
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id, node?.parentId])
-
-  // ── Auto-actualizar "Lo que From sabe" al abrir un contexto en el panel derecho ──
-  // Misma lógica que NodeView: si han pasado >30 min desde la última actualización, dispara en background.
-  // NOTA: usamos ctxPanelKnowledgeTimestamps (Map local) en lugar de extraData del nodo para
-  // evitar que la actualización del nodo re-dispare este efecto (bucle infinito de renders).
-  useEffect(() => {
-    if (!node || !isContextNode || ctxKnowledgeLoading) return
-    const lastUpdated = ctxPanelKnowledgeTimestamps.get(node.id) ?? 0
-    const thirtyMinutes = 30 * 60 * 1000
-    if (Date.now() - lastUpdated < thirtyMinutes) return
-    const timer = setTimeout(async () => {
-      if (!node || ctxKnowledgeLoading) return
-      setCtxKnowledgeLoading(true)
-      try {
-        const directChildren = store.children(node.id).filter(n => !n.deletedAt)
-        const samples: string[] = []
-        for (const child of directChildren) {
-          if (child.text?.trim()) samples.push(child.text.trim())
-          if (samples.length >= 60) break
-          for (const grandchild of store.children(child.id).filter(n => !n.deletedAt)) {
-            if (grandchild.text?.trim()) samples.push(grandchild.text.trim())
-            if (samples.length >= 60) break
-          }
-        }
-        if (samples.length === 0) { setCtxKnowledgeLoading(false); return }
-        const knowledge = await extractContextKnowledge(node.text || '', '', samples)
-        const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
-        const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
-        let knowledgeNodeId: string
-        if (existingKnowledgeNode) {
-          knowledgeNodeId = existingKnowledgeNode.id
-        } else {
-          const allSibs = store.children(node.id).filter(n => !n.deletedAt)
-          const maxOrder = allSibs.length > 0 ? Math.max(...allSibs.map(c => c.siblingOrder)) : 0
-          const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: node.id, siblingOrder: maxOrder + 1000 })
-          knowledgeNodeId = newNode.id
-        }
-        const SUBNODE_TEXTS: Record<string, string> = {
-          keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
-          people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
-          topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
-        }
-        const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
-        let order = 1000
-        for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
-          const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
-          const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
-          if (existing) {
-            store.updateNode(existing.id, { text })
-          } else {
-            store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
-          }
-          order += 1000
-        }
-        // Guardar timestamp en Map local (sin tocar extraData — evita re-renders)
-        ctxPanelKnowledgeTimestamps.set(node.id, Date.now())
-      } catch { /* silenciar errores */ }
-      setCtxKnowledgeLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id, isContextNode])
-
-  // Color del contexto desde extraData (_tagColor) con fallback al accent
-  const ctxColor = useMemo(() => {
-    if (!node) return 'var(--accent)'
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      return ed._tagColor || 'var(--accent)'
-    } catch { return 'var(--accent)' }
-  }, [node?.id, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!node) return null
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Cabecera: ← Atrás · Título · ↗ Abrir */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '0 8px', height: 40, flexShrink: 0,
-        borderBottom: '1px solid var(--border-subtle, rgba(0,0,0,0.08))',
-      }}>
-        {/* Botón ← Atrás */}
-        <button
-          onClick={onClose}
-          title={t('ctxPanel.back')}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12, color: 'var(--text-secondary)',
-            padding: '3px 6px', borderRadius: 4, flexShrink: 0,
-            display: 'flex', alignItems: 'center', gap: 3,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-        >
-          {t('ctxPanel.back')}
-        </button>
-        {/* Título con color del contexto */}
-        <span style={{
-          flex: 1, fontSize: 13, fontWeight: 500,
-          color: ctxColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {node.text}
-        </span>
-        {/* Botón ↗ Abrir */}
-        <button
-          onClick={() => { navigate(`/node/${nodeId}`); onClose() }}
-          title={t('ctxPanel.open')}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12, color: 'var(--text-secondary)',
-            padding: '3px 6px', borderRadius: 4, flexShrink: 0,
-            display: 'flex', alignItems: 'center', gap: 3,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-        >
-          {t('ctxPanel.open')}
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M7 1h4v4M11 1L6 6M2 4H1v7h7v-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      </div>
-      {/* Outliner con misma fuente (13px), mismo padding-top que el filtro */}
-      <div className="ctx-panel-outliner" style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingTop: 8 }}>
-        <Outliner parentId={nodeId} autoFocusEmpty={true} />
-      </div>
-    </div>
-  )
-}
 
 export default function MainLayout() {
   const { t } = useTranslation()
@@ -236,15 +88,22 @@ export default function MainLayout() {
   }
 
   // Columna derecha — siempre visible, nunca se cierra
-  // 'context' es un panel especial (nodo concreto); el resto son los paneles ciclables.
-  type RightPanel = 'magic' | 'filter' | 'planner' | 'context' | 'context-list' | 'recorder'
-  type CyclablePanel = 'recorder' | 'context-list' | 'magic' | 'filter' | 'planner'
+  // Paneles de detalle ('context'/'prompt'/'agent') muestran las propiedades de un
+  // nodo concreto (su contenido se abre en la ventana central). El resto son ciclables.
+  type RightPanel = 'magic' | 'filter' | 'planner' | 'recorder'
+    | 'context-list' | 'context'
+    | 'prompt-list'  | 'prompt'
+    | 'agent-list'   | 'agent'
+  type CyclablePanel = 'recorder' | 'context-list' | 'prompt-list' | 'agent-list' | 'magic' | 'filter' | 'planner'
   // PANEL_ORDER coincide con el orden de los iconos en WFTopBar (izquierda → derecha)
-  const PANEL_ORDER: CyclablePanel[] = ['recorder', 'context-list', 'magic', 'filter', 'planner']
+  const PANEL_ORDER: CyclablePanel[] = ['recorder', 'context-list', 'prompt-list', 'agent-list', 'magic', 'filter', 'planner']
   // El panel Filtrar es el de inicio SIEMPRE al abrir la app — escribir una
   // palabra basta para buscar, y tiene filtros y favoritos a mano.
   const [rightPanel, setRightPanel] = useState<RightPanel>('filter')
+  // contextNodeId: solo para el filtro especial "Sin clasificar" (se pasa a WFHomeView).
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
+  // detailNodeId: nodo cuyas propiedades se muestran en los paneles context/prompt/agent.
+  const [detailNodeId, setDetailNodeId] = useState<string | null>(null)
   const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
   // Guard para evitar race condition entre efecto "aplicar pending" y efecto "limpiar al navegar":
   // cuando el efecto de pending consume el ref y setea contextNodeId, este flag evita que el
@@ -256,7 +115,7 @@ export default function MainLayout() {
   function togglePanel(p: CyclablePanel) { setRightPanel(p) }
 
   function handleSelectContext(nodeId: string) {
-    // Filtro especial "Sin clasificar" — no abre panel de nodo, solo aplica filtro
+    // Filtro especial "Sin clasificar" — no abre panel de detalle, solo aplica filtro
     if (nodeId === UNCLASSIFIED_FILTER_ID) {
       if (contextNodeId === UNCLASSIFIED_FILTER_ID) {
         setContextNodeId(null)
@@ -273,22 +132,29 @@ export default function MainLayout() {
       }
       return
     }
+    // Patrón unificado: abrir el contenido en la ventana central + propiedades a la derecha
+    openDetail('context', nodeId)
+  }
 
-    if (contextNodeId === nodeId && rightPanel === 'context') {
-      // Segundo clic → volver a la lista de contextos
-      setRightPanel('context-list')
-      setContextNodeId(null)
-      return
-    }
-    const normPath = location.pathname.replace(/^\/app\/?/, '') || '/'
-    const atHome = normPath === '/' || normPath === ''
-    if (!atHome) {
-      pendingContextRef.current = nodeId
-      navigate('/')
-    } else {
-      setContextNodeId(nodeId)
-      setRightPanel('context')
-    }
+  // ── Patrón unificado Contextos / Prompts / Agentes ────────────────────────
+  // Clic en un item → su contenido se abre en la ventana central (/node/:id) y la
+  // columna derecha muestra sus propiedades con un botón ← para volver a la lista.
+  function openDetail(kind: 'context' | 'prompt' | 'agent', nodeId: string) {
+    setContextNodeId(null)            // limpiar el filtro "Sin clasificar" si estaba activo
+    setDetailNodeId(nodeId)
+    setRightPanel(kind)
+    navigate(`/node/${nodeId}`)
+  }
+  function backToList(kind: 'context' | 'prompt' | 'agent') {
+    setDetailNodeId(null)
+    setRightPanel(kind === 'context' ? 'context-list' : kind === 'prompt' ? 'prompt-list' : 'agent-list')
+  }
+  function handleSelectPrompt(nodeId: string) { openDetail('prompt', nodeId) }
+  function handleSelectAgent(nodeId: string)  { openDetail('agent', nodeId) }
+  // Probar un prompt en Magic: activarlo + abrir el panel Magic.
+  function handleTestPromptInMagic(promptId: string) {
+    aiChatStore.setActivePrompt(promptId, false)
+    openPanel('magic')
   }
 
   // Aplicar contexto pendiente tras volver a home
@@ -363,9 +229,9 @@ export default function MainLayout() {
     }
   }, [showAIChat])
 
-  // Persistir preferencia de panel (siempre, excepto 'context' que es temporal)
+  // Persistir preferencia de panel (excepto los paneles de detalle, que son temporales)
   useEffect(() => {
-    if (rightPanel !== 'context') {
+    if (rightPanel !== 'context' && rightPanel !== 'prompt' && rightPanel !== 'agent') {
       localStorage.setItem('from-right-panel', rightPanel)
     }
   }, [rightPanel])
@@ -391,30 +257,35 @@ export default function MainLayout() {
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al navegar: limpiar contexto activo siempre (independientemente del panel visible)
+  // Al navegar: gestionar paneles de detalle y filtro "Sin clasificar"
   useEffect(() => {
-    if (rightPanel === 'context') {
-      setRightPanel('context-list')
+    const m = location.pathname.match(/\/node\/([^/]+)/)
+    const navId = m ? m[1] : null
+    // Paneles de detalle (context/prompt/agent): se mantienen mientras estés en su
+    // nodo; si navegas a otro nodo o al home, vuelven a su lista.
+    if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent') {
+      if (navId !== detailNodeId) {
+        setRightPanel(rightPanel === 'context' ? 'context-list' : rightPanel === 'prompt' ? 'prompt-list' : 'agent-list')
+        setDetailNodeId(null)
+      }
     }
-    // Limpiar contextNodeId al ENTRAR a un nodo concreto — no al volver a home.
-    // Si pendingContextConsumedRef es true, el efecto de pending (mismo location.pathname,
-    // ejecutado antes) ya seteó contextNodeId — no limpiar, solo resetear el flag.
+    // Limpiar contextNodeId (filtro "Sin clasificar") al ENTRAR a un nodo concreto.
     if (location.pathname.startsWith('/node/')) {
       setContextNodeId(null)
       setFilterText('')
     } else if (pendingContextConsumedRef.current) {
-      // El pending fue procesado por el efecto anterior — no limpiar, solo resetear el flag.
       pendingContextConsumedRef.current = false
     } else if (!pendingContextRef.current) {
-      // Volvemos a home sin pending → limpiar contexto (navegación normal, ESC, etc.)
       setContextNodeId(null)
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function onSetFilter() {
-      // Al aplicar filtro, si estábamos en contexto volvemos a filtro
-      if (rightPanel === 'context') { setRightPanel('filter'); setContextNodeId(null) }
+      // Al aplicar filtro, si estábamos en un panel de detalle volvemos a filtro
+      if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent') {
+        setRightPanel('filter'); setContextNodeId(null); setDetailNodeId(null)
+      }
     }
     window.addEventListener('wf:set-filter', onSetFilter)
     return () => window.removeEventListener('wf:set-filter', onSetFilter)
@@ -532,6 +403,7 @@ export default function MainLayout() {
         ensureAtajosNode()
         migrateLocalStorageShortcuts()
         ensureAgentesNode()
+        ensurePromptsNode()
         ensurePapeleraNode()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
@@ -794,11 +666,12 @@ export default function MainLayout() {
         const hasFloatingMenu = !!document.querySelector('.slash-menu, .inline-picker, .wf-topbar-dropdown')
         if (hasFloatingMenu) return
 
-        // Prioridad 2.5: volver a lista de contextos (no cerrar el panel)
-        // También cubre el filtro "Sin clasificar" que no abre panel 'context' sino que queda en 'context-list'
-        if (rightPanel === 'context' || contextNodeId === UNCLASSIFIED_FILTER_ID) {
-          setRightPanel('context-list')
+        // Prioridad 2.5: en un panel de detalle → volver a su lista (no cerrar el panel)
+        // También cubre el filtro "Sin clasificar" que queda en 'context-list'.
+        if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || contextNodeId === UNCLASSIFIED_FILTER_ID) {
+          setRightPanel(rightPanel === 'prompt' ? 'prompt-list' : rightPanel === 'agent' ? 'agent-list' : 'context-list')
           setContextNodeId(null)  // limpia filtro del árbol
+          setDetailNodeId(null)
           return
         }
 
@@ -935,6 +808,8 @@ export default function MainLayout() {
           onToggleSearch={() => togglePanel('filter')}
           onToggleMagic={() => togglePanel('magic')}
           onToggleContextList={() => togglePanel('context-list')}
+          onTogglePromptList={() => togglePanel('prompt-list')}
+          onToggleAgentList={() => togglePanel('agent-list')}
           onToggleRecorder={() => togglePanel('recorder')}
           rightPanel={rightPanel}
         />
@@ -1015,17 +890,26 @@ export default function MainLayout() {
           {rightPanel === 'planner' && (
             <PlannerPanel onClose={() => openPanel('filter')} />
           )}
-          {rightPanel === 'context' && contextNodeId && (
-            <ContextNodePanel
-              nodeId={contextNodeId}
-              onClose={() => { setRightPanel('context-list'); setContextNodeId(null) }}
-            />
+          {rightPanel === 'context' && detailNodeId && (
+            <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />
           )}
           {rightPanel === 'context-list' && (
             <ContextListPanel
               onSelectContext={handleSelectContext}
-              selectedContextId={contextNodeId}
+              selectedContextId={detailNodeId ?? contextNodeId}
             />
+          )}
+          {rightPanel === 'prompt' && detailNodeId && (
+            <PromptPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('prompt')} onTestInMagic={handleTestPromptInMagic} />
+          )}
+          {rightPanel === 'prompt-list' && (
+            <PromptListPanel onSelectPrompt={handleSelectPrompt} selectedPromptId={detailNodeId} />
+          )}
+          {rightPanel === 'agent' && detailNodeId && (
+            <AgentPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('agent')} />
+          )}
+          {rightPanel === 'agent-list' && (
+            <AgentListPanel onSelectAgent={handleSelectAgent} selectedAgentId={detailNodeId} />
           )}
           {rightPanel === 'recorder' && (
             <RecorderPanel onClose={() => openPanel('filter')} />

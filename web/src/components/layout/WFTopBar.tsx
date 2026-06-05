@@ -19,6 +19,8 @@ interface Props {
   onToggleSearch: () => void
   onToggleMagic?: () => void
   onToggleContextList?: () => void
+  onTogglePromptList?: () => void
+  onToggleAgentList?: () => void
   onToggleRecorder?: () => void
   rightPanel?: string | null
 }
@@ -33,6 +35,8 @@ export default function WFTopBar({
   onToggleSearch,
   onToggleMagic,
   onToggleContextList,
+  onTogglePromptList,
+  onToggleAgentList,
   onToggleRecorder,
   rightPanel,
 }: Props) {
@@ -171,6 +175,31 @@ export default function WFTopBar({
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.96-3 2.5 2.5 0 0 1-1.32-4.24 3 3 0 0 1 .34-5.58 2.5 2.5 0 0 1 4.4-2.72z"/>
           <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.96-3 2.5 2.5 0 0 0 1.32-4.24 3 3 0 0 0-.34-5.58 2.5 2.5 0 0 0-4.4-2.72z"/>
+        </svg>
+      </button>
+
+      {/* Prompts */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'prompt-list' || rightPanel === 'prompt' ? 'active' : ''}`}
+        onClick={onTogglePromptList}
+        title={t('prompts.topbarTitle', 'Prompts')}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+        </svg>
+      </button>
+
+      {/* Agentes */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'agent-list' || rightPanel === 'agent' ? 'active' : ''}`}
+        onClick={onToggleAgentList}
+        title={t('agents.topbarTitle', 'Agentes')}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="8" width="16" height="11" rx="2"/>
+          <path d="M12 8V4M9 2h6"/>
+          <circle cx="9" cy="13" r="1" fill="currentColor"/>
+          <circle cx="15" cy="13" r="1" fill="currentColor"/>
         </svg>
       </button>
 
