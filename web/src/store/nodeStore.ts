@@ -178,8 +178,18 @@ export class NodeStore {
     }, 15_000)
     // También sincronizar al recuperar foco (vuelve de otra app/ventana)
     document.addEventListener('visibilitychange', this._onVisibilityChange)
-    // Fase 3: arrancar el cliente de operaciones en SOMBRA (no-op si flag OFF)
-    opsClient.start(() => this.nodes)
+    // Fase 3/7: arrancar el cliente de operaciones en SOMBRA (no-op si flag OFF)
+    opsClient.start(() => this.nodes, (nodes) => this.applyExternalNodes(nodes))
+    // Prueba del flip (Fase 7): reconstruir el estado real desde el op-log.
+    ;(window as unknown as { fromOpsRebuild?: () => unknown }).fromOpsRebuild = () => opsClient.rebuildRealFromShadow()
+  }
+
+  /** Aplica nodos reconstruidos desde el op-log al estado real, SIN emitir ops
+   *  (upsert). Usado por la prueba del flip op-based. No marca dirty ni sincroniza. */
+  applyExternalNodes(nodes: Node[]): void {
+    for (const n of nodes) this.applyNode(n)
+    this.invalidateChildrenCache()
+    this.notify()
   }
 
   private _onVisibilityChange = () => {

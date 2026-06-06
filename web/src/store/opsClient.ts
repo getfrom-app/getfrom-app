@@ -310,11 +310,60 @@ class OpsClient {
     return { match, missingInShadow, missingInReal, fieldDiffs }
   }
 
+  /** Callback para aplicar nodos reconstruidos desde ops al estado real (modo-live). */
+  private applyExternal: ((nodes: Node[]) => void) | null = null
+
+  /** Convierte un nodo del estado SOMBRA (motor de ops) a un Node del store. */
+  private shadowToNode(n: NodeState): Node {
+    const f = n.fields
+    const arr = (v: unknown): string[] => { try { const p = JSON.parse(String(v ?? "[]")); return Array.isArray(p) ? p : [] } catch { return [] } }
+    const s = (v: unknown): string | null => (v == null ? null : String(v))
+    const now = "1970-01-01T00:00:00.000Z"
+    return {
+      id: n.id,
+      parentId: n.parentId,
+      siblingOrder: n.siblingOrder,
+      text: String(f.text ?? ""),
+      body: s(f.body),
+      types: arr(f.types),
+      collections: arr(f.collections),
+      status: s(f.status) as Node["status"],
+      isActive: f.isActive === true, isEvent: f.isEvent === true,
+      isDiaryEntry: f.isDiaryEntry === true, isChat: f.isChat === true,
+      isCollapsed: f.isCollapsed === true, isFavorite: f.isFavorite === true,
+      isResource: f.isResource === true, isInline: f.isInline === true,
+      isAtomic: f.isAtomic === true, isQuick: f.isQuick === true,
+      isSeguimiento: f.isSeguimiento === true,
+      due: s(f.due), dueEnd: s(f.dueEnd), diaryDate: s(f.diaryDate),
+      priority: s(f.priority) as Node["priority"], recurrence: s(f.recurrence),
+      seguimientoOrder: (f.seguimientoOrder as number | undefined) ?? null,
+      color: s(f.color), block: s(f.block), gcalEventId: s(f.gcalEventId), location: s(f.location),
+      icon: s(f.icon), resourceUrl: s(f.resourceUrl), resourceType: s(f.resourceType), resourceStatus: s(f.resourceStatus),
+      props: s(f.props), extraData: s(f.extraData),
+      appleId: s(f.appleId), appleCalId: s(f.appleCalId), publicSlug: s(f.publicSlug),
+      gdocId: s(f.gdocId), gdocAccount: s(f.gdocAccount), gdocUrl: s(f.gdocUrl),
+      workspaceId: String(f.workspaceId ?? "00000000-0000-0000-0000-000000000001"),
+      deletedAt: null,
+      createdAt: now, updatedAt: now,
+    } as Node
+  }
+
+  /** PRUEBA DEL FLIP: reconstruye el estado real desde el op-log (estado sombra) y
+   *  lo aplica al store. Demuestra que op-based puede ser la fuente de verdad.
+   *  Reversible: recargar la página restaura desde /sync. Invocable: window.fromOpsRebuild() */
+  rebuildRealFromShadow(): { applied: number } {
+    const nodes = liveNodes(this.shadow).map((n) => this.shadowToNode(n))
+    this.applyExternal?.(nodes)
+    console.log(`[ops] REBUILD: ${nodes.length} nodos reconstruidos desde el op-log y aplicados al estado real`)
+    return { applied: nodes.length }
+  }
+
   /** Arranca el bucle en sombra (idempotente). `getReal` devuelve el Map de nodos real. */
-  start(getReal: () => Map<string, Node>) {
+  start(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
     if (!opsEnabled() || this.started) return
     this.started = true
     this.getReal = getReal
+    this.applyExternal = applyExternal ?? null
     this.outbox = loadOutbox()
     this.hlc = loadHlc()
     // El estado SOMBRA vive en memoria y se reinicia al recargar; por eso NO
