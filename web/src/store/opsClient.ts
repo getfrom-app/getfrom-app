@@ -108,14 +108,21 @@ export const DATA_FIELDS = [
 ] as const
 const ARRAY_FIELDS = new Set(["types", "collections"])
 const DATE_FIELDS = new Set(["due", "dueEnd", "diaryDate"])
+const BOOL_FIELDS = new Set([
+  "isActive", "isEvent", "isSeguimiento", "isDiaryEntry", "isChat", "isCollapsed",
+  "isFavorite", "isResource", "isInline", "isAtomic", "isQuick",
+])
 
 export function normField(field: string, raw: unknown): unknown {
-  if (raw === undefined || raw === null) return null
   if (ARRAY_FIELDS.has(field)) {
-    if (Array.isArray(raw)) return JSON.stringify(raw)
-    if (typeof raw === "string") { try { return JSON.stringify(JSON.parse(raw)) } catch { return raw } }
-    return JSON.stringify(raw)
+    // Des-codifica robustamente: tolera doble/triple-encoding histórico
+    // (columnas con '"[\\"x\\"]"' en vez de '["x"]'). Hasta llegar al array real.
+    let v: unknown = raw
+    for (let i = 0; i < 4 && typeof v === "string"; i++) { try { v = JSON.parse(v) } catch { break } }
+    return JSON.stringify(Array.isArray(v) ? v : [])
   }
+  if (BOOL_FIELDS.has(field)) return raw === true || raw === "true" // default canónico false
+  if (raw === undefined || raw === null) return null
   if (DATE_FIELDS.has(field)) { const d = raw instanceof Date ? raw : new Date(raw as string); return isNaN(d.getTime()) ? null : d.toISOString() }
   return raw
 }
@@ -267,7 +274,7 @@ class OpsClient {
     for (const n of this.shadow.values()) {
       if (n.deleted) continue
       const fields: Record<string, unknown> = {}
-      for (const f of DATA_FIELDS) fields[f] = n.fields[f] ?? null
+      for (const f of DATA_FIELDS) fields[f] = normField(f, n.fields[f]) // misma normalización robusta que el real
       shadowProj.set(n.id, { parentId: n.parentId, siblingOrder: n.siblingOrder, fields })
     }
     let missingInShadow = 0, missingInReal = 0, fieldDiffs = 0
