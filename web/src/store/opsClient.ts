@@ -349,7 +349,8 @@ class OpsClient {
       appleId: s(f.appleId), appleCalId: s(f.appleCalId), publicSlug: s(f.publicSlug),
       gdocId: s(f.gdocId), gdocAccount: s(f.gdocAccount), gdocUrl: s(f.gdocUrl),
       workspaceId: String(f.workspaceId ?? "00000000-0000-0000-0000-000000000001"),
-      deletedAt: null,
+      // En modo-live propagamos también los borrados (deleted → deletedAt no-null).
+      deletedAt: n.deleted ? "2000-01-01T00:00:00.000Z" : null,
       createdAt: now, updatedAt: now,
     } as Node
   }
@@ -372,6 +373,22 @@ class OpsClient {
   private isEnabled(): boolean { return (import.meta.env.DEV && opsEnabled()) || this.serverEnabled }
   setServerEnabled(v: boolean) { this.serverEnabled = v; this.maybeStart() }
 
+  /** MODO-LIVE (Fase 7): op-based es el transporte. Cuando true, el cliente
+   *  aplica las ops al estado REAL continuamente y NO usa /sync. */
+  private live = false
+  isLive(): boolean { return this.live }
+  setLive(v: boolean) {
+    if (this.live === v) return
+    this.live = v
+    if (v) { this.serverEnabled = true; this.maybeStart() } // live implica activo
+  }
+
+  /** Aplica TODO el estado sombra (vivos + borrados) al estado real. Modo-live. */
+  private applyShadowToReal() {
+    const nodes = [...this.shadow.values()].map((n) => this.shadowToNode(n))
+    this.applyExternal?.(nodes)
+  }
+
   /** Registra los callbacks del store (siempre); arranca el bucle si está activo. */
   configure(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
     this.getReal = getReal
@@ -389,7 +406,12 @@ class OpsClient {
     // arranque (no reutilizar cursor persistido → evitar shadow incompleto).
     this.pulledSeq = 0
     this.shadow = new Map()
-    const cycle = async () => { await this.pushOutbox(); await this.pullAndApply(); this.compareToState() }
+    const cycle = async () => {
+      await this.pushOutbox()
+      await this.pullAndApply()
+      if (this.live) this.applyShadowToReal()  // op-based ES la fuente
+      else this.compareToState()               // solo validación en sombra
+    }
     void cycle()
     this.timer = setInterval(() => { void cycle() }, 20_000)
     console.info("[ops] cliente de operaciones iniciado (server/localStorage)")

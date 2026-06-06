@@ -174,6 +174,8 @@ export class NodeStore {
     if (this.remotePollTimer) return
     this.remotePollTimer = setInterval(() => {
       if (!getToken() || this.isSyncing) return
+      // Fase 7 modo-live: el cliente lee por /ops/pull (opsClient), no por /sync.
+      if (opsClient.isLive()) return
       this.sync()
     }, 15_000)
     // También sincronizar al recuperar foco (vuelve de otra app/ventana)
@@ -194,6 +196,7 @@ export class NodeStore {
   }
 
   private _onVisibilityChange = () => {
+    if (opsClient.isLive()) return  // Fase 7 modo-live: no /sync
     if (document.visibilityState === 'visible' && getToken()) {
       this.sync()
     }
@@ -1231,6 +1234,8 @@ export class NodeStore {
   // ── Sync ──────────────────────────────────────────────────────────────────
 
   private scheduleSyncDebounced() {
+    // Fase 7 modo-live: las mutaciones van por /ops/push (opsClient), no por /sync.
+    if (opsClient.isLive()) return
     if (this.syncTimer) clearTimeout(this.syncTimer)
     this.syncTimer = setTimeout(() => this.sync(), 1500)
   }
@@ -1319,6 +1324,8 @@ export class NodeStore {
       this.lastSyncAt = res.syncAt
       // Fase 6/7: activación CENTRAL del cliente de ops desde el servidor.
       opsClient.setServerEnabled(!!(res as { opsClientEnabled?: boolean }).opsClientEnabled)
+      // Fase 7: switch de transporte. Si opsLive, op-based pasa a ser la fuente.
+      opsClient.setLive(!!(res as { opsLive?: boolean }).opsLive)
 
       // Solo limpiar de dirtyIds los nodos que NO se modificaron durante el await.
       // Si updatedAt cambió durante el vuelo → el nodo tiene cambios más nuevos → conservar dirty.
