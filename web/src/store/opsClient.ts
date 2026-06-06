@@ -226,7 +226,7 @@ class OpsClient {
       // Procesadas (aceptadas o ya existentes) → quitar del outbox
       this.outbox = this.outbox.slice(batch.length)
       saveOutbox(this.outbox)
-      console.debug(`[ops] push: +${res.accepted} aceptadas, ${res.deduped} dedupe, ${res.invalid} inválidas, latestSeq=${res.latestSeq}`)
+      console.log(`[ops] push: +${res.accepted} aceptadas, ${res.deduped} dedupe, ${res.invalid} inválidas, latestSeq=${res.latestSeq}`)
     } catch (e) {
       console.warn("[ops] push falló (se reintenta):", e)
     }
@@ -259,27 +259,48 @@ class OpsClient {
   /** Compara el estado SOMBRA (replay de ops) con el estado REAL del cliente. */
   compareToState(): { match: boolean; missingInShadow: number; missingInReal: number; fieldDiffs: number } {
     const real = this.getReal?.() ?? new Map<string, Node>()
-    const realProj = new Map<string, string>()
+    const realProj = new Map<string, { parentId: string | null; siblingOrder: number; fields: Record<string, unknown> }>()
     for (const n of real.values()) {
       if (n.deletedAt) continue
-      realProj.set(n.id, JSON.stringify({ parentId: n.parentId ?? null, siblingOrder: typeof n.siblingOrder === "number" ? n.siblingOrder : 0, fields: projectFields(n as unknown as Record<string, unknown>) }))
+      realProj.set(n.id, { parentId: n.parentId ?? null, siblingOrder: typeof n.siblingOrder === "number" ? n.siblingOrder : 0, fields: projectFields(n as unknown as Record<string, unknown>) })
     }
-    const shadowProj = new Map<string, string>()
+    const shadowProj = new Map<string, { parentId: string | null; siblingOrder: number; fields: Record<string, unknown> }>()
     for (const n of this.shadow.values()) {
       if (n.deleted) continue
       const fields: Record<string, unknown> = {}
       for (const f of DATA_FIELDS) fields[f] = n.fields[f] ?? null
-      shadowProj.set(n.id, JSON.stringify({ parentId: n.parentId, siblingOrder: n.siblingOrder, fields }))
+      shadowProj.set(n.id, { parentId: n.parentId, siblingOrder: n.siblingOrder, fields })
     }
     let missingInShadow = 0, missingInReal = 0, fieldDiffs = 0
+    const hist: Record<string, number> = {}
+    const samples: Array<Record<string, unknown>> = []
     for (const [id, r] of realProj) {
       const s = shadowProj.get(id)
-      if (s === undefined) missingInShadow++
-      else if (s !== r) fieldDiffs++
+      if (!s) { missingInShadow++; continue }
+      const diffFields: string[] = []
+      if (r.parentId !== s.parentId) diffFields.push("parentId")
+      if (r.siblingOrder !== s.siblingOrder) diffFields.push("siblingOrder")
+      for (const f of DATA_FIELDS) if (JSON.stringify(r.fields[f]) !== JSON.stringify(s.fields[f])) diffFields.push(f)
+      if (diffFields.length) {
+        fieldDiffs++
+        for (const f of diffFields) hist[f] = (hist[f] ?? 0) + 1
+        if (samples.length < 3) {
+          const real_: Record<string, unknown> = {}, shadow_: Record<string, unknown> = {}
+          for (const f of diffFields) {
+            real_[f] = f === "parentId" ? r.parentId : f === "siblingOrder" ? r.siblingOrder : r.fields[f]
+            shadow_[f] = f === "parentId" ? s.parentId : f === "siblingOrder" ? s.siblingOrder : s.fields[f]
+          }
+          samples.push({ id, diffFields, real: real_, shadow: shadow_ })
+        }
+      }
     }
     for (const id of shadowProj.keys()) if (!realProj.has(id)) missingInReal++
     const match = missingInShadow === 0 && missingInReal === 0 && fieldDiffs === 0
-    console.debug(`[ops] compare: match=${match} shadowLive=${shadowProj.size} realLive=${realProj.size} missingInShadow=${missingInShadow} missingInReal=${missingInReal} fieldDiffs=${fieldDiffs}`)
+    console.log(`[ops] compare: match=${match} shadowLive=${shadowProj.size} realLive=${realProj.size} missingInShadow=${missingInShadow} missingInReal=${missingInReal} fieldDiffs=${fieldDiffs}`)
+    if (fieldDiffs) {
+      console.log("[ops] fieldDiff histograma (campo→nº nodos):", hist)
+      console.log("[ops] muestra de diffs (real vs shadow):", samples)
+    }
     return { match, missingInShadow, missingInReal, fieldDiffs }
   }
 
