@@ -1,6 +1,7 @@
 import { syncNodes, getToken } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
+import { opsClient } from './opsClient'
 
 const GUEST_NODES_KEY = 'from_guest_nodes'
 
@@ -177,6 +178,8 @@ export class NodeStore {
     }, 15_000)
     // También sincronizar al recuperar foco (vuelve de otra app/ventana)
     document.addEventListener('visibilitychange', this._onVisibilityChange)
+    // Fase 3: arrancar el cliente de operaciones en SOMBRA (no-op si flag OFF)
+    opsClient.start(() => this.nodes)
   }
 
   private _onVisibilityChange = () => {
@@ -964,6 +967,7 @@ export class NodeStore {
     this.snapshot()
     this.notify()
     this.scheduleSyncDebounced()
+    opsClient.onCreate(node)  // Fase 3: doble escritura en sombra (flag from_ops_v1)
     return node
   }
 
@@ -973,6 +977,7 @@ export class NodeStore {
 
     const updated = { ...node, ...changes, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)
+    opsClient.onUpdate(node, changes, updated)  // Fase 3: doble escritura en sombra (flag from_ops_v1)
     // Invalidar siempre el cache: guarda referencias de Node y al hacer spread
     // creamos un objeto nuevo — el cache quedaría apuntando al objeto viejo.
     this.invalidateChildrenCache()
