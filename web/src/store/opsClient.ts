@@ -163,6 +163,7 @@ class OpsClient {
   private shadow: State = new Map()
   private pulledSeq = 0
   private started = false
+  private initialPullDone = false  // tras el primer pull, los siguientes se aplican como deltas
   private timer: ReturnType<typeof setInterval> | null = null
   private pushTimer: ReturnType<typeof setTimeout> | null = null
   private getReal: (() => Map<string, Node>) | null = null
@@ -240,6 +241,7 @@ class OpsClient {
 
   async pullAndApply(): Promise<void> {
     if (!this.isEnabled() || !getToken()) return
+    const myDevice = deviceId()
     try {
       for (let guard = 0; guard < 20; guard++) {
         const res = await apiRequest<{ ops: Op[]; hasMore: boolean; latestSeq: number }>(
@@ -247,16 +249,29 @@ class OpsClient {
         )
         if (res.ops.length === 0) break
         let maxRemote: HLC | null = null
+        const changed = new Set<string>()
         for (const op of res.ops) {
           applyOp(this.shadow, op)
           const h = parseHLC(op.hlc)
           if (!maxRemote || hlcCompare(op.hlc, hlcToString(maxRemote)) > 0) maxRemote = h
+          // Modo-live: aplicar al estado REAL sólo los DELTAS de OTROS dispositivos
+          // y sólo TRAS el primer pull (el estado base ya está cargado por /sync).
+          // Esto evita el rebuild completo cada ciclo (que causaba el parpadeo).
+          if (this.live && this.initialPullDone && op.deviceId !== myDevice) changed.add(op.nodeId)
         }
         if (maxRemote) { this.hlc = hlcReceive(this.hlc, maxRemote, deviceId(), Date.now()); saveHlc(this.hlc) }
+        if (changed.size && this.applyExternal) {
+          const nodes = [...changed]
+            .map((id) => this.shadow.get(id))
+            .filter((n): n is NodeState => !!n)
+            .map((n) => this.shadowToNode(n))
+          this.applyExternal(nodes)
+        }
         this.pulledSeq = res.latestSeq
         saveSeq(this.pulledSeq)
         if (!res.hasMore) break
       }
+      this.initialPullDone = true // tras el primer pull completo, lo siguiente son deltas
     } catch (e) {
       console.warn("[ops] pull falló:", e)
     }
@@ -383,11 +398,6 @@ class OpsClient {
     if (v) { this.serverEnabled = true; this.maybeStart() } // live implica activo
   }
 
-  /** Aplica TODO el estado sombra (vivos + borrados) al estado real. Modo-live. */
-  private applyShadowToReal() {
-    const nodes = [...this.shadow.values()].map((n) => this.shadowToNode(n))
-    this.applyExternal?.(nodes)
-  }
 
   /** Registra los callbacks del store (siempre); arranca el bucle si está activo. */
   configure(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
@@ -406,11 +416,11 @@ class OpsClient {
     // arranque (no reutilizar cursor persistido → evitar shadow incompleto).
     this.pulledSeq = 0
     this.shadow = new Map()
+    this.initialPullDone = false
     const cycle = async () => {
       await this.pushOutbox()
-      await this.pullAndApply()
-      if (this.live) this.applyShadowToReal()  // op-based ES la fuente
-      else this.compareToState()               // solo validación en sombra
+      await this.pullAndApply()   // en modo-live aplica DELTAS al estado real (no rebuild)
+      if (!this.live) this.compareToState()  // compare sólo en sombra
     }
     void cycle()
     this.timer = setInterval(() => { void cycle() }, 20_000)
