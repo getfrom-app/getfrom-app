@@ -242,9 +242,8 @@ class OpsClient {
   async pullAndApply(): Promise<void> {
     if (!this.isEnabled() || !getToken()) return
     const myDevice = deviceId()
-    const wasInitial = !this.initialPullDone
     try {
-      for (let guard = 0; guard < 50; guard++) {
+      for (let guard = 0; guard < 20; guard++) {
         const res = await apiRequest<{ ops: Op[]; hasMore: boolean; latestSeq: number }>(
           `/ops/pull?since=${this.pulledSeq}&limit=2000`, { method: "GET" },
         )
@@ -272,19 +271,9 @@ class OpsClient {
         saveSeq(this.pulledSeq)
         if (!res.hasMore) break
       }
-      // BOOTSTRAP: en el PRIMER pull en modo-live, sembrar el estado real con TODO
-      // el árbol (vivos + borrados → applyNode marca los borrados). Sustituye al
-      // bootstrap por /sync. Después, sólo deltas. La siembra es idempotente.
-      if (wasInitial && this.live && this.applyExternal) {
-        const all = [...this.shadow.values()].map((n) => this.shadowToNode(n))
-        this.applyExternal(all)
-        this.lastSeededLive = all.filter((n) => !n.deletedAt).length
-        console.info(`[ops] bootstrap: ${this.lastSeededLive} nodos vivos sembrados desde el op-log`)
-      }
       this.initialPullDone = true // tras el primer pull completo, lo siguiente son deltas
     } catch (e) {
       console.warn("[ops] pull falló:", e)
-      if (wasInitial) throw e   // bootstrap necesita saber si el pull inicial falló
     }
   }
 
@@ -409,81 +398,34 @@ class OpsClient {
     if (v) { this.serverEnabled = true; this.maybeStart() } // live implica activo
   }
 
-  /** ¿Ya se decidió el transporte (op-based vs /sync)? Hasta entonces, el store NO
-   *  debe llamar a /sync (evita la carrera donde un sync() temprano dispara un
-   *  /sync completo antes de que el bootstrap marque modo-live). */
-  private decided = false
-  bootstrapDecided(): boolean { return this.decided }
-  /** Nº de nodos vivos sembrados en el último bootstrap (para sanity-check). */
-  private lastSeededLive = 0
 
-  /** Registra los callbacks del store (siempre). NO arranca nada: el arranque lo
-   *  conduce bootstrap() (modo-live) o el primer sync() (no-live). */
+  /** Registra los callbacks del store (siempre); arranca el bucle si está activo. */
   configure(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
     this.getReal = getReal
     this.applyExternal = applyExternal ?? null
-  }
-
-  private setupState() {
-    this.outbox = loadOutbox()
-    this.hlc = loadHlc()
-    // El estado SOMBRA se reconstruye ENTERO desde seq 0 en cada arranque.
-    this.pulledSeq = 0
-    this.shadow = new Map()
-    this.initialPullDone = false
-  }
-  private async cycle(): Promise<void> {
-    await this.pushOutbox()
-    await this.pullAndApply()   // en modo-live aplica DELTAS (y siembra en el 1er pull)
-    if (!this.live) this.compareToState()  // compare sólo en sombra
+    this.maybeStart()
   }
 
   /** Arranca el bucle (idempotente). Sólo si está activo (server o localStorage). */
   private maybeStart() {
     if (!this.isEnabled() || this.started || !this.getReal) return
     this.started = true
-    this.setupState()
-    void this.cycle()
-    this.timer = setInterval(() => { void this.cycle() }, 20_000)
+    this.outbox = loadOutbox()
+    this.hlc = loadHlc()
+    // El estado SOMBRA vive en memoria; se reconstruye ENTERO desde seq 0 en cada
+    // arranque (no reutilizar cursor persistido → evitar shadow incompleto).
+    this.pulledSeq = 0
+    this.shadow = new Map()
+    this.initialPullDone = false
+    const cycle = async () => {
+      await this.pushOutbox()
+      await this.pullAndApply()   // en modo-live aplica DELTAS al estado real (no rebuild)
+      if (!this.live) this.compareToState()  // compare sólo en sombra
+    }
+    void cycle()
+    this.timer = setInterval(() => { void cycle() }, 20_000)
     console.info("[ops] cliente de operaciones iniciado (server/localStorage)")
   }
-
-  /** BOOTSTRAP robusto sin /sync. Lee /ops/config; si modo-live, construye el
-   *  estado SOMBRA desde seq 0 y SIEMBRA el estado real (AWAIT, una vez), luego
-   *  arranca el bucle de deltas. Devuelve el nº de nodos vivos sembrados, o null
-   *  si NO es modo-live o el arranque falló (→ el caller hace fallback a /sync). */
-  async bootstrap(): Promise<number | null> {
-    if (!getToken() || !this.getReal) return null
-    let cfg: { opsClientEnabled?: boolean; opsLive?: boolean }
-    try { cfg = await apiRequest<{ opsClientEnabled?: boolean; opsLive?: boolean }>("/ops/config", { method: "GET" }) }
-    catch (e) { console.warn("[ops] /ops/config falló → fallback /sync:", e); this.decided = true; return null }
-    this.serverEnabled = !!cfg.opsClientEnabled
-    this.decided = true
-    if (!cfg.opsLive) { this.maybeStart(); return null }  // no-live → bootstrap por /sync
-    // Modo-live: SIEMBRA awaited y limpia (cancela cualquier ciclo previo).
-    this.live = true
-    if (this.timer) { clearInterval(this.timer); this.timer = null }
-    this.started = true
-    this.setupState()
-    try {
-      await this.cycle()   // construye sombra seq0 + SIEMBRA el estado real (awaited)
-    } catch (e) {
-      console.warn("[ops] bootstrap: pull inicial falló → fallback /sync:", e)
-      this.live = false; this.started = false
-      return null
-    }
-    this.timer = setInterval(() => { void this.cycle() }, 20_000)
-    console.info("[ops] bootstrap modo-live completado (sin /sync)")
-    return this.lastSeededLive
-  }
-
-  /** Desactiva modo-live (emergencia): el store vuelve a /sync. */
-  forceSyncFallback() {
-    this.live = false
-    if (this.timer) { clearInterval(this.timer); this.timer = null }
-    this.started = false
-  }
-
   stop() {
     if (this.timer) clearInterval(this.timer)
     if (this.pushTimer) clearTimeout(this.pushTimer)

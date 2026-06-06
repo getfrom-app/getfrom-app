@@ -1286,16 +1286,6 @@ export class NodeStore {
       return
     }
 
-    // Hasta que el bootstrap decida el transporte, NO llamar a /sync (evita la
-    // carrera: un sync() temprano dispararía un /sync completo antes de que el
-    // bootstrap marque modo-live). Reprogramamos para no perder nodos dirty.
-    if (!opsClient.bootstrapDecided()) {
-      if (this.dirtyIds.size > 0) this.scheduleSyncDebounced()
-      return
-    }
-    // MODO-LIVE: las mutaciones van por el op-log (opsClient), no por /sync.
-    if (opsClient.isLive()) { this.dirtyIds.clear(); return }
-
     if (this.isSyncing && !force) {
       // Hay un sync en curso — reprogramar para no perder nodos dirty pendientes.
       // Sin esto, si el debounce expira durante un sync largo (initialLoad),
@@ -1423,23 +1413,7 @@ export class NodeStore {
       window.dispatchEvent(new Event('from:store-loaded'))
     }
 
-    // BOOTSTRAP: en modo-live el estado inicial viene del op-log (/ops/config +
-    // /ops/pull), no de /sync. bootstrap() devuelve el nº de nodos vivos sembrados,
-    // o null si NO es modo-live (o falló) → fallback a /sync.
-    const seeded = await opsClient.bootstrap()
-    if (seeded === null) {
-      await this.sync()  // no-live o config falló → /sync
-    } else {
-      // SALVAGUARDA: si el árbol sembrado tiene muchos menos nodos de los que el
-      // servidor reporta, algo falló en la siembra → caer a /sync (árbol completo).
-      // Esto hace IMPOSIBLE el fallo de "árbol vacío → recrear nodos de sistema".
-      const storeCount = this.allActive().length
-      if (seeded >= 5 && storeCount < seeded * 0.9) {
-        console.warn(`[ops] siembra insuficiente (${storeCount}/${seeded}) → fallback /sync`)
-        opsClient.forceSyncFallback()
-        await this.sync()
-      }
-    }
+    await this.sync()
 
     // Limpieza silenciosa: nodo vacío = no existe.
     // Período de gracia de 60s — no borrar nodos recién creados donde el cursor
