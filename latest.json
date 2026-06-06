@@ -1,11 +1,11 @@
 {
-  "version": "9.5.2",
-  "notes": "Planificador rediseñado (franja all-day, drag sin duplicar, GCal sync), filtros reactivos en tiempo real, animación de salida del filtro, fix Enter crea hermano en todos los casos.",
-  "pub_date": "2026-06-02T20:59:05Z",
+  "version": "9.5.21",
+  "notes": "Modo-live op-based aplica deltas en vez de reconstruir el árbol (arregla parpadeo). Paridad con web v9.6.173.",
+  "pub_date": "2026-06-06T22:50:24Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaUVSVVF3VXJoRGR1L3NWbUtwb0hpREFLMlZaMEFaRDZtRWNRemsrTTdEYkVUSGxUdHpEanpLSkpXMTRmYm1aSnc0Zks4MmJ2TDFoc0ZqZGZCMkFLUEU1YUYwT3Zhc0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNDMzOTM4CWZpbGU6RnJvbS5hcHAudGFyLmd6CjJzOUJzWVlxV1VTRi9OWXo3YkFWdGp2bGw4OE9KWXlyOURoYnd2dGxRczZya0NzbldMaVpjTjc3Qm9TbFV2UTFPcURDd2NDdkZGWUJwajBxaXpZakJBPT0K",
-      "url": "https://github.com/getfrom-app/getfrom-app/releases/download/v9.5.2/From.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaUVSVVF3VXJoRGFJY3dxaUtDeEFUeW9iUWh0VFlqQVFOTzBBb1g1UzJsTlA5Q0FMTTRxbDlMNEtScmhFc0EzdVl1Z2IzcVZjZjJpNzRuejNuakpUeExVRGpHWlMxRWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNzg2MjE2CWZpbGU6RnJvbS5hcHAudGFyLmd6CmxXQWFNdVh3Mm1lQVl5dGxhYkg4bzFheXRwRHorMkV5eEExUVVsYnRWeDBiRTJvU2xWbm5jYWlkNWhRUmYwdUkvUlh4QXA5cFE2VFk0TVdwaE02RUFnPT0K",
+      "url": "https://github.com/getfrom-app/getfrom-app/releases/download/v9.5.21/From.app.tar.gz"
     }
   }
 }

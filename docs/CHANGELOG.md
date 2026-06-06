@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.173 / Mac v9.5.21 / iPhone — 7 junio 2026 · Sincronización por operaciones (op-log)
+
+**Nuevo motor de sincronización.** From deja atrás la sincronización por estado (que comparaba el árbol entero y podía inferir borrados) y pasa a un **registro de operaciones** estilo WorkFlowy: cada cambio (crear, editar, mover, borrar) es una operación inmutable que se añade a un log. El servidor **nunca infiere un borrado** — solo aplica lo que tú haces. Esto elimina de raíz toda la clase de bugs de duplicación y pérdida de nodos.
+
+- **Tiempo real entre dispositivos.** Los cambios en un dispositivo aparecen en los demás aplicando solo las operaciones nuevas (deltas), sin reconstruir el árbol. Sin parpadeos.
+- **Funciona en web, Mac e iPhone** con el mismo motor (relojes lógicos híbridos, resolución por campo, marcas de borrado).
+- **Bajo el capó:** log append-only, idempotente, con compactación periódica. Backup automático antes de cualquier operación masiva.
+
+---
+
 ## Web v9.6.155–162 / Mac v9.5.18 — 6 junio 2026 · Prompts para Magic + robustez de datos
 
 **Nuevo: Prompts para Magic.** Crea modos de conversación (⚡ Prompts) que cambian cómo te responde Magic. Variables (`{{fecha}}`, `{{nombre}}`…), activación con `/`, automática por contexto, o sugerida. De ejemplo: "Diario del día" y "Brainstorming".
