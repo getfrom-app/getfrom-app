@@ -1286,21 +1286,6 @@ export class NodeStore {
       return
     }
 
-    // Hasta que el bootstrap decida el transporte, NO llamar a /sync (evita la
-    // carrera: un sync() temprano dispararía un /sync completo antes de que el
-    // bootstrap marque modo-live). Reprogramamos para no perder nodos dirty.
-    if (!opsClient.bootstrapDecided()) {
-      if (this.dirtyIds.size > 0) this.scheduleSyncDebounced()
-      return
-    }
-
-    // MODO-LIVE (op-based): /sync queda fuera del camino. Las mutaciones se
-    // propagan por el op-log (opsClient.onCreate/onUpdate). No llamamos a /sync.
-    if (opsClient.isLive()) {
-      this.dirtyIds.clear()
-      return
-    }
-
     if (this.isSyncing && !force) {
       // Hay un sync en curso — reprogramar para no perder nodos dirty pendientes.
       // Sin esto, si el debounce expira durante un sync largo (initialLoad),
@@ -1428,10 +1413,7 @@ export class NodeStore {
       window.dispatchEvent(new Event('from:store-loaded'))
     }
 
-    // BOOTSTRAP: en modo-live el estado inicial viene del op-log (/ops/config +
-    // /ops/state), no de /sync. Si no es live (o falla), fallback a /sync.
-    const liveBootstrapped = await opsClient.bootstrap()
-    if (!liveBootstrapped) await this.sync()
+    await this.sync()
 
     // Limpieza silenciosa: nodo vacío = no existe.
     // Período de gracia de 60s — no borrar nodos recién creados donde el cursor
