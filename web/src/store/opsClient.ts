@@ -352,7 +352,7 @@ class OpsClient {
    *  lo aplica al store. Demuestra que op-based puede ser la fuente de verdad.
    *  Reversible: recargar la página restaura desde /sync. Invocable: window.fromOpsRebuild() */
   rebuildRealFromShadow(): { applied: number } {
-    const nodes = liveNodes(this.shadow).map((n) => this.shadowToNode(n))
+    const nodes = [...this.shadow.values()].filter((n) => !n.deleted).map((n) => this.shadowToNode(n))
     this.applyExternal?.(nodes)
     console.log(`[ops] REBUILD: ${nodes.length} nodos reconstruidos desde el op-log y aplicados al estado real`)
     return { applied: nodes.length }
