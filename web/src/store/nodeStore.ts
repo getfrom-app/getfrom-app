@@ -1013,7 +1013,27 @@ export class NodeStore {
   }
 
   deleteNode(id: string): void {
-    this.updateNode(id, { deletedAt: new Date().toISOString() })
+    // Cascada EXPLÍCITA: marca deletedAt en el nodo y TODOS sus descendientes
+    // activos. Con el sync por operaciones el servidor ya no infiere borrados
+    // (se apaga la cascada destructiva del servidor), así que el cliente debe
+    // emitir el borrado de los descendientes de forma explícita. Cada updateNode
+    // emite su op `delete`. Índice parent→children O(n) + BFS para no degradar.
+    const byParent = new Map<string | null, string[]>()
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      const arr = byParent.get(n.parentId); if (arr) arr.push(n.id); else byParent.set(n.parentId, [n.id])
+    }
+    const toDelete: string[] = []
+    const queue: string[] = [id]
+    while (queue.length) {
+      const cur = queue.shift()!
+      toDelete.push(cur)
+      for (const c of byParent.get(cur) ?? []) queue.push(c)
+    }
+    const now = new Date().toISOString()
+    this.beginBatch()
+    try { for (const nid of toDelete) this.updateNode(nid, { deletedAt: now }) }
+    finally { this.endBatch() }
   }
 
   /**
