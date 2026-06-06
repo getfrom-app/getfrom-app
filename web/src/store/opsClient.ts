@@ -404,6 +404,12 @@ class OpsClient {
    *  aplica las ops al estado REAL continuamente y NO usa /sync. */
   private live = false
   isLive(): boolean { return this.live }
+
+  /** ¿Ya se decidió el transporte (op-based vs /sync)? Hasta entonces, el store
+   *  NO debe llamar a /sync (evita la carrera donde un sync() temprano dispara
+   *  un /sync completo antes de que el bootstrap marque modo-live). */
+  private decided = false
+  bootstrapDecided(): boolean { return this.decided }
   setLive(v: boolean) {
     if (this.live === v) return
     this.live = v
@@ -452,8 +458,9 @@ class OpsClient {
     if (!getToken() || !this.getReal) return false
     let cfg: { opsClientEnabled?: boolean; opsLive?: boolean }
     try { cfg = await apiRequest<{ opsClientEnabled?: boolean; opsLive?: boolean }>("/ops/config", { method: "GET" }) }
-    catch (e) { console.warn("[ops] /ops/config falló, fallback a /sync:", e); return false }
+    catch (e) { console.warn("[ops] /ops/config falló, fallback a /sync:", e); this.decided = true; return false }
     this.serverEnabled = !!cfg.opsClientEnabled
+    this.decided = true  // transporte decidido: a partir de aquí sync() respeta isLive()
     if (!cfg.opsLive) { this.maybeStart(); return false }  // no-live → bootstrap por /sync
     this.live = true
     if (!this.started) {

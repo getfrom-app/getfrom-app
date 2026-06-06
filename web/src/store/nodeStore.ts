@@ -1286,6 +1286,14 @@ export class NodeStore {
       return
     }
 
+    // Hasta que el bootstrap decida el transporte, NO llamar a /sync (evita la
+    // carrera: un sync() temprano dispararía un /sync completo antes de que el
+    // bootstrap marque modo-live). Reprogramamos para no perder nodos dirty.
+    if (!opsClient.bootstrapDecided()) {
+      if (this.dirtyIds.size > 0) this.scheduleSyncDebounced()
+      return
+    }
+
     // MODO-LIVE (op-based): /sync queda fuera del camino. Las mutaciones se
     // propagan por el op-log (opsClient.onCreate/onUpdate). No llamamos a /sync.
     if (opsClient.isLive()) {
