@@ -242,8 +242,9 @@ class OpsClient {
   async pullAndApply(): Promise<void> {
     if (!this.isEnabled() || !getToken()) return
     const myDevice = deviceId()
+    const wasInitial = !this.initialPullDone
     try {
-      for (let guard = 0; guard < 20; guard++) {
+      for (let guard = 0; guard < 50; guard++) {
         const res = await apiRequest<{ ops: Op[]; hasMore: boolean; latestSeq: number }>(
           `/ops/pull?since=${this.pulledSeq}&limit=2000`, { method: "GET" },
         )
@@ -270,6 +271,17 @@ class OpsClient {
         this.pulledSeq = res.latestSeq
         saveSeq(this.pulledSeq)
         if (!res.hasMore) break
+      }
+      // BOOTSTRAP: en el primer pull en modo-live, sembrar el estado real con TODO
+      // el árbol vivo (una sola vez). Sustituye al antiguo bootstrap vía /sync.
+      // A partir de aquí, los siguientes pulls aplican sólo deltas.
+      if (wasInitial && this.live && this.applyExternal) {
+        // Sembramos TODOS los nodos (vivos + borrados). Los borrados llevan
+        // deletedAt → applyNode los marca, limpiando cualquier caché obsoleta.
+        const all = [...this.shadow.values()].map((n) => this.shadowToNode(n))
+        this.applyExternal(all)
+        const live = all.filter((n) => !n.deletedAt).length
+        console.info(`[ops] bootstrap: ${live} nodos vivos sembrados desde el op-log`)
       }
       this.initialPullDone = true // tras el primer pull completo, lo siguiente son deltas
     } catch (e) {
@@ -406,10 +418,14 @@ class OpsClient {
     this.maybeStart()
   }
 
-  /** Arranca el bucle (idempotente). Sólo si está activo (server o localStorage). */
-  private maybeStart() {
-    if (!this.isEnabled() || this.started || !this.getReal) return
-    this.started = true
+  private async cycle(): Promise<void> {
+    await this.pushOutbox()
+    await this.pullAndApply()   // en modo-live aplica DELTAS (y siembra en el 1er pull)
+    if (!this.live) this.compareToState()  // compare sólo en sombra
+  }
+
+  /** Prepara el estado interno para arrancar (idempotente). */
+  private setupState() {
     this.outbox = loadOutbox()
     this.hlc = loadHlc()
     // El estado SOMBRA vive en memoria; se reconstruye ENTERO desde seq 0 en cada
@@ -417,14 +433,37 @@ class OpsClient {
     this.pulledSeq = 0
     this.shadow = new Map()
     this.initialPullDone = false
-    const cycle = async () => {
-      await this.pushOutbox()
-      await this.pullAndApply()   // en modo-live aplica DELTAS al estado real (no rebuild)
-      if (!this.live) this.compareToState()  // compare sólo en sombra
-    }
-    void cycle()
-    this.timer = setInterval(() => { void cycle() }, 20_000)
+  }
+
+  /** Arranca el bucle (idempotente). Sólo si está activo (server o localStorage). */
+  private maybeStart() {
+    if (!this.isEnabled() || this.started || !this.getReal) return
+    this.started = true
+    this.setupState()
+    void this.cycle()
+    this.timer = setInterval(() => { void this.cycle() }, 20_000)
     console.info("[ops] cliente de operaciones iniciado (server/localStorage)")
+  }
+
+  /** BOOTSTRAP sin /sync: lee los flags de /ops/config y, si modo-live, arranca y
+   *  AWAIT-ea el primer pull (que siembra el estado real desde el op-log).
+   *  Devuelve true si gestionó el bootstrap (modo-live); false → usar /sync. */
+  async bootstrap(): Promise<boolean> {
+    if (!getToken() || !this.getReal) return false
+    let cfg: { opsClientEnabled?: boolean; opsLive?: boolean }
+    try { cfg = await apiRequest<{ opsClientEnabled?: boolean; opsLive?: boolean }>("/ops/config", { method: "GET" }) }
+    catch (e) { console.warn("[ops] /ops/config falló, fallback a /sync:", e); return false }
+    this.serverEnabled = !!cfg.opsClientEnabled
+    if (!cfg.opsLive) { this.maybeStart(); return false }  // no-live → bootstrap por /sync
+    this.live = true
+    if (!this.started) {
+      this.started = true
+      this.setupState()
+      await this.cycle()  // primer pull → siembra el estado real
+      this.timer = setInterval(() => { void this.cycle() }, 20_000)
+      console.info("[ops] bootstrap modo-live completado (sin /sync)")
+    }
+    return true
   }
   stop() {
     if (this.timer) clearInterval(this.timer)
