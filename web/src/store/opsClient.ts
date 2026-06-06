@@ -316,7 +316,13 @@ class OpsClient {
   /** Convierte un nodo del estado SOMBRA (motor de ops) a un Node del store. */
   private shadowToNode(n: NodeState): Node {
     const f = n.fields
-    const arr = (v: unknown): string[] => { try { const p = JSON.parse(String(v ?? "[]")); return Array.isArray(p) ? p : [] } catch { return [] } }
+    // Des-codifica robustamente (igual que normField): tolera el doble/triple-encoding
+    // histórico del op-log ('"[\"x\"]"') hasta llegar al array real.
+    const arr = (v: unknown): string[] => {
+      let x: unknown = v
+      for (let i = 0; i < 6 && typeof x === "string"; i++) { try { x = JSON.parse(x) } catch { break } }
+      return Array.isArray(x) ? (x as string[]) : []
+    }
     const s = (v: unknown): string | null => (v == null ? null : String(v))
     const now = "1970-01-01T00:00:00.000Z"
     return {
