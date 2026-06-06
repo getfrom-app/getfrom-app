@@ -182,7 +182,7 @@ class OpsClient {
 
   /** Mutación: nodo nuevo → op create con todos los campos. */
   onCreate(node: Node) {
-    if (!opsEnabled()) return
+    if (!this.isEnabled()) return
     this.enqueue(node.id, "create", {
       parentId: node.parentId ?? null,
       siblingOrder: typeof node.siblingOrder === "number" ? node.siblingOrder : 0,
@@ -192,7 +192,7 @@ class OpsClient {
 
   /** Mutación: updateNode(id, changes). Deriva set / move / delete / restore. */
   onUpdate(prev: Node, changes: Partial<Node>, next: Node) {
-    if (!opsEnabled()) return
+    if (!this.isEnabled()) return
     // Vida
     if ("deletedAt" in changes) {
       if (changes.deletedAt && !prev.deletedAt) this.enqueue(next.id, "delete", {})
@@ -222,7 +222,7 @@ class OpsClient {
   }
 
   async pushOutbox(): Promise<void> {
-    if (!opsEnabled() || !getToken()) return
+    if (!this.isEnabled() || !getToken()) return
     if (this.outbox.length === 0) return
     const batch = this.outbox.slice(0, 500)
     try {
@@ -239,7 +239,7 @@ class OpsClient {
   }
 
   async pullAndApply(): Promise<void> {
-    if (!opsEnabled() || !getToken()) return
+    if (!this.isEnabled() || !getToken()) return
     try {
       for (let guard = 0; guard < 20; guard++) {
         const res = await apiRequest<{ ops: Op[]; hasMore: boolean; latestSeq: number }>(
@@ -358,24 +358,35 @@ class OpsClient {
     return { applied: nodes.length }
   }
 
-  /** Arranca el bucle en sombra (idempotente). `getReal` devuelve el Map de nodos real. */
-  start(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
-    if (!opsEnabled() || this.started) return
-    this.started = true
+  /** Activación CENTRAL desde el servidor (campo opsClientEnabled del /sync).
+   *  El localStorage `from_ops_v1` queda como override de desarrollo opcional. */
+  private serverEnabled = false
+  // En PRODUCCIÓN manda el servidor (opsClientEnabled). El localStorage `from_ops_v1`
+  // solo sirve como override en desarrollo local — así el usuario nunca gestiona flags.
+  private isEnabled(): boolean { return (import.meta.env.DEV && opsEnabled()) || this.serverEnabled }
+  setServerEnabled(v: boolean) { this.serverEnabled = v; this.maybeStart() }
+
+  /** Registra los callbacks del store (siempre); arranca el bucle si está activo. */
+  configure(getReal: () => Map<string, Node>, applyExternal?: (nodes: Node[]) => void) {
     this.getReal = getReal
     this.applyExternal = applyExternal ?? null
+    this.maybeStart()
+  }
+
+  /** Arranca el bucle (idempotente). Sólo si está activo (server o localStorage). */
+  private maybeStart() {
+    if (!this.isEnabled() || this.started || !this.getReal) return
+    this.started = true
     this.outbox = loadOutbox()
     this.hlc = loadHlc()
-    // El estado SOMBRA vive en memoria y se reinicia al recargar; por eso NO
-    // reutilizamos el cursor persistido (causaría un shadow incompleto). Se
-    // reconstruye el shadow ENTERO desde seq 0 en cada arranque. (En Fase 5 se
-    // persistirá un snapshot del estado materializado para no re-pullear todo.)
+    // El estado SOMBRA vive en memoria; se reconstruye ENTERO desde seq 0 en cada
+    // arranque (no reutilizar cursor persistido → evitar shadow incompleto).
     this.pulledSeq = 0
     this.shadow = new Map()
     const cycle = async () => { await this.pushOutbox(); await this.pullAndApply(); this.compareToState() }
     void cycle()
     this.timer = setInterval(() => { void cycle() }, 20_000)
-    console.info("[ops] cliente de operaciones en SOMBRA iniciado (flag from_ops_v1)")
+    console.info("[ops] cliente de operaciones iniciado (server/localStorage)")
   }
   stop() {
     if (this.timer) clearInterval(this.timer)

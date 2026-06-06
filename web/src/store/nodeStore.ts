@@ -178,8 +178,9 @@ export class NodeStore {
     }, 15_000)
     // También sincronizar al recuperar foco (vuelve de otra app/ventana)
     document.addEventListener('visibilitychange', this._onVisibilityChange)
-    // Fase 3/7: arrancar el cliente de operaciones en SOMBRA (no-op si flag OFF)
-    opsClient.start(() => this.nodes, (nodes) => this.applyExternalNodes(nodes))
+    // Fase 3/7: registrar callbacks del cliente de operaciones. Se ACTIVA según
+    // el flag del servidor (opsClientEnabled, leído tras cada /sync) o localStorage.
+    opsClient.configure(() => this.nodes, (nodes) => this.applyExternalNodes(nodes))
     // Prueba del flip (Fase 7): reconstruir el estado real desde el op-log.
     ;(window as unknown as { fromOpsRebuild?: () => unknown }).fromOpsRebuild = () => opsClient.rebuildRealFromShadow()
   }
@@ -1316,6 +1317,8 @@ export class NodeStore {
     try {
       const res = await syncNodes(payload)
       this.lastSyncAt = res.syncAt
+      // Fase 6/7: activación CENTRAL del cliente de ops desde el servidor.
+      opsClient.setServerEnabled(!!(res as { opsClientEnabled?: boolean }).opsClientEnabled)
 
       // Solo limpiar de dirtyIds los nodos que NO se modificaron durante el await.
       // Si updatedAt cambió durante el vuelo → el nodo tiene cambios más nuevos → conservar dirty.
