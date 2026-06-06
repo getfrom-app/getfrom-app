@@ -145,7 +145,6 @@ function loadHlc(): HLC | null { try { const s = localStorage.getItem(K_HLC); re
 function saveHlc(h: HLC) { try { localStorage.setItem(K_HLC, hlcToString(h)) } catch {} }
 function loadOutbox(): Op[] { try { return JSON.parse(localStorage.getItem(K_OUTBOX) ?? "[]") } catch { return [] } }
 function saveOutbox(ops: Op[]) { try { localStorage.setItem(K_OUTBOX, JSON.stringify(ops)) } catch {} }
-function loadSeq(): number { try { return Number(localStorage.getItem(K_SEQ) ?? 0) || 0 } catch { return 0 } }
 function saveSeq(n: number) { try { localStorage.setItem(K_SEQ, String(n)) } catch {} }
 
 // ══ Cliente de ops ════════════════════════════════════════════════════════════
@@ -311,7 +310,12 @@ class OpsClient {
     this.getReal = getReal
     this.outbox = loadOutbox()
     this.hlc = loadHlc()
-    this.pulledSeq = loadSeq()
+    // El estado SOMBRA vive en memoria y se reinicia al recargar; por eso NO
+    // reutilizamos el cursor persistido (causaría un shadow incompleto). Se
+    // reconstruye el shadow ENTERO desde seq 0 en cada arranque. (En Fase 5 se
+    // persistirá un snapshot del estado materializado para no re-pullear todo.)
+    this.pulledSeq = 0
+    this.shadow = new Map()
     const cycle = async () => { await this.pushOutbox(); await this.pullAndApply(); this.compareToState() }
     void cycle()
     this.timer = setInterval(() => { void cycle() }, 20_000)
