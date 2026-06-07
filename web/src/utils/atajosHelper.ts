@@ -47,7 +47,8 @@ export function createFilterShortcut(name: string, query: string, view?: string)
   const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
   const node = store.createNode({ text: name, parentId: parent.id, siblingOrder: maxOrder + 1 })
   store.updateNode(node.id, { extraData: JSON.stringify({ _shortcutQuery: query, _shortcutView: view || 'list' }) })
-  window.dispatchEvent(new Event('wf:shortcuts-changed'))
+  // La lista de filtros (SearchPanel/⌘K) se refresca por reactividad del store; ya no
+  // hace falta el evento 'wf:shortcuts-changed' (sin listeners tras unificar favoritos).
   return node.id
 }
 
