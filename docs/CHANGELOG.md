@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.179 / Mac v9.5.22 / iPhone — 7 junio 2026 · Migración a op-log completada
+
+From ya funciona **100% sobre el registro de operaciones**, en todos los dispositivos. La carga inicial viene del op-log (`/ops/bootstrap`) y los cambios se propagan como operaciones en tiempo real. El antiguo mecanismo de sincronización por estado — que comparaba el árbol entero y podía inferir borrados — **queda retirado**: el servidor ya nunca infiere un borrado. Es la culminación de la migración estilo WorkFlowy, blindada con tests automatizados del arranque.
+
+---
+
 ## Web v9.6.173 / Mac v9.5.21 / iPhone — 7 junio 2026 · Sincronización por operaciones (op-log)
 
 **Nuevo motor de sincronización.** From deja atrás la sincronización por estado (que comparaba el árbol entero y podía inferir borrados) y pasa a un **registro de operaciones** estilo WorkFlowy: cada cambio (crear, editar, mover, borrar) es una operación inmutable que se añade a un log. El servidor **nunca infiere un borrado** — solo aplica lo que tú haces. Esto elimina de raíz toda la clase de bugs de duplicación y pérdida de nodos.
