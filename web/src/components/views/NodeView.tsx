@@ -1131,41 +1131,39 @@ export default function NodeView() {
 
   async function handleShare() {
     if (!node) return
-    // Si ya está publicada, copiar URL
-    const existingSlug = node.publicSlug || shareUrl?.split('/p/')[1]
-    if (existingSlug) {
-      const url = `https://getfrom.app/p/${existingSlug}`
+    if (!getToken()) {
+      const url = `https://getfrom.app/app/node/${node.id}`
+      navigator.clipboard.writeText(url).then(() => {
+        setShareCopied(true); setTimeout(() => setShareCopied(false), 2000)
+      }).catch(() => { prompt('Copia este enlace:', url) })
+      return
+    }
+    setIsPublishing(true)
+    try {
+      // El contenido vive en los nodos HIJOS (no en body) → lo serializamos como
+      // markdown recursivo. El servidor pone el título aparte. (Re)publicamos siempre
+      // con el slug existente para mantener la URL y refrescar el contenido.
+      const buildMd = (parentId: string, depth: number): string =>
+        store.children(parentId).filter(n => !n.deletedAt).map(n => {
+          const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
+          return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
+        }).join('')
+      const content = `${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`.trim() || (node.text || '')
+      const existingSlug = node.publicSlug || shareUrl?.split('/p/')[1] || undefined
+      const result = await publishNote(node.text || 'Nota', content, existingSlug)
+      const url = `https://getfrom.app/p/${result.slug}`
+      if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
+      setShareUrl(url)
       navigator.clipboard.writeText(url).catch(() => {})
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 2000)
-      return
-    }
-    if (getToken()) {
-      setIsPublishing(true)
-      try {
-        const content = node.body || node.text || ''
-        const result = await publishNote(node.text || 'Nota', content)
-        const url = `https://getfrom.app/p/${result.slug}`
-        // Guardar slug en el nodo
-        store.updateNode(node.id, { publicSlug: result.slug })
-        setShareUrl(url)
-        navigator.clipboard.writeText(url).catch(() => {})
-        setShareCopied(true)
-        setTimeout(() => setShareCopied(false), 2000)
-      } catch {
-        const url = `https://getfrom.app/app/node/${node!.id}`
-        navigator.clipboard.writeText(url).catch(() => {})
-        setShareCopied(true)
-        setTimeout(() => setShareCopied(false), 2000)
-      } finally {
-        setIsPublishing(false)
-      }
-    } else {
+    } catch {
       const url = `https://getfrom.app/app/node/${node!.id}`
-      navigator.clipboard.writeText(url).then(() => {
-        setShareCopied(true)
-        setTimeout(() => setShareCopied(false), 2000)
-      }).catch(() => { prompt('Copia este enlace:', url) })
+      navigator.clipboard.writeText(url).catch(() => {})
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    } finally {
+      setIsPublishing(false)
     }
   }
 

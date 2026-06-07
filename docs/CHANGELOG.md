@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.195 / Mac v9.5.34 — 7 junio 2026 · Notas públicas con contenido completo
+
+**Las notas públicas ahora muestran TODO el contenido** (antes solo el título): al publicar se incluye la jerarquía completa de la nota. Al volver a pulsar el botón de publicar en una nota ya pública, se **actualiza** su contenido manteniendo el mismo enlace.
+
+---
+
 ## Web v9.6.194 / Mac v9.5.33 — 7 junio 2026 · Buscador en papelera + exportar/copiar completo
 
 - **Buscador en la papelera**: al abrir 🗑 Papelera aparece un buscador para encontrar lo que tiraste.
