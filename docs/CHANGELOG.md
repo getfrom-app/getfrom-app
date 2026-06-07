@@ -4,9 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.179 / Mac v9.5.22 / iPhone — 7 junio 2026 · Migración a op-log completada
+## Web v9.6.179 / Mac v9.5.22 / iPhone v2.3 — 7 junio 2026 · Migración a op-log completada
 
 From ya funciona **100% sobre el registro de operaciones**, en todos los dispositivos. La carga inicial viene del op-log (`/ops/bootstrap`) y los cambios se propagan como operaciones en tiempo real. El antiguo mecanismo de sincronización por estado — que comparaba el árbol entero y podía inferir borrados — **queda retirado**: el servidor ya nunca infiere un borrado. Es la culminación de la migración estilo WorkFlowy, blindada con tests automatizados del arranque.
+
+- **Tiempo real también desde Claude y agentes.** Lo que creas con los conectores de Claude (MCP) o tus agentes del servidor (p. ej. el informe de mercado) ahora aparece al instante en tus dispositivos, no solo al recargar.
+- **iPhone v2.3** con el mismo motor (subida a la App Store en curso).
 
 ---
 
