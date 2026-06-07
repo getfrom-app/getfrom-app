@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.193 / Mac v9.5.32 — 7 junio 2026 · Notas públicas + restaurar de papelera
+
+- **Notas públicas arregladas**: los enlaces `getfrom.app/p/…` ya abren la nota (antes redirigían a la portada). Funciona también con los enlaces ya compartidos.
+- **Restaurar desde la papelera**: el nodo vuelve a su sitio original; si esa ubicación ya no existe, se restaura en 📅 Agenda para que SIEMPRE lo encuentres, y la app te lleva directamente a él.
+
+---
+
 ## Web v9.6.192 / Mac v9.5.31 — 7 junio 2026 · Pulidos varios
 
 - **Al enviar a la papelera una nota abierta**, ahora sales automáticamente a su nota padre (antes te quedabas en una página ya borrada).

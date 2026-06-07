@@ -376,8 +376,17 @@ export default function MainLayout() {
       const parent = parentId ? store.getNode(parentId) : null
       navigate(parent && !parent.deletedAt ? `/node/${parentId}` : '/')
     }
+    function onRestored(e: Event) {
+      const { id } = (e as CustomEvent<{ id: string; parentId: string | null }>).detail || {}
+      if (!id) return
+      navigate(`/node/${id}`)  // llevar al usuario al nodo restaurado (lo encuentra al instante)
+    }
     window.addEventListener('from:node-trashed', onTrashed)
-    return () => window.removeEventListener('from:node-trashed', onTrashed)
+    window.addEventListener('from:node-restored', onRestored)
+    return () => {
+      window.removeEventListener('from:node-trashed', onTrashed)
+      window.removeEventListener('from:node-restored', onRestored)
+    }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Limpiar / aplicar filtro desde cualquier componente

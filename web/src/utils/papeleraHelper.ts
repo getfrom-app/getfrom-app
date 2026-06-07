@@ -83,23 +83,34 @@ export function trashNode(nodeId: string): void {
 }
 
 /**
- * Restaura un nodo a su ubicación original.
+ * Restaura un nodo de la papelera a su ubicación original — o, si esa ubicación ya
+ * no es válida (no existe, está borrada, sigue en la papelera, o era la raíz null que
+ * con 🏠 From ya no se ve), a 📅 Agenda para que SIEMPRE quede visible. Devuelve el id
+ * del padre final y emite `from:node-restored` para que MainLayout navegue al nodo.
  */
-export function restoreNode(nodeId: string): void {
+export function restoreNode(nodeId: string): string | null {
   const node = store.getNode(nodeId)
-  if (!node) return
+  if (!node) return null
 
   let ed: Record<string, unknown> = {}
   try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
 
-  const originalParentId = ed._trashedFromParentId as string | null | undefined
+  const originalParentId = (ed._trashedFromParentId as string | null | undefined) ?? null
   delete ed._trashedFromParentId
   delete ed._trashedAt
 
-  store.updateNode(nodeId, {
-    parentId:  originalParentId ?? null,
-    extraData: JSON.stringify(ed),
-  })
+  // El destino es válido solo si existe, no está borrado y NO está en la papelera.
+  const parentValid = !!originalParentId && (() => {
+    const p = store.getNode(originalParentId)
+    return !!p && !p.deletedAt && !isInPapelera(originalParentId)
+  })()
+  const targetParent = parentValid
+    ? originalParentId!
+    : (findRootByKey('agenda', '📅 Agenda')?.id ?? null)
+
+  store.updateNode(nodeId, { parentId: targetParent, extraData: JSON.stringify(ed) })
+  window.dispatchEvent(new CustomEvent('from:node-restored', { detail: { id: nodeId, parentId: targetParent } }))
+  return targetParent
 }
 
 /**

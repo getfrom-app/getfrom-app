@@ -8,6 +8,12 @@
     // main.tsx lee ?p= y restaura la ruta para React Router
     (function () {
       var path = window.location.pathname;
+      // Notas públicas: getfrom.app/p/<slug> lo renderiza el servidor (GitHub Pages
+      // no tiene esa ruta). Redirigir al endpoint público del servidor.
+      if (path.indexOf('/p/') === 0) {
+        window.location.replace('https://from-server-production.up.railway.app' + path + (window.location.search || ''));
+        return;
+      }
       if (path.startsWith('/app')) {
         // Extrae la sub-ruta sin el prefijo /app y sin la barra inicial
         var sub = path.replace(/^\/app\/?/, '') || '';
