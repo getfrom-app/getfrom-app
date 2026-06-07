@@ -43,6 +43,8 @@ const NON_AGENDA_SYSTEM_TEXTS = new Set([
   '📋 Plantillas',
   '🗑 Papelera',
   '🤖 Agentes',
+  '🔍 Filtros',   // contenedor de filtros guardados (antes "📊 Paneles")
+  '📊 Paneles',   // back-compat hasta migrar el nombre
   '📁 Paneles',
   '📁 Atajos',
 ])

@@ -7,7 +7,7 @@ import { useToast } from './Toast'
 import { normalizeText } from '../utils/normalize'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { findContextRoot } from '../utils/rootLookup'
-import { getAtajosNode, getShortcutData } from '../utils/atajosHelper'
+import { getAtajosNode, getShortcutData, createFilterShortcut } from '../utils/atajosHelper'
 
 interface Props {
   onClose: () => void
@@ -24,17 +24,6 @@ interface PaletteItem {
   score: number
 }
 
-// ── Panels storage ───────────────────────────────────────────────────────────
-const PANELS_KEY = 'from_panels'
-function addPanel(name: string, query: string) {
-  try {
-    const panels = JSON.parse(localStorage.getItem(PANELS_KEY) || '[]')
-    panels.push({ id: Date.now().toString(), name, query, createdAt: new Date().toISOString() })
-    localStorage.setItem(PANELS_KEY, JSON.stringify(panels))
-    // Forzar re-render del sidebar via evento
-    window.dispatchEvent(new Event('panels-updated'))
-  } catch { /* ignore */ }
-}
 
 const RECENT_KEY = 'from_recent_nodes'
 
@@ -431,7 +420,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
 
   function handleSavePanel() {
     if (!panelName.trim()) return
-    addPanel(panelName.trim(), query)
+    createFilterShortcut(panelName.trim(), query)
     showToast(`Filtro "${panelName.trim()}" guardado`)
     onClose()
   }

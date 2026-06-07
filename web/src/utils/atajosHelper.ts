@@ -1,26 +1,34 @@
 import { store } from '../store/nodeStore'
 import { structuralId } from './deterministicId'
+import { findRootByKey } from './rootLookup'
 
-const ATAJOS_NAME = '📊 Paneles'
+// Contenedor (invisible) de los filtros guardados. Antes se llamaba "📊 Paneles";
+// renombrado a "🔍 Filtros" para desacoplarlo del extinto concepto de paneles.
+// La clave determinista sigue siendo 'paneles' → el id NO cambia (datos intactos).
+const ATAJOS_NAME = '🔍 Filtros'
+const ATAJOS_OLD_NAME = '📊 Paneles'
 
 export function getAtajosNode() {
-  // Buscar en TODOS los nodos activos (no solo children de null)
-  // para evitar problemas si parentId no está indexado aún al inicio
-  return store.allActive().find(n => n.text === ATAJOS_NAME && n.parentId === null)
+  // Robusto al reparent y al renombrado: por id determinista + fallback por texto
+  // (nombre nuevo y antiguo).
+  return findRootByKey('paneles', ATAJOS_NAME, ATAJOS_OLD_NAME)
 }
 
 export function ensureAtajosNode() {
-  // Buscar duplicados — si hay más de uno con este nombre, dejar solo el más antiguo
-  const all = store.allActive().filter(n => n.text === ATAJOS_NAME && n.parentId === null)
+  // Buscar duplicados (nombre nuevo o antiguo) — dejar solo el más antiguo
+  const all = store.allActive().filter(n => (n.text === ATAJOS_NAME || n.text === ATAJOS_OLD_NAME) && n.parentId === null)
   if (all.length > 1) {
-    // Ordenar por fecha de creación, mantener el más antiguo
     all.sort((a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime())
     for (let i = 1; i < all.length; i++) {
       store.deleteNode(all[i].id)
     }
   }
-  const existing = all[0]
-  if (existing) return existing
+  const existing = all[0] ?? getAtajosNode()
+  if (existing) {
+    // Migración cosmética: renombrar el contenedor antiguo a "🔍 Filtros"
+    if (existing.text === ATAJOS_OLD_NAME) store.updateNode(existing.id, { text: ATAJOS_NAME })
+    return existing
+  }
 
   // Solo crear si el store tiene nodos cargados (evita crear en estado vacío)
   if (store.allActive().length < 3) {
@@ -42,7 +50,7 @@ export function isShortcutNode(nodeId: string): boolean {
   } catch { return false }
 }
 
-// Create a filter panel node under 📊 Paneles
+// Crea un filtro guardado (bajo el contenedor 🔍 Filtros)
 export function createFilterShortcut(name: string, query: string, view?: string): string {
   const parent = ensureAtajosNode()
   const siblings = store.children(parent.id)
