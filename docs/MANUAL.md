@@ -22,7 +22,7 @@ Ve a [getfrom.app](https://getfrom.app) y pulsa **Crear cuenta**. Puedes registr
 - Cuenta de Google
 - Apple ID
 
-Con la misma cuenta accedes desde el navegador, Mac e iPhone. Todo sincroniza automáticamente.
+Con la misma cuenta accedes desde el navegador, Mac e iPhone. Todo sincroniza **en tiempo real**: empieza una idea en el móvil y aparece al instante en el ordenador. La sincronización registra cada cambio como una operación, así que nunca pierde ni borra nada por error — incluido lo que crees desde Claude o tus agentes, que también aparece al momento.
 
 ### Acceder desde el navegador
 

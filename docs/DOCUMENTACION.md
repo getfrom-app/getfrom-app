@@ -1,7 +1,20 @@
 # From — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-05-25 (Web v7.48)
+> Última actualización: 2026-06-07 (Web v9.6.179 / Mac v9.5.22 / iOS v2.3)
+
+---
+
+## 🏛️ Sesión 2026-06-07 — HITO: Sync por operaciones (op-log estilo WorkFlowy)
+
+**Cambio de arquitectura mayor.** From migra de sync-por-estado (el servidor comparaba el árbol
+entero y deducía borrados → causa del incidente 5-6 jun) a **sync por operaciones**: el op-log
+append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
+
+- **Servidor:** motor `lib/ops.ts` (HLC, applyOp/replay, LWW por campo, tombstones, no-ciclos); `lib/opsLog.ts` (`emitOpsForNodes`, materialización, compactación). Endpoints `GET /ops/bootstrap` (carga inicial, misma forma que /sync, solo lectura), `POST /ops/push`, `GET /ops/pull`, `GET /ops/state`, `GET /ops/config`. `POST /sync` neutralizado → alias read-only. `OPS_LIVE_ALL=true` (global). `POST /admin/ops-compact` race-safe.
+- **Clientes (web/Mac/iOS):** `bootstrapLoad()` desde `/ops/bootstrap`, escritura por `/ops/push`, deltas en tiempo real por `/ops/pull`. Motor copiado byte-a-byte (web `opsClient.ts`, iOS `Ops.swift`). Fix del "parpadeo" aplicando deltas en vez de reconstruir el árbol. Test headless `bootstrapLoad.test.ts` (4/4).
+- **MCP + agentes** propagan al op-log vía `emitOpsForNodes` → cambios en tiempo real.
+- Detalle completo del hito y la lección (2 intentos nocturnos fallidos → uno diurno con test): `logs/2026-06-07-hito-sync-operaciones.md`.
 
 ---
 
