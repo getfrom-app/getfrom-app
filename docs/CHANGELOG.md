@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.192 / Mac v9.5.31 — 7 junio 2026 · Pulidos varios
+
+- **Al enviar a la papelera una nota abierta**, ahora sales automáticamente a su nota padre (antes te quedabas en una página ya borrada).
+- **Quitar recurrencia** desde su chip: pasa el ratón y pulsa la ×, o clic derecho.
+- **Barra de desplazamiento visible** en las notas (antes era invisible en tema claro).
+- **Notas de día/mes/año más limpias**: se quitan los botones de publicar, bucle y el menú ··· (no aplican). En la **nota diaria** queda un botón **📋 Plantillas** para aplicar una plantilla con un clic.
+
+---
+
 ## Web v9.6.191 / Mac v9.5.30 — 7 junio 2026 · Las raíces de sistema no se pueden eliminar
 
 **Protección de estructura.** Los nodos de sistema (📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes, 📋 Plantillas, 🗑 Papelera, 🧠 Perfil de IA, 🏠 From) ya **no se pueden eliminar** — son la estructura de From. Al intentarlo, aparece un aviso y no pasa nada. Así nunca te quedas sin sitio donde crear una plantilla, un agente, etc. (Los duplicados sueltos sí se pueden limpiar normalmente.)

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 import { findContextRoot, isProtectedSystemRoot } from '../../utils/rootLookup'
+import { listTemplates, applyTemplate } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -143,6 +144,7 @@ export default function NodeView() {
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false)
 
   // Quick actions bar state
   const [quickActionMsg, setQuickActionMsg] = useState<string | null>(null)
@@ -2084,6 +2086,35 @@ export default function NodeView() {
 
               {/* Botón ✦ eliminado — "Lo que From sabe" se actualiza automáticamente al abrir el contexto */}
 
+              {/* ── Plantillas — SOLO en la nota diaria: aplicar una plantilla ── */}
+              {node.isDiaryEntry && (
+                <div style={{ position: 'relative' }}>
+                  <button
+                    className={`node-action-icon-btn ${showTemplateMenu ? 'active' : ''}`}
+                    onClick={() => setShowTemplateMenu(v => !v)}
+                    title="Aplicar plantilla"
+                  >📋</button>
+                  {showTemplateMenu && (
+                    <div className="node-share-menu">
+                      {(() => {
+                        const tpls = listTemplates()
+                        if (tpls.length === 0) return <button disabled>No tienes plantillas</button>
+                        return tpls.map(tpl => (
+                          <button key={tpl.id} onClick={() => {
+                            applyTemplate(tpl.id, node.id)
+                            setShowTemplateMenu(false)
+                            setQuickActionMsg('Plantilla aplicada')
+                            setTimeout(() => setQuickActionMsg(null), 2000)
+                          }}>📋 {tpl.text}</button>
+                        ))
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Publicar / Bucle / ··· — no aplican en notas temporales (diaria/mes/año) */}
+              {!(node.isDiaryEntry || temporalNodeType !== null) && (<>
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
                 <button
@@ -2219,6 +2250,7 @@ export default function NodeView() {
                   </div>
                 )}
               </div>
+              </>)}
             </div>
           </div>
 

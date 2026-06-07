@@ -76,6 +76,10 @@ export function trashNode(nodeId: string): void {
   // Cuando borramos B después de haber borrado A (hijo de B):
   // A está en Papelera con _trashedFromParentId=B.id → A pasa a ser hijo de B.
   reconnectOrphanedChildren(nodeId)
+
+  // Si el nodo borrado estaba ABIERTO en la ventana central, MainLayout navega al
+  // padre (no tiene sentido quedarse en una página que ya está en la papelera).
+  window.dispatchEvent(new CustomEvent('from:node-trashed', { detail: { id: nodeId, parentId: originalParentId } }))
 }
 
 /**

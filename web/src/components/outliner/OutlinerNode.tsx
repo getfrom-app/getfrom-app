@@ -3681,7 +3681,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
               const [sing, plur] = unitLabels[unit] || [unit, unit]
               const txt = n === 1 ? sing : `${n} ${plur}`
-              return <span className="node-type-badge recurrence" title={`Repite cada ${txt}`}>🔁 {txt}</span>
+              const removeRecurrence = (e: React.MouseEvent) => {
+                e.stopPropagation(); e.preventDefault()
+                store.updateNode(node.id, { recurrence: null })
+              }
+              // Clic derecho elimina la recurrencia; también hay una × al pasar el ratón.
+              return (
+                <span
+                  className="node-type-badge recurrence"
+                  title={`Repite cada ${txt} · clic derecho o × para quitar`}
+                  onContextMenu={removeRecurrence}
+                >
+                  🔁 {txt}
+                  <button
+                    className="node-badge-remove"
+                    onClick={removeRecurrence}
+                    title="Quitar recurrencia"
+                    aria-label="Quitar recurrencia"
+                  >×</button>
+                </span>
+              )
             })()}
 
             {/* Contexto badge — tres modos:

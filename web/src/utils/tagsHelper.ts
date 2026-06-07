@@ -15,7 +15,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId } from './deterministicId'
-import { findContextRoot } from './rootLookup'
+import { findContextRoot, findRootByKey } from './rootLookup'
 
 export const TAGS_ROOT_NAME = '🧠 Contexto'
 
@@ -61,6 +61,38 @@ export function findTagsRoot(): Node | undefined {
 
 export function getOrCreateTagsRoot(): Node {
   return findTagsRoot() ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
+}
+
+/** Plantillas disponibles (hijos de 📋 Plantillas). */
+export function listTemplates(): Node[] {
+  const root = findRootByKey('plantillas', '📋 Plantillas', 'Plantillas')
+  if (!root) return []
+  return store.children(root.id).filter(n => !n.deletedAt && (n.text || '').trim())
+    .sort((a, b) => a.siblingOrder - b.siblingOrder)
+}
+
+/**
+ * applyTemplate — copia (recursivamente) el contenido de una plantilla como hijos del
+ * nodo destino (p.ej. la nota diaria). Copia texto/body/status/types; preserva el
+ * orden. No mueve la plantilla original.
+ */
+export function applyTemplate(templateNodeId: string, targetNodeId: string): void {
+  const copyChildren = (srcId: string, dstId: string) => {
+    const kids = store.children(srcId).filter(n => !n.deletedAt).sort((a, b) => a.siblingOrder - b.siblingOrder)
+    for (const child of kids) {
+      const copy = store.createNode({
+        text: child.text,
+        parentId: dstId,
+        types: child.types ? [...child.types] : [],
+      })
+      const patch: Partial<typeof child> = {}
+      if (child.body) patch.body = child.body
+      if (child.status) patch.status = child.status
+      if (Object.keys(patch).length) store.updateNode(copy.id, patch)
+      copyChildren(child.id, copy.id)
+    }
+  }
+  copyChildren(templateNodeId, targetNodeId)
 }
 
 /**

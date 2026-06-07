@@ -365,6 +365,21 @@ export default function MainLayout() {
     return () => window.removeEventListener('magic-chat:open-with-text', onOpenWithText)
   }, [])
 
+  // Al mandar a la papelera el nodo ABIERTO, salir a su padre (no quedarse en la
+  // página que ya está en la papelera). Cubre todos los caminos de borrado (trashNode).
+  useEffect(() => {
+    function onTrashed(e: Event) {
+      const { id, parentId } = (e as CustomEvent<{ id: string; parentId: string | null }>).detail || {}
+      const m = location.pathname.match(/\/node\/([^/]+)/)
+      const current = m ? m[1] : null
+      if (current !== id) return
+      const parent = parentId ? store.getNode(parentId) : null
+      navigate(parent && !parent.deletedAt ? `/node/${parentId}` : '/')
+    }
+    window.addEventListener('from:node-trashed', onTrashed)
+    return () => window.removeEventListener('from:node-trashed', onTrashed)
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Limpiar / aplicar filtro desde cualquier componente
   useEffect(() => {
     function handleClearFilter() { setFilterText('') }
