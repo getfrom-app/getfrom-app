@@ -547,6 +547,35 @@ export default function NodeView() {
     return applyWFFilter(s.nodes, effective)
   }, [activeFilterQuery, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Buscador de la papelera: al abrir 🗑 Papelera mostramos el buscador in-doc
+  // automáticamente (y reseteamos el filtro al cambiar de nodo).
+  const isPapeleraNode = (node?.text || '').trim() === '🗑 Papelera'
+  useEffect(() => {
+    setInDocSearch('')
+    setShowInDocSearch(isPapeleraNode)
+  }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filtro de la papelera por texto (el filtro normal está acotado a Agenda, que no
+  // incluye la papelera) → matchIds propios sobre el subárbol de la papelera.
+  const papeleraFilter = useMemo(() => {
+    if (!isPapeleraNode || !inDocSearch.trim() || !node) return null
+    const q = inDocSearch.trim().toLowerCase()
+    const matchIds = new Set<string>()
+    const ancestorIds = new Set<string>()
+    const walk = (id: string, ancestors: string[]) => {
+      for (const child of store.children(id)) {
+        if (child.deletedAt) continue
+        if ((child.text || '').toLowerCase().includes(q)) {
+          matchIds.add(child.id)
+          ancestors.forEach(a => ancestorIds.add(a))
+        }
+        walk(child.id, [...ancestors, child.id])
+      }
+    }
+    walk(node.id, [])
+    return { matchIds, ancestorIds }
+  }, [isPapeleraNode, inDocSearch, node?.id, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // titleTagPicker eliminado — #tags no existen en From
 
   // Icono del nodo (extraData.icon)
@@ -1344,9 +1373,12 @@ export default function NodeView() {
   function handleExportMarkdown() {
     const title = node!.text || 'nota'
     const body = node!.body || ''
-    const children = store.children(node!.id)
-    const bulletsMd = children.map(c => `- ${c.text}${c.body ? '\n\n  ' + c.body.replace(/\n/g, '\n  ') : ''}`).join('\n')
-    const content = `# ${title}\n\n${body}${bulletsMd ? '\n\n## Bullets\n\n' + bulletsMd : ''}\n`
+    const buildMd = (parentId: string, depth: number): string =>
+      store.children(parentId).filter(n => !n.deletedAt).map(n => {
+        const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
+        return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
+      }).join('')
+    const content = `# ${title}\n\n${body ? body + '\n\n' : ''}${buildMd(node!.id, 0)}`
     const blob = new Blob([content], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -1367,9 +1399,11 @@ export default function NodeView() {
   function handleCopyToClipboard() {
     const title = node!.text || 'Sin título'
     const body = node!.body || ''
-    const children = store.children(node!.id)
-    const bullets = children.map(c => `• ${c.text}`).join('\n')
-    const text = [title, body, bullets].filter(Boolean).join('\n\n')
+    const buildTxt = (parentId: string, depth: number): string =>
+      store.children(parentId).filter(n => !n.deletedAt).map(n =>
+        '  '.repeat(depth) + '• ' + n.text + '\n' + buildTxt(n.id, depth + 1)
+      ).join('')
+    const text = `${title}\n${body ? '\n' + body + '\n' : ''}\n${buildTxt(node!.id, 0)}`.trim()
     navigator.clipboard.writeText(text).then(() => {
       setQuickActionMsg('Copiado al portapapeles')
       setTimeout(() => setQuickActionMsg(null), 2000)
@@ -1602,7 +1636,7 @@ export default function NodeView() {
               ref={inDocSearchRef}
               type="text"
               className="in-doc-search-input"
-              placeholder="Buscar en esta nota..."
+              placeholder={isPapeleraNode ? 'Buscar en la papelera...' : 'Buscar en esta nota...'}
               value={inDocSearch}
               onChange={e => setInDocSearch(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') { setShowInDocSearch(false); setInDocSearch('') } }}
@@ -2752,9 +2786,9 @@ export default function NodeView() {
                   <Outliner
                     parentId={node.id}
                     autoFocusEmpty
-                    filterText={smartFilterResult ? undefined : (activeFilterQuery || undefined)}
-                    filterMatchIds={smartFilterResult?.matchIds}
-                    filterAncestorIds={smartFilterResult?.ancestorIds}
+                    filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
+                    filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
+                    filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
                     temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
                     disableLocalFilter
                   />

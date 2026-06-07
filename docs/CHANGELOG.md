@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.194 / Mac v9.5.33 — 7 junio 2026 · Buscador en papelera + exportar/copiar completo
+
+- **Buscador en la papelera**: al abrir 🗑 Papelera aparece un buscador para encontrar lo que tiraste.
+- **Copiar/Exportar mejorado**: copiar Markdown, copiar texto y exportar Markdown ahora incluyen **toda la jerarquía** de la nota (antes solo el primer nivel). (Exportar PDF, copiar y exportar siguen en el menú ··· de las notas.)
+
+---
+
 ## Web v9.6.193 / Mac v9.5.32 — 7 junio 2026 · Notas públicas + restaurar de papelera
 
 - **Notas públicas arregladas**: los enlaces `getfrom.app/p/…` ya abren la nota (antes redirigían a la portada). Funciona también con los enlaces ya compartidos.
