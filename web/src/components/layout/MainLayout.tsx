@@ -85,6 +85,10 @@ export default function MainLayout() {
   // Wrapper: aplicar filtro + navegar a raíz si estamos dentro de un nodo
   const applyFilter = (q: string) => {
     setFilterText(q)
+    // Limpiar el filtro (query vacía) NO debe sacarte del nodo actual: solo navegamos
+    // a la home cuando se APLICA un filtro real (para ver los resultados). Sin esto,
+    // montar SearchPanel (que llama onFilter('') al iniciar) te echaba del nodo.
+    if (!q.trim()) return
     const path = window.location.pathname.replace(/^\/app\/?/, '') || '/'
     if (path !== '/' && path !== '') navigate('/')
   }
@@ -362,6 +366,8 @@ export default function MainLayout() {
     function handleSetFilter(e: Event) {
       const q = (e as CustomEvent<{ query: string }>).detail?.query ?? ''
       setFilterText(q)
+      // Solo navegar a home al aplicar un filtro real; query vacía = limpiar (no mover).
+      if (!q.trim()) return
       // Asegurar que estamos en la vista raíz para ver el árbol filtrado
       const path = window.location.pathname.replace(/^\/app/, '') || '/'
       if (path !== '/' && path !== '') navigate('/')
