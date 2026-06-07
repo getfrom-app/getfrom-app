@@ -14,7 +14,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId } from './deterministicId'
-import { findRootByKey } from './rootLookup'
+import { findRootByKey, isProtectedSystemRoot } from './rootLookup'
 
 const PAPELERA_NAME = '🗑 Papelera'
 
@@ -43,6 +43,13 @@ export function ensurePapeleraNode(): Node {
 export function trashNode(nodeId: string): void {
   const node = store.getNode(nodeId)
   if (!node) return
+
+  // Las raíces de sistema (Agenda, Contexto, Prompts, Agentes, Plantillas, Papelera,
+  // Perfil, 🏠 From) son estructura: no se pueden eliminar.
+  if (isProtectedSystemRoot(nodeId)) {
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
+    return
+  }
 
   const papelera = ensurePapeleraNode()
   const originalParentId = node.parentId

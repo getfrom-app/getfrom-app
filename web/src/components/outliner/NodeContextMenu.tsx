@@ -19,6 +19,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import { trashNode, isInPapelera, restoreNode } from '../../utils/papeleraHelper'
+import { isProtectedSystemRoot } from '../../utils/rootLookup'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
@@ -286,6 +287,12 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }
 
   function deleteNode() {
+    // Raíces de sistema: no se pueden eliminar.
+    if (!isMulti && isProtectedSystemRoot(node.id)) {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
+      onClose()
+      return
+    }
     if (isMulti) {
       // Bulk: mover todos a papelera
       if (!confirm(`¿Mover ${effectiveIds.length} nodos a la Papelera?`)) return

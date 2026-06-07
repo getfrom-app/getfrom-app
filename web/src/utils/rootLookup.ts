@@ -28,3 +28,19 @@ export function findRootByKey(key: string, ...names: string[]): Node | undefined
 export function findContextRoot(): Node | undefined {
   return findRootByKey('contexto', '🧠 Contexto', '🏷 Tags')
 }
+
+/**
+ * isProtectedSystemRoot — true si el nodo es una raíz de sistema CANÓNICA que NO debe
+ * poder eliminarse (Home/Agenda/Contexto/Prompts/Agentes/Plantillas/Paneles/Papelera/Perfil).
+ * Se identifica por id determinista (robusto al reparent) + el flag de Perfil IA.
+ * NO por texto: así los DUPLICADOS (id aleatorio) sí se pueden limpiar.
+ */
+export function isProtectedSystemRoot(nodeId: string): boolean {
+  for (const key of ['home','agenda','contexto','prompts','agentes','plantillas','paneles','papelera','perfil']) {
+    if (structuralId(key) === nodeId) return true
+  }
+  const n = store.getNode(nodeId)
+  if (!n) return false
+  try { if (JSON.parse(n.extraData || '{}')._perfilIA === '1') return true } catch { /* ignore */ }
+  return false
+}

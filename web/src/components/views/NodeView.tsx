@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
-import { findContextRoot } from '../../utils/rootLookup'
+import { findContextRoot, isProtectedSystemRoot } from '../../utils/rootLookup'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -1391,6 +1391,11 @@ export default function NodeView() {
 
   function handleDelete() {
     if (!node) return
+    // Raíces de sistema: no se pueden eliminar.
+    if (isProtectedSystemRoot(node.id)) {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
+      return
+    }
     const childCount = (() => {
       let count = 0
       const q = [node.id]

@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.191 / Mac v9.5.30 — 7 junio 2026 · Las raíces de sistema no se pueden eliminar
+
+**Protección de estructura.** Los nodos de sistema (📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes, 📋 Plantillas, 🗑 Papelera, 🧠 Perfil de IA, 🏠 From) ya **no se pueden eliminar** — son la estructura de From. Al intentarlo, aparece un aviso y no pasa nada. Así nunca te quedas sin sitio donde crear una plantilla, un agente, etc. (Los duplicados sueltos sí se pueden limpiar normalmente.)
+
+---
+
 ## Web v9.6.190 / Mac v9.5.29 — 7 junio 2026 · Limpieza de menús + Perfil IA + Sin clasificar
 
 - **Menú ··· más limpio**: Agentes y Plantillas se abren desde su nodo en el árbol; quedan fuera del menú. Añadido acceso directo a **🧠 Perfil de IA**.

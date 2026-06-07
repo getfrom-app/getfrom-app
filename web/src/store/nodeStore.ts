@@ -2,6 +2,7 @@ import { syncNodes, getToken, apiRequest } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
 import { opsClient } from './opsClient'
+import { structuralId } from '../utils/deterministicId'
 
 const GUEST_NODES_KEY = 'from_guest_nodes'
 
@@ -1027,6 +1028,14 @@ export class NodeStore {
   }
 
   deleteNode(id: string): void {
+    // Protección: las raíces de sistema CANÓNICAS (id determinista) nunca se borran
+    // — ni por Backspace/merge ni por limpiezas. Los DUPLICADOS (id aleatorio) sí se
+    // pueden borrar (el dedup los necesita), por eso protegemos solo por id determinista.
+    for (const k of ['home','agenda','contexto','prompts','agentes','plantillas','paneles','papelera','perfil']) {
+      if (structuralId(k) === id) return
+    }
+    const _n = this.nodes.get(id)
+    if (_n) { try { if (JSON.parse(_n.extraData || '{}')._perfilIA === '1') return } catch { /* ignore */ } }
     // Cascada EXPLÍCITA: marca deletedAt en el nodo y TODOS sus descendientes
     // activos. Con el sync por operaciones el servidor ya no infiere borrados
     // (se apaga la cascada destructiva del servidor), así que el cliente debe
