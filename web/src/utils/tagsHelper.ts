@@ -255,17 +255,15 @@ Profesión / actividad principal:
  *   · Existe con padre → no hace nada
  */
 export function ensurePerfilInsideContexto(): void {
-  // Obtener o crear el nodo raíz 🧠 Contexto
-  const contextoRoot = findContextRoot()
-    ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
-
+  // El Perfil IA NO es un contexto ni vive en el árbol: es una raíz flotante
+  // (parentId=null) accesible solo desde el menú ···. Antes colgaba de 🧠 Contexto.
   const perfil = store.perfilIANode?.() ?? null
 
   if (!perfil) {
-    // Primera vez: crear dentro de Contexto como nodos hijos (no body editor)
+    // Primera vez: crear como raíz flotante (fuera del árbol home y de Contextos)
     const newPerfil = store.createNode({
       text: '🧠 Perfil de IA',
-      parentId: contextoRoot.id,
+      parentId: null,
       extraData: { _perfilIA: '1' },
       predefinedId: structuralId('perfil') ?? undefined,
     })
@@ -286,9 +284,10 @@ export function ensurePerfilInsideContexto(): void {
     return
   }
 
-  // Ya existe pero está en root → moverlo dentro de Contexto
-  if (perfil.parentId === null) {
-    store.updateNode(perfil.id, { parentId: contextoRoot.id })
+  // Migración: si el Perfil quedó dentro de 🧠 Contexto (o de cualquier otro nodo),
+  // sacarlo a raíz flotante (parentId=null) — nunca debió ser un contexto.
+  if (perfil.parentId !== null) {
+    store.updateNode(perfil.id, { parentId: null })
   }
 
   // ── Migración: si tiene .body pero no nodos hijos, convertir a nodos ──────

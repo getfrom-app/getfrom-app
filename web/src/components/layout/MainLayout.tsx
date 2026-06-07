@@ -16,7 +16,8 @@ import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import { aiChatStore } from '../../store/aiChatStore'
-import { ensurePromptsNode } from '../../utils/promptsHelper'
+import { ensurePromptsNode, getPromptsRoot } from '../../utils/promptsHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
@@ -63,7 +64,7 @@ import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
-import { ensureAgentesNode, migrateAgentsV2 } from '../../utils/agentesHelper'
+import { ensureAgentesNode, migrateAgentsV2, getAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -157,8 +158,12 @@ export default function MainLayout() {
     navigate(`/node/${nodeId}`)
   }
   function backToList(kind: 'context' | 'prompt' | 'agent') {
+    // Las listas ya no viven en la columna derecha: el ← navega a la raíz
+    // correspondiente en el árbol central y deja la derecha en el filtro.
     setDetailNodeId(null)
-    setRightPanel(kind === 'context' ? 'context-list' : kind === 'prompt' ? 'prompt-list' : 'agent-list')
+    setRightPanel('filter')
+    const root = kind === 'context' ? findContextRoot() : kind === 'prompt' ? getPromptsRoot() : getAgentesNode()
+    if (root) navigate(`/node/${root.id}`)
   }
   function handleSelectPrompt(nodeId: string) { openDetail('prompt', nodeId) }
   function handleSelectAgent(nodeId: string)  { openDetail('agent', nodeId) }
@@ -908,7 +913,7 @@ export default function MainLayout() {
             <MagicChat mode="panel" onClose={() => openPanel('filter')} currentNodeId={currentNodeIdFromRoute} />
           )}
           {rightPanel === 'filter' && (
-            <SearchPanel filterText={filterText} onFilter={applyFilter} onClose={() => { setFilterText('') }} />
+            <SearchPanel filterText={filterText} onFilter={applyFilter} onClose={() => { setFilterText('') }} onSelectContext={handleSelectContext} activeContextId={contextNodeId} />
           )}
           {rightPanel === 'planner' && (
             <PlannerPanel onClose={() => openPanel('filter')} />

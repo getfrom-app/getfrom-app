@@ -13,7 +13,13 @@ interface Props {
   filterText: string
   onFilter: (text: string) => void
   onClose: () => void
+  // Filtro especial "Sin clasificar" (contextNodeId), gestionado por MainLayout.
+  onSelectContext?: (id: string) => void
+  activeContextId?: string | null
 }
+
+/** Constante del filtro especial "Sin clasificar" (debe coincidir con ContextListPanel). */
+const UNCLASSIFIED_FILTER_ID = '__unclassified__'
 
 const TYPE_CHIPS = [
   { labelKey: 'search.chipNote',    query: 'nota' },
@@ -45,7 +51,7 @@ function cartesian(arrays: string[][]): string[][] {
   )
 }
 
-export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
+export default function SearchPanel({ filterText, onFilter, onClose, onSelectContext, activeContextId }: Props) {
   const s = useStore()
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -185,8 +191,19 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
           {STATUS_CHIPS.map(c => renderChip(c, 'status'))}
           {BUCLE_CHIPS.map(c => renderChip(c, 'bucle'))}
         </div>
-        {contextChips.length > 0 && (
-          <div className="search-panel-row">{contextChips.map(c => renderChip(c, 'context'))}</div>
+        {(contextChips.length > 0 || onSelectContext) && (
+          <div className="search-panel-row">
+            {contextChips.map(c => renderChip(c, 'context'))}
+            {/* Filtro especial: nodos de la Agenda sin contexto asignado */}
+            {onSelectContext && (
+              <button
+                className={`search-panel-chip ${activeContextId === UNCLASSIFIED_FILTER_ID ? 'active' : ''}`}
+                onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
+              >
+                Sin clasificar
+              </button>
+            )}
+          </div>
         )}
       </div>
 

@@ -549,22 +549,27 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // ya tienen su contexto implícito por posición.
   const isInsideRestrictedAncestor = useMemo(() => {
     const contextoRoot = findContextRoot()
+    // Raíces de sistema FUERA de Agenda: ni ellas ni sus subárboles se clasifican
+    // ni muestran chip de contexto. (Agenda y 🏠 From NO están aquí a propósito.)
+    const NON_AGENDA_ROOTS = new Set(['📋 Plantillas','⚡ Prompts','🤖 Agentes','📊 Paneles','🔍 Filtros','🗑 Papelera'])
 
-    let cur = store.getNode(node.parentId ?? '')
+    // Empezar por el PROPIO nodo (para cubrir las raíces de sistema en sí mismas).
+    let cur = store.getNode(node.id)
     let depth = 0
-    while (cur && depth < 8) {
+    while (cur && depth < 10) {
       try {
         const ed = JSON.parse(cur.extraData || '{}')
         if (ed._perfilIA === '1') return true
       } catch { /* ignore */ }
       if (contextoRoot && cur.id === contextoRoot.id) return true
-      if ((cur.text || '') === '🗑 Papelera') return true
-      cur = store.getNode(cur.parentId ?? '')
+      if (NON_AGENDA_ROOTS.has((cur.text || '').trim())) return true
+      if (!cur.parentId) break
+      cur = store.getNode(cur.parentId)
       depth++
     }
     return false
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.parentId])
+  }, [node.id, node.parentId, node.text])
 
   // Comprueba si el nodo está dentro de estructuras donde NO debe extraerse conocimiento del usuario.
   // Igual que isInsideRestrictedAncestor EXCEPTO que la Agenda no bloquea:

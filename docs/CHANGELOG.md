@@ -4,6 +4,22 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.189 / Mac v9.5.29 — 7 junio 2026 · Limpieza de menús + Perfil IA + Sin clasificar
+
+- **Menú ··· más limpio**: Agentes y Plantillas se abren desde su nodo en el árbol; quedan fuera del menú. Añadido acceso directo a **🧠 Perfil de IA**.
+- **Perfil de IA fuera de Contextos**: nunca fue un contexto. Ahora es independiente (no aparece en la lista de contextos ni en el árbol) y se abre desde el menú.
+- **Columna derecha como inspector**: quitados los accesos a Contextos/Prompts/Agentes (se navegan por el árbol). Queda filtro, Magic y grabadora, más las propiedades del nodo abierto.
+- **"Sin clasificar" en Filtros**: el filtro de notas sin contexto vive ahora junto al resto de filtros, en la columna de la derecha.
+- **Contexto solo en la Agenda**: From solo propone contexto a lo que escribes en tu día a día (no a contextos, plantillas, agentes…). Lo que cuelga de un nodo hereda su contexto.
+
+---
+
+## Web v9.6.188 / Mac v9.5.28 — 7 junio 2026 · Fix navegación al limpiar filtro
+
+**Arreglado**: al entrar en una raíz (Contextos, Prompts, Agentes) desde dentro de uno de sus elementos, la app te devolvía a la pantalla principal. Ahora navegas correctamente a la lista. (Limpiar un filtro ya no te saca del nodo en el que estás.)
+
+---
+
 ## Web v9.6.187 / Mac v9.5.27 — 7 junio 2026 · El árbol abre colapsado
 
 **Empiezas con la vista limpia.** Al abrir From, el árbol arranca **colapsado**: ves solo los nodos de primer nivel y vas desplegando lo que necesites. Lo que expandas se mantiene mientras usas la app; la próxima vez que abras, vuelve a estar recogido. (Es solo tu vista del momento: no se sincroniza ni cambia nada entre dispositivos.)
