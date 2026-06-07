@@ -15,9 +15,9 @@
 // paneles. Altura dinámica vía measureElement (los bullets varían de alto).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useRef, useState, useLayoutEffect } from 'react'
+import { useRef, useState, useLayoutEffect, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import OutlinerNode from './OutlinerNode'
+import OutlinerNode, { getDraggedId } from './OutlinerNode'
 import type { FlatRow } from './flattenTree'
 
 // Virtualización ACTIVADA por defecto. Escape hatch: localStorage
@@ -64,6 +64,30 @@ export function VirtualOutlinerList({
   useLayoutEffect(() => {
     setScrollEl(findScrollParent(listRef.current))
   }, [])
+
+  // Auto-scroll durante el drag de un nodo: cuando el cursor se acerca al borde
+  // superior/inferior del scroller, desplazarlo para poder soltar en destinos
+  // fuera del viewport (sin esto, en árboles grandes no llegarías a ellos). Loop
+  // con rAF → scroll continuo aunque el cursor esté quieto en la zona de borde.
+  useEffect(() => {
+    const el = scrollEl
+    if (!el) return
+    const MARGIN = 64, SPEED = 16
+    let pointerY = 0, raf = 0, running = false
+    const tick = () => {
+      if (!getDraggedId()) { running = false; return } // drag terminó
+      const rect = el.getBoundingClientRect()
+      if (pointerY < rect.top + MARGIN && el.scrollTop > 0) el.scrollTop -= SPEED
+      else if (pointerY > rect.bottom - MARGIN) el.scrollTop += SPEED
+      raf = requestAnimationFrame(tick)
+    }
+    const onDragOver = (e: DragEvent) => {
+      pointerY = e.clientY
+      if (!running && getDraggedId()) { running = true; raf = requestAnimationFrame(tick) }
+    }
+    window.addEventListener('dragover', onDragOver)
+    return () => { window.removeEventListener('dragover', onDragOver); cancelAnimationFrame(raf) }
+  }, [scrollEl])
 
   const virtualizer = useVirtualizer({
     count: rows.length,
