@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.183 / Mac v9.5.24 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 From
+
+**Tu segundo cerebro, todo en un mismo árbol.** La pantalla principal ahora muestra, al mismo nivel, **📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes y 📋 Plantillas**. Antes Agentes, Prompts, Plantillas y Contextos estaban escondidos en menús; ahora son parte del árbol: los despliegas, eliges uno y lo editas ahí mismo.
+
+- **La columna derecha es ahora un inspector.** Al abrir un agente, un prompt o un contexto, sus propiedades aparecen a la derecha automáticamente. Por defecto queda el filtro; el ciclo de paneles es filtro → Magic → grabadora.
+- **La nota de hoy, a un toque.** El botón **Hoy** sigue llevándote directo al día. La Agenda es la primera raíz.
+- **La Papelera** ya no ocupa sitio en el árbol: vive solo en el menú. Las búsquedas y filtros la excluyen siempre.
+- **Mismo comportamiento en web, Mac e iPhone.** La estructura converge entre dispositivos sin duplicar nada (ids deterministas + sincronización por operaciones).
+
+---
+
 ## Web v9.6.181 / Mac v9.5.23 — 7 junio 2026 · Rendimiento del árbol + robustez
 
 **Listas enormes sin ralentizaciones.** El árbol ahora dibuja solo lo que cabe en pantalla (virtualización): abrir una nota con cientos o miles de elementos es instantáneo y el desplazamiento va fluido. Se activa automáticamente solo en listas grandes; en las pequeñas todo funciona igual que siempre.
