@@ -21,6 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -504,7 +505,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // → _contextManuallySet=1 (badge v9.6.82+) O userTypes presente (flujos anteriores)
     // Excluir si el único "contexto" es un @mention en el texto (no aparece en types[] normalmente,
     // pero nodeHasManualContext ya lo detecta vía /@\w/.test — aquí buscamos en types[])
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return null
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     for (const typeName of userTypes) {
@@ -543,7 +544,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // Los contextos no deben mostrar badge de contexto — no tiene sentido preguntar
   // "¿en qué contexto está este contexto?".
   const isContextNode = useMemo(() => {
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return false
     return node.parentId === tagsRoot.id
   }, [node.parentId])
@@ -557,7 +558,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // que sí debe clasificarse. Solo bloqueamos los nodos de contexto y perfil porque
   // ya tienen su contexto implícito por posición.
   const isInsideRestrictedAncestor = useMemo(() => {
-    const contextoRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const contextoRoot = findContextRoot()
 
     let cur = store.getNode(node.parentId ?? '')
     let depth = 0
@@ -580,7 +581,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // los nodos escritos por el usuario dentro del diario SÍ alimentan el perfil IA.
   // Solo bloqueamos: contextos, perfil IA, papelera.
   const isInsideKnowledgeRestricted = useMemo(() => {
-    const contextoRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const contextoRoot = findContextRoot()
 
     let cur = store.getNode(node.parentId ?? '')
     let depth = 0
@@ -1153,7 +1154,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (type === '@') {
       // @ — contextos del árbol 🧠 Contexto: buscar por nombre visible, no por slug
       const treeItems: { id: string; label: string; slug: string }[] = []
-      const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+      const tagsRoot = findContextRoot()
       if (tagsRoot) {
         function collectContextNodes(parentId: string, prefix: string) {
           for (const child of store.children(parentId)) {
@@ -1409,7 +1410,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (!/@[\wÀ-ɏ\s]*$/.test(beforeCursor)) {
         const ctxNodes: { slug: string; displayName: string }[] = []
         // Solo hijos directos del nodo 🧠 Contexto (o 🏷 Tags legacy)
-        const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+        const tagsRoot = findContextRoot()
         if (tagsRoot) {
           for (const child of store.children(tagsRoot.id)) {
             if (child.deletedAt || !child.text) continue
@@ -3838,7 +3839,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {(() => {
               const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
               const textLower = (displayNode.text || '').toLowerCase()
-              const ctxRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto')
+              const ctxRoot = findContextRoot()
               if (!ctxRoot) return null
               return (node.types || [])
                 .filter(slug => {

@@ -14,11 +14,14 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId } from './deterministicId'
+import { findRootByKey } from './rootLookup'
 
 const PAPELERA_NAME = '🗑 Papelera'
 
 export function getPapeleraNode(): Node | undefined {
-  return store.children(null).find(n => !n.deletedAt && n.text === PAPELERA_NAME)
+  // Papelera permanece en parentId=null (no se reparenta bajo 🏠 From), pero usamos
+  // el lookup robusto por id determinista por consistencia.
+  return findRootByKey('papelera', PAPELERA_NAME)
 }
 
 export function ensurePapeleraNode(): Node {

@@ -6,6 +6,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId, diaryId } from './deterministicId'
+import { findRootByKey, findContextRoot } from './rootLookup'
 
 const MONTHS_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -17,7 +18,8 @@ export const AGENDA_ROOT_NAME = '📅 Agenda'
 // ── Primitivas ────────────────────────────────────────────────────────────────
 
 export function findAgendaRoot(): Node | undefined {
-  return store.children(null).find(n => !n.deletedAt && n.text === AGENDA_ROOT_NAME)
+  // Robusto al reparent bajo 🏠 From: por id determinista + fallback por texto.
+  return findRootByKey('agenda', AGENDA_ROOT_NAME)
 }
 
 export function getOrCreateAgendaRoot(): Node {
@@ -182,7 +184,7 @@ export function cleanupYearMonthContexts(): void {
   if (!agenda) return
 
   // Conjunto de nombres de contexto válidos (para distinguir de tags builtin)
-  const ctxRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+  const ctxRoot = findContextRoot()
   const contextNames = new Set(
     ctxRoot ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text).map(n => n.text) : []
   )

@@ -20,6 +20,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
+import { findContextRoot } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
 import OutlinerNode from '../outliner/OutlinerNode'
@@ -69,7 +70,7 @@ export function ContextPlaceholderBadge({ node, onContextAssigned }: { node: Fro
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
 
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const tagsRoot = findContextRoot()
   const contextNodes = tagsRoot ? store.children(tagsRoot.id).filter(n => !n.deletedAt) : []
 
   useEffect(() => {
@@ -264,7 +265,7 @@ export function FilterResultItem({
     const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length === 0) return null
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return null
     const ctxNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     for (const typeName of userTypes) {

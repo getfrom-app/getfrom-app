@@ -18,6 +18,7 @@
 
 import type { Node } from '../types'
 import { normalizeText } from './normalize'
+import { structuralId } from './deterministicId'
 
 interface FilterResult {
   matchIds: Set<string>
@@ -260,9 +261,17 @@ export function applyWFFilter(
 
   // El filtro SOLO busca dentro de 📅 Agenda. Todo lo demás (contextos,
   // papelera, carpetas de sistema, perfil IA, atajos…) queda fuera del scope.
+  // Robusto al reparent bajo 🏠 From: por id determinista; fallback por texto SIN
+  // exigir parentId=null (Agenda ya no vive en la raíz tras introducir 🏠 From).
   let agendaRootId: string | null = null
-  for (const n of nodes.values()) {
-    if (!n.deletedAt && !n.parentId && (n.text || '') === '📅 Agenda') { agendaRootId = n.id; break }
+  const detAgendaId = structuralId('agenda')
+  const detAgenda = detAgendaId ? nodes.get(detAgendaId) : undefined
+  if (detAgenda && !detAgenda.deletedAt) {
+    agendaRootId = detAgenda.id
+  } else {
+    for (const n of nodes.values()) {
+      if (!n.deletedAt && (n.text || '') === '📅 Agenda') { agendaRootId = n.id; break }
+    }
   }
 
   // Precalcular si un nodo desciende de un id concreto (subiendo por parentId)

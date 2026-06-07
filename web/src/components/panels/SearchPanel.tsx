@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 
 interface Props {
   filterText: string
@@ -56,7 +57,7 @@ export default function SearchPanel({ filterText, onFilter, onClose }: Props) {
   const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
 
   // Todos los contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
-  const contextRoot = s.allActive().find(n => n.text === '🧠 Contexto' && n.parentId === null)
+  const contextRoot = findContextRoot()
   const contextChips = contextRoot
     ? s.children(contextRoot.id)
         .filter(n => !n.deletedAt && n.text?.trim())

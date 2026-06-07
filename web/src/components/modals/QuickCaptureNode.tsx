@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import type { DateExtraction } from '../../utils/naturalDate'
@@ -188,7 +189,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
 
     // 3. Sugerencia de contexto — solo hijos de 🧠 Contexto (o 🏷 Tags legacy)
     if (t.length >= 3) {
-      const ctxRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+      const ctxRoot = findContextRoot()
       const ctxNodes = ctxRoot
         ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
         : []

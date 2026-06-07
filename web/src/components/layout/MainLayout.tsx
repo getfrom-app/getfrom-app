@@ -65,6 +65,7 @@ import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensureP
 import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
 import { ensureAgentesNode, migrateAgentsV2 } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
+import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -95,9 +96,12 @@ export default function MainLayout() {
     | 'context-list' | 'context'
     | 'prompt-list'  | 'prompt'
     | 'agent-list'   | 'agent'
-  type CyclablePanel = 'recorder' | 'context-list' | 'prompt-list' | 'agent-list' | 'magic' | 'filter' | 'planner'
-  // PANEL_ORDER coincide con el orden de los iconos en WFTopBar (izquierda → derecha)
-  const PANEL_ORDER: CyclablePanel[] = ['recorder', 'context-list', 'prompt-list', 'agent-list', 'magic', 'filter', 'planner']
+  // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
+  // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
+  // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
+  // propio botón en la barra superior.
+  type CyclablePanel = 'filter' | 'magic' | 'recorder'
+  const PANEL_ORDER: CyclablePanel[] = ['filter', 'magic', 'recorder']
   // El panel Filtrar es el de inicio SIEMPRE al abrir la app — escribir una
   // palabra basta para buscar, y tiene filtros y favoritos a mano.
   const [rightPanel, setRightPanel] = useState<RightPanel>('filter')
@@ -111,9 +115,11 @@ export default function MainLayout() {
   // efecto de limpieza lo borre inmediatamente (ambos se disparan con la misma dep location.pathname).
   const pendingContextConsumedRef = useRef(false)
 
-  function openPanel(p: CyclablePanel) { setRightPanel(p) }
+  // openPanel/togglePanel cambian a cualquier panel (no solo los del ciclo): el
+  // planner y las listas tienen sus propios atajos/botones aunque estén fuera del ciclo.
+  function openPanel(p: RightPanel) { setRightPanel(p) }
   // togglePanel ahora solo cambia de panel — no cierra
-  function togglePanel(p: CyclablePanel) { setRightPanel(p) }
+  function togglePanel(p: RightPanel) { setRightPanel(p) }
 
   function handleSelectContext(nodeId: string) {
     // Filtro especial "Sin clasificar" — no abre panel de detalle, solo aplica filtro
@@ -249,26 +255,24 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:panelMode', handler)
   }, [])
 
-  // Si el usuario navega al nodo Agenda, redirigir al home (Agenda es transparente)
-  useEffect(() => {
-    const m = location.pathname.match(/\/node\/([^/]+)/)
-    if (m) {
-      const node = store.getNode(m[1])
-      if (node?.text === AGENDA_ROOT_NAME) navigate('/', { replace: true })
-    }
-  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Al navegar: gestionar paneles de detalle y filtro "Sin clasificar"
+  // Al navegar: auto-abrir las propiedades del nodo según su tipo, y gestionar el
+  // filtro "Sin clasificar".
   useEffect(() => {
     const m = location.pathname.match(/\/node\/([^/]+)/)
     const navId = m ? m[1] : null
-    // Paneles de detalle (context/prompt/agent): se mantienen mientras estés en su
-    // nodo; si navegas a otro nodo o al home, vuelven a su lista.
-    if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent') {
-      if (navId !== detailNodeId) {
-        setRightPanel(rightPanel === 'context' ? 'context-list' : rightPanel === 'prompt' ? 'prompt-list' : 'agent-list')
-        setDetailNodeId(null)
+    // Si el nodo es (o desciende de) Agentes/Prompts/Contexto → mostrar sus
+    // propiedades en la columna derecha. La navegación es por el árbol; el detalle
+    // se abre solo (ya no hace falta clicar en una pestaña lista).
+    const kind = navId ? classifyNodeRoot(navId) : null
+    if (navId && kind) {
+      if (rightPanel !== kind || detailNodeId !== navId) {
+        setDetailNodeId(navId)
+        setRightPanel(kind)
       }
+    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent') {
+      // Salimos a un nodo normal o al home → cerrar el detalle y volver al filtro.
+      setRightPanel('filter')
+      setDetailNodeId(null)
     }
     // Limpiar contextNodeId (filtro "Sin clasificar") al ENTRAR a un nodo concreto.
     if (location.pathname.startsWith('/node/')) {
@@ -407,6 +411,9 @@ export default function MainLayout() {
         ensureAgentesNode()
         ensurePromptsNode()
         ensurePapeleraNode()
+        // Raíz 🏠 From por encima de Agenda: reparenta las 5 raíces visibles bajo ella.
+        // DESPUÉS de los ensure*() (deben existir) y ANTES del sync(true) que persiste.
+        ensureHomeRootAndReparent()
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
         cleanupYearMonthContexts()

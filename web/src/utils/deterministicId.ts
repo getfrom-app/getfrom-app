@@ -104,11 +104,21 @@ export function serverUserId(): string | null {
   } catch { return null }
 }
 
+// Cache de ids deterministas por `${uid}.${key}` — structuralId se llama en muchos
+// renders (lookups de raíces); el SHA-256 es barato pero no gratis. El id es estable
+// por usuario+clave, así que memoizarlo evita recalcular en cada render.
+const _structuralIdCache = new Map<string, string>()
+
 /** ID determinista para un nodo estructural único (raíz, perfil, año/mes…). */
 export function structuralId(key: string): string | null {
   const uid = serverUserId()
   if (!uid) return null
-  return uuidFromString(`from.struct.${uid}.${key}`)
+  const cacheKey = `${uid}.${key}`
+  const cached = _structuralIdCache.get(cacheKey)
+  if (cached) return cached
+  const id = uuidFromString(`from.struct.${uid}.${key}`)
+  _structuralIdCache.set(cacheKey, id)
+  return id
 }
 
 /** ID determinista del diario de un día (idéntico a iOS canonicalDiaryId). */

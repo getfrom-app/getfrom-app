@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
+import { findContextRoot } from '../../utils/rootLookup'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -231,7 +232,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
   const analyzeRef = useRef<((t: string) => void) | null>(null)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto') ?? null
+  const contextoRoot = findContextRoot() ?? null
   const atajosRoot = getAtajosNode()
 
   const allFilterNodes = useCallback((): { id: string; text: string; query: string }[] => {
@@ -319,7 +320,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
     // Sugerencia de contexto
     if (t.length >= 3) {
-      const ctxRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+      const ctxRoot = findContextRoot()
       const ctxNodes = ctxRoot
         ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
         : []

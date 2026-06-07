@@ -19,6 +19,7 @@
 
 import { store } from '../store/nodeStore'
 import { structuralId } from './deterministicId'
+import { findRootByKey } from './rootLookup'
 import type { Node } from '../types'
 
 const AGENTES_NAME = '🤖 Agentes'
@@ -110,7 +111,7 @@ const LEGACY_AGENT_IDS = new Set([
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getAgentesNode(): Node | undefined {
-  return store.children(null).find(n => !n.deletedAt && n.text === AGENTES_NAME)
+  return findRootByKey('agentes', AGENTES_NAME)
 }
 
 /** Lee los datos de agente de un nodo */

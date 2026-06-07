@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 import { getUnclassifiedIds } from '../../utils/unclassified'
 import { DRAG_NODE_ID_KEY } from '../views/FilteredList'
@@ -32,7 +33,7 @@ interface Props {
 function assignContextToNode(nodeId: string, contextNodeId: string) {
   const node = store.getNode(nodeId)
   if (!node) return
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const tagsRoot = findContextRoot()
   if (!tagsRoot) return
   const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
   const contextNode = contextNodes.find(n => n.id === contextNodeId)
@@ -74,7 +75,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
   function createNamedContext(name: string) {
     const clean = name.trim()
     if (!clean) return
-    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const root = findContextRoot()
     if (!root) return
     // Evitar duplicado por nombre
     const existing = store.children(root.id).find(n => !n.deletedAt && (n.text || '').trim().toLowerCase() === clean.toLowerCase())
@@ -273,7 +274,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
     )
   }
 
-  const contextoRoot = s.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const contextoRoot = findContextRoot()
 
   // Nodo perfil IA — identificado por extraData._perfilIA === '1'
   const perfilNode = useMemo(() => {

@@ -10,6 +10,7 @@
  */
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
+import { findContextRoot } from '../../utils/rootLookup'
 
 export interface ContextChip {
   label: string
@@ -26,7 +27,7 @@ function isTagNode(nodeId: string): boolean {
   const node = store.getNode(nodeId)
   if (!node) return false
   // Bajo árbol 🏷 Tags
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === '🏷 Tags')
+  const tagsRoot = findContextRoot()
   if (tagsRoot) {
     // Comprobar si el nodo es descendiente de tagsRoot
     let current = node

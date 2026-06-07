@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -190,7 +191,7 @@ export default function NodeView() {
     const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length === 0) return null
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return null
     const contextNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
     for (const typeName of userTypes) {
@@ -255,7 +256,7 @@ export default function NodeView() {
   const isContextNode = useMemo(() => {
     if (!node) return false
     try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return false } catch { /* ignore */ }
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return false
     return node.parentId === tagsRoot.id
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2015,7 +2016,7 @@ export default function NodeView() {
             )}
             {/* Badge de contexto — inline junto al título, alineado con el texto */}
             {!isContextNode && !node.isDiaryEntry && (() => {
-              const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+              const tagsRoot = findContextRoot()
               if (!tagsRoot || store.children(tagsRoot.id).filter(n => !n.deletedAt).length === 0) return null
               if (nodeViewManualCtxId) {
                 return (

@@ -6,6 +6,7 @@
  */
 import { useMemo } from 'react'
 import { useStore, store } from '../../store/nodeStore'
+import { findContextRoot } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 import { AVAILABLE_VARIABLES, getPromptActivation, setPromptActivation, type PromptActivation } from '../../utils/promptsHelper'
 
@@ -25,7 +26,7 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
 
   // Contextos disponibles (para activación «context:<id>»)
   const contexts = useMemo(() => {
-    const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+    const tagsRoot = findContextRoot()
     if (!tagsRoot) return []
     return store.children(tagsRoot.id).filter(n => {
       if (n.deletedAt) return false

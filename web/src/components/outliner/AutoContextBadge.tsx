@@ -19,6 +19,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { saveExample, cancelClassify, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
@@ -46,7 +47,7 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
   const isConfirmedMode = !!assignedContextId
 
   // Obtener la lista de contextos del usuario
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const tagsRoot = findContextRoot()
   const contextNodes = tagsRoot
     ? store.children(tagsRoot.id).filter(n => !n.deletedAt)
     : []
@@ -124,7 +125,7 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
   function createAndAssignContext() {
     const name = searchText.trim()
     if (!name) return
-    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const root = findContextRoot()
     if (!root) return
     const sibs = store.children(root.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
@@ -136,7 +137,7 @@ export default function AutoContextBadge({ node, result, onContextAssigned, assi
     if (!hasSuggestion) return
     let parentId: string | null = result.suggestedParentId ?? null
     if (parentId && !store.getNode(parentId)) parentId = null
-    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const root = findContextRoot()
     const targetParent = parentId ?? root?.id
     if (!targetParent) return
     const sibs = store.children(targetParent).filter(n => !n.deletedAt)
@@ -417,7 +418,7 @@ export function ContextPlaceholderBadge({ node, onContextAssigned }: {
   const dropRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const tagsRoot = findContextRoot()
   const contextNodes = tagsRoot ? store.children(tagsRoot.id).filter(n => !n.deletedAt) : []
 
   // Filtrado y lógica de crear nuevo contexto
@@ -492,7 +493,7 @@ export function ContextPlaceholderBadge({ node, onContextAssigned }: {
   function createAndAssignContext() {
     const name = searchText.trim()
     if (!name) return
-    const root = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+    const root = findContextRoot()
     if (!root) return
     const sibs = store.children(root.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0

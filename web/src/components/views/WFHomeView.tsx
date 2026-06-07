@@ -15,7 +15,8 @@ import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
 import type { FilterView } from './FilterResultsView'
 import { uploadFile } from '../../api/client'
-import { AGENDA_ROOT_NAME } from '../../utils/agendaHelper'
+import { findAgendaRoot } from '../../utils/agendaHelper'
+import { findHomeRoot } from '../../utils/homeHelper'
 import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import UnclassifiedList from './UnclassifiedList'
 import FilteredList from './FilteredList'
@@ -84,8 +85,10 @@ function buildContextFilter(contextNodeId: string): {
   // Traversal de arriba hacia abajo: O(n) total, no O(n×depth)
   const excludedIds = new Set<string>()
   const queue: string[] = []
-  store.children(null).forEach(root => {
-    if (!root.deletedAt && NON_AGENDA_SYSTEM_TEXTS.has(root.text)) {
+  // Raíces de sistema NO-Agenda, buscadas por texto en TODO el árbol (no solo en
+  // children(null)): tras introducir 🏠 From cuelgan de la raíz home, no de null.
+  store.allActive().forEach(root => {
+    if (NON_AGENDA_SYSTEM_TEXTS.has(root.text)) {
       excludedIds.add(root.id)
       queue.push(root.id)
     }
@@ -158,26 +161,33 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     localStorage.setItem(FILTER_VIEW_KEY, v)
   }
 
-  // ── Nodo Agenda — la vista raíz muestra sus hijos directamente ───────────
-  const agendaNode = useMemo(() => {
+  // ── Raíz 🏠 From — la vista raíz muestra sus hijos (Agenda + Contexto + …) ───
+  const homeRoot = useMemo(() => {
     if (!storeReady) return null
-    return store.children(null).find(n => !n.deletedAt && n.text === AGENDA_ROOT_NAME) ?? null
+    // Fallback a Agenda por si el reparent aún no creó la raíz home (no debería).
+    return findHomeRoot() ?? findAgendaRoot() ?? null
   }, [storeReady, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const agendaId = agendaNode?.id ?? null
+  const homeRootId = homeRoot?.id ?? null
 
-  // ── Colapsar root nodes al primer arranque ─────────────────────────────────
+  // Agenda — para el drop de archivos y el hint "Espacio" (su contenido es el diario).
+  const agendaId = useMemo(() => {
+    if (!storeReady) return null
+    return findAgendaRoot()?.id ?? null
+  }, [storeReady, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Colapsar las raíces al primer arranque (vista limpia; "Hoy" lleva al día) ─
   useEffect(() => {
-    if (!storeReady || !agendaId) return
+    if (!storeReady || !homeRootId) return
     if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
-    const roots = store.children(agendaId).filter(n => !n.deletedAt)
+    const roots = store.children(homeRootId).filter(n => !n.deletedAt)
     if (roots.length === 0) return
     roots.forEach(root => {
       const kids = store.children(root.id).filter(n => !n.deletedAt)
       if (kids.length > 0 && !root.isCollapsed) store.updateNode(root.id, { isCollapsed: true })
     })
     localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
-  }, [storeReady, agendaId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [storeReady, homeRootId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
   // UNCLASSIFIED_FILTER_ID se maneja con UnclassifiedList — no necesita buildContextFilter.
@@ -318,7 +328,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
       {/* ── Árbol normal — sin filtro activo ── */}
       {!isFiltering && (
         <Outliner
-          parentId={agendaId}
+          parentId={homeRootId}
           autoFocusEmpty={false}
           placeholder="Escribe algo… o pulsa Enter para crear un nodo"
         />

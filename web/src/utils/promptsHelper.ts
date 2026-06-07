@@ -25,6 +25,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { aiInlineStream, getToken } from '../api/client'
 import { structuralId } from './deterministicId'
+import { findRootByKey, findContextRoot } from './rootLookup'
 
 export const PROMPTS_ROOT_NAME = '⚡ Prompts'
 
@@ -55,7 +56,7 @@ export const AVAILABLE_VARIABLES: PromptVariable[] = [
 // ── Raíz ──────────────────────────────────────────────────────────────────────
 
 export function getPromptsRoot(): Node | undefined {
-  return store.children(null).find(n => !n.deletedAt && n.text === PROMPTS_ROOT_NAME)
+  return findRootByKey('prompts', PROMPTS_ROOT_NAME)
 }
 
 export function getOrCreatePromptsRoot(): Node {
@@ -154,7 +155,7 @@ function contextIdsForNode(nodeId: string): Set<string> {
   const ids = new Set<string>()
   const node = store.getNode(nodeId)
   if (!node) return ids
-  const tagsRoot = store.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
+  const tagsRoot = findContextRoot()
   if (!tagsRoot) return ids
   const contexts = store.children(tagsRoot.id).filter(n => !n.deletedAt)
   const types = (node.types || []).map(t => t.toLowerCase())

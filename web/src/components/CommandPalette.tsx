@@ -6,6 +6,7 @@ import { store } from '../store/nodeStore'
 import { useToast } from './Toast'
 import { normalizeText } from '../utils/normalize'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { findContextRoot } from '../utils/rootLookup'
 import { getAtajosNode, getShortcutData } from '../utils/atajosHelper'
 
 interface Props {
@@ -195,7 +196,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
   }, [parsed, query, showToast, onClose])
 
   // ── Helpers para sub-vistas ─────────────────────────────────────────────────
-  const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto') ?? null
+  const contextoRoot = findContextRoot() ?? null
   const atajosRoot = getAtajosNode()
 
   const allFilterNodes = useCallback((): { id: string; text: string; query: string }[] => {

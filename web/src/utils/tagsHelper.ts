@@ -15,6 +15,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId } from './deterministicId'
+import { findContextRoot } from './rootLookup'
 
 export const TAGS_ROOT_NAME = '🧠 Contexto'
 
@@ -55,7 +56,7 @@ export function getNodeTagSlug(nodeId: string): string | null {
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 export function findTagsRoot(): Node | undefined {
-  return store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  return findContextRoot()
 }
 
 export function getOrCreateTagsRoot(): Node {
@@ -255,7 +256,7 @@ Profesión / actividad principal:
  */
 export function ensurePerfilInsideContexto(): void {
   // Obtener o crear el nodo raíz 🧠 Contexto
-  const contextoRoot = store.children(null).find(n => !n.deletedAt && n.text === TAGS_ROOT_NAME)
+  const contextoRoot = findContextRoot()
     ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
 
   const perfil = store.perfilIANode?.() ?? null
@@ -363,13 +364,11 @@ export function ensurePlantillasNode(): void {
     store.createNode({ text: PLANTILLAS_NAME, parentId: null, siblingOrder: 9997, predefinedId: structuralId('plantillas') ?? undefined })
   } else {
     const keeper = remaining[0]
-    // Asegurar nombre correcto Y que esté en root (parentId === null)
-    const needsUpdate = keeper.text !== PLANTILLAS_NAME || keeper.parentId !== null
-    if (needsUpdate) {
-      store.updateNode(keeper.id, {
-        ...(keeper.text !== PLANTILLAS_NAME ? { text: PLANTILLAS_NAME } : {}),
-        ...(keeper.parentId !== null ? { parentId: null } : {}),
-      })
+    // Asegurar solo el nombre correcto. NO forzar parentId=null: la raíz 🏠 From
+    // reparenta Plantillas bajo ella (ensureHomeRootAndReparent); forzar null aquí
+    // la devolvería a la raíz en cada arranque, peleando con el reparent.
+    if (keeper.text !== PLANTILLAS_NAME) {
+      store.updateNode(keeper.id, { text: PLANTILLAS_NAME })
     }
   }
 }

@@ -7,6 +7,9 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { getAgentesNode } from '../../utils/agentesHelper'
+import { getPapeleraNode } from '../../utils/papeleraHelper'
+import { findRootByKey } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -49,11 +52,12 @@ export default function WFTopBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Nodos sistema — para navegación desde el menú
-  const rootNodes = s.children(null).filter(n => !n.deletedAt)
-  const papeleraNode = rootNodes.find(n => n.text === '🗑 Papelera')
-  const agentesNode  = rootNodes.find(n => n.text === '🤖 Agentes')
-  const plantillasNode = rootNodes.find(n => n.text === '📋 Plantillas')
+  // Nodos sistema — para navegación desde el menú.
+  // Lookup robusto al reparent bajo 🏠 From (id determinista, no por children(null)).
+  // `s = useStore()` re-renderiza ante cualquier cambio del árbol → sigue reactivo.
+  const papeleraNode = getPapeleraNode()
+  const agentesNode  = getAgentesNode()
+  const plantillasNode = findRootByKey('plantillas', '📋 Plantillas', 'Plantillas')
 
   // ── Breadcrumb ────────────────────────────────────────────────────────────
   const path = location.pathname.replace(/^\/app/, '') || '/'
@@ -73,8 +77,9 @@ export default function WFTopBar({
       cur = s.getNode(cur.parentId) ?? undefined
     }
     // fullPath = [root, ..., parent, current]
-    // Ocultar nodo Agenda del breadcrumb — el home ya es la agenda
-    const HIDDEN = new Set(['📅 Agenda'])
+    // Ocultar la raíz 🏠 From del breadcrumb (es el home, representado por el icono 🏠).
+    // Agenda sí se muestra ahora (es una raíz visible más).
+    const HIDDEN = new Set(['🏠 From'])
     const visible = fullPath.filter(n => !HIDDEN.has(n.label))
     const current = visible[visible.length - 1] ?? null
     const ancestors = visible.slice(0, -1)
