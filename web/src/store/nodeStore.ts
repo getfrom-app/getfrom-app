@@ -1,4 +1,4 @@
-import { syncNodes, getToken } from '../api/client'
+import { syncNodes, getToken, apiRequest } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
 import { opsClient } from './opsClient'
@@ -1278,6 +1278,40 @@ export class NodeStore {
     this.notify()
   }
 
+  /** CARGA INICIAL desde el op-log (GET /ops/bootstrap), SIN /sync. Misma forma de
+   *  respuesta que /sync → se aplica con el MISMO applyNode probado. De solo lectura
+   *  (no envía nodos). Devuelve true si cargó; false → el caller hace fallback a /sync.
+   *  No reescribe el flujo: solo cambia de dónde viene el árbol inicial. */
+  async bootstrapLoad(): Promise<boolean> {
+    if (this.isGuest || !getToken()) return false
+    try {
+      const res = await apiRequest<{
+        syncAt: string; opsClientEnabled?: boolean; opsLive?: boolean
+        nodes: unknown[]; workspaces?: unknown[]
+      }>('/ops/bootstrap', { method: 'GET' })
+      this.lastSyncAt = res.syncAt
+      // 1) Aplicar el árbol completo PRIMERO (mismo applyNode que /sync). Es carga
+      //    inicial: no hay nodos dirty ni "enviados", así que aplicamos directo.
+      for (const rawNode of res.nodes) {
+        try { this.applyNode(rawNode as Node) }
+        catch (err) { console.error('[bootstrap] nodo omitido:', err, rawNode) }
+      }
+      this.invalidateChildrenCache()
+      if (res.workspaces && (res.workspaces as unknown[]).length > 0) {
+        this.workspaces = res.workspaces as Workspace[]
+      }
+      this.notify()
+      // 2) Con el árbol YA en el store, activar el cliente de ops (igual que /sync).
+      opsClient.setServerEnabled(!!res.opsClientEnabled)
+      opsClient.setLive(!!res.opsLive)
+      console.info(`[bootstrap] ${res.nodes.length} nodos cargados desde /ops/bootstrap (opsLive=${res.opsLive})`)
+      return true
+    } catch (err) {
+      console.warn('[bootstrap] /ops/bootstrap falló → fallback /sync:', err)
+      return false
+    }
+  }
+
   async sync(force = false): Promise<void> {
     // En modo invitado, persistir en localStorage y no llamar al servidor
     if (this.isGuest) {
@@ -1285,6 +1319,10 @@ export class NodeStore {
       this.dirtyIds.clear()
       return
     }
+
+    // MODO-LIVE: las mutaciones van por el op-log (opsClient.onCreate/onUpdate),
+    // NUNCA por /sync. El árbol inicial vino de /ops/bootstrap. → no-op.
+    if (opsClient.isLive()) { this.dirtyIds.clear(); return }
 
     if (this.isSyncing && !force) {
       // Hay un sync en curso — reprogramar para no perder nodos dirty pendientes.
@@ -1413,7 +1451,10 @@ export class NodeStore {
       window.dispatchEvent(new Event('from:store-loaded'))
     }
 
-    await this.sync()
+    // CARGA INICIAL: desde el op-log (/ops/bootstrap). Si falla, fallback a /sync.
+    // Si la respuesta es opsLive, los cambios posteriores van por el op-log.
+    const bootstrapped = await this.bootstrapLoad()
+    if (!bootstrapped) await this.sync()
 
     // Limpieza silenciosa: nodo vacío = no existe.
     // Período de gracia de 60s — no borrar nodos recién creados donde el cursor
