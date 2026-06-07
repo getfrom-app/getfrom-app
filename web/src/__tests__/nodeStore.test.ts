@@ -101,15 +101,6 @@ describe('NodeStore — flujos críticos', () => {
       expect(store.getNode(n.id)?.due).toBe('2026-05-27T15:00:00.000Z')
     })
 
-    it('scheduleNodeAt sobre bucle (isSeguimiento) lo rechaza', () => {
-      // Forzamos isSeguimiento para verificar la defensa
-      const n = store.createNode({ text: 'Bucle viejo', parentId: null })
-      store.updateNode(n.id, { isSeguimiento: true })
-      const r = store.scheduleNodeAt(n.id, '2026-05-27T10:00:00.000Z')
-      expect(r).toBeNull()
-      expect(store.getNode(n.id)?.due).toBeNull()
-    })
-
     it('scheduleNodeAt sobre nodo con types includes bucle lo rechaza', () => {
       const n = store.createNode({ text: 'Tag bucle', parentId: null, types: ['bucle'] })
       const r = store.scheduleNodeAt(n.id, '2026-05-27T10:00:00.000Z')

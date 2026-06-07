@@ -118,7 +118,10 @@ export function normField(field: string, raw: unknown): unknown {
     // Des-codifica robustamente: tolera doble/triple-encoding histórico
     // (columnas con '"[\\"x\\"]"' en vez de '["x"]'). Hasta llegar al array real.
     let v: unknown = raw
-    for (let i = 0; i < 4 && typeof v === "string"; i++) { try { v = JSON.parse(v) } catch { break } }
+    // 6 iteraciones — DEBE coincidir byte a byte con server/src/lib/opsLog.ts y
+    // app/From/Services/Ops.swift (ambos usan 6). Con 4 la web materializaba un
+    // array distinto ante encoding histórico de >4 niveles → árbol divergente.
+    for (let i = 0; i < 6 && typeof v === "string"; i++) { try { v = JSON.parse(v) } catch { break } }
     return JSON.stringify(Array.isArray(v) ? v : [])
   }
   if (BOOL_FIELDS.has(field)) return raw === true || raw === "true" // default canónico false

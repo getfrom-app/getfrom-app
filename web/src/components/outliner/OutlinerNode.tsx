@@ -141,6 +141,7 @@ interface Props {
   filterMatchIds?: Set<string>    // WF smart filter — IDs que coinciden
   filterAncestorIds?: Set<string> // ancestros de nodos coincidentes (precomputado, evita getAllDescendants)
   isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
+  flat?: boolean  // modo virtualizado: la lista plana ya monta los hijos → este nodo NO los renderiza
 }
 
 const COMMON_TYPES = [
@@ -277,7 +278,7 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty, flat }: Props) {
   const navigate = useNavigate()
   // Cada nodo calcula su propio estado de multi-selección desde el estado global,
   // en lugar de heredar el boolean del padre. Esto permite seleccionar nodos
@@ -4121,7 +4122,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       )}
 
       {/* Inline view block — renderiza tabla/kanban/calendar EN VEZ de los hijos como bullets */}
-      {showChildren && (() => {
+      {!flat && showChildren && (() => {
         try {
           const ed = JSON.parse(node.extraData || '{}')
           if (ed._inline !== '1') return null
@@ -4152,8 +4153,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       })()}
 
       {/* Children — selectedId se propaga para que los hijos sepan si están seleccionados.
-          Si este nodo es un inline view block, no renderizamos hijos como bullets (los muestra la vista). */}
-      {showChildren && (() => {
+          Si este nodo es un inline view block, no renderizamos hijos como bullets (los muestra la vista).
+          En modo `flat` (virtualizado) la lista plana ya monta los hijos → este nodo no los recurre. */}
+      {!flat && showChildren && (() => {
         try {
           const ed = JSON.parse(node.extraData || '{}')
           if (ed._inline === '1') return null

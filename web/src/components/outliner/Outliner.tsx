@@ -5,6 +5,7 @@ import type { Node } from '../../types'
 import { trashNode } from '../../utils/papeleraHelper'
 import { useNavigate } from 'react-router-dom'
 import NodeContextMenu from './NodeContextMenu'
+import { VirtualOutlinerList, isVirtualizedOutliner } from './VirtualOutlinerList'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -358,6 +359,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
 
   // Effective filter: prefer external prop, fall back to local
   const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
+
+  // Virtualización (flag OFF por defecto). Solo el caso NORMAL: sin sort efímero,
+  // sin temporalSort y sin filtro (el aplanado v1 no replica esos; el filtrado
+  // tiene su propio path). En cualquier otro caso → render recursivo clásico.
+  const useVirtual = isVirtualizedOutliner()
+    && sortMode === 'none' && !temporalSort
+    && !filterMatchIds && !effectiveFilter
 
   // Actualizar refs de drag en cada render (sin re-registrar listeners)
   ownNodeIdsRef.current = new Set(nodes.map(n => n.id))
@@ -852,29 +860,45 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             </div>
           </div>
         )}
-        {nodes.map((node, idx) => (
-          <OutlinerNode
-            key={node.id}
-            node={node}
-            depth={0}
-            isSelected={selectedId === node.id}
-            selectedId={selectedId}
-            isMultiSelected={selectedIds.has(node.id)}
-            onSelect={setSelectedId}
-            onSelectNext={handleSelectNext}
-            onShiftSelect={handleShiftSelect}
-            filterText={effectiveFilter}
-            filterMatchIds={filterMatchIds}
-            filterAncestorIds={filterAncestorIds}
-            isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
-          />
-        ))}
-        {/* Zona de drop al final — permite arrastrar después del último nodo */}
-        {nodes.length > 0 && (
-          <DropTrailer
+        {useVirtual ? (
+          <VirtualOutlinerList
             parentId={parentId}
-            lastSiblingOrder={Math.max(...nodes.map(n => n.siblingOrder))}
+            store={s}
+            selectedId={selectedId}
+            setSelectedId={setSelectedId}
+            handleSelectNext={handleSelectNext}
+            handleShiftSelect={handleShiftSelect}
+            selectedIds={selectedIds}
+            effectiveFilter={effectiveFilter}
+            excludeDiaryEntries={excludeDiaryEntries}
           />
+        ) : (
+          <>
+            {nodes.map((node, idx) => (
+              <OutlinerNode
+                key={node.id}
+                node={node}
+                depth={0}
+                isSelected={selectedId === node.id}
+                selectedId={selectedId}
+                isMultiSelected={selectedIds.has(node.id)}
+                onSelect={setSelectedId}
+                onSelectNext={handleSelectNext}
+                onShiftSelect={handleShiftSelect}
+                filterText={effectiveFilter}
+                filterMatchIds={filterMatchIds}
+                filterAncestorIds={filterAncestorIds}
+                isFirstEmpty={idx === 0 && nodes.length === 1 && !(node.text || '').trim()}
+              />
+            ))}
+            {/* Zona de drop al final — permite arrastrar después del último nodo */}
+            {nodes.length > 0 && (
+              <DropTrailer
+                parentId={parentId}
+                lastSiblingOrder={Math.max(...nodes.map(n => n.siblingOrder))}
+              />
+            )}
+          </>
         )}
       </div>
 
