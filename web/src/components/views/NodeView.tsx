@@ -36,7 +36,6 @@ import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInline
 import EmojiPicker from '../EmojiPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
-import { createNodeShortcut, getAtajosNode } from '../../utils/atajosHelper'
 import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
@@ -1091,26 +1090,12 @@ export default function NodeView() {
 
   function toggleFavorite() {
     if (!node) return
-    const atajosNode = getAtajosNode()
-    // Comprobar si ya existe como atajo (hijo de 📌 Atajos con _shortcutNodeId)
-    const existingShortcut = atajosNode
-      ? store.children(atajosNode.id).find(n => {
-          try { return JSON.parse(n.extraData || '{}')._shortcutNodeId === node.id } catch { return false }
-        })
-      : null
-
-    if (existingShortcut) {
-      // Quitar de atajos
-      store.updateNode(existingShortcut.id, { deletedAt: new Date().toISOString() })
-      store.updateNode(node.id, { isFavorite: false })
-      window.dispatchEvent(new Event('wf:shortcuts-changed'))
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Quitado de atajos', type: 'info' } }))
-    } else {
-      // Añadir a atajos
-      createNodeShortcut(node.id, node.text || 'Sin título')
-      store.updateNode(node.id, { isFavorite: true })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Añadido a atajos: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
-    }
+    const next = !node.isFavorite
+    store.updateNode(node.id, { isFavorite: next })
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+      message: next ? `Añadido a favoritos: "${(node.text || '').slice(0, 30)}"` : 'Quitado de favoritos',
+      type: next ? 'success' : 'info',
+    } }))
   }
 
   async function handleShare() {

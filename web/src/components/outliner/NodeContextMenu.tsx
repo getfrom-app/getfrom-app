@@ -18,9 +18,7 @@ import { useTranslation } from 'react-i18next'
 import { store, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import MoveNodeModal from '../modals/MoveNodeModal'
-import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
 import { trashNode, isInPapelera, restoreNode } from '../../utils/papeleraHelper'
-import { createNodeShortcut } from '../../utils/atajosHelper'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
@@ -104,7 +102,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
   const isTask = node.status !== null && node.status !== undefined
   const isEvent = !!node.isEvent
-  const isFav = isNodeShortcut(node.id) || node.isFavorite
+  const isFav = !!node.isFavorite
   const isBucle = (node.types || []).includes('bucle')
   const meta = nodeMeta(node)
   const currentBlock = meta.block ?? null
@@ -226,14 +224,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }
 
   function toggleShortcut() {
-    if (isFav) {
-      removeNodeShortcut(node.id)
-      store.updateNode(node.id, { isFavorite: false })
-    } else {
-      createNodeShortcut(node.id, node.text || 'Sin título')
-      store.updateNode(node.id, { isFavorite: true })
-    }
-    window.dispatchEvent(new Event('wf:shortcuts-changed'))
+    store.updateNode(node.id, { isFavorite: !isFav })
   }
 
   function openTaskProps() {

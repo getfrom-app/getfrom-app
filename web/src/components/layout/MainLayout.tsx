@@ -62,7 +62,7 @@ import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
-import { ensureAtajosNode, migrateLocalStorageShortcuts } from '../../utils/atajosHelper'
+import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
 import { ensureAgentesNode, migrateAgentsV2 } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
@@ -407,6 +407,8 @@ export default function MainLayout() {
         // Nodo de sistema: 📌 Atajos
         ensureAtajosNode()
         migrateLocalStorageShortcuts()
+        // Unifica favoritos: convierte los nodos-puntero legacy en isFavorite y los borra
+        migrateNodeShortcutsToFavorites()
         migrateAgentsV2()   // elimina agentes-ejemplo v1 (una vez) antes de añadir los v2
         ensureAgentesNode()
         ensurePromptsNode()

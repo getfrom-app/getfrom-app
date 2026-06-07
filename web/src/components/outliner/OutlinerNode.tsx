@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
 import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, openSelectionMenu } from './Outliner'
 import type { Node } from '../../types'
-import { removeNodeShortcut, isNodeShortcut } from '../../store/shortcutsStore'
-import { createNodeShortcut } from '../../utils/atajosHelper'
 import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
@@ -320,14 +318,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const [picker, setPicker] = useState<InlinePicker | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
-  // Performance: memoize isNodeShortcut to avoid localStorage on every render
-  const [isShortcutState, setIsShortcutState] = useState(() => isNodeShortcut(node.id))
-  useEffect(() => {
-    function update() { setIsShortcutState(isNodeShortcut(node.id)) }
-    window.addEventListener('wf:shortcuts-changed', update)
-    return () => window.removeEventListener('wf:shortcuts-changed', update)
-  }, [node.id])
-
   // Auto-clasificación de contexto — badge sutil con sugerencia IA
   const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(() => {
     // 1. Primero: caché en memoria de la sesión actual (más reciente)

@@ -219,7 +219,8 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
         .sort((a, b) => a.siblingOrder - b.siblingOrder)
         .map(n => {
           const sc = getShortcutData(n.id)
-          return sc?.query !== undefined ? { id: n.id, name: n.text, query: sc.query } : null
+          // Solo filtros de query reales; excluye punteros legacy a nodos (_shortcutNodeId)
+          return sc?.query !== undefined && !sc.nodeId ? { id: n.id, name: n.text, query: sc.query } : null
         })
         .filter(Boolean) as { id: string; name: string; query: string }[]
     : []

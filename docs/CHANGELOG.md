@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.184 / Mac v9.5.25 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 From
+## Web v9.6.185 / Mac v9.5.26 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 From
 
 **Tu segundo cerebro, todo en un mismo árbol.** La pantalla principal ahora muestra, al mismo nivel, **📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes y 📋 Plantillas**. Antes Agentes, Prompts, Plantillas y Contextos estaban escondidos en menús; ahora son parte del árbol: los despliegas, eliges uno y lo editas ahí mismo.
 
@@ -13,6 +13,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 - **La Papelera** ya no ocupa sitio en el árbol: vive solo en el menú. Las búsquedas y filtros la excluyen siempre.
 - **Mismo comportamiento en web, Mac e iPhone.** La estructura converge entre dispositivos sin duplicar nada (ids deterministas + sincronización por operaciones).
 - **Limpieza interna.** Retirado el antiguo concepto de "Paneles": los filtros guardados viven solo en la columna de filtros (y se pueden guardar desde ⌘K). Eliminado código muerto de la barra lateral.
+- **Favoritos unificados.** Una sola noción de "favorito" (la estrella del nodo, que sincroniza entre dispositivos). Retirado el sistema duplicado de atajos en almacenamiento local; los favoritos antiguos se migran automáticamente sin perder nada.
 
 ---
 

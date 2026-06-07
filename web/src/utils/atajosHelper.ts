@@ -40,16 +40,6 @@ export function ensureAtajosNode() {
   return store.getNode(node.id)!
 }
 
-// Check if node is a shortcut (has _shortcutQuery or _shortcutNodeId)
-export function isShortcutNode(nodeId: string): boolean {
-  const n = store.getNode(nodeId)
-  if (!n) return false
-  try {
-    const ed = JSON.parse(n.extraData || '{}')
-    return !!(ed._shortcutQuery !== undefined || ed._shortcutNodeId)
-  } catch { return false }
-}
-
 // Crea un filtro guardado (bajo el contenedor 🔍 Filtros)
 export function createFilterShortcut(name: string, query: string, view?: string): string {
   const parent = ensureAtajosNode()
@@ -61,23 +51,29 @@ export function createFilterShortcut(name: string, query: string, view?: string)
   return node.id
 }
 
-// Create a node shortcut under 📌 Atajos
-export function createNodeShortcut(nodeId: string, name: string): string {
-  const parent = ensureAtajosNode()
-  const siblings = store.children(parent.id)
-  const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.siblingOrder)) : 0
-  const node = store.createNode({ text: name, parentId: parent.id, siblingOrder: maxOrder + 1 })
-  // Store both nodeId (for icon fallback) AND the combined query that shows
-  // structural descendants + nodes that reference this node by @slug
-  store.updateNode(node.id, {
-    extraData: JSON.stringify({
-      _shortcutNodeId: nodeId,
-      _shortcutQuery: `node:${nodeId}`,
-      _shortcutView: 'lista',
-    })
-  })
-  window.dispatchEvent(new Event('wf:shortcuts-changed'))
-  return node.id
+/**
+ * migrateNodeShortcutsToFavorites — unifica el concepto de "favorito".
+ *
+ * Los favoritos antiguos creaban un nodo-puntero (`_shortcutNodeId`) bajo el
+ * contenedor de filtros ADEMÁS de marcar `isFavorite` en el nodo destino. Ahora la
+ * única fuente de verdad es `node.isFavorite`. Esta migración (idempotente) recorre
+ * los punteros, asegura `isFavorite=true` en el destino (por si alguno se creó sin
+ * marcarlo) y borra el nodo-puntero redundante. Op-based → reversible.
+ */
+export function migrateNodeShortcutsToFavorites(): void {
+  const parent = getAtajosNode()
+  if (!parent) return
+  for (const child of store.children(parent.id)) {
+    if (child.deletedAt) continue
+    let nodeId: string | undefined
+    try { nodeId = JSON.parse(child.extraData || '{}')._shortcutNodeId } catch { /* ignore */ }
+    if (!nodeId) continue
+    const target = store.getNode(nodeId)
+    if (target && !target.deletedAt && !target.isFavorite) {
+      store.updateNode(nodeId, { isFavorite: true })
+    }
+    store.deleteNode(child.id)  // borrar el puntero redundante
+  }
 }
 
 // Get shortcut data from a node

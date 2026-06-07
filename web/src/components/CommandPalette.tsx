@@ -194,7 +194,8 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
     const collect = (parentId: string) => {
       for (const n of store.children(parentId).filter(c => !c.deletedAt)) {
         const sc = getShortcutData(n.id)
-        if (sc?.query !== undefined) out.push({ id: n.id, text: n.text || '', query: sc.query })
+        // Solo filtros de query reales; excluye punteros legacy a nodos (_shortcutNodeId)
+        if (sc?.query !== undefined && !sc.nodeId) out.push({ id: n.id, text: n.text || '', query: sc.query })
         collect(n.id)
       }
     }
