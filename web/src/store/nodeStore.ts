@@ -1211,23 +1211,47 @@ export class NodeStore {
     return nodeId
   }
 
-  /** Colapsar todos los nodos que tienen hijos */
+  /**
+   * setCollapsedLocal — cambia el colapso de UN nodo SOLO en memoria (sin op/sync).
+   * El colapso es efímero por sesión: al recargar, todo vuelve a colapsado
+   * (collapseAllLocal en el arranque). Evita churn de sync entre dispositivos.
+   */
+  setCollapsedLocal(id: string, collapsed: boolean): void {
+    const node = this.nodes.get(id)
+    if (!node || node.isCollapsed === collapsed) return
+    this.nodes.set(id, { ...node, isCollapsed: collapsed })
+    this.invalidateChildrenCache()
+    this.notify()
+  }
+
+  /**
+   * collapseAllLocal — colapsa TODOS los nodos solo en memoria (sin sync). Se llama
+   * al arrancar para que el árbol abra colapsado por defecto. Lo que el usuario
+   * expanda durante la sesión es efímero.
+   */
+  collapseAllLocal(): void {
+    for (const [id, node] of this.nodes) {
+      if (node.isCollapsed !== true && !node.deletedAt) {
+        this.nodes.set(id, { ...node, isCollapsed: true })
+      }
+    }
+    this.invalidateChildrenCache()
+    this.notify()
+  }
+
+  /** Colapsar todos los nodos que tienen hijos (local, efímero) */
   collapseAll(parentId: string | null): void {
     const toCollapse = this.allActive().filter(n => n.parentId === parentId || !parentId)
     toCollapse.forEach(n => {
-      if (this.children(n.id).length > 0) {
-        this.updateNode(n.id, { isCollapsed: true })
-      }
+      if (this.children(n.id).length > 0) this.setCollapsedLocal(n.id, true)
     })
   }
 
-  /** Expandir todos los nodos */
+  /** Expandir todos los nodos (local, efímero) */
   expandAll(parentId: string | null): void {
     const toExpand = this.allActive().filter(n => parentId ? n.parentId === parentId : true)
     toExpand.forEach(n => {
-      if (n.isCollapsed) {
-        this.updateNode(n.id, { isCollapsed: false })
-      }
+      if (n.isCollapsed !== false) this.setCollapsedLocal(n.id, false)
     })
   }
 

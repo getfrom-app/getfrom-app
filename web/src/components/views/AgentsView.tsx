@@ -345,7 +345,7 @@ export default function AgentsView() {
                             text: agentTitle || 'Resultado IA',
                             parentId: diary.id,
                           })
-                          store.updateNode(resultNode.id, { isCollapsed: false })
+                          store.setCollapsedLocal(resultNode.id, false)
                           // Cada línea no vacía → un nodo hijo
                           const lines = runResult.split('\n').map((l: string) => l.trim()).filter(Boolean)
                           for (const line of lines) {

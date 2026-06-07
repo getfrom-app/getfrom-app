@@ -2107,9 +2107,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             ? prevChildren[prevChildren.length - 1].siblingOrder + 1
             : Date.now()
           store.updateNode(node.id, { parentId: prevSibling.id, siblingOrder: order })
-          // Expand prev sibling if collapsed
+          // Expand prev sibling if collapsed (efímero, sin sync)
           if (prevSibling.isCollapsed) {
-            store.updateNode(prevSibling.id, { isCollapsed: false })
+            store.setCollapsedLocal(prevSibling.id, false)
           }
         }
       }
@@ -2332,7 +2332,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }
 
   function toggleCollapse() {
-    store.updateNode(node.id, { isCollapsed: !node.isCollapsed })
+    // Colapso efímero por sesión (sin sync): expandir = isCollapsed false.
+    store.setCollapsedLocal(node.id, node.isCollapsed === false)
   }
 
   /** ID de navegación: para espejos de padre, navega al nodo real */
@@ -2786,15 +2787,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         const kids = store.children(id)
         return kids.flatMap(k => [k.id, ...getAllDescEx(k.id)])
       }
-      store.updateNode(node.id, { isCollapsed: false })
-      for (const id of getAllDescEx(node.id)) store.updateNode(id, { isCollapsed: false })
+      store.setCollapsedLocal(node.id, false)
+      for (const id of getAllDescEx(node.id)) store.setCollapsedLocal(id, false)
       return
     } else if (action === 'collapse-all') {
       const getAllDescCo = (id: string): string[] => {
         const kids = store.children(id)
         return kids.flatMap(k => [k.id, ...getAllDescCo(k.id)])
       }
-      for (const id of getAllDescCo(node.id)) store.updateNode(id, { isCollapsed: true })
+      for (const id of getAllDescCo(node.id)) store.setCollapsedLocal(id, true)
       return
     } else if (action === 'count-children') {
       const count = store.children(node.id).filter(c => !c.deletedAt).length
@@ -3129,11 +3130,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               if (e.altKey) {
                 // Alt+Click: colapsar/expandir todo el subárbol
                 const allDesc = getAllDescendants(node.id)
-                const anyExpanded = allDesc.some(id => !store.getNode(id)?.isCollapsed)
+                const anyExpanded = allDesc.some(id => store.getNode(id)?.isCollapsed === false)
                 for (const id of allDesc) {
-                  store.updateNode(id, { isCollapsed: anyExpanded })
+                  store.setCollapsedLocal(id, anyExpanded)
                 }
-                store.updateNode(node.id, { isCollapsed: anyExpanded })
+                store.setCollapsedLocal(node.id, anyExpanded)
               } else {
                 toggleCollapse()
               }

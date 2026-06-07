@@ -20,8 +20,6 @@ import { findHomeRoot } from '../../utils/homeHelper'
 import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import UnclassifiedList from './UnclassifiedList'
 import FilteredList from './FilteredList'
-
-const WF_COLLAPSE_DONE_KEY = 'from_wf_initial_collapse_done'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
 
 interface Props {
@@ -178,18 +176,8 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
     return findAgendaRoot()?.id ?? null
   }, [storeReady, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Colapsar las raíces al primer arranque (vista limpia; "Hoy" lleva al día) ─
-  useEffect(() => {
-    if (!storeReady || !homeRootId) return
-    if (localStorage.getItem(WF_COLLAPSE_DONE_KEY)) return
-    const roots = store.children(homeRootId).filter(n => !n.deletedAt)
-    if (roots.length === 0) return
-    roots.forEach(root => {
-      const kids = store.children(root.id).filter(n => !n.deletedAt)
-      if (kids.length > 0 && !root.isCollapsed) store.updateNode(root.id, { isCollapsed: true })
-    })
-    localStorage.setItem(WF_COLLAPSE_DONE_KEY, '1')
-  }, [storeReady, homeRootId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // El colapsado por defecto lo gestiona store.collapseAllLocal() en el arranque
+  // (MainLayout): el árbol abre colapsado y la expansión es efímera por sesión.
 
   // ── Filtro por contexto (sidebar) ─────────────────────────────────────────
   // UNCLASSIFIED_FILTER_ID se maneja con UnclassifiedList — no necesita buildContextFilter.

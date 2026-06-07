@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.187 / Mac v9.5.27 — 7 junio 2026 · El árbol abre colapsado
+
+**Empiezas con la vista limpia.** Al abrir From, el árbol arranca **colapsado**: ves solo los nodos de primer nivel y vas desplegando lo que necesites. Lo que expandas se mantiene mientras usas la app; la próxima vez que abras, vuelve a estar recogido. (Es solo tu vista del momento: no se sincroniza ni cambia nada entre dispositivos.)
+
+---
+
 ## Web v9.6.185 / Mac v9.5.26 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 From
 
 **Tu segundo cerebro, todo en un mismo árbol.** La pantalla principal ahora muestra, al mismo nivel, **📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes y 📋 Plantillas**. Antes Agentes, Prompts, Plantillas y Contextos estaban escondidos en menús; ahora son parte del árbol: los despliegas, eliges uno y lo editas ahí mismo.

@@ -426,6 +426,10 @@ export default function MainLayout() {
         // Sin esto, si el usuario recarga antes del debounce (1.5s),
         // los nodos de sistema se recrean en cada recarga.
         await store.sync(true)
+        // Colapsado por defecto: el árbol abre colapsado en cada arranque. Lo que el
+        // usuario expanda es efímero (en memoria, sin sync). ANTES de setLoaded para
+        // que no haya parpadeo expandido→colapsado.
+        store.collapseAllLocal()
         store.setLoaded()
         store.startRemotePolling() // Polling 15s para recibir cambios remotos (MCP, otros clientes)
       })

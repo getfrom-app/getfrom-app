@@ -173,7 +173,7 @@ class AIChatStore {
       if (!transcriptNode) {
         // Crear transcript y migrar mensajes legacy como nodos hijos
         const t = store.createNode({ text: '💬 Conversación', parentId: nodeId, extraData: { _aiTranscript: '1' } })
-        store.updateNode(t.id, { isCollapsed: true })
+        store.setCollapsedLocal(t.id, true)
         for (const m of legacyMessages) {
           const ed = JSON.parse(m.extraData || '{}')
           const label = ed._aiRole === 'user' ? 'Tú' : 'Magic'
@@ -842,7 +842,7 @@ class AIChatStore {
       parentId: today.id,
       extraData: { _aiSession: '1', _aiSessionSeed: seed.slice(0, 80), _aiAutoTitle: '1' },
     })
-    store.updateNode(sessionNode.id, { isCollapsed: true })
+    store.setCollapsedLocal(sessionNode.id, true)
 
     // Nodo contenedor del transcript — sus hijos son los mensajes individuales
     const transcript = store.createNode({
@@ -850,7 +850,7 @@ class AIChatStore {
       parentId: sessionNode.id,
       extraData: { _aiTranscript: '1' },
     })
-    store.updateNode(transcript.id, { isCollapsed: true })
+    store.setCollapsedLocal(transcript.id, true)
 
     return sessionNode.id
   }
