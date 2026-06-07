@@ -63,6 +63,48 @@ export function getOrCreateTagsRoot(): Node {
   return findTagsRoot() ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
 }
 
+/**
+ * cleanupNonAgendaContexts — limpia asignaciones de contexto HEREDADAS en nodos que
+ * no deben tenerlas: los propios nodos de contexto (hijos de 🧠 Contexto, que tenían
+ * su propio slug en types[] → mostraban un chip de sí mismos) y las raíces de sistema
+ * fuera de Agenda. Quita del types[] los slugs que correspondan a un contexto y los
+ * flags _autoContextId/_autoContextConfidence/_contextManuallySet de extraData.
+ * Idempotente. La clasificación nueva ya está acotada a la Agenda (isContextAnchor).
+ */
+export function cleanupNonAgendaContexts(): void {
+  const ctxRoot = findContextRoot()
+  if (!ctxRoot) return
+  const slugify = (t: string) => t.toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+  const contextNodes = store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
+  const ctxSlugs = new Set(contextNodes.map(n => slugify(n.text)))
+  const ctxNames = new Set(contextNodes.map(n => n.text))
+
+  const strip = (node: Node) => {
+    let changed = false
+    const patch: Partial<Node> = {}
+    const types = node.types || []
+    const clean = types.filter(t => !ctxSlugs.has(t) && !ctxNames.has(t))
+    if (clean.length !== types.length) { patch.types = clean; changed = true }
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._autoContextId !== undefined || ed._autoContextConfidence !== undefined || ed._contextManuallySet !== undefined) {
+        delete ed._autoContextId; delete ed._autoContextConfidence; delete ed._contextManuallySet
+        patch.extraData = JSON.stringify(ed); changed = true
+      }
+    } catch { /* extraData no parseable */ }
+    if (changed) store.updateNode(node.id, patch)
+  }
+
+  // Nodos de contexto en sí mismos
+  for (const ctx of contextNodes) strip(ctx)
+  // Raíces de sistema fuera de Agenda
+  for (const name of ['📋 Plantillas', '⚡ Prompts', '🤖 Agentes', '📊 Paneles', '🔍 Filtros']) {
+    const root = store.allActive().find(n => (n.text || '').trim() === name)
+    if (root) strip(root)
+  }
+}
+
 // ── Buscar tag por slug ───────────────────────────────────────────────────────
 
 /**

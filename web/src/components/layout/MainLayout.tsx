@@ -62,7 +62,7 @@ import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
-import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode } from '../../utils/tagsHelper'
+import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
 import { ensureAgentesNode, migrateAgentsV2, getAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
@@ -430,6 +430,7 @@ export default function MainLayout() {
         // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
         await relocateRootDiariesToAgenda()
         cleanupYearMonthContexts()
+        cleanupNonAgendaContexts()  // quita chips de contexto heredados en contextos/raíces
         cleanupSpuriousTags()
         syncTagDefinitions()
         // Forzar sync inmediato para que todos los cambios de inicialización

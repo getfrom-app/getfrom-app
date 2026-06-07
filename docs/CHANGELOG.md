@@ -4,13 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.189 / Mac v9.5.29 — 7 junio 2026 · Limpieza de menús + Perfil IA + Sin clasificar
+## Web v9.6.190 / Mac v9.5.29 — 7 junio 2026 · Limpieza de menús + Perfil IA + Sin clasificar
 
 - **Menú ··· más limpio**: Agentes y Plantillas se abren desde su nodo en el árbol; quedan fuera del menú. Añadido acceso directo a **🧠 Perfil de IA**.
 - **Perfil de IA fuera de Contextos**: nunca fue un contexto. Ahora es independiente (no aparece en la lista de contextos ni en el árbol) y se abre desde el menú.
 - **Columna derecha como inspector**: quitados los accesos a Contextos/Prompts/Agentes (se navegan por el árbol). Queda filtro, Magic y grabadora, más las propiedades del nodo abierto.
 - **"Sin clasificar" en Filtros**: el filtro de notas sin contexto vive ahora junto al resto de filtros, en la columna de la derecha.
 - **Contexto solo en la Agenda**: From solo propone contexto a lo que escribes en tu día a día (no a contextos, plantillas, agentes…). Lo que cuelga de un nodo hereda su contexto.
+- **Limpieza de chips heredados**: los contextos ya no muestran un chip de sí mismos (etiquetas de contexto antiguas eliminadas automáticamente).
 
 ---
 

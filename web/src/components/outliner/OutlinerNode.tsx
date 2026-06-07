@@ -3833,6 +3833,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
             {/* Chips de contexto asignados vía types[] (sin @ en texto) */}
             {(() => {
+              // No mostrar chips de contexto en nodos restringidos (los propios
+              // contextos, perfil, plantillas/prompts/agentes, papelera).
+              if (isContextNode || isInsideRestrictedAncestor) return null
               const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
               const textLower = (displayNode.text || '').toLowerCase()
               const ctxRoot = findContextRoot()
