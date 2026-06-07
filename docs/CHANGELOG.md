@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.196 / Mac v9.5.35 — 7 junio 2026 · Copiar y Exportar en el menú del nodo
+
+- En el menú ··· de una nota: **Copiar ▸ Markdown / Texto rico** y **Exportar ▸ Markdown / PDF**, con **todo el contenido** de la nota (antes "Copiar" solo copiaba el título).
+- **PDF limpio**: al exportar/imprimir, el PDF muestra solo la nota (sin barras ni paneles de la app).
+
+---
+
 ## Web v9.6.195 / Mac v9.5.34 — 7 junio 2026 · Notas públicas con contenido completo
 
 **Las notas públicas ahora muestran TODO el contenido** (antes solo el título): al publicar se incluye la jerarquía completa de la nota. Al volver a pulsar el botón de publicar en una nota ya pública, se **actualiza** su contenido manteniendo el mismo enlace.

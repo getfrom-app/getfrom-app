@@ -7436,11 +7436,17 @@ textarea:focus-visible,
 /* ── Print styles ─────────────────────────────────────────────────────────── */
 
 @media print {
-  .sidebar, .top-bar, .status-bar, .node-quick-actions, .node-properties-panel, .node-context-panel {
+  /* PDF limpio: solo el contenido de la nota. Ocultar todo el chrome de la app. */
+  .sidebar, .top-bar, .wf-topbar-root, .wf-topbar, .status-bar, .statusbar,
+  .right-panel-unified, .right-panel-slide, .node-right-panel,
+  .node-quick-actions, .node-properties-panel, .node-context-panel,
+  .node-action-icon-btn, .node-view-modes, .in-doc-search-bar, .node-published-bar,
+  .node-share-menu, .node-more-menu, .context-menu, .collapse-btn, .node-action-icons {
     display: none !important;
   }
-  .main-content { padding: 0 !important; }
-  .node-view-main { max-width: 100% !important; }
+  .main-body { display: block !important; overflow: visible !important; }
+  .main-content { padding: 0 !important; overflow: visible !important; display: block !important; }
+  .node-view-main, .view-body, .outliner-section { max-width: 100% !important; overflow: visible !important; padding: 0 !important; }
   .node-body-textarea { display: none !important; }
   .node-body-rendered { display: block !important; }
 }

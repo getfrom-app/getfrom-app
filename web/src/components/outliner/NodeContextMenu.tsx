@@ -94,6 +94,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   // nodeIds capturados al abrir el modal — inmunes a re-renders posteriores
   const [moveNodeIds, setMoveNodeIds] = useState<string[] | undefined>(undefined)
   const [showConvert, setShowConvert] = useState(false)
+  const [showCopySub, setShowCopySub] = useState(false)
+  const [showExportSub, setShowExportSub] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showPrediction, setShowPrediction] = useState(false)
   // Texto seleccionado en el momento de abrir el menú
@@ -162,7 +164,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     const adjustedX = Math.max(marginW, Math.min(x, window.innerWidth - w - marginW))
     menuRef.current.style.top = `${adjustedY}px`
     menuRef.current.style.left = `${adjustedX}px`
-  }, [x, y, showConvert, showColorPicker, showTemplates])
+  }, [x, y, showConvert, showColorPicker, showTemplates, showCopySub, showExportSub])
 
   // Cerrar al click fuera (solo si no hay submodal)
   // Excepción: clic en un handle ⋮⋮ → añade/quita de la selección sin cerrar el menú
@@ -233,9 +235,47 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: node.id } }))
   }
 
-  function copyText() {
-    navigator.clipboard.writeText(node.text || '')
+  // ── Copiar / Exportar (contenido = jerarquía de hijos, recursivo) ──────────
+  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  function buildMd(parentId: string, depth: number): string {
+    return store.children(parentId).filter(n => !n.deletedAt).map(n => {
+      const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
+      return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
+    }).join('')
   }
+  function fullMd(): string {
+    return `# ${node.text || 'Nota'}\n\n${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`.trim()
+  }
+  function buildHtml(parentId: string): string {
+    const kids = store.children(parentId).filter(n => !n.deletedAt)
+    if (!kids.length) return ''
+    return '<ul>' + kids.map(n => `<li>${escapeHtml(n.text || '')}${buildHtml(n.id)}</li>`).join('') + '</ul>'
+  }
+  const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
+
+  function copyMarkdown() {
+    navigator.clipboard.writeText(fullMd()).then(() => toast('Markdown copiado')).catch(() => {})
+  }
+  function copyRich() {
+    const html = `<h1>${escapeHtml(node.text || '')}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}`
+    try {
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([fullMd()], { type: 'text/plain' }),
+      })]).then(() => toast('Copiado con formato')).catch(() => navigator.clipboard.writeText(fullMd()))
+    } catch { navigator.clipboard.writeText(fullMd()) }
+  }
+  function exportMarkdown() {
+    const blob = new Blob([fullMd()], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.md'
+    a.click()
+    URL.revokeObjectURL(url)
+    toast('Exportado a Markdown')
+  }
+  function exportPdf() { window.print() }
 
   function copyInternalLink() {
     const url = `${window.location.origin}/app/node/${node.id}`
@@ -517,9 +557,42 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
       {/* Copiar */}
       <div className="context-menu-section">
-        <button className="context-menu-item" onClick={run(copyText)}>
-          <span className="context-menu-icon">⎘</span> {t('common.copy')}
+        {/* Copiar → Markdown / Texto rico */}
+        <button
+          className={`context-menu-item${showCopySub ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowCopySub(v => !v); setShowExportSub(false) }}
+        >
+          <span className="context-menu-icon">⎘</span> Copiar
+          <span className="context-menu-shortcut">{showCopySub ? '▾' : '›'}</span>
         </button>
+        {showCopySub && (
+          <div className="context-menu-submenu-inline">
+            <button className="context-menu-item context-menu-item--sub" onClick={run(copyMarkdown)}>
+              <span className="context-menu-icon">⌨</span> Markdown
+            </button>
+            <button className="context-menu-item context-menu-item--sub" onClick={run(copyRich)}>
+              <span className="context-menu-icon">¶</span> Texto rico
+            </button>
+          </div>
+        )}
+        {/* Exportar → Markdown / PDF */}
+        <button
+          className={`context-menu-item${showExportSub ? ' active' : ''}`}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setShowExportSub(v => !v); setShowCopySub(false) }}
+        >
+          <span className="context-menu-icon">↧</span> Exportar
+          <span className="context-menu-shortcut">{showExportSub ? '▾' : '›'}</span>
+        </button>
+        {showExportSub && (
+          <div className="context-menu-submenu-inline">
+            <button className="context-menu-item context-menu-item--sub" onClick={run(exportMarkdown)}>
+              <span className="context-menu-icon">⌨</span> Markdown
+            </button>
+            <button className="context-menu-item context-menu-item--sub" onClick={run(exportPdf)}>
+              <span className="context-menu-icon">📄</span> PDF
+            </button>
+          </div>
+        )}
         <button className="context-menu-item" onClick={run(copyInternalLink)}>
           <span className="context-menu-icon">🔗</span> {t('context.copyLink')}
         </button>
