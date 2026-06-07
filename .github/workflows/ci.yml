@@ -22,7 +22,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Instalar dependencias
-        run: npm ci
+        # npm install (no ci): tolera los binarios opcionales de esbuild que varían
+        # por plataforma (el lock se genera en macOS, el runner es Linux).
+        run: npm install --no-audit --no-fund
 
       - name: Tests (vitest)
         run: npm test

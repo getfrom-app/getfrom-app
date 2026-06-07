@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.181 / Mac v9.5.23 — 7 junio 2026 · Rendimiento del árbol + robustez
+
+**Listas enormes sin ralentizaciones.** El árbol ahora dibuja solo lo que cabe en pantalla (virtualización): abrir una nota con cientos o miles de elementos es instantáneo y el desplazamiento va fluido. Se activa automáticamente solo en listas grandes; en las pequeñas todo funciona igual que siempre.
+
+- **Más sólido bajo el capó.** El motor de sincronización por operaciones queda idéntico byte a byte en web, Mac e iPhone (se corrigió una diferencia que, en casos raros, podía descodificar mal una etiqueta).
+- **Pagos a prueba de fallos.** Si un webhook de pago falla puntualmente, ahora se reintenta de forma segura sin duplicar nada — ninguna compra se queda sin registrar.
+- **Limpieza interna.** Retirado el antiguo código de sincronización por estado (ya no se usaba) y añadida integración continua que ejecuta los tests en cada cambio.
+
+---
+
 ## Web v9.6.179 / Mac v9.5.22 / iPhone v2.3 — 7 junio 2026 · Migración a op-log completada
 
 From ya funciona **100% sobre el registro de operaciones**, en todos los dispositivos. La carga inicial viene del op-log (`/ops/bootstrap`) y los cambios se propagan como operaciones en tiempo real. El antiguo mecanismo de sincronización por estado — que comparaba el árbol entero y podía inferir borrados — **queda retirado**: el servidor ya nunca infiere un borrado. Es la culminación de la migración estilo WorkFlowy, blindada con tests automatizados del arranque.
