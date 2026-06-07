@@ -15,15 +15,21 @@
 // paneles. Altura dinámica vía measureElement (los bullets varían de alto).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useMemo, useRef, useState, useLayoutEffect } from 'react'
+import { useRef, useState, useLayoutEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import OutlinerNode from './OutlinerNode'
-import { flattenVisibleTree } from './flattenTree'
-import type { NodeStore } from '../../store/nodeStore'
+import type { FlatRow } from './flattenTree'
 
+// Virtualización ACTIVADA por defecto. Escape hatch: localStorage
+// `from_virtualized_outliner` === '0' la fuerza OFF (vuelve al render recursivo).
 export function isVirtualizedOutliner(): boolean {
-  try { return localStorage.getItem('from_virtualized_outliner') === '1' } catch { return false }
+  try { return localStorage.getItem('from_virtualized_outliner') !== '0' } catch { return true }
 }
+
+// Solo se virtualiza si la lista plana supera este nº de filas: por debajo, el
+// render recursivo clásico (probado, sin limitaciones de drag) va de sobra y no
+// hay congelación que resolver. Una pantalla muestra ~25-30 filas.
+export const VIRTUALIZE_THRESHOLD = 60
 
 /** Sube el DOM desde `start` buscando el primer ancestro con scroll vertical. */
 function findScrollParent(start: HTMLElement | null): HTMLElement | null {
@@ -37,28 +43,20 @@ function findScrollParent(start: HTMLElement | null): HTMLElement | null {
 }
 
 interface Props {
-  parentId: string | null
-  store: NodeStore
+  /** Lista plana precomputada por el Outliner (evita doble aplanado). */
+  rows: FlatRow[]
   selectedId: string | null
   setSelectedId: (id: string) => void
   handleSelectNext: (id: string, dir: 'up' | 'down') => void
   handleShiftSelect?: (id: string) => void
   selectedIds: Set<string>
   effectiveFilter?: string
-  excludeDiaryEntries?: boolean
 }
 
 export function VirtualOutlinerList({
-  parentId, store, selectedId, setSelectedId, handleSelectNext, handleShiftSelect,
-  selectedIds, effectiveFilter, excludeDiaryEntries,
+  rows, selectedId, setSelectedId, handleSelectNext, handleShiftSelect,
+  selectedIds, effectiveFilter,
 }: Props) {
-  // Recompute solo cuando cambia el árbol (nodesVersion) o el ámbito.
-  const rows = useMemo(
-    () => flattenVisibleTree(store, parentId, { excludeDiaryEntries }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [parentId, excludeDiaryEntries, store.nodesVersion],
-  )
-
   const listRef = useRef<HTMLDivElement>(null)
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null)
 
@@ -70,8 +68,10 @@ export function VirtualOutlinerList({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollEl,
-    estimateSize: () => 32,
-    overscan: 12,
+    // Estimación cercana a la altura típica de un bullet de una línea (~40px);
+    // measureElement corrige las filas reales (más altas) al montarlas.
+    estimateSize: () => 40,
+    overscan: 16,
     getItemKey: (index) => rows[index]?.node.id ?? index,
   })
 

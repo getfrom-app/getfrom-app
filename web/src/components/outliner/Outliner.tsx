@@ -1,11 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import OutlinerNode, { getDraggedIds, getDraggedId } from './OutlinerNode'
 import type { Node } from '../../types'
 import { trashNode } from '../../utils/papeleraHelper'
 import { useNavigate } from 'react-router-dom'
 import NodeContextMenu from './NodeContextMenu'
-import { VirtualOutlinerList, isVirtualizedOutliner } from './VirtualOutlinerList'
+import { VirtualOutlinerList, isVirtualizedOutliner, VIRTUALIZE_THRESHOLD } from './VirtualOutlinerList'
+import { flattenVisibleTree } from './flattenTree'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -360,12 +361,19 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   // Effective filter: prefer external prop, fall back to local
   const effectiveFilter = filterText !== undefined ? filterText : (localFilterOpen ? localFilterText : undefined)
 
-  // Virtualización (flag OFF por defecto). Solo el caso NORMAL: sin sort efímero,
-  // sin temporalSort y sin filtro (el aplanado v1 no replica esos; el filtrado
-  // tiene su propio path). En cualquier otro caso → render recursivo clásico.
-  const useVirtual = isVirtualizedOutliner()
+  // Virtualización (ON por defecto). Solo el caso NORMAL: sin sort efímero, sin
+  // temporalSort y sin filtro (el aplanado no replica esos; el filtrado tiene su
+  // propio path). Y SOLO si el árbol es grande (> umbral): para árboles pequeños
+  // el render recursivo clásico (probado, sin limitaciones de drag) va de sobra.
+  const canVirtualizeBase = isVirtualizedOutliner()
     && sortMode === 'none' && !temporalSort
     && !filterMatchIds && !effectiveFilter
+  const flatRows = useMemo(
+    () => canVirtualizeBase ? flattenVisibleTree(s, parentId, { excludeDiaryEntries }) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canVirtualizeBase, parentId, excludeDiaryEntries, s.nodesVersion],
+  )
+  const useVirtual = canVirtualizeBase && flatRows.length > VIRTUALIZE_THRESHOLD
 
   // Actualizar refs de drag en cada render (sin re-registrar listeners)
   ownNodeIdsRef.current = new Set(nodes.map(n => n.id))
@@ -862,15 +870,13 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
         )}
         {useVirtual ? (
           <VirtualOutlinerList
-            parentId={parentId}
-            store={s}
+            rows={flatRows}
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             handleSelectNext={handleSelectNext}
             handleShiftSelect={handleShiftSelect}
             selectedIds={selectedIds}
             effectiveFilter={effectiveFilter}
-            excludeDiaryEntries={excludeDiaryEntries}
           />
         ) : (
           <>
