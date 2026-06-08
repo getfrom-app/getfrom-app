@@ -795,5 +795,20 @@
   "prompts.variablesHint2": "Write them in the prompt and Fromly fills them in. Click to insert one where your cursor is.",
   "pricing.free": "Free",
   "pricing.lifetime": "Lifetime",
-  "pricing.lifetimePrice": "€149"
+  "pricing.lifetimePrice": "€149",
+  "pricing.subtitle2": "Start free. Go Pro when your second brain grows.",
+  "pricing.nodesLabel": "nodes",
+  "pricing.nodesUnlimited": "unlimited nodes",
+  "pricing.freeNodesNote": "Plenty to get started",
+  "pricing.proNodesNote": "No limits, ever",
+  "pricing.annualNote": "€4.08/mo · billed yearly",
+  "pricing.proEverythingFree": "Everything in Free, plus:",
+  "pricing.proPriority": "Priority support",
+  "pricing.proBadge": "Recommended",
+  "pricing.perYear": "/yr",
+  "pricing.perMonth": "/mo",
+  "pricing.monthly": "Monthly",
+  "pricing.annual": "Annual",
+  "pricing.annualSave": "save 42%",
+  "pricing.ctaStartPro": "Go Pro"
 }

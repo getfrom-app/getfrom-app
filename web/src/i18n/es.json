@@ -794,5 +794,20 @@
   "prompts.variablesHint2": "Escríbelas en el prompt y Fromly las rellena al usarlo. Clic para insertarla donde tengas el cursor.",
   "pricing.free": "Gratis",
   "pricing.lifetime": "Lifetime",
-  "pricing.lifetimePrice": "€149"
+  "pricing.lifetimePrice": "€149",
+  "pricing.subtitle2": "Empieza gratis. Pasa a Pro cuando tu segundo cerebro crezca.",
+  "pricing.nodesLabel": "nodos",
+  "pricing.nodesUnlimited": "nodos ilimitados",
+  "pricing.freeNodesNote": "De sobra para empezar",
+  "pricing.proNodesNote": "Sin límites, nunca",
+  "pricing.annualNote": "€4,08/mes · facturado anual",
+  "pricing.proEverythingFree": "Todo lo de Gratis, y además:",
+  "pricing.proPriority": "Soporte prioritario",
+  "pricing.proBadge": "Recomendado",
+  "pricing.perYear": "/año",
+  "pricing.perMonth": "/mes",
+  "pricing.monthly": "Mensual",
+  "pricing.annual": "Anual",
+  "pricing.annualSave": "ahorra 42%",
+  "pricing.ctaStartPro": "Empezar Pro"
 }

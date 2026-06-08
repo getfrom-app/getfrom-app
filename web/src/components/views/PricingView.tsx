@@ -1,140 +1,120 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
-import { getToken, changePlanLifetime } from '../../api/client'
+import { getToken, changePlan, changePlanAnnual } from '../../api/client'
 
-const LS_LIFETIME = 'https://from.lemonsqueezy.com/checkout/buy/82bf7fc4-e3b5-402c-b4b2-b2ef1f7f7520'
-
-interface PlanFeature {
-  text: string
-  included: boolean
-}
-
-interface Plan {
-  id: string
-  name: string
-  price: string
-  priceDetail?: string
-  badge?: string
-  features: PlanFeature[]
-  ctaLabel: string
-  isCurrent?: boolean
-  isPopular?: boolean
-  onCta: () => void
-}
-
+// Pricing rediseñado (jun 2026): simple y visual.
+// Diferenciador claro = nº de nodos. Gratis = 1.000 nodos; Pro = ilimitados + IA/prompts/agentes.
 export default function PricingView() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const us = useUserStore()
   const isGuest = !getToken()
+  const [annual, setAnnual] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  async function handleCheckoutLifetime() {
-    if (isGuest) {
-      window.open(LS_LIFETIME, '_blank')
-      return
-    }
+  const isPaid = !!us.isPremium
+
+  async function startPro() {
+    if (isGuest) { navigate('/register'); return }
+    setLoading(true)
     try {
-      const res = await changePlanLifetime()
+      const res = annual ? await changePlanAnnual() : await changePlan()
       if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
     } catch (err) {
-      console.error('Error al iniciar checkout:', err)
+      console.error('Error al iniciar checkout Pro:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleLifetime = () => handleCheckoutLifetime()
-
-  const isFree = !us.isPremium
-  const isLifetime = us.user?.licenseStatus === 'active'
-
-  const plans: Plan[] = [
-    {
-      id: 'free',
-      name: t('pricing.free'),
-      price: '€0',
-      features: [
-        { text: t('pricing.featureOutliner'), included: true },
-        { text: t('pricing.featureAdvancedSearch'), included: true },
-        { text: t('pricing.featureSync'), included: true },
-        { text: t('pricing.featurePlatforms'), included: true },
-        { text: t('pricing.featureAI'), included: false },
-        { text: t('pricing.featureAdvancedViews'), included: false },
-        { text: t('pricing.featureNodeLimit'), included: false },
-      ],
-      ctaLabel: isFree && !isGuest ? t('pricing.ctaContinueFree') : t('pricing.ctaCreateFree'),
-      isCurrent: false, // nunca marcado como "actual" en el onboarding
-      onCta: isGuest ? () => navigate('/register') : () => navigate('/'),
-    },
-    {
-      id: 'lifetime',
-      name: t('pricing.lifetime'),
-      price: t('pricing.lifetimePrice'),
-      priceDetail: t('pricing.planLifetimePriceDetail'),
-      badge: t('pricing.planLifetimeBadge'),
-      isPopular: true,
-      features: [
-        { text: t('pricing.featureOutliner'), included: true },
-        { text: t('pricing.featureAdvancedSearch'), included: true },
-        { text: t('pricing.featureSyncFull'), included: true },
-        { text: t('pricing.featurePlatforms'), included: true },
-        { text: t('pricing.featureAIIncluded'), included: true },
-        { text: t('pricing.featureAdvancedViews'), included: true },
-        { text: t('pricing.featureNodeLimit'), included: true },
-      ],
-      ctaLabel: isLifetime ? t('pricing.ctaCurrentPlan') : t('pricing.ctaBuyNow'),
-      isCurrent: isLifetime,
-      onCta: isLifetime ? () => {} : handleLifetime,
-    },
+  const freeFeatures = [
+    t('pricing.featureOutliner', 'Outliner + diario'),
+    t('pricing.featureAdvancedSearch', 'Búsqueda avanzada'),
+    t('pricing.featurePlatforms', 'Mac, iPhone y web'),
+    t('pricing.featureSync', 'Sync en tiempo real'),
+  ]
+  const proFeatures = [
+    t('pricing.proEverythingFree', 'Todo lo de Gratis, y además:'),
+    t('pricing.featureAIIncluded', 'IA, prompts y agentes'),
+    t('pricing.featureAdvancedViews', 'Vistas tabla, kanban, calendario'),
+    t('pricing.proPriority', 'Soporte prioritario'),
   ]
 
   return (
-    <div className="pricing-view">
-      <div className="pricing-header">
-        <h1 className="pricing-title">{isGuest ? t('pricing.title') : t('pricing.titleAfterRegister')}</h1>
-        <p className="pricing-subtitle">
-          {isGuest
-            ? 'Empieza gratis · Paga una vez y usa From para siempre'
-            : 'Puedes usar From gratis ahora mismo. Actualiza cuando quieras.'}
+    <div className="pricing2">
+      <div className="pricing2-head">
+        <h1 className="pricing2-title">
+          {isGuest ? t('pricing.title', 'Elige tu plan') : t('pricing.titleAfterRegister', '¡Cuenta creada!')}
+        </h1>
+        <p className="pricing2-sub">
+          {t('pricing.subtitle2', 'Empieza gratis. Pasa a Pro cuando tu segundo cerebro crezca.')}
         </p>
       </div>
 
-      <div className="pricing-grid">
-        {plans.map(plan => (
-          <div
-            key={plan.id}
-            className={[
-              'plan-card',
-              plan.isPopular ? 'plan-card--popular' : '',
-              plan.isCurrent ? 'plan-card--current' : '',
-            ].filter(Boolean).join(' ')}
+      <div className="pricing2-grid">
+        {/* ── Gratis ── */}
+        <div className="pcard">
+          <div className="pcard-top">
+            <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
+            <span className="pcard-price">€0</span>
+          </div>
+          <div className="pcard-hero">
+            <span className="pcard-hero-num">1.000</span>
+            <span className="pcard-hero-label">{t('pricing.nodesLabel', 'nodos')}</span>
+          </div>
+          <p className="pcard-note">{t('pricing.freeNodesNote', 'De sobra para empezar')}</p>
+          <ul className="pcard-feats">
+            {freeFeatures.map((f, i) => <li key={i}><span className="pcard-check">✓</span>{f}</li>)}
+          </ul>
+          <button
+            className="pcard-cta pcard-cta--ghost"
+            onClick={isGuest ? () => navigate('/register') : () => navigate('/')}
           >
-            {plan.badge && (
-              <div className="plan-badge">{plan.badge}</div>
-            )}
-            <div className="plan-name">{plan.name}</div>
-            <div className="plan-price">{plan.price}</div>
-            {plan.priceDetail && (
-              <div className="plan-price-detail">{plan.priceDetail}</div>
-            )}
+            {isGuest ? t('pricing.ctaCreateFree', 'Empezar gratis') : t('pricing.ctaContinueFree', 'Continuar gratis')}
+          </button>
+        </div>
 
-            <ul className="plan-feature-list">
-              {plan.features.map((f, i) => (
-                <li key={i} className={`plan-feature ${f.included ? 'plan-feature--included' : 'plan-feature--excluded'}`}>
-                  <span className="plan-feature-icon">{f.included ? '✓' : '✗'}</span>
-                  {f.text}
-                </li>
-              ))}
-            </ul>
+        {/* ── Pro ── */}
+        <div className="pcard pcard--pro">
+          <span className="pcard-badge">{t('pricing.proBadge', 'Recomendado')}</span>
+          <div className="pcard-top">
+            <span className="pcard-name">Pro</span>
+            <span className="pcard-price">
+              {annual ? '€49' : '€7'}
+              <span className="pcard-per">{annual ? t('pricing.perYear', '/año') : t('pricing.perMonth', '/mes')}</span>
+            </span>
+          </div>
 
-            <button
-              className={`plan-cta ${plan.isCurrent ? 'plan-cta--current' : 'btn-primary'}`}
-              onClick={plan.onCta}
-              disabled={plan.isCurrent}
-            >
-              {plan.ctaLabel}
+          <div className="pricing2-toggle" role="tablist">
+            <button className={!annual ? 'on' : ''} onClick={() => setAnnual(false)}>
+              {t('pricing.monthly', 'Mensual')}
+            </button>
+            <button className={annual ? 'on' : ''} onClick={() => setAnnual(true)}>
+              {t('pricing.annual', 'Anual')}
+              <span className="pricing2-save">{t('pricing.annualSave', 'ahorra 42%')}</span>
             </button>
           </div>
-        ))}
+
+          <div className="pcard-hero pcard-hero--pro">
+            <span className="pcard-hero-num">∞</span>
+            <span className="pcard-hero-label">{t('pricing.nodesUnlimited', 'nodos ilimitados')}</span>
+          </div>
+          <p className="pcard-note">
+            {annual ? t('pricing.annualNote', '€4,08/mes · facturado anual') : t('pricing.proNodesNote', 'Sin límites, nunca')}
+          </p>
+          <ul className="pcard-feats">
+            {proFeatures.map((f, i) => <li key={i}><span className="pcard-check">✓</span>{f}</li>)}
+          </ul>
+          <button
+            className="pcard-cta pcard-cta--solid"
+            onClick={startPro}
+            disabled={loading || isPaid}
+          >
+            {isPaid ? t('pricing.ctaCurrentPlan', 'Tu plan actual') : (loading ? '…' : t('pricing.ctaStartPro', 'Empezar Pro'))}
+          </button>
+        </div>
       </div>
     </div>
   )
