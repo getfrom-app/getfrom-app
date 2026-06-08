@@ -1376,7 +1376,6 @@ export default function NodeView() {
         setCtxKnowledgeLoading(false)
         return
       }
-      const knowledge = await extractContextKnowledge(node.text || '', '', samples)
       // Buscar o crear el nodo "🧠 Lo que From sabe" dentro del contexto
       const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
       const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
@@ -1389,16 +1388,48 @@ export default function NodeView() {
         const newNode = store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: node.id, siblingOrder: maxOrder + 1000 })
         knowledgeNodeId = newNode.id
       }
-      // Definir los tres subnodos
-      const SUBNODE_TEXTS: Record<string, string> = {
-        keywords: `Palabras clave: ${knowledge.keywords.join(', ')}`,
-        people: `Personas: ${knowledge.people.length > 0 ? knowledge.people.join(', ') : '—'}`,
-        topics: `Temas frecuentes: ${knowledge.topics.join(', ')}`,
-      }
       const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
+
+      // Leer lo que ya sabíamos (para ACUMULAR, no sobrescribir, y para que el
+      // extractor del server solo devuelva lo NUEVO).
+      const readLine = (prefix: string): string[] => {
+        const n2 = existingChildren.find(x => (x.text || '').startsWith(prefix))
+        if (!n2) return []
+        return (n2.text || '').slice(prefix.length).split(',').map(s => s.trim()).filter(s => s && s !== '—')
+      }
+      const prevKw = readLine('Palabras clave:')
+      const prevPe = readLine('Personas:')
+      const prevTo = readLine('Temas frecuentes:')
+      const existingSummary = [
+        prevKw.length ? `Palabras clave: ${prevKw.join(', ')}` : '',
+        prevPe.length ? `Personas: ${prevPe.join(', ')}` : '',
+        prevTo.length ? `Temas frecuentes: ${prevTo.join(', ')}` : '',
+      ].filter(Boolean).join('\n')
+
+      const knowledge = await extractContextKnowledge(node.text || '', existingSummary, samples)
+
+      // Curación: unir lo viejo + lo nuevo, deduplicar (sin distinguir mayúsculas)
+      // y acotar (memoria acumulada y limitada, no crece sin control).
+      const mergeCap = (oldArr: string[], neu: string[], cap: number): string[] => {
+        const seen = new Set(oldArr.map(s => s.toLowerCase()))
+        const out = [...oldArr]
+        for (const x of neu) {
+          const k = (x || '').trim().toLowerCase()
+          if (k && !seen.has(k)) { seen.add(k); out.push(x.trim()) }
+        }
+        return out.slice(-cap)   // conserva lo más reciente si supera el tope
+      }
+      const kw = mergeCap(prevKw, knowledge.keywords, 60)
+      const pe = mergeCap(prevPe, knowledge.people, 40)
+      const to = mergeCap(prevTo, knowledge.topics, 30)
+
+      const SUBNODE_TEXTS: Record<string, string> = {
+        keywords: `Palabras clave: ${kw.join(', ')}`,
+        people: `Personas: ${pe.length > 0 ? pe.join(', ') : '—'}`,
+        topics: `Temas frecuentes: ${to.join(', ')}`,
+      }
       let order = 1000
       for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
-        // Buscar por prefijo para actualizar en lugar de duplicar
         const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
         const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
         if (existing) {

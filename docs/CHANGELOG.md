@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.224 — 8 junio 2026 · Conocimiento por contexto: memoria que se acumula y se usa
+
+- El conocimiento que From guarda de cada contexto ahora **se acumula** (antes se sobrescribía): une lo nuevo con lo anterior, deduplica y se mantiene acotado (no crece sin control).
+- Y lo más importante: **From ya usa ese conocimiento en el chat** cuando trabajas en ese contexto (antes no se inyectaba). Así "conoce" mejor cada proyecto.
+
+---
+
 ## Web v9.6.223 — 8 junio 2026 · Magic: conocimiento por contexto + limpieza de nodo antiguo
 
 - En Ajustes › Magic ahora también ves **lo que From sabe por cada contexto** (resumen que se actualiza solo). Cada uno se abre para revisarlo.

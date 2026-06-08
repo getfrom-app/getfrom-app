@@ -633,7 +633,18 @@ class AIChatStore {
         try { return JSON.parse(child.extraData || '{}')._tagPrompt === '1' } catch { return false }
       })
       // Resolver códigos en el body del tag y en cada prompt
-      const resolvedBody = resolveTemplateCodes(body, ctx)
+      let resolvedBody = resolveTemplateCodes(body, ctx)
+
+      // Memoria que From acumula de este contexto ("🧠 Lo que From sabe"): se
+      // inyecta para que el chat use lo que sabe del proyecto, no solo el body.
+      const knowledgeNode = store.children(defNode.id).find(c => !c.deletedAt && (c.text || '') === '🧠 Lo que From sabe')
+      if (knowledgeNode) {
+        const lines = store.children(knowledgeNode.id)
+          .filter(c => !c.deletedAt && (c.text || '').trim())
+          .map(c => (c.text || '').trim())
+        if (lines.length > 0) resolvedBody += '\n\n## Lo que From sabe de este contexto:\n' + lines.map(l => `- ${l}`).join('\n')
+      }
+
       if (prompts.length === 0) return resolvedBody
       const section = '\n\n## Prompts disponibles para este tag:\n' +
         prompts.map(p => {
