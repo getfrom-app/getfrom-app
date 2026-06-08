@@ -20,6 +20,7 @@ import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
 import { readLearnedItems, getOrCreateLearnNode } from '../../api/userKnowledge'
+import { findContextRoot } from '../../utils/rootLookup'
 
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
@@ -44,6 +45,20 @@ function MagicPane() {
     if (node) navigate(`/node/${node.id}`)
   }
 
+  // Conocimiento que From mantiene por contexto (nodo "🧠 Lo que From sabe" dentro
+  // de cada contexto; se regenera y sobrescribe solo, no acumula).
+  const contextKnowledge = (() => {
+    const root = findContextRoot()
+    if (!root) return [] as { name: string; id: string }[]
+    const out: { name: string; id: string }[] = []
+    for (const ctx of s.children(root.id)) {
+      if (ctx.deletedAt || (ctx.text || '').startsWith('🧠')) continue
+      const kn = s.children(ctx.id).find(n => !n.deletedAt && (n.text || '') === '🧠 Lo que From sabe')
+      if (kn) out.push({ name: ctx.text || 'Contexto', id: kn.id })
+    }
+    return out
+  })()
+
   return (
     <div className="st-pane">
       <div className="st-section-title">Lo que From sabe de ti</div>
@@ -60,6 +75,23 @@ function MagicPane() {
           <button className="btn-primary btn-sm" onClick={openLearned}>Ver y editar</button>
         </div>
       </div>
+
+      {contextKnowledge.length > 0 && (
+        <>
+          <div className="st-section-title" style={{ marginTop: 24 }}>Lo que From sabe por contexto</div>
+          <div className="st-row-hint" style={{ marginBottom: 4 }}>
+            Para cada contexto, From mantiene un resumen (palabras clave, personas, temas) que se actualiza solo al usarlo.
+          </div>
+          {contextKnowledge.map(c => (
+            <div className="st-row" key={c.id}>
+              <div className="st-row-info"><div className="st-row-label">{c.name}</div></div>
+              <div className="st-row-action">
+                <button className="btn-secondary btn-sm" onClick={() => navigate(`/node/${c.id}`)}>Ver</button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   )
 }

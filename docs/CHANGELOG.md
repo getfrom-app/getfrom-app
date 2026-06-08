@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.223 — 8 junio 2026 · Magic: conocimiento por contexto + limpieza de nodo antiguo
+
+- En Ajustes › Magic ahora también ves **lo que From sabe por cada contexto** (resumen que se actualiza solo). Cada uno se abre para revisarlo.
+- Limpiado un nodo antiguo "🧠 Lo que From sabe" que quedaba suelto en el Perfil de versiones anteriores.
+
+---
+
 ## Web v9.6.222 — 8 junio 2026 · Magic: ver lo que From ha aprendido por su cuenta
 
 - "Ver y editar" lleva directamente a **lo que From ha escrito de forma autónoma** (no a todo tu perfil, para que no veas solo lo que escribiste tú).

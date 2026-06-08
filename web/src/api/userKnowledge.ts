@@ -127,6 +127,21 @@ function countLearnedItems(): number {
   return people.length + facts.length
 }
 
+/** Limpia el nodo huérfano "🧠 Lo que From sabe" (sin "sobre ti") que quedó como
+ *  hijo directo del Perfil en versiones antiguas (cuando el Perfil se trataba como
+ *  contexto). El conocimiento por contexto vive ahora dentro de cada contexto. */
+export function cleanupOrphanProfileKnowledge(): void {
+  try { if (localStorage.getItem('from_profile_orphan_v1') === '1') return } catch { /* */ }
+  const perfil = store.perfilIANode?.() ?? null
+  if (perfil) {
+    for (const c of store.children(perfil.id)) {
+      if (c.deletedAt) continue
+      if ((c.text || '').trim() === '🧠 Lo que From sabe') store.deleteNode(c.id)
+    }
+  }
+  try { localStorage.setItem('from_profile_orphan_v1', '1') } catch { /* */ }
+}
+
 /** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que
  *  From escribe de forma autónoma en el Perfil. Para abrirlo y revisarlo. */
 export function getOrCreateLearnNode(): Node | null {
