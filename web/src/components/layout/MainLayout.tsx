@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, useMemo, Suspense } from 'react'
+import { lazyWithReload as lazy } from '../../utils/lazyWithReload'
 import { useTranslation } from 'react-i18next'
 import { useFilterStore, setActiveFilter } from '../../store/filterStore'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'

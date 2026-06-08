@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.208 / Mac v9.5.45 — 8 junio 2026 · Fix: error de navegación al abrir paneles/ajustes
+
+- Arreglado el fallo intermitente por el que, al abrir un panel o Ajustes, la navegación daba un error y la app se recargaba (a veces volviendo a la raíz). Ocurría cuando había una versión nueva publicada y la pestaña seguía con la anterior: al cargar una parte de la app que había cambiado, fallaba. Ahora **reintenta y, si hace falta, se recarga en el mismo sitio** (sin perder dónde estabas) y sin pantallazo de error.
+
+---
+
 ## Web v9.6.207 / Mac v9.5.44 — 8 junio 2026 · Magic más humano y cercano
 
 - Al abrir Magic, te **saluda** según la hora («Buenas tardes 👋»).

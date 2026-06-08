@@ -21,15 +21,22 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   static getDerivedStateFromError(error: Error) { return { error } }
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('From Web error:', error, info)
-    // Auto-recuperación: si es un error de chunk dinámico (deploy nuevo), hacer hard reload automático
+    // Auto-recuperación: si es un error de chunk dinámico (deploy nuevo), hacer hard reload automático.
+    // (lazyWithReload ya intercepta la mayoría de estos antes de llegar aquí; esto es el último recurso.)
     const isChunkError = error?.message?.includes('Failed to fetch dynamically imported module') ||
                          error?.message?.includes('Importing a module script failed')
-    if (isChunkError && !this.state.didHardReload) {
-      this.setState({ didHardReload: true })
-      // Hard reload sin caché: añadir ?v= timestamp para forzar nueva petición
-      const url = window.location.href.replace(/[?#].*$/, '') + '?v=' + Date.now()
-      window.location.replace(url)
-    }
+    if (!isChunkError || this.state.didHardReload) return
+    // Respetar la guardia anti-bucle compartida con lazyWithReload (no recargar dos veces).
+    const last = Number(sessionStorage.getItem('from_chunk_reload_at') || 0)
+    if (Date.now() - last < 10_000) return
+    this.setState({ didHardReload: true })
+    try {
+      sessionStorage.setItem('from_chunk_reload_at', String(Date.now()))
+      // Preservar ruta Y query (ej. /app/settings?tab=…), solo añadir ?v= para saltar caché.
+      const u = new URL(window.location.href)
+      u.searchParams.set('v', String(Date.now()))
+      window.location.replace(u.toString())
+    } catch { /* noop */ }
   }
   render() {
     if (this.state.error) {
