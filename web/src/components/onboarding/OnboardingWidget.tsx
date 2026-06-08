@@ -578,7 +578,7 @@ function Step6({ onClose }: { onClose: () => void }) {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <a
-          href="https://getfrom.app/blog/index.html"
+          href="https://fromly.app/blog/index.html"
           target="_blank"
           rel="noopener noreferrer"
           style={linkBtnStyle}
@@ -586,7 +586,7 @@ function Step6({ onClose }: { onClose: () => void }) {
           📖 Lee el blog
         </a>
         <a
-          href="https://getfrom.app/docs/"
+          href="https://fromly.app/docs/"
           target="_blank"
           rel="noopener noreferrer"
           style={linkBtnStyle}

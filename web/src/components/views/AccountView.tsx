@@ -631,7 +631,7 @@ AL TERMINAR ("fin"):
               <div className="settings-row-hint">{t('account.privacyPolicyHint')}</div>
             </div>
             <a
-              href="https://getfrom.app/privacy"
+              href="https://fromly.app/privacy"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary"
@@ -906,7 +906,7 @@ AL TERMINAR ("fin"):
                 <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
               </ol>
               <a
-                href="https://getfrom.app/docs/google-calendar"
+                href="https://fromly.app/docs/google-calendar"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent)', fontSize: 12 }}
@@ -931,13 +931,13 @@ AL TERMINAR ("fin"):
                   <div className="settings-row-label">{t('sidebar.claudeMCP')}</div>
                   <div className="settings-row-hint">
                     Conecta Claude con tu vault. Instala la extensión y genera tu token.{' '}
-                    <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                    <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
                       Más info →
                     </a>
                   </div>
                 </div>
                 <a
-                  href="https://getfrom.app/From.dxt"
+                  href="https://fromly.app/From.dxt"
                   download
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}

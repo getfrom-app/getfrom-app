@@ -1129,7 +1129,7 @@ export default function NodeView() {
   async function handleShare() {
     if (!node) return
     if (!getToken()) {
-      const url = `https://getfrom.app/app/node/${node.id}`
+      const url = `https://fromly.app/app/node/${node.id}`
       navigator.clipboard.writeText(url).then(() => {
         setShareCopied(true); setTimeout(() => setShareCopied(false), 2000)
       }).catch(() => { prompt('Copia este enlace:', url) })
@@ -1148,14 +1148,14 @@ export default function NodeView() {
       const content = `${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`.trim() || (node.text || '')
       const existingSlug = node.publicSlug || shareUrl?.split('/p/')[1] || undefined
       const result = await publishNote(node.text || 'Nota', content, existingSlug)
-      const url = `https://getfrom.app/p/${result.slug}`
+      const url = `https://fromly.app/p/${result.slug}`
       if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
       setShareUrl(url)
       navigator.clipboard.writeText(url).catch(() => {})
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 2000)
     } catch {
-      const url = `https://getfrom.app/app/node/${node!.id}`
+      const url = `https://fromly.app/app/node/${node!.id}`
       navigator.clipboard.writeText(url).catch(() => {})
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 2000)
@@ -1571,23 +1571,23 @@ export default function NodeView() {
             <span className="node-published-icon">👁</span>
             <span className="node-published-label">Pública:</span>
             <a
-              href={`https://getfrom.app/p/${node.publicSlug}`}
+              href={`https://fromly.app/p/${node.publicSlug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="node-published-link"
             >
-              getfrom.app/p/{node.publicSlug}
+              fromly.app/p/{node.publicSlug}
             </a>
             <button
               className="node-published-copy"
-              onClick={() => navigator.clipboard.writeText(`https://getfrom.app/p/${node.publicSlug!}`)}
+              onClick={() => navigator.clipboard.writeText(`https://fromly.app/p/${node.publicSlug!}`)}
               title="Copiar enlace"
             >
               📋
             </button>
             <button
               className="node-published-copy"
-              onClick={() => window.open(`https://getfrom.app/p/${node.publicSlug!}`, '_blank')}
+              onClick={() => window.open(`https://fromly.app/p/${node.publicSlug!}`, '_blank')}
               title="Abrir en nueva pestaña"
             >
               ↗

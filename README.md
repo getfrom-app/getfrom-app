@@ -54,13 +54,13 @@ Full technical and product documentation: [`docs/DOCUMENTACION_EN.md`](docs/DOCU
 
 ## Website
 
-[getfrom.app](https://getfrom.app)
+[fromly.app](https://fromly.app)
 
 ---
 
 ## Contact
 
-- Email: hello@getfrom.app
+- Email: hello@fromly.app
 - Developer: [Alberto Lezaun](https://www.linkedin.com/in/lezaun/)
 
 ---

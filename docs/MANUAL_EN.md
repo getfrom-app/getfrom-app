@@ -374,7 +374,7 @@ An **area** is a label that groups related nodes under a shared context: work, p
 
 **Publish a note:**
 - Open the `···` menu of any node and select **Publish**.
-- Fromly generates a public URL of the form `getfrom.app/p/...` with the note's content rendered in markdown.
+- Fromly generates a public URL of the form `fromly.app/p/...` with the note's content rendered in markdown.
 - The URL is saved in the node's properties panel.
 
 **Update a published note:**
@@ -658,4 +658,4 @@ The Fromly extension for Chrome: click the icon → saves the current tab's URL 
 
 ---
 
-*getfrom.app*
+*fromly.app*

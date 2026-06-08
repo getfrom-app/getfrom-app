@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario v9.6
 
-> Web · Mac · iPhone · getfrom.app
+> Web · Mac · iPhone · fromly.app
 
 ---
 
@@ -16,7 +16,7 @@ Existe para la persona que tiene demasiadas cosas en la cabeza, demasiadas apps 
 
 ### Crear cuenta
 
-Ve a [getfrom.app](https://getfrom.app) y pulsa **Crear cuenta**. Puedes registrarte con:
+Ve a [fromly.app](https://fromly.app) y pulsa **Crear cuenta**. Puedes registrarte con:
 
 - Email y contraseña
 - Cuenta de Google
@@ -26,13 +26,13 @@ Con la misma cuenta accedes desde el navegador, Mac e iPhone. Todo sincroniza **
 
 ### Acceder desde el navegador
 
-Ve a [getfrom.app/app](https://getfrom.app/app) desde cualquier navegador moderno. No necesitas instalar nada.
+Ve a [fromly.app/app](https://fromly.app/app) desde cualquier navegador moderno. No necesitas instalar nada.
 
 También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa el icono de instalación en la barra de dirección. En Safari iOS: Compartir → "Añadir a pantalla de inicio".
 
 ### Instalar en Mac
 
-1. Ve a [getfrom.app](https://getfrom.app) y descarga el archivo `From.dmg`.
+1. Ve a [fromly.app](https://fromly.app) y descarga el archivo `From.dmg`.
 2. Abre el DMG y arrastra el icono de Fromly a la carpeta **Aplicaciones**.
 3. Abre Fromly desde el Launchpad o desde la carpeta Aplicaciones.
 4. Si macOS advierte que no puede comprobar el desarrollador, ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
@@ -42,7 +42,7 @@ También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa
 
 ### Instalar en iPhone
 
-Busca **Fromly — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](https://getfrom.app/ios). Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
+Busca **Fromly — Notas y PKM** en el App Store o accede desde [fromly.app/ios](https://fromly.app/ios). Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
 
 ### El primer arranque: qué ves
 
@@ -1263,7 +1263,7 @@ Si tienes código de beta o cupón, introdúcelo en el checkout al comprar. Los 
 
 Suscríbete al canal oficial de Fromly en Telegram para recibir tips semanales sobre cómo sacar el máximo partido a la app: atajos, flujos de trabajo, casos de uso con Magic y novedades.
 
-**Cómo unirte:** busca **@FromMagicBot** en Telegram o accede desde el enlace en getfrom.app.
+**Cómo unirte:** busca **@FromMagicBot** en Telegram o accede desde el enlace en fromly.app.
 
 Los tips se envían de forma automática sin necesidad de interacción. Es un canal de difusión, ideal para aprender Fromly de forma gradual sin saturar tu bandeja de entrada.
 
@@ -1290,7 +1290,7 @@ Sí. Ve a **Ajustes → Importar**. Fromly acepta exports de Obsidian, Notion, L
 Sí. Editar el espejo edita el original, y cualquier cambio en el original se refleja en todos sus espejos inmediatamente.
 
 **¿Puedo compartir una nota con alguien que no tiene Fromly?**
-Sí. Clic derecho sobre el nodo → "Publicar". Fromly genera una URL pública del tipo `getfrom.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
+Sí. Clic derecho sobre el nodo → "Publicar". Fromly genera una URL pública del tipo `fromly.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
 
 **¿Cómo funciona la sincronización entre dispositivos?**
 Los cambios se sincronizan en tiempo real (delta: solo viajan los cambios, no toda la base de datos). En condiciones normales, los cambios aparecen en segundos en todos tus dispositivos.
@@ -1312,4 +1312,4 @@ Sí. `Espacio` abre el modal de captura unificada cuando el cursor no está edit
 
 ---
 
-*getfrom.app — Tu segundo cerebro. En todos tus dispositivos.*
+*fromly.app — Tu segundo cerebro. En todos tus dispositivos.*

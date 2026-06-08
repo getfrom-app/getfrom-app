@@ -150,8 +150,8 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 
 | Plataforma | Repo | Stack | URL/Distribución |
 |---|---|---|---|
-| **Mac** | `from-app` | SwiftUI + SQLite + Sparkle | getfrom.app (descarga DMG) |
-| **Web** | `getfrom-app` | React 18 + Vite + TypeScript | getfrom.app/app |
+| **Mac** | `from-app` | SwiftUI + SQLite + Sparkle | fromly.app (descarga DMG) |
+| **Web** | `getfrom-app` | React 18 + Vite + TypeScript | fromly.app/app |
 | **iOS** | `from-app` | SwiftUI + SQLite + App Store | App Store (pendiente) |
 | **Server** | `from-server` | Hono + Bun + PostgreSQL | Railway (from-server-production) |
 
@@ -160,13 +160,13 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 1. Cualquier feature nueva en Mac debe evaluarse para Web (y viceversa)
 2. Los features de IA (inline, agentes, grabación) deben estar en ambas plataformas
 3. La documentación (MANUAL.md, DOCUMENTACION.md) refleja todas las plataformas
-4. La landing page (getfrom.app) tiene accesos e información a las tres plataformas
+4. La landing page (fromly.app) tiene accesos e información a las tres plataformas
 
 ### Accesos a plataformas en landing
-- getfrom.app → Mac (descarga DMG)
-- getfrom.app/app → Web
-- getfrom.app/claude → Extensión MCP para Claude
-- getfrom.app/pricing → Precios (único para todas las plataformas)
+- fromly.app → Mac (descarga DMG)
+- fromly.app/app → Web
+- fromly.app/claude → Extensión MCP para Claude
+- fromly.app/pricing → Precios (único para todas las plataformas)
 
 ---
 
@@ -174,7 +174,7 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 
 ### Web 1.0 — 2026-05-20
 
-**Plataforma: Web** (getfrom.app/app)
+**Plataforma: Web** (fromly.app/app)
 
 **Nuevo:**
 - Sidebar con 4 tabs: Tags, Fijados, Paneles, Ajustes
@@ -188,7 +188,7 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 - Indicador de sync animado en esquina inferior derecha
 - Grabación de voz → nota (Web Speech API, Chrome/Edge)
 - ⌘T nueva tarea · ⌘E nuevo evento · ⌘R grabar voz · Escape → hoy
-- Publicar nota con URL pública real (getfrom.app/p/SLUG)
+- Publicar nota con URL pública real (fromly.app/p/SLUG)
 
 **Arreglado:**
 - Paneles del sidebar pre-rellenan la búsqueda correctamente
@@ -207,7 +207,7 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 - Precios actualizados: Free, Pro €7/mes, Anual €49/año, Lifetime €149
 - Checkout sin cuenta: guests van directo a LemonSqueezy, webhook crea cuenta automáticamente
 
-**From Web** (nuevo — getfrom.app/app)
+**From Web** (nuevo — fromly.app/app)
 - Editor outliner completo: jerarquía, Tab/indent, collapse, tipos de bloque
 - Markdown inline: bold, italic, code, strike, links
 - Slash menu (/), Cmd+K command palette, Cmd+N nueva nota
@@ -572,7 +572,7 @@ Esta sección describe el estado completo de la aplicación From tal como está 
 | IA | Multi-proveedor: Anthropic Claude, OpenAI, Google Gemini |
 | Pagos | LemonSqueezy |
 | Updates | Sparkle (macOS) |
-| Landing | HTML estático (getfrom.app) |
+| Landing | HTML estático (fromly.app) |
 
 ---
 
@@ -821,7 +821,7 @@ from/
 │       ├── routes/         # Endpoints (sync, files, auth, admin)
 │       ├── db/             # Schema Drizzle + PostgreSQL
 │       └── lib/            # JWT, R2 wrapper
-├── landing/                # Web estática (getfrom.app)
+├── landing/                # Web estática (fromly.app)
 ├── docs/                   # Documentación técnica y procesos
 └── logs/                   # Logs de sesiones de desarrollo
 ```

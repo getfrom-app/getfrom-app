@@ -255,7 +255,7 @@ export function CuentaPane() {
       <SectionTitle>{t('account.sectionPrivacy')}</SectionTitle>
       <Row label={t('account.privacyDataLabel')} hint={t('account.privacyDataHint')} />
       <Row label={t('account.privacyPolicyLabel')}>
-        <a href="https://getfrom.app/privacy" target="_blank" rel="noopener noreferrer" className="btn-secondary">{t('account.privacyPolicyViewButton')}</a>
+        <a href="https://fromly.app/privacy" target="_blank" rel="noopener noreferrer" className="btn-secondary">{t('account.privacyPolicyViewButton')}</a>
       </Row>
 
       <SectionTitle>{t('account.sectionDangerZone')}</SectionTitle>
@@ -568,7 +568,7 @@ export function ClaudeMcpPane() {
       </div>
 
       <div style={{ marginTop: 8 }}>
-        <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
+        <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
           Ver documentación completa →
         </a>
       </div>
@@ -691,7 +691,7 @@ export function CapturaRapidaPane() {
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
         Crea, busca y abre tu nota de hoy desde Raycast. Al instalarla, pega tu token (arriba) en sus preferencias.
       </div>
-      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+      <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
         Instalar en Raycast →
       </a>
 
@@ -700,7 +700,7 @@ export function CapturaRapidaPane() {
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
         Guarda la página actual en tu nota de hoy y envía texto seleccionado como nodo. Pega tu token en sus opciones.
       </div>
-      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+      <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
         Instalar en Chrome →
       </a>
 
@@ -709,7 +709,7 @@ export function CapturaRapidaPane() {
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
         Fromly está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>: abre Claude → Conectores → busca Fromly y conecta con un clic. Sin tokens ni configuración. Funciona en Claude Desktop, Claude.ai y Claude Code.
       </div>
-      <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+      <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
         Conectar en Claude →
       </a>
     </div>

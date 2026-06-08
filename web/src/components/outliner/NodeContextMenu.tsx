@@ -320,7 +320,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     try {
       if (publicSlug) {
         // Ya publicado → copiar URL
-        const url = `https://getfrom.app/p/${publicSlug}`
+        const url = `https://fromly.app/p/${publicSlug}`
         await navigator.clipboard.writeText(url)
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace público copiado', type: 'success' } }))
       } else {
@@ -329,7 +329,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         if (result?.slug) {
           // Guardar el slug en el nodo
           store.updateNode(node.id, { publicSlug: result.slug } as any)
-          const url = `https://getfrom.app/p/${result.slug}`
+          const url = `https://fromly.app/p/${result.slug}`
           await navigator.clipboard.writeText(url)
           window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Publicado y enlace copiado', type: 'success' } }))
         }

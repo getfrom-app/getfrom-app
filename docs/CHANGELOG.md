@@ -266,7 +266,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.193 / Mac v9.5.32 — 7 junio 2026 · Notas públicas + restaurar de papelera
 
-- **Notas públicas arregladas**: los enlaces `getfrom.app/p/…` ya abren la nota (antes redirigían a la portada). Funciona también con los enlaces ya compartidos.
+- **Notas públicas arregladas**: los enlaces `fromly.app/p/…` ya abren la nota (antes redirigían a la portada). Funciona también con los enlaces ya compartidos.
 - **Restaurar desde la papelera**: el nodo vuelve a su sitio original; si esa ubicación ya no existe, se restaura en 📅 Agenda para que SIEMPRE lo encuentres, y la app te lleva directamente a él.
 
 ---
@@ -850,7 +850,7 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 - **Topup de tokens corregido**: el botón "Comprar más tokens" ya lleva al producto correcto (tokens adicionales), no a una segunda suscripción
 - **Indicador de pago pendiente**: si un pago falla, la app muestra el estado "Pago pendiente" claramente en Ajustes
 
-### Descarga directa desde getfrom.app (Web)
+### Descarga directa desde fromly.app (Web)
 - El botón "Descargar para Mac" en la cabecera descarga el archivo directamente sin redirigir a la sección de descarga
 
 ### Integración con Claude — MCP (Servidor)
@@ -901,7 +901,7 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 - Cualquier idioma no-español detectado por el navegador → interfaz en inglés
 
 ### Landing y Blog en inglés (Web)
-- Landing getfrom.app disponible en inglés en `/en/`
+- Landing fromly.app disponible en inglés en `/en/`
 - Blog en inglés en `/blog/en/` con 13 artículos traducidos
 - SEO bilingüe — URLs canónicas y hreflang correctamente configurados
 
@@ -933,7 +933,7 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 ### Canal de Telegram @FromMagicBot (Telegram)
 - Canal oficial con tips semanales sobre cómo sacar el máximo partido a Fromly
 - Automatización completa: los tips se envían sin intervención manual
-- Suscríbete desde getfrom.app o directamente en Telegram buscando @FromMagicBot
+- Suscríbete desde fromly.app o directamente en Telegram buscando @FromMagicBot
 
 ---
 
@@ -1206,7 +1206,7 @@ Esta versión es una reescritura completa del producto. Nuevo modelo de datos, n
 ## Versiones anteriores (v1–v8)
 
 Archivadas. Arquitectura diferente, no compatible con v9.0.
-Soporte: [getfrom.app/support](https://getfrom.app/support)
+Soporte: [fromly.app/support](https://fromly.app/support)
 
 ### set_filter — Magic filtra el árbol sin texto (Web · Servidor)
 - Magic reconoce peticiones de filtrado: "tareas de hoy", "archivos", "pendientes"...

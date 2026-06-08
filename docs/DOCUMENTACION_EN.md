@@ -302,7 +302,7 @@ This section describes the complete state of the From application as implemented
 | AI | Multi-provider: Anthropic Claude, OpenAI, Google Gemini |
 | Payments | LemonSqueezy |
 | Updates | Sparkle (macOS) |
-| Landing | Static HTML (getfrom.app) |
+| Landing | Static HTML (fromly.app) |
 
 ---
 
@@ -552,7 +552,7 @@ from/
 │       ├── routes/         # Endpoints (sync, files, auth, admin)
 │       ├── db/             # Drizzle schema + PostgreSQL
 │       └── lib/            # JWT, R2 wrapper
-├── landing/                # Static web (getfrom.app)
+├── landing/                # Static web (fromly.app)
 ├── docs/                   # Technical documentation and processes
 └── logs/                   # Development session logs
 ```
