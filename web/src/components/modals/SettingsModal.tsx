@@ -318,30 +318,6 @@ export function AparienciaPane() {
     window.dispatchEvent(new Event('from-day-hours-changed'))
   }
 
-  const fontSizeKey = 'from_font_size'
-  const [fontSize, setFontSize] = useState(() => localStorage.getItem(fontSizeKey) || 'normal')
-
-  function applyFontSize(size: string) {
-    setFontSize(size)
-    localStorage.setItem(fontSizeKey, size)
-    const root = document.documentElement
-    if (size === 'small') root.style.setProperty('--font-size-base', '13px')
-    else if (size === 'large') root.style.setProperty('--font-size-base', '16px')
-    else root.style.removeProperty('--font-size-base')
-  }
-
-  const lineHeightKey = 'from_line_height'
-  const [lineHeight, setLineHeight] = useState(() => localStorage.getItem(lineHeightKey) || 'normal')
-
-  function applyLineHeight(lh: string) {
-    setLineHeight(lh)
-    localStorage.setItem(lineHeightKey, lh)
-    const root = document.documentElement
-    if (lh === 'compact') root.style.setProperty('--line-height-base', '1.4')
-    else if (lh === 'relaxed') root.style.setProperty('--line-height-base', '1.8')
-    else root.style.removeProperty('--line-height-base')
-  }
-
   return (
     <div className="st-pane">
       <SectionTitle>{t('appearance.sectionTheme')}</SectionTitle>
@@ -349,22 +325,6 @@ export function AparienciaPane() {
         <div className="st-segmented">
           <button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}>{t('appearance.themeLight')}</button>
           <button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}>{t('appearance.themeDark')}</button>
-        </div>
-      </Row>
-
-      <SectionTitle>{t('appearance.sectionTypography')}</SectionTitle>
-      <Row label={t('appearance.fontSizeLabel')} hint={t('appearance.fontSizeHint')}>
-        <div className="st-segmented">
-          <button className={fontSize === 'small' ? 'active' : ''} onClick={() => applyFontSize('small')}>{t('appearance.fontSizeSmall')}</button>
-          <button className={fontSize === 'normal' ? 'active' : ''} onClick={() => applyFontSize('normal')}>{t('appearance.fontSizeNormal')}</button>
-          <button className={fontSize === 'large' ? 'active' : ''} onClick={() => applyFontSize('large')}>{t('appearance.fontSizeLarge')}</button>
-        </div>
-      </Row>
-      <Row label={t('appearance.lineHeightLabel')} hint={t('appearance.lineHeightHint')}>
-        <div className="st-segmented">
-          <button className={lineHeight === 'compact' ? 'active' : ''} onClick={() => applyLineHeight('compact')}>{t('appearance.lineHeightCompact')}</button>
-          <button className={lineHeight === 'normal' ? 'active' : ''} onClick={() => applyLineHeight('normal')}>{t('appearance.lineHeightNormal')}</button>
-          <button className={lineHeight === 'relaxed' ? 'active' : ''} onClick={() => applyLineHeight('relaxed')}>{t('appearance.lineHeightRelaxed')}</button>
         </div>
       </Row>
 

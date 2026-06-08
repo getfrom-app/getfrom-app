@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 export type Theme = 'light' | 'dark' | 'system'
 export type Density = 'normal' | 'compact' | 'comfortable'
 export type AccentColor = 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
+  | 'indigo' | 'cyan' | 'amber' | 'pink' | 'red' | 'lime'
 
 const THEME_KEY = 'from_theme'
 const DENSITY_KEY = 'from_density'
@@ -28,7 +29,7 @@ export function getStoredDensity(): Density {
 
 export function getStoredAccent(): AccentColor {
   const stored = localStorage.getItem(ACCENT_KEY)
-  const valid: AccentColor[] = ['purple', 'blue', 'green', 'orange', 'rose', 'teal']
+  const valid: AccentColor[] = ['purple', 'blue', 'green', 'orange', 'rose', 'teal', 'indigo', 'cyan', 'amber', 'pink', 'red', 'lime']
   return valid.includes(stored as AccentColor) ? stored as AccentColor : 'purple'
 }
 

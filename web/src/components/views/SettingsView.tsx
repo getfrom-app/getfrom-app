@@ -368,12 +368,18 @@ function EstadísticasPane() {
 // ── AparienciaViewPane (con selector de color de acento) ──────────────────────
 
 const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
-  { value: 'purple', label: 'Morado', hex: '#8b5cf6' },
-  { value: 'blue',   label: 'Azul',   hex: '#3b82f6' },
-  { value: 'green',  label: 'Verde',  hex: '#22c55e' },
+  { value: 'purple', label: 'Morado',  hex: '#8b5cf6' },
+  { value: 'indigo', label: 'Índigo',  hex: '#6366f1' },
+  { value: 'blue',   label: 'Azul',    hex: '#3b82f6' },
+  { value: 'cyan',   label: 'Cian',    hex: '#06b6d4' },
+  { value: 'teal',   label: 'Teal',    hex: '#14b8a6' },
+  { value: 'green',  label: 'Verde',   hex: '#22c55e' },
+  { value: 'lime',   label: 'Lima',    hex: '#84cc16' },
+  { value: 'amber',  label: 'Ámbar',   hex: '#f59e0b' },
   { value: 'orange', label: 'Naranja', hex: '#f97316' },
-  { value: 'rose',   label: 'Rosa',   hex: '#f43f5e' },
-  { value: 'teal',   label: 'Teal',   hex: '#14b8a6' },
+  { value: 'red',    label: 'Rojo',    hex: '#ef4444' },
+  { value: 'rose',   label: 'Rosa',    hex: '#f43f5e' },
+  { value: 'pink',   label: 'Fucsia',  hex: '#ec4899' },
 ]
 
 function AparienciaViewPane() {

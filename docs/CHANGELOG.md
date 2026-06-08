@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.216 / Mac v9.5.48 — 8 junio 2026 · Apariencia: limpieza + más colores de acento
+
+- Quitadas las opciones de **tamaño de fuente** e **interlineado** (no hacían nada). El texto usa el tamaño normal.
+- **Color de acento**: ahora hay **12 colores** para elegir (antes 6).
+- "Calendario y Timeline" → **"Calendario y Planner"**. Las horas de inicio/fin del día funcionan (ocultan las horas fuera de rango en el calendario y el planner).
+
+---
+
 ## Web v9.6.215 — 8 junio 2026 · Pestaña Google: quitada la sección de Drive (aún no disponible)
 
 - En Ajustes › Google se mostraba "Google Drive · Acceso a archivos" como si funcionara, pero adjuntar archivos de Drive aún no está disponible. Quitado para no confundir; volverá cuando se implemente.
