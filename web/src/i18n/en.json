@@ -163,6 +163,8 @@
   "statusbar.agentsActive_one": "{{count}} active agent",
   "statusbar.agentsActive_other": "{{count}} active agents",
   "statusbar.nextRun": "next {{when}}",
+  "statusbar.contextBudget": "AI context: ~{{tokens}} tokens",
+  "statusbar.contextBudgetHint": "Text injected into Magic for this note: your Profile + the node's context. The less, the cheaper and more focused.",
   "statusbar.nodeCountHint": "Nodes in your tree",
   "statusbar.syncing": "Syncing",
   "statusbar.saved": "✓ Saved",

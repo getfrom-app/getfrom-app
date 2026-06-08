@@ -6,18 +6,20 @@ import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
 import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelper'
+import { estimateContextTokens, formatTokens } from '../../utils/contextBudget'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.6.203'
+export const WEB_VERSION = 'v9.6.204'
 
 interface Props {
   isSyncing: boolean
   showSaved?: boolean
+  currentNodeId?: string
 }
 
 const isTauriEnv = import.meta.env.VITE_TAURI === 'true'
 
-export default function StatusBar({ isSyncing, showSaved }: Props) {
+export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props) {
   const s = useStore()
   const us = useUserStore()
   const navigate = useNavigate()
@@ -156,6 +158,10 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   }, [])
 
   const nodeCount = s.allActive().length
+  // Presupuesto de contexto que se inyectaría en Magic para el nodo actual
+  // (Perfil + contexto del nodo y heredado). void s.nodesVersion → reactivo.
+  void s.nodesVersion
+  const ctxTokens = estimateContextTokens(currentNodeId)
 
   // Etiqueta de sync
   const syncLabel = isSyncing
@@ -204,6 +210,16 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
                 {agentsSummary.nextDate && ` · ${t('statusbar.nextRun', { when: relativeUntil(agentsSummary.nextDate, i18n.language?.startsWith('en')) })}`}
               </>
             )}
+          </span>
+        </>
+      )}
+
+      {/* Presupuesto de contexto IA (Perfil + contexto del nodo actual) */}
+      {ctxTokens > 0 && (
+        <>
+          <span className="footer-sep" />
+          <span className="footer-item" title={t('statusbar.contextBudgetHint')}>
+            🧠 {t('statusbar.contextBudget', { tokens: formatTokens(ctxTokens) })}
           </span>
         </>
       )}

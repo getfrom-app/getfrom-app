@@ -984,7 +984,7 @@ export default function MainLayout() {
       </div>{/* .main-body */}
 
       {/* ── Footer global ── */}
-      <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} />
+      <StatusBar isSyncing={s.isSyncing} showSaved={showSaved} currentNodeId={currentNodeIdFromRoute} />
       <Suspense fallback={null}>
         {paywallReason && (
           <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />

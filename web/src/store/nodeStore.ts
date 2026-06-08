@@ -592,6 +592,28 @@ export class NodeStore {
     return out
   }
 
+  /** Contextos del nodo + los heredados de sus ancestros (regla: todo lo que
+   *  cuelga de un nodo hereda su contexto). Base para inyectar SOLO el contexto
+   *  del nodo en el que se trabaja, en vez de todos los contextos usados. */
+  tagDefinitionsForNodeChain(nodeId: string): Record<string, string> {
+    const out: Record<string, string> = {}
+    const seen = new Set<string>()
+    let current: Node | undefined = this.nodes.get(nodeId)
+    let guard = 0
+    while (current && guard++ < 100) {
+      if (!seen.has(current.id)) {
+        seen.add(current.id)
+        for (const tagName of current.types || []) {
+          if (out[tagName]) continue
+          const body = this.getTagDefNode(tagName)?.body?.trim()
+          if (body) out[tagName] = body
+        }
+      }
+      current = current.parentId ? this.nodes.get(current.parentId) : undefined
+    }
+    return out
+  }
+
   // ── Recursos ────────────────────────────────────────────────────────────────
 
   /** Todos los nodos marcados como recurso */

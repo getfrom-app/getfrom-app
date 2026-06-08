@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.204 / Mac v9.5.41 — 8 junio 2026 · Contexto IA enfocado + presupuesto en el footer
+
+- **Menos tokens, más foco**: Magic ya no inyecta los 8 contextos más usados en cada mensaje. Ahora inyecta **solo tu Perfil + el contexto del nodo en el que trabajas** (y el que hereda de sus nodos padre). Respuestas más relevantes y más baratas.
+- **Presupuesto de contexto en la barra inferior**: «🧠 contexto IA: ~1.2k tokens» — ves de un vistazo cuánto contexto se inyecta para la nota actual.
+
+---
+
 ## Web v9.6.203 / Mac v9.5.40 — 8 junio 2026 · La nota del agente es lo que ejecuta
 
 - Ahora **lo que escribes en la nota de un agente es exactamente lo que ejecuta** (antes corría una copia interna congelada, y los agentes que creabas tú salían vacíos). Al ejecutar o programar, From toma el texto de la nota como instrucción — también para las ejecuciones automáticas del servidor.

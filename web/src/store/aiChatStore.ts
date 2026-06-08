@@ -556,28 +556,12 @@ class AIChatStore {
       if (childrenText) profile = [profile, childrenText].filter(Boolean).join('\n\n')
     }
 
-    // Tag defs: del nodo actual + top 8 tags usados con definición
-    const tagDefs: Record<string, string> = {}
-    if (currentNodeId) {
-      const fromNode = store.tagDefinitionsForNode(currentNodeId)
-      Object.assign(tagDefs, fromNode)
-    }
-    const tagCounts: Record<string, number> = {}
-    for (const n of store.nodes.values()) {
-      if (n.deletedAt) continue
-      for (const t of n.types || []) {
-        const lower = t.toLowerCase()
-        if (['tarea','evento','agente','prompt','magic','rec','chat','diary_entry','quick','panel','busqueda','archivo','enlace'].includes(lower)) continue
-        tagCounts[t] = (tagCounts[t] || 0) + 1
-      }
-    }
-    const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-    for (const [name] of topTags) {
-      if (tagDefs[name]) continue
-      const def = store.getTagDefNode(name)
-      const body = def?.body?.trim()
-      if (body) tagDefs[name] = body
-    }
+    // Contexto inyectado: SOLO el del nodo actual + el heredado de sus ancestros.
+    // (Antes se inyectaban los 8 contextos más usados en cada turno — gasto alto
+    //  e irrelevante para el nodo en el que se trabaja.)
+    const tagDefs: Record<string, string> = currentNodeId
+      ? store.tagDefinitionsForNodeChain(currentNodeId)
+      : {}
 
     // Recent nodes (últimos modificados, excluyendo diarios/sesiones/temporales)
     const recent = store.allActive()
@@ -661,21 +645,9 @@ class AIChatStore {
     for (const [name, body] of Object.entries(tagDefs)) {
       enrichedTagDefs[name] = enrichTag(name, body)
     }
-    // Tags con prompts que no están en el top-8 — incluirlos siempre.
-    for (const node of store.nodes.values()) {
-      if (node.deletedAt) continue
-      try {
-        const ed = JSON.parse(node.extraData || '{}')
-        if (ed._tagPrompt !== '1') continue
-        const parent = node.parentId ? store.nodes.get(node.parentId) : null
-        if (!parent) continue
-        const ped = JSON.parse(parent.extraData || '{}')
-        const tagName = ped._tagDefinition as string | undefined
-        if (!tagName || enrichedTagDefs[tagName]) continue
-        const body = (parent.body || '').trim()
-        enrichedTagDefs[tagName] = enrichTag(tagName, body || '(sin descripción)')
-      } catch { /* ignore */ }
-    }
+    // (Antes aquí se inyectaban SIEMPRE todos los tags con prompts hijos, aunque
+    //  no fueran del nodo actual. Eliminado: solo el contexto del nodo en el que
+    //  se trabaja entra en el system prompt.)
 
     // ── Nota actual: título + body + hijos ─────────────────────────────────
     let currentNoteContent: string | undefined
