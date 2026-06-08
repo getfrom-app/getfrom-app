@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
 import { getToken, changePlan, changePlanAnnual } from '../../api/client'
 
-// Pricing rediseñado (jun 2026): simple y visual.
-// Diferenciador = nº de nodos (1.000 vs ∞). Toggle mes/año global arriba.
-// Ambas tarjetas con estructura IDÉNTICA → todo alineado; precio abajo.
+// Pricing rediseñado (jun 2026, v3): tono suave — "prueba gratis, pasa a Pro cuando lo necesites".
+// Sin badge ni resalte; ambas tarjetas iguales. Toggle mes/año sobre la tarjeta Pro.
 export default function PricingView() {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -43,32 +42,22 @@ export default function PricingView() {
     t('pricing.proPriority', 'Soporte prioritario'),
   ]
 
+  // Precio Pro: por defecto anual → grande €4,08/mes, pequeño 49 €/año. Mensual → grande €7/mes, sin pequeño.
+  const proBig = annual ? '€4,08' : '€7'
+  const proSmall = annual ? t('pricing.annualBilled', '49 €/año') : ''
+
   return (
     <div className="pricing2">
       <div className="pricing2-head">
-        <h1 className="pricing2-title">
-          {isGuest ? t('pricing.title', 'Elige tu plan') : t('pricing.titleAfterRegister', '¡Cuenta creada!')}
-        </h1>
-        <p className="pricing2-sub">
-          {t('pricing.subtitle2', 'Empieza gratis. Pasa a Pro cuando tu segundo cerebro crezca.')}
-        </p>
-      </div>
-
-      {/* Toggle global mes / año */}
-      <div className="pricing2-toggle pricing2-toggle--center" role="tablist">
-        <button className={!annual ? 'on' : ''} onClick={() => setAnnual(false)}>
-          {t('pricing.monthly', 'Mensual')}
-        </button>
-        <button className={annual ? 'on' : ''} onClick={() => setAnnual(true)}>
-          {t('pricing.annual', 'Anual')}
-          <span className="pricing2-save">{t('pricing.annualSave', 'ahorra 42%')}</span>
-        </button>
+        <h1 className="pricing2-title">{t('pricing.titleFree', 'Empieza gratis')}</h1>
+        <p className="pricing2-sub">{t('pricing.subtitleFree', 'Pasa a Pro cuando lo necesites')}</p>
       </div>
 
       <div className="pricing2-grid">
         {/* ── Gratis ── */}
         <div className="pcard">
           <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
+          <div className="ptoggle-spacer" aria-hidden="true" />
           <div className="pcard-hero">
             <span className="pcard-hero-num">1.000</span>
             <span className="pcard-hero-label">{t('pricing.nodesLabel', 'nodos')}</span>
@@ -81,17 +70,25 @@ export default function PricingView() {
             <span className="pcard-price">€0</span>
           </div>
           <button
-            className="pcard-cta pcard-cta--ghost"
+            className="pcard-cta pcard-cta--solid"
             onClick={isGuest ? () => navigate('/register') : () => navigate('/')}
           >
-            {isGuest ? t('pricing.ctaCreateFree', 'Empezar gratis') : t('pricing.ctaContinueFree', 'Continuar gratis')}
+            {t('pricing.ctaStartFree2', 'Empezar gratis')}
           </button>
         </div>
 
         {/* ── Pro ── */}
-        <div className="pcard pcard--pro">
-          <span className="pcard-badge">{t('pricing.proBadge', 'Recomendado')}</span>
+        <div className="pcard">
           <span className="pcard-name">Pro</span>
+          <div className="pricing2-toggle" role="tablist">
+            <button className={!annual ? 'on' : ''} onClick={() => setAnnual(false)}>
+              {t('pricing.monthly', 'Mensual')}
+            </button>
+            <button className={annual ? 'on' : ''} onClick={() => setAnnual(true)}>
+              {t('pricing.annual', 'Anual')}
+              <span className="pricing2-save">{t('pricing.annualSave', 'ahorra 42%')}</span>
+            </button>
+          </div>
           <div className="pcard-hero pcard-hero--pro">
             <span className="pcard-hero-num">∞</span>
             <span className="pcard-hero-label">{t('pricing.nodesUnlimited', 'nodos ilimitados')}</span>
@@ -102,17 +99,16 @@ export default function PricingView() {
           </ul>
           <div className="pcard-price-row">
             <span className="pcard-price">
-              {annual ? '€49' : '€7'}
-              <span className="pcard-per">{annual ? t('pricing.perYear', '/año') : t('pricing.perMonth', '/mes')}</span>
+              {proBig}<span className="pcard-per">{t('pricing.perMonth', '/mes')}</span>
             </span>
-            {annual && <span className="pcard-price-sub">{t('pricing.annualNote', '€4,08/mes · facturado anual')}</span>}
+            {proSmall && <span className="pcard-price-sub">{proSmall}</span>}
           </div>
           <button
-            className="pcard-cta pcard-cta--solid"
+            className="pcard-cta pcard-cta--ghost"
             onClick={startPro}
             disabled={loading || isPaid}
           >
-            {isPaid ? t('pricing.ctaCurrentPlan', 'Tu plan actual') : (loading ? '…' : t('pricing.ctaStartPro', 'Empezar Pro'))}
+            {isPaid ? t('pricing.ctaCurrentPlan', 'Tu plan actual') : (loading ? '…' : t('pricing.ctaGoPro2', 'Pasar a Pro'))}
           </button>
         </div>
       </div>
