@@ -11615,6 +11615,23 @@ textarea:focus-visible,
   flex-direction: column;
   gap: 6px;
 }
+/* En el panel lateral: separar el input de la barra inferior y darle fondo opaco
+   para que nunca quede tapado y se distinga del scroll de mensajes. */
+.magic-chat-panel .magic-chat-input-wrap {
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+  padding-bottom: 18px;
+}
+/* Recuadro visible alrededor de la caja de texto (antes era transparente → invisible) */
+.magic-chat-panel .magic-chat-node-input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+.magic-chat-panel .magic-chat-node-input:focus-within {
+  border-color: var(--accent);
+}
 /* En estado compacto el input va arriba */
 .magic-chat-modal--compact .magic-chat-input-wrap {
   padding-top: 12px;
