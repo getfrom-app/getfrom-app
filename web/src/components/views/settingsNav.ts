@@ -3,7 +3,7 @@
 
 export type Tab =
   | 'cuenta' | 'google'
-  | 'apariencia' | 'estadisticas'
+  | 'apariencia'
   | 'ia' | 'magic'
   | 'atajos' | 'plantillas'
   | 'exportar' | 'importar' | 'backups'
@@ -24,7 +24,6 @@ export const NAV: NavSection[] = [
     title: 'Apariencia',
     items: [
       { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
-      { id: 'estadisticas', label: 'Estadísticas', icon: '📊' },
     ],
   },
   {
@@ -63,8 +62,7 @@ export const ALL_ITEMS: NavItem[] = NAV.flatMap(s => s.items)
 export const SUBTITLES: Partial<Record<Tab, string>> = {
   cuenta: 'Datos de tu cuenta, suscripción y privacidad.',
   google: 'Conexión con Google Calendar y Google Drive.',
-  apariencia: 'Tema, tipografía, interlineado y color de acento.',
-  estadisticas: 'Resumen de notas, tareas y actividad en tu vault.',
+  apariencia: 'Tema, color de acento y horario del día.',
   ia: 'Proveedor de IA, tokens e integración con Claude.',
   magic: 'Sugerencias automáticas y acciones inteligentes.',
   atajos: 'Atajos de teclado y expansión de texto.',

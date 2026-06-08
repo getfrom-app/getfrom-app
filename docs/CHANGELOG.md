@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.217 — 8 junio 2026 · Quitada la pestaña Estadísticas
+
+- Eliminada la pestaña **Estadísticas** de Ajustes (no aportaba). El número de notas y nodos sigue visible en la barra inferior.
+
+---
+
 ## Web v9.6.216 / Mac v9.5.48 — 8 junio 2026 · Apariencia: limpieza + más colores de acento
 
 - Quitadas las opciones de **tamaño de fuente** e **interlineado** (no hacían nada). El texto usa el tamaño normal.

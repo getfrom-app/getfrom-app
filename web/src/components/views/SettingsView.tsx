@@ -304,67 +304,6 @@ function MagicLearningsSection() {
   )
 }
 
-// ── EstadísticasPane ──────────────────────────────────────────────────────────
-
-function EstadísticasPane() {
-  const s = useStore()
-  const nodes = s.allActive()
-
-  // Una NOTA es un nodo con hijos (contenedor real), no un párrafo suelto.
-  const totalNotes = s.noteCount()
-  const totalTasks = nodes.filter(n => n.status !== null && !n.deletedAt).length
-  const doneTasks = nodes.filter(n => n.status === 'done' && !n.deletedAt).length
-  const pendingTasks = nodes.filter(n => n.status === 'pending' && !n.deletedAt).length
-  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
-  const totalWords = nodes.reduce((acc, n) => {
-    const bodyWords = n.body ? n.body.trim().split(/\s+/).length : 0
-    const titleWords = n.text ? n.text.trim().split(/\s+/).length : 0
-    return acc + bodyWords + titleWords
-  }, 0)
-  const usedTags = s.allUsedTags ? s.allUsedTags() : []
-  const diaryEntries = nodes.filter(n => n.isDiaryEntry && !n.deletedAt)
-  const diaryDates = new Set(
-    diaryEntries.filter(n => n.diaryDate).map(n => new Date(n.diaryDate!).toDateString())
-  )
-  let diaryStreak = 0
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(today); d.setDate(today.getDate() - i)
-    if (diaryDates.has(d.toDateString())) diaryStreak++
-    else break
-  }
-  const overdueCount = s.overdueTasks ? s.overdueTasks().length : 0
-
-  const stat = (value: number | string, label: string) => (
-    <div className="st-stat">
-      <span className="st-stat-n">{typeof value === 'number' ? value.toLocaleString() : value}</span>
-      <span>{label}</span>
-    </div>
-  )
-
-  return (
-    <div className="st-pane">
-      <div className="st-section-title">Tu vault</div>
-      <div className="st-stats">
-        {stat(totalNotes, 'Notas')}
-        {stat(totalTasks, 'Tareas')}
-        {stat(doneTasks, 'Completadas')}
-        {stat(pendingTasks, 'Pendientes')}
-        {stat(overdueCount, 'Vencidas')}
-        {stat(`${completionRate}%`, 'Completado')}
-      </div>
-
-      <div className="st-section-title" style={{ marginTop: 24 }}>Escritura</div>
-      <div className="st-stats">
-        {stat(totalWords, 'Palabras')}
-        {stat(diaryEntries.length, 'Entradas diario')}
-        {stat(diaryStreak, 'Racha diario')}
-        {stat(usedTags.length, 'Tags activos')}
-      </div>
-    </div>
-  )
-}
-
 // ── AparienciaViewPane (con selector de color de acento) ──────────────────────
 
 const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
@@ -576,7 +515,6 @@ export default function SettingsView() {
       case 'cuenta':      return <CuentaViewPane />
       case 'google':      return <GooglePane />
       case 'apariencia':  return <AparienciaViewPane />
-      case 'estadisticas': return <EstadísticasPane />
       case 'ia':          return <IAPane />
       case 'magic':       return <MagicPane />
       case 'atajos':      return <AtajosPane />
