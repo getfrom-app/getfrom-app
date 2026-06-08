@@ -7,6 +7,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId, diaryId } from './deterministicId'
 import { findRootByKey, findContextRoot } from './rootLookup'
+import { getDailyTemplate, applyTemplate } from './tagsHelper'
 
 const MONTHS_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -53,7 +54,7 @@ function getOrCreateDay(date: Date, monthId: string): Node {
   const dayText = dayDate.toLocaleDateString('es-ES', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   }).replace(/^\w/, c => c.toUpperCase())
-  return store.createNode({
+  const dayNode = store.createNode({
     text: dayText,
     parentId: monthId,
     isDiaryEntry: true,
@@ -61,6 +62,15 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     siblingOrder: d,   // día del mes (1-31) como orden → siempre cronológico
     predefinedId: diaryId(dayDate) ?? undefined,  // canónico (idéntico a iOS) → no duplica
   })
+  // Plantilla diaria: si el usuario marcó una plantilla para la nota diaria, se
+  // aplica al crear el día (solo en días nuevos y vacíos).
+  try {
+    const daily = getDailyTemplate()
+    if (daily && store.children(dayNode.id).filter(n => !n.deletedAt).length === 0) {
+      applyTemplate(daily.id, dayNode.id)
+    }
+  } catch { /* ignore */ }
+  return dayNode
 }
 
 // ── API pública ───────────────────────────────────────────────────────────────

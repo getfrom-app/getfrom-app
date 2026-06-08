@@ -8,7 +8,6 @@ import {
   ClaudeMcpPane,
   CapturaRapidaPane,
   AtajosPane,
-  PlantillasPane,
   GooglePane,
   ExportarPane,
   ImportarPane,
@@ -310,7 +309,6 @@ export default function SettingsView() {
       case 'ia':          return <IAPane />
       case 'magic':       return <MagicPane />
       case 'atajos':      return <AtajosPane />
-      case 'plantillas':  return <PlantillasPane />
       case 'backups':     return <BackupsPane />
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />

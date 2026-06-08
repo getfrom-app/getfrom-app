@@ -63,12 +63,46 @@ export function getOrCreateTagsRoot(): Node {
   return findTagsRoot() ?? store.createNode({ text: TAGS_ROOT_NAME, parentId: null, predefinedId: structuralId('contexto') ?? undefined })
 }
 
+/** Nodo raíz de plantillas (📋 Plantillas). */
+export function getPlantillasRoot(): Node | null {
+  return findRootByKey('plantillas', '📋 Plantillas', 'Plantillas') ?? null
+}
+
+/** ¿El nodo es una plantilla? (hijo directo de 📋 Plantillas). */
+export function isTemplateNode(nodeId: string): boolean {
+  const root = getPlantillasRoot()
+  if (!root) return false
+  const n = store.getNode(nodeId)
+  return !!n && !n.deletedAt && n.parentId === root.id
+}
+
 /** Plantillas disponibles (hijos de 📋 Plantillas). */
 export function listTemplates(): Node[] {
-  const root = findRootByKey('plantillas', '📋 Plantillas', 'Plantillas')
+  const root = getPlantillasRoot()
   if (!root) return []
   return store.children(root.id).filter(n => !n.deletedAt && (n.text || '').trim())
     .sort((a, b) => a.siblingOrder - b.siblingOrder)
+}
+
+/** La plantilla marcada para aplicarse a la nota diaria (o null). */
+export function getDailyTemplate(): Node | null {
+  for (const t of listTemplates()) {
+    try { if (JSON.parse(t.extraData || '{}')._dailyTemplate === '1') return t } catch { /* */ }
+  }
+  return null
+}
+
+/** Marca/desmarca una plantilla como la que se aplica a la nota diaria.
+ *  Solo una a la vez: al activar una, desactiva las demás. */
+export function setDailyTemplate(nodeId: string, on: boolean): void {
+  for (const t of listTemplates()) {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(t.extraData || '{}') } catch { /* */ }
+    const shouldBeOn = on && t.id === nodeId
+    const isOn = ed._dailyTemplate === '1'
+    if (shouldBeOn && !isOn) { ed._dailyTemplate = '1'; store.updateNode(t.id, { extraData: JSON.stringify(ed) }) }
+    else if (!shouldBeOn && isOn) { delete ed._dailyTemplate; store.updateNode(t.id, { extraData: JSON.stringify(ed) }) }
+  }
 }
 
 /**

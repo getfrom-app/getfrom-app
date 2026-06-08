@@ -87,16 +87,17 @@ export function ensureHomeRootAndReparent(): void {
  * derecha muestre las propiedades correspondientes. Agenda/Plantillas/otros → null
  * (la derecha se queda en el filtro).
  */
-export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | 'prompt' | 'context' | null {
+export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | 'prompt' | 'context' | 'template' | null {
   if (!nodeId) return null
   const agentesId = getAgentesNode()?.id
   const promptsId = getPromptsRoot()?.id
   const contextId = findContextRoot()?.id
-  if (!agentesId && !promptsId && !contextId) return null
+  const plantillasId = findPlantillasRoot()?.id
+  if (!agentesId && !promptsId && !contextId && !plantillasId) return null
 
   // La raíz misma no abre propiedades: muestra su lista (sus hijos) en el centro.
-  // Solo los DESCENDIENTES (un agente/prompt/contexto concreto) abren su panel.
-  if (nodeId === agentesId || nodeId === promptsId || nodeId === contextId) return null
+  // Solo los DESCENDIENTES (un agente/prompt/contexto/plantilla concreto) abren su panel.
+  if (nodeId === agentesId || nodeId === promptsId || nodeId === contextId || nodeId === plantillasId) return null
 
   let cur = store.getNode(nodeId)
   const visited = new Set<string>()
@@ -106,6 +107,7 @@ export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | '
     if (cur.id === agentesId) return 'agent'
     if (cur.id === promptsId) return 'prompt'
     if (cur.id === contextId) return 'context'
+    if (cur.id === plantillasId) return 'template'
     if (!cur.parentId) break
     cur = store.getNode(cur.parentId)
     depth++

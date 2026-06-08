@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.226 — 8 junio 2026 · Plantillas: se gestionan como nodos + plantilla diaria
+
+- Quitada la pestaña **Plantillas** de Ajustes (sobraba): una plantilla es simplemente un **nodo hijo de 📋 Plantillas**, que editas como cualquier nota.
+- Al abrir una plantilla, la **columna derecha** muestra sus opciones. La primera: **«Nota diaria»** — marca una plantilla para que **cada día nuevo arranque con ella** (formato/secciones predefinidas en tu diario). Solo una plantilla diaria a la vez.
+
+---
+
 ## Web v9.6.225 — 8 junio 2026 · Atajos: cabecera redundante quitada
 
 - En Ajustes › Atajos se quitó el encabezado interno repetido ("Atajos de teclado · configurable…"), que duplicaba el título de la página.

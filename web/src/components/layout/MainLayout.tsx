@@ -17,6 +17,7 @@ import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import SettingsListPanel from '../panels/SettingsListPanel'
+import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
 import { aiChatStore } from '../../store/aiChatStore'
 import { ensurePromptsNode, getPromptsRoot } from '../../utils/promptsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
@@ -64,7 +65,7 @@ import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
-import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts } from '../../utils/tagsHelper'
+import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts, getPlantillasRoot } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
 import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgentesNode } from '../../utils/agentesHelper'
 import { cleanupOrphanProfileKnowledge } from '../../api/userKnowledge'
@@ -104,6 +105,7 @@ export default function MainLayout() {
     | 'context-list' | 'context'
     | 'prompt-list'  | 'prompt'
     | 'agent-list'   | 'agent'
+    | 'template'
     | 'settings'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
@@ -161,12 +163,15 @@ export default function MainLayout() {
     setRightPanel(kind)
     navigate(`/node/${nodeId}`)
   }
-  function backToList(kind: 'context' | 'prompt' | 'agent') {
+  function backToList(kind: 'context' | 'prompt' | 'agent' | 'template') {
     // Las listas ya no viven en la columna derecha: el ← navega a la raíz
     // correspondiente en el árbol central y deja la derecha en el filtro.
     setDetailNodeId(null)
     setRightPanel('filter')
-    const root = kind === 'context' ? findContextRoot() : kind === 'prompt' ? getPromptsRoot() : getAgentesNode()
+    const root = kind === 'context' ? findContextRoot()
+      : kind === 'prompt' ? getPromptsRoot()
+      : kind === 'template' ? getPlantillasRoot()
+      : getAgentesNode()
     if (root) navigate(`/node/${root.id}`)
   }
   function handleSelectPrompt(nodeId: string) { openDetail('prompt', nodeId) }
@@ -286,7 +291,7 @@ export default function MainLayout() {
         setDetailNodeId(navId)
         setRightPanel(kind)
       }
-    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || rightPanel === 'settings') {
+    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || rightPanel === 'template' || rightPanel === 'settings') {
       // Salimos a un nodo normal o al home → cerrar el detalle y volver al filtro.
       setRightPanel('filter')
       setDetailNodeId(null)
@@ -970,6 +975,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'agent' && detailNodeId && (
             <AgentPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('agent')} />
+          )}
+          {rightPanel === 'template' && detailNodeId && (
+            <TemplatePropertiesPanel nodeId={detailNodeId} onBack={() => backToList('template')} />
           )}
           {rightPanel === 'agent-list' && (
             <AgentListPanel onSelectAgent={handleSelectAgent} selectedAgentId={detailNodeId} />

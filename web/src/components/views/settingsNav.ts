@@ -5,7 +5,7 @@ export type Tab =
   | 'cuenta' | 'google'
   | 'apariencia'
   | 'ia' | 'magic'
-  | 'atajos' | 'plantillas'
+  | 'atajos'
   | 'exportar' | 'importar' | 'backups'
   | 'claude' | 'captura'
 
@@ -37,7 +37,6 @@ export const NAV: NavSection[] = [
     title: 'Productividad',
     items: [
       { id: 'atajos', label: 'Atajos', icon: '⌨' },
-      { id: 'plantillas', label: 'Plantillas', icon: '📋' },
     ],
   },
   {
@@ -66,7 +65,6 @@ export const SUBTITLES: Partial<Record<Tab, string>> = {
   ia: 'Proveedor de IA, tokens e integración con Claude.',
   magic: 'Sugerencias automáticas y acciones inteligentes.',
   atajos: 'Atajos de teclado y expansión de texto.',
-  plantillas: 'Plantillas personalizadas para crear notas rápido.',
   backups: 'Snapshots automáticos cada 2h. Restaura tu vault a cualquier punto.',
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',

@@ -91,10 +91,11 @@ describe('homeHelper — raíz 🏠 From + reparent', () => {
     expect(classifyNodeRoot(prompt.id)).toBe('prompt')
     expect(classifyNodeRoot(ctx.id)).toBe('context')
     expect(classifyNodeRoot(diaBullet.id)).toBeNull()      // Agenda → sin panel
-    expect(classifyNodeRoot(plantilla.id)).toBeNull()      // Plantillas → sin panel
+    expect(classifyNodeRoot(plantilla.id)).toBe('template') // Plantillas → panel de plantilla
     // Las raíces MISMAS no abren propiedades (muestran su lista en el centro)
     expect(classifyNodeRoot(r.agentes.id)).toBeNull()
     expect(classifyNodeRoot(r.prompts.id)).toBeNull()
     expect(classifyNodeRoot(r.contexto.id)).toBeNull()
+    expect(classifyNodeRoot(r.plantillas.id)).toBeNull()
   })
 })
