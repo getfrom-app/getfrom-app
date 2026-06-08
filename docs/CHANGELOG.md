@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.200 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes programados en la barra inferior
+
+- La barra inferior muestra ahora **cuántos agentes activos tienes programados y cuándo corre el próximo** (p. ej. «🤖 2 agentes activos · próxima en 2 h»). Solo aparece si hay agentes con horario.
+
+---
+
 ## Web v9.6.199 / Mac v9.5.38 — 8 junio 2026 · Agentes: controles solo en el panel derecho
 
 - Los controles del agente (**Activo/Pausado**, **Ejecutar**, **programación**, última y próxima ejecución) viven ahora **solo en la columna derecha**. Se quitó la barra duplicada del centro.

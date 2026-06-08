@@ -100,3 +100,28 @@ export function nextScheduledRunLabel(
   if (diffDays === 1) return `IA: mañana ${timeStr}`
   return `IA: ${DAYS_ES[earliest.date.getDay()]} ${timeStr}`
 }
+
+/** Resumen de agentes programados para el footer: cuántos activos con horario
+ *  y cuándo corre el primero. */
+export function scheduledAgentsSummary(
+  schedules: Array<{ schedule: string; agentTitle: string | null; enabled: boolean }>
+): { count: number; nextDate: Date | null } {
+  const active = schedules.filter(s => s.enabled && s.schedule)
+  let nextDate: Date | null = null
+  for (const s of active) {
+    const d = nextRunDate(s.schedule)
+    if (d && (!nextDate || d < nextDate)) nextDate = d
+  }
+  return { count: active.length, nextDate }
+}
+
+/** Tiempo relativo hasta una fecha futura, breve: "en 2 h", "en 35 min", "en 3 d". */
+export function relativeUntil(date: Date, isEn = false): string {
+  const mins = Math.max(0, Math.round((date.getTime() - Date.now()) / 60000))
+  if (mins <= 0) return isEn ? 'now' : 'ahora'
+  if (mins < 60) return isEn ? `in ${mins} min` : `en ${mins} min`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return isEn ? `in ${hrs} h` : `en ${hrs} h`
+  const days = Math.round(hrs / 24)
+  return isEn ? `in ${days} d` : `en ${days} d`
+}

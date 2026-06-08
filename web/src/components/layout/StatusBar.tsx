@@ -5,10 +5,10 @@ import { useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { listBackups, formatBackupAge } from '../../api/backups'
 import { clearTokens, apiRequest, getToken } from '../../api/client'
-import { nextScheduledRunLabel } from '../../utils/scheduleHelper'
+import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.6.199'
+export const WEB_VERSION = 'v9.6.200'
 
 interface Props {
   isSyncing: boolean
@@ -21,11 +21,11 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
   const s = useStore()
   const us = useUserStore()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
-  const [nextRunLabel, setNextRunLabel] = useState<string | null>(null)
+  const [agentsSummary, setAgentsSummary] = useState<{ count: number; nextDate: Date | null } | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState<string | null>(null)
@@ -146,7 +146,7 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
       try {
         const res = await apiRequest<{ schedules: Array<{ schedule: string; agentTitle: string | null; enabled: boolean }> }>('/agents/schedules')
         if (!cancelled) {
-          setNextRunLabel(nextScheduledRunLabel(res.schedules ?? []))
+          setAgentsSummary(scheduledAgentsSummary(res.schedules ?? []))
         }
       } catch { /* silencioso */ }
     }
@@ -191,12 +191,13 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
         {t('statusbar.lastBackup')} {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
       </span>
 
-      {/* Próxima ejecución de agente programado */}
-      {nextRunLabel && (
+      {/* Agentes programados: contador + próxima activación */}
+      {agentsSummary && agentsSummary.count > 0 && (
         <>
           <span className="footer-sep" />
           <span className="footer-item" title={t('statusbar.nextAgentRunHint')}>
-            ⏰ {nextRunLabel}
+            🤖 {t('statusbar.agentsActive', { count: agentsSummary.count })}
+            {agentsSummary.nextDate && ` · ${t('statusbar.nextRun', { when: relativeUntil(agentsSummary.nextDate, i18n.language?.startsWith('en')) })}`}
           </span>
         </>
       )}
