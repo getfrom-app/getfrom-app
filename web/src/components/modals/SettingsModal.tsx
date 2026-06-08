@@ -1004,12 +1004,8 @@ export function GooglePane() {
         label={t('google.calendarSyncLabel')}
         hint={t('google.calendarSyncHint')}
       />
-
-      <SectionTitle>{t('google.sectionDrive')}</SectionTitle>
-      <Row
-        label={t('google.driveAccessLabel')}
-        hint={t('google.driveAccessHint')}
-      />
+      {/* La sección de Google Drive se mostrará cuando el adjuntar-archivos esté
+          implementado (requiere re-añadir el scope drive.file tras verificar Calendar). */}
     </div>
   )
 }

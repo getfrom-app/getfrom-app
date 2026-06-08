@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.215 — 8 junio 2026 · Pestaña Google: quitada la sección de Drive (aún no disponible)
+
+- En Ajustes › Google se mostraba "Google Drive · Acceso a archivos" como si funcionara, pero adjuntar archivos de Drive aún no está disponible. Quitado para no confundir; volverá cuando se implemente.
+
+---
+
 ## Web v9.6.214 / Mac v9.5.47 — 8 junio 2026 · Mi cuenta: borrado protegido + sin cerrar sesión duplicado
 
 - **Eliminar cuenta** ahora pide **confirmar con tu contraseña** (o tu email si entras con Google) — así no se borra por error.
