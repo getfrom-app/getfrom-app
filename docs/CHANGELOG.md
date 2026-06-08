@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.211 — 8 junio 2026 · "Notas" cuenta notas reales (con contenido)
+
+- El contador de **Notas** ahora cuenta **notas reales** (nodos con contenido dentro), no cada párrafo o línea suelta. En From todo es un nodo, pero una nota es un nodo que contiene otros. Los **nodos totales** siguen viéndose en la barra inferior («Nodos en tu árbol»).
+
+---
+
 ## Web v9.6.210 — 8 junio 2026 · Ajustes: contenido centrado + fuentes legibles + limpieza
 
 - En Ajustes, el contenido ya **no se queda pegado a la izquierda** con un hueco enorme: está centrado y mejor aprovechado.

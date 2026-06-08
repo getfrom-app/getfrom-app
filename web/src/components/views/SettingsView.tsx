@@ -310,7 +310,8 @@ function EstadísticasPane() {
   const s = useStore()
   const nodes = s.allActive()
 
-  const totalNotes = nodes.filter(n => !n.isDiaryEntry && n.status === null && !n.deletedAt).length
+  // Una NOTA es un nodo con hijos (contenedor real), no un párrafo suelto.
+  const totalNotes = s.noteCount()
   const totalTasks = nodes.filter(n => n.status !== null && !n.deletedAt).length
   const doneTasks = nodes.filter(n => n.status === 'done' && !n.deletedAt).length
   const pendingTasks = nodes.filter(n => n.status === 'pending' && !n.deletedAt).length

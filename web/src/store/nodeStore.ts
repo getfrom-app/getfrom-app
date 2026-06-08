@@ -670,6 +670,43 @@ export class NodeStore {
     return false
   }
 
+  /** ¿Es una NOTA "de verdad"? En From todo es un nodo, pero una nota es un nodo
+   *  de contenido que TIENE HIJOS (un contenedor real). Un nodo hoja es solo un
+   *  párrafo/bullet dentro de una nota, no una nota en sí. Criterio único para
+   *  contar/diferenciar notas en toda la app. Excluye tareas, eventos, recursos,
+   *  diarios, estructura temporal y nodos de sistema/configuración. */
+  isNote(node: Node | undefined): boolean {
+    if (!node || node.deletedAt) return false
+    if (node.status !== null) return false   // tarea
+    if (node.isEvent) return false
+    if (node.isResource) return false
+    if (node.isDiaryEntry) return false
+    try {
+      const ed = JSON.parse(node.extraData || '{}')
+      if (ed._resource) return false
+      if (ed.temporalType) return false
+      if (ed._perfilIA === '1') return false
+      if (ed._agentDef === '1' || ed._promptDef === '1') return false
+      if (ed._tagDefinition) return false        // nodo de contexto, no es una nota
+      if (ed._shortcutQuery !== undefined || ed._shortcutNodeId) return false
+    } catch { /* ignore */ }
+    const t = (node.text || '').trim()
+    // Estructura temporal (Año / Mes / Semana)
+    const MONTHS_N = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
+    if (/^\d{4}$/.test(t) || MONTHS_N.has(t) || /^Semana \d+$/i.test(t)) return false
+    // Raíces de sistema
+    if (/^(🏠 From|📅 Agenda|🧠 Contexto|⚡ Prompts|🤖 Agentes|📋 Plantillas|🗑 Papelera)$/.test(t)) return false
+    // La clave: una nota tiene al menos un hijo activo.
+    return this.children(node.id).some(k => !k.deletedAt)
+  }
+
+  /** Número de notas reales (nodos con hijos). */
+  noteCount(): number {
+    let n = 0
+    for (const node of this.nodes.values()) if (this.isNote(node)) n++
+    return n
+  }
+
   /** Devuelve todas las notas "container" vivas. */
   liveContainers(options?: { requireUnscheduled?: boolean }): Node[] {
     return this.allActive()
