@@ -314,9 +314,15 @@ AL TERMINAR ("fin"):
 
   async function handleDeleteAccount() {
     setDeleteError('')
+    // Confirmación obligatoria: contraseña (o email si la cuenta es de Google).
+    const hasPwd = userStore.user?.hasPassword !== false
+    const answer = window.prompt(hasPwd
+      ? 'Escribe tu contraseña para confirmar la eliminación de tu cuenta:'
+      : 'Escribe tu email para confirmar la eliminación de tu cuenta:')
+    if (!answer || !answer.trim()) return
     setDeleteLoading(true)
     try {
-      await deleteAccount()
+      await deleteAccount(hasPwd ? { password: answer } : { confirmEmail: answer })
       clearTokens()
       userStore.reset()
       navigate('/login', { replace: true })

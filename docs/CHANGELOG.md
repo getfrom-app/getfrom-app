@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.213 / Mac v9.5.47 — 8 junio 2026 · Mi cuenta: borrado protegido + sin cerrar sesión duplicado
+## Web v9.6.214 / Mac v9.5.47 — 8 junio 2026 · Mi cuenta: borrado protegido + sin cerrar sesión duplicado
 
 - **Eliminar cuenta** ahora pide **confirmar con tu contraseña** (o tu email si entras con Google) — así no se borra por error.
 - Quitado "Cerrar sesión" de Ajustes (ya está en el menú superior).
