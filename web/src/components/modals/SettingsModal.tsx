@@ -636,85 +636,20 @@ export function CapturaRapidaPane() {
 
   return (
     <div className="st-pane">
-      {/* Barra de menús */}
-      <SectionTitle>Barra de menús</SectionTitle>
+      {/* Token de API — uno para todo (Raycast, Chrome, Claude Code) */}
+      <SectionTitle>Token de API</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        From vive en la barra de menús del Mac con su icono.
-        Haz clic en él (o elige <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) para abrir
-        una ventana flotante y crear una nota, tarea o evento al vuelo — sin cambiar de app.
-        Cerrar la ventana principal no cierra From: sigue disponible en la barra de menús.
+        Una sola clave para conectar From con Raycast, Chrome y Claude Code. No la compartas.
       </div>
-      {isTauriDesktop && (
-        <Row label="Mostrar icono en la barra de menús" hint="Si lo desactivas, From sigue funcionando pero el icono desaparece. También puedes ocultarlo desde el propio icono (clic derecho → Ocultar este icono).">
-          <input
-            type="checkbox"
-            checked={trayVisible}
-            onChange={e => toggleTray(e.target.checked)}
-            style={{ width: 16, height: 16, cursor: 'pointer' }}
-          />
-        </Row>
-      )}
-
-      {/* Backup a iCloud */}
-      {isTauriDesktop && (
-        <>
-          <SectionTitle>Backup en iCloud</SectionTitle>
-          <Row label="Copia automática a iCloud Drive" hint="From guarda cada ~2h una copia de tu vault en iCloud Drive (carpeta «From Backups»). Backup offsite en tu cuenta, además del backup del servidor. Recomendado durante la beta.">
-            <input
-              type="checkbox"
-              checked={icloud}
-              onChange={e => toggleICloud(e.target.checked)}
-              style={{ width: 16, height: 16, cursor: 'pointer' }}
-            />
-          </Row>
-        </>
-      )}
-
-      {/* Atajo de Apple */}
-      <SectionTitle>Atajo de Apple — tecla global</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Instala nuestro Atajo listo para usar: te pide el texto y lo guarda en tu nota de hoy.
-        Después, asígnale la tecla global que quieras desde
-        <strong style={{ color: 'var(--text)' }}> Atajos → Ajustes del atajo → Tecla rápida</strong>.
-      </div>
-      <a href={APPLE_SHORTCUT_ICLOUD} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        ↓ Instalar atajo de Apple
-      </a>
-      <div className="st-row-hint" style={{ marginTop: 14 }}>
-        ¿Prefieres crearlo a mano? Usa una acción <strong style={{ color: 'var(--text)' }}>«Abrir URL»</strong> con:
-      </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-        <code style={codeBox}>{APPLE_SHORTCUT_URL}</code>
-        <button className="btn-secondary" onClick={() => copy(APPLE_SHORTCUT_URL, 'shortcut')} style={{ flexShrink: 0, fontSize: 12 }}>
-          {copied === 'shortcut' ? '✓ Copiado' : 'Copiar URL'}
-        </button>
-      </div>
-
-      {/* Raycast */}
-      <SectionTitle>Raycast</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Instala la extensión <strong style={{ color: 'var(--text)' }}>From</strong> desde la Raycast Store y pega
-        tu token de API en sus preferencias. Podrás crear, buscar y abrir tu nota de hoy desde Raycast.
-      </div>
-      <div className="st-row-hint" style={{ marginBottom: 6 }}>Servidor (URL base):</div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-        <code style={codeBox}>{RAYCAST_API_BASE}</code>
-        <button className="btn-secondary" onClick={() => copy(RAYCAST_API_BASE, 'base')} style={{ flexShrink: 0, fontSize: 12 }}>
-          {copied === 'base' ? '✓ Copiado' : 'Copiar'}
-        </button>
-      </div>
-      <div className="st-row-hint" style={{ marginBottom: 6 }}>Tu token de API (válido 1 año):</div>
       {loaded ? (
         token ? (
-          <div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-              <code style={codeBox}>{token}</code>
-              <button className="btn-secondary" onClick={() => copy(token, 'token')} style={{ flexShrink: 0, fontSize: 12 }}>
-                {copied === 'token' ? '✓ Copiado' : 'Copiar'}
-              </button>
-            </div>
-            <button onClick={handleGenerate} disabled={generating} style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-              {generating ? 'Regenerando...' : 'Regenerar token'}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <code style={codeBox}>{'•'.repeat(40)}</code>
+            <button className="btn-secondary" onClick={() => copy(token, 'token')} style={{ flexShrink: 0, fontSize: 12 }}>
+              {copied === 'token' ? '✓ Copiado' : 'Copiar'}
+            </button>
+            <button onClick={handleGenerate} disabled={generating} title="Generar uno nuevo (invalida el anterior)" style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: '0 4px', border: 'none' }}>
+              {generating ? '…' : 'Regenerar'}
             </button>
           </div>
         ) : (
@@ -724,35 +659,59 @@ export function CapturaRapidaPane() {
         )
       ) : <div className="st-row-hint">Cargando...</div>}
 
+      {/* Barra de menús — solo en Mac */}
+      {isTauriDesktop && (
+        <>
+          <SectionTitle>Barra de menús</SectionTitle>
+          <div className="st-row-hint" style={{ marginBottom: 10 }}>
+            From vive en la barra de menús del Mac: clic en el icono (o <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) abre una ventana flotante para crear algo al vuelo. Cerrar la ventana principal no cierra From.
+          </div>
+          <Row label="Mostrar icono en la barra de menús" hint="También puedes ocultarlo desde el propio icono (clic derecho → Ocultar).">
+            <input type="checkbox" checked={trayVisible} onChange={e => toggleTray(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+          </Row>
+
+          <SectionTitle>Backup en iCloud</SectionTitle>
+          <Row label="Copia automática a iCloud Drive" hint="Cada ~2h, una copia de tu vault en iCloud Drive (carpeta «From Backups»), además del backup del servidor.">
+            <input type="checkbox" checked={icloud} onChange={e => toggleICloud(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+          </Row>
+        </>
+      )}
+
+      {/* Atajo de Apple */}
+      <SectionTitle>Atajo de Apple</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Te pide el texto y lo guarda en tu nota de hoy. Luego asígnale una tecla global desde Atajos → Ajustes del atajo.
+      </div>
+      <a href={APPLE_SHORTCUT_ICLOUD} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12, display: 'inline-flex' }}>
+        ↓ Instalar atajo de Apple
+      </a>
+
+      {/* Raycast */}
+      <SectionTitle>Raycast</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        Crea, busca y abre tu nota de hoy desde Raycast. Al instalarla, pega tu token (arriba) en sus preferencias.
+      </div>
+      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+        Instalar en Raycast →
+      </a>
+
       {/* Chrome */}
       <SectionTitle>Chrome</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Instala la extensión <strong style={{ color: 'var(--text)' }}>From</strong> en Chrome: clic en el icono
-        guarda la URL de la pestaña en tu nota de hoy, y seleccionando texto + clic derecho lo envías como nodo.
-        En sus opciones, pega el mismo token de API de arriba.
+        Guarda la página actual en tu nota de hoy y envía texto seleccionado como nodo. Pega tu token en sus opciones.
       </div>
-      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
-        Cómo instalar la extensión de Chrome →
+      <a href="https://getfrom.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+        Instalar en Chrome →
       </a>
 
       {/* Claude (MCP) */}
-      <SectionTitle>Claude (MCP)</SectionTitle>
-      <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,.06), rgba(88,86,214,.06))', border: '1px solid rgba(124,58,237,.18)', borderRadius: 10, padding: '12px 14px', marginBottom: 10 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '.05em', marginBottom: 6 }}>DIRECTORIO OFICIAL · ANTHROPIC</div>
-        <div className="st-row-hint" style={{ marginBottom: 0 }}>
-          From está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>. No necesitas tokens ni configuración manual. Abre Claude → Conectores → busca <strong style={{ color: 'var(--text)' }}>From</strong> y conecta con un clic.
-        </div>
+      <SectionTitle>Claude</SectionTitle>
+      <div className="st-row-hint" style={{ marginBottom: 10 }}>
+        From está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>: abre Claude → Conectores → busca From y conecta con un clic. Sin tokens ni configuración. Funciona en Claude Desktop, Claude.ai y Claude Code.
       </div>
-      <div className="st-row-hint" style={{ marginBottom: 8 }}>
-        Funciona en Claude Desktop, Claude.ai y Claude Code. Guarda notas, crea tareas y consulta tu vault desde cualquier conversación.
-      </div>
-      <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
-        Ver instrucciones completas →
+      <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
+        Conectar en Claude →
       </a>
-
-      <div className="st-row-hint" style={{ marginTop: 16, fontSize: 11 }}>
-        El token de API sirve para Raycast, Chrome y Claude Code (CLI avanzado). Regenerarlo invalida el anterior.
-      </div>
     </div>
   )
 }

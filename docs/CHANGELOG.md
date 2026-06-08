@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.230 — 8 junio 2026 · Accesorios: más limpio y ordenado
+
+- **Token de API arriba del todo, uno para todo** (Raycast, Chrome, Claude Code): se muestra con puntitos y un botón **Copiar** (+ Regenerar). Sin cajas de texto repetidas.
+- **Barra de menús e iCloud** solo aparecen en la app de **Mac** (no en web).
+- **Raycast y Chrome**: un botón directo de **Instalar** en vez de instrucciones largas.
+- **Atajo de Apple**: quitada la opción de crearlo a mano (innecesaria).
+- **Claude**: explicación breve + botón **Conectar en Claude**.
+
+---
+
 ## Web v9.6.229 — 8 junio 2026 · Plantillas: panel más claro + recurrencia flexible
 
 - En el panel de una plantilla, los botones ahora son claros: **«Auto-aplicar en nota diaria»** y **«Nota recurrente»**.
