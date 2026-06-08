@@ -4,9 +4,10 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.201 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes programados en la barra inferior
+## Web v9.6.202 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes en la barra inferior + Magic más limpio
 
 - La barra inferior muestra ahora **cuántos agentes activos tienes programados y cuándo corre el próximo** (p. ej. «🤖 2 agentes activos · próxima en 2 h»). Si no hay ninguno programado, muestra «Ningún agente activo».
+- **Magic más limpio**: se quitaron los botones de sugerencia (Analizar, Resumir, etc.) del estado inicial. Ahora aparece solo la lista de tus prompts.
 
 ---
 

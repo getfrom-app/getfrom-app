@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
-import ContextChips, { expandSpecialPrompt } from './ContextChips'
+import { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { listPrompts, findAutoPromptForNode, suggestPromptForText } from '../../utils/promptsHelper'
@@ -496,15 +496,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       {isCompact && (
         <>
           {inputBlock}
-          <ContextChips
-            nodeId={currentNodeId}
-            visible={true}
-            onSelect={(prompt) => {
-              if (chat.isStreaming) return
-              const final = prompt.startsWith('__') ? expandSpecialPrompt(prompt) : prompt
-              chat.send(final, currentNodeId)
-            }}
-          />
 
           {/* Lista de prompts: clic para activar (sustituye al slash) */}
           {!activePromptNode && !input.trim() && allPrompts.length > 0 && (
