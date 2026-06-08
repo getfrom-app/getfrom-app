@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.207 / Mac v9.5.44 — 8 junio 2026 · Magic más humano y cercano
+
+- Al abrir Magic, te **saluda** según la hora («Buenas tardes 👋»).
+- Magic ahora es **más cercano**: te trata por tu nombre, demuestra que conoce tus proyectos y metas (de tu Perfil y contextos), y **se anticipa** a lo que necesitas (tareas y eventos del día). Un compañero que te conoce, no una herramienta.
+
+---
+
 ## Web v9.6.206 / Mac v9.5.43 — 8 junio 2026 · Perfil global vs contexto
 
 - Lo que From aprende ahora va **al sitio correcto**: si escribes dentro de un proyecto/contexto, los datos **específicos de ese proyecto se quedan en su contexto** y solo lo **global sobre ti** (relaciones, metas, situación) entra en tu Perfil. Menos ruido en el perfil, más foco.

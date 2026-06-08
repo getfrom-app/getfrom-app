@@ -415,6 +415,15 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // hasExpanded jamás vuelve a false → tamaño fijo, sin redimensionado por mensaje.
   const isCompact = !hasExpanded && !isRecording
 
+  // Saludo cálido según la hora (cliente, sin gastar tokens).
+  const greeting = (() => {
+    const h = new Date().getHours()
+    if (h < 6)  return t('ai.greetingNight', 'Buenas noches')
+    if (h < 13) return t('ai.greetingMorning', 'Buenos días')
+    if (h < 21) return t('ai.greetingAfternoon', 'Buenas tardes')
+    return t('ai.greetingNight', 'Buenas noches')
+  })()
+
   function promptIcon(p: { extraData?: string | null }): string {
     try { return JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { return '⚡' }
   }
@@ -495,6 +504,12 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       {/* ── COMPACTO: input arriba (igual que Buscar) → chips debajo → spacer ── */}
       {isCompact && (
         <>
+          {/* Saludo cálido cuando aún no hay conversación */}
+          {isEmpty && !input.trim() && !activePromptNode && (
+            <div style={{ padding: '10px 16px 2px', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {greeting} <span style={{ fontWeight: 400 }}>👋</span>
+            </div>
+          )}
           {inputBlock}
 
           {/* Lista de prompts: clic para activar (sustituye al slash) */}
