@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## iPhone v2.4 — 8 junio 2026 · App rediseñada "on the go" + mucho más rápida
+
+- **5 pestañas claras**: Agenda · Hoy (tu nota diaria) · Buscar · Magic · Ajustes.
+- **Magic mejorado**: habla por voz (dicta y se envía), te conoce por tu Perfil y **aprende** de lo que le cuentas, respuestas con **formato bonito** (markdown), puedes activar **prompts** y elegir **una nota como contexto**, y puede **crear, mover y completar** tareas desde el chat.
+- **Buscar** con filtros desplegables (tipo, fecha, estado, contextos, filtros guardados) y resultados al instante.
+- **Notas más limpias**: título único, casilla que completa la tarea, compartir **enlace público**, copiar texto, mover a hoy. Las notas de diario/mes/año ya no muestran estado ni fecha.
+- **La papelera no aparece** en agenda, búsqueda ni filtros.
+- **Mucho más fría y fluida**: la app ya no trabaja cuando no la tocas (rendimiento optimizado a fondo).
+
+---
+
+## Web v9.6.234 — 8 junio 2026 · Magic se ve mejor + grabación con botón de parar
+
+- **Magic**: las respuestas se muestran con **formato** (encabezados, listas, negrita) en vez de markdown "en crudo".
+- **Grabación de voz**: botón de **Parar y enviar** siempre visible mientras grabas (antes podía desaparecer). La caja de texto del panel ahora se ve bien.
+- **Menciones @**: buscador mejorado, distingue **nota** (con contenido) de **párrafo**, y no muestra la papelera.
+- Menos **recargas inesperadas** al abrir paneles.
+
+---
+
 ## Web v9.6.232 — 8 junio 2026 · Importar desde Obsidian, Notion, Apple Notes… + Exportar más simple
 
 - **Importar** rediseñado: elige la **fuente** (Obsidian, Notion, Apple Notes, Markdown/texto, From JSON) y sigue un **paso a paso**. Sube archivos o una carpeta entera; From respeta la estructura de subcarpetas y convierte el Markdown en notas y bullets, todo bajo un nodo «📥 Importado [fecha]» para que lo reorganices sin tocar tus notas.
