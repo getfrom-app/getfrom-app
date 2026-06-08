@@ -25,31 +25,32 @@ import { readLearnedItems, compactProfileKnowledge } from '../../api/userKnowled
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
 
 // ── MagicPane ─────────────────────────────────────────────────────────────────
-// Magic está siempre activo (detección de objeto, completar, botón ✨, editor
-// lateral, pill). No hay conmutadores: solo el conocimiento del perfil y lo
-// aprendido por Magic.
+// Magic está siempre activo. From y Magic son lo mismo: TODO lo que saben de ti
+// (lo que extraen de tus notas/conversaciones + lo que le enseñas) vive en tu
+// Perfil de IA, que es una nota normal editable en bullets. Aquí solo un acceso
+// unificado para verlo/editarlo + limpiar/compactar.
 
 function MagicPane() {
-  return (
-    <div className="st-pane">
-      <ProfileKnowledgeSection />
-      <MagicLearningsSection />
-    </div>
-  )
-}
-
-// ── Conocimiento del perfil (lo que From aprende de ti) ───────────────────────
-
-function ProfileKnowledgeSection() {
-  const [items, setItems] = useState(() => readLearnedItems())
+  const s = useStore()
+  const navigate = useNavigate()
+  const ls = useLearningsStore()
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
-  const total = items.people.length + items.facts.length
+
+  void s.nodesVersion
+  const learned = readLearnedItems()
+  const rules = ls.getAll()
+  const total = learned.people.length + learned.facts.length + rules.length
+
+  async function openProfile() {
+    let perfil = s.perfilIANode?.() ?? null
+    if (!perfil) { try { perfil = await s.getOrCreatePerfilIA() } catch { /* */ } }
+    if (perfil) navigate(`/node/${perfil.id}`)
+  }
 
   async function handleCompact() {
     setBusy(true); setMsg(null)
     const r = await compactProfileKnowledge()
-    setItems(readLearnedItems())
     if (r) setMsg(r.before === r.after ? 'Ya estaba limpio.' : `Compactado: ${r.before} → ${r.after} entradas.`)
     else setMsg('Nada que compactar.')
     setBusy(false)
@@ -57,149 +58,26 @@ function ProfileKnowledgeSection() {
   }
 
   return (
-    <>
-      <div className="st-section-title" style={{ marginTop: 28 }}>Lo que From sabe sobre ti</div>
+    <div className="st-pane">
+      <div className="st-section-title">Lo que From sabe de ti</div>
       <div className="st-row">
         <div className="st-row-info">
-          <div className="st-row-label">Conocimiento del perfil</div>
+          <div className="st-row-label">Tu Perfil de IA</div>
           <div className="st-row-hint">
-            From aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones.
+            From y Magic son lo mismo: aprenden datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y de lo que le enseñas (botón derecho → Enseñar a Magic).
             {total > 0 ? ` Ahora guarda ${total} ${total === 1 ? 'entrada' : 'entradas'}.` : ' Aún no ha guardado nada.'}
-            {' '}Se compacta solo al crecer; aquí puedes limpiarlo a mano.
+            {' '}Ábrelo para verlo y editarlo en bullets, como cualquier nota.
           </div>
         </div>
-        <div className="st-row-action">
+        <div className="st-row-action" style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-primary btn-sm" onClick={openProfile}>Ver y editar</button>
           <button className="btn-secondary btn-sm" onClick={handleCompact} disabled={busy || total === 0}>
             {busy ? 'Limpiando…' : 'Limpiar y compactar'}
           </button>
         </div>
       </div>
       {msg && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '0 0 4px' }}>{msg}</div>}
-    </>
-  )
-}
-
-function MagicLearningsSection() {
-  const { t } = useTranslation()
-  const ls = useLearningsStore()
-  const items = ls.getAll()
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editText, setEditText] = useState('')
-
-  const categoryLabel: Record<string, string> = {
-    type:     'Tipo',
-    context:  'Contexto',
-    behavior: 'Comportamiento',
-    positive: 'Refuerzo',
-  }
-  const categoryColor: Record<string, string> = {
-    type:     '#3b82f6',
-    context:  '#8b5cf6',
-    behavior: '#f59e0b',
-    positive: '#10b981',
-  }
-
-  return (
-    <>
-      <div className="st-section-title" style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>{t('settings.magic.learned')}</span>
-        {items.length > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', borderRadius: 10, padding: '1px 6px' }}>
-            {items.length}
-          </span>
-        )}
-        {items.length > 0 && (
-          <button
-            style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
-            onClick={() => { if (confirm('¿Borrar todos los aprendizajes?')) ls.clear() }}
-          >
-            Borrar todo
-          </button>
-        )}
-      </div>
-
-      {items.length === 0 ? (
-        <div style={{ padding: '16px 0', fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-          <div style={{ fontSize: 22, marginBottom: 8 }}>✦</div>
-          Magic todavía no ha aprendido nada de ti.<br />
-          Usa <strong>botón derecho → Enseñar a Magic</strong> en cualquier nodo<br />
-          para corregir interpretaciones y ayudarle a entenderte mejor.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-          {items.map(item => (
-            <div key={item.id} style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '8px 10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                {/* Categoría badge */}
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
-                  color: categoryColor[item.category] ?? 'var(--text-tertiary)',
-                  background: `${categoryColor[item.category] ?? '#999'}18`,
-                  borderRadius: 4, padding: '1px 5px', flexShrink: 0, marginTop: 1,
-                }}>
-                  {categoryLabel[item.category] ?? item.category}
-                </span>
-
-                {/* Texto editable */}
-                {editingId === item.id ? (
-                  <input
-                    autoFocus
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { ls.update(item.id, editText); setEditingId(null) }
-                      if (e.key === 'Escape') setEditingId(null)
-                    }}
-                    style={{
-                      flex: 1, fontSize: 12, background: 'var(--bg-primary)',
-                      border: '1px solid var(--border-focus)', borderRadius: 4,
-                      padding: '2px 6px', color: 'var(--text-primary)', outline: 'none',
-                    }}
-                  />
-                ) : (
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                    {item.text}
-                  </span>
-                )}
-
-                {/* Acciones */}
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                  <button
-                    onClick={() => {
-                      if (editingId === item.id) { ls.update(item.id, editText); setEditingId(null) }
-                      else { setEditingId(item.id); setEditText(item.text) }
-                    }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '1px 4px' }}
-                    title="Editar"
-                  >✎</button>
-                  <button
-                    onClick={() => ls.remove(item.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '1px 4px' }}
-                    title="Eliminar"
-                  >✕</button>
-                </div>
-              </div>
-
-              {/* Nodo origen y fecha */}
-              <div style={{ display: 'flex', gap: 8, fontSize: 10, color: 'var(--text-tertiary)' }}>
-                {item.nodeText && <span>en: "{item.nodeText.slice(0, 40)}"</span>}
-                <span style={{ marginLeft: 'auto' }}>
-                  {new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
+    </div>
   )
 }
 

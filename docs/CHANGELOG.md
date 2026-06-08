@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.220 — 8 junio 2026 · Magic: todo lo que From sabe de ti, en un solo sitio
+
+- Unificadas "Lo que From sabe sobre ti" y "Lo que Magic ha aprendido de ti" en **una sola sección**: From y Magic son lo mismo. Todo (lo que aprende de tus notas/conversaciones + lo que le enseñas) vive en tu **Perfil de IA**, que es una nota normal: pulsa **"Ver y editar"** para verlo y editarlo en bullets. Sigue el botón "Limpiar y compactar".
+
+---
+
 ## Web v9.6.219 — 8 junio 2026 · Magic: siempre activo, sin conmutadores
 
 - Quitados los interruptores de Magic (detectar objeto, completar, botón ✨, editor lateral, animar pill). **Todo está siempre activado** — no eran necesarios (de hecho no hacían nada). La pestaña Magic deja solo lo útil: el conocimiento del perfil y lo que Magic ha aprendido de ti.
