@@ -11314,7 +11314,7 @@ textarea:focus-visible,
   position: relative;
   border-left: 1px solid transparent; /* invisible cuando está cerrado */
   background: var(--bg-primary);
-  padding-bottom: 28px;
+  padding-bottom: 40px; /* deja sitio a la barra inferior (chips/input no quedan tapados) */
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -11435,6 +11435,30 @@ textarea:focus-visible,
   color: var(--text-primary);
 }
 
+/* Botón de parar grabación (visible dentro del waveform) */
+.magic-chat-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.magic-chat-stop-btn:hover { background: #dc2626; }
+.magic-chat-stop-btn--cancel {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+.magic-chat-stop-btn--cancel:hover { background: var(--bg-hover); }
+
 /* ── Waveform ── */
 .magic-chat-waveform {
   display: none;
@@ -11499,9 +11523,25 @@ textarea:focus-visible,
 .magic-chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 0 4px;
+  padding: 12px 0 16px;
   min-height: 0;
 }
+
+/* ── Markdown renderizado en los mensajes de Magic ── */
+.md-lite { display: flex; flex-direction: column; gap: 6px; }
+.md-lite .md-p { margin: 0; line-height: 1.55; }
+.md-lite .md-h { margin: 4px 0 0; font-weight: 700; line-height: 1.35; }
+.md-lite h3.md-h { font-size: 15px; }
+.md-lite h4.md-h { font-size: 14px; }
+.md-lite h5.md-h { font-size: 13px; }
+.md-lite .md-ul, .md-lite .md-ol { margin: 2px 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+.md-lite .md-ul { list-style: disc; }
+.md-lite .md-ol { list-style: decimal; }
+.md-lite li { line-height: 1.5; }
+.md-lite .md-code { background: var(--bg-secondary); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.md-lite a { color: var(--accent); text-decoration: underline; }
+/* El contenedor de markdown no usa pre-wrap (los bloques ya gestionan saltos) */
+.magic-chat-bubble--ai .magic-chat-bubble-text { white-space: normal; }
 
 .magic-chat-bubble {
   display: flex;

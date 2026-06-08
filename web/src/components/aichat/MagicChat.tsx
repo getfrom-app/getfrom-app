@@ -16,6 +16,7 @@ import { expandSpecialPrompt } from './ContextChips'
 import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInterpreter'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { listPrompts, findAutoPromptForNode, suggestPromptForText } from '../../utils/promptsHelper'
+import MarkdownLite from './MarkdownLite'
 
 interface Props {
   onClose: () => void
@@ -503,6 +504,24 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           <span className="magic-chat-recording-dot" />
           {t('ai.recordingLabel')}
         </div>
+        {/* Botón de parar SIEMPRE visible al grabar (antes el ■ vivía en el input,
+            que no se renderiza durante la grabación inicial → no había forma de parar). */}
+        {isRecording && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              className="magic-chat-stop-btn"
+              onClick={() => { isRKeyDownRef.current = false; stopRecording(true) }}
+            >
+              <span style={{ fontSize: 11 }}>■</span> {t('ai.stopRecording', 'Parar y enviar')}
+            </button>
+            <button
+              className="magic-chat-stop-btn magic-chat-stop-btn--cancel"
+              onClick={() => { isRKeyDownRef.current = false; stopRecording(false) }}
+            >
+              {t('common.cancel', 'Cancelar')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── COMPACTO: input arriba (igual que Buscar) → chips debajo → spacer ── */}
@@ -708,7 +727,11 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
     <div className={`magic-chat-bubble ${isUser ? 'magic-chat-bubble--user' : 'magic-chat-bubble--ai'}`}>
       <div className="magic-chat-bubble-avatar">{isUser ? '👤' : '✨'}</div>
       <div className="magic-chat-bubble-body">
-        {cleaned && <div className="magic-chat-bubble-text">{cleaned}</div>}
+        {cleaned && (
+          isUser
+            ? <div className="magic-chat-bubble-text">{cleaned}</div>
+            : <div className="magic-chat-bubble-text"><MarkdownLite content={cleaned} /></div>
+        )}
         {msg.actions.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
             {msg.actions.map((a, i) => (

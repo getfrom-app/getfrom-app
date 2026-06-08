@@ -20,6 +20,7 @@ import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
+import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -163,6 +164,7 @@ interface PickerItem {
   types?: string[]
   bodyPreview?: string
   group?: 'context' | 'note'  // para @ picker con dos secciones
+  isNote?: boolean            // nota (tiene hijos) vs párrafo (hoja)
 }
 
 interface InlinePicker {
@@ -1195,12 +1197,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         .slice(0, 8)
         .map(item => ({ id: item.id, label: item.label, group: 'context' as const }))
 
-      // Grupo "Notas": búsqueda en todos los nodos (como el picker #)
+      // Grupo "Notas": búsqueda por texto, excluyendo papelera. Distinción nota/párrafo:
+      // una NOTA tiene hijos; un PÁRRAFO es una hoja. Las notas se priorizan arriba.
       const noteItems = q
         ? store.allActive()
-            .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(q))
-            .slice(0, 5)
-            .map(n => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], bodyPreview: n.body?.slice(0, 30), group: 'note' as const }))
+            .filter(n => !n.deletedAt && n.id !== node.id && n.text && n.text.toLowerCase().includes(q) && !isInPapelera(n.id))
+            .map(n => ({ n, isNote: store.children(n.id).some(c => !c.deletedAt) }))
+            .sort((a, b) => {
+              if (a.isNote !== b.isNote) return a.isNote ? -1 : 1   // notas primero
+              const as = a.n.text.toLowerCase().startsWith(q), bs = b.n.text.toLowerCase().startsWith(q)
+              if (as !== bs) return as ? -1 : 1
+              return a.n.text.localeCompare(b.n.text)
+            })
+            .slice(0, 8)
+            .map(({ n, isNote }) => ({ id: n.id, label: n.text, status: n.status, types: n.types || [], isNote, group: 'note' as const }))
         : []
 
       return [...contextItems, ...noteItems]
@@ -4101,11 +4111,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
                 onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
               >
-                <span className="inline-picker-icon">{item.group === 'note' ? '📄' : '@'}</span>
+                <span className="inline-picker-icon">
+                  {item.group === 'context' ? '@' : item.isNote ? '📄' : '¶'}
+                </span>
                 <span className="inline-picker-content">
                   <span className="inline-picker-label">{item.label}</span>
-                  {item.group === 'note' && item.bodyPreview && (
-                    <span className="inline-picker-preview">{item.bodyPreview}…</span>
+                  {item.group === 'note' && (
+                    <span className="inline-picker-preview">{item.isNote ? 'Nota' : 'Párrafo'}</span>
                   )}
                 </span>
               </button>

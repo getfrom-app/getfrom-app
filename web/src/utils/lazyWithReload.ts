@@ -43,18 +43,22 @@ export function lazyWithReload<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ) {
   return lazy(async () => {
-    try {
-      return await factory()
-    } catch (err) {
-      if (!isChunkLoadError(err)) throw err
-      // Reintento único tras un pequeño respiro (red transitoria).
+    // Hasta 3 intentos con backoff antes de recargar: la mayoría de fallos al abrir
+    // un panel son red transitoria, no un chunk realmente obsoleto. Reintentar evita
+    // la "redirección extraña" (recarga) en esos casos.
+    const delays = [0, 400, 1000]
+    let lastErr: unknown
+    for (const d of delays) {
       try {
-        await delay(350)
+        if (d) await delay(d)
         return await factory()
-      } catch (err2) {
-        if (isChunkLoadError(err2)) reloadPreservingLocation()
-        throw err2
+      } catch (err) {
+        lastErr = err
+        if (!isChunkLoadError(err)) throw err   // error real del módulo → propagar
       }
     }
+    // Agotados los reintentos y sigue siendo error de chunk → recargar en su sitio.
+    if (isChunkLoadError(lastErr)) reloadPreservingLocation()
+    throw lastErr
   })
 }
