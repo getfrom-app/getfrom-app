@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.231 — 8 junio 2026 · Quitada la pestaña Claude (MCP)
+
+- Eliminada la pestaña **Claude (MCP)** de Ajustes: ya está cubierta en **Accesorios** (sección Claude).
+
+---
+
 ## Web v9.6.230 — 8 junio 2026 · Accesorios: más limpio y ordenado
 
 - **Token de API arriba del todo, uno para todo** (Raycast, Chrome, Claude Code): se muestra con puntitos y un botón **Copiar** (+ Regenerar). Sin cajas de texto repetidas.

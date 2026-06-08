@@ -7,7 +7,7 @@ export type Tab =
   | 'ia' | 'magic'
   | 'atajos'
   | 'exportar' | 'importar' | 'backups'
-  | 'claude' | 'captura'
+  | 'captura'
 
 export interface NavItem { id: Tab; label: string; icon: string }
 export interface NavSection { title: string; items: NavItem[] }
@@ -43,7 +43,6 @@ export const NAV: NavSection[] = [
     title: 'Integraciones',
     items: [
       { id: 'captura', label: 'Accesorios', icon: '⚡' },
-      { id: 'claude', label: 'Claude (MCP)', icon: '🤖' },
     ],
   },
   {
@@ -68,6 +67,5 @@ export const SUBTITLES: Partial<Record<Tab, string>> = {
   backups: 'Snapshots automáticos cada 2h. Restaura tu vault a cualquier punto.',
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',
-  claude: 'Conecta Claude Desktop con tu vault mediante MCP.',
-  captura: 'Tus accesorios de captura rápida: barra de menús, Atajo de Apple, Raycast y Chrome.',
+  captura: 'Token de API, barra de menús, Atajo de Apple, Raycast, Chrome y Claude.',
 }

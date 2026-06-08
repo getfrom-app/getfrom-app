@@ -5,7 +5,6 @@ import {
   CuentaPane,
   AparienciaPane,
   IAPane,
-  ClaudeMcpPane,
   CapturaRapidaPane,
   AtajosPane,
   GooglePane,
@@ -312,7 +311,6 @@ export default function SettingsView() {
       case 'backups':     return <BackupsPane />
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />
-      case 'claude':      return <ClaudeMcpPane />
       case 'captura':     return <CapturaRapidaPane />
     }
   }
