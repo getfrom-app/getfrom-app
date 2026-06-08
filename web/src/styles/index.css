@@ -13078,51 +13078,42 @@ textarea:focus-visible,
   font-size: 13px;
 }
 
-/* ── Pricing rediseñado (jun 2026) ───────────────────────────────────────── */
-.pricing2 { max-width: 880px; margin: 0 auto; padding: 48px 20px 64px; }
-.pricing2-head { text-align: center; margin-bottom: 36px; }
+/* ── Pricing rediseñado (jun 2026, v2 alineado) ──────────────────────────── */
+.pricing2 { max-width: 880px; margin: 0 auto; padding: 44px 20px 64px; }
+.pricing2-head { text-align: center; margin-bottom: 22px; }
 .pricing2-title { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary, #1a1a2e); margin: 0 0 10px; }
 .pricing2-sub { font-size: 16px; color: var(--text-secondary, #6b7280); margin: 0; }
+
+.pricing2-toggle { display: inline-flex; gap: 4px; background: var(--bg-secondary, #f3f4f6); border-radius: 11px; padding: 4px; }
+.pricing2-toggle--center { display: flex; width: max-content; margin: 0 auto 28px; }
+.pricing2-toggle button { border: 0; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-secondary, #6b7280); padding: 8px 18px; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px; transition: all .15s; }
+.pricing2-toggle button.on { background: var(--bg-elevated, #fff); color: var(--text-primary, #1a1a2e); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.pricing2-save { font-size: 11px; font-weight: 700; color: #16a34a; background: rgba(22,163,74,.12); padding: 1px 7px; border-radius: 6px; }
+
 .pricing2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
 @media (max-width: 720px) { .pricing2-grid { grid-template-columns: 1fr; } }
 
-.pcard {
-  position: relative; display: flex; flex-direction: column;
-  background: var(--bg-elevated, #fff); border: 1px solid var(--border, #e5e7eb);
-  border-radius: 18px; padding: 26px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-.pcard--pro { border-color: #8b5cf6; box-shadow: 0 8px 30px rgba(139,92,246,0.18); }
-.pcard-badge {
-  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-  background: #8b5cf6; color: #fff; font-size: 12px; font-weight: 700;
-  padding: 5px 14px; border-radius: 999px; letter-spacing: 0.01em; white-space: nowrap;
-}
-.pcard-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.pcard-name { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary, #6b7280); }
-.pcard-price { font-size: 28px; font-weight: 800; color: var(--text-primary, #1a1a2e); }
-.pcard-per { font-size: 14px; font-weight: 600; color: var(--text-secondary, #9ca3af); margin-left: 2px; }
+.pcard { position: relative; display: flex; flex-direction: column; background: var(--bg-elevated, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: 18px; padding: 28px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.pcard--pro { border: 2px solid #8b5cf6; box-shadow: 0 10px 34px rgba(139,92,246,0.20); }
+.pcard-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #8b5cf6; color: #fff; font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 999px; white-space: nowrap; }
 
-/* Toggle mensual/anual */
-.pricing2-toggle { display: flex; gap: 4px; background: var(--bg-secondary, #f3f4f6); border-radius: 10px; padding: 4px; margin: 14px 0 4px; }
-.pricing2-toggle button {
-  flex: 1; border: 0; background: transparent; cursor: pointer; font-size: 13.5px; font-weight: 600;
-  color: var(--text-secondary, #6b7280); padding: 7px 8px; border-radius: 7px;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s;
-}
-.pricing2-toggle button.on { background: var(--bg-elevated, #fff); color: var(--text-primary, #1a1a2e); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-.pricing2-save { font-size: 11px; font-weight: 700; color: #16a34a; background: rgba(22,163,74,.12); padding: 1px 6px; border-radius: 6px; }
+.pcard-name { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary, #9ca3af); }
 
-/* Héroe: número de nodos */
-.pcard-hero { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 2px; min-height: 64px; }
-.ptoggle-spacer { height: 38px; margin: 14px 0 4px; }
-.pcard-hero-num { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--text-secondary, #9ca3af); }
-.pcard-hero--pro .pcard-hero-num { font-size: 80px; color: #8b5cf6; }
+.pcard-hero { display: flex; align-items: center; gap: 10px; height: 88px; margin: 4px 0 0; }
+.pcard-hero-num { font-size: 58px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--text-secondary, #9ca3af); }
+.pcard-hero--pro .pcard-hero-num { font-size: 84px; color: #8b5cf6; }
 .pcard-hero-label { font-size: 15px; font-weight: 600; color: var(--text-secondary, #6b7280); }
-.pcard-note { font-size: 13px; color: var(--text-secondary, #9ca3af); margin: 0 0 18px; }
 
-.pcard-feats { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.pcard-note { font-size: 13px; color: var(--text-secondary, #9ca3af); margin: 0 0 20px; min-height: 17px; }
+
+.pcard-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; flex: 1; }
 .pcard-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; color: var(--text-primary, #374151); }
 .pcard-check { color: #8b5cf6; font-weight: 800; flex-shrink: 0; }
+
+.pcard-price-row { display: flex; flex-direction: column; gap: 2px; margin: 22px 0 16px; min-height: 48px; justify-content: flex-end; }
+.pcard-price { font-size: 32px; font-weight: 800; color: var(--text-primary, #1a1a2e); line-height: 1; }
+.pcard-per { font-size: 15px; font-weight: 600; color: var(--text-secondary, #9ca3af); margin-left: 3px; }
+.pcard-price-sub { font-size: 12.5px; color: var(--text-secondary, #9ca3af); }
 
 .pcard-cta { width: 100%; border: 0; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all .15s; }
 .pcard-cta--ghost { background: var(--bg-secondary, #f3f4f6); color: var(--text-primary, #1a1a2e); }
