@@ -458,13 +458,17 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       <div className="magic-chat-actions">
         <button
           className={`magic-chat-action-key ${isRecording ? 'magic-chat-action-key--recording' : ''}`}
-          onMouseDown={e => { e.preventDefault(); if (!isRecordingRef.current) { isRKeyDownRef.current = false; startRecording() } }}
-          onMouseUp={() => { if (isRecordingRef.current) stopRecording(true) }}
-          onMouseLeave={() => { if (isRecordingRef.current) stopRecording(true) }}
-          title={t('ai.holdToTalk')}
+          // Clic = toggle: empezar a grabar / parar y enviar (con ratón siempre se
+          // puede parar). La tecla R (mantener/soltar) la gestiona MainLayout aparte.
+          onClick={() => {
+            isRKeyDownRef.current = false
+            if (isRecordingRef.current) stopRecording(true)
+            else startRecording()
+          }}
+          title={isRecording ? t('ai.stopRecording', 'Parar y enviar') : t('ai.holdToTalk')}
         >
           <span className="magic-action-dot" />
-          <span>R</span>
+          <span>{isRecording ? '■' : 'R'}</span>
         </button>
         <button
           className="magic-chat-action-key magic-chat-send"

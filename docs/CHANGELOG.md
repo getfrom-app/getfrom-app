@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.228 / Mac v9.5.49 — 8 junio 2026 · Magic: parar la grabación con un clic
+
+- El botón de grabación de Magic ahora funciona con **clic para empezar y clic para parar** (y enviar). Antes, si lo iniciabas con el ratón, no había forma clara de pararlo (solo soltando la tecla R). La tecla R sigue funcionando manteniéndola pulsada.
+- (Mac al día con todo lo de hoy: Estadísticas, IA, Magic, Atajos, Plantillas con diaria y recurrentes, memoria por contexto, etc.)
+
+---
+
 ## Web v9.6.227 — 8 junio 2026 · Plantillas recurrentes (revisión semanal/mensual)
 
 - Una plantilla puede ser **recurrente**: cada lunes (o el día de la semana que elijas), o cada día N del mes. Cuando llega ese día, From inserta la plantilla como una **sección dentro de la nota de ese día** (no reemplaza el día). Ideal para revisión semanal/mensual con un formato fijo.
