@@ -60,22 +60,18 @@ export default function HotkeysPane() {
 
   return (
     <div className="hotkeys-pane">
-      <div className="hotkeys-header">
-        <div>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{t('shortcuts.keyboardTitle')}</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-            {t('shortcuts.configurable')}
-          </p>
-        </div>
-        {hasCustom && (
+      {/* Encabezado interno eliminado (lo daba el título de la página). Solo el
+          botón de restablecer cuando hay atajos personalizados. */}
+      {hasCustom && (
+        <div className="hotkeys-header" style={{ justifyContent: 'flex-end' }}>
           <button
             className="hotkeys-reset-all"
             onClick={() => { resetAllHotkeys(); setHotkeys(getAllHotkeys()) }}
           >
             {t('shortcuts.resetAll')}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {categories.map(cat => (
         <div key={cat} className="hotkeys-category">

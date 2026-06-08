@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.225 — 8 junio 2026 · Atajos: cabecera redundante quitada
+
+- En Ajustes › Atajos se quitó el encabezado interno repetido ("Atajos de teclado · configurable…"), que duplicaba el título de la página.
+
+---
+
 ## Web v9.6.224 — 8 junio 2026 · Conocimiento por contexto: memoria que se acumula y se usa
 
 - El conocimiento que From guarda de cada contexto ahora **se acumula** (antes se sobrescribía): une lo nuevo con lo anterior, deduplica y se mantiene acotado (no crece sin control).

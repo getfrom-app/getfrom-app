@@ -1,4 +1,4 @@
-import{aH as A,aT as Y,am as e,F as ue}from"./outliner-6BXJxGsb.js";import{d as ye,c as s}from"./react-vendor-DZMOm95h.js";import{u as we,l as je,f as Re,e as Se,a as de}from"./index-9b18Tjhh.js";import{n as Ce,i as ke}from"./panels-kb0jqkQA.js";function Ee(r){if(r.startsWith("__mejorar_contexto__:")){const c=r.split(":")[1],m=A.getNode(c);return`Quiero mejorar el contexto de este nodo para que sirva mejor como referencia para la IA.
+import{aH as A,aT as Y,am as e,F as ue}from"./outliner-Czb9oRVc.js";import{d as ye,c as s}from"./react-vendor-DZMOm95h.js";import{u as we,l as je,f as Re,d as Se,a as de}from"./index-dTz_2uWW.js";import{n as Ce,i as ke}from"./panels-C7TBfs-i.js";function Ee(r){if(r.startsWith("__mejorar_contexto__:")){const c=r.split(":")[1],m=A.getNode(c);return`Quiero mejorar el contexto de este nodo para que sirva mejor como referencia para la IA.
 
 ${m?`Título: ${m.text}
 
