@@ -43,7 +43,7 @@ function MagicPane() {
     if (node) navigate(`/node/${node.id}`)
   }
 
-  // Conocimiento que From mantiene por contexto (nodo "🧠 Lo que From sabe" dentro
+  // Conocimiento que From mantiene por contexto (nodo "🧠 Lo que Fromly sabe" dentro
   // de cada contexto; se regenera y sobrescribe solo, no acumula).
   const contextKnowledge = (() => {
     const root = findContextRoot()
@@ -51,7 +51,7 @@ function MagicPane() {
     const out: { name: string; id: string }[] = []
     for (const ctx of s.children(root.id)) {
       if (ctx.deletedAt || (ctx.text || '').startsWith('🧠')) continue
-      const kn = s.children(ctx.id).find(n => !n.deletedAt && (n.text || '') === '🧠 Lo que From sabe')
+      const kn = s.children(ctx.id).find(n => !n.deletedAt && (n.text || '') === '🧠 Lo que Fromly sabe')
       if (kn) out.push({ name: ctx.text || 'Contexto', id: kn.id })
     }
     return out
@@ -59,10 +59,10 @@ function MagicPane() {
 
   return (
     <div className="st-pane">
-      <div className="st-section-title">Lo que From sabe de ti</div>
+      <div className="st-section-title">Lo que Fromly sabe de ti</div>
       <div className="st-row">
         <div className="st-row-info">
-          <div className="st-row-label">Conocimiento de From</div>
+          <div className="st-row-label">Conocimiento de Fromly</div>
           <div className="st-row-hint">
             From aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y los guarda aquí por su cuenta. También aprende de lo que le enseñas (botón derecho → Enseñar a Magic).
             {total > 0 ? ` Ha aprendido ${total} ${total === 1 ? 'dato' : 'datos'}.` : ' Aún no ha aprendido datos nuevos.'}
@@ -76,7 +76,7 @@ function MagicPane() {
 
       {contextKnowledge.length > 0 && (
         <>
-          <div className="st-section-title" style={{ marginTop: 24 }}>Lo que From sabe por contexto</div>
+          <div className="st-section-title" style={{ marginTop: 24 }}>Lo que Fromly sabe por contexto</div>
           <div className="st-row-hint" style={{ marginBottom: 4 }}>
             Para cada contexto, From mantiene un resumen (palabras clave, personas, temas) que se actualiza solo al usarlo.
           </div>

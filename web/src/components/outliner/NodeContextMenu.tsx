@@ -287,7 +287,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   p{margin:.7em 0;} footer{margin-top:48px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:.8rem;color:#aaa;}
 </style></head>
 <body><h1>${safeTitle}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}
-<footer>Generado con From</footer></body></html>`
+<footer>Generado con Fromly</footer></body></html>`
   }
   function exportHtml() {
     const blob = new Blob([standaloneHtml()], { type: 'text/html' })

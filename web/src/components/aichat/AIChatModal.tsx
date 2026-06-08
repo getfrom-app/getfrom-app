@@ -1,6 +1,6 @@
 // MARK: - AIChatModal
 //
-// Panel modal del chat From AI. Equivalente a AIChatModalView.swift (Mac).
+// Panel modal del chat Fromly AI. Equivalente a AIChatModalView.swift (Mac).
 // Historial conversacional + textarea + botón enviar + chips de acciones.
 
 import { useEffect, useRef, useState } from 'react'
@@ -193,7 +193,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
             fontSize: 14, fontWeight: 600,
           }}>✨</span>
           <span style={{ fontSize: 14, fontWeight: 600 }}>
-            {chat.messages.length === 0 ? 'From AI' : t('ai.chatViewTitle')}
+            {chat.messages.length === 0 ? 'Fromly AI' : t('ai.chatViewTitle')}
           </span>
           <div style={{ flex: 1 }} />
           <button
@@ -441,7 +441,7 @@ function EmptyState() {
       height: '100%', padding: 28, gap: 10, textAlign: 'center',
     }}>
       <div style={{ fontSize: 32 }}>✨</div>
-      <div style={{ fontSize: 18, fontWeight: 600 }}>From AI</div>
+      <div style={{ fontSize: 18, fontWeight: 600 }}>Fromly AI</div>
       <div style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 400, lineHeight: 1.5 }}>
         Escribe lo que necesites. Yo decido qué hacer: crear notas, tareas, eventos, modificar contenido…
         con tu perfil y tus contextos como referencia.

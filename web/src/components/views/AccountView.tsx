@@ -901,7 +901,7 @@ AL TERMINAR ("fin"):
             <div style={{ marginTop: 4, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, lineHeight: 1.65, color: 'var(--text-secondary)' }}>
               <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>Cómo sincronizar Google Calendar</strong>
               <ol style={{ margin: 0, paddingLeft: 18 }}>
-                <li>Cierra sesión en From.</li>
+                <li>Cierra sesión en Fromly.</li>
                 <li>Inicia sesión usando el botón <em>{t('auth.continueWithGoogle')}</em>.</li>
                 <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
               </ol>

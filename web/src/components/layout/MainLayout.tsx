@@ -545,7 +545,7 @@ export default function MainLayout() {
           import('@tauri-apps/plugin-notification').then(async ({ isPermissionGranted, requestPermission, sendNotification }) => {
             let granted = await isPermissionGranted()
             if (!granted) granted = (await requestPermission()) === 'granted'
-            if (granted) sendNotification({ title: 'From', body: `✓ ${labelForType(result.type)} añadido a tu nota de hoy` })
+            if (granted) sendNotification({ title: 'Fromly', body: `✓ ${labelForType(result.type)} añadido a tu nota de hoy` })
           }).catch(() => {})
         }
         // Si el store aún no está listo (app recién lanzada por el deep link), esperar.

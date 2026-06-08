@@ -1,14 +1,14 @@
-# From — Manual de usuario v9.6
+# Fromly — Manual de usuario v9.6
 
 > Web · Mac · iPhone · getfrom.app
 
 ---
 
-## 1. ¿Qué es From?
+## 1. ¿Qué es Fromly?
 
-From es tu segundo cerebro. Una app de notas, tareas y gestión de conocimiento personal que organiza todo lo que piensas, haces y quieres recordar en un único árbol jerarquizado, disponible en cualquier dispositivo y con IA integrada que realmente conoce tu información.
+Fromly es tu segundo cerebro. Una app de notas, tareas y gestión de conocimiento personal que organiza todo lo que piensas, haces y quieres recordar en un único árbol jerarquizado, disponible en cualquier dispositivo y con IA integrada que realmente conoce tu información.
 
-Existe para la persona que tiene demasiadas cosas en la cabeza, demasiadas apps para gestionarlas y no quiere invertir horas configurando sistemas complejos. En From, capturas, organizas y actúas desde un solo lugar.
+Existe para la persona que tiene demasiadas cosas en la cabeza, demasiadas apps para gestionarlas y no quiere invertir horas configurando sistemas complejos. En Fromly, capturas, organizas y actúas desde un solo lugar.
 
 ---
 
@@ -33,20 +33,20 @@ También puedes instalarlo como app de escritorio ligera: en Chrome o Edge pulsa
 ### Instalar en Mac
 
 1. Ve a [getfrom.app](https://getfrom.app) y descarga el archivo `From.dmg`.
-2. Abre el DMG y arrastra el icono de From a la carpeta **Aplicaciones**.
-3. Abre From desde el Launchpad o desde la carpeta Aplicaciones.
+2. Abre el DMG y arrastra el icono de Fromly a la carpeta **Aplicaciones**.
+3. Abre Fromly desde el Launchpad o desde la carpeta Aplicaciones.
 4. Si macOS advierte que no puede comprobar el desarrollador, ve a **Ajustes del sistema → Privacidad y seguridad** y pulsa "Abrir igualmente".
 5. Inicia sesión con tu cuenta.
 
-**Actualizaciones automáticas:** cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión — Actualizar` en la barra inferior de From. Un clic instala la actualización sin salir de la app. No hace falta descargar nada manualmente.
+**Actualizaciones automáticas:** cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión — Actualizar` en la barra inferior de Fromly. Un clic instala la actualización sin salir de la app. No hace falta descargar nada manualmente.
 
 ### Instalar en iPhone
 
-Busca **From — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](https://getfrom.app/ios). Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
+Busca **Fromly — Notas y PKM** en el App Store o accede desde [getfrom.app/ios](https://getfrom.app/ios). Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
 
 ### El primer arranque: qué ves
 
-Cuando entras en From por primera vez encuentras:
+Cuando entras en Fromly por primera vez encuentras:
 
 - **El árbol principal** en el centro: tu espacio de trabajo. Muestra directamente la **Agenda** — los años (2026, 2027...) desde donde navegas a meses, días y notas.
 - **El sidebar izquierdo**: tus paneles guardados y la lista de contextos.
@@ -57,9 +57,9 @@ Para empezar: haz clic en el año actual para ver tus notas del mes, o pulsa `H`
 
 ---
 
-## 3. El árbol — cómo funciona From
+## 3. El árbol — cómo funciona Fromly
 
-Todo en From vive en un único árbol. No hay carpetas, no hay archivos: cada nota, tarea, evento o recurso es un **nodo** que puede contener otros nodos hijos.
+Todo en Fromly vive en un único árbol. No hay carpetas, no hay archivos: cada nota, tarea, evento o recurso es un **nodo** que puede contener otros nodos hijos.
 
 ### Todo es un nodo
 
@@ -160,7 +160,7 @@ Al convertir un nodo en tarea (con `-t` + Enter o `⌘Enter`), siempre se crea u
 **Propiedades de tarea (panel derecho):**
 
 - **Estado**: Pendiente / En progreso / Hecho / Vencido.
-- **Fecha de vencimiento**: asígnala escribiendo en el campo de fecha con lenguaje natural. From detecta automáticamente expresiones como:
+- **Fecha de vencimiento**: asígnala escribiendo en el campo de fecha con lenguaje natural. Fromly detecta automáticamente expresiones como:
   - `hoy`, `mañana`, `pasado mañana`
   - `el lunes`, `el próximo viernes`
   - `en 3 días`, `en 2 semanas`
@@ -210,17 +210,17 @@ Los espejos se identifican visualmente con el icono ⬡ junto al texto.
 
 ### Recurso / Enlace
 
-Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube, un podcast, una página web. From extrae automáticamente el título y el tipo de contenido al pegarlo.
+Un recurso es un enlace a contenido externo: un artículo, un vídeo de YouTube, un podcast, una página web. Fromly extrae automáticamente el título y el tipo de contenido al pegarlo.
 
 **Cómo crear un recurso:**
 
 - Slash menu → `/Recurso`.
-- **Pega una URL en un nodo vacío**: From la detecta automáticamente, hace unfurl (obtiene el título real de la página), y el nodo queda con el título de la web y el icono de enlace 🔗 en el bullet. La URL se preserva en los metadatos aunque cambies el título del nodo.
+- **Pega una URL en un nodo vacío**: Fromly la detecta automáticamente, hace unfurl (obtiene el título real de la página), y el nodo queda con el título de la web y el icono de enlace 🔗 en el bullet. La URL se preserva en los metadatos aunque cambies el título del nodo.
 
 **Comportamiento del nodo de enlace:**
 
 - El bullet cambia a un **icono de cadena** 🔗 (en lugar del punto normal).
-- **Clic en el bullet** → navega a la nota del nodo en From.
+- **Clic en el bullet** → navega a la nota del nodo en Fromly.
 - El botón **↗** inline (al lado del texto) → abre la URL en el navegador externo.
 - Al editar el texto del nodo, la URL se preserva aunque cambies el título.
 
@@ -234,7 +234,7 @@ Los recursos aparecen en el bloque de recursos de la Agenda diaria para que recu
 
 ### PDF
 
-Arrastra cualquier archivo PDF desde tu ordenador a un nodo en From. El PDF se sube a la nube y queda disponible en todos tus dispositivos.
+Arrastra cualquier archivo PDF desde tu ordenador a un nodo en Fromly. El PDF se sube a la nube y queda disponible en todos tus dispositivos.
 
 **Cómo adjuntar un PDF:**
 
@@ -251,7 +251,7 @@ Al abrir un nodo PDF, aparece el visor integrado con barra de herramientas:
 | T Texto | Haz clic en el PDF para insertar texto flotante. |
 | ◻ Borrador | Elimina anotaciones. |
 
-Las anotaciones se guardan en From y se **incrustan permanentemente** en el PDF al salir. Si abres el PDF fuera de From, las anotaciones siguen ahí.
+Las anotaciones se guardan en Fromly y se **incrustan permanentemente** en el PDF al salir. Si abres el PDF fuera de Fromly, las anotaciones siguen ahí.
 
 ### Pizarra
 
@@ -377,7 +377,7 @@ También aparecen los nodos marcados como **Favoritos** para acceso rápido.
 
 ### Buscar con texto
 
-Empieza a escribir y From busca en tiempo real:
+Empieza a escribir y Fromly busca en tiempo real:
 
 - **Nombre de una nota** → navega directamente al nodo
 - **Nombre de un contexto** (ej. "trabajo") → abre el filtro de ese contexto + panel lateral
@@ -476,7 +476,7 @@ Los contextos son etiquetas que agrupan nodos relacionados más allá de la jera
 
 Escribe `@` en cualquier nodo. Se abre el picker con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
 
-Puedes asignar más de un contexto al mismo nodo. También funciona en la captura unificada (Espacio): escribe `@` y From sugiere contextos como ghost text.
+Puedes asignar más de un contexto al mismo nodo. También funciona en la captura unificada (Espacio): escribe `@` y Fromly sugiere contextos como ghost text.
 
 ### Crear y gestionar contextos
 
@@ -484,7 +484,7 @@ Puedes asignar más de un contexto al mismo nodo. También funciona en la captur
 
 **Desde el propio contexto (panel derecho)**: al seleccionar un contexto, se abre como outliner editable en la columna derecha. Añade hijos para describir el contexto, guardar instrucciones para la IA o crear sub-secciones.
 
-Los contextos son nodos raíz especiales con `_tagDefinition` internamente. No son carpetas del sistema: son nodos normales del árbol a los que From asigna función de etiqueta.
+Los contextos son nodos raíz especiales con `_tagDefinition` internamente. No son carpetas del sistema: son nodos normales del árbol a los que Fromly asigna función de etiqueta.
 
 ### Filtrar por contexto desde el sidebar
 
@@ -502,13 +502,13 @@ Dentro del contexto **Perfil IA** puedes escribir información personal que la I
 
 ### Auto-clasificación con IA
 
-From puede sugerir automáticamente el contexto más apropiado para cada nota o tarea.
+Fromly puede sugerir automáticamente el contexto más apropiado para cada nota o tarea.
 
-**Badge en tiempo real:** al crear o editar un nodo sin contexto asignado, aparece un badge pequeño `✦ NombreContexto` junto al texto. Haz clic para confirmar el contexto sugerido o seleccionar otro. From aprende de tus correcciones.
+**Badge en tiempo real:** al crear o editar un nodo sin contexto asignado, aparece un badge pequeño `✦ NombreContexto` junto al texto. Haz clic para confirmar el contexto sugerido o seleccionar otro. Fromly aprende de tus correcciones.
 
 **Filtro "Sin clasificar":** en la lista de contextos aparece una entrada especial **"Sin clasificar"** con el número de nodos pendientes. Al hacer clic, el árbol se filtra para mostrar solo esos nodos.
 
-**Clasificar todos de golpe:** bajo el filtro "Sin clasificar" aparece el botón **"✦ Clasificar todos"**. Púlsalo para que From analice en background todos los nodos históricos sin contexto. El progreso se muestra en una barra con "Clasificando… X/Y". Puedes cancelar en cualquier momento con el botón ✕.
+**Clasificar todos de golpe:** bajo el filtro "Sin clasificar" aparece el botón **"✦ Clasificar todos"**. Púlsalo para que Fromly analice en background todos los nodos históricos sin contexto. El progreso se muestra en una barra con "Clasificando… X/Y". Puedes cancelar en cualquier momento con el botón ✕.
 
 La clasificación usa IA (Claude Haiku) sin consumir tokens de tu plan.
 
@@ -536,7 +536,7 @@ Los favoritos son un marcador rápido para los nodos que usas con frecuencia.
 
 ### La Agenda — vista principal
 
-La vista de inicio de From ES la Agenda. Al abrir la app ves directamente los años (2026, 2027...). Navegar es tan sencillo como expandir el año → mes → día.
+La vista de inicio de Fromly ES la Agenda. Al abrir la app ves directamente los años (2026, 2027...). Navegar es tan sencillo como expandir el año → mes → día.
 
 La Agenda organiza el tiempo en la jerarquía: **Año → Mes → Día**. Cada día tiene su propia nota con:
 
@@ -548,7 +548,7 @@ La Agenda organiza el tiempo en la jerarquía: **Año → Mes → Día**. Cada d
 
 **Navegar a otro día:** expande el árbol de años/meses/días. También puedes navegar desde el Planificador (tecla `P`) haciendo clic en cualquier día en la Vista Año.
 
-**Mover tareas a otro día:** slash menu → `/Mover a hoy`, `/Mover a mañana` o `/Mover a fecha...`. From coloca el nodo en el día destino y deja un espejo en el origen.
+**Mover tareas a otro día:** slash menu → `/Mover a hoy`, `/Mover a mañana` o `/Mover a fecha...`. Fromly coloca el nodo en el día destino y deja un espejo en el origen.
 
 Los nodos con tareas pendientes en su interior muestran el icono 📁 (contenedor vivo) aunque estén colapsados, indicando que hay trabajo pendiente dentro.
 
@@ -584,14 +584,14 @@ Los filtros son **completamente reactivos en tiempo real**: si mueves una tarea 
 
 ### Lenguaje natural
 
-Puedes escribir directamente en lenguaje natural y From traduce tu consulta a los operadores técnicos automáticamente:
+Puedes escribir directamente en lenguaje natural y Fromly traduce tu consulta a los operadores técnicos automáticamente:
 
 - "tareas de hoy y pasadas" → `tarea hoy o vencido`
 - "recursos sin fecha" → `recurso sin-fecha`
 - "todo lo de esta semana" → `semana`
 - "favoritos pendientes" → `favorito pendiente`
 
-From usa IA (Haiku, gratuita para todos los usuarios) para interpretar la consulta. No consume tokens de tu plan.
+Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la consulta. No consume tokens de tu plan.
 
 ### Operadores disponibles
 
@@ -732,23 +732,23 @@ Puedes crear múltiples vistas para el mismo nodo. Pulsa el "+" junto a los tabs
 
 ---
 
-## 15. Magic — la inteligencia de From
+## 15. Magic — la inteligencia de Fromly
 
-Magic es la capa de inteligencia de From. La idea no es "tener IA": es que **From te entienda**. Escribes como piensas y From se encarga de lo demás — entiende qué es cada cosa, la ordena, recuerda quién eres y se anticipa. Todo en segundo plano, sin menús y sin que tengas que mantener nada. El objetivo es eliminar la fricción entre lo que piensas y lo que queda escrito, y hacerlo rápido.
+Magic es la capa de inteligencia de Fromly. La idea no es "tener IA": es que **Fromly te entienda**. Escribes como piensas y Fromly se encarga de lo demás — entiende qué es cada cosa, la ordena, recuerda quién eres y se anticipa. Todo en segundo plano, sin menús y sin que tengas que mantener nada. El objetivo es eliminar la fricción entre lo que piensas y lo que queda escrito, y hacerlo rápido.
 
 Magic tiene tres caras:
 
 1. **Te entiende mientras escribes** — clasifica, fecha y detecta el tipo de cada nota sin que toques un menú (ver más abajo y la sección 9).
-2. **Te recuerda** — construye un perfil tuyo y un conocimiento por contexto a partir de lo que escribes ("Lo que From sabe").
+2. **Te recuerda** — construye un perfil tuyo y un conocimiento por contexto a partir de lo que escribes ("Lo que Fromly sabe").
 3. **Actúa por ti** — Magic Chat, grabadora, agentes programados.
 
-### Cómo From te entiende — la capa de inteligencia
+### Cómo Fromly te entiende — la capa de inteligencia
 
-**Contextos automáticos con jerarquía.** Mientras escribes, From clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto), entendiendo la **jerarquía** de contextos y subcontextos. Una nota de "La Isla" va a "Trabajo › La Isla", no a una etiqueta plana. Si hace falta un contexto que no existe, From puede crear el subcontexto en el lugar correcto. El badge de contexto aparece junto al nodo con la sugerencia; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Agenda/Año/Mes) nunca muestran badge.
+**Contextos automáticos con jerarquía.** Mientras escribes, Fromly clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto), entendiendo la **jerarquía** de contextos y subcontextos. Una nota de "La Isla" va a "Trabajo › La Isla", no a una etiqueta plana. Si hace falta un contexto que no existe, Fromly puede crear el subcontexto en el lugar correcto. El badge de contexto aparece junto al nodo con la sugerencia; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Agenda/Año/Mes) nunca muestran badge.
 
-**"Lo que From sabe" por contexto.** Cada contexto acumula su propio conocimiento vivo, en tres apartados: **Palabras clave**, **Personas** y **Temas frecuentes**. From lo extrae solo de las notas que clasificas ahí y lo mantiene al día: cuando añades algo nuevo, **fusiona** la información nueva con la que ya había, sin duplicar, en lugar de reescribirlo todo. La actualización es proactiva (al clasificar nodos) y vuelve a aprender si sigues editando un nodo ya clasificado. Solo guarda información nueva: si no hay nada que añadir, no toca nada. Abres un contexto y From ya sabe de qué va.
+**"Lo que Fromly sabe" por contexto.** Cada contexto acumula su propio conocimiento vivo, en tres apartados: **Palabras clave**, **Personas** y **Temas frecuentes**. Fromly lo extrae solo de las notas que clasificas ahí y lo mantiene al día: cuando añades algo nuevo, **fusiona** la información nueva con la que ya había, sin duplicar, en lugar de reescribirlo todo. La actualización es proactiva (al clasificar nodos) y vuelve a aprender si sigues editando un nodo ya clasificado. Solo guarda información nueva: si no hay nada que añadir, no toca nada. Abres un contexto y Fromly ya sabe de qué va.
 
-**Tu perfil — From te recuerda.** From construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo. Filtra el ruido — **solo retiene lo que perdura**, no las tareas del día ni los problemas temporales — y sintetiza en vez de copiar literal ("Me voy a casar" → "Tiene planes de matrimonio con su pareja"). El aprendizaje se guarda aunque salgas del nodo, navegues a otra página o el nodo lo cree un agente. Abre tu perfil desde **CONTEXTOS → Mi perfil**.
+**Tu perfil — Fromly te recuerda.** Fromly construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo. Filtra el ruido — **solo retiene lo que perdura**, no las tareas del día ni los problemas temporales — y sintetiza en vez de copiar literal ("Me voy a casar" → "Tiene planes de matrimonio con su pareja"). El aprendizaje se guarda aunque salgas del nodo, navegues a otra página o el nodo lo cree un agente. Abre tu perfil desde **CONTEXTOS → Mi perfil**.
 
 **Clasificar todo lo antiguo.** En el panel de contextos, bajo "Sin clasificar", el botón **"Clasificar todos"** procesa de una vez todos los nodos antiguos sin contexto, con barra de progreso y posibilidad de cancelar.
 
@@ -775,9 +775,9 @@ Escribe en el campo y pulsa Enter para enviar.
 
 Los **Prompts** (icono ⚡ en la barra superior) son modos de conversación que tú creas y que cambian cómo te responde Magic. Un prompt es un nodo: su **contenido son sus hijos**, donde escribes las instrucciones (lo editas como cualquier nota).
 
-**Crear y editar:** abre el panel ⚡ Prompts, pulsa "Nuevo prompt…" y escribe sus instrucciones dentro. From trae dos de ejemplo: **Diario del día** y **Brainstorming**.
+**Crear y editar:** abre el panel ⚡ Prompts, pulsa "Nuevo prompt…" y escribe sus instrucciones dentro. Fromly trae dos de ejemplo: **Diario del día** y **Brainstorming**.
 
-**Variables** (From las rellena al usar el prompt): `{{fecha}}`, `{{nombre}}`, `{{contexto_actual}}`, `{{notas_hoy}}`, `{{perfil}}`. En el panel de propiedades del prompt, clic en una variable la inserta donde tengas el cursor.
+**Variables** (Fromly las rellena al usar el prompt): `{{fecha}}`, `{{nombre}}`, `{{contexto_actual}}`, `{{notas_hoy}}`, `{{perfil}}`. En el panel de propiedades del prompt, clic en una variable la inserta donde tengas el cursor.
 
 **Cómo se activa en Magic (tres formas):**
 - **Manual**: escribe `/` en Magic y elige el prompt; o el botón ✨ en iPhone.
@@ -817,7 +817,7 @@ Magic aprende de tus correcciones y se adapta a ti progresivamente.
 
 ### Ghost text — predicciones mientras escribes
 
-Mientras escribes en cualquier nodo, From muestra sugerencias en gris claro (ghost text):
+Mientras escribes en cualquier nodo, Fromly muestra sugerencias en gris claro (ghost text):
 
 - Si detecta un **verbo de acción** o una expresión que suena a tarea → sugiere convertir el nodo en tarea. Pulsa `Tab` para aceptar.
 - Si detecta una **fecha en lenguaje natural** (`mañana`, `el lunes`, `15 junio`) → sugiere esa fecha como vencimiento. Pulsa `Tab` para aceptar. Pulsar `Enter` después crea un nodo hermano debajo.
@@ -827,7 +827,7 @@ Personaliza qué palabras activan estas sugerencias en **Ajustes → Prediccione
 
 ### Códigos de variables en prompts
 
-Dentro de cualquier agente o prompt puedes usar variables que From resuelve antes de enviar a la IA:
+Dentro de cualquier agente o prompt puedes usar variables que Fromly resuelve antes de enviar a la IA:
 
 | Código | Se reemplaza por |
 |---|---|
@@ -863,7 +863,7 @@ Los agentes se configuran en su panel de propiedades:
 
 ## 16. El Planificador
 
-El Planificador es la vista de calendario de From. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
+El Planificador es la vista de calendario de Fromly. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
 ### Dos vistas
 
@@ -902,7 +902,7 @@ Si tienes Google Calendar conectado, el planificador crea y actualiza eventos au
 - **Mover o redimensionar** el bloque → el evento de Google Calendar se actualiza al instante.
 - **Quitar la hora** (clic derecho → "Quitar hora") → el evento de Google Calendar se elimina.
 
-Los eventos de Google Calendar también se muestran en el planificador con su color original y pueden moverse y redimensionarse directamente desde From.
+Los eventos de Google Calendar también se muestran en el planificador con su color original y pueden moverse y redimensionarse directamente desde Fromly.
 
 ### Clic derecho sobre un bloque
 
@@ -930,8 +930,8 @@ Ve a **Ajustes → Integraciones → Google Calendar** y sigue el proceso de aut
 ### Cómo funciona
 
 - Tus eventos de Google Calendar aparecen en el Planificador con el color de cada calendario.
-- Crear un evento en From lo crea también en Google Calendar.
-- Editar o eliminar un evento funciona en ambas direcciones: lo que cambias en From se refleja en Google Calendar, y viceversa.
+- Crear un evento en Fromly lo crea también en Google Calendar.
+- Editar o eliminar un evento funciona en ambas direcciones: lo que cambias en Fromly se refleja en Google Calendar, y viceversa.
 - Los colores de tus calendarios de Google se respetan.
 - La sincronización tiene en cuenta tu zona horaria local.
 
@@ -968,7 +968,7 @@ Al mover un nodo a otro día, el nodo se traslada físicamente al destino y el s
 
 ---
 
-## 19. From para iPhone
+## 19. Fromly para iPhone
 
 La app de iPhone está disponible en el App Store. Organiza en cinco pestañas accesibles desde la barra inferior:
 
@@ -993,7 +993,7 @@ Debajo de los chips aparece el resultado con el número de nodos encontrados y l
 
 ### Pestaña 2 — Buscar
 
-Búsqueda full-text en tiempo real con auto-foco de teclado. Escribe cualquier término y From busca en todo tu árbol al instante.
+Búsqueda full-text en tiempo real con auto-foco de teclado. Escribe cualquier término y Fromly busca en todo tu árbol al instante.
 
 El estado vacío (antes de escribir) muestra tus **Favoritos** para acceso inmediato a los nodos que usas con más frecuencia.
 
@@ -1019,7 +1019,7 @@ Todo lo que capturas en iPhone aparece en web y Mac en tiempo real. Los cambios 
 
 ### Backup automático en el servidor
 
-From crea un snapshot completo de tus datos en el servidor cada 2 horas (solo cuando hay cambios). Se conservan los últimos **12 snapshots** (~24 horas de historial continuo).
+Fromly crea un snapshot completo de tus datos en el servidor cada 2 horas (solo cuando hay cambios). Se conservan los últimos **12 snapshots** (~24 horas de historial continuo).
 
 Puedes crear un snapshot manual cuando quieras: **Ajustes → Datos → Backups → "Crear snapshot ahora"**.
 
@@ -1034,12 +1034,12 @@ En **Ajustes → Exportar** puedes descargar todos tus datos en cualquier moment
 - **JSON**: formato estructurado con todos los metadatos (para uso programático o migraciones).
 - **Markdown**: una carpeta de archivos `.md`, uno por nodo con cuerpo. Legible en cualquier editor.
 
-Tus datos no están atrapados en From. La exportación es completa, sin restricciones y funciona en el plan gratuito.
+Tus datos no están atrapados en Fromly. La exportación es completa, sin restricciones y funciona en el plan gratuito.
 
 ### Privacidad
 
 - La IA solo accede al contenido que está en el contexto de la conversación activa: el nodo abierto, sus hijos y los contextos que tengas activos. No escanea todo el árbol de forma automática.
-- El backup local en Mac se guarda en `Application Support/From/Backups/` en tu propio ordenador.
+- El backup local en Mac se guarda en `Application Support/Fromly/Backups/` en tu propio ordenador.
 
 ---
 
@@ -1084,7 +1084,7 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 
 ### Idioma
 
-From está disponible en español e inglés. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo.
+Fromly está disponible en español e inglés. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo.
 
 Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e English. El cambio se aplica de inmediato sin necesidad de recargar.
 
@@ -1102,7 +1102,7 @@ Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e
 
 ### Magic
 
-Todo lo que From sabe de ti vive en tu **Perfil de IA** (una nota editable). Desde aquí, «Ver y editar» abre lo que From ha aprendido por su cuenta, y se lista lo que sabe **por cada contexto**. La limpieza es automática. Magic siempre está activo (no hay interruptores).
+Todo lo que Fromly sabe de ti vive en tu **Perfil de IA** (una nota editable). Desde aquí, «Ver y editar» abre lo que Fromly ha aprendido por su cuenta, y se lista lo que sabe **por cada contexto**. La limpieza es automática. Magic siempre está activo (no hay interruptores).
 
 ### Atajos
 
@@ -1123,13 +1123,13 @@ Token de API, barra de menús (Mac), Atajo de Apple, Raycast, Chrome y Claude. V
 
 ### Importar
 
-From importa desde otras apps con un **asistente paso a paso**. Ve a **Ajustes → Importar** y elige la fuente:
+Fromly importa desde otras apps con un **asistente paso a paso**. Ve a **Ajustes → Importar** y elige la fuente:
 
 - **Obsidian** — sube la carpeta del vault (.md). Se respeta la estructura de subcarpetas.
 - **Notion** — exporta a «Markdown & CSV», descomprime el .zip y sube la carpeta.
 - **Apple Notes** — pásalas antes a .txt/.md y súbelas.
 - **Markdown / texto** — uno o varios archivos .md/.txt, o una carpeta entera.
-- **From (JSON)** — una copia de seguridad exportada desde From.
+- **Fromly (JSON)** — una copia de seguridad exportada desde Fromly.
 
 Lo importado se crea en un nodo **«📥 Importado [fecha]»** (con encabezados → secciones y viñetas anidadas), para que lo revises y reorganices sin tocar tus notas actuales.
 
@@ -1137,13 +1137,13 @@ Lo importado se crea en un nodo **«📥 Importado [fecha]»** (con encabezados 
 
 Una plantilla es un **nodo hijo de 📋 Plantillas**: la editas como cualquier nota. Al abrirla, en la columna derecha puedes:
 - **Auto-aplicar en nota diaria**: cada día nuevo arranca con su contenido.
-- **Nota recurrente**: cada X días/semanas/meses (y el día), From inserta la plantilla como una **sección dentro de la nota de ese día** (ideal para revisión semanal/mensual).
+- **Nota recurrente**: cada X días/semanas/meses (y el día), Fromly inserta la plantilla como una **sección dentro de la nota de ese día** (ideal para revisión semanal/mensual).
 
 ---
 
 ## 23. Conexión con Claude (MCP)
 
-From está en el **directorio oficial de conectores de Claude** (Anthropic). Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
+Fromly está en el **directorio oficial de conectores de Claude** (Anthropic). Una vez conectado, Claude guarda automáticamente documentos, tareas y resúmenes de conversación en tu vault sin que tengas que pedirlo.
 
 ### Cómo conectar — directorio de Claude (recomendado)
 
@@ -1151,15 +1151,15 @@ Funciona desde cualquier dispositivo: claude.ai, iPhone, Android y Claude Deskto
 
 1. Abre Claude (claude.ai, app de iPhone/Android o Claude Desktop).
 2. Ve a **Ajustes → Conectores**.
-3. Busca **"From"** en el directorio.
-4. Pulsa **Conectar** e inicia sesión con tu cuenta de From mediante OAuth.
+3. Busca **"Fromly"** en el directorio.
+4. Pulsa **Conectar** e inicia sesión con tu cuenta de Fromly mediante OAuth.
 5. Listo — Claude puede guardar notas y tareas en tu vault desde ese momento.
 
 No necesitas instalar extensiones, copiar tokens ni introducir URLs manualmente.
 
 ### Cómo conectar — Claude Code (CLI)
 
-Para Claude Code (la CLI de terminal), configura la conexión manualmente. Primero genera tu token en **From → Ajustes → Accesorios**. Luego añade la entrada `from` a `~/.claude.json` bajo la clave `mcpServers`:
+Para Claude Code (la CLI de terminal), configura la conexión manualmente. Primero genera tu token en **Fromly → Ajustes → Accesorios**. Luego añade la entrada `from` a `~/.claude.json` bajo la clave `mcpServers`:
 
 ```json
 "mcpServers": {
@@ -1171,9 +1171,9 @@ Para Claude Code (la CLI de terminal), configura la conexión manualmente. Prime
 }
 ```
 
-Reinicia Claude Code. From funciona automáticamente desde ese momento.
+Reinicia Claude Code. Fromly funciona automáticamente desde ese momento.
 
-### Qué hace Claude con From automáticamente
+### Qué hace Claude con Fromly automáticamente
 
 - **Guarda documentos y análisis** que genera durante la conversación.
 - **Crea tareas** cuando mencionas acciones pendientes.
@@ -1187,22 +1187,22 @@ Reinicia Claude Code. From funciona automáticamente desde ese momento.
 "¿Qué tareas tengo pendientes para hoy?"
 "Añade una tarea para llamar a Adrián mañana a las 10"
 "Busca en mis notas todo lo relacionado con el proyecto X"
-fin  →  Claude guarda el resumen de la conversación en From automáticamente
+fin  →  Claude guarda el resumen de la conversación en Fromly automáticamente
 ```
 
 ---
 
 ## 23b. Accesorios — captura desde cualquier sitio
 
-From no te obliga a tener la app delante. Estos accesorios mandan lo que tengas a tu **nota de hoy**, y la inteligencia de From se encarga de clasificarlo (tipo, fecha, contexto). Todos —salvo la barra de menús— se conectan con el **token de API** de tu cuenta.
+Fromly no te obliga a tener la app delante. Estos accesorios mandan lo que tengas a tu **nota de hoy**, y la inteligencia de Fromly se encarga de clasificarlo (tipo, fecha, contexto). Todos —salvo la barra de menús— se conectan con el **token de API** de tu cuenta.
 
 ### El token de API
-Es la llave que usan Raycast, Chrome y Claude Code (CLI) para hablar con tu From. Se genera y copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el anterior). Vive 1 año. Para Claude en web, iPhone, Android y Desktop, no necesitas el token — usa el directorio de conectores (ver sección 23).
+Es la llave que usan Raycast, Chrome y Claude Code (CLI) para hablar con tu Fromly. Se genera y copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el anterior). Vive 1 año. Para Claude en web, iPhone, Android y Desktop, no necesitas el token — usa el directorio de conectores (ver sección 23).
 
 ### Barra de menús (Mac)
-From vive en la barra de menús del Mac con su icono (el árbol).
-- **Clic en el icono** (o menú → *Captura rápida*) → abre una ventana de captura tipo Spotlight: escribe una nota, tarea o evento y cae en tu nota de hoy. From detecta el tipo, la fecha y los `@contextos` que escribas.
-- Cerrar la ventana principal **no** cierra From: sigue disponible en la barra de menús.
+Fromly vive en la barra de menús del Mac con su icono (el árbol).
+- **Clic en el icono** (o menú → *Captura rápida*) → abre una ventana de captura tipo Spotlight: escribe una nota, tarea o evento y cae en tu nota de hoy. Fromly detecta el tipo, la fecha y los `@contextos` que escribas.
+- Cerrar la ventana principal **no** cierra Fromly: sigue disponible en la barra de menús.
 - **Ocultarlo**: Ajustes → Accesorios → desactiva "Mostrar icono en la barra de menús", o clic derecho en el icono → *Ocultar este icono*.
 
 ### Atajo de Apple (tecla global)
@@ -1214,17 +1214,17 @@ Para capturar desde **cualquier app** con una sola tecla.
 Por debajo usa el enlace `from://capture?text=…&silent=1`. Si prefieres montarlo a mano, crea un Atajo con la acción *"Abrir URL"* usando ese enlace y sustituye `[Texto]` por *"Pedir texto"* o *"Portapapeles"*.
 
 ### Raycast
-Extensión de From para [Raycast](https://raycast.com):
-- **Create in From** — escribe y cae en tu nota de hoy (From decide si es nota, tarea o evento).
-- **Search From** — busca en todo tu vault y abre el resultado en la app o en la web.
+Extensión de Fromly para [Raycast](https://raycast.com):
+- **Create in Fromly** — escribe y cae en tu nota de hoy (Fromly decide si es nota, tarea o evento).
+- **Search Fromly** — busca en todo tu vault y abre el resultado en la app o en la web.
 - **Open Today's Note** — abre tu nota diaria.
 
 Instálala desde la Raycast Store y pega tu token de API en sus preferencias (Ajustes → Accesorios → Raycast → copiar token).
 
 ### Chrome
-Extensión de From para Chrome:
+Extensión de Fromly para Chrome:
 - **Clic en el icono** → guarda la URL de la pestaña actual en tu nota de hoy (se convierte en enlace).
-- **Selecciona texto → clic derecho → "Enviar selección a From"** → lo guarda como nodo.
+- **Selecciona texto → clic derecho → "Enviar selección a Fromly"** → lo guarda como nodo.
 
 Instálala desde la Chrome Web Store, abre sus **Opciones** y pega tu token de API.
 
@@ -1261,36 +1261,36 @@ Si tienes código de beta o cupón, introdúcelo en el checkout al comprar. Los 
 
 ## 25. Canal de Telegram — @FromMagicBot
 
-Suscríbete al canal oficial de From en Telegram para recibir tips semanales sobre cómo sacar el máximo partido a la app: atajos, flujos de trabajo, casos de uso con Magic y novedades.
+Suscríbete al canal oficial de Fromly en Telegram para recibir tips semanales sobre cómo sacar el máximo partido a la app: atajos, flujos de trabajo, casos de uso con Magic y novedades.
 
 **Cómo unirte:** busca **@FromMagicBot** en Telegram o accede desde el enlace en getfrom.app.
 
-Los tips se envían de forma automática sin necesidad de interacción. Es un canal de difusión, ideal para aprender From de forma gradual sin saturar tu bandeja de entrada.
+Los tips se envían de forma automática sin necesidad de interacción. Es un canal de difusión, ideal para aprender Fromly de forma gradual sin saturar tu bandeja de entrada.
 
 ---
 
 ## Preguntas frecuentes
 
-**¿Puedo usar From sin conexión?**
+**¿Puedo usar Fromly sin conexión?**
 Sí. La app Mac e iPhone funciona sin conexión. Los cambios se sincronizan automáticamente cuando recuperas la conexión.
 
 **¿Qué pasa si supero los 1.000 nodos en el plan gratuito?**
 Puedes seguir leyendo tus notas, pero no crear nuevas hasta que elimines nodos o actualices a Pro.
 
 **¿Dónde se guardan mis datos?**
-En los servidores de From (Europa) y, en Mac, también en un backup local en tu propio ordenador. Puedes exportar todo en JSON o Markdown desde Ajustes en cualquier momento.
+En los servidores de Fromly (Europa) y, en Mac, también en un backup local en tu propio ordenador. Puedes exportar todo en JSON o Markdown desde Ajustes en cualquier momento.
 
 **¿La IA lee todas mis notas?**
 No. La IA solo accede al contenido que está en el contexto de la conversación activa: el nodo abierto, sus hijos y los contextos que tengas activos. No escanea el árbol completo de forma automática.
 
 **¿Puedo importar mis notas de Obsidian, Notion u otras apps?**
-Sí. Ve a **Ajustes → Importar**. From acepta exports de Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes y carpetas de Markdown en general.
+Sí. Ve a **Ajustes → Importar**. Fromly acepta exports de Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes y carpetas de Markdown en general.
 
 **¿Los espejos (⬡) sincronizan en ambas direcciones?**
 Sí. Editar el espejo edita el original, y cualquier cambio en el original se refleja en todos sus espejos inmediatamente.
 
-**¿Puedo compartir una nota con alguien que no tiene From?**
-Sí. Clic derecho sobre el nodo → "Publicar". From genera una URL pública del tipo `getfrom.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
+**¿Puedo compartir una nota con alguien que no tiene Fromly?**
+Sí. Clic derecho sobre el nodo → "Publicar". Fromly genera una URL pública del tipo `getfrom.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
 
 **¿Cómo funciona la sincronización entre dispositivos?**
 Los cambios se sincronizan en tiempo real (delta: solo viajan los cambios, no toda la base de datos). En condiciones normales, los cambios aparecen en segundos en todos tus dispositivos.
@@ -1302,7 +1302,7 @@ No. Los snapshots automáticos son parte del servicio en todos los planes. El hi
 Desde **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). Tu acceso Pro se mantiene hasta el final del periodo pagado.
 
 **¿Puedo usar mis propias claves de API de IA?**
-Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de From.
+Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de Fromly.
 
 **¿Qué es el filtro `bucle`?**
 El operador `bucle` muestra los nodos (proyectos, áreas, notas) que tienen tareas pendientes en su interior. Útil para ver de un vistazo qué contenedores tienen trabajo sin terminar. En el árbol, estos nodos muestran el icono 📁 aunque estén colapsados.

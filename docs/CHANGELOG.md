@@ -1,4 +1,4 @@
-# Changelog — From
+# Changelog — Fromly
 
 Historial de versiones. Plataformas: Web · Mac · iPhone.
 
@@ -26,7 +26,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.232 — 8 junio 2026 · Importar desde Obsidian, Notion, Apple Notes… + Exportar más simple
 
-- **Importar** rediseñado: elige la **fuente** (Obsidian, Notion, Apple Notes, Markdown/texto, From JSON) y sigue un **paso a paso**. Sube archivos o una carpeta entera; From respeta la estructura de subcarpetas y convierte el Markdown en notas y bullets, todo bajo un nodo «📥 Importado [fecha]» para que lo reorganices sin tocar tus notas.
+- **Importar** rediseñado: elige la **fuente** (Obsidian, Notion, Apple Notes, Markdown/texto, Fromly JSON) y sigue un **paso a paso**. Sube archivos o una carpeta entera; Fromly respeta la estructura de subcarpetas y convierte el Markdown en notas y bullets, todo bajo un nodo «📥 Importado [fecha]» para que lo reorganices sin tocar tus notas.
 - **Exportar**: quitada la opción «datos locales» (confusa) — una sola exportación (todo está en el servidor).
 
 ---
@@ -63,7 +63,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.227 — 8 junio 2026 · Plantillas recurrentes (revisión semanal/mensual)
 
-- Una plantilla puede ser **recurrente**: cada lunes (o el día de la semana que elijas), o cada día N del mes. Cuando llega ese día, From inserta la plantilla como una **sección dentro de la nota de ese día** (no reemplaza el día). Ideal para revisión semanal/mensual con un formato fijo.
+- Una plantilla puede ser **recurrente**: cada lunes (o el día de la semana que elijas), o cada día N del mes. Cuando llega ese día, Fromly inserta la plantilla como una **sección dentro de la nota de ese día** (no reemplaza el día). Ideal para revisión semanal/mensual con un formato fijo.
 
 ---
 
@@ -82,35 +82,35 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.224 — 8 junio 2026 · Conocimiento por contexto: memoria que se acumula y se usa
 
-- El conocimiento que From guarda de cada contexto ahora **se acumula** (antes se sobrescribía): une lo nuevo con lo anterior, deduplica y se mantiene acotado (no crece sin control).
-- Y lo más importante: **From ya usa ese conocimiento en el chat** cuando trabajas en ese contexto (antes no se inyectaba). Así "conoce" mejor cada proyecto.
+- El conocimiento que Fromly guarda de cada contexto ahora **se acumula** (antes se sobrescribía): une lo nuevo con lo anterior, deduplica y se mantiene acotado (no crece sin control).
+- Y lo más importante: **Fromly ya usa ese conocimiento en el chat** cuando trabajas en ese contexto (antes no se inyectaba). Así "conoce" mejor cada proyecto.
 
 ---
 
 ## Web v9.6.223 — 8 junio 2026 · Magic: conocimiento por contexto + limpieza de nodo antiguo
 
-- En Ajustes › Magic ahora también ves **lo que From sabe por cada contexto** (resumen que se actualiza solo). Cada uno se abre para revisarlo.
-- Limpiado un nodo antiguo "🧠 Lo que From sabe" que quedaba suelto en el Perfil de versiones anteriores.
+- En Ajustes › Magic ahora también ves **lo que Fromly sabe por cada contexto** (resumen que se actualiza solo). Cada uno se abre para revisarlo.
+- Limpiado un nodo antiguo "🧠 Lo que Fromly sabe" que quedaba suelto en el Perfil de versiones anteriores.
 
 ---
 
-## Web v9.6.222 — 8 junio 2026 · Magic: ver lo que From ha aprendido por su cuenta
+## Web v9.6.222 — 8 junio 2026 · Magic: ver lo que Fromly ha aprendido por su cuenta
 
-- "Ver y editar" lleva directamente a **lo que From ha escrito de forma autónoma** (no a todo tu perfil, para que no veas solo lo que escribiste tú).
+- "Ver y editar" lleva directamente a **lo que Fromly ha escrito de forma autónoma** (no a todo tu perfil, para que no veas solo lo que escribiste tú).
 - Quitado el botón "Limpiar y compactar": la limpieza es **automática**, no necesitas hacer nada.
-- Texto reescrito: "From aprende datos duraderos sobre ti…".
+- Texto reescrito: "Fromly aprende datos duraderos sobre ti…".
 
 ---
 
 ## Web v9.6.221 — 8 junio 2026 · Magic: el contador refleja todo tu perfil
 
-- Antes decía "aún no ha guardado nada" aunque tu Perfil de IA tuviera contenido: solo contaba el bucket auto-extraído. Ahora cuenta **todo tu Perfil** (lo que escribes + lo auto-aprendido + las reglas) y explica que From también usa tus contextos y notas recientes.
+- Antes decía "aún no ha guardado nada" aunque tu Perfil de IA tuviera contenido: solo contaba el bucket auto-extraído. Ahora cuenta **todo tu Perfil** (lo que escribes + lo auto-aprendido + las reglas) y explica que Fromly también usa tus contextos y notas recientes.
 
 ---
 
-## Web v9.6.220 — 8 junio 2026 · Magic: todo lo que From sabe de ti, en un solo sitio
+## Web v9.6.220 — 8 junio 2026 · Magic: todo lo que Fromly sabe de ti, en un solo sitio
 
-- Unificadas "Lo que From sabe sobre ti" y "Lo que Magic ha aprendido de ti" en **una sola sección**: From y Magic son lo mismo. Todo (lo que aprende de tus notas/conversaciones + lo que le enseñas) vive en tu **Perfil de IA**, que es una nota normal: pulsa **"Ver y editar"** para verlo y editarlo en bullets. Sigue el botón "Limpiar y compactar".
+- Unificadas "Lo que Fromly sabe sobre ti" y "Lo que Magic ha aprendido de ti" en **una sola sección**: Fromly y Magic son lo mismo. Todo (lo que aprende de tus notas/conversaciones + lo que le enseñas) vive en tu **Perfil de IA**, que es una nota normal: pulsa **"Ver y editar"** para verlo y editarlo en bullets. Sigue el botón "Limpiar y compactar".
 
 ---
 
@@ -165,7 +165,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.211 — 8 junio 2026 · "Notas" cuenta notas reales (con contenido)
 
-- El contador de **Notas** ahora cuenta **notas reales** (nodos con contenido dentro), no cada párrafo o línea suelta. En From todo es un nodo, pero una nota es un nodo que contiene otros. Los **nodos totales** siguen viéndose en la barra inferior («Nodos en tu árbol»).
+- El contador de **Notas** ahora cuenta **notas reales** (nodos con contenido dentro), no cada párrafo o línea suelta. En Fromly todo es un nodo, pero una nota es un nodo que contiene otros. Los **nodos totales** siguen viéndose en la barra inferior («Nodos en tu árbol»).
 
 ---
 
@@ -192,13 +192,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.206 / Mac v9.5.43 — 8 junio 2026 · Perfil global vs contexto
 
-- Lo que From aprende ahora va **al sitio correcto**: si escribes dentro de un proyecto/contexto, los datos **específicos de ese proyecto se quedan en su contexto** y solo lo **global sobre ti** (relaciones, metas, situación) entra en tu Perfil. Menos ruido en el perfil, más foco.
+- Lo que Fromly aprende ahora va **al sitio correcto**: si escribes dentro de un proyecto/contexto, los datos **específicos de ese proyecto se quedan en su contexto** y solo lo **global sobre ti** (relaciones, metas, situación) entra en tu Perfil. Menos ruido en el perfil, más foco.
 
 ---
 
 ## Web v9.6.205 / Mac v9.5.42 — 8 junio 2026 · Curador del perfil (aprende sin acumular basura)
 
-- From sigue **aprendiendo cosas duraderas sobre ti** (de tus notas y conversaciones), pero ahora un **curador** mantiene el perfil limpio: **deduplica, fusiona y se queda con lo esencial**, automáticamente cuando crece. Botón **«Limpiar y compactar»** en Ajustes › Magic para hacerlo a mano.
+- Fromly sigue **aprendiendo cosas duraderas sobre ti** (de tus notas y conversaciones), pero ahora un **curador** mantiene el perfil limpio: **deduplica, fusiona y se queda con lo esencial**, automáticamente cuando crece. Botón **«Limpiar y compactar»** en Ajustes › Magic para hacerlo a mano.
 
 ---
 
@@ -211,7 +211,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.203 / Mac v9.5.40 — 8 junio 2026 · La nota del agente es lo que ejecuta
 
-- Ahora **lo que escribes en la nota de un agente es exactamente lo que ejecuta** (antes corría una copia interna congelada, y los agentes que creabas tú salían vacíos). Al ejecutar o programar, From toma el texto de la nota como instrucción — también para las ejecuciones automáticas del servidor.
+- Ahora **lo que escribes en la nota de un agente es exactamente lo que ejecuta** (antes corría una copia interna congelada, y los agentes que creabas tú salían vacíos). Al ejecutar o programar, Fromly toma el texto de la nota como instrucción — también para las ejecuciones automáticas del servidor.
 
 ---
 
@@ -233,7 +233,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 ## Web v9.6.198 / Mac v9.5.37 — 8 junio 2026 · Prompts en Magic + Ajustes en el panel derecho
 
 - **Prompts en Magic**: al abrir Magic, los prompts aparecen como **lista clicable** (igual que la columna de filtros). Pulsas uno y se activa. Se ha **eliminado el `/`** (ya no hace falta el comando slash para activarlos).
-- **Ajustes integrados en From**: la pantalla de Ajustes ahora vive dentro del layout de tres columnas: la **lista de pestañas** (Cuenta, Apariencia, IA, Productividad, Integraciones, Datos) está en la **columna derecha** y el **contenido de cada pestaña en el centro**. Coherente con cómo se muestran agentes, prompts y contextos.
+- **Ajustes integrados en Fromly**: la pantalla de Ajustes ahora vive dentro del layout de tres columnas: la **lista de pestañas** (Cuenta, Apariencia, IA, Productividad, Integraciones, Datos) está en la **columna derecha** y el **contenido de cada pestaña en el centro**. Coherente con cómo se muestran agentes, prompts y contextos.
 
 ---
 
@@ -282,7 +282,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.191 / Mac v9.5.30 — 7 junio 2026 · Las raíces de sistema no se pueden eliminar
 
-**Protección de estructura.** Los nodos de sistema (📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes, 📋 Plantillas, 🗑 Papelera, 🧠 Perfil de IA, 🏠 From) ya **no se pueden eliminar** — son la estructura de From. Al intentarlo, aparece un aviso y no pasa nada. Así nunca te quedas sin sitio donde crear una plantilla, un agente, etc. (Los duplicados sueltos sí se pueden limpiar normalmente.)
+**Protección de estructura.** Los nodos de sistema (📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes, 📋 Plantillas, 🗑 Papelera, 🧠 Perfil de IA, 🏠 Fromly) ya **no se pueden eliminar** — son la estructura de Fromly. Al intentarlo, aparece un aviso y no pasa nada. Así nunca te quedas sin sitio donde crear una plantilla, un agente, etc. (Los duplicados sueltos sí se pueden limpiar normalmente.)
 
 ---
 
@@ -292,7 +292,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 - **Perfil de IA fuera de Contextos**: nunca fue un contexto. Ahora es independiente (no aparece en la lista de contextos ni en el árbol) y se abre desde el menú.
 - **Columna derecha como inspector**: quitados los accesos a Contextos/Prompts/Agentes (se navegan por el árbol). Queda filtro, Magic y grabadora, más las propiedades del nodo abierto.
 - **"Sin clasificar" en Filtros**: el filtro de notas sin contexto vive ahora junto al resto de filtros, en la columna de la derecha.
-- **Contexto solo en la Agenda**: From solo propone contexto a lo que escribes en tu día a día (no a contextos, plantillas, agentes…). Lo que cuelga de un nodo hereda su contexto.
+- **Contexto solo en la Agenda**: Fromly solo propone contexto a lo que escribes en tu día a día (no a contextos, plantillas, agentes…). Lo que cuelga de un nodo hereda su contexto.
 - **Limpieza de chips heredados**: los contextos ya no muestran un chip de sí mismos (etiquetas de contexto antiguas eliminadas automáticamente).
 
 ---
@@ -305,11 +305,11 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.187 / Mac v9.5.27 — 7 junio 2026 · El árbol abre colapsado
 
-**Empiezas con la vista limpia.** Al abrir From, el árbol arranca **colapsado**: ves solo los nodos de primer nivel y vas desplegando lo que necesites. Lo que expandas se mantiene mientras usas la app; la próxima vez que abras, vuelve a estar recogido. (Es solo tu vista del momento: no se sincroniza ni cambia nada entre dispositivos.)
+**Empiezas con la vista limpia.** Al abrir Fromly, el árbol arranca **colapsado**: ves solo los nodos de primer nivel y vas desplegando lo que necesites. Lo que expandas se mantiene mientras usas la app; la próxima vez que abras, vuelve a estar recogido. (Es solo tu vista del momento: no se sincroniza ni cambia nada entre dispositivos.)
 
 ---
 
-## Web v9.6.185 / Mac v9.5.26 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 From
+## Web v9.6.185 / Mac v9.5.26 / iPhone v2.4 — 7 junio 2026 · Una sola raíz: 🏠 Fromly
 
 **Tu segundo cerebro, todo en un mismo árbol.** La pantalla principal ahora muestra, al mismo nivel, **📅 Agenda, 🧠 Contexto, ⚡ Prompts, 🤖 Agentes y 📋 Plantillas**. Antes Agentes, Prompts, Plantillas y Contextos estaban escondidos en menús; ahora son parte del árbol: los despliegas, eliges uno y lo editas ahí mismo.
 
@@ -334,7 +334,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ## Web v9.6.179 / Mac v9.5.22 / iPhone v2.3 — 7 junio 2026 · Migración a op-log completada
 
-From ya funciona **100% sobre el registro de operaciones**, en todos los dispositivos. La carga inicial viene del op-log (`/ops/bootstrap`) y los cambios se propagan como operaciones en tiempo real. El antiguo mecanismo de sincronización por estado — que comparaba el árbol entero y podía inferir borrados — **queda retirado**: el servidor ya nunca infiere un borrado. Es la culminación de la migración estilo WorkFlowy, blindada con tests automatizados del arranque.
+Fromly ya funciona **100% sobre el registro de operaciones**, en todos los dispositivos. La carga inicial viene del op-log (`/ops/bootstrap`) y los cambios se propagan como operaciones en tiempo real. El antiguo mecanismo de sincronización por estado — que comparaba el árbol entero y podía inferir borrados — **queda retirado**: el servidor ya nunca infiere un borrado. Es la culminación de la migración estilo WorkFlowy, blindada con tests automatizados del arranque.
 
 - **Tiempo real también desde Claude y agentes.** Lo que creas con los conectores de Claude (MCP) o tus agentes del servidor (p. ej. el informe de mercado) ahora aparece al instante en tus dispositivos, no solo al recargar.
 - **iPhone v2.3** con el mismo motor (subida a la App Store en curso).
@@ -343,7 +343,7 @@ From ya funciona **100% sobre el registro de operaciones**, en todos los disposi
 
 ## Web v9.6.173 / Mac v9.5.21 / iPhone — 7 junio 2026 · Sincronización por operaciones (op-log)
 
-**Nuevo motor de sincronización.** From deja atrás la sincronización por estado (que comparaba el árbol entero y podía inferir borrados) y pasa a un **registro de operaciones** estilo WorkFlowy: cada cambio (crear, editar, mover, borrar) es una operación inmutable que se añade a un log. El servidor **nunca infiere un borrado** — solo aplica lo que tú haces. Esto elimina de raíz toda la clase de bugs de duplicación y pérdida de nodos.
+**Nuevo motor de sincronización.** Fromly deja atrás la sincronización por estado (que comparaba el árbol entero y podía inferir borrados) y pasa a un **registro de operaciones** estilo WorkFlowy: cada cambio (crear, editar, mover, borrar) es una operación inmutable que se añade a un log. El servidor **nunca infiere un borrado** — solo aplica lo que tú haces. Esto elimina de raíz toda la clase de bugs de duplicación y pérdida de nodos.
 
 - **Tiempo real entre dispositivos.** Los cambios en un dispositivo aparecen en los demás aplicando solo las operaciones nuevas (deltas), sin reconstruir el árbol. Sin parpadeos.
 - **Funciona en web, Mac e iPhone** con el mismo motor (relojes lógicos híbridos, resolución por campo, marcas de borrado).
@@ -363,13 +363,13 @@ From ya funciona **100% sobre el registro de operaciones**, en todos los disposi
 
 ---
 
-## Web v9.6.152 — 5 junio 2026 · From disponible en el directorio oficial de conectores de Claude
+## Web v9.6.152 — 5 junio 2026 · Fromly disponible en el directorio oficial de conectores de Claude
 
-From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes conectar Claude con tu vault desde cualquier dispositivo sin instalar nada ni copiar tokens.
+Fromly ya está en el directorio oficial de conectores de Anthropic. Ahora puedes conectar Claude con tu vault desde cualquier dispositivo sin instalar nada ni copiar tokens.
 
-- **Directorio de Claude**: busca "From" en Claude → Ajustes → Conectores, pulsa Conectar e inicia sesión con tu cuenta. Funciona en claude.ai, Claude Desktop, iPhone y Android.
-- **OAuth 2.0**: la autenticación es automática — Claude te redirige a From para que inicies sesión, sin tokens manuales.
-- **Streamable HTTP**: el servidor MCP de From ahora soporta el transporte Streamable HTTP/SSE requerido por el directorio de Anthropic.
+- **Directorio de Claude**: busca "Fromly" en Claude → Ajustes → Conectores, pulsa Conectar e inicia sesión con tu cuenta. Funciona en claude.ai, Claude Desktop, iPhone y Android.
+- **OAuth 2.0**: la autenticación es automática — Claude te redirige a Fromly para que inicies sesión, sin tokens manuales.
+- **Streamable HTTP**: el servidor MCP de Fromly ahora soporta el transporte Streamable HTTP/SSE requerido por el directorio de Anthropic.
 - **UI actualizada**: eliminado el flujo antiguo (.dxt, token manual, URL personalizada) en web, iPhone y documentación. Solo se mantiene como opción avanzada para Claude Code (CLI).
 
 ---
@@ -377,15 +377,15 @@ From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes 
 ## Web v9.6.151 — 5 junio 2026 · OAuth 2.0 para Claude + página de consentimiento
 
 - Implementado flujo OAuth 2.0 completo para el conector de Claude: endpoints `/auth/claude/authorize`, `/auth/claude/token` (PKCE S256) y discovery `/.well-known/oauth-authorization-server`.
-- Nueva página `/app/claude-connect` — pantalla de consentimiento "Conectar From con Claude".
+- Nueva página `/app/claude-connect` — pantalla de consentimiento "Conectar Fromly con Claude".
 - Servidor MCP: herramientas actualizadas con `title` y anotaciones `readOnlyHint`/`destructiveHint` en todas las tools.
 
 ---
 
 ## Web v9.6.149 — 5 junio 2026 · Planificador: eliminar evento sincroniza con Google Calendar
 
-- Nuevo botón **"Eliminar evento"** en el menú contextual del planificador: elimina la tarea de From Y borra el evento en Google Calendar. Antes "Quitar del planificador" solo quitaba la hora sin borrar nada; ahora coexisten las dos opciones según lo que quieras hacer.
-- Fix: eventos GCal creados por From ya no aparecen duplicados en el planificador (se filtra por `gcalEventId`).
+- Nuevo botón **"Eliminar evento"** en el menú contextual del planificador: elimina la tarea de Fromly Y borra el evento en Google Calendar. Antes "Quitar del planificador" solo quitaba la hora sin borrar nada; ahora coexisten las dos opciones según lo que quieras hacer.
+- Fix: eventos GCal creados por Fromly ya no aparecen duplicados en el planificador (se filtra por `gcalEventId`).
 - Fix: "Eliminar bloque" renombrado a "Eliminar evento" para eventos nativos de GCal; ahora llama correctamente a la API de Google Calendar para borrarlos.
 
 ---
@@ -401,7 +401,7 @@ From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes 
 
 ### Blog
 - 22 artículos nuevos (ES+EN): Magic, Accesorios, Núcleo, Avanzado, Confianza/Comparativas. Todos con capturas reales de la app y CTA a registro.
-- Artículo fundador "Por qué hice From" (~2500 palabras, ES+EN): historia personal de los 6 problemas con apps de notas que llevaron a construir From.
+- Artículo fundador "Por qué hice Fromly" (~2500 palabras, ES+EN): historia personal de los 6 problemas con apps de notas que llevaron a construir Fromly.
 
 ### Distribución
 - Artículo fundador publicado en LinkedIn (ES+EN, artículos nativos con imagen de portada real).
@@ -424,12 +424,12 @@ From ya está en el directorio oficial de conectores de Anthropic. Ahora puedes 
 
 ---
 
-## Web v9.6.141 · Mac v9.5.13 — 5 junio 2026 · Accesorios: captura en From desde cualquier sitio
+## Web v9.6.141 · Mac v9.5.13 — 5 junio 2026 · Accesorios: captura en Fromly desde cualquier sitio
 
-From sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desde el sistema, desde Raycast o desde el navegador — y From lo entiende y lo coloca en su sitio.
+Fromly sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desde el sistema, desde Raycast o desde el navegador — y Fromly lo entiende y lo coloca en su sitio.
 
 ### Barra de menús (Mac)
-- From vive en la barra de menús con su icono. Clic → ventana de **captura rápida** (estilo Spotlight) para crear nota, tarea o evento al vuelo. From detecta el tipo, la fecha y los @contextos del texto.
+- Fromly vive en la barra de menús con su icono. Clic → ventana de **captura rápida** (estilo Spotlight) para crear nota, tarea o evento al vuelo. Fromly detecta el tipo, la fecha y los @contextos del texto.
 - Se puede **ocultar** el icono: en Ajustes → Accesorios, o con clic derecho en el icono → "Ocultar este icono".
 
 ### Atajo de Apple (tecla global)
@@ -437,17 +437,17 @@ From sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desd
 - Asígnale la tecla global que quieras desde la app Atajos. Por debajo usa el enlace `from://capture?text=…&silent=1`.
 
 ### Raycast
-- Extensión de From para Raycast: **Crear**, **Buscar** y **Abrir la nota de hoy**. Al crear, From decide nota/tarea/evento con su inteligencia.
+- Extensión de Fromly para Raycast: **Crear**, **Buscar** y **Abrir la nota de hoy**. Al crear, Fromly decide nota/tarea/evento con su inteligencia.
 
 ### Chrome
-- Extensión de From para Chrome: clic en el icono → guarda la URL de la pestaña en tu nota de hoy; selecciona texto + clic derecho → lo manda como nodo.
+- Extensión de Fromly para Chrome: clic en el icono → guarda la URL de la pestaña en tu nota de hoy; selecciona texto + clic derecho → lo manda como nodo.
 
 ### Dónde está todo
-- Nueva página **Accesorios** en la web (enlazada desde el menú) y nueva pestaña **Accesorios** en Ajustes de From. Todos usan el mismo **token de API** (Ajustes → Accesorios), el mismo que la integración con Claude.
+- Nueva página **Accesorios** en la web (enlazada desde el menú) y nueva pestaña **Accesorios** en Ajustes de Fromly. Todos usan el mismo **token de API** (Ajustes → Accesorios), el mismo que la integración con Claude.
 
 ### Bajo el capó / fixes
 - Deep links nuevos: `from://capture` (captura) y `from://node/<id>` (abrir una nota).
-- **Icono oficial de From** (árbol azul) unificado en app, barra de menús y extensiones.
+- **Icono oficial de Fromly** (árbol azul) unificado en app, barra de menús y extensiones.
 - Fix: error "failed to unpack" del actualizador (el `.tar.gz` ahora se genera sin archivos AppleDouble).
 - Fix: borde fino alrededor de la ventana principal (desactivado el macOS private API) y ventana de captura sin marco.
 
@@ -455,23 +455,23 @@ From sale de su ventana. Ahora puedes mandar lo que tengas a tu nota de hoy desd
 
 ## Web v9.6.136 · Mac v9.5.8 — 4 junio 2026 · Captura rápida desde cualquier sitio
 
-From sale de su ventana. Ahora puedes capturar al vuelo sin cambiar de app, y abrir o buscar tus notas desde las herramientas que ya usas.
+Fromly sale de su ventana. Ahora puedes capturar al vuelo sin cambiar de app, y abrir o buscar tus notas desde las herramientas que ya usas.
 
 ### Icono en la barra de menús (Mac)
 
-- From vive en la barra de menús con el icono **⚡**. Un clic abre una **ventana flotante de captura** (estilo Spotlight) para crear una nota, tarea o evento al instante — con la misma inteligencia que dentro de From (detecta tipo, fecha y contexto).
+- Fromly vive en la barra de menús con el icono **⚡**. Un clic abre una **ventana flotante de captura** (estilo Spotlight) para crear una nota, tarea o evento al instante — con la misma inteligencia que dentro de Fromly (detecta tipo, fecha y contexto).
 - Buscar cualquier nota desde esa ventana y abrirla en la app.
-- Cerrar la ventana principal ya no cierra From: sigue disponible en la barra de menús.
+- Cerrar la ventana principal ya no cierra Fromly: sigue disponible en la barra de menús.
 
 ### Atajo de Apple — tu tecla global
 
 - Nuevo esquema de enlace `from://capture?text=…&silent=1`: añade texto directamente a tu nota de hoy, sin abrir nada.
-- Crea un Atajo de macOS con «Abrir URL» y asígnale la tecla global que quieras. Así tienes captura global con la tecla que tú elijas — sin chocar con los atajos de From ni de otras apps.
+- Crea un Atajo de macOS con «Abrir URL» y asígnale la tecla global que quieras. Así tienes captura global con la tecla que tú elijas — sin chocar con los atajos de Fromly ni de otras apps.
 - Guía paso a paso en **Ajustes → Captura rápida**.
 
 ### Integración con Raycast
 
-- Extensión de From para Raycast: **Crear en From**, **Buscar en From** y **Abrir nota de hoy**, sin salir de Raycast.
+- Extensión de Fromly para Raycast: **Crear en Fromly**, **Buscar en Fromly** y **Abrir nota de hoy**, sin salir de Raycast.
 - Se conecta con tu token de API (el mismo que usa la extensión de Claude). Genera y copia el token en **Ajustes → Captura rápida → Raycast**.
 
 ### Enlaces profundos
@@ -480,42 +480,42 @@ From sale de su ventana. Ahora puedes capturar al vuelo sin cambiar de app, y ab
 
 ---
 
-## Web v9.6.135 · Mac v9.5.7 — 4 junio 2026 · La capa de inteligencia de From
+## Web v9.6.135 · Mac v9.5.7 — 4 junio 2026 · La capa de inteligencia de Fromly
 
-Esta es la versión en la que From deja de ser "un outliner con IA" y pasa a ser un sistema que **te entiende, sabe lo que quieres y elimina la fricción**. No hablamos de IA genérica: hablamos de que escribes como piensas y From se encarga del resto, en segundo plano y sin que tengas que mantener nada.
+Esta es la versión en la que Fromly deja de ser "un outliner con IA" y pasa a ser un sistema que **te entiende, sabe lo que quieres y elimina la fricción**. No hablamos de IA genérica: hablamos de que escribes como piensas y Fromly se encarga del resto, en segundo plano y sin que tengas que mantener nada.
 
 ### Contextos automáticos con jerarquía
 
-- From clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto) mientras escribes, **entendiendo la jerarquía** de contextos y subcontextos.
-- Si una nota necesita un contexto que aún no existe, From puede **crear el subcontexto** automáticamente en el lugar correcto del árbol.
+- Fromly clasifica cada nota en el contexto al que pertenece (trabajo, familia, un proyecto concreto) mientras escribes, **entendiendo la jerarquía** de contextos y subcontextos.
+- Si una nota necesita un contexto que aún no existe, Fromly puede **crear el subcontexto** automáticamente en el lugar correcto del árbol.
 - El clasificador es consciente de la jerarquía: una nota de "La Isla" va dentro de "Trabajo › La Isla", no en una etiqueta plana.
-- El badge de contexto aparece junto a cada nodo con la sugerencia de From; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Año/Mes/Agenda) nunca muestran badge — no se preguntan a sí mismos en qué contexto están.
+- El badge de contexto aparece junto a cada nodo con la sugerencia de Fromly; un clic la confirma o la cambia. Los contextos y los nodos estructurales (Año/Mes/Agenda) nunca muestran badge — no se preguntan a sí mismos en qué contexto están.
 - Clasificación en bloque: "Clasificar todos" procesa de una vez todos los nodos antiguos sin contexto, con barra de progreso y cancelación.
 
-### "Lo que From sabe" — conocimiento por contexto
+### "Lo que Fromly sabe" — conocimiento por contexto
 
 - Cada contexto acumula su propio conocimiento vivo: **Palabras clave**, **Personas** y **Temas frecuentes**.
-- From lo extrae solo a partir de las notas que clasificas en ese contexto y lo **mantiene al día**: cuando añades algo nuevo, fusiona la información nueva con la que ya había (sin duplicar) en lugar de reescribirlo todo.
-- La actualización es proactiva: al clasificar nodos en un contexto, From programa una actualización del conocimiento de ese contexto (con deduplicación y cooldown para no recalcular de más).
-- Si sigues editando un nodo ya clasificado durante horas o días, From vuelve a aprender del nuevo contenido (re-disparo con debounce de 30 min).
+- Fromly lo extrae solo a partir de las notas que clasificas en ese contexto y lo **mantiene al día**: cuando añades algo nuevo, fusiona la información nueva con la que ya había (sin duplicar) en lugar de reescribirlo todo.
+- La actualización es proactiva: al clasificar nodos en un contexto, Fromly programa una actualización del conocimiento de ese contexto (con deduplicación y cooldown para no recalcular de más).
+- Si sigues editando un nodo ya clasificado durante horas o días, Fromly vuelve a aprender del nuevo contenido (re-disparo con debounce de 30 min).
 - El servidor solo extrae **información nueva** que no estuviera ya en el contexto: si no hay nada que añadir, no toca nada.
 
-### Tu perfil — From te recuerda
+### Tu perfil — Fromly te recuerda
 
-- From construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo.
+- Fromly construye un perfil tuyo a partir de lo que escribes: tus proyectos, las personas estables de tu vida, tus objetivos y activos a largo plazo.
 - Filtra el ruido: **solo retiene lo que perdura**, no las tareas del día ni los problemas temporales. Y sintetiza en vez de copiar literal ("Me voy a casar" → "Tiene planes de matrimonio con su pareja").
 - El aprendizaje se guarda aunque salgas del nodo, navegues a otra página o el nodo lo cree un agente (extracción en el desmonte, sin perder nada).
 - "Mi perfil" abre el nodo de tu perfil en el área central, no como un filtro.
 
 ### Enseñar a Magic
 
-- Clic derecho en cualquier nodo → **Enseñar a Magic**. Le corriges: "esto no es una tarea", "va en este contexto". From aprende de la corrección y la aplica desde ese momento en toda clasificación posterior.
+- Clic derecho en cualquier nodo → **Enseñar a Magic**. Le corriges: "esto no es una tarea", "va en este contexto". Fromly aprende de la corrección y la aplica desde ese momento en toda clasificación posterior.
 - Los aprendizajes y los ejemplos del clasificador se **guardan como nodos** dentro de tu árbol (respaldados, migrados desde el almacenamiento local), así viajan con tu cuenta y sobreviven entre dispositivos.
 
 ### Búsqueda y navegación sin fricción
 
-- **Resaltado de coincidencias**: al buscar texto libre, From subraya en amarillo las palabras que coinciden dentro de cada nodo, para que las encuentres de un vistazo aunque haya mucho texto.
-- **Al eliminar una nota, From navega a la nota padre** en vez de dejarte mirando una nota que ya no existe.
+- **Resaltado de coincidencias**: al buscar texto libre, Fromly subraya en amarillo las palabras que coinciden dentro de cada nodo, para que las encuentres de un vistazo aunque haya mucho texto.
+- **Al eliminar una nota, Fromly navega a la nota padre** en vez de dejarte mirando una nota que ya no existe.
 - Buscador de la columna Filtrar: cualquier palabra filtra al instante por el texto de cualquier nodo de la Agenda.
 - Filtros y captura rápida acotados a la Agenda (no rebuscan en contextos, papelera ni sistema).
 - Favoritos: clic para navegar a la nota, con editar y eliminar al pasar el ratón.
@@ -531,7 +531,7 @@ Esta es la versión en la que From deja de ser "un outliner con IA" y pasa a ser
 
 ### Mejora: todos los filtros muestran resultados como raíces flotantes con breadcrumb
 
-Al activar cualquier filtro en From (contexto, tipo, búsqueda de texto o "Sin clasificar"), los nodos resultado ahora se muestran como **raíces flotantes independientes** con un breadcrumb de texto indicando su posición en el árbol.
+Al activar cualquier filtro en Fromly (contexto, tipo, búsqueda de texto o "Sin clasificar"), los nodos resultado ahora se muestran como **raíces flotantes independientes** con un breadcrumb de texto indicando su posición en el árbol.
 
 **Comportamiento anterior:**
 - El filtro por contexto expandía el árbol completo usando `ancestorIds`, montando miles de OutlinerNode simultáneamente → lentitud y freeze potencial.
@@ -575,7 +575,7 @@ Ahora puedes clasificar de un solo clic todos los nodos que ya existían antes y
 **Cómo funciona:**
 
 - En el panel de contextos (columna derecha), bajo el filtro **"Sin clasificar"**, aparece el botón **"✦ Clasificar todos"**.
-- Al pulsarlo, From analiza en background todos los nodos sin contexto usando IA (Claude Haiku).
+- Al pulsarlo, Fromly analiza en background todos los nodos sin contexto usando IA (Claude Haiku).
 - Se procesan en lotes de 5, con una **barra de progreso** que muestra "Clasificando… X/Y nodos".
 - Puedes **cancelar** en cualquier momento con el botón ✕.
 - Al terminar, muestra "X nodos clasificados" durante unos segundos.
@@ -588,14 +588,14 @@ Ahora puedes clasificar de un solo clic todos los nodos que ya existían antes y
 
 ### Nueva feature: Auto-clasificación inteligente de contextos
 
-From ahora sugiere automáticamente el contexto más apropiado para cada nota o tarea que creas.
+Fromly ahora sugiere automáticamente el contexto más apropiado para cada nota o tarea que creas.
 
 **Cómo funciona:**
 
 - **Badge automático**: aproximadamente 1 segundo después de crear o editar un nodo (sin contexto asignado), aparece un badge pequeño `✦ NombreContexto` junto al texto.
 - **Alta confianza** (≥ 60%): el badge muestra el nombre del contexto en su color.
 - **Baja confianza** (< 60%): el badge aparece en gris con `?`.
-- **Asignación manual**: haz clic en el badge → se despliega la lista de contextos → selecciona el correcto. From aprende de tu corrección para mejorar futuras sugerencias.
+- **Asignación manual**: haz clic en el badge → se despliega la lista de contextos → selecciona el correcto. Fromly aprende de tu corrección para mejorar futuras sugerencias.
 - **Opción "Sin contexto"**: si el nodo no pertenece a ningún contexto, puedes indicarlo desde el mismo dropdown.
 
 **Vista "Sin clasificar":**
@@ -649,7 +649,7 @@ El atajo `⌘⇧F` marca/desmarca cualquier nodo como favorito sin abrir menús.
 
 ### App Store — localización España y multiidioma
 
-From iOS ahora tiene localización en **6 idiomas**, con **Español (España) como idioma primario**. Esto corrige un bug que impedía que la app apareciera correctamente en búsquedas del App Store en España y otros países hispanohablantes.
+Fromly iOS ahora tiene localización en **6 idiomas**, con **Español (España) como idioma primario**. Esto corrige un bug que impedía que la app apareciera correctamente en búsquedas del App Store en España y otros países hispanohablantes.
 
 Idiomas disponibles: Español (España) · Inglés · Alemán · Francés · Italiano · Portugués (Brasil).
 
@@ -679,7 +679,7 @@ Arrastra un archivo PDF desde Finder a cualquier nodo para subirlo a la nube. Se
 - **Texto** — clic para insertar texto flotante
 - **Borrador** — eliminar anotaciones
 
-Las anotaciones se guardan en From y se incrustan permanentemente en el PDF cuando sales.
+Las anotaciones se guardan en Fromly y se incrustan permanentemente en el PDF cuando sales.
 
 ### Pizarras digitales
 
@@ -724,7 +724,7 @@ Sin texto muestra los accesos rápidos: Hoy, Mañana, Filtros y Contextos. En cu
 Cada columna (Filtro, Magic, Contextos, Grabación) tiene ahora un título al inicio con la misma tipografía que el título de la nota: **26px, negrita**. El título y el primer elemento de la columna quedan a la misma altura que el título de nota y el primer nodo del árbol respectivamente.
 
 ### Columna de filtros abierta por defecto
-Al abrir From, la columna de filtros ya aparece visible por defecto. La preferencia se guarda: si la cierras, la próxima sesión empieza sin ella.
+Al abrir Fromly, la columna de filtros ya aparece visible por defecto. La preferencia se guarda: si la cierras, la próxima sesión empieza sin ella.
 
 ### Headings markdown desde agentes externos
 Los nodos creados por Claude u otros agentes con prefijos markdown (`### Título`, `## Título`, `# Título`) se detectan y renderizan automáticamente como headings. En segundo plano, el nodo se normaliza (quita el prefijo del texto y guarda el tipo en los metadatos).
@@ -742,7 +742,7 @@ El botón rayo del topbar desaparece. Todo el acceso a búsqueda y creación est
 ### ⌘K más limpio y potente
 La paleta de comandos tiene ahora una vista por defecto ordenada: **Hoy**, **Mañana**, **Filtros →** y **Contextos →**. Sin ruido. Al hacer clic en Filtros o Contextos se abre una subvista dedicada donde puedes navegar con ↑↓ y seleccionar con Enter. Escape vuelve siempre al menú principal.
 
-Para buscar un contexto específico escribe su nombre directamente — From lo detecta y lo abre. Al escribir "contextos" aparece la lista completa.
+Para buscar un contexto específico escribe su nombre directamente — Fromly lo detecta y lo abre. Al escribir "contextos" aparece la lista completa.
 
 ### Filtros guardados: renombrar y eliminar
 En la columna de filtros puedes pasar el ratón sobre un filtro guardado y aparecen dos botones: un lápiz ✏ para renombrar (edición inline, Enter confirma) y una × para eliminar (se pone roja en hover).
@@ -828,11 +828,11 @@ El sistema de recurrencia ahora reconoce patrones como "cada 2 lunes" o "cada 3 
 ### Actualizador automático — confirmado funcionando (Mac)
 - El actualizador automático se ha verificado en entorno real: detecta la nueva versión, descarga, instala y relanza la app con un solo clic sin intervención manual
 - Versión Mac visible en la barra inferior: `v9.4.XX · Mac 9.4.XX`
-- Menú nativo macOS: **From → Buscar actualizaciones...** para forzar la comprobación al instante
+- Menú nativo macOS: **Fromly → Buscar actualizaciones...** para forzar la comprobación al instante
 
 ### Proceso de instalación y release Mac (interno)
 - Corrección del proceso de publicación: el artefacto del updater es `From.app.tar.gz` (no el DMG)
-- Para instalar From Mac correctamente: arrastrar desde el DMG a Aplicaciones en Finder
+- Para instalar Fromly Mac correctamente: arrastrar desde el DMG a Aplicaciones en Finder
 - El DMG notarizado garantiza que la app se ejecuta directamente desde `/Applications/` sin restricciones del sistema
 
 ---
@@ -864,9 +864,9 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 ## Mac v9.4.4 / v9.4.5 — Junio 2026 · Actualizador automático
 
 ### Actualización automática desde la app (Mac)
-- **Primera versión con actualización automática**: a partir de ahora, cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión X.X.X — Actualizar` en la barra inferior de From
+- **Primera versión con actualización automática**: a partir de ahora, cuando haya una nueva versión disponible, aparecerá `✦ Nueva versión X.X.X — Actualizar` en la barra inferior de Fromly
 - Un clic descarga e instala la actualización sin salir de la app ni reiniciar manualmente
-- El sistema comprueba si hay novedades 5 segundos después de abrir From, y luego cada hora
+- El sistema comprueba si hay novedades 5 segundos después de abrir Fromly, y luego cada hora
 - Esta es la **última vez que hace falta descargar manualmente** desde la web
 
 ### Sincronización mejorada (Mac)
@@ -931,7 +931,7 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 - Gestión completa vía Railway + LemonSqueezy webhooks
 
 ### Canal de Telegram @FromMagicBot (Telegram)
-- Canal oficial con tips semanales sobre cómo sacar el máximo partido a From
+- Canal oficial con tips semanales sobre cómo sacar el máximo partido a Fromly
 - Automatización completa: los tips se envían sin intervención manual
 - Suscríbete desde getfrom.app o directamente en Telegram buscando @FromMagicBot
 
@@ -1045,7 +1045,7 @@ Revisión completa de todos los flujos de alta, suscripción, cancelación y ren
 
 ### Filtro con lenguaje natural (⌘F)
 - La caja de filtro ahora acepta lenguaje natural: "tareas de hoy y pasadas", "recursos sin fecha", "todo lo de esta semana"…
-- From traduce la consulta a la query técnica equivalente usando Haiku (gratuito, sin coste para el usuario)
+- Fromly traduce la consulta a la query técnica equivalente usando Haiku (gratuito, sin coste para el usuario)
 - Nuevos operadores disponibles: `pasado`, `futuro`, `mes`, `sin-fecha`, `favorito`, `diario`, `recurso`
 - Soporte para `y` (AND) y `o` (OR) combinando condiciones
 - Magic Chat detecta cuando quieres filtrar y aplica el filtro directamente sin abrir el campo manualmente

@@ -54,7 +54,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
     } catch { /* ignore */ }
 
     return [
-      `Estás asistiendo al usuario con una nota de su gestor personal "From".`,
+      `Estás asistiendo al usuario con una nota de su gestor personal "Fromly".`,
       areaContext,
       ``,
       `**Nota actual:**`,

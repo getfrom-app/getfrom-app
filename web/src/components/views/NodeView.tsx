@@ -1467,7 +1467,7 @@ export default function NodeView() {
       </style>
       </head><body>
       <h1>${title}</h1>
-      <div class="meta">From · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      <div class="meta">Fromly · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
       ${body ? `<div class="body">${body.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
       ${bullets ? `<div class="bullets">${bullets.split('\n').map(b => `<div class="bullet">${b}</div>`).join('')}</div>` : ''}
       </body></html>

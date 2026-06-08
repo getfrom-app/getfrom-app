@@ -514,16 +514,16 @@ export function IAPane() {
   )
 }
 
-const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
+const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a Fromly, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
 
 ARQUITECTURA DE FROM (crítico):
-From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
+Fromly es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
 HEADINGS Y BULLETS AL MISMO NIVEL — nunca anidar bullets bajo un heading.
 Correcto: [{heading:2,text:"Sección"},{text:"bullet 1"},{text:"bullet 2"},{heading:2,text:"Otra sección"}]
 Incorrecto: [{heading:2,text:"Sección",children:[{text:"bullet 1"}]}]
 
 INICIO DE CONVERSACIÓN:
-- Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab").
+- Si menciono un área (La Isla, inversión, piloto, coding, Fromly...), llama a from_get_context("nombre-kebab").
 - Llama a from_get_today_note() y guarda el ID.
 - Busca sesión existente: from_search("Sesión " + fecha). Si existe, guarda su ID y transcriptId.
 
@@ -536,22 +536,22 @@ AL TERMINAR ("fin"):
 - PRIMERA VEZ: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2,text:"Resumen"},{text:"punto 1"},{text:"punto 2"},{heading:2,text:"Decisiones"},{text:"..."}], transcript="conversación íntegra").
 - CONTINUACIÓN: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="texto nuevo", newChildren=[{heading:2,text:"Actualización FECHA"},{text:"..."}]).
 - Si hay info nueva del área → from_update_context(contexto, info).
-- Confirma: "Guardado en From (cuenta: X) — [título sesión]".`
+- Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
 
 export function ClaudeMcpPane() {
   const steps = [
     'Abre Claude (claude.ai, iPhone, Android o Desktop)',
     'Ve a Ajustes → Conectores',
-    'Busca "From" y pulsa Conectar',
-    'Inicia sesión con tu cuenta de From',
+    'Busca "Fromly" y pulsa Conectar',
+    'Inicia sesión con tu cuenta de Fromly',
     'Listo — Claude puede guardar notas y tareas en tu vault desde cualquier dispositivo',
   ]
 
   return (
     <div className="st-pane">
-      <SectionTitle>From para Claude — ya disponible en el directorio</SectionTitle>
+      <SectionTitle>Fromly para Claude — ya disponible en el directorio</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 16 }}>
-        From está en el directorio oficial de conectores de Claude. No necesitas instalar nada ni copiar tokens.
+        Fromly está en el directorio oficial de conectores de Claude. No necesitas instalar nada ni copiar tokens.
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
@@ -577,7 +577,7 @@ export function ClaudeMcpPane() {
       <div style={{ marginTop: 28, padding: '12px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8 }}>
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Para Claude Code (CLI)</div>
         <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          Añade From a <code style={{ fontSize: 11 }}>~/.claude.json</code> con tipo <code style={{ fontSize: 11 }}>http</code> y URL <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code>. El token lo encuentras en Ajustes → Accesorios.
+          Añade Fromly a <code style={{ fontSize: 11 }}>~/.claude.json</code> con tipo <code style={{ fontSize: 11 }}>http</code> y URL <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code>. El token lo encuentras en Ajustes → Accesorios.
         </div>
       </div>
     </div>
@@ -639,7 +639,7 @@ export function CapturaRapidaPane() {
       {/* Token de API — uno para todo (Raycast, Chrome, Claude Code) */}
       <SectionTitle>Token de API</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Una sola clave para conectar From con Raycast, Chrome y Claude Code. No la compartas.
+        Una sola clave para conectar Fromly con Raycast, Chrome y Claude Code. No la compartas.
       </div>
       {loaded ? (
         token ? (
@@ -664,7 +664,7 @@ export function CapturaRapidaPane() {
         <>
           <SectionTitle>Barra de menús</SectionTitle>
           <div className="st-row-hint" style={{ marginBottom: 10 }}>
-            From vive en la barra de menús del Mac: clic en el icono (o <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) abre una ventana flotante para crear algo al vuelo. Cerrar la ventana principal no cierra From.
+            Fromly vive en la barra de menús del Mac: clic en el icono (o <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) abre una ventana flotante para crear algo al vuelo. Cerrar la ventana principal no cierra Fromly.
           </div>
           <Row label="Mostrar icono en la barra de menús" hint="También puedes ocultarlo desde el propio icono (clic derecho → Ocultar).">
             <input type="checkbox" checked={trayVisible} onChange={e => toggleTray(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
@@ -707,7 +707,7 @@ export function CapturaRapidaPane() {
       {/* Claude (MCP) */}
       <SectionTitle>Claude</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        From está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>: abre Claude → Conectores → busca From y conecta con un clic. Sin tokens ni configuración. Funciona en Claude Desktop, Claude.ai y Claude Code.
+        Fromly está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>: abre Claude → Conectores → busca Fromly y conecta con un clic. Sin tokens ni configuración. Funciona en Claude Desktop, Claude.ai y Claude Code.
       </div>
       <a href="https://getfrom.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
         Conectar en Claude →
@@ -973,7 +973,7 @@ const IMPORT_SOURCES: { id: ImportSource; icon: string; name: string; desc: stri
   { id: 'notion',   icon: '⬛', name: 'Notion',          desc: 'Exportación Markdown' },
   { id: 'apple',    icon: '🍎', name: 'Apple Notes',     desc: 'Vía Markdown / texto' },
   { id: 'markdown', icon: '📝', name: 'Markdown / texto', desc: 'Archivos .md o .txt' },
-  { id: 'from',     icon: '📦', name: 'From (JSON)',      desc: 'Copia de seguridad de From' },
+  { id: 'from',     icon: '📦', name: 'Fromly (JSON)',      desc: 'Copia de seguridad de Fromly' },
 ]
 
 const IMPORT_STEPS: Record<ImportSource, string[]> = {
@@ -995,7 +995,7 @@ const IMPORT_STEPS: Record<ImportSource, string[]> = {
     'Selecciona uno o varios archivos .md o .txt (o una carpeta entera).',
   ],
   from: [
-    'Selecciona el archivo .json exportado desde From (Ajustes → Exportar).',
+    'Selecciona el archivo .json exportado desde Fromly (Ajustes → Exportar).',
   ],
 }
 
@@ -1006,7 +1006,7 @@ export function ImportarPane() {
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // ── From (JSON) ──────────────────────────────────────────────────────────
+  // ── Fromly (JSON) ──────────────────────────────────────────────────────────
   async function handleJson(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return

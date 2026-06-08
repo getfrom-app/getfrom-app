@@ -1,18 +1,18 @@
-# From — User Manual
+# Fromly — User Manual
 
 > Version 3.11 · macOS 14+ · iOS 17+
 
 ---
 
-## 1. What is From?
+## 1. What is Fromly?
 
-From is a native app for Mac and iPhone that acts as your second brain. All your information — notes, tasks, projects, diary, files — lives in a bullet tree that syncs in real time across devices. No folders to organize, no .md files to manage: everything is in one system, always accessible, with built-in AI.
+Fromly is a native app for Mac and iPhone that acts as your second brain. All your information — notes, tasks, projects, diary, files — lives in a bullet tree that syncs in real time across devices. No folders to organize, no .md files to manage: everything is in one system, always accessible, with built-in AI.
 
 ---
 
 ## 2. Today's diary
 
-When you open From for the first time, you land on **today's diary entry**. This is your daily starting point.
+When you open Fromly for the first time, you land on **today's diary entry**. This is your daily starting point.
 
 **The three sections of the day:**
 
@@ -32,7 +32,7 @@ When you open From for the first time, you land on **today's diary entry**. This
 
 ## 3. Notes and nodes
 
-In From, everything is a **node**: a line of text with a title, body (free markdown), and children. There is no distinction between a note and a task — a node can be both at the same time.
+In Fromly, everything is a **node**: a line of text with a title, body (free markdown), and children. There is no distinction between a note and a task — a node can be both at the same time.
 
 **Create a node:**
 - Press `Enter` on any bullet to create a new one at the same level.
@@ -50,7 +50,7 @@ In From, everything is a **node**: a line of text with a title, body (free markd
 
 **Diary nodes:**
 - Nodes marked as diary entries (`isDiaryEntry`) form the temporal hierarchy.
-- From creates them automatically on startup — you don't have to.
+- Fromly creates them automatically on startup — you don't have to.
 
 ---
 
@@ -88,7 +88,7 @@ Shortcuts are configurable in **Settings → Keyboard Shortcuts**.
 | `#prompt` | Reusable instruction for the chat |
 
 **Custom types:**
-- Type `#client`, `#meeting`, `#idea` or any word: From creates the type instantly.
+- Type `#client`, `#meeting`, `#idea` or any word: Fromly creates the type instantly.
 - Each type gets an automatic color. Change it by right-clicking the chip in the tree.
 - Tags are visible in the bullet, the panel title, and the sidebar tree.
 
@@ -150,7 +150,7 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 - The badge turns orange when the date is past due
 
 **Apple Calendar sync:**
-- From automatically imports events from your Apple calendars.
+- Fromly automatically imports events from your Apple calendars.
 - The sync is bidirectional: events appear in the day timeline and in the calendar view.
 - Enable it in **Settings → Calendar** and choose which calendars to include.
 
@@ -177,7 +177,7 @@ Type `@` anywhere in a bullet to open the **mention picker**. Search by name and
 
 ## 9. Views
 
-From offers five display modes for nodes at any level. Switch views from the buttons in the top bar.
+Fromly offers five display modes for nodes at any level. Switch views from the buttons in the top bar.
 
 | View | When to use it |
 |---|---|
@@ -220,13 +220,13 @@ Filters the tree you're viewing without leaving it. Supports commands:
 - Instant, no server needed. Results update in real time as you type.
 
 **Semantic search (AI):**
-- Beyond exact text matching, From includes a **magic search** mode that answers questions about your vault's content.
+- Beyond exact text matching, Fromly includes a **magic search** mode that answers questions about your vault's content.
 - Activate it by typing a natural language question in the global search bar: "What tasks do I have pending for client X?" or "What did we decide in Tuesday's meeting?"
 - The AI analyzes your notes and returns an answer with references to the relevant nodes.
 
 **Spotlight:**
-- From indexes your content in macOS search so you can find notes from Spotlight without opening the app.
-- The integration activates automatically when From is installed. You can disable it in **Settings → Search**.
+- Fromly indexes your content in macOS search so you can find notes from Spotlight without opening the app.
+- The integration activates automatically when Fromly is installed. You can disable it in **Settings → Search**.
 
 **Saved search panels:**
 - Pin frequent searches as panels in the sidebar.
@@ -236,7 +236,7 @@ Filters the tree you're viewing without leaving it. Supports commands:
 
 ## 11. Quick capture
 
-From offers several ways to capture information without interrupting your flow.
+Fromly offers several ways to capture information without interrupting your flow.
 
 | Shortcut | What it does |
 |---|---|
@@ -246,7 +246,7 @@ From offers several ways to capture information without interrupting your flow.
 | `⌘N` | New node at the current level |
 
 **Capture from any app (macOS):**
-- From the macOS menu bar you can open a floating quick-capture window without switching apps.
+- Fromly the macOS menu bar you can open a floating quick-capture window without switching apps.
 - The bullet is added to the selected node, or to today's diary if nothing is selected.
 
 **File capture:**
@@ -254,13 +254,13 @@ From offers several ways to capture information without interrupting your flow.
 - You can also paste images directly from the clipboard.
 
 **Linked note:**
-- From the `···` menu of any node you can create a new linked child note with one click, without losing the context of the parent node.
+- Fromly the `···` menu of any node you can create a new linked child note with one click, without losing the context of the parent node.
 
 ---
 
 ## 12. Voice recording
 
-From includes a **persistent recording bar** at the bottom of the left column. It captures audio and converts it into structured bullets using AI.
+Fromly includes a **persistent recording bar** at the bottom of the left column. It captures audio and converts it into structured bullets using AI.
 
 **How to record:**
 1. Select the source: **Microphone**, **System**, or **Mixed** in the bottom bar.
@@ -285,17 +285,17 @@ From includes a **persistent recording bar** at the bottom of the left column. I
 
 ---
 
-## 13. Magic — From's intelligence
+## 13. Magic — Fromly's intelligence
 
-Magic is From's intelligence layer. The point isn't "having AI": it's that **From understands you**. You write the way you think and From handles the rest — it understands what each thing is, organizes it, remembers who you are and anticipates. All in the background, no menus, nothing for you to maintain. The goal is to remove the friction between what you think and what gets written — and to do it fast.
+Magic is Fromly's intelligence layer. The point isn't "having AI": it's that **Fromly understands you**. You write the way you think and Fromly handles the rest — it understands what each thing is, organizes it, remembers who you are and anticipates. All in the background, no menus, nothing for you to maintain. The goal is to remove the friction between what you think and what gets written — and to do it fast.
 
-**Automatic contexts with hierarchy.** As you write, From classifies each note into the context it belongs to (work, family, a specific project), understanding the **hierarchy** of contexts and subcontexts. A "La Isla" note goes under "Work › La Isla", not into a flat tag. If a context that doesn't exist is needed, From can create the subcontext in the right place. A context badge appears next to the node with the suggestion; one click confirms or changes it.
+**Automatic contexts with hierarchy.** As you write, Fromly classifies each note into the context it belongs to (work, family, a specific project), understanding the **hierarchy** of contexts and subcontexts. A "La Isla" note goes under "Work › La Isla", not into a flat tag. If a context that doesn't exist is needed, Fromly can create the subcontext in the right place. A context badge appears next to the node with the suggestion; one click confirms or changes it.
 
-**"What From knows" per context.** Each context builds up its own living knowledge: **Keywords**, **People** and **Recurring topics**. From extracts it on its own from the notes you classify there and keeps it current: when you add something new, it **merges** the new information with what was already there, without duplicating, instead of rewriting everything. Open a context and From already knows what it's about.
+**"What Fromly knows" per context.** Each context builds up its own living knowledge: **Keywords**, **People** and **Recurring topics**. Fromly extracts it on its own from the notes you classify there and keeps it current: when you add something new, it **merges** the new information with what was already there, without duplicating, instead of rewriting everything. Open a context and Fromly already knows what it's about.
 
-**Your profile — From remembers you.** From builds a profile of you from what you write: your projects, the stable people in your life, your goals and long-term assets. It filters out the noise — it **keeps only what lasts**, not the day's tasks or temporary problems — and synthesizes instead of copying verbatim. The learning is saved even if you leave the node, navigate away, or the node was created by an agent. Open it from **CONTEXTS → My profile**.
+**Your profile — Fromly remembers you.** Fromly builds a profile of you from what you write: your projects, the stable people in your life, your goals and long-term assets. It filters out the noise — it **keeps only what lasts**, not the day's tasks or temporary problems — and synthesizes instead of copying verbatim. The learning is saved even if you leave the node, navigate away, or the node was created by an agent. Open it from **CONTEXTS → My profile**.
 
-**Teach Magic.** Right-click any node → **Teach Magic**. Correct it: "this isn't a task", "this goes in this context". From learns from the correction and applies it from then on in every later classification. Learnings and classifier examples are stored as nodes in your tree, so they travel with your account across devices.
+**Teach Magic.** Right-click any node → **Teach Magic**. Correct it: "this isn't a task", "this goes in this context". Fromly learns from the correction and applies it from then on in every later classification. Learnings and classifier examples are stored as nodes in your tree, so they travel with your account across devices.
 
 **Classify everything old.** In the contexts panel, under "Unclassified", the **"Classify all"** button processes all your old nodes without a context at once, with a progress bar and the option to cancel.
 
@@ -360,7 +360,7 @@ An **area** is a label that groups related nodes under a shared context: work, p
 
 **Create an area:**
 - In any node's properties panel, find the **Area** field and type the name.
-- From creates the area instantly if it doesn't exist.
+- Fromly creates the area instantly if it doesn't exist.
 
 **Area AI context:**
 - Each area can have a special context node (`_areaCtx`).
@@ -374,7 +374,7 @@ An **area** is a label that groups related nodes under a shared context: work, p
 
 **Publish a note:**
 - Open the `···` menu of any node and select **Publish**.
-- From generates a public URL of the form `getfrom.app/p/...` with the note's content rendered in markdown.
+- Fromly generates a public URL of the form `getfrom.app/p/...` with the note's content rendered in markdown.
 - The URL is saved in the node's properties panel.
 
 **Update a published note:**
@@ -383,13 +383,13 @@ An **area** is a label that groups related nodes under a shared context: work, p
 **Unpublish:**
 - Select **Unpublish** from the `···` menu. The URL becomes inaccessible immediately.
 
-**Typical uses:** sharing a report with someone who doesn't have From, publishing project documentation, sending a brief to a client.
+**Typical uses:** sharing a report with someone who doesn't have Fromly, publishing project documentation, sending a brief to a client.
 
 ---
 
 ## 17. Google Docs
 
-From can sync any note's content with a Google Docs document.
+Fromly can sync any note's content with a Google Docs document.
 
 **Initial setup:**
 1. Go to **Settings → Integrations** and connect your Google account.
@@ -399,7 +399,7 @@ From can sync any note's content with a Google Docs document.
 - Open the node you want to sync.
 - In the note's action bar (top bar of the right panel), click the **Google Docs** button.
 - Choose whether to link to an existing document or create a new one.
-- From keeps the content in sync: changes in From are reflected in the document and vice versa.
+- Fromly keeps the content in sync: changes in Fromly are reflected in the document and vice versa.
 
 **Notes:**
 - Sync is per node, not for the whole vault.
@@ -430,12 +430,12 @@ From can sync any note's content with a Google Docs document.
 - Buy additional top-ups from **Settings → Account**.
 
 **Local backup:**
-- From automatically exports all your nodes to Markdown every 2 hours to:
-  `~/Library/Application Support/From/Backups/`
+- Fromly automatically exports all your nodes to Markdown every 2 hours to:
+  `~/Library/Application Support/Fromly/Backups/`
 
 ### Automatic local backup
 
-From saves a complete snapshot of your notes every 2 hours to `~/Documents/From Backup/{Workspace}/`. Each snapshot includes:
+Fromly saves a complete snapshot of your notes every 2 hours to `~/Documents/Fromly Backup/{Workspace}/`. Each snapshot includes:
 - All your nodes as standard Markdown (compatible with Obsidian and any editor)
 - A copy of the database file for instant restoration
 
@@ -449,7 +449,7 @@ Your notes don't depend on any server. Even without an internet connection, back
 
 ## 19. Useful settings
 
-Access from the **From → Settings** menu or with `⌘,`.
+Access from the **Fromly → Settings** menu or with `⌘,`.
 
 | Section | What you configure |
 |---|---|
@@ -466,7 +466,7 @@ Access from the **From → Settings** menu or with `⌘,`.
 | **Space** | Local directory for files and agents |
 
 **Inline shortcuts (text expansions):**
-- In **Settings → Inline shortcuts** you define your own abbreviations: type a short key and From expands it automatically to the text you configured.
+- In **Settings → Inline shortcuts** you define your own abbreviations: type a short key and Fromly expands it automatically to the text you configured.
 - Example: type `;sig` and it expands to your full email signature.
 - Useful for recurring text blocks, templates, or anything you type repeatedly.
 
@@ -478,15 +478,15 @@ Access from the **From → Settings** menu or with `⌘,`.
 
 ## 20. Importing from other apps
 
-From can import notes from Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes, and any folder of Markdown files.
+Fromly can import notes from Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes, and any folder of Markdown files.
 
 Access via **Settings → Import**.
 
-### How From organises imported notes
+### How Fromly organises imported notes
 
-From works with a temporal hierarchy: every note and task lives inside a specific day. When importing, this is what happens:
+Fromly works with a temporal hierarchy: every note and task lives inside a specific day. When importing, this is what happens:
 
-| What you import | Where it goes in From |
+| What you import | Where it goes in Fromly |
 |---|---|
 | Notes and tasks without a date | **Yesterday's** diary (so today stays clean) |
 | Tasks with a date (`due: 2024-07-01`) | The diary for the **date specified**, creating that day if needed |
@@ -507,13 +507,13 @@ After importing, you can move any node to any other day by dragging it in the tr
 4. Export format: choose **Markdown & CSV**.
 5. Download the ZIP file Notion generates.
 
-**How to import into From:**
+**How to import into Fromly:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import ZIP** and select the downloaded file.
-3. From automatically detects the Notion format and processes it.
+3. Fromly automatically detects the Notion format and processes it.
 
-**What From does with your Notion content:**
+**What Fromly does with your Notion content:**
 - **Page titles**: automatically removes the 32-character IDs Notion appends to names (`My page abc123def456...` → `My page`).
 - **Nested pages**: Notion subfolders become parent nodes, preserving hierarchy.
 - **Databases**: CSV files are skipped; Markdown pages are imported normally.
@@ -527,16 +527,16 @@ After importing, you can move any node to any other day by dragging it in the tr
 
 No export needed. Obsidian stores your notes as `.md` files in a regular folder on your disk.
 
-**How to import into From:**
+**How to import into Fromly:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import folder** and select your Obsidian vault's main folder (the one containing the `.obsidian/` folder).
-3. From automatically detects it as an Obsidian vault.
+3. Fromly automatically detects it as an Obsidian vault.
 
-**What From does with your Obsidian vault:**
+**What Fromly does with your Obsidian vault:**
 - **Folder structure**: each root folder becomes a grouping node inside yesterday's diary.
 - **Callouts** (`> [!NOTE]`): converted to standard Markdown blockquotes.
-- **Frontmatter**: `due:`, `date:`, `tipo:`, `estado:` fields are mapped to From node fields.
+- **Frontmatter**: `due:`, `date:`, `tipo:`, `estado:` fields are mapped to Fromly node fields.
 - **Ignored folders**: `.obsidian/`, `.trash/`, `Templates/`, `assets/`, `Attachments/`.
 - **Tasks** (`- [ ]` and `- [x]`): extracted as child nodes with Active or Done status.
 
@@ -548,17 +548,17 @@ No export needed. Obsidian stores your notes as `.md` files in a regular folder 
 
 No export needed. LogSeq stores your graph as `.md` files on your disk.
 
-**How to import into From:**
+**How to import into Fromly:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import folder** and select your graph's main folder (the one containing the `logseq/` folder).
-3. From automatically detects the LogSeq format.
+3. Fromly automatically detects the LogSeq format.
 
-**What From does with your LogSeq graph:**
-- **Journals** (`journals/`): each dated LogSeq journal file is imported to the corresponding diary in From.
+**What Fromly does with your LogSeq graph:**
+- **Journals** (`journals/`): each dated LogSeq journal file is imported to the corresponding diary in Fromly.
 - **Pages** (`pages/`): imported as notes under yesterday's diary.
-- **Bullet format**: LogSeq uses bullets for all content, even prose. From converts them to normal Markdown paragraphs.
-- **Block references** (`((uuid))`): removed, as they have no equivalent in From.
+- **Bullet format**: LogSeq uses bullets for all content, even prose. Fromly converts them to normal Markdown paragraphs.
+- **Block references** (`((uuid))`): removed, as they have no equivalent in Fromly.
 - **Ignored folders**: `logseq/`, `.recycle/`, `assets/`.
 
 ---
@@ -569,14 +569,14 @@ No export needed. LogSeq stores your graph as `.md` files on your disk.
 
 No export needed. NotePlan stores notes as `.md` files on your disk.
 
-**How to import into From:**
+**How to import into Fromly:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import folder** and select your NotePlan vault folder.
-3. From automatically detects the NotePlan format (by the presence of dated files in the root).
+3. Fromly automatically detects the NotePlan format (by the presence of dated files in the root).
 
-**What From does with your NotePlan content:**
-- **Calendar Notes**: NotePlan diary files (`YYYY-MM-DD.md`) are imported to the matching diary in From.
+**What Fromly does with your NotePlan content:**
+- **Calendar Notes**: NotePlan diary files (`YYYY-MM-DD.md`) are imported to the matching diary in Fromly.
 - **Project notes**: imported as regular notes under yesterday's diary.
 - **Tasks**: `- [ ]` and `- [x]` lines are extracted as child nodes with Active or Done status.
 
@@ -590,11 +590,11 @@ No export needed. NotePlan stores notes as `.md` files on your disk.
 2. Select **All files** and the **Markdown** format.
 3. Choose a destination folder and save.
 
-**How to import into From:**
+**How to import into Fromly:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import folder** and select the folder you just saved.
-3. From imports all `.md` files as notes under yesterday's diary.
+3. Fromly imports all `.md` files as notes under yesterday's diary.
 
 ---
 
@@ -607,17 +607,17 @@ Apple Notes doesn't export directly to Markdown, but there's a simple solution:
 1. Download the free **Exporter** app from the Mac App Store.
 2. Open Exporter and select your Apple Notes.
 3. Export in **Markdown** format to a folder on your disk.
-4. In From, go to **Settings → Import → Import folder** and select that folder.
+4. In Fromly, go to **Settings → Import → Import folder** and select that folder.
 
 ---
 
 ### Importing a generic Markdown folder
 
-Any folder with `.md` or `.txt` files can be imported into From, regardless of origin.
+Any folder with `.md` or `.txt` files can be imported into Fromly, regardless of origin.
 
 **How to import:**
 
-1. In From, go to **Settings → Import**.
+1. In Fromly, go to **Settings → Import**.
 2. Click **Import folder** and select the folder. Or use **Import ZIP** if your files are zipped.
 
 **General rules:**
@@ -631,15 +631,15 @@ Any folder with `.md` or `.txt` files can be imported into From, regardless of o
 
 ## 21. Accessories — capture from anywhere
 
-You don't need to have From open. These accessories send whatever you have to your **daily note**, and From's intelligence files it (type, date, context). All of them — except the menu bar — connect using your account's **API token**.
+You don't need to have Fromly open. These accessories send whatever you have to your **daily note**, and Fromly's intelligence files it (type, date, context). All of them — except the menu bar — connect using your account's **API token**.
 
 ### The API token
-The key Raycast, Chrome and the Claude integration use to talk to your From. Generate and copy it in **Settings → Accessories** (it's the same token for all three; regenerating it invalidates the old one). Valid for 1 year.
+The key Raycast, Chrome and the Claude integration use to talk to your Fromly. Generate and copy it in **Settings → Accessories** (it's the same token for all three; regenerating it invalidates the old one). Valid for 1 year.
 
 ### Menu bar (Mac)
-From lives in the macOS menu bar with its icon.
-- **Click the icon** (or menu → *Quick capture*) → opens a Spotlight-style window: write a note, task or event and it lands in today's note. From detects the type, date and any `@contexts`.
-- Closing the main window does **not** quit From — it stays in the menu bar.
+Fromly lives in the macOS menu bar with its icon.
+- **Click the icon** (or menu → *Quick capture*) → opens a Spotlight-style window: write a note, task or event and it lands in today's note. Fromly detects the type, date and any `@contexts`.
+- Closing the main window does **not** quit Fromly — it stays in the menu bar.
 - **Hide it**: Settings → Accessories → turn off "Show icon in the menu bar", or right-click the icon → *Hide this icon*.
 
 ### Apple Shortcut (global hotkey)
@@ -651,10 +651,10 @@ Capture from **any app** with a single key.
 Under the hood it uses `from://capture?text=…&silent=1`.
 
 ### Raycast
-The From extension for Raycast: **Create in From**, **Search From** and **Open Today's Note**. On create, From decides whether it's a note, task or event. Install it from the Raycast Store and paste your API token in its preferences.
+The Fromly extension for Raycast: **Create in Fromly**, **Search Fromly** and **Open Today's Note**. On create, Fromly decides whether it's a note, task or event. Install it from the Raycast Store and paste your API token in its preferences.
 
 ### Chrome
-The From extension for Chrome: click the icon → saves the current tab's URL to today's note; select text → right-click → "Send to From" → saved as a node. Install it from the Chrome Web Store and paste your API token in its options.
+The Fromly extension for Chrome: click the icon → saves the current tab's URL to today's note; select text → right-click → "Send to Fromly" → saved as a node. Install it from the Chrome Web Store and paste your API token in its options.
 
 ---
 

@@ -419,7 +419,7 @@ export function migrateTagsToContexto(): void {
 
 // Plantilla de onboarding para el perfil IA — se pre-rellena al crearlo.
 // El usuario edita y borra las instrucciones que no necesite.
-const PERFIL_IA_ONBOARDING = `Cuéntale a From quién eres para que te entienda sin que tengas que explicarlo cada vez.
+const PERFIL_IA_ONBOARDING = `Cuéntale a Fromly quién eres para que te entienda sin que tengas que explicarlo cada vez.
 
 ## Quién soy
 Nombre:
@@ -427,14 +427,14 @@ Ubicación:
 Profesión / actividad principal:
 
 ## Mis proyectos
-(Describe brevemente cada proyecto o área de tu vida. From usará esto para asignar contexto automáticamente.)
+(Describe brevemente cada proyecto o área de tu vida. Fromly usará esto para asignar contexto automáticamente.)
 
 ## Cómo quiero que me responda
 - Directo, sin rodeos, en español
 (Añade tus preferencias)
 
 ## Contexto adicional
-(Cualquier cosa que From deba saber siempre: familia, rutinas, herramientas habituales…)`
+(Cualquier cosa que Fromly deba saber siempre: familia, rutinas, herramientas habituales…)`
 
 /**
  * ensurePerfilInsideContexto — garantiza que el nodo Perfil IA existe
@@ -461,9 +461,9 @@ export function ensurePerfilInsideContexto(): void {
     // Las secciones como nodos hijos — el usuario rellena en el outliner normal
     const sections = [
       { title: 'Quién soy', children: ['Nombre:', 'Ubicación:', 'Profesión / actividad principal:'] },
-      { title: 'Mis proyectos', children: ['Describe aquí tus proyectos. From los usará para asignar contexto automáticamente.'] },
+      { title: 'Mis proyectos', children: ['Describe aquí tus proyectos. Fromly los usará para asignar contexto automáticamente.'] },
       { title: 'Cómo quiero que me responda', children: ['Directo, sin rodeos, en español', '(Añade tus preferencias)'] },
-      { title: 'Contexto adicional', children: ['(Familia, rutinas, herramientas habituales, lo que From deba saber siempre)'] },
+      { title: 'Contexto adicional', children: ['(Familia, rutinas, herramientas habituales, lo que Fromly deba saber siempre)'] },
     ]
     for (const section of sections) {
       const sNode = store.createNode({ text: section.title, parentId: newPerfil.id })
@@ -554,7 +554,7 @@ export function ensurePlantillasNode(): void {
     store.createNode({ text: PLANTILLAS_NAME, parentId: null, siblingOrder: 9997, predefinedId: structuralId('plantillas') ?? undefined })
   } else {
     const keeper = remaining[0]
-    // Asegurar solo el nombre correcto. NO forzar parentId=null: la raíz 🏠 From
+    // Asegurar solo el nombre correcto. NO forzar parentId=null: la raíz 🏠 Fromly
     // reparenta Plantillas bajo ella (ensureHomeRootAndReparent); forzar null aquí
     // la devolvería a la raíz en cada arranque, peleando con el reparent.
     if (keeper.text !== PLANTILLAS_NAME) {

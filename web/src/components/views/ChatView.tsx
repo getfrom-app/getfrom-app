@@ -8,7 +8,7 @@ interface Message {
   content: string
 }
 
-const SYSTEM_PROMPT = `Eres el asistente de IA personal de From, una app de gestión de conocimiento personal.
+const SYSTEM_PROMPT = `Eres el asistente de IA personal de Fromly, una app de gestión de conocimiento personal.
 Ayudas al usuario con: organización personal, escritura, análisis, resúmenes y cualquier pregunta que tenga.
 Responde siempre en español de forma clara y concisa.
 Puedes usar markdown en tus respuestas.`
@@ -173,7 +173,7 @@ export default function ChatView() {
           <div className="chat-welcome">
             <div className="chat-welcome-icon">✦</div>
             <div className="chat-welcome-title">¿En qué puedo ayudarte?</div>
-            <div className="chat-welcome-subtitle">Tu asistente personal de From. Pregunta lo que necesites.</div>
+            <div className="chat-welcome-subtitle">Tu asistente personal de Fromly. Pregunta lo que necesites.</div>
             <div className="chat-welcome-suggestions">
               {SUGGESTIONS.map((s) => (
                 <button

@@ -229,7 +229,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
             <rect width="100" height="100" rx="22" fill="#8b5cf6"/>
             <text x="50" y="68" textAnchor="middle" fontSize="52" fontWeight="700" fill="white" fontFamily="Inter, sans-serif">F</text>
           </svg>
-          <span>From</span>
+          <span>Fromly</span>
         </div>
 
         <h1>{mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}</h1>

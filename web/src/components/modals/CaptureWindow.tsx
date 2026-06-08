@@ -71,8 +71,8 @@ export default function CaptureWindow() {
         fontFamily: 'Inter, sans-serif', borderRadius: 12,
         border: '1px solid var(--border)', padding: 24, textAlign: 'center',
       }}>
-        <strong style={{ color: 'var(--text-primary)', fontSize: 15 }}>Inicia sesión en From</strong>
-        <span style={{ fontSize: 13 }}>Abre la app de From y entra en tu cuenta para usar la captura rápida.</span>
+        <strong style={{ color: 'var(--text-primary)', fontSize: 15 }}>Inicia sesión en Fromly</strong>
+        <span style={{ fontSize: 13 }}>Abre la app de Fromly y entra en tu cuenta para usar la captura rápida.</span>
         <button
           onClick={() => routeToMain('/')}
           style={{ marginTop: 4, padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}

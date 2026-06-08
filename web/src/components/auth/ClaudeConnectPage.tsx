@@ -115,7 +115,7 @@ export default function ClaudeConnectPage() {
     <div style={containerStyle}>
       <div style={cardStyle}>
         <Logo />
-        <h2 style={titleStyle}>Conectar From con Claude</h2>
+        <h2 style={titleStyle}>Conectar Fromly con Claude</h2>
         <p style={subtitleStyle}>
           Claude quiere acceder a tu vault de From para guardar notas, tareas y contextos de tus conversaciones.
         </p>
@@ -175,7 +175,7 @@ function Logo() {
       }}>
         🌳
       </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>From</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>Fromly</div>
     </div>
   )
 }
