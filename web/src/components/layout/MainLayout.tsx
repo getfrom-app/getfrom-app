@@ -15,6 +15,7 @@ import PromptPropertiesPanel from '../panels/PromptPropertiesPanel'
 import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
+import SettingsListPanel from '../panels/SettingsListPanel'
 import { aiChatStore } from '../../store/aiChatStore'
 import { ensurePromptsNode, getPromptsRoot } from '../../utils/promptsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
@@ -101,6 +102,7 @@ export default function MainLayout() {
     | 'context-list' | 'context'
     | 'prompt-list'  | 'prompt'
     | 'agent-list'   | 'agent'
+    | 'settings'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
   // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
@@ -269,16 +271,20 @@ export default function MainLayout() {
   useEffect(() => {
     const m = location.pathname.match(/\/node\/([^/]+)/)
     const navId = m ? m[1] : null
+    const atSettings = location.pathname.replace(/^\/app\/?/, '').replace(/^\//, '').startsWith('settings')
     // Si el nodo es (o desciende de) Agentes/Prompts/Contexto → mostrar sus
     // propiedades en la columna derecha. La navegación es por el árbol; el detalle
     // se abre solo (ya no hace falta clicar en una pestaña lista).
     const kind = navId ? classifyNodeRoot(navId) : null
-    if (navId && kind) {
+    if (atSettings) {
+      // Ajustes: la columna derecha lista las pestañas, el centro muestra el contenido.
+      if (rightPanel !== 'settings') setRightPanel('settings')
+    } else if (navId && kind) {
       if (rightPanel !== kind || detailNodeId !== navId) {
         setDetailNodeId(navId)
         setRightPanel(kind)
       }
-    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent') {
+    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || rightPanel === 'settings') {
       // Salimos a un nodo normal o al home → cerrar el detalle y volver al filtro.
       setRightPanel('filter')
       setDetailNodeId(null)
@@ -966,6 +972,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'recorder' && (
             <RecorderPanel onClose={() => openPanel('filter')} />
+          )}
+          {rightPanel === 'settings' && (
+            <SettingsListPanel />
           )}
         </div>
         </Suspense>

@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.198 / Mac v9.5.37 — 8 junio 2026 · Prompts en Magic + Ajustes en el panel derecho
+
+- **Prompts en Magic**: al abrir Magic, los prompts aparecen como **lista clicable** (igual que la columna de filtros). Pulsas uno y se activa. Se ha **eliminado el `/`** (ya no hace falta el comando slash para activarlos).
+- **Ajustes integrados en From**: la pantalla de Ajustes ahora vive dentro del layout de tres columnas: la **lista de pestañas** (Cuenta, Apariencia, IA, Productividad, Integraciones, Datos) está en la **columna derecha** y el **contenido de cada pestaña en el centro**. Coherente con cómo se muestran agentes, prompts y contextos.
+
+---
+
 ## Web v9.6.197 / Mac v9.5.36 — 8 junio 2026 · Exportar HTML + un único menú de nodo
 
 - **Exportar ▸ HTML**: descarga la nota como página HTML autónoma. Y el **PDF** ahora se genera limpio (ventana solo con la nota).

@@ -754,6 +754,7 @@
   "prompts.autoTag": "auto",
   "prompts.removeActive": "Quitar",
   "prompts.suggestUse": "¿Usar prompt",
+  "prompts.listTitle": "Prompts",
   "prompts.slashTitle": "Activar un prompt",
   "prompts.slashNone": "Sin prompts. Créalos en el panel de Prompts.",
   "agents.topbarTitle": "Agentes",

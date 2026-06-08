@@ -33,14 +33,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const onboardingNodeIdRef = useRef<string | undefined>(undefined)
 
   // ── Sistema de Prompts ────────────────────────────────────────────────────
+  // Los prompts se eligen desde la lista del estado vacío (no hay slash).
   const allPrompts = listPrompts()
-  // Slash: el popup de prompts se abre cuando el input empieza por '/'
-  const slashQuery = input.startsWith('/') ? input.slice(1).toLowerCase() : null
-  const slashMatches = slashQuery !== null
-    ? allPrompts.filter(p => (p.text || '').toLowerCase().includes(slashQuery))
-    : []
-  const [slashIdx, setSlashIdx] = useState(0)
-  useEffect(() => { setSlashIdx(0) }, [slashQuery])
   // Sugerencias (modo 3) descartadas por el usuario — no volver a proponerlas.
   const dismissedSuggestRef = useRef<Set<string>>(new Set())
   // Evita re-activar automáticamente un prompt que el usuario quitó a mano.
@@ -60,9 +54,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId, chat.messages.length])
 
-  function activatePromptFromSlash(id: string) {
+  function activatePrompt(id: string) {
     chat.setActivePrompt(id, false)
-    setInput('')
     setTimeout(() => taRef.current?.focus(), 30)
   }
   function clearActivePrompt() {
@@ -82,7 +75,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const suggestAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
     if (suggestTimerRef.current) clearTimeout(suggestTimerRef.current)
-    if (slashQuery !== null || chat.activePromptId) return
+    if (chat.activePromptId) return
     const trimmed = input.trim()
     if (trimmed.length < 12 || trimmed === lastSuggestTextRef.current) return
     suggestTimerRef.current = setTimeout(async () => {
@@ -411,18 +404,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   }
 
   function onTextareaKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Popup de slash abierto → navegar/activar prompts
-    if (slashQuery !== null && slashMatches.length > 0) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setSlashIdx(i => (i + 1) % slashMatches.length); return }
-      if (e.key === 'ArrowUp')   { e.preventDefault(); setSlashIdx(i => (i - 1 + slashMatches.length) % slashMatches.length); return }
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        const picked = slashMatches[slashIdx] ?? slashMatches[0]
-        if (picked) activatePromptFromSlash(picked.id)
-        return
-      }
-      if (e.key === 'Escape') { e.preventDefault(); setInput(''); return }
-    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend(input)
@@ -442,7 +423,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const inputBlock = (
     <div className="magic-chat-input-wrap" style={{ position: 'relative' }}>
       {/* Chip del prompt activo */}
-      {activePromptNode && slashQuery === null && (
+      {activePromptNode && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 0' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, color: 'var(--accent)', fontWeight: 500, maxWidth: '100%' }}>
             <span>{promptIcon(activePromptNode)}</span>
@@ -451,28 +432,6 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
             <button onClick={clearActivePrompt} title={t('prompts.removeActive', 'Quitar')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 1 }}>×</button>
           </div>
-        </div>
-      )}
-
-      {/* Popup de slash: lista de prompts */}
-      {slashQuery !== null && (
-        <div style={{ position: 'absolute', bottom: '100%', left: 8, right: 8, marginBottom: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 12px 40px rgba(0,0,0,0.18)', overflow: 'hidden', zIndex: 30, maxHeight: 260, overflowY: 'auto' }}>
-          <div style={{ padding: '6px 12px', fontSize: 10.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-            {t('prompts.slashTitle', 'Activar un prompt')}
-          </div>
-          {slashMatches.length === 0 ? (
-            <div style={{ padding: '8px 12px', fontSize: 12.5, color: 'var(--text-tertiary)' }}>{t('prompts.slashNone', 'Sin prompts. Créalos en el panel de Prompts.')}</div>
-          ) : slashMatches.map((p, i) => (
-            <button
-              key={p.id}
-              onMouseDown={e => { e.preventDefault(); activatePromptFromSlash(p.id) }}
-              onMouseEnter={() => setSlashIdx(i)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: i === slashIdx ? 'var(--bg-hover)' : 'transparent', border: 'none', padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
-            >
-              <span style={{ flexShrink: 0 }}>{promptIcon(p)}</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.text}</span>
-            </button>
-          ))}
         </div>
       )}
 
@@ -546,6 +505,28 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
               chat.send(final, currentNodeId)
             }}
           />
+
+          {/* Lista de prompts: clic para activar (sustituye al slash) */}
+          {!activePromptNode && !input.trim() && allPrompts.length > 0 && (
+            <div style={{ padding: '4px 8px 8px', overflowY: 'auto', maxHeight: 220 }}>
+              <div style={{ padding: '4px 8px 2px', fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {t('prompts.listTitle', 'Prompts')}
+              </div>
+              {allPrompts.map(p => (
+                <button
+                  key={p.id}
+                  onMouseDown={e => { e.preventDefault(); activatePrompt(p.id) }}
+                  className="magic-prompt-row"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'inherit' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <span style={{ flexShrink: 0 }}>{promptIcon(p)}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.text}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{ flex: 1 }} />
         </>
       )}
