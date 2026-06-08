@@ -127,6 +127,24 @@ function countLearnedItems(): number {
   return people.length + facts.length
 }
 
+/** Cuenta TODO lo que From sabe de ti: cada línea con contenido bajo tu Perfil de
+ *  IA (lo que escribes + lo que extrae solo + las reglas que le enseñas). Refleja
+ *  el conocimiento real, no solo el bucket auto-extraído. */
+export function profileEntryCount(): number {
+  const perfil = store.perfilIANode?.() ?? null
+  if (!perfil) return 0
+  let n = 0
+  const walk = (id: string) => {
+    for (const k of store.children(id)) {
+      if (k.deletedAt) continue
+      if ((k.text || '').trim().length > 1) n++
+      walk(k.id)
+    }
+  }
+  walk(perfil.id)
+  return n
+}
+
 /** Sobrescribe las sublíneas Personas/Hechos con listas ya compactadas. */
 function writeLearnedItems(learnNodeId: string, people: string[], facts: string[]) {
   const setSub = (prefix: string, items: string[]) => {

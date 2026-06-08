@@ -19,7 +19,7 @@ import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
-import { readLearnedItems, compactProfileKnowledge } from '../../api/userKnowledge'
+import { readLearnedItems, compactProfileKnowledge, profileEntryCount } from '../../api/userKnowledge'
 
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
@@ -38,9 +38,10 @@ function MagicPane() {
   const [msg, setMsg] = useState<string | null>(null)
 
   void s.nodesVersion
+  void ls           // re-render cuando cambian las reglas de Magic
   const learned = readLearnedItems()
-  const rules = ls.getAll()
-  const total = learned.people.length + learned.facts.length + rules.length
+  const total = profileEntryCount()                       // TODO el Perfil, no solo el bucket auto
+  const canCompact = learned.people.length + learned.facts.length > 0
 
   async function openProfile() {
     let perfil = s.perfilIANode?.() ?? null
@@ -64,14 +65,14 @@ function MagicPane() {
         <div className="st-row-info">
           <div className="st-row-label">Tu Perfil de IA</div>
           <div className="st-row-hint">
-            From y Magic son lo mismo: aprenden datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y de lo que le enseñas (botón derecho → Enseñar a Magic).
-            {total > 0 ? ` Ahora guarda ${total} ${total === 1 ? 'entrada' : 'entradas'}.` : ' Aún no ha guardado nada.'}
+            From y Magic son lo mismo. Tu Perfil de IA reúne lo que escribes tú, lo que From extrae solo de tus notas y conversaciones, y lo que le enseñas (botón derecho → Enseñar a Magic). Además, en cada conversación usa tus contextos y notas recientes.
+            {total > 0 ? ` Tu perfil tiene ${total} ${total === 1 ? 'línea' : 'líneas'}.` : ' Tu perfil aún está vacío.'}
             {' '}Ábrelo para verlo y editarlo en bullets, como cualquier nota.
           </div>
         </div>
         <div className="st-row-action" style={{ display: 'flex', gap: 8 }}>
           <button className="btn-primary btn-sm" onClick={openProfile}>Ver y editar</button>
-          <button className="btn-secondary btn-sm" onClick={handleCompact} disabled={busy || total === 0}>
+          <button className="btn-secondary btn-sm" onClick={handleCompact} disabled={busy || !canCompact}>
             {busy ? 'Limpiando…' : 'Limpiar y compactar'}
           </button>
         </div>

@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.221 — 8 junio 2026 · Magic: el contador refleja todo tu perfil
+
+- Antes decía "aún no ha guardado nada" aunque tu Perfil de IA tuviera contenido: solo contaba el bucket auto-extraído. Ahora cuenta **todo tu Perfil** (lo que escribes + lo auto-aprendido + las reglas) y explica que From también usa tus contextos y notas recientes.
+
+---
+
 ## Web v9.6.220 — 8 junio 2026 · Magic: todo lo que From sabe de ti, en un solo sitio
 
 - Unificadas "Lo que From sabe sobre ti" y "Lo que Magic ha aprendido de ti" en **una sola sección**: From y Magic son lo mismo. Todo (lo que aprende de tus notas/conversaciones + lo que le enseñas) vive en tu **Perfil de IA**, que es una nota normal: pulsa **"Ver y editar"** para verlo y editarlo en bullets. Sigue el botón "Limpiar y compactar".
