@@ -1077,10 +1077,10 @@ Tus datos no están atrapados en From. La exportación es completa, sin restricc
 
 ### Cuenta
 
-- Email y contraseña.
-- Plan actual y fechas de renovación.
-- Cancelar suscripción (el acceso se mantiene hasta el final del periodo pagado).
-- Historial de tokens de IA consumidos.
+- **Email**: solo lectura (cambiarlo rompería el inicio de sesión con Google/Apple).
+- **Contraseña**: puedes cambiarla (pide la actual).
+- **Suscripción**: tu plan y, si tienes suscripción activa, renovación, «Cancelar» y «Gestionar facturación» (portal de cliente). En plan gratuito solo verás «Mejorar»; en licencia perpetua, nada que gestionar.
+- **Eliminar cuenta**: protegida — pide confirmar con tu contraseña (o tu email si entras con Google).
 
 ### Idioma
 
@@ -1090,46 +1090,54 @@ Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e
 
 ### Apariencia
 
-- **Tema**: claro, oscuro o automático (sigue el sistema).
-- **Densidad**: compacto, normal o espacioso. Cambia el espaciado entre nodos.
-- **Color de acento**: el color del interfaz (por defecto morado).
-- **Calendario y Timeline**: rango de horas mostrado en el planificador (por defecto 7:00-23:00).
+- **Tema**: claro u oscuro.
+- **Color de acento**: 12 colores para el interfaz (por defecto morado).
+- **Calendario y Planner**: hora de inicio y fin del día (por defecto 7:00-23:00); las horas fuera de rango se ocultan en el calendario y el planner.
 
 ### IA
 
-- **Modelo**: el modelo de IA que usa From por defecto (Claude, GPT, Gemini).
-- **Claves API propias**: si tienes plan Pro o Lifetime, puedes usar tus propias claves de API de Anthropic, OpenAI o Google para que el consumo vaya a tu cuenta.
-- **Configuración de agentes**: permisos y límites generales de los agentes autónomos.
+- **Tokens incluidos**: tu saldo de tokens de IA.
+- **Claves API propias**: solo con **licencia perpetua** puedes usar tus propias claves de Anthropic/OpenAI/Google (el consumo va a tu cuenta).
+- **Idioma** de la IA: español, inglés o automático.
 
-### Predicciones
+### Magic
 
-Añade palabras clave propias para que From las reconozca como señal de tarea o evento mientras escribes. Por ejemplo: si añades "llamar", cada vez que escribas "llamar a..." From sugerirá convertirlo en tarea automáticamente.
+Todo lo que From sabe de ti vive en tu **Perfil de IA** (una nota editable). Desde aquí, «Ver y editar» abre lo que From ha aprendido por su cuenta, y se lista lo que sabe **por cada contexto**. La limpieza es automática. Magic siempre está activo (no hay interruptores).
 
-### Integraciones
+### Atajos
 
-- **Google Calendar**: conectar, desconectar, ver estado de sincronización.
-- **Claude (MCP)**: conecta From con Claude desde el directorio oficial de conectores de Anthropic. Ver instrucciones detalladas más abajo.
+Atajos de teclado (los configurables se reasignan con un clic) y expansión de texto.
+
+### Google
+
+Conectar/desconectar Google Calendar y ver el estado de sincronización.
+
+### Accesorios
+
+Token de API, barra de menús (Mac), Atajo de Apple, Raycast, Chrome y Claude. Ver §23b.
 
 ### Datos / Backup
 
-- Historial de snapshots automáticos.
-- Botón para crear snapshot manual.
-- Restaurar un snapshot anterior.
-- Exportar en JSON o Markdown.
+- Snapshots automáticos cada ~2h; crear snapshot manual; restaurar uno anterior.
+- **Exportar** una copia completa en JSON o Markdown.
 
 ### Importar
 
-From puede importar notas desde otras apps:
+From importa desde otras apps con un **asistente paso a paso**. Ve a **Ajustes → Importar** y elige la fuente:
 
-- Obsidian (vault de Markdown)
-- Notion (export JSON)
-- LogSeq
-- NotePlan
-- Bear
-- Apple Notes
-- Cualquier carpeta de archivos Markdown
+- **Obsidian** — sube la carpeta del vault (.md). Se respeta la estructura de subcarpetas.
+- **Notion** — exporta a «Markdown & CSV», descomprime el .zip y sube la carpeta.
+- **Apple Notes** — pásalas antes a .txt/.md y súbelas.
+- **Markdown / texto** — uno o varios archivos .md/.txt, o una carpeta entera.
+- **From (JSON)** — una copia de seguridad exportada desde From.
 
-Ve a **Ajustes → Importar**, elige la fuente y sigue el proceso.
+Lo importado se crea en un nodo **«📥 Importado [fecha]»** (con encabezados → secciones y viñetas anidadas), para que lo revises y reorganices sin tocar tus notas actuales.
+
+### Plantillas
+
+Una plantilla es un **nodo hijo de 📋 Plantillas**: la editas como cualquier nota. Al abrirla, en la columna derecha puedes:
+- **Auto-aplicar en nota diaria**: cada día nuevo arranca con su contenido.
+- **Nota recurrente**: cada X días/semanas/meses (y el día), From inserta la plantilla como una **sección dentro de la nota de ese día** (ideal para revisión semanal/mensual).
 
 ---
 
