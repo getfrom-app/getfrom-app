@@ -22,7 +22,7 @@ export default function SettingsListPanel() {
       </div>
       {NAV.map((section, si) => (
         <div key={si} style={{ marginBottom: 4 }}>
-          <div style={{ padding: '6px 16px 2px', fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          <div style={{ padding: '8px 16px 3px', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             {section.title}
           </div>
           {section.items.map(item => {
@@ -33,7 +33,7 @@ export default function SettingsListPanel() {
                 onClick={() => open(item.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
-                  padding: '6px 16px', border: 'none', cursor: 'pointer', fontSize: 13,
+                  padding: '7px 16px', border: 'none', cursor: 'pointer', fontSize: 14,
                   fontFamily: 'inherit',
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                   background: isActive ? 'rgba(139,92,246,0.08)' : 'transparent',

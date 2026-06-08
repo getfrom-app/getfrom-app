@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.209 — 8 junio 2026 · Ajustes: contenido centrado + fuentes más legibles
+
+- En Ajustes, el contenido ya **no se queda pegado a la izquierda** con un hueco enorme: está centrado y mejor aprovechado.
+- **Fuentes más grandes** en toda la pantalla de Ajustes (etiquetas, descripciones, pestañas) — se leen mucho mejor.
+
+---
+
 ## Web v9.6.208 / Mac v9.5.45 — 8 junio 2026 · Fix: error de navegación al abrir paneles/ajustes
 
 - Arreglado el fallo intermitente por el que, al abrir un panel o Ajustes, la navegación daba un error y la app se recargaba (a veces volviendo a la raíz). Ocurría cuando había una versión nueva publicada y la pestaña seguía con la anterior: al cargar una parte de la app que había cambiado, fallaba. Ahora **reintenta y, si hace falta, se recarga en el mismo sitio** (sin perder dónde estabas) y sin pantallazo de error.
