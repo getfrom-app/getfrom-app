@@ -3,6 +3,10 @@ import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
 import { opsClient } from './opsClient'
 import { structuralId } from '../utils/deterministicId'
+import { userStore } from './userStore'
+
+/** Límite de nodos del plan gratuito. */
+export const FREE_NODE_LIMIT = 1000
 
 const GUEST_NODES_KEY = 'from_guest_nodes'
 
@@ -293,6 +297,15 @@ export class NodeStore {
 
   allActive(): Node[] {
     return [...this.nodes.values()].filter(n => !n.deletedAt)
+  }
+
+  /** True si el usuario gratis ya alcanzó el límite de nodos. Si es así, dispara
+   *  el paywall (banner de pasar a Pro). Los usuarios Pro/Lifetime nunca se bloquean. */
+  atFreeNodeLimit(): boolean {
+    if (userStore.isPremium) return false
+    if (this.allActive().length < FREE_NODE_LIMIT) return false
+    window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
+    return true
   }
 
   /// Nodo perfil de la IA (paridad Mac NodeService.perfilIANode).

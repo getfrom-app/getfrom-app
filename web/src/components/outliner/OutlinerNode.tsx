@@ -1673,6 +1673,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   }, [node.id, node.isDiaryEntry])
 
   function createSiblingBelow() {
+    if (store.atFreeNodeLimit()) return  // free: bloquea al llegar a 1.000 nodos + muestra paywall
     const sibs = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
     const i = sibs.findIndex(n => n.id === node.id)
     const next = sibs[i + 1]

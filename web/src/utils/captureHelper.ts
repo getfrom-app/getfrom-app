@@ -68,6 +68,7 @@ export interface CreateFromTextResult {
 export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpts = {}): CreateFromTextResult | null {
   const rawText = rawTextInput.trim()
   if (!rawText) return null
+  if (store.atFreeNodeLimit()) return null  // free: bloquea al llegar a 1.000 nodos + muestra paywall
 
   const today = getTodayDiaryUnderAgenda()
   const sibs = store.children(today.id)
