@@ -1,6 +1,6 @@
 {
-  "name": "From",
-  "short_name": "From",
+  "name": "Fromly",
+  "short_name": "Fromly",
   "description": "Tu segundo cerebro. Notas, tareas, diario y IA.",
   "start_url": "/app/",
   "display": "standalone",
