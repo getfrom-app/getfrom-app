@@ -159,6 +159,7 @@
   "statusbar.lastBackup": "Último backup",
   "statusbar.lastBackupHint": "Último backup automático",
   "statusbar.nextAgentRunHint": "Próxima ejecución automática de agente",
+  "statusbar.noAgentsActive": "Ningún agente activo",
   "statusbar.agentsActive_one": "{{count}} agente activo",
   "statusbar.agentsActive_other": "{{count}} agentes activos",
   "statusbar.nextRun": "próxima {{when}}",

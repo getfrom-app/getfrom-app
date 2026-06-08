@@ -4,9 +4,9 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.200 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes programados en la barra inferior
+## Web v9.6.201 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes programados en la barra inferior
 
-- La barra inferior muestra ahora **cuántos agentes activos tienes programados y cuándo corre el próximo** (p. ej. «🤖 2 agentes activos · próxima en 2 h»). Solo aparece si hay agentes con horario.
+- La barra inferior muestra ahora **cuántos agentes activos tienes programados y cuándo corre el próximo** (p. ej. «🤖 2 agentes activos · próxima en 2 h»). Si no hay ninguno programado, muestra «Ningún agente activo».
 
 ---
 

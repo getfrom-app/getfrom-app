@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.6.200'
+export const WEB_VERSION = 'v9.6.201'
 
 interface Props {
   isSyncing: boolean
@@ -191,13 +191,19 @@ export default function StatusBar({ isSyncing, showSaved }: Props) {
         {t('statusbar.lastBackup')} {loadingBackup ? '…' : lastBackup ? formatBackupAge(lastBackup) : '—'}
       </span>
 
-      {/* Agentes programados: contador + próxima activación */}
-      {agentsSummary && agentsSummary.count > 0 && (
+      {/* Agentes programados: contador + próxima activación (o "ninguno") */}
+      {agentsSummary && (
         <>
           <span className="footer-sep" />
           <span className="footer-item" title={t('statusbar.nextAgentRunHint')}>
-            🤖 {t('statusbar.agentsActive', { count: agentsSummary.count })}
-            {agentsSummary.nextDate && ` · ${t('statusbar.nextRun', { when: relativeUntil(agentsSummary.nextDate, i18n.language?.startsWith('en')) })}`}
+            {agentsSummary.count === 0 ? (
+              t('statusbar.noAgentsActive', 'Ningún agente activo')
+            ) : (
+              <>
+                🤖 {t('statusbar.agentsActive', { count: agentsSummary.count })}
+                {agentsSummary.nextDate && ` · ${t('statusbar.nextRun', { when: relativeUntil(agentsSummary.nextDate, i18n.language?.startsWith('en')) })}`}
+              </>
+            )}
           </span>
         </>
       )}
