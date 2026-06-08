@@ -60,6 +60,7 @@ export default function PricingView() {
             <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
             <span className="pcard-price">€0</span>
           </div>
+          <div className="ptoggle-spacer" aria-hidden="true" />
           <div className="pcard-hero">
             <span className="pcard-hero-num">1.000</span>
             <span className="pcard-hero-label">{t('pricing.nodesLabel', 'nodos')}</span>
