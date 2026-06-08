@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.218 — 8 junio 2026 · IA: más limpia
+
+- Quitado "Proveedor de IA / Modelo por defecto" (irrelevante para el usuario).
+- El bloque de **API keys propias** solo lo ven los usuarios con **licencia perpetua** (es un extra de ese plan). El resto ve solo sus tokens incluidos y el idioma.
+
+---
+
 ## Web v9.6.217 — 8 junio 2026 · Quitada la pestaña Estadísticas
 
 - Eliminada la pestaña **Estadísticas** de Ajustes (no aportaba). El número de notas y nodos sigue visible en la barra inferior.

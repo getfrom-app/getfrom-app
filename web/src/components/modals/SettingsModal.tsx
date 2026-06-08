@@ -469,10 +469,8 @@ export function IAPane() {
   const us = useUserStore()
   const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'es')
 
-  const hasPaidPlan =
-    us.user?.licenseStatus === 'active' ||
-    us.user?.subscriptionStatus === 'active' ||
-    us.user?.subscriptionStatus === 'trialing'
+  // Las API keys propias son un extra de la licencia perpetua (lifetime).
+  const isLifetime = us.user?.licenseStatus === 'active'
 
   function setLanguage(v: string) {
     setLang(v)
@@ -481,18 +479,15 @@ export function IAPane() {
 
   return (
     <div className="st-pane">
-      <SectionTitle>{t('ai.sectionProvider')}</SectionTitle>
-      <Row
-        label={t('ai.defaultModelLabel')}
-        hint={t('ai.defaultModelHint')}
-      >
-        <span className="st-value">{t('ai.defaultModelValue')}</span>
-      </Row>
-
-      <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
-      {PROVIDERS.map(p => (
-        <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={hasPaidPlan} />
-      ))}
+      {/* API keys propias: solo lifetime puede usar sus propias claves. */}
+      {isLifetime && (
+        <>
+          <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
+          {PROVIDERS.map(p => (
+            <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={isLifetime} />
+          ))}
+        </>
+      )}
 
       <SectionTitle>{t('ai.sectionIncludedTokens')}</SectionTitle>
       {us.user?.tokensBalance !== undefined ? (
