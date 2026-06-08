@@ -105,15 +105,35 @@ export function setDailyTemplate(nodeId: string, on: boolean): void {
   }
 }
 
-/** Recurrencia de una plantilla: '' (ninguna) | 'weekly:D' (D=0 dom…6 sáb) |
- *  'monthly:N' (N=1..31). Se aplica como SECCIÓN hija de la nota del día. */
-export function getTemplateRecurrence(nodeId: string): string {
-  const n = store.getNode(nodeId)
-  if (!n) return ''
-  try { return JSON.parse(n.extraData || '{}')._recur || '' } catch { return '' }
+/** Recurrencia de una plantilla. freq = día/semana/mes; interval = cada cuántos;
+ *  weekday (0 dom…6 sáb) para semanas; monthday (1..31) para meses; start = ancla. */
+export interface TemplateRecurrence {
+  freq: 'day' | 'week' | 'month'
+  interval: number
+  weekday?: number
+  monthday?: number
+  start?: string   // ISO date-only (ancla para contar intervalos)
 }
 
-export function setTemplateRecurrence(nodeId: string, recur: string): void {
+/** Lee la recurrencia (objeto) de una plantilla, o null. Convierte el formato
+ *  antiguo ('weekly:D' / 'monthly:N') al nuevo de forma transparente. */
+export function getTemplateRecurrence(nodeId: string): TemplateRecurrence | null {
+  const n = store.getNode(nodeId)
+  if (!n) return null
+  let raw: unknown
+  try { raw = JSON.parse(n.extraData || '{}')._recur } catch { return null }
+  if (!raw) return null
+  if (typeof raw === 'string') {
+    if (raw.startsWith('weekly:')) return { freq: 'week', interval: 1, weekday: parseInt(raw.slice(7), 10) }
+    if (raw.startsWith('monthly:')) return { freq: 'month', interval: 1, monthday: parseInt(raw.slice(8), 10) }
+    return null
+  }
+  const o = raw as TemplateRecurrence
+  if (o && (o.freq === 'day' || o.freq === 'week' || o.freq === 'month')) return o
+  return null
+}
+
+export function setTemplateRecurrence(nodeId: string, recur: TemplateRecurrence | null): void {
   const n = store.getNode(nodeId)
   if (!n) return
   try {
@@ -123,16 +143,37 @@ export function setTemplateRecurrence(nodeId: string, recur: string): void {
   } catch { /* */ }
 }
 
+const dayMs = 86400000
+const atMidnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
+/** ¿Toca la recurrencia en `date`? */
+export function recurrenceMatches(r: TemplateRecurrence, date: Date): boolean {
+  const interval = Math.max(1, r.interval || 1)
+  const start = r.start ? new Date(r.start) : new Date(2026, 0, 1)
+  const d0 = atMidnight(date)
+  const s0 = atMidnight(start)
+  if (d0 < s0) return false
+  if (r.freq === 'day') {
+    const days = Math.round((d0 - s0) / dayMs)
+    return days % interval === 0
+  }
+  if (r.freq === 'week') {
+    if (typeof r.weekday === 'number' && date.getDay() !== r.weekday) return false
+    const weeks = Math.floor((d0 - s0) / (7 * dayMs))
+    return weeks % interval === 0
+  }
+  // month
+  if (typeof r.monthday === 'number' && date.getDate() !== r.monthday) return false
+  const months = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth())
+  return months >= 0 && months % interval === 0
+}
+
 /** Aplica las plantillas recurrentes que toquen en `date` como secciones hijas
  *  de la nota del día (sin duplicar). Cada sección se marca con _fromTemplate. */
 export function applyRecurringTemplatesToDay(dayNodeId: string, date: Date): void {
   for (const t of listTemplates()) {
     const recur = getTemplateRecurrence(t.id)
-    if (!recur) continue
-    let match = false
-    if (recur.startsWith('weekly:')) match = date.getDay() === parseInt(recur.slice(7), 10)
-    else if (recur.startsWith('monthly:')) match = date.getDate() === parseInt(recur.slice(8), 10)
-    if (!match) continue
+    if (!recur || !recurrenceMatches(recur, date)) continue
     // No duplicar: ¿ya hay una sección de esta plantilla en el día?
     const exists = store.children(dayNodeId).some(c => {
       if (c.deletedAt) return false

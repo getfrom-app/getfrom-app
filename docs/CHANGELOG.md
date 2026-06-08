@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.229 — 8 junio 2026 · Plantillas: panel más claro + recurrencia flexible
+
+- En el panel de una plantilla, los botones ahora son claros: **«Auto-aplicar en nota diaria»** y **«Nota recurrente»**.
+- «Nota recurrente» abre un **modal** para configurar la recurrencia: **cada X días / semanas / meses**, y el día (de la semana o del mes). Se inserta como sección dentro de la nota de ese día.
+
+---
+
 ## Web v9.6.228 / Mac v9.5.49 — 8 junio 2026 · Magic: parar la grabación con un clic
 
 - El botón de grabación de Magic ahora funciona con **clic para empezar y clic para parar** (y enviar). Antes, si lo iniciabas con el ratón, no había forma clara de pararlo (solo soltando la tecla R). La tecla R sigue funcionando manteniéndola pulsada.
