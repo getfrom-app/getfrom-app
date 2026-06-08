@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.219 — 8 junio 2026 · Magic: siempre activo, sin conmutadores
+
+- Quitados los interruptores de Magic (detectar objeto, completar, botón ✨, editor lateral, animar pill). **Todo está siempre activado** — no eran necesarios (de hecho no hacían nada). La pestaña Magic deja solo lo útil: el conocimiento del perfil y lo que Magic ha aprendido de ti.
+
+---
+
 ## Web v9.6.218 — 8 junio 2026 · IA: más limpia
 
 - Quitado "Proveedor de IA / Modelo por defecto" (irrelevante para el usuario).

@@ -24,116 +24,15 @@ import { readLearnedItems, compactProfileKnowledge } from '../../api/userKnowled
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
 
-// ── Magic toggles ────────────────────────────────────────────────────────────
-
-interface MagicToggleDef {
-  key: string
-  title: string
-  subtitle: string
-  defaultOn: boolean
-}
-
-const MAGIC_TOGGLES: MagicToggleDef[] = [
-  { key: 'magic.objectDetection', title: 'Detectar objeto desde el texto',
-    subtitle: 'Cuando escribes algo como "Sync con Adrián mañana", From propone #reunión como ghost text. Tab acepta.',
-    defaultOn: true },
-  { key: 'magic.completion', title: 'Completar el pensamiento',
-    subtitle: 'From sugiere cómo terminar la frase con texto en gris cursiva. Tab acepta.',
-    defaultOn: true },
-  { key: 'magic.ambient', title: 'Acciones IA por nodo (botón ✨)',
-    subtitle: 'En hover sobre cada bullet o nota aparece el botón ✨ con acciones precocinadas por tipo (resumir, sugerir subtareas, etc).',
-    defaultOn: true },
-  { key: 'magic.draftSidebar', title: 'Editor lateral para outputs largos',
-    subtitle: 'Cuando la IA genera texto largo, abre un panel lateral editable antes de aplicar. Si lo apagas, todo se aplica directo.',
-    defaultOn: true },
-  { key: 'magic.animatedPill', title: 'Animar el pill al cambiar objeto',
-    subtitle: 'Cuando el objeto detectado cambia, el pill del panel derecho hace un pulso con glow.',
-    defaultOn: true },
-]
-
-function readMagic(key: string, def: boolean): boolean {
-  const v = localStorage.getItem(key)
-  if (v === null) return def
-  return v === 'true'
-}
+// ── MagicPane ─────────────────────────────────────────────────────────────────
+// Magic está siempre activo (detección de objeto, completar, botón ✨, editor
+// lateral, pill). No hay conmutadores: solo el conocimiento del perfil y lo
+// aprendido por Magic.
 
 function MagicPane() {
-  const { t } = useTranslation()
-  const [values, setValues] = useState<Record<string, boolean>>(() => {
-    const v: Record<string, boolean> = {}
-    MAGIC_TOGGLES.forEach(t => { v[t.key] = readMagic(t.key, t.defaultOn) })
-    return v
-  })
-
-  function setToggle(key: string, val: boolean) {
-    setValues(v => ({ ...v, [key]: val }))
-    localStorage.setItem(key, String(val))
-  }
-
   return (
     <div className="st-pane">
-      <div className="st-section-title">{t('settings.magic.suggestions')}</div>
-      {MAGIC_TOGGLES.slice(0, 2).map(t => (
-        <div key={t.key} className="st-row">
-          <div className="st-row-info">
-            <div className="st-row-label">{t.title}</div>
-            <div className="st-row-hint">{t.subtitle}</div>
-          </div>
-          <div className="st-row-action">
-            <button
-              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
-              onClick={() => setToggle(t.key, !values[t.key])}
-              aria-pressed={values[t.key]}
-              role="switch"
-            >
-              <span className="st-switch-thumb" />
-            </button>
-          </div>
-        </div>
-      ))}
-
-      <div className="st-section-title" style={{ marginTop: 20 }}>{t('settings.magic.actions')}</div>
-      {MAGIC_TOGGLES.slice(2, 4).map(t => (
-        <div key={t.key} className="st-row">
-          <div className="st-row-info">
-            <div className="st-row-label">{t.title}</div>
-            <div className="st-row-hint">{t.subtitle}</div>
-          </div>
-          <div className="st-row-action">
-            <button
-              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
-              onClick={() => setToggle(t.key, !values[t.key])}
-              aria-pressed={values[t.key]}
-              role="switch"
-            >
-              <span className="st-switch-thumb" />
-            </button>
-          </div>
-        </div>
-      ))}
-
-      <div className="st-section-title" style={{ marginTop: 20 }}>{t('settings.magic.visual')}</div>
-      {MAGIC_TOGGLES.slice(4).map(t => (
-        <div key={t.key} className="st-row">
-          <div className="st-row-info">
-            <div className="st-row-label">{t.title}</div>
-            <div className="st-row-hint">{t.subtitle}</div>
-          </div>
-          <div className="st-row-action">
-            <button
-              className={`st-switch ${values[t.key] ? 'on' : 'off'}`}
-              onClick={() => setToggle(t.key, !values[t.key])}
-              aria-pressed={values[t.key]}
-              role="switch"
-            >
-              <span className="st-switch-thumb" />
-            </button>
-          </div>
-        </div>
-      ))}
-
       <ProfileKnowledgeSection />
-
       <MagicLearningsSection />
     </div>
   )
