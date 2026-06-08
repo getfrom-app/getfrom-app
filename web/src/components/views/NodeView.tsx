@@ -35,7 +35,6 @@ import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
 import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
-import MoveNodeModal from '../modals/MoveNodeModal'
 import SlashMenu from '../outliner/SlashMenu'
 import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
@@ -123,8 +122,6 @@ export default function NodeView() {
   })
   const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
-  const [showMoreMenu, setShowMoreMenu] = useState(false)
-  const [showMoveModal, setShowMoveModal] = useState(false)
   const [titleContextMenu, setTitleContextMenu] = useState<{ x: number; y: number } | null>(null)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -1354,114 +1351,9 @@ export default function NodeView() {
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
-  function handleDuplicate() {
-    const newNode = store.createNode({
-      text: (node!.text || 'Sin título') + ' (copia)',
-      parentId: node!.parentId || null,
-      siblingOrder: node!.siblingOrder + 1,
-    })
-    if (node!.body) store.updateNode(newNode.id, { body: node!.body })
-    if (newNode?.id) {
-      navigate(`/node/${newNode.id}`)
-    }
-    setQuickActionMsg('Nota duplicada')
-    setTimeout(() => setQuickActionMsg(null), 2000)
-  }
+  // Duplicar / Copiar / Exportar / Eliminar de la NOTA viven ahora SOLO en
+  // NodeContextMenu (menú único de nodo). El antiguo node-more-menu se eliminó.
 
-  function handleExportMarkdown() {
-    const title = node!.text || 'nota'
-    const body = node!.body || ''
-    const buildMd = (parentId: string, depth: number): string =>
-      store.children(parentId).filter(n => !n.deletedAt).map(n => {
-        const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
-        return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
-      }).join('')
-    const content = `# ${title}\n\n${body ? body + '\n\n' : ''}${buildMd(node!.id, 0)}`
-    const blob = new Blob([content], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${title.slice(0, 40).replace(/[^a-zA-Z0-9áéíóú\s]/g, '').trim()}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-    setQuickActionMsg('✓ Exportado')
-    setTimeout(() => setQuickActionMsg(null), 2000)
-  }
-
-  // toggleSeguimiento eliminado: ahora vive sólo en NodeRightPanel como botón "Bucle".
-
-  function handleExportPdf() {
-    window.print()
-  }
-
-  function handleCopyToClipboard() {
-    const title = node!.text || 'Sin título'
-    const body = node!.body || ''
-    const buildTxt = (parentId: string, depth: number): string =>
-      store.children(parentId).filter(n => !n.deletedAt).map(n =>
-        '  '.repeat(depth) + '• ' + n.text + '\n' + buildTxt(n.id, depth + 1)
-      ).join('')
-    const text = `${title}\n${body ? '\n' + body + '\n' : ''}\n${buildTxt(node!.id, 0)}`.trim()
-    navigator.clipboard.writeText(text).then(() => {
-      setQuickActionMsg('Copiado al portapapeles')
-      setTimeout(() => setQuickActionMsg(null), 2000)
-    }).catch(() => {})
-  }
-
-  function copyMarkdown() {
-    if (!node) return
-    function buildMd(parentId: string, depth: number): string {
-      return store.children(parentId).filter(n => !n.deletedAt).map(n => {
-        const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
-        const indent = '  '.repeat(depth)
-        return indent + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
-      }).join('')
-    }
-    const md = `# ${node.text}\n\n${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`
-    navigator.clipboard.writeText(md).catch(() => {})
-    setQuickActionMsg('✓ Markdown copiado')
-    setTimeout(() => setQuickActionMsg(null), 1500)
-  }
-
-  function handleDelete() {
-    if (!node) return
-    // Raíces de sistema: no se pueden eliminar.
-    if (isProtectedSystemRoot(node.id)) {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
-      return
-    }
-    const childCount = (() => {
-      let count = 0
-      const q = [node.id]
-      while (q.length) { const id = q.shift()!; count++; store.children(id).forEach(c => q.push(c.id)) }
-      return count - 1 // excluir el propio nodo
-    })()
-    const msg = childCount > 0
-      ? `¿Eliminar "${node.text || 'esta nota'}" y sus ${childCount} nota${childCount === 1 ? '' : 's'} hijas? Se moverán a la papelera.`
-      : `¿Eliminar "${node.text || 'esta nota'}"? Se moverá a la papelera.`
-    if (!window.confirm(msg)) return
-
-    // Navegar primero para evitar re-render sobre nodo borrado.
-    // Preferir la nota padre; si no hay (raíz), caer a hoy / home.
-    const parent = node.parentId ? store.getNode(node.parentId) : null
-    if (parent && !parent.deletedAt) {
-      navigate(`/node/${parent.id}`, { replace: true })
-    } else {
-      const today = store.todayDiary()
-      if (today) navigate(`/node/${today.id}`, { replace: true })
-      else navigate('/', { replace: true })
-    }
-
-    // Borrar nodo + todos sus descendientes
-    const toDelete: string[] = []
-    const q = [node.id]
-    while (q.length) {
-      const id = q.shift()!
-      toDelete.push(id)
-      store.children(id).forEach(c => q.push(c.id))
-    }
-    toDelete.forEach(id => store.deleteNode(id))
-  }
 
   // ── Extraer conocimiento del contexto ──────────────────────────────────────
   async function handleUpdateContextKnowledge() {
@@ -2212,18 +2104,13 @@ export default function NodeView() {
                 )
               })()}
 
-              {/* ── ··· Más opciones ── */}
+              {/* ── ··· Más opciones → NodeContextMenu (menú ÚNICO de nodo) ── */}
               <div style={{ position: 'relative' }}>
                 <button
-                  className={`node-action-icon-btn ${(showMoreMenu || titleContextMenu) ? 'active' : ''}`}
+                  className={`node-action-icon-btn ${titleContextMenu ? 'active' : ''}`}
                   onClick={e => {
-                    if (document.querySelector('.wf-layout')) {
-                      // En WF mode: abrir NodeContextMenu igual que cualquier nodo
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      setTitleContextMenu({ x: rect.left, y: rect.bottom + 4 })
-                    } else {
-                      setShowMoreMenu(v => !v)
-                    }
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setTitleContextMenu({ x: rect.left, y: rect.bottom + 4 })
                   }}
                   title="Más opciones"
                 >
@@ -2231,56 +2118,6 @@ export default function NodeView() {
                     <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
                   </svg>
                 </button>
-                {showMoreMenu && (
-                  <div className="node-more-menu" onClick={() => setShowMoreMenu(false)}>
-                    {/* Mover a… */}
-                    <button className="node-more-item" onClick={() => setShowMoveModal(true)}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 10h10M10 5l5 5-5 5"/></svg>
-                      Mover a…
-                    </button>
-                    <div className="node-more-sep"/>
-                    {/* Copiar */}
-                    <span className="node-more-section">Copiar</span>
-                    <button className="node-more-item" onClick={copyMarkdown}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7"/></svg>
-                      Copiar Markdown
-                    </button>
-                    <button className="node-more-item" onClick={handleCopyToClipboard}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 4H5a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M8 4h7a1 1 0 011 1v7"/></svg>
-                      Copiar texto plano
-                    </button>
-                    <div className="node-more-sep"/>
-                    {/* Exportar */}
-                    <span className="node-more-section">Exportar</span>
-                    <button className="node-more-item" onClick={handleExportMarkdown}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
-                      Exportar Markdown
-                    </button>
-                    <button className="node-more-item" onClick={handleExportPdf}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 16h12M10 3v10M6 9l4 4 4-4"/></svg>
-                      Exportar PDF
-                    </button>
-                    <div className="node-more-sep"/>
-                    <button className="node-more-item" onClick={handleDuplicate}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="6" y="6" width="11" height="11" rx="2"/><path d="M4 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v1"/></svg>
-                      Duplicar
-                    </button>
-                    <button className="node-more-item" onClick={handlePrint}>
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 7V3h10v4M5 15H3a1 1 0 01-1-1V9a1 1 0 011-1h14a1 1 0 011 1v5a1 1 0 01-1 1h-2M5 12h10v5H5z"/></svg>
-                      Imprimir
-                    </button>
-                    {/* Notas temporales (año/mes/semana) y diarios NO se pueden eliminar */}
-                    {!node.isDiaryEntry && !temporalNodeType && (
-                      <>
-                        <div className="node-more-sep"/>
-                        <button className="node-more-item node-more-item--danger" onClick={handleDelete}>
-                          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 01-2 2H4a2 2 0 01-2-2L1 6"/></svg>
-                          Eliminar nota
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
               </>)}
             </div>
@@ -2823,13 +2660,7 @@ export default function NodeView() {
         />
       )}
 
-      {/* Modal: Mover a… */}
-      {showMoveModal && (
-        <MoveNodeModal
-          node={node}
-          onClose={() => setShowMoveModal(false)}
-        />
-      )}
+      {/* "Mover a…" vive en NodeContextMenu (que tiene su propio MoveNodeModal). */}
 
       {/* NodeContextMenu del título — WF mode */}
       {titleContextMenu && (

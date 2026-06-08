@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.197 / Mac v9.5.36 — 8 junio 2026 · Exportar HTML + un único menú de nodo
+
+- **Exportar ▸ HTML**: descarga la nota como página HTML autónoma. Y el **PDF** ahora se genera limpio (ventana solo con la nota).
+- **Un solo menú de nota**: eliminado el menú duplicado que ya no se usaba; todas las acciones (copiar, exportar, mover, duplicar, publicar, papelera…) viven en un único menú (···).
+
+---
+
 ## Web v9.6.196 / Mac v9.5.35 — 7 junio 2026 · Copiar y Exportar en el menú del nodo
 
 - En el menú ··· de una nota: **Copiar ▸ Markdown / Texto rico** y **Exportar ▸ Markdown / PDF**, con **todo el contenido** de la nota (antes "Copiar" solo copiaba el título).

@@ -275,7 +275,39 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     URL.revokeObjectURL(url)
     toast('Exportado a Markdown')
   }
-  function exportPdf() { window.print() }
+  // Documento HTML autónomo (para exportar HTML y para el PDF limpio).
+  function standaloneHtml(): string {
+    const safeTitle = escapeHtml(node.text || 'Nota')
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safeTitle}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;color:#1a1a1a;max-width:720px;margin:40px auto;padding:0 24px;}
+  h1{font-size:1.9rem;margin:0 0 1rem;color:#111;}
+  ul{padding-left:1.3em;} li{margin:.25em 0;}
+  p{margin:.7em 0;} footer{margin-top:48px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:.8rem;color:#aaa;}
+</style></head>
+<body><h1>${safeTitle}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}
+<footer>Generado con From</footer></body></html>`
+  }
+  function exportHtml() {
+    const blob = new Blob([standaloneHtml()], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.html'
+    a.click()
+    URL.revokeObjectURL(url)
+    toast('Exportado a HTML')
+  }
+  function exportPdf() {
+    // PDF limpio: ventana nueva con SOLO la nota → imprimir (sin el chrome de la app).
+    const w = window.open('', '_blank')
+    if (!w) { window.print(); return }
+    w.document.write(standaloneHtml())
+    w.document.close()
+    w.focus()
+    setTimeout(() => w.print(), 300)
+  }
 
   function copyInternalLink() {
     const url = `${window.location.origin}/app/node/${node.id}`
@@ -587,6 +619,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <div className="context-menu-submenu-inline">
             <button className="context-menu-item context-menu-item--sub" onClick={run(exportMarkdown)}>
               <span className="context-menu-icon">⌨</span> Markdown
+            </button>
+            <button className="context-menu-item context-menu-item--sub" onClick={run(exportHtml)}>
+              <span className="context-menu-icon">◇</span> HTML
             </button>
             <button className="context-menu-item context-menu-item--sub" onClick={run(exportPdf)}>
               <span className="context-menu-icon">📄</span> PDF
