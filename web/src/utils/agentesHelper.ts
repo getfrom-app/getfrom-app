@@ -135,6 +135,39 @@ export function getAgentData(nodeId: string): {
   } catch { return null }
 }
 
+/** Lee la "nota" del agente: el texto de sus nodos hijos (recursivo, en orden),
+ *  que es lo que el usuario edita en la ventana central. Esto ES la instrucción. */
+export function readAgentNote(nodeId: string): string {
+  const lines: string[] = []
+  const walk = (parentId: string) => {
+    const kids = store.children(parentId).filter(n => !n.deletedAt)
+    for (const k of kids) {
+      const t = (k.text || '').trim()
+      if (t) lines.push(t)
+      walk(k.id)
+    }
+  }
+  walk(nodeId)
+  return lines.join('\n').trim()
+}
+
+/** Sincroniza _agentUserMessage con la nota actual (lo que se ve y edita en el
+ *  centro). Así "lo que escribes = lo que el agente ejecuta", también en el cron
+ *  del servidor (que usa _agentUserMessage). Devuelve el mensaje resultante. */
+export function syncAgentUserMessage(nodeId: string): string {
+  const n = store.getNode(nodeId)
+  if (!n) return ''
+  const note = readAgentNote(nodeId)
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    if (ed._agentDef === '1' && (ed._agentUserMessage || '') !== note) {
+      ed._agentUserMessage = note
+      store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+    }
+  } catch { /* ignore */ }
+  return note
+}
+
 /** Activa o desactiva un agente */
 export function setAgentEnabled(nodeId: string, enabled: boolean) {
   const n = store.getNode(nodeId)

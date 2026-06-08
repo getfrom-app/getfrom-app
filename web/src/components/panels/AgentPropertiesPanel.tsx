@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { getAgentData, setAgentEnabled } from '../../utils/agentesHelper'
+import { getAgentData, setAgentEnabled, syncAgentUserMessage } from '../../utils/agentesHelper'
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { scheduleNextLabel } from '../../utils/scheduleHelper'
@@ -54,17 +54,18 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     const n = store.getNode(nodeId)
     if (!n || !data) return
     try {
-      const ed = JSON.parse(n.extraData || '{}')
+      const userMessage = syncAgentUserMessage(nodeId)  // la nota = instrucción
+      const ed = JSON.parse((store.getNode(nodeId)?.extraData) || '{}')
       ed._agentSchedule = schedule
       store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
       // Sync al servidor (registra/actualiza el cron) si hay sesión e instrucciones.
       if (!getToken()) return
-      if (!data.systemPrompt || !data.userMessage) return
+      if (!userMessage) return
       apiRequest('/agents/schedule', {
         method: 'POST',
         body: JSON.stringify({
           nodeId, agentId: data.agentId, agentTitle: n.text,
-          systemPrompt: data.systemPrompt, userMessage: data.userMessage,
+          systemPrompt: data.systemPrompt, userMessage,
           schedule, enabled: data.enabled,
         }),
       }).catch(err => console.warn('[schedule sync]', err))
@@ -76,11 +77,12 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     const next = !data.enabled
     setAgentEnabled(nodeId, next)
     if (data.schedule && isLoggedIn) {
+      const userMessage = syncAgentUserMessage(nodeId)
       apiRequest('/agents/schedule', {
         method: 'POST',
         body: JSON.stringify({
           nodeId, agentId: data.agentId, agentTitle: node!.text,
-          systemPrompt: data.systemPrompt, userMessage: data.userMessage,
+          systemPrompt: data.systemPrompt, userMessage,
           schedule: data.schedule, enabled: next,
         }),
       }).catch(() => { /* silencioso */ })
@@ -89,13 +91,15 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
 
   async function handleRun() {
     if (running || !isLoggedIn || !data) return
+    const userMessage = syncAgentUserMessage(nodeId)  // ejecutar lo que dice la nota
+    if (!userMessage) { setError(isEn ? 'Write an instruction in the note first' : 'Escribe una instrucción en la nota primero'); return }
     setRunning(true); setError(null); setSaved(false)
     try {
       const res = await apiRequest<{ ok: boolean; result?: string; error?: string }>('/agents/run', {
         method: 'POST',
         body: JSON.stringify({
           agentId: data.agentId, agentTitle: node!.text,
-          systemPrompt: data.systemPrompt, firstUserMessage: data.userMessage,
+          systemPrompt: data.systemPrompt, firstUserMessage: userMessage,
           modelTier: 'fast',
         }),
       })

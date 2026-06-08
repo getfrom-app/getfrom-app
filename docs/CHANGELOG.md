@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.203 / Mac v9.5.40 — 8 junio 2026 · La nota del agente es lo que ejecuta
+
+- Ahora **lo que escribes en la nota de un agente es exactamente lo que ejecuta** (antes corría una copia interna congelada, y los agentes que creabas tú salían vacíos). Al ejecutar o programar, From toma el texto de la nota como instrucción — también para las ejecuciones automáticas del servidor.
+
+---
+
 ## Web v9.6.202 / Mac v9.5.39 — 8 junio 2026 · Indicador de agentes en la barra inferior + Magic más limpio
 
 - La barra inferior muestra ahora **cuántos agentes activos tienes programados y cuándo corre el próximo** (p. ej. «🤖 2 agentes activos · próxima en 2 h»). Si no hay ninguno programado, muestra «Ningún agente activo».

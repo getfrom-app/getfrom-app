@@ -8,7 +8,7 @@ import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelper'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.6.202'
+export const WEB_VERSION = 'v9.6.203'
 
 interface Props {
   isSyncing: boolean
