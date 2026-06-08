@@ -59,6 +59,7 @@ declare global {
 interface AuthResponse {
   accessToken: string
   refreshToken: string
+  isNew?: boolean
 }
 
 interface AuthPageProps {
@@ -100,7 +101,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         body: JSON.stringify({ idToken: credential }),
       })
       setTokens(data.accessToken, data.refreshToken)
-      navigate(mode === 'register' ? '/pricing' : '/', { replace: true })
+      // Solo mostramos el onboarding/pricing si la cuenta es NUEVA. Si ya existía
+      // (aunque el usuario pulsara "registrarse"), va directo a la app.
+      navigate(data.isNew ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('auth.errorGoogleUnavailable'))
     } finally {
@@ -182,7 +185,8 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         }),
       })
       setTokens(data.accessToken, data.refreshToken)
-      navigate(mode === 'register' ? '/pricing' : '/', { replace: true })
+      // Cuenta existente → app; solo cuenta nueva ve el onboarding/pricing.
+      navigate(data.isNew ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'error' in err) {
         // User cancelled Apple sign-in — no mostrar error

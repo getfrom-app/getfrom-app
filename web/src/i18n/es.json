@@ -791,5 +791,8 @@
   "ctxProps.updating": "Actualizando…",
   "ctxProps.knowledgeUpdated": "Conocimiento actualizado",
   "ctxProps.knowledgeHint": "Fromly resume las palabras clave, personas y temas de este contexto para entender mejor tus notas.",
-  "prompts.variablesHint2": "Escríbelas en el prompt y Fromly las rellena al usarlo. Clic para insertarla donde tengas el cursor."
+  "prompts.variablesHint2": "Escríbelas en el prompt y Fromly las rellena al usarlo. Clic para insertarla donde tengas el cursor.",
+  "pricing.free": "Gratis",
+  "pricing.lifetime": "Lifetime",
+  "pricing.lifetimePrice": "€149"
 }
