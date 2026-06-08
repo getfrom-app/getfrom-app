@@ -325,7 +325,6 @@ function EstadísticasPane() {
   const diaryDates = new Set(
     diaryEntries.filter(n => n.diaryDate).map(n => new Date(n.diaryDate!).toDateString())
   )
-  const followUps = nodes.filter(n => (n.types || []).includes('bucle') && !n.deletedAt).length
   let diaryStreak = 0
   const today = new Date(); today.setHours(0, 0, 0, 0)
   for (let i = 0; i < 365; i++) {
@@ -350,6 +349,7 @@ function EstadísticasPane() {
         {stat(totalTasks, 'Tareas')}
         {stat(doneTasks, 'Completadas')}
         {stat(pendingTasks, 'Pendientes')}
+        {stat(overdueCount, 'Vencidas')}
         {stat(`${completionRate}%`, 'Completado')}
       </div>
 
@@ -359,12 +359,6 @@ function EstadísticasPane() {
         {stat(diaryEntries.length, 'Entradas diario')}
         {stat(diaryStreak, 'Racha diario')}
         {stat(usedTags.length, 'Tags activos')}
-      </div>
-
-      <div className="st-section-title" style={{ marginTop: 24 }}>Tareas</div>
-      <div className="st-stats">
-        {stat(overdueCount, 'Vencidas')}
-        {stat(followUps, 'Bucles')}
       </div>
     </div>
   )

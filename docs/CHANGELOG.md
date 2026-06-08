@@ -4,10 +4,11 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
-## Web v9.6.209 — 8 junio 2026 · Ajustes: contenido centrado + fuentes más legibles
+## Web v9.6.210 — 8 junio 2026 · Ajustes: contenido centrado + fuentes legibles + limpieza
 
 - En Ajustes, el contenido ya **no se queda pegado a la izquierda** con un hueco enorme: está centrado y mejor aprovechado.
 - **Fuentes más grandes** en toda la pantalla de Ajustes (etiquetas, descripciones, pestañas) — se leen mucho mejor.
+- Estadísticas: quitado el contador «Bucles» (era de una función ya retirada); «Vencidas» pasa al bloque principal.
 
 ---
 
