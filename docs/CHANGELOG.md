@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.232 — 8 junio 2026 · Importar desde Obsidian, Notion, Apple Notes… + Exportar más simple
+
+- **Importar** rediseñado: elige la **fuente** (Obsidian, Notion, Apple Notes, Markdown/texto, From JSON) y sigue un **paso a paso**. Sube archivos o una carpeta entera; From respeta la estructura de subcarpetas y convierte el Markdown en notas y bullets, todo bajo un nodo «📥 Importado [fecha]» para que lo reorganices sin tocar tus notas.
+- **Exportar**: quitada la opción «datos locales» (confusa) — una sola exportación (todo está en el servidor).
+
+---
+
 ## Web v9.6.231 — 8 junio 2026 · Quitada la pestaña Claude (MCP)
 
 - Eliminada la pestaña **Claude (MCP)** de Ajustes: ya está cubierta en **Accesorios** (sección Claude).

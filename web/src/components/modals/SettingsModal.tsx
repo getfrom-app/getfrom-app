@@ -949,34 +949,10 @@ export function ExportarPane() {
     finally { setLoading(false) }
   }
 
-  function handleExportLocal(format: 'json' | 'markdown') {
-    const nodes = store.allActive().filter(n => !n.deletedAt)
-    const date = new Date().toISOString().slice(0, 10)
-    let blob: Blob, filename: string
-    if (format === 'markdown') {
-      const lines: string[] = [`# From Export — ${new Date().toLocaleDateString('es-ES')}`, '']
-      function renderNode(node: typeof nodes[0], depth: number): string[] {
-        const indent = '  '.repeat(depth)
-        const prefix = node.status === 'done' ? '[x] ' : node.status === 'pending' ? '[ ] ' : ''
-        const result = [`${indent}${prefix}${node.text || t('common.noTitle')}`]
-        if (node.body) { result.push(''); node.body.split('\n').forEach(l => result.push(`${indent}  ${l}`)); result.push('') }
-        nodes.filter(n => n.parentId === node.id).sort((a, b) => a.siblingOrder - b.siblingOrder).forEach(child => result.push(...renderNode(child, depth + 1)))
-        return result
-      }
-      nodes.filter(n => !n.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder).forEach(root => { lines.push(...renderNode(root, 0)); lines.push('') })
-      blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' }); filename = `from-export-${date}.md`
-    } else {
-      blob = new Blob([JSON.stringify(nodes, null, 2)], { type: 'application/json' }); filename = `from-export-${date}.json`
-    }
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = filename
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
-  }
-
   return (
     <div className="st-pane">
       <SectionTitle>{t('export.sectionTitle')}</SectionTitle>
-      <Row label={t('export.serverBackupLabel')} hint={t('export.serverBackupHint')} />
+      <Row label={t('export.serverBackupLabel')} hint="Descarga una copia completa de tu vault (todo está en el servidor)." />
       {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
       <div className="st-actions">
         <button className="btn-secondary" onClick={() => handleExport('json')} disabled={loading}>
@@ -986,83 +962,172 @@ export function ExportarPane() {
           {loading ? t('common.exporting') : t('export.markdownServerButton')}
         </button>
       </div>
-
-      <SectionTitle>{t('export.sectionLocal')}</SectionTitle>
-      <Row label={t('export.localDataLabel')} hint={t('export.localDataHint')} />
-      <div className="st-actions">
-        <button className="btn-secondary" onClick={() => handleExportLocal('json')}>{t('export.jsonLocalButton')}</button>
-        <button className="btn-secondary" onClick={() => handleExportLocal('markdown')}>{t('export.markdownLocalButton')}</button>
-      </div>
     </div>
   )
 }
 
+type ImportSource = 'obsidian' | 'notion' | 'apple' | 'markdown' | 'from'
+
+const IMPORT_SOURCES: { id: ImportSource; icon: string; name: string; desc: string }[] = [
+  { id: 'obsidian', icon: '🪨', name: 'Obsidian',        desc: 'Tu carpeta de notas .md' },
+  { id: 'notion',   icon: '⬛', name: 'Notion',          desc: 'Exportación Markdown' },
+  { id: 'apple',    icon: '🍎', name: 'Apple Notes',     desc: 'Vía Markdown / texto' },
+  { id: 'markdown', icon: '📝', name: 'Markdown / texto', desc: 'Archivos .md o .txt' },
+  { id: 'from',     icon: '📦', name: 'From (JSON)',      desc: 'Copia de seguridad de From' },
+]
+
+const IMPORT_STEPS: Record<ImportSource, string[]> = {
+  obsidian: [
+    'En tu ordenador, localiza la carpeta del vault de Obsidian.',
+    'Pulsa «Subir carpeta» y selecciónala. Se respeta la estructura de subcarpetas.',
+  ],
+  notion: [
+    'En Notion: ··· (arriba a la derecha) → Export → formato «Markdown & CSV», con «Include subpages».',
+    'Descarga y descomprime el .zip.',
+    'Pulsa «Subir carpeta» y elige la carpeta descomprimida.',
+  ],
+  apple: [
+    'Apple Notes no exporta a Markdown directamente.',
+    'Pásalas a archivos .txt/.md (con un Atajo de Apple «Exportar notas», o copiando el texto).',
+    'Pulsa «Subir archivos» y selecciónalos.',
+  ],
+  markdown: [
+    'Selecciona uno o varios archivos .md o .txt (o una carpeta entera).',
+  ],
+  from: [
+    'Selecciona el archivo .json exportado desde From (Ajustes → Exportar).',
+  ],
+}
+
 export function ImportarPane() {
   const { t } = useTranslation()
+  const [source, setSource] = useState<ImportSource | null>(null)
   const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<string | null>(null)
-  const [importError, setImportError] = useState<string | null>(null)
+  const [result, setResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── From (JSON) ──────────────────────────────────────────────────────────
+  async function handleJson(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setImporting(true); setImportResult(null); setImportError(null)
+    setImporting(true); setResult(null); setError(null)
     try {
       const text = await file.text()
-      let nodes: unknown[]
-      if (file.name.endsWith('.json')) {
-        const parsed = JSON.parse(text)
-        nodes = Array.isArray(parsed) ? parsed : (parsed as Record<string, unknown>).nodes as unknown[] || []
-      } else {
-        setImportError(t('import.formatError'))
-        setImporting(false); return
-      }
-      // Import each node via store
+      const parsed = JSON.parse(text)
+      const nodes: unknown[] = Array.isArray(parsed) ? parsed : (parsed as Record<string, unknown>).nodes as unknown[] || []
       let count = 0
       for (const raw of nodes) {
         const n = raw as Record<string, unknown>
         if (!n.id || !n.text) continue
-        // Use createNode + updateNode to import
         try {
           const existing = store.getNode(n.id as string)
-          if (existing) {
-            store.updateNode(n.id as string, n as Partial<typeof existing>)
-          } else {
-            store.createNode({ text: n.text as string, parentId: n.parentId as string | null })
-          }
+          if (existing) store.updateNode(n.id as string, n as Partial<typeof existing>)
+          else store.createNode({ text: n.text as string, parentId: n.parentId as string | null })
           count++
-        } catch { /* skip invalid */ }
+        } catch { /* skip */ }
       }
-      setImportResult(t('import.importSuccess', { count }))
+      setResult(t('import.importSuccess', { count }))
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : t('import.importError'))
-    } finally { setImporting(false) }
-    e.target.value = ''
+      setError(err instanceof Error ? err.message : t('import.importError'))
+    } finally { setImporting(false); e.target.value = '' }
   }
+
+  // ── Markdown / Obsidian / Notion / Apple ───────────────────────────────────
+  async function handleMarkdown(e: React.ChangeEvent<HTMLInputElement>) {
+    const fileList = Array.from(e.target.files || [])
+    if (!fileList.length) return
+    setImporting(true); setResult(null); setError(null)
+    try {
+      const files = await Promise.all(fileList.map(async f => ({
+        path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name,
+        content: await f.text(),
+      })))
+      const { importMarkdownFiles } = await import('../../utils/importMarkdown')
+      const r = await importMarkdownFiles(files)
+      if (r.notes === 0) setError('No se encontraron archivos .md / .txt válidos.')
+      else setResult(`Importadas ${r.notes} ${r.notes === 1 ? 'nota' : 'notas'}. Las tienes en «📥 Importado…» (en tu árbol).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('import.importError'))
+    } finally { setImporting(false); e.target.value = '' }
+  }
+
+  // ── Lista de fuentes ───────────────────────────────────────────────────────
+  if (!source) {
+    return (
+      <div className="st-pane">
+        <SectionTitle>Importar desde…</SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          {IMPORT_SOURCES.map(s => (
+            <button
+              key={s.id}
+              onClick={() => { setSource(s.id); setResult(null); setError(null) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', fontFamily: 'inherit' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
+            >
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{s.icon}</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
+                <span style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)' }}>{s.desc}</span>
+              </span>
+              <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Asistente de la fuente elegida ─────────────────────────────────────────
+  const meta = IMPORT_SOURCES.find(s => s.id === source)!
+  const isFolderSource = source === 'obsidian' || source === 'notion'
+  const isJson = source === 'from'
 
   return (
     <div className="st-pane">
-      <SectionTitle>{t('import.sectionTitle')}</SectionTitle>
-      <Row
-        label={t('import.jsonLabel')}
-        hint={t('import.jsonHint')}
-      />
-      <div className="st-actions">
-        <label className="btn-secondary" style={{ cursor: 'pointer' }}>
-          {importing ? t('common.importing') : t('import.selectFileButton')}
-          <input type="file" accept=".json" onChange={handleFile} style={{ display: 'none' }} disabled={importing} />
-        </label>
-      </div>
-      {importResult && <div className="auth-success" style={{ marginTop: 8 }}>{importResult}</div>}
-      {importError && <div className="auth-error" style={{ marginTop: 8 }}>{importError}</div>}
+      <button onClick={() => { setSource(null); setResult(null); setError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-secondary)', padding: '2px 0 8px' }}>
+        ← Todas las fuentes
+      </button>
+      <SectionTitle>{meta.icon} {meta.name}</SectionTitle>
 
-      <div className="st-info-box" style={{ marginTop: 16 }}>
-        <strong style={{ display: 'block', marginBottom: 6 }}>{t('import.notesTitle')}</strong>
-        <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-          <li>{t('import.noteExisting')}</li>
-          <li>{t('import.noteNew')}</li>
-          <li>{t('import.noteFormat')}</li>
-        </ul>
+      <ol style={{ margin: '4px 0 14px', paddingLeft: 18, lineHeight: 1.7, color: 'var(--text-secondary)', fontSize: 13 }}>
+        {IMPORT_STEPS[source].map((step, i) => <li key={i}>{step}</li>)}
+      </ol>
+
+      <div className="st-actions">
+        {isJson ? (
+          <label className="btn-primary" style={{ cursor: 'pointer' }}>
+            {importing ? t('common.importing') : 'Subir archivo .json'}
+            <input type="file" accept=".json" onChange={handleJson} style={{ display: 'none' }} disabled={importing} />
+          </label>
+        ) : (
+          <>
+            {isFolderSource && (
+              <label className="btn-primary" style={{ cursor: 'pointer' }}>
+                {importing ? t('common.importing') : 'Subir carpeta'}
+                <input
+                  type="file"
+                  multiple
+                  ref={el => { if (el) el.setAttribute('webkitdirectory', '') }}
+                  onChange={handleMarkdown}
+                  style={{ display: 'none' }}
+                  disabled={importing}
+                />
+              </label>
+            )}
+            <label className={isFolderSource ? 'btn-secondary' : 'btn-primary'} style={{ cursor: 'pointer' }}>
+              {importing ? t('common.importing') : 'Subir archivos'}
+              <input type="file" multiple accept=".md,.markdown,.txt" onChange={handleMarkdown} style={{ display: 'none' }} disabled={importing} />
+            </label>
+          </>
+        )}
+      </div>
+
+      {result && <div className="auth-success" style={{ marginTop: 10 }}>{result}</div>}
+      {error && <div className="auth-error" style={{ marginTop: 10 }}>{error}</div>}
+
+      <div className="st-row-hint" style={{ marginTop: 14, fontSize: 11.5 }}>
+        Lo importado se crea en un nodo «📥 Importado [fecha]» en tu árbol, para que lo revises y reorganices con calma. No toca tus notas actuales.
       </div>
     </div>
   )
