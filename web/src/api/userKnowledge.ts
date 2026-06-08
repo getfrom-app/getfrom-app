@@ -127,22 +127,18 @@ function countLearnedItems(): number {
   return people.length + facts.length
 }
 
-/** Cuenta TODO lo que From sabe de ti: cada línea con contenido bajo tu Perfil de
- *  IA (lo que escribes + lo que extrae solo + las reglas que le enseñas). Refleja
- *  el conocimiento real, no solo el bucket auto-extraído. */
-export function profileEntryCount(): number {
-  const perfil = store.perfilIANode?.() ?? null
-  if (!perfil) return 0
-  let n = 0
-  const walk = (id: string) => {
-    for (const k of store.children(id)) {
-      if (k.deletedAt) continue
-      if ((k.text || '').trim().length > 1) n++
-      walk(k.id)
-    }
+/** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que
+ *  From escribe de forma autónoma en el Perfil. Para abrirlo y revisarlo. */
+export function getOrCreateLearnNode(): Node | null {
+  const perfil = ensurePerfilSync()
+  if (!perfil) return null
+  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  if (!learnNode) {
+    const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
   }
-  walk(perfil.id)
-  return n
+  return learnNode
 }
 
 /** Sobrescribe las sublíneas Personas/Hechos con listas ya compactadas. */

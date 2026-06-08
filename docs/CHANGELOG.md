@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.222 — 8 junio 2026 · Magic: ver lo que From ha aprendido por su cuenta
+
+- "Ver y editar" lleva directamente a **lo que From ha escrito de forma autónoma** (no a todo tu perfil, para que no veas solo lo que escribiste tú).
+- Quitado el botón "Limpiar y compactar": la limpieza es **automática**, no necesitas hacer nada.
+- Texto reescrito: "From aprende datos duraderos sobre ti…".
+
+---
+
 ## Web v9.6.221 — 8 junio 2026 · Magic: el contador refleja todo tu perfil
 
 - Antes decía "aún no ha guardado nada" aunque tu Perfil de IA tuviera contenido: solo contaba el bucket auto-extraído. Ahora cuenta **todo tu Perfil** (lo que escribes + lo auto-aprendido + las reglas) y explica que From también usa tus contextos y notas recientes.

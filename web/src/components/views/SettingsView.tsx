@@ -19,43 +19,29 @@ import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
-import { readLearnedItems, compactProfileKnowledge, profileEntryCount } from '../../api/userKnowledge'
+import { readLearnedItems, getOrCreateLearnNode } from '../../api/userKnowledge'
 
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
 
 // ── MagicPane ─────────────────────────────────────────────────────────────────
-// Magic está siempre activo. From y Magic son lo mismo: TODO lo que saben de ti
-// (lo que extraen de tus notas/conversaciones + lo que le enseñas) vive en tu
-// Perfil de IA, que es una nota normal editable en bullets. Aquí solo un acceso
-// unificado para verlo/editarlo + limpiar/compactar.
+// Magic está siempre activo. From aprende datos duraderos sobre ti y los escribe
+// en su parte del Perfil de IA. La limpieza/compactación es automática y periódica
+// (no hay botón). "Ver y editar" lleva a lo que From ha escrito por su cuenta.
 
 function MagicPane() {
   const s = useStore()
   const navigate = useNavigate()
   const ls = useLearningsStore()
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
 
   void s.nodesVersion
   void ls           // re-render cuando cambian las reglas de Magic
   const learned = readLearnedItems()
-  const total = profileEntryCount()                       // TODO el Perfil, no solo el bucket auto
-  const canCompact = learned.people.length + learned.facts.length > 0
+  const total = learned.people.length + learned.facts.length
 
-  async function openProfile() {
-    let perfil = s.perfilIANode?.() ?? null
-    if (!perfil) { try { perfil = await s.getOrCreatePerfilIA() } catch { /* */ } }
-    if (perfil) navigate(`/node/${perfil.id}`)
-  }
-
-  async function handleCompact() {
-    setBusy(true); setMsg(null)
-    const r = await compactProfileKnowledge()
-    if (r) setMsg(r.before === r.after ? 'Ya estaba limpio.' : `Compactado: ${r.before} → ${r.after} entradas.`)
-    else setMsg('Nada que compactar.')
-    setBusy(false)
-    setTimeout(() => setMsg(null), 4000)
+  function openLearned() {
+    const node = getOrCreateLearnNode()
+    if (node) navigate(`/node/${node.id}`)
   }
 
   return (
@@ -63,21 +49,17 @@ function MagicPane() {
       <div className="st-section-title">Lo que From sabe de ti</div>
       <div className="st-row">
         <div className="st-row-info">
-          <div className="st-row-label">Tu Perfil de IA</div>
+          <div className="st-row-label">Conocimiento de From</div>
           <div className="st-row-hint">
-            From y Magic son lo mismo. Tu Perfil de IA reúne lo que escribes tú, lo que From extrae solo de tus notas y conversaciones, y lo que le enseñas (botón derecho → Enseñar a Magic). Además, en cada conversación usa tus contextos y notas recientes.
-            {total > 0 ? ` Tu perfil tiene ${total} ${total === 1 ? 'línea' : 'líneas'}.` : ' Tu perfil aún está vacío.'}
-            {' '}Ábrelo para verlo y editarlo en bullets, como cualquier nota.
+            From aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y los guarda aquí por su cuenta. También aprende de lo que le enseñas (botón derecho → Enseñar a Magic).
+            {total > 0 ? ` Ha aprendido ${total} ${total === 1 ? 'dato' : 'datos'}.` : ' Aún no ha aprendido datos nuevos.'}
+            {' '}Ábrelo para revisarlo y editarlo en bullets, como cualquier nota. La limpieza es automática.
           </div>
         </div>
-        <div className="st-row-action" style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-primary btn-sm" onClick={openProfile}>Ver y editar</button>
-          <button className="btn-secondary btn-sm" onClick={handleCompact} disabled={busy || !canCompact}>
-            {busy ? 'Limpiando…' : 'Limpiar y compactar'}
-          </button>
+        <div className="st-row-action">
+          <button className="btn-primary btn-sm" onClick={openLearned}>Ver y editar</button>
         </div>
       </div>
-      {msg && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '0 0 4px' }}>{msg}</div>}
     </div>
   )
 }
