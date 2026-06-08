@@ -202,26 +202,39 @@ export function ensureAgentesNode(): void {
       isCollapsed: false,
     })
 
-    // Nodos hijos visibles/editables: el mensaje (instrucción) y cuándo se ejecuta.
-    store.createNode({ text: `📨 ${userMsg}`, parentId: node.id })
-    if (def.schedule) {
-      store.createNode({ text: `⏰ Se ejecuta: ${describeSchedule(def.schedule)} · guarda el resultado en la nota del día`, parentId: node.id })
-    } else {
-      store.createNode({ text: '⏰ Manual · pulsa Ejecutar cuando lo necesites', parentId: node.id })
-    }
+    // La nota central es SOLO el prompt del usuario (lo que el agente debe hacer).
+    // El horario y el estado se muestran en la columna derecha, no como hijo.
+    store.createNode({ text: userMsg, parentId: node.id })
   }
 }
 
-/** Texto legible de un schedule ("daily:08:00" → "cada día a las 08:00"). */
-function describeSchedule(schedule: string): string {
-  const parts = schedule.split(':')
-  if (parts[0] === 'daily' && parts[1]) return `cada día a las ${parts[1]}:${parts[2] ?? '00'}`
-  if (parts[0] === 'weekly' && parts.length >= 3) {
-    const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado']
-    const d = days[parseInt(parts[1])] ?? 'lunes'
-    return `cada ${d} a las ${parts[2]}:${parts[3] ?? '00'}`
+/**
+ * migrateAgentMetaChildren — limpia las líneas meta antiguas («⏰ Se ejecuta…»,
+ * «⏰ Manual…») de los hijos de los agentes y quita el prefijo «📨 » del prompt.
+ * La nota central queda solo con el prompt del usuario. Idempotente vía flag.
+ */
+export function migrateAgentMetaChildren(): void {
+  try { if (localStorage.getItem('from_agents_meta_v1') === '1') return } catch { /* */ }
+  const agentesNode = getAgentesNode()
+  if (agentesNode) {
+    for (const agent of store.children(agentesNode.id)) {
+      if (agent.deletedAt) continue
+      try {
+        const ed = JSON.parse(agent.extraData || '{}')
+        if (ed._agentDef !== '1') continue
+      } catch { continue }
+      for (const child of store.children(agent.id)) {
+        if (child.deletedAt) continue
+        const txt = child.text || ''
+        if (txt.startsWith('⏰ Se ejecuta:') || txt.startsWith('⏰ Manual')) {
+          store.deleteNode(child.id)
+        } else if (txt.startsWith('📨 ')) {
+          store.updateNode(child.id, { text: txt.slice(2).trimStart() })
+        }
+      }
+    }
   }
-  return schedule
+  try { localStorage.setItem('from_agents_meta_v1', '1') } catch { /* */ }
 }
 
 /**

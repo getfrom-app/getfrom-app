@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.199 / Mac v9.5.38 — 8 junio 2026 · Agentes: controles solo en el panel derecho
+
+- Los controles del agente (**Activo/Pausado**, **Ejecutar**, **programación**, última y próxima ejecución) viven ahora **solo en la columna derecha**. Se quitó la barra duplicada del centro.
+- La **nota central de un agente es solo el prompt del usuario** (lo que debe hacer). Se eliminó la línea «⏰ Se ejecuta…» y el prefijo «📨 ».
+- Arreglado: el selector de programación del panel derecho no reflejaba horarios como «Diario 08:00» (mostraba «Sin programar»). Ahora muestra el horario real y lo sincroniza con el servidor.
+
+---
+
 ## Web v9.6.198 / Mac v9.5.37 — 8 junio 2026 · Prompts en Magic + Ajustes en el panel derecho
 
 - **Prompts en Magic**: al abrir Magic, los prompts aparecen como **lista clicable** (igual que la columna de filtros). Pulsas uno y se activa. Se ha **eliminado el `/`** (ya no hace falta el comando slash para activarlos).

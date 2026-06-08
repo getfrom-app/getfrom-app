@@ -65,7 +65,7 @@ import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
-import { ensureAgentesNode, migrateAgentsV2, getAgentesNode } from '../../utils/agentesHelper'
+import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgentesNode } from '../../utils/agentesHelper'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -452,6 +452,7 @@ export default function MainLayout() {
         migrateNodeShortcutsToFavorites()
         migrateAgentsV2()   // elimina agentes-ejemplo v1 (una vez) antes de añadir los v2
         ensureAgentesNode()
+        migrateAgentMetaChildren()  // limpia líneas «⏰ Se ejecuta…» y prefijo «📨 » (una vez)
         ensurePromptsNode()
         ensurePapeleraNode()
         // Raíz 🏠 From por encima de Agenda: reparenta las 5 raíces visibles bajo ella.

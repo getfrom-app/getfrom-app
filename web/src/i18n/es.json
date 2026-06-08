@@ -769,6 +769,7 @@
   "agents.scheduleTitle": "Programación",
   "agents.lastRun": "Última ejecución",
   "agents.editHint": "Edita las instrucciones del agente y ejecútalo desde la ventana central.",
+  "agents.editHintCenter": "En la ventana central editas el prompt del usuario (lo que el agente debe hacer).",
   "ctxProps.back": "← Contextos",
   "ctxProps.colorTitle": "Color",
   "ctxProps.knowledgeTitle": "Lo que From sabe",

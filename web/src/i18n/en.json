@@ -770,6 +770,7 @@
   "agents.scheduleTitle": "Schedule",
   "agents.lastRun": "Last run",
   "agents.editHint": "Edit the agent's instructions and run it from the central window.",
+  "agents.editHintCenter": "In the central window you edit the user prompt (what the agent should do).",
   "ctxProps.back": "← Contexts",
   "ctxProps.colorTitle": "Color",
   "ctxProps.knowledgeTitle": "What From knows",
