@@ -4,8 +4,12 @@
  * edita en la ventana central (sus nodos hijos, como cualquier nota).
  * Aquí: opciones de auto-aplicación (de momento, a la nota diaria).
  */
+import type { CSSProperties } from 'react'
 import { useStore } from '../../store/nodeStore'
-import { getDailyTemplate, setDailyTemplate } from '../../utils/tagsHelper'
+import { getDailyTemplate, setDailyTemplate, getTemplateRecurrence, setTemplateRecurrence } from '../../utils/tagsHelper'
+
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+const selectStyle: CSSProperties = { fontSize: 12.5, padding: '7px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontFamily: 'inherit' }
 
 interface Props {
   nodeId: string
@@ -20,6 +24,16 @@ export default function TemplatePropertiesPanel({ nodeId, onBack }: Props) {
 
   const daily = getDailyTemplate()
   const isDaily = daily?.id === nodeId
+
+  const recur = getTemplateRecurrence(nodeId)
+  const recurMode = recur.startsWith('weekly:') ? 'weekly' : recur.startsWith('monthly:') ? 'monthly' : 'none'
+  const recurValue = recur.includes(':') ? parseInt(recur.split(':')[1], 10) : 1
+
+  function changeRecurMode(mode: string) {
+    if (mode === 'none') setTemplateRecurrence(nodeId, '')
+    else if (mode === 'weekly') setTemplateRecurrence(nodeId, 'weekly:1')   // lunes por defecto
+    else setTemplateRecurrence(nodeId, 'monthly:1')                          // día 1 por defecto
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -64,6 +78,35 @@ export default function TemplatePropertiesPanel({ nodeId, onBack }: Props) {
           {isDaily && daily && daily.id !== nodeId && (
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
               (Sustituirá a «{daily.text}» como plantilla diaria.)
+            </div>
+          )}
+        </div>
+
+        {/* Recurrente: se inserta como sección hija de la nota de ese día */}
+        <div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
+            Recurrente
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <select value={recurMode} onChange={e => changeRecurMode(e.target.value)} style={selectStyle}>
+              <option value="none">No recurrente</option>
+              <option value="weekly">Cada semana</option>
+              <option value="monthly">Cada mes</option>
+            </select>
+            {recurMode === 'weekly' && (
+              <select value={recurValue} onChange={e => setTemplateRecurrence(nodeId, `weekly:${e.target.value}`)} style={selectStyle}>
+                {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>Cada {WEEKDAYS[d]}</option>)}
+              </select>
+            )}
+            {recurMode === 'monthly' && (
+              <select value={recurValue} onChange={e => setTemplateRecurrence(nodeId, `monthly:${e.target.value}`)} style={selectStyle}>
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(n => <option key={n} value={n}>Cada día {n} del mes</option>)}
+              </select>
+            )}
+          </div>
+          {recurMode !== 'none' && (
+            <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 6, lineHeight: 1.5 }}>
+              Cuando llegue ese día, From añade esta plantilla como una sección dentro de la nota del día (no reemplaza el día).
             </div>
           )}
         </div>

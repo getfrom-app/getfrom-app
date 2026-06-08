@@ -105,6 +105,48 @@ export function setDailyTemplate(nodeId: string, on: boolean): void {
   }
 }
 
+/** Recurrencia de una plantilla: '' (ninguna) | 'weekly:D' (D=0 dom…6 sáb) |
+ *  'monthly:N' (N=1..31). Se aplica como SECCIÓN hija de la nota del día. */
+export function getTemplateRecurrence(nodeId: string): string {
+  const n = store.getNode(nodeId)
+  if (!n) return ''
+  try { return JSON.parse(n.extraData || '{}')._recur || '' } catch { return '' }
+}
+
+export function setTemplateRecurrence(nodeId: string, recur: string): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    if (recur) ed._recur = recur; else delete ed._recur
+    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  } catch { /* */ }
+}
+
+/** Aplica las plantillas recurrentes que toquen en `date` como secciones hijas
+ *  de la nota del día (sin duplicar). Cada sección se marca con _fromTemplate. */
+export function applyRecurringTemplatesToDay(dayNodeId: string, date: Date): void {
+  for (const t of listTemplates()) {
+    const recur = getTemplateRecurrence(t.id)
+    if (!recur) continue
+    let match = false
+    if (recur.startsWith('weekly:')) match = date.getDay() === parseInt(recur.slice(7), 10)
+    else if (recur.startsWith('monthly:')) match = date.getDate() === parseInt(recur.slice(8), 10)
+    if (!match) continue
+    // No duplicar: ¿ya hay una sección de esta plantilla en el día?
+    const exists = store.children(dayNodeId).some(c => {
+      if (c.deletedAt) return false
+      try { return JSON.parse(c.extraData || '{}')._fromTemplate === t.id } catch { return false }
+    })
+    if (exists) continue
+    const sibs = store.children(dayNodeId).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    const section = store.createNode({ text: t.text, parentId: dayNodeId, siblingOrder: maxOrder + 1000 })
+    store.updateNode(section.id, { extraData: JSON.stringify({ _fromTemplate: t.id }) })
+    applyTemplate(t.id, section.id)
+  }
+}
+
 /**
  * applyTemplate — copia (recursivamente) el contenido de una plantilla como hijos del
  * nodo destino (p.ej. la nota diaria). Copia texto/body/status/types; preserva el

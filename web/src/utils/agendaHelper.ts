@@ -7,7 +7,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { structuralId, diaryId } from './deterministicId'
 import { findRootByKey, findContextRoot } from './rootLookup'
-import { getDailyTemplate, applyTemplate } from './tagsHelper'
+import { getDailyTemplate, applyTemplate, applyRecurringTemplatesToDay } from './tagsHelper'
 
 const MONTHS_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -69,6 +69,8 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     if (daily && store.children(dayNode.id).filter(n => !n.deletedAt).length === 0) {
       applyTemplate(daily.id, dayNode.id)
     }
+    // Plantillas recurrentes (cada lunes / cada día 1 / etc.) → sección hija del día.
+    applyRecurringTemplatesToDay(dayNode.id, dayDate)
   } catch { /* ignore */ }
   return dayNode
 }

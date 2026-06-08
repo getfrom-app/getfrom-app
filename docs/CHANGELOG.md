@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.227 — 8 junio 2026 · Plantillas recurrentes (revisión semanal/mensual)
+
+- Una plantilla puede ser **recurrente**: cada lunes (o el día de la semana que elijas), o cada día N del mes. Cuando llega ese día, From inserta la plantilla como una **sección dentro de la nota de ese día** (no reemplaza el día). Ideal para revisión semanal/mensual con un formato fijo.
+
+---
+
 ## Web v9.6.226 — 8 junio 2026 · Plantillas: se gestionan como nodos + plantilla diaria
 
 - Quitada la pestaña **Plantillas** de Ajustes (sobraba): una plantilla es simplemente un **nodo hijo de 📋 Plantillas**, que editas como cualquier nota.
