@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.212 / Mac v9.5.46 — 8 junio 2026 · Mi cuenta: suscripción y email arreglados
+
+- **Email**: ahora es **solo lectura** (cambiarlo rompería el acceso con Google/Apple). El cambio de **contraseña** sigue disponible y funciona.
+- **Estado** de suscripción: ya no aparece vacío — muestra siempre tu plan (Gratuito / Suscripción activa / Prueba / Cancelada / Licencia perpetua).
+- **Botones según tu plan**: si eres gratuito ya **no** ves "Cancelar" ni "Gestionar facturación" (solo "Mejorar"); con suscripción activa ves ambos; con licencia perpetua, nada que gestionar.
+- **Gestionar facturación** abre ahora el **portal de cliente real** (antes iba a una página que daba error). Cancelar suscripción ya no te manda a esa página rota.
+
+---
+
 ## Web v9.6.211 — 8 junio 2026 · "Notas" cuenta notas reales (con contenido)
 
 - El contador de **Notas** ahora cuenta **notas reales** (nodos con contenido dentro), no cada párrafo o línea suelta. En From todo es un nodo, pero una nota es un nodo que contiene otros. Los **nodos totales** siguen viéndose en la barra inferior («Nodos en tu árbol»).

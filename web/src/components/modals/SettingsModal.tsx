@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import LanguageSelector from '../settings/LanguageSelector'
 import { isICloudBackupEnabled, setICloudBackupEnabled } from '../../utils/icloudBackup'
 import {
-  updateMe, deleteAccount, cancelSubscription, changePlan,
+  updateMe, deleteAccount, cancelSubscription, changePlan, getBillingPortalUrl,
   clearTokens, exportNodes, getToken, getApiToken, generateApiToken,
 } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
@@ -70,13 +70,6 @@ export function CuentaPane() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
 
-  const [showEmailForm, setShowEmailForm] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [emailPassword, setEmailPassword] = useState('')
-  const [emailError, setEmailError] = useState('')
-  const [emailSuccess, setEmailSuccess] = useState('')
-  const [emailLoading, setEmailLoading] = useState(false)
-
   const [subLoading, setSubLoading] = useState(false)
   const [subError, setSubError] = useState('')
 
@@ -84,9 +77,9 @@ export function CuentaPane() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
-  // Stats
+  // Stats — una NOTA es un nodo con hijos (no cada párrafo). Ver store.isNote.
   const nodes = store.allActive()
-  const totalNotes = nodes.filter(n => !n.isDiaryEntry && n.status === null).length
+  const totalNotes = store.noteCount()
   const totalTasks = nodes.filter(n => n.status !== null).length
   const doneTasks = nodes.filter(n => n.status === 'done').length
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
@@ -119,16 +112,6 @@ export function CuentaPane() {
     finally { setPasswordLoading(false) }
   }
 
-  async function handleChangeEmail(e: React.FormEvent) {
-    e.preventDefault(); setEmailError(''); setEmailSuccess(''); setEmailLoading(true)
-    try {
-      await updateMe({ newEmail, currentPassword: emailPassword })
-      await userStore.fetchMe()
-      setEmailSuccess(t('account.emailUpdated')); setNewEmail(''); setEmailPassword(''); setShowEmailForm(false)
-    } catch (err: unknown) { setEmailError(err instanceof Error ? err.message : 'Error') }
-    finally { setEmailLoading(false) }
-  }
-
   async function handleSubscribe() {
     setSubError(''); setSubLoading(true)
     try {
@@ -144,11 +127,22 @@ export function CuentaPane() {
   }
 
   async function handleCancelSubscription() {
+    if (!confirm(t('account.cancelConfirm', '¿Seguro que quieres cancelar tu suscripción? Mantendrás el acceso hasta el final del periodo pagado.'))) return
     setSubError(''); setSubLoading(true)
     try {
       const res = await cancelSubscription()
-      if (!res.ok && res.billingPortalUrl) window.open(res.billingPortalUrl, '_blank')
-      else await userStore.fetchMe()
+      if (res.ok) await userStore.fetchMe()
+      else if (res.billingPortalUrl) window.open(res.billingPortalUrl, '_blank')
+    } catch (err: unknown) { setSubError(err instanceof Error ? err.message : 'Error') }
+    finally { setSubLoading(false) }
+  }
+
+  async function handleManageBilling() {
+    setSubError(''); setSubLoading(true)
+    try {
+      const url = await getBillingPortalUrl()
+      if (url) window.open(url, '_blank')
+      else setSubError(t('account.billingUnavailable', 'No hay portal de facturación disponible para esta cuenta.'))
     } catch (err: unknown) { setSubError(err instanceof Error ? err.message : 'Error') }
     finally { setSubLoading(false) }
   }
@@ -183,23 +177,8 @@ export function CuentaPane() {
 
       <SectionTitle>{t('account.sectionProfile')}</SectionTitle>
 
-      <Row label={t('account.emailRow')} hint={user?.email ?? '—'}>
-        <button className="btn-secondary" onClick={() => { setShowEmailForm(v => !v); setEmailError(''); setEmailSuccess('') }}>
-          {t('account.changeButton')}
-        </button>
-      </Row>
-      {showEmailForm && (
-        <form className="st-form" onSubmit={handleChangeEmail}>
-          <div className="st-form-field"><label>{t('account.newEmailLabel')}</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={t('account.newEmailPlaceholder')} required /></div>
-          <div className="st-form-field"><label>{t('account.currentPasswordLabel')}</label><input type="password" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} placeholder="••••••••" required /></div>
-          {emailError && <div className="auth-error">{emailError}</div>}
-          {emailSuccess && <div className="auth-success">{emailSuccess}</div>}
-          <div className="st-form-actions">
-            <button type="submit" className="btn-primary" disabled={emailLoading}>{emailLoading ? t('common.saving') : t('common.save')}</button>
-            <button type="button" className="btn-secondary" onClick={() => setShowEmailForm(false)}>{t('common.cancel')}</button>
-          </div>
-        </form>
-      )}
+      {/* Email es solo lectura: cambiarlo rompería el login con Google/Apple. */}
+      <Row label={t('account.emailRow')} hint={user?.email ?? '—'} />
 
       <Row label={t('account.passwordRow')} hint="••••••••">
         <button className="btn-secondary" onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess('') }}>
@@ -222,33 +201,53 @@ export function CuentaPane() {
 
       <SectionTitle>{t('account.sectionSubscription')}</SectionTitle>
 
-      <Row label={t('account.subscriptionStatus')}>{getPlanBadge()}</Row>
-      {user?.subscriptionStatus === 'active' && user.subscriptionRenewsAt && (
-        <Row label={t('account.subscriptionRenewal')}>
-          <span className="st-value">{new Date(user.subscriptionRenewsAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-        </Row>
-      )}
-      {user?.tokensBalance !== undefined && (
-        <Row label={t('account.tokensBalance')}>
-          <span className="st-value">{user.tokensBalance.toLocaleString()}</span>
-        </Row>
-      )}
-      {subError && <div className="auth-error" style={{ marginTop: 8 }}>{subError}</div>}
-      <div className="st-actions">
-        {user?.subscriptionStatus !== 'active' && user?.licenseStatus !== 'active' && (
-          <button className="btn-primary" onClick={handleSubscribe} disabled={subLoading}>
-            {subLoading ? t('common.loading') : t('account.subscribeButton')}
-          </button>
-        )}
-        {user?.subscriptionStatus === 'active' && (
-          <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
-            {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
-          </button>
-        )}
-        <a href="https://app.lemonsqueezy.com/billing" target="_blank" rel="noopener noreferrer" className="btn-secondary">
-          {t('account.manageBillingButton')}
-        </a>
-      </div>
+      {(() => {
+        const isLifetime  = user?.licenseStatus === 'active'
+        const isActiveSub = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing'
+        const isCancelled = user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired'
+        const estadoLabel = isLifetime ? t('account.planBadgeLicense', 'Licencia perpetua')
+          : user?.subscriptionStatus === 'active' ? t('account.planBadgeActive', 'Suscripción activa')
+          : user?.subscriptionStatus === 'trialing' ? t('account.planBadgeTrial', 'Prueba gratuita')
+          : isCancelled ? t('account.planBadgeCancelled', 'Cancelada')
+          : t('account.planBadgeFree', 'Plan gratuito')
+        return (
+          <>
+            <Row label={t('account.subscriptionStatus')}>
+              <span className="st-value">{estadoLabel}</span>
+            </Row>
+            {isActiveSub && user?.subscriptionRenewsAt && (
+              <Row label={t('account.subscriptionRenewal')}>
+                <span className="st-value">{new Date(user.subscriptionRenewsAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </Row>
+            )}
+            {user?.tokensBalance !== undefined && (
+              <Row label={t('account.tokensBalance')}>
+                <span className="st-value">{user.tokensBalance.toLocaleString()}</span>
+              </Row>
+            )}
+            {subError && <div className="auth-error" style={{ marginTop: 8 }}>{subError}</div>}
+            <div className="st-actions">
+              {/* Free → solo mejorar. Suscripción activa → cancelar + facturación.
+                  Lifetime → nada que gestionar. */}
+              {!isLifetime && !isActiveSub && (
+                <button className="btn-primary" onClick={handleSubscribe} disabled={subLoading}>
+                  {subLoading ? t('common.loading') : t('account.subscribeButton')}
+                </button>
+              )}
+              {isActiveSub && (
+                <>
+                  <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
+                    {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
+                  </button>
+                  <button className="btn-secondary" onClick={handleManageBilling} disabled={subLoading}>
+                    {t('account.manageBillingButton')}
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )
+      })()}
 
       <SectionTitle>{t('account.sectionPrivacy')}</SectionTitle>
       <Row label={t('account.privacyDataLabel')} hint={t('account.privacyDataHint')} />

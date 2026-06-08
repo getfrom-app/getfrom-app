@@ -177,6 +177,12 @@ export async function cancelSubscription(): Promise<{ ok: boolean; billingPortal
   return apiRequest('/auth/subscription/cancel', { method: 'POST' })
 }
 
+/** URL real del portal de cliente de LemonSqueezy para gestionar facturación. */
+export async function getBillingPortalUrl(): Promise<string | null> {
+  const res = await apiRequest<{ url: string | null }>('/auth/subscription/portal')
+  return res.url ?? null
+}
+
 export async function changePlan(): Promise<{ ok: boolean; action: 'checkout' | 'portal'; checkoutUrl?: string }> {
   return apiRequest('/auth/plan/change', { method: 'POST', body: JSON.stringify({ to: 'subscription' }) })
 }
