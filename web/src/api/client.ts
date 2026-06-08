@@ -135,6 +135,9 @@ export interface UserProfile {
    * El servidor las almacena cifradas y las devuelve descifradas. Si no hay
    * keys o el usuario no tiene plan, llega un objeto vacío. */
   aiApiKeys?: { anthropic?: string; openai?: string; google?: string }
+  /** true si la cuenta tiene contraseña (login email). false = solo Google.
+   * Determina cómo confirmar acciones sensibles (borrar cuenta). */
+  hasPassword?: boolean
 }
 
 export async function getMe(): Promise<{ user: UserProfile }> {
@@ -169,8 +172,8 @@ export async function updateMe(data: {
   })
 }
 
-export async function deleteAccount(): Promise<{ ok: true }> {
-  return apiRequest('/auth/account', { method: 'DELETE' })
+export async function deleteAccount(confirm: { password?: string; confirmEmail?: string }): Promise<{ ok: true }> {
+  return apiRequest('/auth/account', { method: 'DELETE', body: JSON.stringify(confirm) })
 }
 
 export async function cancelSubscription(): Promise<{ ok: boolean; billingPortalUrl?: string }> {

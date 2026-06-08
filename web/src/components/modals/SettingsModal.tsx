@@ -76,6 +76,8 @@ export function CuentaPane() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState('')   // contraseña o email de confirmación
+  const hasPassword = user?.hasPassword !== false           // por defecto asume contraseña
 
   // Stats — una NOTA es un nodo con hijos (no cada párrafo). Ver store.isNote.
   const nodes = store.allActive()
@@ -150,7 +152,8 @@ export function CuentaPane() {
   async function handleDeleteAccount() {
     setDeleteError(''); setDeleteLoading(true)
     try {
-      await deleteAccount(); clearTokens(); userStore.reset()
+      await deleteAccount(hasPassword ? { password: deleteConfirm } : { confirmEmail: deleteConfirm })
+      clearTokens(); userStore.reset()
       navigate('/login', { replace: true })
     } catch (err: unknown) { setDeleteError(err instanceof Error ? err.message : 'Error'); setDeleteLoading(false) }
   }
@@ -261,14 +264,27 @@ export function CuentaPane() {
       </Row>
 
       {showDeleteModal && createPortal(
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeleteError('') }}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
             <h2>{t('account.deleteAccountConfirmTitle')}</h2>
             <p>{t('account.deleteAccountConfirmText')}</p>
+            {/* Confirmación obligatoria: contraseña (o email exacto si es cuenta Google). */}
+            <div className="st-form-field" style={{ marginTop: 12 }}>
+              <label>{hasPassword
+                ? t('account.deleteConfirmPasswordLabel', 'Escribe tu contraseña para confirmar')
+                : t('account.deleteConfirmEmailLabel', 'Escribe tu email para confirmar')}</label>
+              <input
+                type={hasPassword ? 'password' : 'email'}
+                value={deleteConfirm}
+                onChange={e => setDeleteConfirm(e.target.value)}
+                placeholder={hasPassword ? '••••••••' : user?.email ?? ''}
+                autoFocus
+              />
+            </div>
             {deleteError && <div className="auth-error" style={{ marginTop: 12 }}>{deleteError}</div>}
             <div className="modal-actions">
-              <button className="btn-danger" onClick={handleDeleteAccount} disabled={deleteLoading}>{deleteLoading ? t('common.eliminating') : t('account.deleteAccountConfirmButton')}</button>
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('common.cancel')}</button>
+              <button className="btn-danger" onClick={handleDeleteAccount} disabled={deleteLoading || !deleteConfirm.trim()}>{deleteLoading ? t('common.eliminating') : t('account.deleteAccountConfirmButton')}</button>
+              <button className="btn-secondary" onClick={() => { setShowDeleteModal(false); setDeleteConfirm(''); setDeleteError('') }}>{t('common.cancel')}</button>
             </div>
           </div>
         </div>,

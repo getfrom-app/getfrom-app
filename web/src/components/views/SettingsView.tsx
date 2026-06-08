@@ -413,36 +413,11 @@ function AparienciaViewPane() {
   )
 }
 
-// ── CuentaViewPane (con cerrar sesión) ────────────────────────────────────────
+// ── CuentaViewPane ────────────────────────────────────────────────────────────
+// (Cerrar sesión no va aquí: ya está en el menú superior desplegable.)
 
 function CuentaViewPane() {
-  const navigate = useNavigate()
-
-  function handleLogout() {
-    clearTokens()
-    userStore.reset()
-    navigate('/login', { replace: true })
-  }
-
-  return (
-    <>
-      <CuentaPane />
-      <div className="st-pane" style={{ paddingTop: 0 }}>
-        <div className="st-section-title">Sesión</div>
-        <div className="st-row">
-          <div className="st-row-info">
-            <div className="st-row-label">Cerrar sesión</div>
-            <div className="st-row-hint">Salir de tu cuenta en este dispositivo.</div>
-          </div>
-          <div className="st-row-action">
-            <button className="btn-secondary btn-danger-outline" onClick={handleLogout}>
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  )
+  return <CuentaPane />
 }
 
 // ── BackupsPane ───────────────────────────────────────────────────────────────
