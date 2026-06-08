@@ -271,6 +271,22 @@ export async function extractUserKnowledge(
 }
 
 /**
+ * Curador del perfil: envía las listas actuales de personas/hechos y recibe una
+ * versión compactada (deduplicada, sin obsoletos, esencial). Ante cualquier fallo
+ * el servidor devuelve las listas intactas, así que es seguro llamarlo.
+ */
+export async function compactKnowledge(
+  people: string[],
+  facts: string[],
+): Promise<UserKnowledge> {
+  const data = await apiRequest<UserKnowledge>('/ai/compact-knowledge', {
+    method: 'POST',
+    body: JSON.stringify({ people, facts }),
+  })
+  return { people: data.people ?? people, facts: data.facts ?? facts }
+}
+
+/**
  * Extrae conocimiento estructurado de los nodos de un contexto.
  * Devuelve palabras clave, personas y temas frecuentes.
  */

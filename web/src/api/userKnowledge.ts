@@ -99,4 +99,74 @@ export async function saveUserKnowledgeToProfile(people: string[], facts: string
   const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
   upsertSub('Personas', people, maxBase + 1000)
   upsertSub('Hechos', facts, maxBase + 2000)
+
+  // Curador automático: si el conocimiento acumulado supera el umbral, compacta.
+  maybeCompactProfile()
+}
+
+// ── Curador del perfil (tope + compactación inteligente) ──────────────────────
+
+const COMPACT_THRESHOLD = 40   // nº total de items aprendidos que dispara la limpieza
+
+/** Lee las listas actuales de Personas/Hechos del nodo de aprendizaje. */
+export function readLearnedItems(): { people: string[]; facts: string[]; learnNodeId: string | null } {
+  const perfil = store.perfilIANode?.() ?? null
+  if (!perfil) return { people: [], facts: [], learnNodeId: null }
+  const learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  if (!learnNode) return { people: [], facts: [], learnNodeId: null }
+  const parseSub = (prefix: string): string[] => {
+    const sub = store.children(learnNode.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
+    if (!sub) return []
+    return (sub.text || '').slice(prefix.length + 1).split(',').map(s => s.trim()).filter(Boolean)
+  }
+  return { people: parseSub('Personas'), facts: parseSub('Hechos'), learnNodeId: learnNode.id }
+}
+
+function countLearnedItems(): number {
+  const { people, facts } = readLearnedItems()
+  return people.length + facts.length
+}
+
+/** Sobrescribe las sublíneas Personas/Hechos con listas ya compactadas. */
+function writeLearnedItems(learnNodeId: string, people: string[], facts: string[]) {
+  const setSub = (prefix: string, items: string[]) => {
+    const sub = store.children(learnNodeId).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
+    const text = items.length ? `${prefix}: ${items.join(', ')}` : ''
+    if (sub) {
+      if (text) store.updateNode(sub.id, { text })
+      else store.deleteNode(sub.id)  // sin items → quitar la línea
+    } else if (text) {
+      store.createNode({ text, parentId: learnNodeId })
+    }
+  }
+  setSub('Personas', people)
+  setSub('Hechos', facts)
+}
+
+let _compacting = false
+
+/** Compacta el conocimiento del perfil vía el curador del servidor.
+ *  Seguro: ante cualquier fallo el servidor devuelve las listas intactas. */
+export async function compactProfileKnowledge(): Promise<{ before: number; after: number } | null> {
+  if (_compacting) return null
+  const { people, facts, learnNodeId } = readLearnedItems()
+  if (!learnNodeId || people.length + facts.length === 0) return null
+  _compacting = true
+  try {
+    const { compactKnowledge } = await import('./autoClassify')
+    const r = await compactKnowledge(people, facts)
+    writeLearnedItems(learnNodeId, r.people, r.facts)
+    return { before: people.length + facts.length, after: r.people.length + r.facts.length }
+  } catch {
+    return null
+  } finally {
+    _compacting = false
+  }
+}
+
+/** Dispara el curador si se supera el umbral. Fire-and-forget, una vez a la vez. */
+function maybeCompactProfile() {
+  if (_compacting) return
+  if (countLearnedItems() <= COMPACT_THRESHOLD) return
+  void compactProfileKnowledge()
 }

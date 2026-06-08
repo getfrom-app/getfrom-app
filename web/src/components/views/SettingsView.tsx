@@ -19,6 +19,7 @@ import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
+import { readLearnedItems, compactProfileKnowledge } from '../../api/userKnowledge'
 
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
@@ -131,8 +132,51 @@ function MagicPane() {
         </div>
       ))}
 
+      <ProfileKnowledgeSection />
+
       <MagicLearningsSection />
     </div>
+  )
+}
+
+// ── Conocimiento del perfil (lo que From aprende de ti) ───────────────────────
+
+function ProfileKnowledgeSection() {
+  const [items, setItems] = useState(() => readLearnedItems())
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const total = items.people.length + items.facts.length
+
+  async function handleCompact() {
+    setBusy(true); setMsg(null)
+    const r = await compactProfileKnowledge()
+    setItems(readLearnedItems())
+    if (r) setMsg(r.before === r.after ? 'Ya estaba limpio.' : `Compactado: ${r.before} → ${r.after} entradas.`)
+    else setMsg('Nada que compactar.')
+    setBusy(false)
+    setTimeout(() => setMsg(null), 4000)
+  }
+
+  return (
+    <>
+      <div className="st-section-title" style={{ marginTop: 28 }}>Lo que From sabe sobre ti</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">Conocimiento del perfil</div>
+          <div className="st-row-hint">
+            From aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones.
+            {total > 0 ? ` Ahora guarda ${total} ${total === 1 ? 'entrada' : 'entradas'}.` : ' Aún no ha guardado nada.'}
+            {' '}Se compacta solo al crecer; aquí puedes limpiarlo a mano.
+          </div>
+        </div>
+        <div className="st-row-action">
+          <button className="btn-secondary btn-sm" onClick={handleCompact} disabled={busy || total === 0}>
+            {busy ? 'Limpiando…' : 'Limpiar y compactar'}
+          </button>
+        </div>
+      </div>
+      {msg && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '0 0 4px' }}>{msg}</div>}
+    </>
   )
 }
 

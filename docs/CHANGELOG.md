@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.205 / Mac v9.5.42 — 8 junio 2026 · Curador del perfil (aprende sin acumular basura)
+
+- From sigue **aprendiendo cosas duraderas sobre ti** (de tus notas y conversaciones), pero ahora un **curador** mantiene el perfil limpio: **deduplica, fusiona y se queda con lo esencial**, automáticamente cuando crece. Botón **«Limpiar y compactar»** en Ajustes › Magic para hacerlo a mano.
+
+---
+
 ## Web v9.6.204 / Mac v9.5.41 — 8 junio 2026 · Contexto IA enfocado + presupuesto en el footer
 
 - **Menos tokens, más foco**: Magic ya no inyecta los 8 contextos más usados en cada mensaje. Ahora inyecta **solo tu Perfil + el contexto del nodo en el que trabajas** (y el que hereda de sus nodos padre). Respuestas más relevantes y más baratas.
