@@ -614,6 +614,14 @@ export class NodeStore {
     return out
   }
 
+  /** Nombre del contexto más cercano del nodo (el suyo o el heredado del padre),
+   *  o null si no está dentro de ningún contexto. Para enrutar conocimiento:
+   *  lo específico de un contexto NO debe ir al Perfil global. */
+  primaryContextName(nodeId: string): string | null {
+    const keys = Object.keys(this.tagDefinitionsForNodeChain(nodeId))
+    return keys.length > 0 ? keys[0] : null
+  }
+
   // ── Recursos ────────────────────────────────────────────────────────────────
 
   /** Todos los nodos marcados como recurso */

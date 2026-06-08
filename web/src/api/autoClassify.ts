@@ -261,10 +261,11 @@ export interface UserKnowledge {
 export async function extractUserKnowledge(
   nodeText: string,
   existingProfile?: string,
+  contextName?: string | null,
 ): Promise<UserKnowledge | null> {
   const data = await apiRequest<UserKnowledge>('/ai/extract-user-knowledge', {
     method: 'POST',
-    body: JSON.stringify({ nodeText, existingProfile }),
+    body: JSON.stringify({ nodeText, existingProfile, contextName: contextName ?? undefined }),
   })
   if (!data.people?.length && !data.facts?.length) return null
   return { people: data.people ?? [], facts: data.facts ?? [] }

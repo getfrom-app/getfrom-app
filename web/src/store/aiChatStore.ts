@@ -347,7 +347,7 @@ class AIChatStore {
     }
     await this.maybeAutoRenameSession()
     // Aprender del mensaje del usuario (personas/hechos) — integral, fire-and-forget.
-    this.learnFromUserMessage(trimmed)
+    this.learnFromUserMessage(trimmed, currentNodeId)
   }
 
   /**
@@ -356,14 +356,16 @@ class AIChatStore {
    * lo que el usuario le cuenta de forma natural conversando. Fire-and-forget.
    */
   private learnedFromChat = new Set<string>()
-  private async learnFromUserMessage(text: string) {
+  private async learnFromUserMessage(text: string, currentNodeId?: string) {
     const trimmed = text.trim()
     if (trimmed.length < 15) return
     if (this.learnedFromChat.has(trimmed)) return
     this.learnedFromChat.add(trimmed)
     try {
       const existingProfile = readProfileLines().join('. ')
-      const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined)
+      // Enrutado: si se conversa sobre un nodo dentro de un contexto, solo lo GLOBAL.
+      const contextName = currentNodeId ? store.primaryContextName(currentNodeId) : null
+      const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName)
       if (!knowledge) return
       await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
     } catch { /* silencioso */ }

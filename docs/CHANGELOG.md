@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.206 / Mac v9.5.43 — 8 junio 2026 · Perfil global vs contexto
+
+- Lo que From aprende ahora va **al sitio correcto**: si escribes dentro de un proyecto/contexto, los datos **específicos de ese proyecto se quedan en su contexto** y solo lo **global sobre ti** (relaciones, metas, situación) entra en tu Perfil. Menos ruido en el perfil, más foco.
+
+---
+
 ## Web v9.6.205 / Mac v9.5.42 — 8 junio 2026 · Curador del perfil (aprende sin acumular basura)
 
 - From sigue **aprendiendo cosas duraderas sobre ti** (de tus notas y conversaciones), pero ahora un **curador** mantiene el perfil limpio: **deduplica, fusiona y se queda con lo esencial**, automáticamente cuando crece. Botón **«Limpiar y compactar»** en Ajustes › Magic para hacerlo a mano.

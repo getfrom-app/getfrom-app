@@ -361,7 +361,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             .map(n => (n.text || '').trim())
         : []
       const existingProfile = existingProfileLines.join('. ')
-      const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined)
+      // Enrutado: si el nodo está dentro de un contexto, solo extraer lo GLOBAL.
+      const contextName = store.primaryContextName(nodeId)
+      const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined, contextName)
       if (!knowledge) return
       await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
     } catch { /* silencioso */ }
