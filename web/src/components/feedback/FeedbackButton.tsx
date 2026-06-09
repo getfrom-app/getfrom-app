@@ -63,7 +63,7 @@ export default function FeedbackButton() {
         onClick={() => setOpen(true)}
         title={t('feedback.tooltip')}
         style={{
-          position: 'fixed', bottom: 16, left: 16, zIndex: 9998,
+          position: 'fixed', bottom: 38, left: 16, zIndex: 9998,
           display: 'flex', alignItems: 'center', gap: 7,
           background: '#ffffff', border: '1px solid rgba(139,92,246,0.25)',
           borderRadius: 999, padding: '7px 13px 7px 11px',
