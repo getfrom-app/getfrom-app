@@ -49,7 +49,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // (sus mensajes inyectados no fijan boundNodeKey) ni a reabrir sobre el mismo nodo.
   useEffect(() => {
     const key = (onboardingNodeIdRef.current ?? currentNodeId) ?? '∅'
-    if (chat.boundNodeKey != null && chat.boundNodeKey !== key) {
+    // No resetear al navegar a la PROPIA nota de voz de esta conversación (es parte
+    // de la misma charla: la abrimos a la izquierda mientras Magic sigue a la derecha).
+    if (chat.boundNodeKey != null && chat.boundNodeKey !== key && key !== chat.voiceNoteId) {
       chat.startNewSession()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -347,6 +349,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           const noteId = await upsertVoiceNote(text, res.durationSec || approxDur, res.audioKey, chat.voiceNoteId)
           chat.setVoiceNoteId(noteId)
           chat.markNextAsVoiceNote()
+          // Abrir la nota a la izquierda y mantenerla durante toda la conversación
+          // (se ven en vivo las adiciones). Magic sigue a la derecha.
+          window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
         } catch { /* si falla, Magic gestionará el texto normalmente */ }
       }
       const base = inputRef.current.trim()

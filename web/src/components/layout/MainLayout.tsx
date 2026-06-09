@@ -211,7 +211,10 @@ export default function MainLayout() {
       const n = store.getNode(currentNodeIdFromRoute)
       try { const ed = n ? JSON.parse(n.extraData || '{}') : {}; isAudio = (Array.isArray(ed._audios) && ed._audios.length > 0) || !!(ed._audioKey || ed._audioTranscript) } catch { isAudio = false }
     }
-    if (isAudio) setRightPanel('audio')
+    // Si Magic está abierto (conversación de voz en curso), NO robamos la columna:
+    // la nota se ve a la izquierda y Magic sigue a la derecha. El panel de audio
+    // (reproductor + transcripción) se muestra al abrir la nota con Magic cerrado.
+    if (isAudio && rightPanel !== 'magic') setRightPanel('audio')
     else setRightPanel(p => (p === 'audio' ? 'filter' : p))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeIdFromRoute])
