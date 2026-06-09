@@ -338,10 +338,16 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       setIsTranscribing(false)
       if (!text) return
 
-      // Grabación larga: guardar el audio + transcripción en el nodo de la conversación
-      // (se acumulan varios audios). Magic no se cierra; sigues conversando.
-      if (isLong && res.audioKey) {
-        chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text, durationSec: res.durationSec || approxDur })
+      // Grabación larga (no instrucción corta): crear/actualizar la ÚNICA nota de voz
+      // de esta conversación (audio + transcripción consolidada). Magic NO se cierra;
+      // se le marca para que converse pero NO cree otra nota (la nota de voz ya existe).
+      if (isLong) {
+        try {
+          const { upsertVoiceNote } = await import('../../utils/recordingProcessor')
+          const noteId = await upsertVoiceNote(text, res.durationSec || approxDur, res.audioKey, chat.voiceNoteId)
+          chat.setVoiceNoteId(noteId)
+          chat.markNextAsVoiceNote()
+        } catch { /* si falla, Magic gestionará el texto normalmente */ }
       }
       const base = inputRef.current.trim()
       const combined = [base, text].filter(Boolean).join(' ').trim()
