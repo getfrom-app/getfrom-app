@@ -141,10 +141,20 @@ class AIChatStore {
     const sid = this.sessionId
     if (!sid) return
     const node = store.getNode(sid)
-    let hasAudio = false
-    try { const ed = JSON.parse(node?.extraData || '{}'); hasAudio = Array.isArray(ed._audios) && ed._audios.length > 0 } catch { /* */ }
-    if (this.messages.length === 0 && !hasAudio) {
-      if (node) { for (const c of store.children(sid)) store.deleteNode(c.id); store.deleteNode(sid) }
+    if (!node) { this.startNewSession(); return }
+    // SEGURIDAD: solo borrar si es REALMENTE un nodo de conversación (✦) vacío. Nunca
+    // tocar notas diarias, nodos con contenido, etc. (evita borrar tareas por error).
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { ed = {} }
+    const isSessionNode = ed._aiSession === '1'
+    const hasAudio = Array.isArray(ed._audios) && ed._audios.length > 0
+    // Hijos que NO sean el contenedor de transcripción (💬) → hay contenido real, no borrar.
+    const realChildren = store.children(sid).filter(c => {
+      try { return JSON.parse(c.extraData || '{}')._aiTranscript !== '1' } catch { return true }
+    })
+    if (isSessionNode && this.messages.length === 0 && !hasAudio && realChildren.length === 0 && !node.isDiaryEntry) {
+      for (const c of store.children(sid)) store.deleteNode(c.id)
+      store.deleteNode(sid)
       this.startNewSession()
       // No dejar la ruta apuntando al nodo borrado ("Nodo no encontrado"): volver al diario.
       try {
