@@ -686,12 +686,13 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // ── Con query: búsqueda normal ─────────────────────────────────────────
     const qNormStr = qNorm
 
-    // Shortcuts Hoy/Mañana
-    if (['hoy', 'today', 'ho'].some(kw => kw.startsWith(qNormStr) || qNormStr.startsWith(kw.slice(0, 2)))) {
+    // Shortcuts Hoy/Mañana — solo si escribes el comando (prefijo, mín. 2 chars). Sin
+    // texto extra: "mañana comprar pan" NO debe ir al atajo, sino a crear la tarea.
+    if (qNormStr.length >= 2 && ['hoy', 'today'].some(kw => kw.startsWith(qNormStr))) {
       const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
       return [{ id: 'quick-today', label: t('cmdpalette.todayNote'), sublabel: todayLabel, type: 'wf-action', taskStatus: null, score: 300, action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() } }]
     }
-    if (['mañana', 'manana', 'tomorrow'].some(kw => qNormStr.length >= 2 && (kw.startsWith(qNormStr) || qNormStr.startsWith(kw.slice(0, 3))))) {
+    if (qNormStr.length >= 2 && ['mañana', 'manana', 'tomorrow'].some(kw => kw.startsWith(qNormStr))) {
       const d = new Date(); d.setDate(d.getDate() + 1)
       const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
       return [{ id: 'quick-tomorrow', label: t('cmdpalette.tomorrowNote'), sublabel: label, type: 'wf-action', taskStatus: null, score: 300, action: () => { import('../../utils/agendaHelper').then(({ ensureDayPath }) => { const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose() }) } }]
@@ -788,12 +789,15 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     results.sort((a, b) => b.score - a.score)
     results.splice(20)
 
-    // Colapsar / expandir
-    const qLow = q.toLowerCase()
-    if (['colapsar', 'collapse', 'plegar', 'contraer'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
+    // Colapsar / expandir — solo si el usuario ESCRIBE el comando (match por prefijo,
+    // mín. 2 chars). Antes usaba qLow.includes(kw.slice(0,3)) → "des"/"con"/"exp"
+    // aparecían ante cualquier texto que los contuviera (p.ej. "transferir desde…").
+    const qLow = q.toLowerCase().trim()
+    const cmdMatch = (kws: string[]) => qLow.length >= 2 && kws.some(kw => kw.startsWith(qLow) || qLow.startsWith(kw))
+    if (cmdMatch(['colapsar', 'collapse', 'plegar', 'contraer'])) {
       results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast('Todo colapsado', 'success') } })
     }
-    if (['expandir', 'expand', 'desplegar'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
+    if (cmdMatch(['expandir', 'expand', 'desplegar'])) {
       results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast('Todo expandido', 'success') } })
     }
 
