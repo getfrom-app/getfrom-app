@@ -228,6 +228,9 @@ class AIChatStore {
         const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]) : []
         audios.push({ audioKey: this.pendingVoiceAudio.audioKey, transcript: this.pendingVoiceAudio.transcript, durationSec: this.pendingVoiceAudio.durationSec })
         store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios }) })
+        // Regenerar el resumen estructurado del nodo (body) desde TODA la voz acumulada
+        // — determinista, siempre, creciendo. Fire-and-forget (no bloquea el chat).
+        import('../utils/recordingProcessor').then(m => m.restructureVoiceNote(sid)).catch(() => {})
         // Voz: abrir el nodo de la conversación a la izquierda (se mantiene toda la
         // charla; Magic sigue a la derecha). Para texto NO se navega (menos intrusivo).
         window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: sid } }))

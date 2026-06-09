@@ -84,7 +84,8 @@ export default function WFTopBar({
     const current = visible[visible.length - 1] ?? null
     const ancestors = visible.slice(0, -1)
     return { ancestors, current }
-  }, [nodeId, s]) // eslint-disable-line react-hooks/exhaustive-deps
+    // s.nodesVersion → recalcular cuando cambie el TEXTO de un nodo (ej.: título auto)
+  }, [nodeId, s, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Truncate long labels for display
   const truncate = (label: string, max = 22) =>

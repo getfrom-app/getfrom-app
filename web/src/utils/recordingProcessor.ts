@@ -109,6 +109,30 @@ function splitLines(text: string): string[] {
   return text.split('\n').map(l => l.trim()).filter(Boolean)
 }
 
+/**
+ * Regenera el RESUMEN ESTRUCTURADO (en el body) del nodo de conversación a partir de
+ * TODA la transcripción de voz acumulada (extraData._audios). Determinista: se llama
+ * tras cada audio para que la nota tenga siempre un resumen que va creciendo.
+ * No bloquea (fire-and-forget desde el store).
+ */
+export async function restructureVoiceNote(nodeId: string): Promise<void> {
+  const node = store.nodes.get(nodeId)
+  if (!node) return
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch { return }
+  const audios = Array.isArray(ed._audios) ? (ed._audios as Array<Record<string, unknown>>) : []
+  const consolidated = audios.map(a => String(a.transcript || '')).filter(s => s.trim()).join('\n\n')
+  if (!consolidated.trim()) return
+  try {
+    const a = await analyzeTranscript(consolidated, 0)
+    let bodyMd = a.summary || ''
+    if (a.tasks && a.tasks.length > 0) {
+      bodyMd += (bodyMd ? '\n\n' : '') + '**Tareas:**\n' + a.tasks.map(tk => `- [ ] ${tk}`).join('\n')
+    }
+    if (bodyMd.trim()) store.updateNode(nodeId, { body: bodyMd })
+  } catch { /* mantener el body anterior si falla */ }
+}
+
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
 export async function processRecording(
   transcript: string,
