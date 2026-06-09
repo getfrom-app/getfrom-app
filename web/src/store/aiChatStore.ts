@@ -345,6 +345,9 @@ class AIChatStore {
               store.updateNode(noteId, {
                 extraData: JSON.stringify({ ...ed, _audioKey: audioKey, _audioTranscript: transcript, _audioDuration: String(durationSec) }),
               })
+              // Llevar al usuario a la nota estructurada (no al nodo de conversación):
+              // a la izquierda la estructura, a la derecha el audio + transcripción.
+              window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
             } catch { /* no romper el turno si falla */ }
             this.pendingVoiceAudio = null
           }

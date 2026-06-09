@@ -411,11 +411,18 @@ export default function MainLayout() {
       if (!id) return
       navigate(`/node/${id}`)  // llevar al usuario al nodo restaurado (lo encuentra al instante)
     }
+    // Abrir un nodo concreto (ej.: tras dictar por voz, llevar a la nota estructurada)
+    function onOpenNode(e: Event) {
+      const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail || {}
+      if (nodeId) navigate(`/node/${nodeId}`)
+    }
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
+    window.addEventListener('from:open-node', onOpenNode)
     return () => {
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
+      window.removeEventListener('from:open-node', onOpenNode)
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
