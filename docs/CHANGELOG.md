@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.278 — 9 junio 2026 · Tu nota diaria, a prueba de balas
+
+- **La nota del día nunca se duplica ni se puede borrar.** Es el contenedor de tu día: ni un atajo de teclado, ni la voz, ni una limpieza automática pueden eliminarla por accidente, y siempre será una sola (jamás dos del mismo día).
+- **Más seguridad al dictar con voz**: el flujo de grabación ya no puede tocar nada que tenga contenido — solo descarta conversaciones realmente vacías.
+- Avisos de copyright de la web como **© Fromly** (imagen de producto).
+
+---
+
 ## Web v9.6.247 · Mac v9.5.53 — 9 junio 2026 · Cierre del rebrand en lo que Fromly aprende
 
 - **"Lo que Fromly sabe"**: las notas de memoria que Fromly construye sobre ti y sobre cada contexto ahora se llaman **"🧠 Lo que Fromly sabe…"** (antes "From"). El cambio se aplica solo, sin duplicar nada y sin que pierdas ningún aprendizaje.
