@@ -5,6 +5,7 @@ import { store, nodeMeta } from '../../store/nodeStore'
 import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, openSelectionMenu } from './Outliner'
 import type { Node } from '../../types'
 import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
@@ -407,8 +408,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (newSamples.length === 0) return
 
       // 2. Leer conocimiento existente en "🧠 Lo que From sabe" para deduplicar
-      const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
-      const existingKnowledgeNode = store.children(contextId).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      const KNOWLEDGE_NODE_TEXT = CONTEXT_KNOWLEDGE  // Fase 1: crea viejo; reconoce ambos
+      const existingKnowledgeNode = store.children(contextId).find(n => !n.deletedAt && isContextKnowledge(n.text))
       const existingKnowledge = existingKnowledgeNode
         ? store.children(existingKnowledgeNode.id).filter(n => !n.deletedAt).map(n => n.text || '').join('. ')
         : ''

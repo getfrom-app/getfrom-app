@@ -14,6 +14,7 @@ import { apiRequest } from './client'
 import { store } from '../store/nodeStore'
 import { learningsStore } from '../store/learningsStore'
 import { buildClassifyContexts } from './autoClassify'
+import { PROFILE_KNOWLEDGE, isProfileKnowledge } from '../utils/knowledgeNodes'
 
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
 
@@ -118,8 +119,8 @@ async function addProfileFact(fact: string): Promise<void> {
     try { perfil = await store.getOrCreatePerfilIA() } catch { return }
   }
   if (!perfil) return
-  const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  const LEARN_SECTION = PROFILE_KNOWLEDGE  // Fase 1: crea con texto viejo; reconoce ambos
+  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
   if (!learnNode) {
     const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0

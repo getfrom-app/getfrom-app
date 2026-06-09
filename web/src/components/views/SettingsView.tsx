@@ -19,6 +19,7 @@ import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
 import { readLearnedItems, getOrCreateLearnNode } from '../../api/userKnowledge'
 import { findContextRoot } from '../../utils/rootLookup'
+import { isContextKnowledge } from '../../utils/knowledgeNodes'
 
 // La lista de pestañas vive en la columna derecha (SettingsListPanel). Esta vista
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
@@ -51,7 +52,7 @@ function MagicPane() {
     const out: { name: string; id: string }[] = []
     for (const ctx of s.children(root.id)) {
       if (ctx.deletedAt || (ctx.text || '').startsWith('🧠')) continue
-      const kn = s.children(ctx.id).find(n => !n.deletedAt && (n.text || '') === '🧠 Lo que Fromly sabe')
+      const kn = s.children(ctx.id).find(n => !n.deletedAt && isContextKnowledge(n.text))
       if (kn) out.push({ name: ctx.text || 'Contexto', id: kn.id })
     }
     return out

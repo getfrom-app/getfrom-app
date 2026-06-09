@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 import { findContextRoot, isProtectedSystemRoot } from '../../utils/rootLookup'
+import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import { listTemplates, applyTemplate } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
@@ -1377,8 +1378,8 @@ export default function NodeView() {
         return
       }
       // Buscar o crear el nodo "🧠 Lo que From sabe" dentro del contexto
-      const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
-      const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      const KNOWLEDGE_NODE_TEXT = CONTEXT_KNOWLEDGE  // Fase 1: crea viejo; reconoce ambos
+      const existingKnowledgeNode = store.children(node.id).find(n => !n.deletedAt && isContextKnowledge(n.text))
       let knowledgeNodeId: string
       if (existingKnowledgeNode) {
         knowledgeNodeId = existingKnowledgeNode.id

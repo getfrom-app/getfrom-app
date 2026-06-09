@@ -11,8 +11,10 @@
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
+import { PROFILE_KNOWLEDGE, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
 
-const LEARN_SECTION = '🧠 Lo que From sabe sobre ti'
+// Canónico de creación (Fase 1 = texto viejo). Los finders reconocen viejo + nuevo.
+const LEARN_SECTION = PROFILE_KNOWLEDGE
 
 /**
  * Devuelve el nodo perfil IA, creándolo de forma SÍNCRONA si no existe.
@@ -65,7 +67,7 @@ export async function saveUserKnowledgeToProfile(people: string[], facts: string
   }
   if (!perfil) return
 
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
   if (!learnNode) {
     const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
@@ -112,7 +114,7 @@ const COMPACT_THRESHOLD = 40   // nº total de items aprendidos que dispara la l
 export function readLearnedItems(): { people: string[]; facts: string[]; learnNodeId: string | null } {
   const perfil = store.perfilIANode?.() ?? null
   if (!perfil) return { people: [], facts: [], learnNodeId: null }
-  const learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  const learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
   if (!learnNode) return { people: [], facts: [], learnNodeId: null }
   const parseSub = (prefix: string): string[] => {
     const sub = store.children(learnNode.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
@@ -136,7 +138,7 @@ export function cleanupOrphanProfileKnowledge(): void {
   if (perfil) {
     for (const c of store.children(perfil.id)) {
       if (c.deletedAt) continue
-      if ((c.text || '').trim() === '🧠 Lo que From sabe') store.deleteNode(c.id)
+      if (isContextKnowledge(c.text)) store.deleteNode(c.id)
     }
   }
   try { localStorage.setItem('from_profile_orphan_v1', '1') } catch { /* */ }
@@ -147,7 +149,7 @@ export function cleanupOrphanProfileKnowledge(): void {
 export function getOrCreateLearnNode(): Node | null {
   const perfil = ensurePerfilSync()
   if (!perfil) return null
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && n.text === LEARN_SECTION)
+  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
   if (!learnNode) {
     const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
     const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0

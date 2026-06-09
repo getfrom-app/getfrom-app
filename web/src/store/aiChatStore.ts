@@ -20,6 +20,7 @@ import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { resolvePrompt } from '../utils/promptsHelper'
+import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 
@@ -637,7 +638,7 @@ class AIChatStore {
 
       // Memoria que Fromly acumula de este contexto ("🧠 Lo que From sabe"): se
       // inyecta para que el chat use lo que sabe del proyecto, no solo el body.
-      const knowledgeNode = store.children(defNode.id).find(c => !c.deletedAt && (c.text || '') === '🧠 Lo que From sabe')
+      const knowledgeNode = store.children(defNode.id).find(c => !c.deletedAt && isContextKnowledge(c.text))
       if (knowledgeNode) {
         const lines = store.children(knowledgeNode.id)
           .filter(c => !c.deletedAt && (c.text || '').trim())

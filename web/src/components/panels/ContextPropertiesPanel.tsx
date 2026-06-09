@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { extractContextKnowledge } from '../../api/autoClassify'
+import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 
 const COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#059669', '#ca8a04', '#dc2626', '#db2777', '#64748b']
 
@@ -54,8 +55,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
       }
       if (samples.length === 0) { setUpdating(false); return }
       const knowledge = await extractContextKnowledge(node!.text || '', '', samples)
-      const KNOWLEDGE_NODE_TEXT = '🧠 Lo que From sabe'
-      const existing = store.children(nodeId).find(n => !n.deletedAt && n.text === KNOWLEDGE_NODE_TEXT)
+      const KNOWLEDGE_NODE_TEXT = CONTEXT_KNOWLEDGE  // Fase 1: crea viejo; reconoce ambos
+      const existing = store.children(nodeId).find(n => !n.deletedAt && isContextKnowledge(n.text))
       const kid = existing ? existing.id : store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: nodeId, siblingOrder: -1000 }).id
       const subnodes: Record<string, string> = {
         'Palabras clave:': `Palabras clave: ${knowledge.keywords.join(', ')}`,
