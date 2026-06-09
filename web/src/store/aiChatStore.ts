@@ -218,6 +218,20 @@ class AIChatStore {
     }
     const sid = this.sessionId
 
+    // Grabación de voz larga: adjuntar audio + transcripción al NODO de la conversación,
+    // acumulando varios audios (se ven todos al abrir ese nodo, columna derecha).
+    if (this.pendingVoiceAudio && sid) {
+      try {
+        const node = store.getNode(sid)
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node?.extraData || '{}') } catch { ed = {} }
+        const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]) : []
+        audios.push({ audioKey: this.pendingVoiceAudio.audioKey, transcript: this.pendingVoiceAudio.transcript, durationSec: this.pendingVoiceAudio.durationSec })
+        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios }) })
+      } catch { /* no romper el turno */ }
+      this.pendingVoiceAudio = null
+    }
+
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
     this.appendToTranscript(sid, 'user', trimmed)          // persistir al transcript
     this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [] })
@@ -329,28 +343,6 @@ class AIChatStore {
           writeResults.push(result)
           // Recopilar IDs creados
           if (result.createdIds) undoBundle.createdIds.push(...result.createdIds)
-        }
-        // Si esta grabación larga produjo una nota, adjuntar el audio + transcripción
-        // completa A LA PROPIA NOTA (no como nodo aparte). Al abrir la nota, la columna
-        // derecha muestra el reproductor + la transcripción (ver AudioPanel).
-        if (this.pendingVoiceAudio) {
-          const noteRes = writeResults.find(r => r.action === 'create_note' && r.ok && r.createdIds.length > 0)
-          if (noteRes) {
-            const { audioKey, transcript, durationSec } = this.pendingVoiceAudio
-            const noteId = noteRes.createdIds[0]
-            try {
-              const note = store.getNode(noteId)
-              let ed: Record<string, unknown> = {}
-              try { ed = JSON.parse(note?.extraData || '{}') } catch { ed = {} }
-              store.updateNode(noteId, {
-                extraData: JSON.stringify({ ...ed, _audioKey: audioKey, _audioTranscript: transcript, _audioDuration: String(durationSec) }),
-              })
-              // Llevar al usuario a la nota estructurada (no al nodo de conversación):
-              // a la izquierda la estructura, a la derecha el audio + transcripción.
-              window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
-            } catch { /* no romper el turno si falla */ }
-            this.pendingVoiceAudio = null
-          }
         }
         // Adjuntar undoBundle al mensaje del asistente
         const hasUndo = undoBundle.createdIds.length > 0 || undoBundle.restoredNodes.length > 0

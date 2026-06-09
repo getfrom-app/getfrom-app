@@ -1,72 +1,84 @@
 // MARK: - AudioPanel
 //
-// Columna derecha cuando se abre un nodo de audio (extraData._audio = '1').
-// Muestra un reproductor (URL firmada de R2, pedida bajo demanda) + la transcripción.
+// Columna derecha cuando se abre un nodo con audio(s) de voz. Muestra, en orden,
+// cada grabación de la conversación: reproductor (URL firmada de R2, bajo demanda)
+// + su transcripción. Soporta varios audios (extraData._audios) y el formato legacy
+// de un solo audio (_audioKey/_audioTranscript).
 
 import { useEffect, useState } from 'react'
 import { store } from '../../store/nodeStore'
 import { getAudioUrl } from '../../api/client'
 
-function parseExtra(raw: string | null | undefined): Record<string, string> {
+interface AudioItem { audioKey: string; transcript: string; durationSec: number }
+
+function parseExtra(raw: string | null | undefined): Record<string, unknown> {
   try { return JSON.parse(raw || '{}') } catch { return {} }
 }
 
-export default function AudioPanel({ nodeId }: { nodeId: string }) {
-  const node = store.getNode(nodeId)
-  const ed = parseExtra(node?.extraData)
-  const audioKey = ed._audioKey
-  const transcript = ed._audioTranscript || ''
-  const durationSec = parseInt(ed._audioDuration || '0', 10) || 0
+function readAudios(extraData: string | null | undefined): AudioItem[] {
+  const ed = parseExtra(extraData)
+  if (Array.isArray(ed._audios)) {
+    return (ed._audios as Array<Record<string, unknown>>).map(a => ({
+      audioKey: String(a.audioKey || ''),
+      transcript: String(a.transcript || ''),
+      durationSec: Number(a.durationSec || 0),
+    }))
+  }
+  // Legacy: un solo audio en campos sueltos
+  if (ed._audioKey || ed._audioTranscript) {
+    return [{ audioKey: String(ed._audioKey || ''), transcript: String(ed._audioTranscript || ''), durationSec: Number(ed._audioDuration || 0) }]
+  }
+  return []
+}
 
+function fmtDur(s: number) {
+  if (!s) return ''
+  return ` · ${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
+}
+
+function AudioItemView({ item, index, total }: { item: AudioItem; index: number; total: number }) {
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     setUrl(null); setError(false)
-    if (!audioKey) { setError(true); return }
-    getAudioUrl(audioKey)
+    if (!item.audioKey) { setError(true); return }
+    getAudioUrl(item.audioKey)
       .then(u => { if (!cancelled) setUrl(u) })
       .catch(() => { if (!cancelled) setError(true) })
     return () => { cancelled = true }
-  }, [audioKey])
+  }, [item.audioKey])
 
-  const mm = Math.floor(durationSec / 60), ss = (durationSec % 60).toString().padStart(2, '0')
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+        🎙 {total > 1 ? `Audio ${index + 1}/${total}` : 'Audio'}{fmtDur(item.durationSec)}
+      </div>
+      {error && <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No se pudo cargar el audio.</div>}
+      {!error && !url && <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Cargando audio…</div>}
+      {url && <audio controls src={url} style={{ width: '100%', marginBottom: 10 }} />}
+      {item.transcript && (
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+          {item.transcript}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function AudioPanel({ nodeId }: { nodeId: string }) {
+  const node = store.getNode(nodeId)
+  const audios = readAudios(node?.extraData)
 
   return (
     <div style={{ padding: '20px 18px', overflowY: 'auto', height: '100%' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 12 }}>
-        🎙 Audio{durationSec ? ` · ${mm}:${ss}` : ''}
-      </div>
-
-      {error && (
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', padding: '8px 0' }}>
-          No se pudo cargar el audio.
-        </div>
+      {audios.length === 0 && (
+        <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>No hay audio en esta nota.</div>
       )}
-
-      {!error && !url && (
-        <div style={{ fontSize: 13, color: 'var(--text-tertiary)', padding: '8px 0' }}>Cargando audio…</div>
-      )}
-
-      {url && (
-        <audio
-          controls
-          src={url}
-          style={{ width: '100%', marginBottom: 16 }}
-        />
-      )}
-
-      {transcript && (
-        <>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '8px 0 6px' }}>
-            Transcripción
-          </div>
-          <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
-            {transcript}
-          </div>
-        </>
-      )}
+      {audios.map((item, i) => (
+        <AudioItemView key={item.audioKey || i} item={item} index={i} total={audios.length} />
+      ))}
     </div>
   )
 }

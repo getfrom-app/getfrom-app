@@ -326,37 +326,27 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
     const blob = wr.stop()
     if (!blob) return                    // grabación vacía / silencio
-    // "Grabación larga" por tamaño (WAV 16k mono ≈ 32000 bytes/s). Larga = NO es
-    // una instrucción corta → SIEMPRE se crea su nota de voz con audio + transcripción.
+    // "Grabación larga" por tamaño (WAV 16k mono ≈ 32000 bytes/s). Larga = NO es una
+    // instrucción corta → se guarda el audio. La voz SIEMPRE entra por Magic (la
+    // conversación se mantiene abierta); el audio se adjunta al nodo de la conversación.
     const approxDur = Math.round((blob.size - 44) / 32000)
     const isLong = approxDur >= 20
     setIsTranscribing(true)
     try {
       const res = await transcribeAudio(blob, isLong)
       const text = res.text?.trim()
-      if (!text) { setIsTranscribing(false); return }
+      setIsTranscribing(false)
+      if (!text) return
 
-      if (isLong) {
-        // Dictado largo → nota estructurada + audio (determinista, NO pasa por el chat
-        // → no crea nodo de conversación). Izquierda: organizado · derecha: audio+transcripción.
-        const { processVoiceNote } = await import('../../utils/recordingProcessor')
-        try {
-          const noteId = await processVoiceNote(text, res.durationSec || approxDur, res.audioKey)
-          setIsTranscribing(false)
-          window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
-        } catch {
-          setIsTranscribing(false)
-          setInput(text); setHasExpanded(true)   // fallback: al input
-        }
-        return
+      // Grabación larga: guardar el audio + transcripción en el nodo de la conversación
+      // (se acumulan varios audios). Magic no se cierra; sigues conversando.
+      if (isLong && res.audioKey) {
+        chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text, durationSec: res.durationSec || approxDur })
       }
-
-      // Instrucción corta → Magic actúa (sin guardar audio)
       const base = inputRef.current.trim()
       const combined = [base, text].filter(Boolean).join(' ').trim()
       setInput(combined)
       setHasExpanded(true)
-      setIsTranscribing(false)
       setTimeout(() => { if (inputRef.current.trim()) handleSend() }, 150)
     } catch {
       setIsTranscribing(false)

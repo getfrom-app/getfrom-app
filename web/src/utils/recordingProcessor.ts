@@ -109,57 +109,6 @@ function splitLines(text: string): string[] {
   return text.split('\n').map(l => l.trim()).filter(Boolean)
 }
 
-/**
- * Nota de voz (grabación larga): SIEMPRE crea una nota estructurada en el diario,
- * con el audio + la transcripción completa adjuntos a la NOTA (extraData) para que
- * se muestren en la columna derecha (AudioPanel). A la izquierda queda el contenido
- * organizado (resumen + tareas). NO vuelca la transcripción como nodos en el árbol.
- * Devuelve el id de la nota creada.
- */
-export async function processVoiceNote(
-  transcript: string,
-  durationSec: number,
-  audioKey: string | null,
-): Promise<string> {
-  const today = getTodayDiaryUnderAgenda()
-  const now = new Date()
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-
-  let analysis: AIAnalysis
-  try {
-    analysis = await analyzeTranscript(transcript, durationSec)
-  } catch {
-    analysis = { title: `Nota de voz ${timeStr}`, summary: '', tasks: [], context: null }
-  }
-
-  const types: string[] = analysis.context ? [analysis.context] : []
-  const parent = store.createNode({
-    text: `🎙 ${analysis.title}`,
-    parentId: today.id,
-    types,
-    extraData: { _audioKey: audioKey ?? '', _audioTranscript: transcript.trim(), _audioDuration: String(durationSec) },
-  })
-
-  // Contenido organizado (izquierda): resumen como puntos directos
-  if (analysis.summary) {
-    for (const line of splitLines(analysis.summary)) {
-      store.createNode({ text: line, parentId: parent.id })
-    }
-  }
-
-  // Tareas detectadas
-  if (analysis.tasks.length > 0) {
-    const tasksContainer = store.createNode({ text: '📋 Tareas', parentId: parent.id })
-    for (const taskText of analysis.tasks) {
-      const tn = store.createNode({ text: taskText, parentId: tasksContainer.id, isTask: true })
-      store.updateNode(tn.id, { status: 'pending' })
-    }
-  }
-
-  store.sync(true).catch(() => {})
-  return parent.id
-}
-
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
 export async function processRecording(
   transcript: string,
