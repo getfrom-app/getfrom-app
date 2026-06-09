@@ -61,8 +61,8 @@ Full technical and product documentation: [`docs/DOCUMENTACION_EN.md`](docs/DOCU
 ## Contact
 
 - Email: hello@fromly.app
-- Developer: [Alberto Lezaun](https://www.linkedin.com/in/lezaun/)
+- Web: [fromly.app](https://fromly.app)
 
 ---
 
-© 2026 Alberto Lezaun. All rights reserved.
+© 2026 Fromly. All rights reserved.
