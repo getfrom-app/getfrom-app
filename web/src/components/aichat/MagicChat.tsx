@@ -57,6 +57,13 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId])
 
+  // Al montar: si el FAB REC pidió grabar (requestStartRecording), arrancar ya —
+  // fiable, sin la carrera del setTimeout (Magic acaba de abrirse).
+  useEffect(() => {
+    if (chat.consumePendingRecord()) startRecording()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Activación contextual (modo 2): al abrir Magic sobre un nodo que encaja con
   // un prompt (diario, tarea, contexto), se activa solo si no hay otro activo.
   useEffect(() => {

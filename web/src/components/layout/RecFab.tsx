@@ -28,12 +28,14 @@ export default function RecFab({ onOpenMagic }: { onOpenMagic: () => void }) {
       window.dispatchEvent(new Event('magic-chat:record-stop'))
       return
     }
-    // La voz SIEMPRE empieza en una conversación limpia (no se mezcla con una previa).
-    // Reseteamos el store ANTES de abrir (Magic monta limpio, sin parpadeo) y, ya
-    // montado, arrancamos el dictado (record-start-fresh resetea de nuevo por si acaso).
+    // La voz SIEMPRE empieza en una conversación limpia. Creamos el nodo y navegamos
+    // YA (sin esperar a Magic), abrimos Magic, y marcamos que debe grabar al montar
+    // (consumePendingRecord) — más fiable que un setTimeout que puede llegar antes de
+    // que MagicChat exista.
     aiChatStore.startNewSession()
+    aiChatStore.startVoiceSession()      // crea el nodo de la conversación + navega a él
+    aiChatStore.requestStartRecording()  // MagicChat arrancará a grabar al montar
     onOpenMagic()
-    setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start-fresh')), 300)
   }
 
   return (

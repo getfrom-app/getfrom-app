@@ -143,8 +143,18 @@ class AIChatStore {
     if (this.messages.length === 0 && !hasAudio) {
       if (node) { for (const c of store.children(sid)) store.deleteNode(c.id); store.deleteNode(sid) }
       this.startNewSession()
+      // No dejar la ruta apuntando al nodo borrado ("Nodo no encontrado"): volver al diario.
+      try {
+        const today = getTodayDiaryUnderAgenda()
+        if (today) window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: today.id } }))
+      } catch { /* */ }
     }
   }
+
+  /** El próximo montaje de Magic debe iniciar grabación (evita la carrera del setTimeout). */
+  private _pendingRecord = false
+  requestStartRecording() { this._pendingRecord = true }
+  consumePendingRecord(): boolean { const v = this._pendingRecord; this._pendingRecord = false; return v }
 
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
