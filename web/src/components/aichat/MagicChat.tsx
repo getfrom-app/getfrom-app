@@ -317,14 +317,22 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
     const blob = wr.stop()
     if (!blob) return                    // grabación vacía / silencio
+    // Heurística de "grabación larga" por tamaño (WAV 16k mono ≈ 32000 bytes/s):
+    // las largas se guardan en R2 para adjuntar el audio a la nota que cree Magic.
+    const approxDur = Math.round((blob.size - 44) / 32000)
+    const isLong = approxDur >= 20
     setIsTranscribing(true)
     try {
-      const text = await transcribeAudio(blob)
+      const res = await transcribeAudio(blob, isLong)
+      const text = res.text
       if (text) {
         const base = inputRef.current.trim()
         const combined = [base, text.trim()].filter(Boolean).join(' ').trim()
         setInput(combined)
         setHasExpanded(true)
+        if (isLong && res.audioKey) {
+          chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text.trim(), durationSec: res.durationSec || approxDur })
+        }
         setTimeout(() => { if (inputRef.current.trim()) handleSend() }, 150)
       }
     } catch {

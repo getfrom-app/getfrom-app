@@ -124,15 +124,23 @@ export async function logout() {
 }
 
 // Transcripción de voz: sube el WAV al servidor (Gemini STT) y devuelve el texto.
-export async function transcribeAudio(blob: Blob): Promise<string> {
+// store=true → además guarda el audio en R2 y devuelve audioKey (para grabaciones largas).
+export interface TranscribeResult { text: string; audioKey: string | null; durationSec: number }
+export async function transcribeAudio(blob: Blob, store = false): Promise<TranscribeResult> {
   const lang = localStorage.getItem('from_ai_language') === 'en' ? 'en' : 'es'
   const form = new FormData()
   form.append('audio', blob, 'audio.wav')
-  const data = await apiRequest<{ text: string }>(`/ai/transcribe?lang=${lang}`, {
-    method: 'POST',
-    body: form,
-  })
-  return data.text || ''
+  const data = await apiRequest<{ text?: string; audioKey?: string | null; durationSec?: number }>(
+    `/ai/transcribe?lang=${lang}${store ? '&store=1' : ''}`,
+    { method: 'POST', body: form }
+  )
+  return { text: data.text || '', audioKey: data.audioKey ?? null, durationSec: data.durationSec ?? 0 }
+}
+
+// URL firmada para reproducir un audio guardado en R2 (a partir de su key).
+export async function getAudioUrl(audioKey: string): Promise<string> {
+  const data = await apiRequest<{ url: string }>(`/ai/audio-url?key=${encodeURIComponent(audioKey)}`)
+  return data.url
 }
 
 // Feedback / aviso de fallo desde dentro de la app (beta). Llega a la Bandeja del dashboard.

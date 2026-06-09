@@ -16,6 +16,7 @@ import PromptPropertiesPanel from '../panels/PromptPropertiesPanel'
 import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
+import AudioPanel from '../panels/AudioPanel'
 import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
 import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
@@ -109,6 +110,7 @@ export default function MainLayout() {
     | 'agent-list'   | 'agent'
     | 'template'
     | 'settings'
+    | 'audio'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
   // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
@@ -200,6 +202,19 @@ export default function MainLayout() {
       if (nodeId !== UNCLASSIFIED_FILTER_ID) setRightPanel('context')
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Al abrir un nodo de audio → la columna derecha muestra el reproductor + transcripción.
+  // Al salir de él, se vuelve al filtro.
+  useEffect(() => {
+    let isAudio = false
+    if (currentNodeIdFromRoute) {
+      const n = store.getNode(currentNodeIdFromRoute)
+      try { isAudio = !!n && JSON.parse(n.extraData || '{}')._audio === '1' } catch { isAudio = false }
+    }
+    if (isAudio) setRightPanel('audio')
+    else setRightPanel(p => (p === 'audio' ? 'filter' : p))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNodeIdFromRoute])
 
   // Ciclar entre paneles con ← → (dirección = orden de iconos en la barra)
   function cyclePanel(dir: 'left' | 'right') {
@@ -960,6 +975,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'planner' && (
             <PlannerPanel onClose={() => openPanel('filter')} />
+          )}
+          {rightPanel === 'audio' && currentNodeIdFromRoute && (
+            <AudioPanel nodeId={currentNodeIdFromRoute} />
           )}
           {rightPanel === 'context' && detailNodeId && (
             <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />

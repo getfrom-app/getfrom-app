@@ -117,6 +117,12 @@ class AIChatStore {
   /** Nodo al que pertenece la conversación en memoria (para resetear al cambiar de nodo). */
   boundNodeKey: string | null = null
 
+  /** Audio de la última grabación larga (para adjuntarlo como nodo hijo si Magic crea una nota). */
+  pendingVoiceAudio: { audioKey: string; transcript: string; durationSec: number } | null = null
+  setPendingVoiceAudio(v: { audioKey: string; transcript: string; durationSec: number } | null) {
+    this.pendingVoiceAudio = v
+  }
+
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
 
@@ -325,6 +331,24 @@ class AIChatStore {
           // Recopilar IDs creados
           if (result.createdIds) undoBundle.createdIds.push(...result.createdIds)
         }
+        // Si esta grabación larga produjo una nota, adjuntar el audio como nodo hijo.
+        if (this.pendingVoiceAudio) {
+          const noteRes = writeResults.find(r => r.action === 'create_note' && r.ok && r.createdIds.length > 0)
+          if (noteRes) {
+            const { audioKey, transcript, durationSec } = this.pendingVoiceAudio
+            const mm = Math.floor(durationSec / 60), ss = (durationSec % 60).toString().padStart(2, '0')
+            try {
+              const audioNode = store.createNode({
+                text: `🎙 Audio · ${mm}:${ss}`,
+                parentId: noteRes.createdIds[0],
+                types: ['recurso'],
+                extraData: { _audio: '1', _audioKey: audioKey, _audioTranscript: transcript, _audioDuration: String(durationSec) },
+              })
+              undoBundle.createdIds.push(audioNode.id)
+            } catch { /* no romper el turno si falla */ }
+            this.pendingVoiceAudio = null
+          }
+        }
         // Adjuntar undoBundle al mensaje del asistente
         const hasUndo = undoBundle.createdIds.length > 0 || undoBundle.restoredNodes.length > 0
         if (hasUndo) {
@@ -348,6 +372,7 @@ class AIChatStore {
       if (!anyOK) break
     }
 
+    this.pendingVoiceAudio = null  // no arrastrar el audio a un turno futuro
     this.isStreaming = false
     this.notify()
     // Si no quedaron acciones pendientes, las escrituras se ejecutaron directamente
