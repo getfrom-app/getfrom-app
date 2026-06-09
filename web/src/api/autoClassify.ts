@@ -101,6 +101,10 @@ export function buildClassifyContexts(excludeId?: string | null): ContextInfo[] 
 // Persiste durante la sesión. Se invalida si el nodo recibe contexto manual.
 
 const cache = new Map<string, ClassifyResult>()
+// Texto exacto con el que se clasificó cada nodo por última vez. Si el texto no
+// cambia, no reclasificamos (evita llamadas redundantes en re-renders o al
+// editar y revertir). Reduce el volumen real contra el servidor.
+const lastClassifiedText = new Map<string, string>()
 
 export function getCachedClassify(nodeId: string): ClassifyResult | undefined {
   return cache.get(nodeId)
@@ -112,6 +116,7 @@ export function setCachedClassify(nodeId: string, result: ClassifyResult) {
 
 export function clearCachedClassify(nodeId: string) {
   cache.delete(nodeId)
+  lastClassifiedText.delete(nodeId)
 }
 
 // ── Ejemplos few-shot (respaldados en nodos → sincronizan por cuenta) ─────────
@@ -186,6 +191,7 @@ export function cancelClassify(nodeId: string) {
   const timer = pendingTimers.get(nodeId)
   if (timer) { clearTimeout(timer); pendingTimers.delete(nodeId) }
   clearCachedClassify(nodeId)
+  lastClassifiedText.delete(nodeId)
 }
 
 // ── Función principal ─────────────────────────────────────────────────────────
@@ -218,11 +224,16 @@ export function scheduleClassify(
     return
   }
 
+  // Si el texto no ha cambiado desde la última clasificación, no repetir la
+  // llamada: el resultado en caché (si lo hay) sigue siendo válido.
+  if (lastClassifiedText.get(nodeId) === text.trim()) return
+
   const timer = setTimeout(async () => {
     pendingTimers.delete(nodeId)
     try {
       const examples = loadExamples()
       const result = await classifyNode(text, contexts, examples, userProfile)
+      lastClassifiedText.set(nodeId, text.trim())
       setCachedClassify(nodeId, result)
       onResult(nodeId, result)
     } catch {
