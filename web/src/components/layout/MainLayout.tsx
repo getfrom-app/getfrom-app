@@ -1010,8 +1010,8 @@ export default function MainLayout() {
           />
         )}
       </Suspense>
-      {/* Botón REC/STOP — abre la grabadora grabando; mientras graba, detiene */}
-      <RecFab onOpen={() => openPanel('recorder')} />
+      {/* Botón REC/STOP — abre Magic y dicta ahí; mientras graba, detiene y envía */}
+      <RecFab onOpenMagic={() => openPanel('magic')} />
       {/* Botón FAB */}
       <button
         className="quick-capture-fab"

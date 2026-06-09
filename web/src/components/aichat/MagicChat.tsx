@@ -189,6 +189,8 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
   // Iniciar waveform cuando isRecording cambia a true
   useEffect(() => {
+    // Avisar al FAB REC del estado de voz (para alternar REC ↔ STOP)
+    window.dispatchEvent(new CustomEvent('from:magic-voice-state', { detail: { recording: isRecording } }))
     if (isRecording && analyserRef.current) {
       cancelAnimationFrame(animFrameRef.current)
       drawWaveform()
