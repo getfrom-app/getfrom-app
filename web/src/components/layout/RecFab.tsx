@@ -10,6 +10,7 @@
 //   - from:magic-voice-state {recording}                → estado para el toggle
 
 import { useEffect, useState } from 'react'
+import { aiChatStore } from '../../store/aiChatStore'
 
 export default function RecFab({ onOpenMagic }: { onOpenMagic: () => void }) {
   const [recording, setRecording] = useState(false)
@@ -27,9 +28,12 @@ export default function RecFab({ onOpenMagic }: { onOpenMagic: () => void }) {
       window.dispatchEvent(new Event('magic-chat:record-stop'))
       return
     }
-    // Abrir Magic y, una vez montado, arrancar el dictado.
+    // La voz SIEMPRE empieza en una conversación limpia (no se mezcla con una previa).
+    // Reseteamos el store ANTES de abrir (Magic monta limpio, sin parpadeo) y, ya
+    // montado, arrancamos el dictado (record-start-fresh resetea de nuevo por si acaso).
+    aiChatStore.startNewSession()
     onOpenMagic()
-    setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start')), 300)
+    setTimeout(() => window.dispatchEvent(new Event('magic-chat:record-start-fresh')), 300)
   }
 
   return (

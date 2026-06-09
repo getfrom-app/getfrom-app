@@ -228,6 +228,13 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     // Eventos emitidos por MainLayout cuando el usuario mantiene / suelta R
     function onRecordStart() { if (!isRecordingRef.current) startRecording() }
     function onRecordStop()  { if (isRecordingRef.current) stopRecording(true) }
+    // Voz desde el FAB REC: empezar SIEMPRE una conversación limpia antes de grabar.
+    function onRecordStartFresh() {
+      chat.startNewSession()
+      setInput('')
+      setHasExpanded(false)
+      if (!isRecordingRef.current) startRecording()
+    }
     // Texto prellenado (ej. desde Grabadora → "Resumir con IA")
     function onPrefill(e: Event) {
       const text = (e as CustomEvent<{ text: string }>).detail?.text ?? ''
@@ -270,6 +277,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('magic-chat:record-start', onRecordStart)
+    window.addEventListener('magic-chat:record-start-fresh', onRecordStartFresh)
     window.addEventListener('magic-chat:record-stop',  onRecordStop)
     window.addEventListener('magic-chat:prefill',      onPrefill)
     window.addEventListener('from:onboarding-prefill',         onOnboardingPrefill)
@@ -279,6 +287,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('magic-chat:record-start', onRecordStart)
+      window.removeEventListener('magic-chat:record-start-fresh', onRecordStartFresh)
       window.removeEventListener('magic-chat:record-stop',  onRecordStop)
       window.removeEventListener('magic-chat:prefill',      onPrefill)
       window.removeEventListener('from:onboarding-prefill',        onOnboardingPrefill)
