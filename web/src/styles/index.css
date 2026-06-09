@@ -11620,7 +11620,8 @@ textarea:focus-visible,
 .magic-chat-panel .magic-chat-input-wrap {
   border-top: 1px solid var(--border);
   background: var(--bg-primary);
-  padding-bottom: 18px;
+  /* Libra la barra de estado inferior (~24px) para que los controles no se corten */
+  padding-bottom: 44px;
 }
 /* Recuadro visible alrededor de la caja de texto (antes era transparente → invisible) */
 .magic-chat-panel .magic-chat-node-input {
