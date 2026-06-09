@@ -1,7 +1,7 @@
 /**
- * userKnowledge — Persistencia del conocimiento que From aprende sobre el usuario.
+ * userKnowledge — Persistencia del conocimiento que Fromly aprende sobre el usuario.
  *
- * From extrae personas y hechos del usuario desde dos fuentes:
+ * Fromly extrae personas y hechos del usuario desde dos fuentes:
  *  · Nodos que el usuario escribe (OutlinerNode → extractUserKnowledge)
  *  · Conversaciones con Magic en el chat (aiChatStore → learnFromUserMessage)
  *
@@ -143,7 +143,7 @@ export function cleanupOrphanProfileKnowledge(): void {
 }
 
 /** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que
- *  From escribe de forma autónoma en el Perfil. Para abrirlo y revisarlo. */
+ *  Fromly escribe de forma autónoma en el Perfil. Para abrirlo y revisarlo. */
 export function getOrCreateLearnNode(): Node | null {
   const perfil = ensurePerfilSync()
   if (!perfil) return null

@@ -199,7 +199,7 @@ export default function OnboardingWidget() {
       const tareas = [
         'Explorar el outliner',
         'Probar el filtro',
-        'Configurar mi perfil en From',
+        'Configurar mi perfil en Fromly',
       ]
       const createdIds: string[] = []
       for (const text of tareas) {
@@ -219,7 +219,7 @@ export default function OnboardingWidget() {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('from:onboarding-inject-result', {
           detail: {
-            userMsg: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From',
+            userMsg: 'Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en Fromly',
             assistantMsg: '¡Listo! 🎉 He añadido las 3 tareas hijas al nodo.',
             createdIds,
           },
@@ -378,7 +378,7 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
           padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6',
           marginBottom: 12, letterSpacing: 0.1,
         }}>
-          Empezar a utilizar From
+          Empezar a utilizar Fromly
         </div>
 
         {/* Hint solo en el estado inicial */}
@@ -459,7 +459,7 @@ function Step2({ onClose }: { onClose: () => void }) {
           Encuentra cualquier cosa
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
-          Pulsa <strong>⌘+F</strong> y escribe <code style={codeStyle}>utilizar</code>. Verás cómo From filtra los nodos al instante.
+          Pulsa <strong>⌘+F</strong> y escribe <code style={codeStyle}>utilizar</code>. Verás cómo Fromly filtra los nodos al instante.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, color: '#aaa', fontSize: 12 }}>
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
@@ -488,7 +488,7 @@ function Step3({ onClose }: { onClose: () => void }) {
           Entra dentro de un nodo
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Pulsa el <strong>punto (●)</strong> que aparece a la izquierda del nodo «Empezar a utilizar From». Puedes crear niveles infinitos.
+          Pulsa el <strong>punto (●)</strong> que aparece a la izquierda del nodo «Empezar a utilizar Fromly». Puedes crear niveles infinitos.
         </div>
         <div style={{
           background: 'rgba(139,92,246,0.07)', borderRadius: 8, padding: '10px 14px',
@@ -551,7 +551,7 @@ function Step5({ onClose }: { onClose: () => void }) {
           padding: '10px 14px', fontSize: 12, color: '#555',
           fontStyle: 'italic', marginBottom: 16, lineHeight: 1.5,
         }}>
-          Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en From
+          Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en Fromly
         </div>
         <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
           Esperando que confirmes las acciones…
@@ -569,7 +569,7 @@ function Step6({ onClose }: { onClose: () => void }) {
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
         <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          ¡Ya dominas From!
+          ¡Ya dominas Fromly!
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>
           Acabas de crear tu primer contenido con IA. Hay mucho más por descubrir.

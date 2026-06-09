@@ -1,6 +1,6 @@
 // MARK: - NodeSpecialControls
 //
-// Barra de controles para nodos especiales de From.
+// Barra de controles para nodos especiales de Fromly.
 // Se muestra entre el título y los hijos en NodeView.
 // Mismo estilo visual que los controles de Agenda (diary-nav-btn).
 //

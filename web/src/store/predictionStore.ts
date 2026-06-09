@@ -1,5 +1,5 @@
 /**
- * predictionStore — Palabras personalizadas para la detección inteligente de From.
+ * predictionStore — Palabras personalizadas para la detección inteligente de Fromly.
  * Se guardan en el nodo sistema "⚙️ Ajustes" (sincronizado con el servidor).
  * Así son por cuenta, no por dispositivo.
  */

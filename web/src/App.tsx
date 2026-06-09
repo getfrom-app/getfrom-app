@@ -20,7 +20,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
   static getDerivedStateFromError(error: Error) { return { error } }
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('From Web error:', error, info)
+    console.error('Fromly Web error:', error, info)
     // Auto-recuperación: si es un error de chunk dinámico (deploy nuevo), hacer hard reload automático.
     // (lazyWithReload ya intercepta la mayoría de estos antes de llegar aquí; esto es el último recurso.)
     const isChunkError = error?.message?.includes('Failed to fetch dynamically imported module') ||

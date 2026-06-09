@@ -296,7 +296,7 @@ export default function NodeView() {
   const [titleEditing, setTitleEditing] = useState(false)
   const [showTitleSlash, setShowTitleSlash] = useState(false)
   const [titleSlashQuery, setTitleSlashQuery] = useState('')
-  // #tag picker eliminado — los tags no existen en From. Solo @ para contextos.
+  // #tag picker eliminado — los tags no existen en Fromly. Solo @ para contextos.
   const [titleTagPicker, _setTitleTagPicker] = useState<null>(null)
   const setTitleTagPicker = (_v: unknown) => {}  // noop — mantenido por compatibilidad con código existente
   const [titleTagPickerPos, setTitleTagPickerPos] = useState<{ top: number; left: number } | null>(null)
@@ -445,7 +445,7 @@ export default function NodeView() {
   // GCal node-move sync eliminado: los eventos GCal ya no son nodos en el outliner.
   // Ahora viven solo como time blocks en DiaryTimeline (vista Calendario).
 
-  // Auto-sync From eventos → GCal cuando el nodo es isEvent y tiene fecha
+  // Auto-sync Fromly eventos → GCal cuando el nodo es isEvent y tiene fecha
   useEffect(() => {
     if (!node?.isEvent || !node.due) return
     if (!us.googleConnected) return
@@ -573,7 +573,7 @@ export default function NodeView() {
     return { matchIds, ancestorIds }
   }, [isPapeleraNode, inDocSearch, node?.id, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // titleTagPicker eliminado — #tags no existen en From
+  // titleTagPicker eliminado — #tags no existen en Fromly
 
   // Icono del nodo (extraData.icon)
   // ── Icono unificado: extraData.icon || primer emoji del texto ─────────────
@@ -1034,7 +1034,7 @@ export default function NodeView() {
     const text = anchors.length === 1 && !rawText.startsWith('http')
       ? (anchors[0].getAttribute('href') || rawText)
       : rawText
-    // Los #tags han sido eliminados de From — actualizar texto directamente
+    // Los #tags han sido eliminados de Fromly — actualizar texto directamente
     store.updateNode(node!.id, { text })
 
     const sel = window.getSelection()
@@ -1054,7 +1054,7 @@ export default function NodeView() {
         setTitleSlashQuery('')
       }
 
-      // #tag picker eliminado — los tags no existen en From
+      // #tag picker eliminado — los tags no existen en Fromly
 
       // Detect "mover a" command
       const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
@@ -1100,10 +1100,10 @@ export default function NodeView() {
     navigate('/')
   }
 
-  // applyTitleTag eliminado — #tags no existen en From
+  // applyTitleTag eliminado — #tags no existen en Fromly
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    // body desactivado — en From todo va en nodos hijos
+    // body desactivado — en Fromly todo va en nodos hijos
     setBodyValue(e.target.value)
   }
 
@@ -1764,7 +1764,7 @@ export default function NodeView() {
             ) : null) || (() => {
               // Nodos de contexto (hijo directo de 🧠 Contexto): no mostrar icono de tipo
               if (isContextNode) return null
-              // Nodos especiales de From (🧠 Lo que From sabe sobre ti, etc.): no mostrar #
+              // Nodos especiales de Fromly (🧠 Lo que From sabe sobre ti, etc.): no mostrar #
               if (node?.text?.startsWith('🧠')) return null
               // Perfil IA: isContextNode lo excluye pero _perfilIA=1 fuerza isContextNode=false,
               // así que hacemos el check explícito aquí también.
@@ -1943,7 +1943,7 @@ export default function NodeView() {
                 onClose={() => { setShowTitleSlash(false); setTitleSlashQuery('') }}
               />
             )}
-            {/* Tag picker del título eliminado — #tags no existen en From */}
+            {/* Tag picker del título eliminado — #tags no existen en Fromly */}
             {/* "Mover a" picker en el título */}
             {titleMovePicker && titleMovePickerPos && createPortal(
               <div className="inline-picker" style={{ position: 'fixed', top: titleMovePickerPos.top, left: titleMovePickerPos.left, zIndex: 1000 }}>
@@ -2234,7 +2234,7 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Body editor — desactivado, en From todo va en nodos hijos */}
+          {/* Body editor — desactivado, en Fromly todo va en nodos hijos */}
           {false && <div className="node-body-editor">
             {bodyEditing && !isLocked ? (
               <>
@@ -2584,7 +2584,7 @@ export default function NodeView() {
           <NodeSpecialControls node={node} />
 
           {/* En WF mode, nodos temporales usan WFTemporalView + outliner libre.
-              En modo normal, usan los bloques originales de From. */}
+              En modo normal, usan los bloques originales de Fromly. */}
           {(() => {
             const isWFMode = !!document.querySelector('.wf-layout')
             const isWFTemporal = isWFMode && (temporalNodeType === 'year' || temporalNodeType === 'month')

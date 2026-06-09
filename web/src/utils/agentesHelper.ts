@@ -1,5 +1,5 @@
 /**
- * agentesHelper — Sistema de agentes como nodos del árbol de From.
+ * agentesHelper — Sistema de agentes como nodos del árbol de Fromly.
  *
  * Estructura:
  *   🤖 Agentes  (nodo raíz, siblingOrder alto)

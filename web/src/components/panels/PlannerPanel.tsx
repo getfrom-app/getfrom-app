@@ -130,13 +130,13 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     })
   }
 
-  // GCal timed — excluir eventos creados por From (ya aparecen como bloque 'task')
+  // GCal timed — excluir eventos creados por Fromly (ya aparecen como bloque 'task')
   const fromGcalIds = new Set(
     store.allActive().map(n => n.gcalEventId).filter(Boolean)
   )
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
-    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque From
+    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque Fromly
     const start = new Date(ev.start)
     if (!sameDay(start, day)) continue
     blocks.push({

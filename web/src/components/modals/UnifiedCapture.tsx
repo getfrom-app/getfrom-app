@@ -334,7 +334,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         // No sugerir contextos ya aceptados como chip
         if (assignedCtx.some(c => c.slug === slug)) continue
         // Incluir el nombre completo (normName.length, sin -1) y sin excluir tail===normName
-        // para que "from" detecte "From" igual que "fro"
+        // para que "from" detecte "Fromly" igual que "fro"
         for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
           const tail = normT.slice(-len)
           const charBefore = t[t.length - len - 1]
@@ -465,7 +465,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       prev.some(c => c.slug === slug) ? prev : [...prev, { name: ctxSuggestion!.displayName, slug }]
     )
     // Mantener el nombre del contexto en el texto con la capitalización correcta
-    // (ej. "from" → "From") para que el nodo se cree con el título completo
+    // (ej. "from" → "Fromly") para que el nodo se cree con el título completo
     const t = getCurrentText()
     const prefix = t.slice(0, -ctxSuggestion.typedLen)
     const newText = prefix + ctxSuggestion.displayName + ' '

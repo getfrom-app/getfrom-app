@@ -1,10 +1,10 @@
-# From — Your second brain. On all your devices.
+# Fromly — Your second brain. On all your devices.
 
-**From** is a native macOS and iOS app that works as a personal second brain. It organizes everything — notes, tasks, projects, diary — in a real-time synchronized bullet tree across your devices, with autonomous AI agents and integrated file storage.
+**Fromly** is a native macOS and iOS app that works as a personal second brain. It organizes everything — notes, tasks, projects, diary — in a real-time synchronized bullet tree across your devices, with autonomous AI agents and integrated file storage.
 
 ---
 
-## What makes From different
+## What makes Fromly different
 
 - **Bullet tree, not files.** Everything lives in a flexible node tree organized into color-coded workspaces. No folders, no .md files to manage, no sync conflicts.
 - **Real-time sync.** Changes sync instantly between Mac and iPhone via a private cloud server. Open your iPhone and your work is there.

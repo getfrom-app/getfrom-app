@@ -1,6 +1,6 @@
 /**
  * importMarkdown — importa archivos Markdown/texto (Obsidian, Notion, genéricos)
- * al árbol de From, preservando la jerarquía de carpetas y el contenido.
+ * al árbol de Fromly, preservando la jerarquía de carpetas y el contenido.
  *
  * Cada archivo .md/.txt se convierte en una NOTA (su nombre = título), bajo un
  * contenedor "📥 Importado AAAA-MM-DD". Si los archivos vienen de una carpeta

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import type { ResourceType } from '../panels/ResourcePanel'
-// Estados unificados con el resto de From: null/pending/future/done
+// Estados unificados con el resto de Fromly: null/pending/future/done
 // "Sin estado" se trata como pendiente para filtros
 type StatusKey = 'all' | 'pending' | 'future' | 'done'
 

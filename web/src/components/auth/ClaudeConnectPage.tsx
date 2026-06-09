@@ -37,7 +37,7 @@ export default function ClaudeConnectPage() {
           textAlign: 'center',
           fontSize: '14px',
         }}>
-          Inicia sesión en From para conectar con Claude
+          Inicia sesión en Fromly para conectar con Claude
         </div>
         <AuthPage />
       </div>
@@ -117,7 +117,7 @@ export default function ClaudeConnectPage() {
         <Logo />
         <h2 style={titleStyle}>Conectar Fromly con Claude</h2>
         <p style={subtitleStyle}>
-          Claude quiere acceder a tu vault de From para guardar notas, tareas y contextos de tus conversaciones.
+          Claude quiere acceder a tu vault de Fromly para guardar notas, tareas y contextos de tus conversaciones.
         </p>
 
         <div style={permissionsBox}>
@@ -153,7 +153,7 @@ export default function ClaudeConnectPage() {
         </div>
 
         <p style={footerNote}>
-          Puedes revocar este acceso en cualquier momento desde los ajustes de From.
+          Puedes revocar este acceso en cualquier momento desde los ajustes de Fromly.
         </p>
       </div>
     </div>

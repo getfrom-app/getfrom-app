@@ -77,7 +77,7 @@ export default function CaptureWindow() {
           onClick={() => routeToMain('/')}
           style={{ marginTop: 4, padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
         >
-          Abrir From
+          Abrir Fromly
         </button>
       </div>
     )

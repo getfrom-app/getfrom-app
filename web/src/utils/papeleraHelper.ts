@@ -1,5 +1,5 @@
 /**
- * papeleraHelper — Papelera como nodo del árbol de From.
+ * papeleraHelper — Papelera como nodo del árbol de Fromly.
  *
  * Los nodos eliminados se mueven al nodo 🗑 Papelera en lugar de
  * ser soft-deleted. La jerarquía se preserva:

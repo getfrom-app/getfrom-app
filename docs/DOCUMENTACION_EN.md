@@ -1,4 +1,4 @@
-# From — Complete Product Documentation
+# Fromly — Complete Product Documentation
 
 > Living document. Updated with each development session.
 > Last update: 2026-05-18
@@ -44,7 +44,7 @@
 
 ## Current state — May 2026
 
-This section describes the complete state of the From application as implemented in May 2026. It is not a version changelog but an exhaustive description of the system.
+This section describes the complete state of the Fromly application as implemented in May 2026. It is not a version changelog but an exhaustive description of the system.
 
 ---
 
@@ -98,7 +98,7 @@ This section describes the complete state of the From application as implemented
 
 ### Events and calendar
 
-- **Two-way sync with Apple Calendar and Apple Reminders** via EventKit. Events created in From appear in macOS/iOS Calendar and vice versa.
+- **Two-way sync with Apple Calendar and Apple Reminders** via EventKit. Events created in Fromly appear in macOS/iOS Calendar and vice versa.
 - **Event creation with ⌘E** and natural language (date, time, duration parsed automatically).
 - **`EventEditSheet`** to edit title, start/end date and time, notes, destination calendar.
 - **Timeline** in the right column of the diary: Day (24h), Week, Month, Year views. Apple Calendar events render in all grids.
@@ -184,7 +184,7 @@ This section describes the complete state of the From application as implemented
 
 ### Integrations
 
-- **Apple Calendar + Reminders:** two-way sync via EventKit. Creating, editing, and deleting events from From is reflected in the system and vice versa.
+- **Apple Calendar + Reminders:** two-way sync via EventKit. Creating, editing, and deleting events from Fromly is reflected in the system and vice versa.
 - **Google Docs:** note ↔ Google document synchronization via OAuth2. Changes to the node body propagate to the doc and vice versa.
 - **Note publishing:** each note can have a public URL by slug. Published content can be updated or unpublished from the properties panel.
 - **macOS Spotlight:** nodes indexed in the operating system index.
@@ -202,7 +202,7 @@ This section describes the complete state of the From application as implemented
   - Subscription €7/month: sync + 2M AI tokens/month (managed Anthropic/Gemini).
   - Lifetime license €59: sync + AI with the user's own API key.
 - **LemonSqueezy** for payments. Variants: subscription (`1553200`), license (`1553210`), topup 5M tokens (`1553900`).
-- **Automatic local backup:** `NodeBackupService` exports all nodes to Markdown every 2 hours to `~/Library/Application Support/From/Backups/`.
+- **Automatic local backup:** `NodeBackupService` exports all nodes to Markdown every 2 hours to `~/Library/Application Support/Fromly/Backups/`.
 
 **Local backup per workspace:**
 - Timestamped snapshots every 2h: `~/Documents/From Backup/{Workspace}/{yyyy-MM-dd_HH-mm}/`
@@ -252,7 +252,7 @@ This section describes the complete state of the From application as implemented
 - **Chat**: area tag button to edit/create the context node from any note
 
 ### v3.6.6 (2026-05-08)
-- **Breadcrumb**: correct temporal hierarchy — no "From" prefix, each level shows only its ancestors. Year: no prefix; Month: year only; Week: year+month; Daily: year+month+week
+- **Breadcrumb**: correct temporal hierarchy — no "Fromly" prefix, each level shows only its ancestors. Year: no prefix; Month: year only; Week: year+month; Daily: year+month+week
 - **Temporal calendars**: year/month/week node calendars open at the node's actual date instead of today
 - **Daily notes in calendars**: daily notes now appear in week/month grids using `diaryDate`
 
@@ -266,9 +266,9 @@ This section describes the complete state of the From application as implemented
 
 ---
 
-## What is From
+## What is Fromly
 
-**From** is a native macOS and iOS app that works as a personal second brain. It organizes all information in a real-time synchronized bullet tree across devices, with autonomous AI agents and integrated file management.
+**Fromly** is a native macOS and iOS app that works as a personal second brain. It organizes all information in a real-time synchronized bullet tree across devices, with autonomous AI agents and integrated file management.
 
 **Tagline:** Your second brain. On all your devices.
 
@@ -368,7 +368,7 @@ Mac  ←──── delta sync every 5min ────→  Railway PostgreSQL  
 ### Local node backup
 
 `NodeBackupService` exports all nodes to Markdown every 2 hours to:
-`~/Library/Application Support/From/Backups/`
+`~/Library/Application Support/Fromly/Backups/`
 
 ---
 
@@ -376,8 +376,8 @@ Mac  ←──── delta sync every 5min ────→  Railway PostgreSQL  
 
 ### macOS
 1. **Welcome screen:** Basic permissions (Calendar, Notifications)
-2. **Choose space:** User selects or creates a local folder From will use as base (for agents and local files).
-3. **Login (optional):** To enable sync across devices, user logs in with their From account.
+2. **Choose space:** User selects or creates a local folder Fromly will use as base (for agents and local files).
+3. **Login (optional):** To enable sync across devices, user logs in with their Fromly account.
 
 ### iOS
 1. **Onboarding:** Welcome screen
@@ -541,7 +541,7 @@ gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R getfrom-app/getfrom-a
 ```
 from/
 ├── app/                    # macOS + iOS app (Swift/SwiftUI)
-│   ├── From/               # macOS target
+│   ├── Fromly/               # macOS target
 │   │   ├── Services/       # Business logic (NodeService, AgentService, etc.)
 │   │   ├── Models/         # Data models (Node, Workspace, VaultFile, etc.)
 │   │   └── Views/          # SwiftUI views

@@ -1,6 +1,6 @@
 // MARK: - AIChatStore
 //
-// Store del chat From AI en web. Multi-turno con tool-use (paridad Mac).
+// Store del chat Fromly AI en web. Multi-turno con tool-use (paridad Mac).
 //
 // Estructura de nodos por sesión:
 //   📅 Diario de hoy
@@ -259,7 +259,7 @@ class AIChatStore {
       const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_task','create_event','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
       const writeActions = allActions.filter(a => {
         if (READ_ACTIONS.has(a.action as string)) return false
-        // Ignorar update_node que solo modifica body (body desactivado en From)
+        // Ignorar update_node que solo modifica body (body desactivado en Fromly)
         if (a.action === 'update_node' && a.body && !a.text && !a.status && !a.due && !a.tags) return false
         // Ignorar acciones desconocidas sin texto — solo generarían 'Sin título' en la UI
         if (!KNOWN_WRITE_ACTIONS.has(a.action as string) && !a.text && !a.title) return false
@@ -635,7 +635,7 @@ class AIChatStore {
       // Resolver códigos en el body del tag y en cada prompt
       let resolvedBody = resolveTemplateCodes(body, ctx)
 
-      // Memoria que From acumula de este contexto ("🧠 Lo que From sabe"): se
+      // Memoria que Fromly acumula de este contexto ("🧠 Lo que From sabe"): se
       // inyecta para que el chat use lo que sabe del proyecto, no solo el body.
       const knowledgeNode = store.children(defNode.id).find(c => !c.deletedAt && (c.text || '') === '🧠 Lo que From sabe')
       if (knowledgeNode) {

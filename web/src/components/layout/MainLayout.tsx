@@ -79,7 +79,7 @@ export default function MainLayout() {
   const location = useLocation()
   const s = useStore()
   // Nodo actualmente abierto en la URL (`/node/:id` o `/app/node/:id`).
-  // Se inyecta a From AI como contexto.
+  // Se inyecta a Fromly AI como contexto.
   const currentNodeIdFromRoute = (() => {
     const m = location.pathname.match(/\/node\/([^/]+)/)
     return m ? m[1] : undefined

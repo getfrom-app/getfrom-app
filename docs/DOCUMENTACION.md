@@ -1,4 +1,4 @@
-# From — Documentación completa
+# Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
 > Última actualización: 2026-06-07 (Web v9.6.179 / Mac v9.5.22 / iOS v2.3)
@@ -7,7 +7,7 @@
 
 ## 🏛️ Sesión 2026-06-07 — HITO: Sync por operaciones (op-log estilo WorkFlowy)
 
-**Cambio de arquitectura mayor.** From migra de sync-por-estado (el servidor comparaba el árbol
+**Cambio de arquitectura mayor.** Fromly migra de sync-por-estado (el servidor comparaba el árbol
 entero y deducía borrados → causa del incidente 5-6 jun) a **sync por operaciones**: el op-log
 append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 
@@ -207,7 +207,7 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 - Precios actualizados: Free, Pro €7/mes, Anual €49/año, Lifetime €149
 - Checkout sin cuenta: guests van directo a LemonSqueezy, webhook crea cuenta automáticamente
 
-**From Web** (nuevo — fromly.app/app)
+**Fromly Web** (nuevo — fromly.app/app)
 - Editor outliner completo: jerarquía, Tab/indent, collapse, tipos de bloque
 - Markdown inline: bold, italic, code, strike, links
 - Slash menu (/), Cmd+K command palette, Cmd+N nueva nota
@@ -269,7 +269,7 @@ append-only es la fuente de verdad y el servidor **nunca infiere un borrado**.
 
 ## Estado actual — Mayo 2026
 
-Esta sección describe el estado completo de la aplicación From tal como está implementada a fecha de mayo de 2026. No es un changelog de versiones sino una descripción exhaustiva del sistema.
+Esta sección describe el estado completo de la aplicación Fromly tal como está implementada a fecha de mayo de 2026. No es un changelog de versiones sino una descripción exhaustiva del sistema.
 
 ---
 
@@ -323,7 +323,7 @@ Esta sección describe el estado completo de la aplicación From tal como está 
 
 ### Eventos y calendario
 
-- **Sync bidireccional con Apple Calendar y Apple Reminders** via EventKit. Los eventos creados en From aparecen en Calendario de macOS/iOS y viceversa.
+- **Sync bidireccional con Apple Calendar y Apple Reminders** via EventKit. Los eventos creados en Fromly aparecen en Calendario de macOS/iOS y viceversa.
 - **Creación de eventos con ⌘E** y lenguaje natural (fecha, hora, duración parseados automáticamente).
 - **`EventEditSheet`** para editar título, fecha/hora de inicio y fin, notas, calendario destino.
 - **Timeline** en columna derecha del diario: vista Día (24h), Semana, Mes, Año. Los eventos de Apple Calendar se renderizan en todos los grids.
@@ -409,7 +409,7 @@ Esta sección describe el estado completo de la aplicación From tal como está 
 
 ### Integraciones
 
-- **Apple Calendar + Reminders:** sync bidireccional via EventKit. Creación, edición y eliminación de eventos desde From se refleja en el sistema y viceversa.
+- **Apple Calendar + Reminders:** sync bidireccional via EventKit. Creación, edición y eliminación de eventos desde Fromly se refleja en el sistema y viceversa.
 - **Google Docs:** sincronización nota ↔ documento Google via OAuth2. Cambios en el body del nodo se propagan al doc y viceversa.
 - **Publicación de notas:** cada nota puede tener una URL pública por slug. Se puede actualizar el contenido publicado o despublicar desde el panel de propiedades.
 - **Spotlight macOS:** nodos indexados en el índice del sistema operativo.
@@ -517,7 +517,7 @@ Esta sección describe el estado completo de la aplicación From tal como está 
 - **Chat**: botón de tag de área para editar/crear el nodo de contexto desde cualquier nota
 
 ### v3.6.6 (2026-05-08)
-- **Breadcrumb**: jerarquía temporal correcta — sin "From", cada nivel muestra solo sus ancestros. Año: sin prefijo; Mes: solo año; Semana: año+mes; Diario: año+mes+semana
+- **Breadcrumb**: jerarquía temporal correcta — sin "Fromly", cada nivel muestra solo sus ancestros. Año: sin prefijo; Mes: solo año; Semana: año+mes; Diario: año+mes+semana
 - **Calendarios temporales**: el calendario de nodos año/mes/semana abre en la fecha correcta del nodo (ya no en la fecha actual)
 - **Notas diarias en calendarios**: las notas diarias aparecen en el grid de semana/mes usando `diaryDate`
 
@@ -536,9 +536,9 @@ Esta sección describe el estado completo de la aplicación From tal como está 
 
 ---
 
-## Qué es From
+## Qué es Fromly
 
-**From** es una aplicación nativa para macOS e iOS que funciona como un segundo cerebro personal. Organiza toda la información en un árbol de bullets sincronizado en tiempo real entre dispositivos, con agentes autónomos de IA y gestión de archivos integrada.
+**Fromly** es una aplicación nativa para macOS e iOS que funciona como un segundo cerebro personal. Organiza toda la información en un árbol de bullets sincronizado en tiempo real entre dispositivos, con agentes autónomos de IA y gestión de archivos integrada.
 
 **Tagline:** Tu segundo cerebro. En todos tus dispositivos.
 
@@ -645,8 +645,8 @@ Sistema unificado server-side — ver sección "Backups unificados Mac+web (serv
 
 ### macOS
 1. **Pantalla de bienvenida:** Permisos básicos (Calendar, Notifications)
-2. **Elegir espacio:** El usuario selecciona o crea una carpeta local que From usará como base (para agentes y archivos locales). El vault .md ya no existe.
-3. **Login (opcional):** Para activar sync entre dispositivos, el usuario hace login con su cuenta From.
+2. **Elegir espacio:** El usuario selecciona o crea una carpeta local que Fromly usará como base (para agentes y archivos locales). El vault .md ya no existe.
+3. **Login (opcional):** Para activar sync entre dispositivos, el usuario hace login con su cuenta Fromly.
 
 ### iOS
 1. **Onboarding:** Pantalla de bienvenida
@@ -810,7 +810,7 @@ gh release create vX.X.X /tmp/From.dmg /tmp/latest.json -R getfrom-app/getfrom-a
 ```
 from/
 ├── app/                    # App macOS + iOS (Swift/SwiftUI)
-│   ├── From/               # Target macOS
+│   ├── Fromly/               # Target macOS
 │   │   ├── Services/       # Lógica de negocio (NodeService, AgentService, etc.)
 │   │   ├── Models/         # Modelos de datos (Node, Workspace, VaultFile, etc.)
 │   │   └── Views/          # Vistas SwiftUI

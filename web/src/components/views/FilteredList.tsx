@@ -1,7 +1,7 @@
 /**
  * FilteredList — Lista genérica de resultados de filtro como raíces flotantes con breadcrumb.
  *
- * Se usa para TODOS los filtros activos en From:
+ * Se usa para TODOS los filtros activos en Fromly:
  *   - Filtro por contexto (@La Isla, @Personal, etc.)
  *   - Filtro por tipo (tareas, notas, eventos, bucles)
  *   - Filtro "Sin clasificar"
@@ -434,7 +434,7 @@ interface FilteredListProps {
 
 /**
  * FilteredList — renderiza un Set<string> de matchIds como lista de raíces flotantes
- * con breadcrumb. Genérico para cualquier filtro activo de From.
+ * con breadcrumb. Genérico para cualquier filtro activo de Fromly.
  */
 export default function FilteredList({
   matchIds,

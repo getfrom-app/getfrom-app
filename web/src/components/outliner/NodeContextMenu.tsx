@@ -683,7 +683,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         )}
       </div>
 
-      {/* Enseñar a From — visible si hay texto seleccionado */}
+      {/* Enseñar a Fromly — visible si hay texto seleccionado */}
       {selectedText.length >= 2 && selectedText.length <= 30 && (() => {
         const guess = guessWordType(selectedText)
         const isTask = guess.type === 'task'

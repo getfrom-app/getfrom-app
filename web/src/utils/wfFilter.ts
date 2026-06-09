@@ -1,5 +1,5 @@
 /**
- * wfFilter — Motor de filtros para From
+ * wfFilter — Motor de filtros para Fromly
  *
  * Soporta:
  *   - Operadores booleanos: "y" (AND), "o" (OR)

@@ -1,23 +1,23 @@
-# From — Guía completa de vídeos YouTube
+# Fromly — Guía completa de vídeos YouTube
 
 > Documento de producción para grabar los vídeos de la plataforma.
 > Cada vídeo incluye: objetivo, duración estimada, guión de lo que mostrar, ejemplos concretos y orden de pantallas.
 
 ---
 
-## VÍDEO 0 — Presentación: "From, tu segundo cerebro"
+## VÍDEO 0 — Presentación: "Fromly, tu segundo cerebro"
 **Tipo:** Presentación general · **Duración estimada:** 8-12 min
 
 ### Objetivo
-Mostrar qué es From, por qué existe y qué lo hace diferente. Es el vídeo de entrada al canal y a la plataforma. Tiene que dejar claro en los primeros 30 segundos por qué alguien querría usarlo.
+Mostrar qué es Fromly, por qué existe y qué lo hace diferente. Es el vídeo de entrada al canal y a la plataforma. Tiene que dejar claro en los primeros 30 segundos por qué alguien querría usarlo.
 
 ### Estructura del vídeo
 
 **Gancho (0:00 - 0:30)**
-Empieza mostrando el problema: tienes notas en Apple Notes, tareas en Todoist, ideas en un cuaderno, emails pendientes y proyectos en Notion. Demasiadas apps, demasiada fricción. From lo une todo.
+Empieza mostrando el problema: tienes notas en Apple Notes, tareas en Todoist, ideas en un cuaderno, emails pendientes y proyectos en Notion. Demasiadas apps, demasiada fricción. Fromly lo une todo.
 
-**¿Qué es From? (0:30 - 1:30)**
-- "From es un árbol. Todo lo que piensas, haces y quieres recordar vive en un árbol de nodos que puedes organizar libremente."
+**¿Qué es Fromly? (0:30 - 1:30)**
+- "Fromly es un árbol. Todo lo que piensas, haces y quieres recordar vive en un árbol de nodos que puedes organizar libremente."
 - Muestra la pantalla principal: el árbol con algunos nodos colapsados/expandidos
 - Destaca que es Web + Mac + iPhone — mostrar las tres pantallas
 
@@ -58,11 +58,11 @@ Empieza mostrando el problema: tienes notas en Apple Notes, tareas en Todoist, i
 
 ---
 
-## VÍDEO 1 — "El árbol: cómo organiza From tu información"
+## VÍDEO 1 — "El árbol: cómo organiza Fromly tu información"
 **Tipo:** Concepto fundamental · **Duración:** 3-5 min
 
 ### Objetivo
-Enseñar el modelo mental del árbol. Es el concepto más importante de From y el más diferente.
+Enseñar el modelo mental del árbol. Es el concepto más importante de Fromly y el más diferente.
 
 ### Qué mostrar
 1. Crear el primer nodo (Enter desde vacío)
@@ -79,7 +79,7 @@ Enseñar el modelo mental del árbol. Es el concepto más importante de From y e
 - "Zoom en Lanzamiento web y solo ves ese contexto"
 
 ### Frases clave
-- "En From no hay carpetas. Hay un árbol infinito."
+- "En Fromly no hay carpetas. Hay un árbol infinito."
 - "Puedes colapsar proyectos enteros con un clic."
 - "El zoom te da foco: ves solo lo que importa ahora."
 
@@ -107,7 +107,7 @@ Enseñar el modelo mental del árbol. Es el concepto más importante de From y e
 
 ---
 
-## VÍDEO 3 — "Tareas en From: nunca pierdas un compromiso"
+## VÍDEO 3 — "Tareas en Fromly: nunca pierdas un compromiso"
 **Tipo:** Funcionalidad core · **Duración:** 4-5 min
 
 ### Qué mostrar
@@ -124,12 +124,12 @@ Enseñar el modelo mental del árbol. Es el concepto más importante de From y e
 - "Revisar contrato → ya es demasiado grande → /Ampliar → se convierte en proyecto"
 
 ### Frases clave
-- "From detecta si estás creando una tarea mientras escribes."
+- "Fromly detecta si estás creando una tarea mientras escribes."
 - "Ampliar es para cuando algo que creías una tarea resulta ser un proyecto."
 
 ---
 
-## VÍDEO 4 — "Eventos y Google Calendar: tu agenda en From"
+## VÍDEO 4 — "Eventos y Google Calendar: tu agenda en Fromly"
 **Tipo:** Integración · **Duración:** 4-5 min
 
 ### Qué mostrar
@@ -137,16 +137,16 @@ Enseñar el modelo mental del árbol. Es el concepto más importante de From y e
 2. El evento aparece en el Planificador
 3. Conectar Google Calendar: Ajustes → Integraciones → Google Calendar → Conectar
 4. Los eventos de GCal aparecen en el Planificador con el color del calendario
-5. Crear evento en From → aparece en Google Calendar en segundos
+5. Crear evento en Fromly → aparece en Google Calendar en segundos
 6. Clic en un evento del Planificador → editar hora, título, eliminar
-7. Sync bidireccional demostrado: cambiar en From → se actualiza en GCal
+7. Sync bidireccional demostrado: cambiar en Fromly → se actualiza en GCal
 
 ### Ejemplos
 - "Reunión de diseño el martes 10:00-11:00"
 - Mostrar el color del calendario de GCal en el Planificador
 
 ### Frases clave
-- "From no reemplaza tu calendario. Lo integra."
+- "Fromly no reemplaza tu calendario. Lo integra."
 - "Todo en un solo lugar: tus notas, tareas y eventos."
 
 ---
@@ -308,7 +308,7 @@ Explicar el concepto de espejo y cuándo es útil.
 **Tipo:** Feature estrella · **Duración:** 5-7 min
 
 ### Objetivo
-Demostrar que la IA de From es diferente: actúa sobre tu información real, no genera texto genérico.
+Demostrar que la IA de Fromly es diferente: actúa sobre tu información real, no genera texto genérico.
 
 ### Qué mostrar
 1. Abrir chat IA: botón ✨ en esquina inferior derecha o ⌘J
@@ -343,7 +343,7 @@ Demostrar que la IA de From es diferente: actúa sobre tu información real, no 
 
 ---
 
-## VÍDEO 14 — "Predicciones ghost text: From anticipa lo que necesitas"
+## VÍDEO 14 — "Predicciones ghost text: Fromly anticipa lo que necesitas"
 **Tipo:** Funcionalidad · **Duración:** 3 min
 
 ### Qué mostrar
@@ -353,7 +353,7 @@ Demostrar que la IA de From es diferente: actúa sobre tu información real, no 
 4. Personalizar en Ajustes → Predicciones: añadir tus propias palabras clave
 
 ### Frases clave
-- "From aprende qué tipo de nodo necesitas según cómo escribes."
+- "Fromly aprende qué tipo de nodo necesitas según cómo escribes."
 - "Tab acepta la sugerencia. Escape la ignora."
 
 ---
@@ -381,7 +381,7 @@ Demostrar que la IA de From es diferente: actúa sobre tu información real, no 
 
 ### Qué mostrar
 1. Crear un recurso: `/Recurso` → pegar URL
-2. From extrae automáticamente el título
+2. Fromly extrae automáticamente el título
 3. Tipos: artículo, vídeo YouTube, podcast
 4. El recurso aparece en el árbol con preview/título
 5. La IA puede trabajar con el contenido del recurso
@@ -389,11 +389,11 @@ Demostrar que la IA de From es diferente: actúa sobre tu información real, no 
 
 ### Ejemplos
 - Pegar URL de artículo → aparece con el título extraído
-- Pegar URL de YouTube → From lo identifica como vídeo
+- Pegar URL de YouTube → Fromly lo identifica como vídeo
 
 ---
 
-## VÍDEO 17 — "El Planificador: tu calendario de From"
+## VÍDEO 17 — "El Planificador: tu calendario de Fromly"
 **Tipo:** Funcionalidad · **Duración:** 3-4 min
 
 ### Qué mostrar
@@ -415,10 +415,10 @@ Generar confianza. Muchas personas tienen miedo de perder sus notas.
 
 ### Qué mostrar
 1. Ajustes → Backup → ver el listado de backups automáticos
-2. Explicar: cada 2 horas, en tu Mac, en Application Support/From/Backups/
+2. Explicar: cada 2 horas, en tu Mac, en Application Support/Fromly/Backups/
 3. Cómo restaurar desde un backup (proceso manual pero posible)
 4. Exportar → JSON (para programadores) o Markdown (legible)
-5. "Si mañana From cierra, tienes todos tus datos en tu Mac en formato abierto"
+5. "Si mañana Fromly cierra, tienes todos tus datos en tu Mac en formato abierto"
 6. Privacidad IA: qué datos se envían y cuáles no
 
 ### Frases clave
@@ -427,7 +427,7 @@ Generar confianza. Muchas personas tienen miedo de perder sus notas.
 
 ---
 
-## VÍDEO 19 — "Atajos de teclado: domina From sin el ratón"
+## VÍDEO 19 — "Atajos de teclado: domina Fromly sin el ratón"
 **Tipo:** Productividad · **Duración:** 3-4 min
 
 ### Qué mostrar
@@ -446,7 +446,7 @@ Mostrar en pantalla cada atajo mientras lo usas, con un overlay visual del tecla
 
 ---
 
-## VÍDEO 20 — "Ajustes: personaliza From a tu estilo"
+## VÍDEO 20 — "Ajustes: personaliza Fromly a tu estilo"
 **Tipo:** Configuración · **Duración:** 4-5 min
 
 ### Qué mostrar
@@ -503,7 +503,7 @@ Mostrar en pantalla cada atajo mientras lo usas, con un overlay visual del tecla
 
 ---
 
-## VÍDEO 24 — "From en Mac: la app nativa"
+## VÍDEO 24 — "Fromly en Mac: la app nativa"
 **Tipo:** Plataforma · **Duración:** 4-5 min
 
 ### Qué mostrar
@@ -517,7 +517,7 @@ Mostrar en pantalla cada atajo mientras lo usas, con un overlay visual del tecla
 
 ---
 
-## VÍDEO 25 — "From en iPhone: tus notas en el bolsillo"
+## VÍDEO 25 — "Fromly en iPhone: tus notas en el bolsillo"
 **Tipo:** Plataforma · **Duración:** 3-4 min
 
 ### Qué mostrar
@@ -531,14 +531,14 @@ Mostrar en pantalla cada atajo mientras lo usas, con un overlay visual del tecla
 
 ---
 
-## VÍDEO 26 — "Workflow de segunda cerebro con From"
+## VÍDEO 26 — "Workflow de segunda cerebro con Fromly"
 **Tipo:** Caso de uso / filosofía · **Duración:** 6-8 min
 
 ### Objetivo
-Mostrar cómo usar From como sistema completo de "segundo cerebro" (PKM).
+Mostrar cómo usar Fromly como sistema completo de "segundo cerebro" (PKM).
 
 ### Estructura sugerida
-1. **Captura**: cualquier idea, en cualquier momento, va a From primero
+1. **Captura**: cualquier idea, en cualquier momento, va a Fromly primero
    - En el móvil: captura rápida
    - En el Mac: Enter y escribes
    - Voz: dictado → nodo
@@ -556,7 +556,7 @@ Mostrar cómo usar From como sistema completo de "segundo cerebro" (PKM).
 
 ---
 
-## VÍDEO 27 — "Workflow de gestión de proyectos con From"
+## VÍDEO 27 — "Workflow de gestión de proyectos con Fromly"
 **Tipo:** Caso de uso avanzado · **Duración:** 5-7 min
 
 ### Estructura
@@ -597,7 +597,7 @@ Mostrar cómo usar From como sistema completo de "segundo cerebro" (PKM).
 
 ### Qué mostrar
 Una rutina matutina completa en tiempo real (5 minutos):
-1. Abrir From → Vista Hoy (5 seg)
+1. Abrir Fromly → Vista Hoy (5 seg)
 2. Revisar vencidas → posponer o hacer (1 min)
 3. Revisar tareas de hoy → elegir las 3 más importantes (1 min)
 4. Escribir en el espacio libre: "Lo que quiero conseguir hoy" (1 min)
@@ -607,15 +607,15 @@ Una rutina matutina completa en tiempo real (5 minutos):
 
 ---
 
-## VÍDEO 30 — "From vs Notion: ¿cuál usar?"
+## VÍDEO 30 — "Fromly vs Notion: ¿cuál usar?"
 **Tipo:** Comparativa · **Duración:** 5-6 min
 
 ### Estructura
 - Sin atacar a Notion: ambas tienen su lugar
 - Lo que Notion hace mejor: bases de datos, colaboración de equipo, wikis empresariales
-- Lo que From hace mejor: captura rápida, IA que actúa, precio (€49 vs €20/mes), backup local
-- Mostrar la diferencia de velocidad: crear una nota en Notion vs en From
-- "Si trabajas solo y quieres pensar rápido con IA, From. Si gestionas un equipo con bases de datos, Notion."
+- Lo que Fromly hace mejor: captura rápida, IA que actúa, precio (€49 vs €20/mes), backup local
+- Mostrar la diferencia de velocidad: crear una nota en Notion vs en Fromly
+- "Si trabajas solo y quieres pensar rápido con IA, Fromly. Si gestionas un equipo con bases de datos, Notion."
 
 ### No hacer
 - No machacar a Notion
@@ -630,7 +630,7 @@ Una rutina matutina completa en tiempo real (5 minutos):
 - Navegador: Chrome o Safari, full screen
 - Resolución: 1920x1080 o 1440x900
 - Zoom del navegador: 100% o 110%
-- From en modo claro para los tutoriales (mejor visibilidad)
+- Fromly en modo claro para los tutoriales (mejor visibilidad)
 - Usar datos de ejemplo realistas, no "test1", "asdf"
 
 ### Datos de ejemplo a preparar antes de grabar

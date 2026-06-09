@@ -468,7 +468,7 @@ export class NodeStore {
   }
 
   /**
-   * @deprecated Eliminado — en From WF cualquier nodo puede estar en cualquier posición.
+   * @deprecated Eliminado — en Fromly WF cualquier nodo puede estar en cualquier posición.
    * La regla "notas bajo temporales → mover a root" ya no aplica.
    */
   fixTemporalHierarchyOrphans(): number { return 0 }
@@ -683,7 +683,7 @@ export class NodeStore {
     return false
   }
 
-  /** ¿Es una NOTA "de verdad"? En From todo es un nodo, pero una nota es un nodo
+  /** ¿Es una NOTA "de verdad"? En Fromly todo es un nodo, pero una nota es un nodo
    *  de contenido que TIENE HIJOS (un contenedor real). Un nodo hoja es solo un
    *  párrafo/bullet dentro de una nota, no una nota en sí. Criterio único para
    *  contar/diferenciar notas en toda la app. Excluye tareas, eventos, recursos,

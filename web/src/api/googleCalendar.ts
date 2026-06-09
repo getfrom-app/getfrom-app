@@ -73,7 +73,7 @@ export async function getCalendarEventsRange(start: Date, end: Date): Promise<Ca
   return res.events
 }
 
-/** Convierte el formato de recurrencia de From ('weekly:2') a RRULE para GCal */
+/** Convierte el formato de recurrencia de Fromly ('weekly:2') a RRULE para GCal */
 export function fromRecToRRule(rec: string | null | undefined): string[] {
   if (!rec) return []
   const [unit, nStr] = rec.split(':')

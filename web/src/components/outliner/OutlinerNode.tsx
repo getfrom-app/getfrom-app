@@ -1236,7 +1236,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // para evitar que el browser colapse el trailing space en contentEditable)
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     // Auto-sync bidireccional: types[] refleja los @contextos del texto.
-    // Los #tags han sido eliminados de From — solo @ para contextos.
+    // Los #tags han sido eliminados de Fromly — solo @ para contextos.
     const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const atTags = new Set([...(text.match(/@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
     const allContextTags = new Set([...atTags])

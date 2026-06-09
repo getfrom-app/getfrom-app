@@ -2,7 +2,7 @@
  * DiaryRightPanel — Panel derecho del diario de hoy.
  *
  * Muestra un filtro vivo: tareas pendientes de hoy + vencidas.
- * Usa el sistema de filtros de From (applyWFFilter) y el Outliner nativo
+ * Usa el sistema de filtros de Fromly (applyWFFilter) y el Outliner nativo
  * para renderizar los resultados con formato y contexto completo.
  */
 import { useMemo } from 'react'

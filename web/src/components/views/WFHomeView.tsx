@@ -103,7 +103,7 @@ function buildContextFilter(contextNodeId: string): {
     })
   }
 
-  // Regex para @mention en texto: @From, @Café\ Olé, etc. — cualquier contexto de la jerarquía
+  // Regex para @mention en texto: @Fromly, @Café\ Olé, etc. — cualquier contexto de la jerarquía
   const escapedNames = ctxNames
     .filter(Boolean)
     .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))

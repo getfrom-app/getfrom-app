@@ -483,7 +483,7 @@ export function ensurePerfilInsideContexto(): void {
 
   // ── Migración: si tiene .body pero no nodos hijos, convertir a nodos ──────
   // Esto arregla nodos creados antes de la actualización que usaban el editor
-  // de body (markdown editor) en lugar del outliner nativo de From.
+  // de body (markdown editor) en lugar del outliner nativo de Fromly.
   const hasBody = !!(perfil.body?.trim())
   const hasChildren = store.children(perfil.id).filter(n => !n.deletedAt).length > 0
 

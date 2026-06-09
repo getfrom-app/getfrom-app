@@ -24,9 +24,9 @@ import { findContextRoot } from '../../utils/rootLookup'
 // solo renderiza el contenido de la pestaña activa (leída del query param ?tab=).
 
 // ── MagicPane ─────────────────────────────────────────────────────────────────
-// Magic está siempre activo. From aprende datos duraderos sobre ti y los escribe
+// Magic está siempre activo. Fromly aprende datos duraderos sobre ti y los escribe
 // en su parte del Perfil de IA. La limpieza/compactación es automática y periódica
-// (no hay botón). "Ver y editar" lleva a lo que From ha escrito por su cuenta.
+// (no hay botón). "Ver y editar" lleva a lo que Fromly ha escrito por su cuenta.
 
 function MagicPane() {
   const s = useStore()
@@ -43,7 +43,7 @@ function MagicPane() {
     if (node) navigate(`/node/${node.id}`)
   }
 
-  // Conocimiento que From mantiene por contexto (nodo "🧠 Lo que Fromly sabe" dentro
+  // Conocimiento que Fromly mantiene por contexto (nodo "🧠 Lo que Fromly sabe" dentro
   // de cada contexto; se regenera y sobrescribe solo, no acumula).
   const contextKnowledge = (() => {
     const root = findContextRoot()
@@ -64,7 +64,7 @@ function MagicPane() {
         <div className="st-row-info">
           <div className="st-row-label">Conocimiento de Fromly</div>
           <div className="st-row-hint">
-            From aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y los guarda aquí por su cuenta. También aprende de lo que le enseñas (botón derecho → Enseñar a Magic).
+            Fromly aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y los guarda aquí por su cuenta. También aprende de lo que le enseñas (botón derecho → Enseñar a Magic).
             {total > 0 ? ` Ha aprendido ${total} ${total === 1 ? 'dato' : 'datos'}.` : ' Aún no ha aprendido datos nuevos.'}
             {' '}Ábrelo para revisarlo y editarlo en bullets, como cualquier nota. La limpieza es automática.
           </div>
@@ -78,7 +78,7 @@ function MagicPane() {
         <>
           <div className="st-section-title" style={{ marginTop: 24 }}>Lo que Fromly sabe por contexto</div>
           <div className="st-row-hint" style={{ marginBottom: 4 }}>
-            Para cada contexto, From mantiene un resumen (palabras clave, personas, temas) que se actualiza solo al usarlo.
+            Para cada contexto, Fromly mantiene un resumen (palabras clave, personas, temas) que se actualiza solo al usarlo.
           </div>
           {contextKnowledge.map(c => (
             <div className="st-row" key={c.id}>

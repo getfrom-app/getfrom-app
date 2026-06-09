@@ -122,7 +122,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             {updating ? t('ctxProps.updating', 'Actualizando…') : `✦ ${t('ctxProps.updateKnowledge', 'Actualizar conocimiento')}`}
           </button>
           <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.5, marginTop: 8 }}>
-            {t('ctxProps.knowledgeHint', 'From resume las palabras clave, personas y temas de este contexto para entender mejor tus notas.')}
+            {t('ctxProps.knowledgeHint', 'Fromly resume las palabras clave, personas y temas de este contexto para entender mejor tus notas.')}
           </div>
         </div>
       </div>

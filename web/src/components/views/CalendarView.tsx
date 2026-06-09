@@ -718,7 +718,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         onDrop={e => {
                           e.preventDefault()
                           e.currentTarget.classList.remove('drag-over')
-                          // From side panel
+                          // Fromly side panel
                           const nodeId = e.dataTransfer.getData('cal-node-id') || e.dataTransfer.getData('text/plain')
                           if (nodeId) {
                             const newDate = new Date(day)
@@ -749,7 +749,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     )
                   })}
 
-                  {/* Eventos con hora — From */}
+                  {/* Eventos con hora — Fromly */}
                   {timedNodes.map(node => {
                     const d = new Date(node.due!)
                     const startMs = d.getTime()

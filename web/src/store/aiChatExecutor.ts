@@ -161,7 +161,7 @@ function updateNode(a: Record<string, unknown>): ExecutedAction {
 
   const updates: Record<string, unknown> = {}
   if (typeof a.text === 'string') updates.text = a.text
-  // body nunca se escribe — en From todo el contenido va en nodos hijos
+  // body nunca se escribe — en Fromly todo el contenido va en nodos hijos
   if (Array.isArray(a.tags)) updates.types = a.tags
   if ('status' in a) updates.status = a.status === null ? null : a.status
   if ('due' in a) updates.due = parseDate(a.due) ?? null

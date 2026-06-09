@@ -74,8 +74,8 @@ export default function PaywallModal({ reason, onClose }: Props) {
   } else {
     // Free sin IA
     icon          = '✨'
-    title         = 'La IA de From requiere suscripción'
-    subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que From organice todo por ti.'
+    title         = 'La IA de Fromly requiere suscripción'
+    subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que Fromly organice todo por ti.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
   }

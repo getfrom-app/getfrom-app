@@ -333,7 +333,7 @@ export async function aiInlineStream(
   return result
 }
 
-// ── From AI Chat ─────────────────────────────────────────────────────────
+// ── Fromly AI Chat ─────────────────────────────────────────────────────────
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 export interface ChatActionResult { action: string; ok: boolean; summary?: string; ids?: string[] }

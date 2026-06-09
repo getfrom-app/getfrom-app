@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function AutoContextBadge({ node, result, onContextAssigned, assignedContextId }: Props) {
-  // node aquí es FromNode (del vault de From), no el DOM Node
+  // node aquí es FromNode (del vault de Fromly), no el DOM Node
   const { t } = useTranslation()
   const [showDropdown, setShowDropdown] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })

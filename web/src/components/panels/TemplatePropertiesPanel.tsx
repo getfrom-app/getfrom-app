@@ -168,7 +168,7 @@ function RecurrenceModal({ initial, onClose, onSave }: {
         )}
 
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-          From insertará esta plantilla como una sección dentro de la nota de ese día (no reemplaza el día).
+          Fromly insertará esta plantilla como una sección dentro de la nota de ese día (no reemplaza el día).
         </p>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>

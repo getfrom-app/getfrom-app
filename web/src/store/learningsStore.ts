@@ -1,7 +1,7 @@
 /**
- * learningsStore — Sistema de aprendizaje de Magic (From AI)
+ * learningsStore — Sistema de aprendizaje de Magic (Fromly AI)
  *
- * Almacena correcciones y preferencias que el usuario enseña a From.
+ * Almacena correcciones y preferencias que el usuario enseña a Fromly.
  *
  * Persistencia: cada regla es un NODO hijo del contenedor "🧠 Reglas de Magic"
  * bajo el perfil IA. Así el aprendizaje sincroniza por cuenta (web, Mac, móvil)

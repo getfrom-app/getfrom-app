@@ -1,5 +1,5 @@
 /**
- * filterInterpreter — Traduce lenguaje natural a consulta de filtro de From.
+ * filterInterpreter — Traduce lenguaje natural a consulta de filtro de Fromly.
  *
  * Usa Haiku con systemBudget (gratuito para todos los usuarios).
  * Responde solo la query técnica, sin texto adicional.
@@ -8,7 +8,7 @@
 import { aiInlineStream, getToken } from '../api/client'
 import { isSmartQuery } from './wfFilter'
 
-const FILTER_SYSTEM = `Eres un intérprete de filtros para From, una app de notas y tareas.
+const FILTER_SYSTEM = `Eres un intérprete de filtros para Fromly, una app de notas y tareas.
 Convierte la petición del usuario a una consulta de filtro usando ÚNICAMENTE estos operadores:
 
   Fecha:    hoy · mañana · semana · mes · pasado · futuro

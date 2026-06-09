@@ -7,8 +7,8 @@
  *     └── 15:15–16:30 Streaming  extraData._gcalEventId="yyy", isEvent=true
  *
  * Bidireccional:
- *   GCal → From: al abrir la nota diaria, sync eventos → nodos
- *   From → GCal: al mover un nodo evento a otra nota diaria, actualiza GCal
+ *   GCal → Fromly: al abrir la nota diaria, sync eventos → nodos
+ *   Fromly → GCal: al mover un nodo evento a otra nota diaria, actualiza GCal
  */
 
 import { store } from '../store/nodeStore'
@@ -113,7 +113,7 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
   }
 }
 
-// ── Sync From → GCal (al mover evento a otra nota) ───────────────────────────
+// ── Sync Fromly → GCal (al mover evento a otra nota) ───────────────────────────
 
 /**
  * Cuando un nodo GCal cambia de nota diaria (parentId),

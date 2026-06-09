@@ -150,7 +150,7 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
             {t('prompts.variablesTitle', 'Variables disponibles')}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.45, marginBottom: 8 }}>
-            {t('prompts.variablesHint2', 'Escríbelas en el prompt y From las rellena al usarlo. Clic para insertarla donde tengas el cursor.')}
+            {t('prompts.variablesHint2', 'Escríbelas en el prompt y Fromly las rellena al usarlo. Clic para insertarla donde tengas el cursor.')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {AVAILABLE_VARIABLES.map(v => (

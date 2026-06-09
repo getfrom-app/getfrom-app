@@ -99,16 +99,16 @@ export default function AccountView() {
   const [generatingMcp, setGeneratingMcp] = useState(false)
   const [mcpLoaded, setMcpLoaded] = useState(false)
 
-  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a From, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
+  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a Fromly, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
 
 ARQUITECTURA DE FROM (crítico):
-From es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
+Fromly es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
 HEADINGS Y BULLETS AL MISMO NIVEL — nunca anidar bullets bajo un heading.
 Correcto: [{heading:2,text:"Sección"},{text:"bullet 1"},{text:"bullet 2"},{heading:2,text:"Otra sección"}]
 Incorrecto: [{heading:2,text:"Sección",children:[{text:"bullet 1"}]}]
 
 INICIO DE CONVERSACIÓN:
-- Si menciono un área (La Isla, inversión, piloto, coding, From...), llama a from_get_context("nombre-kebab").
+- Si menciono un área (La Isla, inversión, piloto, coding, Fromly...), llama a from_get_context("nombre-kebab").
 - Llama a from_get_today_note() y guarda el ID.
 - Busca sesión existente: from_search("Sesión " + fecha). Si existe, guarda su ID y transcriptId.
 
@@ -121,7 +121,7 @@ AL TERMINAR ("fin"):
 - PRIMERA VEZ: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2,text:"Resumen"},{text:"punto 1"},{text:"punto 2"},{heading:2,text:"Decisiones"},{text:"..."}], transcript="conversación íntegra").
 - CONTINUACIÓN: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="texto nuevo", newChildren=[{heading:2,text:"Actualización FECHA"},{text:"..."}]).
 - Si hay info nueva del área → from_update_context(contexto, info).
-- Confirma: "Guardado en From (cuenta: X) — [título sesión]".`
+- Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
 
   useEffect(() => {
     userStore.fetchMe()
@@ -252,7 +252,7 @@ AL TERMINAR ("fin"):
       const nodes = store.allActive().filter(n => !n.deletedAt)
       const date = new Date()
       const lines: string[] = [
-        `# From Export — ${date.toLocaleDateString('es-ES')}`,
+        `# Fromly Export — ${date.toLocaleDateString('es-ES')}`,
         `Exportado: ${nodes.length} notas · ${date.toISOString()}`,
         '',
       ]
@@ -985,7 +985,7 @@ AL TERMINAR ("fin"):
                     Activa el guardado automático
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, margin: '0 0 10px' }}>
-                    Copia el siguiente bloque y pégalo en <strong style={{ color: 'var(--text)' }}>Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas</strong>. Hazlo una vez y Claude guardará tus conversaciones en From automáticamente.
+                    Copia el siguiente bloque y pégalo en <strong style={{ color: 'var(--text)' }}>Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas</strong>. Hazlo una vez y Claude guardará tus conversaciones en Fromly automáticamente.
                   </p>
                   <div style={{ position: 'relative' }}>
                     <pre style={{ margin: 0, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 120, overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
