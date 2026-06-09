@@ -114,6 +114,9 @@ class AIChatStore {
   /** true si el prompt activo se activó automáticamente (por contexto), no por el usuario. */
   activePromptAuto = false
 
+  /** Nodo al que pertenece la conversación en memoria (para resetear al cambiar de nodo). */
+  boundNodeKey: string | null = null
+
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
 
@@ -139,6 +142,10 @@ class AIChatStore {
     this.isStreaming = false
     this.pendingActions = null
     this._pendingContext = null
+    this.boundNodeKey = null
+    // No mezclar prompts entre conversaciones de distintos nodos
+    this.activePromptId = null
+    this.activePromptAuto = false
     this.notify()
   }
 
@@ -198,6 +205,8 @@ class AIChatStore {
     this.lastError = null
     this.pendingActions = null
     this._pendingContext = null
+    // Vincular la conversación al nodo donde se inició (para empezar limpio al cambiar de nodo)
+    if (this.boundNodeKey == null) this.boundNodeKey = currentNodeId ?? '∅'
 
     if (!this.sessionId) {
       this.sessionId = this.createSessionNode(trimmed)

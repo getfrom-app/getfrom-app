@@ -44,6 +44,17 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // Evita re-activar automáticamente un prompt que el usuario quitó a mano.
   const autoPromptHandledRef = useRef<string | undefined>(undefined)
 
+  // Al abrir/cambiar de nodo: si la conversación en memoria pertenece a OTRO nodo,
+  // empezar limpio (no mezclar ideas/prompts de otra nota). No afecta al onboarding
+  // (sus mensajes inyectados no fijan boundNodeKey) ni a reabrir sobre el mismo nodo.
+  useEffect(() => {
+    const key = (onboardingNodeIdRef.current ?? currentNodeId) ?? '∅'
+    if (chat.boundNodeKey != null && chat.boundNodeKey !== key) {
+      chat.startNewSession()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNodeId])
+
   // Activación contextual (modo 2): al abrir Magic sobre un nodo que encaja con
   // un prompt (diario, tarea, contexto), se activa solo si no hay otro activo.
   useEffect(() => {

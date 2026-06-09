@@ -1010,18 +1010,24 @@ export default function MainLayout() {
           />
         )}
       </Suspense>
-      {/* Botón REC/STOP — abre Magic y dicta ahí; mientras graba, detiene y envía */}
-      <RecFab onOpenMagic={() => openPanel('magic')} />
-      {/* Botón FAB */}
-      <button
-        className="quick-capture-fab"
-        onClick={() => setShowUnifiedCapture(true)}
-        title="Nueva nota · buscar (Espacio)"
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </button>
+      {/* Flotantes REC/+ — ocultos cuando Magic está abierto (Magic ya tiene su propio
+          input de texto y voz; así no se solapan con los controles de la columna). */}
+      {!showAIChat && (
+        <>
+          {/* Botón REC/STOP — abre Magic y dicta ahí; mientras graba, detiene y envía */}
+          <RecFab onOpenMagic={() => openPanel('magic')} />
+          {/* Botón FAB */}
+          <button
+            className="quick-capture-fab"
+            onClick={() => setShowUnifiedCapture(true)}
+            title="Nueva nota · buscar (Espacio)"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </>
+      )}
       <Suspense fallback={null}>
         {showNewNote && <NewNoteModal onClose={() => setShowNewNote(false)} />}
         {showNewTask && <NewTaskModal onClose={() => setShowNewTask(false)} />}
