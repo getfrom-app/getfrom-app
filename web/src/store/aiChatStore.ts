@@ -122,6 +122,30 @@ class AIChatStore {
   pendingVoiceAudio: { audioKey: string; transcript: string; durationSec: number } | null = null
   setPendingVoiceAudio(v: { audioKey: string; transcript: string; durationSec: number } | null) { this.pendingVoiceAudio = v }
 
+  /** Inicia (si no existe) el nodo de la conversación de voz y NAVEGA a él. Se llama
+   * al EMPEZAR a grabar: la nota se abre a la izquierda de inmediato y se va rellenando. */
+  startVoiceSession() {
+    if (!this.sessionId) {
+      this.sessionId = this.createSessionNode('Nota de voz')
+      this.notify()
+    }
+    window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: this.sessionId } }))
+  }
+
+  /** Si la conversación de voz se canceló sin enviar nada (sin mensajes ni audio),
+   * borra el nodo vacío que se creó al empezar a grabar. */
+  discardEmptyVoiceSession() {
+    const sid = this.sessionId
+    if (!sid) return
+    const node = store.getNode(sid)
+    let hasAudio = false
+    try { const ed = JSON.parse(node?.extraData || '{}'); hasAudio = Array.isArray(ed._audios) && ed._audios.length > 0 } catch { /* */ }
+    if (this.messages.length === 0 && !hasAudio) {
+      if (node) { for (const c of store.children(sid)) store.deleteNode(c.id); store.deleteNode(sid) }
+      this.startNewSession()
+    }
+  }
+
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
 

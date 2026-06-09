@@ -228,13 +228,16 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       }
     }
     // Eventos emitidos por MainLayout cuando el usuario mantiene / suelta R
-    function onRecordStart() { if (!isRecordingRef.current) startRecording() }
+    function onRecordStart() {
+      if (!isRecordingRef.current) { chat.startVoiceSession(); startRecording() }
+    }
     function onRecordStop()  { if (isRecordingRef.current) stopRecording(true) }
     // Voz desde el FAB REC: empezar SIEMPRE una conversación limpia antes de grabar.
     function onRecordStartFresh() {
       chat.startNewSession()
       setInput('')
       setHasExpanded(false)
+      chat.startVoiceSession()   // crea el nodo de la conversación y navega a él YA
       if (!isRecordingRef.current) startRecording()
     }
     // Texto prellenado (ej. desde Grabadora → "Resumir con IA")
@@ -324,7 +327,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     cancelAnimationFrame(animFrameRef.current)
     analyserRef.current = null
     if (!wr) return
-    if (!send) { wr.cancel(); return }   // «Cancelar» / Escape → descartar audio
+    if (!send) { wr.cancel(); chat.discardEmptyVoiceSession(); return }   // «Cancelar»/Escape → descartar audio + nodo vacío
 
     const blob = wr.stop()
     if (!blob) return                    // grabación vacía / silencio
