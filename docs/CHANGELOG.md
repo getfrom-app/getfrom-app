@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Fromly — 9 junio 2026 · From ahora es Fromly ✨
+
+- **La app pasa a llamarse Fromly** y se muda a **fromly.app** (antes getfrom.app, que sigue redirigiendo). Es la **misma app de siempre, con todos tus datos intactos** — no tienes que hacer nada.
+- Marca actualizada en **toda la app, web, correos y menús**, y en **Mac, iPhone y las extensiones** (Chrome, Raycast). Mac v9.5.52 · Web v9.6.245.
+- Logins de Google y Apple, compra, suscripción y soporte funcionando con el nuevo dominio.
+
+---
+
 ## iPhone v2.4 — 8 junio 2026 · App rediseñada "on the go" + mucho más rápida
 
 - **5 pestañas claras**: Agenda · Hoy (tu nota diaria) · Buscar · Magic · Ajustes.
