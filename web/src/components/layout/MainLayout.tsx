@@ -209,7 +209,7 @@ export default function MainLayout() {
     let isAudio = false
     if (currentNodeIdFromRoute) {
       const n = store.getNode(currentNodeIdFromRoute)
-      try { isAudio = !!n && JSON.parse(n.extraData || '{}')._audio === '1' } catch { isAudio = false }
+      try { isAudio = !!n && !!JSON.parse(n.extraData || '{}')._audioKey } catch { isAudio = false }
     }
     if (isAudio) setRightPanel('audio')
     else setRightPanel(p => (p === 'audio' ? 'filter' : p))

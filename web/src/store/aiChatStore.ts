@@ -191,9 +191,8 @@ class AIChatStore {
         for (const m of legacyMessages) {
           const ed = JSON.parse(m.extraData || '{}')
           const label = ed._aiRole === 'user' ? 'Tú' : 'Magic'
-          const fullText = `${label}: ${m.text}`
           store.createNode({
-            text:     fullText.length > 300 ? fullText.slice(0, 300) + '…' : fullText,
+            text:     `${label}: ${m.text}`,
             parentId: t.id,
             extraData: { _aiMsgRole: ed._aiRole },
           })
@@ -331,20 +330,21 @@ class AIChatStore {
           // Recopilar IDs creados
           if (result.createdIds) undoBundle.createdIds.push(...result.createdIds)
         }
-        // Si esta grabación larga produjo una nota, adjuntar el audio como nodo hijo.
+        // Si esta grabación larga produjo una nota, adjuntar el audio + transcripción
+        // completa A LA PROPIA NOTA (no como nodo aparte). Al abrir la nota, la columna
+        // derecha muestra el reproductor + la transcripción (ver AudioPanel).
         if (this.pendingVoiceAudio) {
           const noteRes = writeResults.find(r => r.action === 'create_note' && r.ok && r.createdIds.length > 0)
           if (noteRes) {
             const { audioKey, transcript, durationSec } = this.pendingVoiceAudio
-            const mm = Math.floor(durationSec / 60), ss = (durationSec % 60).toString().padStart(2, '0')
+            const noteId = noteRes.createdIds[0]
             try {
-              const audioNode = store.createNode({
-                text: `🎙 Audio · ${mm}:${ss}`,
-                parentId: noteRes.createdIds[0],
-                types: ['recurso'],
-                extraData: { _audio: '1', _audioKey: audioKey, _audioTranscript: transcript, _audioDuration: String(durationSec) },
+              const note = store.getNode(noteId)
+              let ed: Record<string, unknown> = {}
+              try { ed = JSON.parse(note?.extraData || '{}') } catch { ed = {} }
+              store.updateNode(noteId, {
+                extraData: JSON.stringify({ ...ed, _audioKey: audioKey, _audioTranscript: transcript, _audioDuration: String(durationSec) }),
               })
-              undoBundle.createdIds.push(audioNode.id)
             } catch { /* no romper el turno si falla */ }
             this.pendingVoiceAudio = null
           }
@@ -889,11 +889,10 @@ class AIChatStore {
     })
     if (!transcriptNode) return
     const label = role === 'user' ? 'Tú' : 'Magic'
-    // Cada mensaje = un nodo hijo. Texto largo se trunca a 300 chars para el title
-    // (el contenido completo va en el primer nodo sin truncar si cabe en un nodo)
-    const fullText = `${label}: ${text}`
+    // Cada mensaje = un nodo hijo, con el texto COMPLETO (sin truncar — antes se
+    // cortaba a 300 chars y se perdía contenido de la transcripción/conversación).
     store.createNode({
-      text:     fullText.length > 300 ? fullText.slice(0, 300) + '…' : fullText,
+      text:     `${label}: ${text}`,
       parentId: transcriptNode.id,
       extraData: { _aiMsgRole: role },
     })
