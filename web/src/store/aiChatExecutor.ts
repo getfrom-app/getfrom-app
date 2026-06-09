@@ -7,6 +7,12 @@ import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 
+/** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
+ * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
+function cleanNodeTitle(text: string): string {
+  return text.replace(/^\s*(\d{1,3}[.)]\s+|[-*•]\s+)/, '').trim() || text.trim()
+}
+
 /** Retorna el nodo padre correcto: si due es un día diferente a hoy, usar ese día; si no, usar sessionId */
 function resolveParent(due: string | null | undefined, sessionId: string | null): string | null {
   if (!due) return sessionId
@@ -68,7 +74,7 @@ function setFilter(a: Record<string, unknown>): ExecutedAction {
 }
 
 function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
-  const text = (a.text as string) || 'Nota sin título'
+  const text = cleanNodeTitle((a.text as string) || 'Nota sin título')
   const body = a.body as string | undefined
   const tags = (a.tags as string[]) || []
   // Validar parent_id: solo usarlo si es un UUID real que existe en el store
@@ -85,7 +91,7 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
   if (body) {
     const lines = body.split('\n').map((l: string) => l.trim()).filter(Boolean)
     for (const line of lines) {
-      store.createNode({ text: line, parentId: created.id })
+      store.createNode({ text: cleanNodeTitle(line), parentId: created.id })
     }
   }
   const tagPart = tags.length > 0 ? ` con tags #${tags.join(' #')}` : ''
@@ -93,7 +99,7 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
 }
 
 function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
-  const text = (a.text as string) || 'Tarea'
+  const text = cleanNodeTitle((a.text as string) || 'Tarea')
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
   const priority = a.priority as string | undefined
