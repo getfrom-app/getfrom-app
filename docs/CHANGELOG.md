@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.247 · Mac v9.5.53 — 9 junio 2026 · Cierre del rebrand en lo que Fromly aprende
+
+- **"Lo que Fromly sabe"**: las notas de memoria que Fromly construye sobre ti y sobre cada contexto ahora se llaman **"🧠 Lo que Fromly sabe…"** (antes "From"). El cambio se aplica solo, sin duplicar nada y sin que pierdas ningún aprendizaje.
+- **Manual en inglés** regenerado y al día con la versión española (25 secciones + preguntas frecuentes).
+- Mejora interna de las copias de seguridad automáticas a iCloud.
+
+---
+
 ## Fromly — 9 junio 2026 · From ahora es Fromly ✨
 
 - **La app pasa a llamarse Fromly** y se muda a **fromly.app** (antes getfrom.app, que sigue redirigiendo). Es la **misma app de siempre, con todos tus datos intactos** — no tienes que hacer nada.
