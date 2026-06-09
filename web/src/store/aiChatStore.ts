@@ -256,17 +256,19 @@ class AIChatStore {
     // acumulando varios audios. Se ven en la columna derecha al abrir ese nodo.
     if (this.pendingVoiceAudio && sid) {
       try {
+        const { audioKey, transcript, durationSec } = this.pendingVoiceAudio
         const node = store.getNode(sid)
         let ed: Record<string, unknown> = {}
         try { ed = JSON.parse(node?.extraData || '{}') } catch { ed = {} }
+        // Audio (si se guardó en R2) → _audios; transcripción → SIEMPRE consolidada.
         const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]) : []
-        audios.push({ audioKey: this.pendingVoiceAudio.audioKey, transcript: this.pendingVoiceAudio.transcript, durationSec: this.pendingVoiceAudio.durationSec })
-        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios }) })
-        // Regenerar el resumen estructurado del nodo (body) desde TODA la voz acumulada
-        // — determinista, siempre, creciendo. Fire-and-forget (no bloquea el chat).
+        if (audioKey) audios.push({ audioKey, transcript, durationSec })
+        const prevTx = typeof ed._audioTranscript === 'string' ? ed._audioTranscript : ''
+        const consolidated = [prevTx, transcript].filter(s => s && s.trim()).join('\n\n')
+        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios, _audioTranscript: consolidated }) })
+        // Regenerar TÍTULO + resumen estructurado de la nota desde toda la voz acumulada.
         import('../utils/recordingProcessor').then(m => m.restructureVoiceNote(sid)).catch(() => {})
-        // Voz: abrir el nodo de la conversación a la izquierda (se mantiene toda la
-        // charla; Magic sigue a la derecha). Para texto NO se navega (menos intrusivo).
+        // Mantener el nodo abierto a la izquierda (Magic sigue a la derecha).
         window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: sid } }))
       } catch { /* no romper el turno */ }
       this.pendingVoiceAudio = null
@@ -584,9 +586,11 @@ class AIChatStore {
     if (!node) return
 
     // Solo renombrar si es título automático (_aiAutoTitle) y hay suficientes mensajes
-    let ed: Record<string, string> = {}
+    let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
     if (!ed._aiAutoTitle) return
+    // Nota de voz: el título lo pone restructureVoiceNote desde la transcripción.
+    if (ed._audioTranscript) return
 
     const userCount = this.messages.filter(m => m.role === 'user').length
     if (userCount < 2) return  // con 2 turnos ya tenemos contexto suficiente

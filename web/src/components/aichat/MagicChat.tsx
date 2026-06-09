@@ -49,9 +49,18 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // (sus mensajes inyectados no fijan boundNodeKey) ni a reabrir sobre el mismo nodo.
   useEffect(() => {
     const key = (onboardingNodeIdRef.current ?? currentNodeId) ?? '∅'
-    // No resetear al navegar al PROPIO nodo de la conversación (✦): es parte de la
-    // misma charla (lo abrimos a la izquierda mientras Magic sigue a la derecha).
-    if (chat.boundNodeKey != null && chat.boundNodeKey !== key && key !== chat.sessionId) {
+    // No resetear al navegar al nodo de la conversación (✦) NI a sus DESCENDIENTES
+    // (💬 Conversación, contenido que crea Magic, etc.): todo es la misma charla.
+    const inConversation = (() => {
+      if (!chat.sessionId || !currentNodeId) return false
+      let cur = store.getNode(currentNodeId); let guard = 0
+      while (cur && guard++ < 60) {
+        if (cur.id === chat.sessionId) return true
+        cur = cur.parentId ? store.getNode(cur.parentId) : undefined
+      }
+      return false
+    })()
+    if (chat.boundNodeKey != null && chat.boundNodeKey !== key && key !== chat.sessionId && !inConversation) {
       chat.startNewSession()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -345,20 +354,16 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     // instrucción corta → se guarda el audio. La voz SIEMPRE entra por Magic (la
     // conversación se mantiene abierta); el audio se adjunta al nodo de la conversación.
     const approxDur = Math.round((blob.size - 44) / 32000)
-    const isLong = approxDur >= 20
     setIsTranscribing(true)
     try {
-      const res = await transcribeAudio(blob, isLong)
+      const res = await transcribeAudio(blob, true)   // siempre guardamos el audio (es una nota de voz)
       const text = res.text?.trim()
       setIsTranscribing(false)
       if (!text) return
 
-      // Grabación larga (no instrucción corta): adjuntar el audio al NODO de la
-      // conversación (✦). Va por Magic como un mensaje más; el nodo se abre solo a la
-      // izquierda (createSessionNode) y los audios se ven en su columna derecha.
-      if (isLong && res.audioKey) {
-        chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text, durationSec: res.durationSec || approxDur })
-      }
+      // Adjuntar SIEMPRE al nodo de la conversación: transcripción consolidada + (si se
+      // guardó) el audio. El store regenera título + resumen estructurado de la nota.
+      chat.setPendingVoiceAudio({ audioKey: res.audioKey || '', transcript: text, durationSec: res.durationSec || approxDur })
       const base = inputRef.current.trim()
       const combined = [base, text].filter(Boolean).join(' ').trim()
       setInput(combined)

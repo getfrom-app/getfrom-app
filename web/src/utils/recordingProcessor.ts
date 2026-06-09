@@ -120,8 +120,7 @@ export async function restructureVoiceNote(nodeId: string): Promise<void> {
   if (!node) return
   let ed: Record<string, unknown> = {}
   try { ed = JSON.parse(node.extraData || '{}') } catch { return }
-  const audios = Array.isArray(ed._audios) ? (ed._audios as Array<Record<string, unknown>>) : []
-  const consolidated = audios.map(a => String(a.transcript || '')).filter(s => s.trim()).join('\n\n')
+  const consolidated = typeof ed._audioTranscript === 'string' ? ed._audioTranscript : ''
   if (!consolidated.trim()) return
   try {
     const a = await analyzeTranscript(consolidated, 0)
@@ -129,8 +128,11 @@ export async function restructureVoiceNote(nodeId: string): Promise<void> {
     if (a.tasks && a.tasks.length > 0) {
       bodyMd += (bodyMd ? '\n\n' : '') + '**Tareas:**\n' + a.tasks.map(tk => `- [ ] ${tk}`).join('\n')
     }
-    if (bodyMd.trim()) store.updateNode(nodeId, { body: bodyMd })
-  } catch { /* mantener el body anterior si falla */ }
+    const updates: { text?: string; body?: string } = {}
+    if (a.title) updates.text = `🎙 ${a.title}`   // título contextual (en vez de "Nota de voz")
+    if (bodyMd.trim()) updates.body = bodyMd
+    if (Object.keys(updates).length > 0) store.updateNode(nodeId, updates)
+  } catch { /* mantener lo anterior si falla */ }
 }
 
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
