@@ -13081,9 +13081,14 @@ textarea:focus-visible,
 .rec-fab-dot {
   width: 9px; height: 9px; border-radius: 50%;
   background: #fff;
-  animation: rec-fab-pulse 1.4s ease-in-out infinite;
 }
-@keyframes rec-fab-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* En reposo el punto no pulsa; al grabar pulsa y se vuelve cuadrado (stop) */
+.rec-fab.recording { background: #b91c1c; }
+.rec-fab.recording .rec-fab-dot {
+  border-radius: 2px;
+  animation: rec-fab-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rec-fab-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 /* (right-panel-title-bar eliminado — los paneles arrancan a la misma altura que el árbol)
 

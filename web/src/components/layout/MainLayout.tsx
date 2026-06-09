@@ -16,7 +16,7 @@ import PromptPropertiesPanel from '../panels/PromptPropertiesPanel'
 import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
-import { recordingStore } from '../../store/recordingStore'
+import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
 import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
 import { aiChatStore } from '../../store/aiChatStore'
@@ -1010,16 +1010,8 @@ export default function MainLayout() {
           />
         )}
       </Suspense>
-      {/* Botón REC — abre la grabadora ya grabando */}
-      <button
-        className="rec-fab"
-        onClick={() => { openPanel('recorder'); recordingStore.startRecording() }}
-        title="Grabar voz (R)"
-        aria-label="Grabar voz"
-      >
-        <span className="rec-fab-dot" />
-        REC
-      </button>
+      {/* Botón REC/STOP — abre la grabadora grabando; mientras graba, detiene */}
+      <RecFab onOpen={() => openPanel('recorder')} />
       {/* Botón FAB */}
       <button
         className="quick-capture-fab"
