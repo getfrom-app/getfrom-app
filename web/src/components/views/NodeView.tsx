@@ -15,7 +15,6 @@ const knowledgeUpdateTimestamps = new Map<string, number>()
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
-import AudioPanel from '../panels/AudioPanel'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -1666,12 +1665,6 @@ export default function NodeView() {
             </div>
           )}
 
-          {/* Reproductor + transcripción del audio (notas de voz) — visible en la nota */}
-          {(() => { try { const ed = JSON.parse(node.extraData || '{}'); return Array.isArray(ed._audios) && ed._audios.length > 0 } catch { return false } })() && (
-            <div style={{ margin: '4px 0 10px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-secondary)', maxHeight: 360, overflowY: 'auto' }}>
-              <AudioPanel nodeId={node.id} />
-            </div>
-          )}
 
           <div className="node-title-row">
             {node.isEvent ? (

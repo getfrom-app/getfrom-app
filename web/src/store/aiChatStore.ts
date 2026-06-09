@@ -47,6 +47,9 @@ export interface ChatMessage {
   chips?: string[]
   /** Bundle para deshacer las acciones de escritura de este turno */
   undoBundle?: UndoBundle
+  /** Si el mensaje vino de voz: key del audio en R2 (se reproduce dentro del chat). */
+  audioKey?: string
+  audioDuration?: number
 }
 
 /** Parsea y elimina {{chips:[...]}} del texto. Devuelve texto limpio + chips. */
@@ -207,7 +210,8 @@ class AIChatStore {
     } catch { return }
 
     this.sessionId = nodeId
-    this.messages = []  // UI limpia — el historial está en el nodo 💬 Conversación
+    this.boundNodeKey = nodeId
+    this.loadMessagesFromNode(nodeId)   // recargar la conversación (incl. audios) en el chat
 
     // Si la sesión tiene mensajes individuales legacy (_aiRole), los migramos al transcript
     // y los eliminamos para no duplicar contenido
@@ -252,31 +256,27 @@ class AIChatStore {
     }
     const sid = this.sessionId
 
-    // Grabación de voz: adjuntar audio + transcripción al NODO de la conversación (✦),
-    // acumulando varios audios. Se ven en la columna derecha al abrir ese nodo.
-    if (this.pendingVoiceAudio && sid) {
+    // ¿Este mensaje viene de una grabación de voz? El audio se adjunta AL MENSAJE
+    // (se reproduce dentro del chat) y la conversación se guarda en el nodo (se recarga
+    // al abrirlo). La transcripción se acumula en el nodo solo para regenerar el resumen.
+    const voice = this.pendingVoiceAudio
+    this.pendingVoiceAudio = null
+    if (voice && sid) {
       try {
-        const { audioKey, transcript, durationSec } = this.pendingVoiceAudio
         const node = store.getNode(sid)
         let ed: Record<string, unknown> = {}
         try { ed = JSON.parse(node?.extraData || '{}') } catch { ed = {} }
-        // Audio (si se guardó en R2) → _audios; transcripción → SIEMPRE consolidada.
-        const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]) : []
-        if (audioKey) audios.push({ audioKey, transcript, durationSec })
         const prevTx = typeof ed._audioTranscript === 'string' ? ed._audioTranscript : ''
-        const consolidated = [prevTx, transcript].filter(s => s && s.trim()).join('\n\n')
-        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios, _audioTranscript: consolidated }) })
-        // Regenerar TÍTULO + resumen estructurado de la nota desde toda la voz acumulada.
+        const consolidated = [prevTx, voice.transcript].filter(s => s && s.trim()).join('\n\n')
+        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audioTranscript: consolidated }) })
         import('../utils/recordingProcessor').then(m => m.restructureVoiceNote(sid)).catch(() => {})
-        // Mantener el nodo abierto a la izquierda (Magic sigue a la derecha).
         window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: sid } }))
       } catch { /* no romper el turno */ }
-      this.pendingVoiceAudio = null
     }
 
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
-    this.appendToTranscript(sid, 'user', trimmed)          // persistir al transcript
-    this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [] })
+    this.appendToTranscript(sid, 'user', trimmed, voice?.audioKey || undefined, voice?.durationSec)
+    this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [], audioKey: voice?.audioKey || undefined, audioDuration: voice?.durationSec })
     this.notify()
 
     this.isStreaming = true
@@ -923,21 +923,46 @@ class AIChatStore {
     return `_msg_${role}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
   }
 
-  /** Añade un mensaje como nodo hijo del transcript. Nunca usa .body — todo en nodos. */
-  private appendToTranscript(sessionId: string, role: 'user' | 'assistant', text: string) {
+  /** Añade un mensaje como nodo hijo del transcript. Guarda rol + contenido limpio +
+   * (si es voz) audioKey, para poder RECARGAR la conversación al abrir el nodo. */
+  private appendToTranscript(sessionId: string, role: 'user' | 'assistant', text: string, audioKey?: string, audioDuration?: number) {
     if (!text.trim()) return
     const transcriptNode = store.children(sessionId).find(c => {
       try { return JSON.parse(c.extraData || '{}')._aiTranscript === '1' } catch { return false }
     })
     if (!transcriptNode) return
     const label = role === 'user' ? 'Tú' : 'Magic'
-    // Cada mensaje = un nodo hijo, con el texto COMPLETO (sin truncar — antes se
-    // cortaba a 300 chars y se perdía contenido de la transcripción/conversación).
+    const ed: Record<string, string> = { _aiMsgRole: role, _aiMsgContent: text }
+    if (audioKey) { ed._audioKey = audioKey; if (audioDuration) ed._audioDuration = String(audioDuration) }
     store.createNode({
-      text:     `${label}: ${text}`,
+      text:     `${label}: ${text}`,   // texto legible en el árbol
       parentId: transcriptNode.id,
-      extraData: { _aiMsgRole: role },
+      extraData: ed,
     })
+  }
+
+  /** Reconstruye this.messages desde los nodos hijos del transcript (para recargar la
+   * conversación al abrir el nodo). Incluye el audioKey de los mensajes de voz. */
+  private loadMessagesFromNode(sessionId: string) {
+    const transcriptNode = store.children(sessionId).find(c => {
+      try { return JSON.parse(c.extraData || '{}')._aiTranscript === '1' } catch { return false }
+    })
+    if (!transcriptNode) { this.messages = []; return }
+    const msgs: ChatMessage[] = []
+    for (const c of store.children(transcriptNode.id)) {
+      if (c.deletedAt) continue
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(c.extraData || '{}') } catch { continue }
+      const role = ed._aiMsgRole === 'assistant' ? 'assistant' : ed._aiMsgRole === 'user' ? 'user' : null
+      if (!role) continue
+      const content = typeof ed._aiMsgContent === 'string' ? ed._aiMsgContent : (c.text || '').replace(/^(Tú|Magic):\s*/, '')
+      msgs.push({
+        id: c.id, role, content, actions: [],
+        audioKey: typeof ed._audioKey === 'string' ? ed._audioKey : undefined,
+        audioDuration: ed._audioDuration ? parseInt(String(ed._audioDuration), 10) : undefined,
+      })
+    }
+    this.messages = msgs
   }
 
   /** No-op: con el nuevo diseño no hay nodos individuales de mensaje. */

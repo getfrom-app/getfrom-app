@@ -209,11 +209,15 @@ export default function MainLayout() {
     let isAudio = false
     if (currentNodeIdFromRoute) {
       const n = store.getNode(currentNodeIdFromRoute)
-      try { const ed = n ? JSON.parse(n.extraData || '{}') : {}; isAudio = (Array.isArray(ed._audios) && ed._audios.length > 0) || !!(ed._audioKey || ed._audioTranscript) } catch { isAudio = false }
+      try { isAudio = !!n && JSON.parse(n.extraData || '{}')._aiSession === '1' } catch { isAudio = false }
     }
-    // El audio ahora se reproduce INLINE dentro de la nota (NodeView), no en la columna
-    // derecha: así Magic puede seguir a la derecha. Solo limpiamos si quedó en 'audio'.
-    void isAudio
+    // Nodo con conversación asociada (✦): al abrirlo, recargar SU conversación en Magic
+    // (con su audio + transcripción) a la derecha. La nota (izquierda) solo tiene la
+    // estructura. No recargar si ya es la conversación activa (no interrumpir).
+    if (isAudio && currentNodeIdFromRoute && aiChatStore.sessionId !== currentNodeIdFromRoute) {
+      aiChatStore.loadSession(currentNodeIdFromRoute)
+      setRightPanel('magic')
+    }
     setRightPanel(p => (p === 'audio' ? 'filter' : p))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeIdFromRoute])

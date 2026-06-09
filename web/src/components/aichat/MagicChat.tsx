@@ -18,7 +18,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { listPrompts, findAutoPromptForNode, suggestPromptForText } from '../../utils/promptsHelper'
 import MarkdownLite from './MarkdownLite'
 import { WavRecorder } from '../../utils/wavRecorder'
-import { transcribeAudio } from '../../api/client'
+import { transcribeAudio, getAudioUrl } from '../../api/client'
 
 interface Props {
   onClose: () => void
@@ -713,6 +713,26 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
 
 // ── MessageBubble ──────────────────────────────────────────────────────────
 
+// Reproductor de audio dentro de un mensaje de voz (URL firmada de R2, bajo demanda)
+function MessageAudio({ audioKey, durationSec }: { audioKey: string; durationSec?: number }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    getAudioUrl(audioKey).then(u => { if (!cancelled) setUrl(u) }).catch(() => { if (!cancelled) setError(true) })
+    return () => { cancelled = true }
+  }, [audioKey])
+  const mm = durationSec ? `${Math.floor(durationSec / 60)}:${(durationSec % 60).toString().padStart(2, '0')}` : ''
+  return (
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 2 }}>🎙 Audio{mm ? ` · ${mm}` : ''}</div>
+      {error ? <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Audio no disponible</div>
+        : url ? <audio controls src={url} style={{ width: '100%', height: 32 }} />
+        : <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Cargando audio…</div>}
+    </div>
+  )
+}
+
 function MessageBubble({ msg, currentNodeId, onOpenNode }: {
   msg: ChatMessage
   currentNodeId?: string
@@ -757,6 +777,7 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
     <div className={`magic-chat-bubble ${isUser ? 'magic-chat-bubble--user' : 'magic-chat-bubble--ai'}`}>
       <div className="magic-chat-bubble-avatar">{isUser ? '👤' : '✨'}</div>
       <div className="magic-chat-bubble-body">
+        {msg.audioKey && <MessageAudio audioKey={msg.audioKey} durationSec={msg.audioDuration} />}
         {cleaned && (
           isUser
             ? <div className="magic-chat-bubble-text">{cleaned}</div>
