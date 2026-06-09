@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { findHomeRoot } from '../../utils/homeHelper'
-import { findAgendaRoot } from '../../utils/agendaHelper'
+import { findAgendaRoot, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 
 const STORAGE_KEY = 'from_onboarding_done'
 const TOTAL_DOTS = 4 // progress dots shown on steps 0–3
@@ -32,6 +32,12 @@ export default function OnboardingWidget() {
     if (!done || hasWelcome) {
       const timer = setTimeout(() => {
         setVisible(true)
+        // Llevar al usuario a su nota de hoy: es donde trabajará a diario, y el
+        // primer nodo se crea ahí (hijo de la entrada diaria, que el detector acepta).
+        try {
+          const diary = getTodayDiaryUnderAgenda()
+          if (diary) navigate(`/node/${diary.id}`)
+        } catch { /* store aún no listo: el detector funciona igual en la home */ }
         requestAnimationFrame(() => {
           requestAnimationFrame(() => setAnimIn(true))
         })
@@ -261,8 +267,13 @@ export default function OnboardingWidget() {
     // Resetear Magic y cerrar panel
     window.dispatchEvent(new Event('from:onboarding-reset-magic'))
     window.dispatchEvent(new CustomEvent('from:panelMode', { detail: { mode: null } }))
-    // Volver a la raíz
-    navigate('/', { replace: true })
+    // Dejar al usuario en su nota de hoy, lista para trabajar (fallback a la raíz).
+    try {
+      const diary = getTodayDiaryUnderAgenda()
+      navigate(diary ? `/node/${diary.id}` : '/', { replace: true })
+    } catch {
+      navigate('/', { replace: true })
+    }
     setTimeout(() => setVisible(false), 300)
   }
 
@@ -383,14 +394,14 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
       <div style={{ padding: '16px 20px 20px' }}>
         <div style={{ fontSize: 28, marginBottom: 10 }}>{tryAgain ? '↩️' : '✏️'}</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
-          {tryAgain ? 'Inténtalo de nuevo' : 'Tu primer nodo'}
+          {tryAgain ? 'Inténtalo de nuevo' : 'Tu nota de hoy'}
         </div>
 
         {/* Subtítulo — distinto según estado */}
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           {tryAgain
             ? <>Ese nodo se quedó a medias. Escríbelo completo en un bullet nuevo y pulsa <strong>Enter</strong>.</>
-            : 'Pulsa en cualquier parte del outliner y escribe:'}
+            : 'Esta es tu nota de hoy, donde trabajarás a diario. Pulsa y escribe:'}
         </div>
 
         <div style={{
