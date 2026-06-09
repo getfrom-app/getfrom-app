@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.279 · Mac v9.5.54 — 9 junio 2026 · IA más estable bajo carga
+
+- **Magic y la clasificación automática ya no fallan cuando hay mucha actividad.** Hemos hecho la conexión con la IA más resistente: si el proveedor está saturado, Fromly espera y reintenta solo, en vez de mostrarte un error.
+- **Menos llamadas innecesarias**: Fromly no vuelve a clasificar una nota si su texto no ha cambiado, y recuerda clasificaciones recientes. Más rápido y más eficiente.
+- (Mejora interna; sin cambios visibles en cómo usas la app.)
+
+---
+
 ## Web v9.6.278 — 9 junio 2026 · Tu nota diaria, a prueba de balas
 
 - **La nota del día nunca se duplica ni se puede borrar.** Es el contenedor de tu día: ni un atajo de teclado, ni la voz, ni una limpieza automática pueden eliminarla por accidente, y siempre será una sola (jamás dos del mismo día).
