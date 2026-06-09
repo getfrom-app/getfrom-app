@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
+import { findHomeRoot } from '../../utils/homeHelper'
+import { findAgendaRoot } from '../../utils/agendaHelper'
 
 const STORAGE_KEY = 'from_onboarding_done'
 const TOTAL_DOTS = 4 // progress dots shown on steps 0–3
@@ -39,7 +41,14 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const SYSTEM_NAMES = new Set(['📌 Atajos', '📊 Paneles', '🤖 Agentes', '📋 Plantillas', '🗑 Papelera', '📅 Agenda', '🧠 Contexto'])
+  // Raíces de sistema — nunca deben confundirse con la "primera tarea" del usuario.
+  // Incluye la raíz home (🏠 From, intocable internamente) y los nombres actuales
+  // (⚡ Prompts, 🔍 Filtros) además de los legacy (📊 Paneles, 📌 Atajos).
+  const SYSTEM_NAMES = new Set([
+    '🏠 From', '📅 Agenda', '🧠 Contexto', '⚡ Prompts', '🤖 Agentes',
+    '📋 Plantillas', '🔍 Filtros', '🗑 Papelera',
+    '📊 Paneles', '📌 Atajos', // legacy
+  ])
 
   // Timestamp when onboarding starts — used to detect RECENTLY UPDATED tasks
   const onboardingStartRef = useRef<number>(0)
@@ -53,6 +62,17 @@ export default function OnboardingWidget() {
       onboardingStartRef.current = Date.now()
     }
 
+    // Padres válidos para "la primera tarea": nivel superior del outliner.
+    // Tras introducir la raíz 🏠 From, los nodos top-level cuelgan de ella (o de
+    // Agenda), no de null. Aceptamos los tres + cualquier nota diaria.
+    const homeRootId = findHomeRoot()?.id ?? null
+    const agendaRootId = findAgendaRoot()?.id ?? null
+    const isTopLevelParent = (parentId: string | null | undefined): boolean => {
+      if (parentId == null) return true
+      if (parentId === homeRootId || parentId === agendaRootId) return true
+      return !!store.getNode(parentId)?.isDiaryEntry
+    }
+
     const interval = setInterval(() => {
       const since = onboardingStartRef.current - 2000 // 2s of margin
       const candidates = store.allActive().filter(n =>
@@ -61,7 +81,7 @@ export default function OnboardingWidget() {
         n.text?.trim() &&
         n.status !== null &&                          // must be a task
         !SYSTEM_NAMES.has(n.text || '') &&
-        (n.parentId === null || store.getNode(n.parentId ?? '')?.isDiaryEntry) &&
+        isTopLevelParent(n.parentId) &&
         new Date(n.updatedAt ?? 0).getTime() >= since // updated since onboarding started
       )
       if (candidates.length === 0) return
