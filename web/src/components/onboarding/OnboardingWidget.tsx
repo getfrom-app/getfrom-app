@@ -206,12 +206,11 @@ export default function OnboardingWidget() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // ── Step 4 (nuevo): esperar a que el usuario abra Magic ──────────────────
+  // ── Step 4: abrir Magic directamente (el botón flotante ya no existe; ahora
+  //    es «+». Lo presentamos abriendo el panel y dejando que el usuario avance). ──
   useEffect(() => {
     if (step !== 4) return
-    function handler() { advanceTo(5) }
-    window.addEventListener('from:magic-opened', handler)
-    return () => window.removeEventListener('from:magic-opened', handler)
+    window.dispatchEvent(new CustomEvent('from:panelMode', { detail: { mode: 'magic' } }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
@@ -305,7 +304,7 @@ export default function OnboardingWidget() {
       {step === 1 && <Step1 onNext={next} onClose={close} />}
       {step === 2 && <Step2 onClose={close} />}
       {step === 3 && <Step3 onClose={close} />}
-      {step === 4 && <Step4Magic onClose={close} />}
+      {step === 4 && <Step4Magic onNext={() => advanceTo(5)} onClose={close} />}
       {step === 5 && <Step5 onClose={close} />}
       {step === 6 && <Step6 onClose={close} />}
     </div>
@@ -533,11 +532,9 @@ function Step3({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Step 4 — Magic AI ──────────────────────────────────────────────────────
+// ── Step 4 — Presentar Magic (se abre solo) ─────────────────────────────────
 
-// ── Step 4 — Abrir Magic ───────────────────────────────────────────────────
-
-function Step4Magic({ onClose }: { onClose: () => void }) {
+function Step4Magic({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -547,14 +544,12 @@ function Step4Magic({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Ahora ábreme a mí
+          Este es Magic, tu asistente
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
-          Pulsa el botón <strong>✦</strong> que ves abajo a la derecha para abrir el chat completo.
+          Lo acabo de abrir a la derecha. Magic conoce tus notas y puede crear, organizar y completar cosas por ti. Lo abres cuando quieras con el icono <strong>✦</strong> de arriba.
         </div>
-        <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
-          Esperando que me abras…
-        </div>
+        <PrimaryBtn label="Vamos a probarlo →" onClick={onNext} />
       </div>
     </>
   )
