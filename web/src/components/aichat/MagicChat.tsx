@@ -315,6 +315,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // Ahora grabamos un WAV y lo transcribe el servidor en /ai/transcribe.
   async function startRecording() {
     if (isRecordingRef.current) return
+    // Forzar layout expandido: el input (con la onda) vive ahí abajo. Sin esto, al
+    // grabar con hasExpanded=false la columna quedaba VACÍA (ni compacto ni expandido).
+    setHasExpanded(true)
     const wr = new WavRecorder()
     try {
       await wr.start()
