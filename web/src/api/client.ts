@@ -123,6 +123,14 @@ export async function logout() {
   }
 }
 
+// Feedback / aviso de fallo desde dentro de la app (beta). Llega a la Bandeja del dashboard.
+export async function sendFeedback(message: string, version: string) {
+  return apiRequest<{ ok: boolean }>('/contact/feedback', {
+    method: 'POST',
+    body: JSON.stringify({ message, version, url: window.location.href }),
+  })
+}
+
 export interface UserProfile {
   id: string
   email: string

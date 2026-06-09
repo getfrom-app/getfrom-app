@@ -61,6 +61,7 @@ const TeachMagicModal = lazy(() => import('../modals/TeachMagicModal'))
 const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsModal'))
 const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
 const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
+const FeedbackButton = lazy(() => import('../feedback/FeedbackButton'))
 import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -1108,6 +1109,7 @@ export default function MainLayout() {
         +
       </button>
       <Suspense fallback={null}><OnboardingWidget /></Suspense>
+      <Suspense fallback={null}><FeedbackButton /></Suspense>
       {/* sync-indicator eliminado — el footer ya muestra el estado de sync */}
     </div>
     </ToastProvider>

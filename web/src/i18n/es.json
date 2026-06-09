@@ -809,5 +809,16 @@
   "pricing.monthly": "Mensual",
   "pricing.annual": "Anual",
   "pricing.annualSave": "ahorra 42%",
-  "pricing.ctaStartPro": "Empezar Pro"
+  "pricing.ctaStartPro": "Empezar Pro",
+  "feedback.buttonLabel": "Feedback",
+  "feedback.tooltip": "Cuéntanos un fallo o una idea",
+  "feedback.title": "Estamos en beta 🛠️",
+  "feedback.subtitle": "Fromly aún tiene cosas por pulir. Si algo falla o se te ocurre una mejora, cuéntanoslo y lo arreglamos rápido.",
+  "feedback.placeholder": "Describe el problema o tu idea…",
+  "feedback.enterHint": "Enter para enviar · Shift+Enter salto de línea",
+  "feedback.send": "Enviar",
+  "feedback.sending": "Enviando…",
+  "feedback.error": "No se pudo enviar. Inténtalo de nuevo en un momento.",
+  "feedback.thanksTitle": "¡Gracias! 🙌",
+  "feedback.thanksSubtitle": "Lo revisamos enseguida."
 }

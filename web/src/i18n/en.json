@@ -810,5 +810,16 @@
   "pricing.monthly": "Monthly",
   "pricing.annual": "Annual",
   "pricing.annualSave": "save 42%",
-  "pricing.ctaStartPro": "Go Pro"
+  "pricing.ctaStartPro": "Go Pro",
+  "feedback.buttonLabel": "Feedback",
+  "feedback.tooltip": "Tell us about a bug or an idea",
+  "feedback.title": "We're in beta 🛠️",
+  "feedback.subtitle": "Fromly still has rough edges. If something breaks or you have an idea, let us know and we'll fix it fast.",
+  "feedback.placeholder": "Describe the problem or your idea…",
+  "feedback.enterHint": "Enter to send · Shift+Enter for a new line",
+  "feedback.send": "Send",
+  "feedback.sending": "Sending…",
+  "feedback.error": "Couldn't send. Please try again in a moment.",
+  "feedback.thanksTitle": "Thank you! 🙌",
+  "feedback.thanksSubtitle": "We'll look into it right away."
 }
