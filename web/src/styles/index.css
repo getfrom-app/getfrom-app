@@ -13054,6 +13054,37 @@ textarea:focus-visible,
 .quick-capture-fab:active { transform: scale(0.96); }
 .wf-layout .quick-capture-fab { bottom: 44px; }
 
+/* REC FAB — a la izquierda del «+», abre la grabadora ya grabando */
+.rec-fab {
+  position: fixed;
+  bottom: 44px;
+  right: 68px; /* 16 (+ FAB) + 44 (ancho FAB) + 8 (hueco) */
+  height: 44px;
+  padding: 0 14px 0 11px;
+  border-radius: 22px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px rgba(239,68,68,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 100;
+}
+.rec-fab:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(239,68,68,0.5); }
+.rec-fab:active { transform: scale(0.96); }
+.rec-fab-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #fff;
+  animation: rec-fab-pulse 1.4s ease-in-out infinite;
+}
+@keyframes rec-fab-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
 /* (right-panel-title-bar eliminado — los paneles arrancan a la misma altura que el árbol)
 
 /* ── WFHomeView — hint de Espacio ────────────────────────────────────────── */

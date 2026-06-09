@@ -158,18 +158,8 @@ export default function WFTopBar({
 
       <div className="wf-topbar-spacer" />
 
-      {/* Grabadora (⌘R) */}
-      <button
-        className={`wf-topbar-btn ${rightPanel === 'recorder' ? 'active' : ''}`}
-        onClick={onToggleRecorder}
-        title="Grabadora (⌘R)"
-      >
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/>
-          <path d="M3 7.5v.5a5 5 0 0 0 10 0v-.5"/>
-          <path d="M8 13v2"/>
-        </svg>
-      </button>
+      {/* Grabadora: el botón se movió al FAB «REC» (abajo-derecha), que abre la
+          columna ya grabando. La barra ya no necesita su icono. ⌘R sigue abriéndola. */}
 
       {/* Contextos / Prompts / Agentes se navegan por el árbol central (sus nodos) —
           ya no tienen icono en la barra. La columna derecha es solo inspector + filtro/magic/grabadora. */}
