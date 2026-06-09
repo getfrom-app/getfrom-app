@@ -400,10 +400,27 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     chat.send(final, effectiveNodeId)
   }
 
+  // Push-to-talk con Espacio: si la caja está VACÍA, mantener Espacio graba y soltar
+  // para+envía. Si hay texto, Espacio escribe un espacio normal.
+  const spaceRecordingRef = useRef(false)
   function onTextareaKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === ' ' && !inputRef.current.trim() && !isRecordingRef.current && !e.repeat) {
+      e.preventDefault()
+      spaceRecordingRef.current = true
+      startRecording()
+      return
+    }
+    if (e.key === ' ' && spaceRecordingRef.current) { e.preventDefault(); return } // ignora repeats mientras graba
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend(input)
+    }
+  }
+  function onTextareaKeyUp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === ' ' && spaceRecordingRef.current) {
+      e.preventDefault()
+      spaceRecordingRef.current = false
+      if (isRecordingRef.current) stopRecording(true)
     }
   }
 
@@ -441,36 +458,59 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         </div>
       )}
 
-      <div className="magic-chat-node-input">
-        <textarea
-          ref={taRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={onTextareaKey}
-          placeholder={isRecording ? t('ai.chatPlaceholderRecording') : isCompact ? t('ai.chatPlaceholderCompact') : ''}
-          className="magic-chat-textarea magic-chat-textarea--bare"
-          rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
-        />
-      </div>
+      {/* Caja de texto · u onda de audio al grabar · o "Transcribiendo…" — todo ABAJO */}
+      {isRecording ? (
+        <div className="magic-chat-node-input magic-chat-node-input--recording">
+          <canvas ref={canvasRef} width={600} height={36} style={{ width: '100%', height: 36 }} />
+          <div className="magic-chat-recording-label">
+            <span className="magic-chat-recording-dot" /> {t('ai.recordingLabel', 'Grabando…')}
+          </div>
+        </div>
+      ) : isTranscribing ? (
+        <div className="magic-chat-node-input" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span style={{ marginLeft: 4 }}>{t('ai.transcribing', 'Transcribiendo…')}</span>
+        </div>
+      ) : (
+        <div className="magic-chat-node-input">
+          <textarea
+            ref={taRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={onTextareaKey}
+            onKeyUp={onTextareaKeyUp}
+            placeholder={isCompact ? t('ai.chatPlaceholderCompact') : ''}
+            className="magic-chat-textarea magic-chat-textarea--bare"
+            rows={input.length > 60 ? 3 : input.length > 30 ? 2 : 1}
+          />
+        </div>
+      )}
       <div className="magic-chat-actions">
         <button
           className={`magic-chat-action-key ${isRecording ? 'magic-chat-action-key--recording' : ''}`}
-          // Clic = toggle: empezar a grabar / parar y enviar (con ratón siempre se
-          // puede parar). La tecla R (mantener/soltar) la gestiona MainLayout aparte.
+          // EL MISMO botón graba y para (toggle in situ). La tecla R/Espacio (mantener/
+          // soltar) la gestionan MainLayout y el textarea aparte.
           onClick={() => {
             isRKeyDownRef.current = false
             if (isRecordingRef.current) stopRecording(true)
             else startRecording()
           }}
-          title={isRecording ? t('ai.stopRecording', 'Parar y enviar') : t('ai.holdToTalk')}
+          title={isRecording ? t('ai.stopRecording', 'Parar y enviar') : t('ai.holdToTalk', 'Hablar (o mantén Espacio)')}
         >
           <span className="magic-action-dot" />
-          <span>{isRecording ? '■' : 'R'}</span>
+          <span>{isRecording ? '■' : '🎙'}</span>
         </button>
+        {isRecording && (
+          <button className="magic-chat-action-key" onClick={() => { isRKeyDownRef.current = false; stopRecording(false) }} title={t('common.cancel', 'Cancelar')}>
+            ✕
+          </button>
+        )}
         <button
           className="magic-chat-action-key magic-chat-send"
           onClick={() => handleSend(input)}
-          disabled={!input.trim() || chat.isStreaming}
+          disabled={!input.trim() || chat.isStreaming || isRecording || isTranscribing}
           title={t('ai.sendButton')}
         >
           ↵
@@ -493,42 +533,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         }
       }}
     >
-      {/* Waveform */}
-      <div className={`magic-chat-waveform ${isRecording ? 'magic-chat-waveform--active' : ''}`}>
-        <canvas ref={canvasRef} width={600} height={64} style={{ width: '100%', height: 64 }} />
-        <div className="magic-chat-recording-label">
-          <span className="magic-chat-recording-dot" />
-          {t('ai.recordingLabel')}
-        </div>
-        {/* Botón de parar SIEMPRE visible al grabar (antes el ■ vivía en el input,
-            que no se renderiza durante la grabación inicial → no había forma de parar). */}
-        {isRecording && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button
-              className="magic-chat-stop-btn"
-              onClick={() => { isRKeyDownRef.current = false; stopRecording(true) }}
-            >
-              <span style={{ fontSize: 11 }}>■</span> {t('ai.stopRecording', 'Parar y enviar')}
-            </button>
-            <button
-              className="magic-chat-stop-btn magic-chat-stop-btn--cancel"
-              onClick={() => { isRKeyDownRef.current = false; stopRecording(false) }}
-            >
-              {t('common.cancel', 'Cancelar')}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Transcribiendo (subiendo el audio al servidor) */}
-      {isTranscribing && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
-          <span style={{ marginLeft: 4 }}>{t('ai.transcribing', 'Transcribiendo…')}</span>
-        </div>
-      )}
+      {/* (La onda de audio y "Transcribiendo…" ahora viven ABAJO, dentro de inputBlock) */}
 
       {/* ── COMPACTO: input arriba (igual que Buscar) → chips debajo → spacer ── */}
       {isCompact && (
@@ -582,7 +587,11 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
             ))}
             {(() => {
               const last = [...chat.messages].reverse().find(m => m.role === 'assistant')
-              const chips = last?.chips ?? []
+              let chips = last?.chips ?? []
+              // Si la nota de la conversación ya está abierta a la izquierda, ocultar
+              // sugerencias del tipo "Abrir/Ver la nota" (redundantes).
+              const noteOpen = !!currentNodeId && currentNodeId === chat.sessionId
+              if (noteOpen) chips = chips.filter(c => !/\b(abrir|ver|abre|muestra|muéstrame)\b.*\bnota\b/i.test(c))
               return chips.length > 0 && !chat.isStreaming && !chat.pendingActions
                 ? <QuickReplyChips chips={chips} disabled={chat.isStreaming} onSelect={chip => { setInput(''); chat.send(chip, currentNodeId) }} />
                 : null
@@ -738,26 +747,42 @@ function MessageBubble({ msg, currentNodeId, onOpenNode }: {
             ? <div className="magic-chat-bubble-text">{cleaned}</div>
             : <div className="magic-chat-bubble-text"><MarkdownLite content={cleaned} /></div>
         )}
-        {msg.actions.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-            {msg.actions.map((a, i) => (
-              <span key={i} style={{
-                fontSize: 10, fontWeight: 500, padding: '3px 7px', borderRadius: 999,
-                background: a.ok ? 'rgba(34,197,94,0.12)' : 'rgba(251,146,60,0.15)',
-                color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}>
-                <span>{a.ok ? '✓' : '⚠'}</span>
-                <span>{ACTION_LABEL_MAP_MAGIC[a.action] ? t(ACTION_LABEL_MAP_MAGIC[a.action]) : a.action}</span>
-                {a.createdIds.length > 0 && (
-                  <button onClick={() => onOpenNode(a.createdIds[0])}
-                    style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 10, fontWeight: 500, cursor: 'pointer', padding: 0 }}>
-                    {t('ai.openNodeButton')}
-                  </button>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
+        {msg.actions.length > 0 && (() => {
+          const chipStyle: React.CSSProperties = { fontSize: 10, fontWeight: 500, padding: '3px 7px', borderRadius: 999, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }
+          // La nota de la conversación está abierta a la izquierda → no mostrar "Abrir".
+          const noteOpen = !!currentNodeId && currentNodeId === aiChatStore.sessionId
+          // Consolidar las creaciones de nodos en UN solo chip (antes salían N chips iguales).
+          const creates = msg.actions.filter(a => a.ok && a.createdIds.length > 0 && a.action.startsWith('create_'))
+          const others = msg.actions.filter(a => !(a.ok && a.createdIds.length > 0 && a.action.startsWith('create_')))
+          return (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+              {creates.length > 0 && (
+                <span style={{ ...chipStyle, background: 'rgba(34,197,94,0.12)' }}>
+                  <span>✓</span>
+                  <span>{creates.length === 1 ? t('ai.nodeAdded', 'Añadido a la nota') : `${creates.length} ${t('ai.nodesAdded', 'puntos añadidos')}`}</span>
+                  {!noteOpen && (
+                    <button onClick={() => onOpenNode(creates[0].createdIds[0])}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 10, fontWeight: 500, cursor: 'pointer', padding: 0 }}>
+                      {t('ai.openNodeButton')}
+                    </button>
+                  )}
+                </span>
+              )}
+              {others.map((a, i) => (
+                <span key={i} style={{ ...chipStyle, background: a.ok ? 'rgba(34,197,94,0.12)' : 'rgba(251,146,60,0.15)' }}>
+                  <span>{a.ok ? '✓' : '⚠'}</span>
+                  <span>{ACTION_LABEL_MAP_MAGIC[a.action] ? t(ACTION_LABEL_MAP_MAGIC[a.action]) : a.action}</span>
+                  {a.createdIds.length > 0 && !noteOpen && (
+                    <button onClick={() => onOpenNode(a.createdIds[0])}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 10, fontWeight: 500, cursor: 'pointer', padding: 0 }}>
+                      {t('ai.openNodeButton')}
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )
+        })()}
         {msg.undoBundle && (msg.undoBundle.createdIds.length > 0 || msg.undoBundle.restoredNodes.length > 0) && (
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <button className="magic-undo-btn" onClick={() => aiChatStore.undoAction(msg.id)}>

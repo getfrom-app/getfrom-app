@@ -11667,6 +11667,13 @@ textarea:focus-visible,
   gap: 6px;
   padding: 2px 0 6px;
 }
+/* Onda de audio dentro del input (grabando) — abajo, junto al botón de grabar */
+.magic-chat-node-input--recording {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.magic-chat-node-input--recording canvas { display: block; }
 .magic-chat-node-cursor {
   font-size: 18px;
   color: var(--accent);
