@@ -123,6 +123,18 @@ export async function logout() {
   }
 }
 
+// Transcripción de voz: sube el WAV al servidor (Gemini STT) y devuelve el texto.
+export async function transcribeAudio(blob: Blob): Promise<string> {
+  const lang = localStorage.getItem('from_ai_language') === 'en' ? 'en' : 'es'
+  const form = new FormData()
+  form.append('audio', blob, 'audio.wav')
+  const data = await apiRequest<{ text: string }>(`/ai/transcribe?lang=${lang}`, {
+    method: 'POST',
+    body: form,
+  })
+  return data.text || ''
+}
+
 // Feedback / aviso de fallo desde dentro de la app (beta). Llega a la Bandeja del dashboard.
 export async function sendFeedback(message: string, version: string) {
   return apiRequest<{ ok: boolean }>('/contact/feedback', {

@@ -17,6 +17,8 @@ import { interpretFilterQuery, needsInterpretation } from '../../utils/filterInt
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { listPrompts, findAutoPromptForNode, suggestPromptForText } from '../../utils/promptsHelper'
 import MarkdownLite from './MarkdownLite'
+import { WavRecorder } from '../../utils/wavRecorder'
+import { transcribeAudio } from '../../api/client'
 
 interface Props {
   onClose: () => void
@@ -30,6 +32,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   // nodeId override desde el onboarding — prevalece sobre currentNodeId del prop
   const onboardingNodeIdRef = useRef<string | undefined>(undefined)
 
@@ -98,13 +101,10 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   const inputRef        = useRef('')
   const isRecordingRef  = useRef(false)
   const isRKeyDownRef   = useRef(false)
-  const shouldSendRef   = useRef(false)
 
   // Audio / speech
-  const recognitionRef  = useRef<unknown>(null)
-  const audioCtxRef     = useRef<AudioContext | null>(null)
+  const wavRecRef       = useRef<WavRecorder | null>(null)
   const analyserRef     = useRef<AnalyserNode | null>(null)
-  const streamRef       = useRef<MediaStream | null>(null)
   const animFrameRef    = useRef<number>(0)
 
   // DOM
@@ -278,92 +278,49 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose])
 
-  // ── Grabar ────────────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // ── Grabar (audio → servidor STT con Gemini, fiable) ───────────────────────
+  // Antes usábamos el Web Speech API del navegador (poco fiable, perdía texto).
+  // Ahora grabamos un WAV y lo transcribe el servidor en /ai/transcribe.
   async function startRecording() {
     if (isRecordingRef.current) return
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
-    if (!SR) {
-      alert(t('ai.browserVoiceUnsupported'))
+    const wr = new WavRecorder()
+    try {
+      await wr.start()
+    } catch {
+      alert(t('ai.micDenied', 'No se pudo acceder al micrófono. Revisa los permisos.'))
       return
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rec: any = new SR()
-    rec.lang = localStorage.getItem('from_ai_language') === 'en' ? 'en-US' : 'es-ES'
-    rec.continuous = true
-    rec.interimResults = true
-
-    const base = inputRef.current.trim()
-    let finalText = ''
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onresult = (e: any) => {
-      let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript
-        if (e.results[i].isFinal) finalText += t + ' '
-        else interim += t
-      }
-      const combined = [base, (finalText + interim).trim()].filter(Boolean).join(' ')
-      setInput(combined.trim())
-    }
-
-    rec.onend = () => {
-      setIsRecording(false)
-      cleanupAudio()
-      if (shouldSendRef.current) {
-        shouldSendRef.current = false
-        setTimeout(() => {
-          if (inputRef.current.trim()) handleSend()
-        }, 80)
-      }
-    }
-
-    rec.start()
-    recognitionRef.current = rec
-
-    // Audio visualization
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-      const ac = new AudioContext()
-      audioCtxRef.current = ac
-      const an = ac.createAnalyser()
-      an.fftSize = 128
-      analyserRef.current = an
-      ac.createMediaStreamSource(stream).connect(an)
-    } catch { /* sin waveform pero speech sigue */ }
-
+    wavRecRef.current = wr
+    analyserRef.current = wr.analyser   // la onda usa el MISMO stream
     setIsRecording(true)
   }
 
-  function stopRecording(send: boolean) {
-    shouldSendRef.current = send
-    try { (recognitionRef.current as { stop?: () => void } | null)?.stop?.() } catch { /* */ }
-    recognitionRef.current = null
-    cleanupAudio()
+  async function stopRecording(send: boolean) {
+    const wr = wavRecRef.current
+    wavRecRef.current = null
     setIsRecording(false)
-    if (send) {
-      // rec.onend ya llamará a handleSend; si no dispara (edge case), lo hacemos aquí
-      setTimeout(() => {
-        if (shouldSendRef.current && inputRef.current.trim()) {
-          shouldSendRef.current = false
-          handleSend()
-        }
-      }, 300)
-    }
-  }
-
-  function cleanupAudio() {
     cancelAnimationFrame(animFrameRef.current)
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    streamRef.current = null
-    try { audioCtxRef.current?.close() } catch { /* */ }
-    audioCtxRef.current = null
     analyserRef.current = null
+    if (!wr) return
+    if (!send) { wr.cancel(); return }   // «Cancelar» / Escape → descartar audio
+
+    const blob = wr.stop()
+    if (!blob) return                    // grabación vacía / silencio
+    setIsTranscribing(true)
+    try {
+      const text = await transcribeAudio(blob)
+      if (text) {
+        const base = inputRef.current.trim()
+        const combined = [base, text.trim()].filter(Boolean).join(' ').trim()
+        setInput(combined)
+        setHasExpanded(true)
+        setTimeout(() => { if (inputRef.current.trim()) handleSend() }, 150)
+      }
+    } catch {
+      alert(t('ai.transcribeFailed', 'No se pudo transcribir el audio. Inténtalo de nuevo.'))
+    } finally {
+      setIsTranscribing(false)
+    }
   }
 
   // ── Enviar ────────────────────────────────────────────────────────────────
@@ -525,6 +482,16 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
           </div>
         )}
       </div>
+
+      {/* Transcribiendo (subiendo el audio al servidor) */}
+      {isTranscribing && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span style={{ marginLeft: 4 }}>{t('ai.transcribing', 'Transcribiendo…')}</span>
+        </div>
+      )}
 
       {/* ── COMPACTO: input arriba (igual que Buscar) → chips debajo → spacer ── */}
       {isCompact && (
