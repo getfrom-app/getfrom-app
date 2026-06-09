@@ -2,7 +2,7 @@ import { syncNodes, getToken, apiRequest } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
 import { opsClient } from './opsClient'
-import { structuralId } from '../utils/deterministicId'
+import { structuralId, diaryId } from '../utils/deterministicId'
 import { userStore } from './userStore'
 
 /** Límite de nodos del plan gratuito. */
@@ -1116,6 +1116,13 @@ export class NodeStore {
     }
     const _n = this.nodes.get(id)
     if (_n) { try { if (JSON.parse(_n.extraData || '{}')._perfilIA === '1') return } catch { /* ignore */ } }
+    // Protección: la nota diaria CANÓNICA (id determinista) NUNCA se borra — ni por
+    // Backspace/merge ni por flujos automáticos (voz, descartes, limpiezas). Es el
+    // contenedor del día del usuario. Solo se protege el canónico (id === diaryId);
+    // los DUPLICADOS (id aleatorio) sí se borran para que mergeDuplicateDiaries limpie.
+    if (_n && _n.isDiaryEntry && _n.diaryDate) {
+      try { if (diaryId(new Date(_n.diaryDate)) === id) return } catch { /* ignore */ }
+    }
     // Cascada EXPLÍCITA: marca deletedAt en el nodo y TODOS sus descendientes
     // activos. Con el sync por operaciones el servidor ya no infiere borrados
     // (se apaga la cascada destructiva del servidor), así que el cliente debe
@@ -1825,6 +1832,7 @@ export class NodeStore {
       parentId: null,
       isDiaryEntry: true,
       diaryDate: diaryDateISO,
+      predefinedId: diaryId(new Date(diaryDateISO)) ?? undefined,  // canónico → nunca duplica
     })
 
     await this.sync()

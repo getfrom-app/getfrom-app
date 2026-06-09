@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { store, useStore } from '../../store/nodeStore'
+import { diaryId } from '../../utils/deterministicId'
 import type { Node } from '../../types'
 
 interface Props {
@@ -144,6 +145,7 @@ export default function TemporalChildrenBlock({ node, type, onNavigate }: Props)
       parentId: null,
       isDiaryEntry: true,
       diaryDate: `${y}-${m}-${dd}T00:00:00.000Z`,
+      predefinedId: diaryId(date) ?? undefined,  // canónico → nunca duplica
     })
     return created
   }
