@@ -11,9 +11,9 @@
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { PROFILE_KNOWLEDGE, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
+import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
 
-// Canónico de creación (Fase 1 = texto viejo). Los finders reconocen viejo + nuevo.
+// Canónico de creación (Fase 2 = texto nuevo "Fromly"). Los finders reconocen viejo + nuevo.
 const LEARN_SECTION = PROFILE_KNOWLEDGE
 
 /**
@@ -142,6 +142,24 @@ export function cleanupOrphanProfileKnowledge(): void {
     }
   }
   try { localStorage.setItem('from_profile_orphan_v1', '1') } catch { /* */ }
+}
+
+/** FASE 2 del rebrand de los nodos de conocimiento (text-keyed): renombra in situ
+ *  los nodos que aún tengan el texto VIEJO ("🧠 Lo que From sabe[ sobre ti]") al
+ *  nuevo ("…Fromly…"). Mismo id → updateNode, sin duplicar. Comparación EXACTA por
+ *  texto para no confundir el de Perfil ("…sobre ti") con el de contexto (prefijo).
+ *  Idempotente y guardada por flag: corre una sola vez por dispositivo. */
+export function migrateKnowledgeNodesToFromly(): void {
+  try { if (localStorage.getItem('from_knowledge_fromly_v1') === '1') return } catch { /* */ }
+  let renamed = 0
+  for (const n of store.nodes.values()) {
+    if (n.deletedAt) continue
+    const text = (n.text || '').trim()
+    if (text === PROFILE_KNOWLEDGE_OLD) { store.updateNode(n.id, { text: PROFILE_KNOWLEDGE }); renamed++ }
+    else if (text === CONTEXT_KNOWLEDGE_OLD) { store.updateNode(n.id, { text: CONTEXT_KNOWLEDGE }); renamed++ }
+  }
+  if (renamed > 0) console.log(`[migrateKnowledgeNodesToFromly] renombrados ${renamed} nodos de conocimiento → Fromly`)
+  try { localStorage.setItem('from_knowledge_fromly_v1', '1') } catch { /* */ }
 }
 
 /** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que

@@ -68,7 +68,7 @@ import { ToastProvider } from '../Toast'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts, getPlantillasRoot } from '../../utils/tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
 import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgentesNode } from '../../utils/agentesHelper'
-import { cleanupOrphanProfileKnowledge } from '../../api/userKnowledge'
+import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '../../api/userKnowledge'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -451,6 +451,7 @@ export default function MainLayout() {
         migrateTagsToContexto()
         ensurePerfilInsideContexto()
         cleanupOrphanProfileKnowledge()  // borra el nodo huérfano "🧠 Lo que From sabe" del Perfil
+        migrateKnowledgeNodesToFromly()  // Fase 2 rebrand: renombra in situ los nodos de conocimiento "From"→"Fromly"
         // Nodos de sistema: Plantillas (se crea solo si no existe)
         ensurePlantillasNode()
         // Nodo de sistema: 📌 Atajos

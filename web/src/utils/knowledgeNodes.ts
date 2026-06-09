@@ -14,18 +14,25 @@
  *     isContextKnowledge. No se renombra nada → invisible, 0 riesgo, reversible.
  *     Objetivo: que web + Mac aprendan a reconocer el texto nuevo ANTES del cambio.
  *
- *   FASE 2 (cuando los Mac hayan auto-actualizado a la Fase 1): cambiar el CANÓNICO
- *     a la versión "Fromly" + migración in situ (updateNode del texto del nodo
- *     existente, mismo id → sin duplicado). Como todos los clientes ya reconocen
- *     ambos textos, ninguno creará un nodo nuevo durante el despliegue.
+ *   FASE 2 (ACTUAL — los Mac ya auto-actualizaron a la Fase 1): el CANÓNICO de
+ *     creación pasa a la versión "Fromly" + migración in situ (updateNode del
+ *     texto del nodo existente, mismo id → sin duplicado). Como todos los clientes
+ *     ya reconocen AMBOS textos (Fase 1 desplegada), ninguno crea un nodo nuevo
+ *     durante el despliegue. La migración (migrateKnowledgeNodesToFromly, en
+ *     api/userKnowledge.ts) renombra los nodos viejos que aún tengan el texto "From".
  *
- * Para hacer la Fase 2: cambiar PROFILE_KNOWLEDGE y CONTEXT_KNOWLEDGE a las variantes
- * "Fromly" (los alias ya las incluyen) y añadir la migración de renombrado.
+ * Los finders (isProfileKnowledge / isContextKnowledge) siguen reconociendo ambos
+ * textos indefinidamente, así que cualquier cliente que se quedara rezagado en
+ * Fase 1 sigue funcionando sin duplicar.
  */
 
-// ── CANÓNICO de creación (Fase 1 = texto viejo "From") ──
-export const PROFILE_KNOWLEDGE = '🧠 Lo que From sabe sobre ti'
-export const CONTEXT_KNOWLEDGE = '🧠 Lo que From sabe'
+// ── CANÓNICO de creación (Fase 2 = texto nuevo "Fromly") ──
+export const PROFILE_KNOWLEDGE = '🧠 Lo que Fromly sabe sobre ti'
+export const CONTEXT_KNOWLEDGE = '🧠 Lo que Fromly sabe'
+
+// ── Texto VIEJO ("From"), solo para la migración de renombrado in situ. ──
+export const PROFILE_KNOWLEDGE_OLD = '🧠 Lo que From sabe sobre ti'
+export const CONTEXT_KNOWLEDGE_OLD = '🧠 Lo que From sabe'
 
 // ── Alias reconocidos (viejo + nuevo). Comparación EXACTA, sin colisión de prefijo. ──
 const PROFILE_ALIASES = ['🧠 Lo que From sabe sobre ti', '🧠 Lo que Fromly sabe sobre ti']
