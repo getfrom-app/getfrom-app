@@ -326,28 +326,41 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
 
     const blob = wr.stop()
     if (!blob) return                    // grabación vacía / silencio
-    // Heurística de "grabación larga" por tamaño (WAV 16k mono ≈ 32000 bytes/s):
-    // las largas se guardan en R2 para adjuntar el audio a la nota que cree Magic.
+    // "Grabación larga" por tamaño (WAV 16k mono ≈ 32000 bytes/s). Larga = NO es
+    // una instrucción corta → SIEMPRE se crea su nota de voz con audio + transcripción.
     const approxDur = Math.round((blob.size - 44) / 32000)
     const isLong = approxDur >= 20
     setIsTranscribing(true)
     try {
       const res = await transcribeAudio(blob, isLong)
-      const text = res.text
-      if (text) {
-        const base = inputRef.current.trim()
-        const combined = [base, text.trim()].filter(Boolean).join(' ').trim()
-        setInput(combined)
-        setHasExpanded(true)
-        if (isLong && res.audioKey) {
-          chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text.trim(), durationSec: res.durationSec || approxDur })
+      const text = res.text?.trim()
+      if (!text) { setIsTranscribing(false); return }
+
+      if (isLong) {
+        // Dictado largo → nota estructurada + audio (determinista, NO pasa por el chat
+        // → no crea nodo de conversación). Izquierda: organizado · derecha: audio+transcripción.
+        const { processVoiceNote } = await import('../../utils/recordingProcessor')
+        try {
+          const noteId = await processVoiceNote(text, res.durationSec || approxDur, res.audioKey)
+          setIsTranscribing(false)
+          window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
+        } catch {
+          setIsTranscribing(false)
+          setInput(text); setHasExpanded(true)   // fallback: al input
         }
-        setTimeout(() => { if (inputRef.current.trim()) handleSend() }, 150)
+        return
       }
-    } catch {
-      alert(t('ai.transcribeFailed', 'No se pudo transcribir el audio. Inténtalo de nuevo.'))
-    } finally {
+
+      // Instrucción corta → Magic actúa (sin guardar audio)
+      const base = inputRef.current.trim()
+      const combined = [base, text].filter(Boolean).join(' ').trim()
+      setInput(combined)
+      setHasExpanded(true)
       setIsTranscribing(false)
+      setTimeout(() => { if (inputRef.current.trim()) handleSend() }, 150)
+    } catch {
+      setIsTranscribing(false)
+      alert(t('ai.transcribeFailed', 'No se pudo transcribir el audio. Inténtalo de nuevo.'))
     }
   }
 
