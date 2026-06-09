@@ -109,52 +109,6 @@ function splitLines(text: string): string[] {
   return text.split('\n').map(l => l.trim()).filter(Boolean)
 }
 
-/**
- * Nota ÚNICA de una conversación de voz. Se crea con el primer audio y se modifica
- * al vuelo con cada audio siguiente: UNA nota, UNA transcripción consolidada, varios
- * audios dentro (extraData._audios). El cuerpo (body) = resumen estructurado regenerado
- * en cada audio. Audio + transcripción se ven en la columna derecha (AudioPanel).
- * Devuelve el id de la nota (para reusarla en el siguiente audio de la misma charla).
- */
-export async function upsertVoiceNote(
-  text: string,
-  durationSec: number,
-  audioKey: string | null,
-  existingNoteId: string | null,
-): Promise<string> {
-  const today = getTodayDiaryUnderAgenda()
-  let note = existingNoteId ? store.nodes.get(existingNoteId) : null
-  if (!note || note.deletedAt) {
-    note = store.createNode({ text: '🎙 Nota de voz', parentId: today.id })
-  }
-  let ed: Record<string, unknown> = {}
-  try { ed = JSON.parse(note.extraData || '{}') } catch { ed = {} }
-  const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]).slice() : []
-  if (audioKey) audios.push({ audioKey, transcript: text.trim(), durationSec })
-  const prevTx = typeof ed._audioTranscript === 'string' ? ed._audioTranscript : ''
-  const consolidated = [prevTx, text.trim()].filter(s => s && s.trim()).join('\n\n')
-
-  // Regenerar título + cuerpo estructurado a partir de TODA la transcripción.
-  let title = note.text
-  let bodyMd = note.body || ''
-  try {
-    const a = await analyzeTranscript(consolidated, durationSec)
-    if (a.title) title = `🎙 ${a.title}`
-    bodyMd = a.summary || ''
-    if (a.tasks && a.tasks.length > 0) {
-      bodyMd += (bodyMd ? '\n\n' : '') + '**Tareas:**\n' + a.tasks.map(tk => `- [ ] ${tk}`).join('\n')
-    }
-  } catch { /* mantener lo anterior */ }
-
-  store.updateNode(note.id, {
-    text: title,
-    body: bodyMd,
-    extraData: JSON.stringify({ ...ed, _audios: audios, _audioTranscript: consolidated }),
-  })
-  store.sync(true).catch(() => {})
-  return note.id
-}
-
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
 export async function processRecording(
   transcript: string,

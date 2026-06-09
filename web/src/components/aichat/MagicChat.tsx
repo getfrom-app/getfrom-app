@@ -49,9 +49,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   // (sus mensajes inyectados no fijan boundNodeKey) ni a reabrir sobre el mismo nodo.
   useEffect(() => {
     const key = (onboardingNodeIdRef.current ?? currentNodeId) ?? '∅'
-    // No resetear al navegar a la PROPIA nota de voz de esta conversación (es parte
-    // de la misma charla: la abrimos a la izquierda mientras Magic sigue a la derecha).
-    if (chat.boundNodeKey != null && chat.boundNodeKey !== key && key !== chat.voiceNoteId) {
+    // No resetear al navegar al PROPIO nodo de la conversación (✦): es parte de la
+    // misma charla (lo abrimos a la izquierda mientras Magic sigue a la derecha).
+    if (chat.boundNodeKey != null && chat.boundNodeKey !== key && key !== chat.sessionId) {
       chat.startNewSession()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -340,19 +340,11 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       setIsTranscribing(false)
       if (!text) return
 
-      // Grabación larga (no instrucción corta): crear/actualizar la ÚNICA nota de voz
-      // de esta conversación (audio + transcripción consolidada). Magic NO se cierra;
-      // se le marca para que converse pero NO cree otra nota (la nota de voz ya existe).
-      if (isLong) {
-        try {
-          const { upsertVoiceNote } = await import('../../utils/recordingProcessor')
-          const noteId = await upsertVoiceNote(text, res.durationSec || approxDur, res.audioKey, chat.voiceNoteId)
-          chat.setVoiceNoteId(noteId)
-          chat.markNextAsVoiceNote()
-          // Abrir la nota a la izquierda y mantenerla durante toda la conversación
-          // (se ven en vivo las adiciones). Magic sigue a la derecha.
-          window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: noteId } }))
-        } catch { /* si falla, Magic gestionará el texto normalmente */ }
+      // Grabación larga (no instrucción corta): adjuntar el audio al NODO de la
+      // conversación (✦). Va por Magic como un mensaje más; el nodo se abre solo a la
+      // izquierda (createSessionNode) y los audios se ven en su columna derecha.
+      if (isLong && res.audioKey) {
+        chat.setPendingVoiceAudio({ audioKey: res.audioKey, transcript: text, durationSec: res.durationSec || approxDur })
       }
       const base = inputRef.current.trim()
       const combined = [base, text].filter(Boolean).join(' ').trim()

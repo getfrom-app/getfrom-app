@@ -117,15 +117,10 @@ class AIChatStore {
   /** Nodo al que pertenece la conversación en memoria (para resetear al cambiar de nodo). */
   boundNodeKey: string | null = null
 
-  /** Nota ÚNICA de la conversación de voz actual (se crea con el 1er audio y se
-   * actualiza al vuelo con los siguientes). null = aún no hay audio en esta charla. */
-  voiceNoteId: string | null = null
-  setVoiceNoteId(id: string | null) { this.voiceNoteId = id }
-
-  /** El próximo send() viene de una grabación de voz → Magic NO debe crear nota
-   * (la nota de voz ya se gestiona en el cliente); solo conversa/comenta. */
-  private _nextIsVoiceNote = false
-  markNextAsVoiceNote() { this._nextIsVoiceNote = true }
+  /** Audio de la grabación pendiente de adjuntar al NODO de la conversación (✦).
+   * Se acumulan en extraData._audios; se ven en la columna derecha al abrir el nodo. */
+  pendingVoiceAudio: { audioKey: string; transcript: string; durationSec: number } | null = null
+  setPendingVoiceAudio(v: { audioKey: string; transcript: string; durationSec: number } | null) { this.pendingVoiceAudio = v }
 
   private _pendingContext: PendingContext | null = null
   private listeners = new Set<Listener>()
@@ -153,8 +148,7 @@ class AIChatStore {
     this.pendingActions = null
     this._pendingContext = null
     this.boundNodeKey = null
-    this.voiceNoteId = null            // nueva conversación → nueva nota de voz
-    this._nextIsVoiceNote = false
+    this.pendingVoiceAudio = null
     // No mezclar prompts entre conversaciones de distintos nodos
     this.activePromptId = null
     this.activePromptAuto = false
@@ -223,6 +217,23 @@ class AIChatStore {
       this.sessionId = this.createSessionNode(trimmed)
     }
     const sid = this.sessionId
+
+    // Grabación de voz: adjuntar audio + transcripción al NODO de la conversación (✦),
+    // acumulando varios audios. Se ven en la columna derecha al abrir ese nodo.
+    if (this.pendingVoiceAudio && sid) {
+      try {
+        const node = store.getNode(sid)
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node?.extraData || '{}') } catch { ed = {} }
+        const audios = Array.isArray(ed._audios) ? (ed._audios as unknown[]) : []
+        audios.push({ audioKey: this.pendingVoiceAudio.audioKey, transcript: this.pendingVoiceAudio.transcript, durationSec: this.pendingVoiceAudio.durationSec })
+        store.updateNode(sid, { extraData: JSON.stringify({ ...ed, _audios: audios }) })
+        // Voz: abrir el nodo de la conversación a la izquierda (se mantiene toda la
+        // charla; Magic sigue a la derecha). Para texto NO se navega (menos intrusivo).
+        window.dispatchEvent(new CustomEvent('from:open-node', { detail: { nodeId: sid } }))
+      } catch { /* no romper el turno */ }
+      this.pendingVoiceAudio = null
+    }
 
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
     this.appendToTranscript(sid, 'user', trimmed)          // persistir al transcript
@@ -359,7 +370,7 @@ class AIChatStore {
       if (!anyOK) break
     }
 
-    this._nextIsVoiceNote = false  // no arrastrar el flag de voz a un turno futuro
+    this.pendingVoiceAudio = null  // no arrastrar el audio a un turno futuro
     this.isStreaming = false
     this.notify()
     // Si no quedaron acciones pendientes, las escrituras se ejecutaron directamente
@@ -838,7 +849,9 @@ class AIChatStore {
       dailyContext,
       pendingTasks,
       locale: userLocale,
-      voiceNote: this._nextIsVoiceNote || undefined,  // Magic no debe crear nota (ya existe)
+      // Nodo de ESTA conversación (✦ en el diario). Magic escribe aquí dentro el
+      // contenido que se le pida (estructurar/ampliar), como hijos de este nodo.
+      conversationNodeId: this.sessionId ?? undefined,
     }
   }
 
