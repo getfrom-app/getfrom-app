@@ -12774,17 +12774,6 @@ textarea:focus-visible,
 .pp-timeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .pp-heads { display: flex; position: sticky; top: 0; z-index: 10; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
 
-/* ── Franja all-day ─────────────────────────────────────────────────────── */
-.pp-allday-row { display: flex; position: sticky; top: 26px; z-index: 9; background: var(--bg-secondary); border-bottom: 1px solid var(--border); min-width: max-content; }
-.pp-allday-axis { display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 4px 0 0; border-right: 1px solid var(--border); background: var(--bg-primary); position: sticky; left: 0; z-index: 5; flex-shrink: 0; }
-.pp-allday-label { font-size: 7px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .04em; writing-mode: horizontal-tb; margin-top: 2px; }
-.pp-allday-strip { border-right: 1px solid var(--border); padding: 2px 2px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; }
-.pp-allday-strip:last-child { border-right: none; }
-.pp-allday-item { border-radius: 3px; padding: 2px 5px; font-size: 10px; font-weight: 500; color: #fff; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .88; transition: opacity .1s; }
-.pp-allday-item:hover { opacity: 1; }
-.pp-allday-item--task { cursor: grab; }
-.pp-allday-item--task:active { cursor: grabbing; }
-.pp-allday-text { pointer-events: none; }
 .pp-col-head { font-size: 10px; font-weight: 500; color: var(--text-secondary); text-align: center; padding: 5px 2px; border-right: 1px solid var(--border); flex-shrink: 0; }
 .pp-col-head--today { color: var(--accent); }
 .pp-col-head--center { font-weight: 700; color: var(--text-primary); background: rgba(74,144,217,.05); }

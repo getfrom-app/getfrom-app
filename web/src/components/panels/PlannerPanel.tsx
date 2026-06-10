@@ -3,8 +3,9 @@
  *
  * Modelo de datos (v2 — sin time blocks separados):
  *   - Nodos con `due` + hora → aparecen en el timeline. El nodo NO se mueve.
- *   - Nodos con `due` sin hora (medianoche local) → aparecen en la franja all-day.
- *   - GCal events: timed → timeline, allDay → franja all-day.
+ *   - Nodos con `due` sin hora NO aparecen aquí (viven en la sección «Tu día»
+ *     de la nota diaria). GCal: solo eventos con hora (allDay tampoco se pinta).
+ *   - Vistas: Día (solo hoy, 1 columna) · Semana (2–7 columnas) · Año.
  *
  * Drag desde el árbol: asigna due+hora al nodo original. No crea duplicados.
  * GCal sync: si el usuario tiene GCal conectado, crear/actualizar evento al programar.
@@ -31,8 +32,6 @@ const HOUR_START      = 6
 const HOUR_END        = 24
 const TOTAL_HOURS     = HOUR_END - HOUR_START
 const AXIS_W          = 40
-const ALL_DAY_H       = 28   // altura de la franja all-day por item
-const ALL_DAY_MIN_H   = 32   // mínimo px de la franja all-day
 const DEFAULT_SLOT_H  = 40   // px por 30 min
 const DEFAULT_DAY_CNT = 5
 const MIN_SLOT_H      = 14
@@ -66,7 +65,8 @@ const MONTHS_S = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','n
 const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 function dayLabel(d: Date) { return `${DAYS_S[d.getDay()]} ${d.getDate()} ${MONTHS_S[d.getMonth()]}` }
 
-type ViewMode = 'day' | 'year'
+// 'day' = solo el día actual (1 columna) · 'week' = multi-día (2–7 columnas) · 'year' = anual
+type ViewMode = 'day' | 'week' | 'year'
 
 // Bloque con hora en el timeline
 interface Block {
@@ -77,15 +77,6 @@ interface Block {
   end: Date
   color: string
   nodeId?: string     // id del nodo original (para task)
-  gcalEvent?: CalendarEvent
-}
-
-// Ítem all-day (franja superior)
-interface AllDayItem {
-  kind: 'task' | 'gcal'
-  id: string          // nodeId para task; gcalId para gcal
-  text: string
-  color: string
   gcalEvent?: CalendarEvent
 }
 
@@ -150,40 +141,6 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   }
 
   return blocks.sort((a, b) => a.start.getTime() - b.start.getTime())
-}
-
-// ── Leer ítems all-day ─────────────────────────────────────────────────
-function getAllDayItems(day: Date, gcalEvents: CalendarEvent[]): AllDayItem[] {
-  const items: AllDayItem[] = []
-
-  for (const n of store.allActive()) {
-    if (!n.due || n.deletedAt) continue
-    // Solo nodos con status (tareas/eventos) que tengan due sin hora
-    if (n.status === null && !n.isEvent) continue
-    try {
-      const ed = JSON.parse(n.extraData || '{}')
-      if (ed._timeBlock === '1') continue // legacy time blocks no van aquí
-    } catch {}
-    const d = new Date(n.due)
-    if (!sameDay(d, day)) continue
-    if (hasTime(n.due)) continue // si tiene hora, va al timeline
-    items.push({
-      kind: 'task',
-      id: n.id,
-      text: n.text,
-      color: n.color || 'var(--accent)',
-    })
-  }
-
-  // GCal all-day
-  for (const ev of gcalEvents) {
-    if (!ev.allDay) continue
-    const d = new Date(ev.start)
-    if (!sameDay(d, day)) continue
-    items.push({ kind: 'gcal', id: ev.id, text: ev.title, color: ev.backgroundColor || '#4a90d9', gcalEvent: ev })
-  }
-
-  return items
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -289,13 +246,14 @@ export default function PlannerPanel({ onClose }: Props) {
     function update() {
       if (!timelineRef.current) return
       const avail = timelineRef.current.clientWidth - AXIS_W - 2
-      setColW(Math.max(60, Math.floor(avail / visibleDayCnt)))
+      const cnt = viewMode === 'day' ? 1 : visibleDayCnt
+      setColW(Math.max(60, Math.floor(avail / cnt)))
     }
     update()
     const ro = new ResizeObserver(update)
     if (timelineRef.current) ro.observe(timelineRef.current)
     return () => ro.disconnect()
-  }, [visibleDayCnt])
+  }, [visibleDayCnt, viewMode])
 
   // ── Zoom Y (eje vertical) ────────────────────────────────────────────────
   function handleAxisDrag(e: React.MouseEvent) {
@@ -317,6 +275,7 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Zoom X (cabecera días) ────────────────────────────────────────────────
   function handleHeadersDrag(e: React.MouseEvent) {
+    if (viewMode === 'day') return // vista día: una sola columna, sin zoom X
     if ((e.target as HTMLElement).closest('.pp-col-head')) return
     e.preventDefault()
     const startX   = e.clientX
@@ -333,8 +292,13 @@ export default function PlannerPanel({ onClose }: Props) {
 
   // ── Días visibles ─────────────────────────────────────────────────────────
   const visibleDays = useMemo(() =>
-    Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
-  , [centerDate.toDateString()]) // eslint-disable-line
+    viewMode === 'day'
+      ? [centerDate]
+      : Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
+  , [centerDate.toDateString(), viewMode]) // eslint-disable-line
+
+  // Días de pre-carga a la izquierda del centro (0 en vista día: única columna)
+  const preDays = viewMode === 'day' ? 0 : PRE_DAYS
 
   // ── Scroll ────────────────────────────────────────────────────────────────
   const scrollHRef = useRef<HTMLDivElement>(null)
@@ -342,8 +306,8 @@ export default function PlannerPanel({ onClose }: Props) {
   const scrollVRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
-    if (viewMode !== 'day' || !scrollHRef.current) return
-    const pos = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    if (viewMode === 'year' || !scrollHRef.current) return
+    const pos = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
     scrollHRef.current.scrollLeft = pos
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
 
@@ -354,20 +318,20 @@ export default function PlannerPanel({ onClose }: Props) {
 
   function centerNow() {
     if (!scrollHRef.current) return
-    const pos = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    const pos = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
     scrollHRef.current.scrollTo({ left: pos, behavior: 'smooth' })
     if (scrollVRef.current) scrollVRef.current.scrollTo({ top: Math.max(0, topPx(new Date()) - 120), behavior: 'smooth' })
   }
 
   function isAlreadyCentered(): boolean {
     if (!scrollHRef.current) return true
-    const expected = Math.max(0, PRE_DAYS * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
+    const expected = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
     return Math.abs(scrollHRef.current.scrollLeft - expected) < colW * 0.4
   }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape' || viewMode !== 'day') return
+      if (e.key !== 'Escape' || viewMode === 'year') return
       // Prioridad 1: cerrar input de nuevo bloque
       if (newBlock) {
         e.stopPropagation()
@@ -463,26 +427,6 @@ export default function PlannerPanel({ onClose }: Props) {
         .then(updated => setGcalEvents(p => p.map(x => x.id === updated.id ? updated : x)))
         .catch(() => setGcalEvents(p => p.map(x => x.id === gcalId ? ev : x)))
     }
-  }
-
-  // ── Drop en zona all-day ──────────────────────────────────────────────────
-  function handleAllDayDrop(e: React.DragEvent, day: Date) {
-    e.preventDefault()
-    e.stopPropagation()
-    const nodeId = e.dataTransfer.getData('plannerTaskId')
-                || e.dataTransfer.getData('nodeId')
-                || e.dataTransfer.getData('text/plain')
-    if (!nodeId) return
-    const node = store.getNode(nodeId)
-    if (!node) return
-    // Asignar due = medianoche del día (sin hora) → aparece en all-day
-    store.updateNode(nodeId, {
-      due:    toMidnight(day),
-      dueEnd: null,
-      status: node.status ?? 'pending',
-    })
-    // Si tenía GCal event → eliminarlo (ya no tiene hora)
-    removeNodeFromGcal(nodeId)
   }
 
   // ── Slot clic → nuevo bloque standalone ──────────────────────────────────
@@ -601,42 +545,6 @@ export default function PlannerPanel({ onClose }: Props) {
     )
   }
 
-  // ── Render franja all-day ─────────────────────────────────────────────────
-  function renderAllDayStrip(day: Date) {
-    const items = getAllDayItems(day, gcalEvents)
-    const stripH = Math.max(ALL_DAY_MIN_H, items.length * ALL_DAY_H + 4)
-    return (
-      <div
-        className="pp-allday-strip"
-        style={{ height: stripH, width: colW, flexShrink: 0 }}
-        onDragOver={e => e.preventDefault()}
-        onDrop={e => handleAllDayDrop(e, day)}
-      >
-        {items.map(item => (
-          <div
-            key={item.id}
-            className={`pp-allday-item pp-allday-item--${item.kind}`}
-            style={{ background: item.color }}
-            draggable={item.kind === 'task'}
-            onDragStart={e => {
-              if (item.kind !== 'task') return
-              e.dataTransfer.setData('plannerTaskId', item.id)
-              e.dataTransfer.effectAllowed = 'move'
-            }}
-            onClick={e => {
-              e.stopPropagation()
-              if (item.kind === 'task') navigate(`/node/${item.id}`)
-              else if (item.gcalEvent) setEditingGcal(item.gcalEvent)
-            }}
-            title={item.text}
-          >
-            <span className="pp-allday-text">{item.text}</span>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   // ── Render columna ────────────────────────────────────────────────────────
   function renderCol(day: Date) {
     const isToday  = sameDay(day, today)
@@ -730,12 +638,12 @@ export default function PlannerPanel({ onClose }: Props) {
   }
 
   // ── Nav ───────────────────────────────────────────────────────────────────
-  const navTitle = viewMode === 'day'
+  const navTitle = viewMode !== 'year'
     ? centerDate.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
     : `${centerDate.getFullYear()}`
 
   function navDelta(d: number) {
-    setCenterDate(prev => viewMode === 'day' ? addDays(prev, d) : new Date(prev.getFullYear() + d, prev.getMonth(), 1))
+    setCenterDate(prev => viewMode !== 'year' ? addDays(prev, d) : new Date(prev.getFullYear() + d, prev.getMonth(), 1))
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -745,9 +653,9 @@ export default function PlannerPanel({ onClose }: Props) {
       {/* Header */}
       <div className="pp-header">
         <div className="pp-view-tabs">
-          {(['day','year'] as ViewMode[]).map(m => (
+          {(['day','week','year'] as ViewMode[]).map(m => (
             <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?'Día':'Año'}
+              {m==='day'?'Día':m==='week'?'Semana':'Año'}
             </button>
           ))}
         </div>
@@ -778,7 +686,7 @@ export default function PlannerPanel({ onClose }: Props) {
         if (el && !(el as any)._wheelBound) {
           (el as any)._wheelBound = true
           el.addEventListener('wheel', (ev: WheelEvent) => {
-            if (!ev.shiftKey || viewMode !== 'day') return
+            if (!ev.shiftKey || viewMode === 'year') return
             ev.preventDefault()
             const dir = ev.deltaY > 0 ? 1 : -1
             setSlotH(prev => {
@@ -803,14 +711,6 @@ export default function PlannerPanel({ onClose }: Props) {
                   {dayLabel(d)}
                 </div>
               ))}
-            </div>
-
-            {/* Franja all-day */}
-            <div className="pp-allday-row">
-              <div className="pp-allday-axis" style={{width: AXIS_W, flexShrink: 0}}>
-                <span className="pp-allday-label">Todo el día</span>
-              </div>
-              {visibleDays.map(d => renderAllDayStrip(d))}
             </div>
 
             {/* Grid de horas */}
@@ -856,7 +756,7 @@ export default function PlannerPanel({ onClose }: Props) {
                 removeNodeFromGcal(nodeId)
                 setCtxMenu(null)
               }}>
-                ⊘ Quitar hora (→ todo el día)
+                ⊘ Quitar hora
               </button>
             )}
             {/* Color picker */}
