@@ -13259,15 +13259,15 @@ textarea:focus-visible,
   border-radius: 5px;
 }
 .dc-parent {
-  flex-shrink: 0;
-  margin-left: auto;
+  flex-shrink: 1;
   font-size: 11px;
   color: var(--text-tertiary);
-  max-width: 180px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dc-parent::before { content: '·'; margin-right: 6px; opacity: 0.6; }
 
 /* ─ Daily Cockpit: 🎯 Foco + acciones de triaje ─ */
 .dc-group--focus {
@@ -13306,6 +13306,7 @@ textarea:focus-visible,
 }
 .dc-actions {
   flex-shrink: 0;
+  margin-left: auto;
   display: flex;
   gap: 2px;
   align-items: center;
