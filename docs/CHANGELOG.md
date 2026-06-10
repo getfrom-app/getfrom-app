@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.289 · Mac v9.5.56 · iPhone — 10 junio 2026 · Compartir a Fromly: guarda y transcribe cualquier vídeo
+
+- **Comparte a Fromly desde cualquier app.** Ves un TikTok (o un Reel, un vídeo de YouTube, X…) y quieres quedarte con lo que dice, no con el vídeo. Pulsa **Compartir → Fromly** y listo: se guarda una **captura** en tu diario con el enlace, el autor y la **transcripción** completa del audio. En segundo plano y sin esperas: la nota aparece al instante y el texto se rellena solo en unos segundos.
+- **Título y resumen automáticos.** Fromly le pone un **título por contexto** (lo que de verdad trata el vídeo) y una breve descripción, en el idioma del propio vídeo.
+- **Tipo «captura» propio.** Las capturas son un tipo de nodo identificable (con su icono) y **filtrables**: en los filtros tienes **«Capturas»** para verlas todas de un vistazo.
+- **Inteligente.** Si compartes un vídeo o audio, lo transcribe. Si compartes un enlace normal o un texto, lo guarda tal cual, sin transcribir.
+- (iPhone: requiere activar **Fromly** en la hoja de compartir la primera vez. La transcripción usa tus tokens de IA.)
+
 ## Web v9.6.288 · Mac v9.5.55 — 10 junio 2026 · Tu día: la nota diaria es ahora tu centro de mando
 
 - **«Tu día» en la nota diaria.** Al abrir Fromly aterrizas en el día de hoy y, arriba del todo, ves de un vistazo lo que importa: tus tareas **atrasadas**, las de **hoy** y tus **bucles abiertos** (lo que tienes en curso). Es la foto de tu día nada más empezar. Todo son enlaces a tus notas reales: completar una tarea o cerrar un bucle ahí mismo actúa sobre el nodo original. Se puede colapsar y no roba espacio a la nota.

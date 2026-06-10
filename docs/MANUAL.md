@@ -318,6 +318,22 @@ Un log es un nodo con la **fecha y hora delante del texto**, en un chip discreto
 
 La fecha/hora se estampa en el momento de crearlo y queda fijada en el chip (no se borra al editar el texto).
 
+### Captura 🎬
+
+Una **captura** es lo que guardas al **compartir un enlace o texto a Fromly** desde otra app (ver «Compartir a Fromly» más abajo). Tiene su propio icono y es **filtrable**: en la columna de filtros tienes **«Capturas»** para verlas todas. Una captura de un vídeo (TikTok, YouTube, Reel…) incluye el enlace clicable, el autor, una breve descripción y la **transcripción** del audio bajo un encabezado «Transcripción».
+
+---
+
+## Compartir a Fromly (iPhone)
+
+Cuando ves un vídeo en redes y quieres quedarte con **lo que dice, no con el vídeo**: pulsa **Compartir → Fromly**.
+
+- Se guarda una **captura** en tu diario de hoy con el enlace, el autor, un título y resumen automáticos (en el idioma del vídeo) y la **transcripción** completa.
+- Ocurre **en segundo plano**: la nota aparece al instante y la transcripción se rellena sola en unos segundos. No tienes que esperar.
+- Funciona con **TikTok, YouTube, Instagram, X y muchos más**. Si compartes un enlace normal o un texto, se guarda tal cual (sin transcribir).
+- **La primera vez**, activa Fromly en la hoja de compartir: desliza la fila de apps hasta el final → **Más / Editar** → activa **Fromly**.
+- La transcripción usa tus **tokens de IA** (plan Pro, Lifetime o prueba).
+
 ---
 
 ## 5. El Slash Menu — acciones rápidas
