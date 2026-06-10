@@ -422,13 +422,19 @@ export default function MainLayout() {
       const { nodeId } = (e as CustomEvent<{ nodeId: string }>).detail || {}
       if (nodeId) navigate(`/node/${nodeId}`)
     }
+    // El cockpit diario («Tu día») pide el planificador al interactuar con él
+    function onOpenPlanner() {
+      setRightPanel(p => p === 'planner' ? p : 'planner')
+    }
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
     window.addEventListener('from:open-node', onOpenNode)
+    window.addEventListener('from:open-planner', onOpenPlanner)
     return () => {
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
       window.removeEventListener('from:open-node', onOpenNode)
+      window.removeEventListener('from:open-planner', onOpenPlanner)
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 

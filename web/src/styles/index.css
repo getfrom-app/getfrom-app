@@ -13279,3 +13279,86 @@ textarea:focus-visible,
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ─ Daily Cockpit: 🎯 Foco + acciones de triaje ─ */
+.dc-group--focus {
+  margin: 2px 2px 8px;
+  padding: 4px 4px 6px;
+  border-radius: 8px;
+  background: rgba(139,92,246,0.07);
+  border: 1px solid rgba(139,92,246,0.18);
+}
+.dc-group-label--focus { color: #7c3aed; }
+.dc-group--focus .dc-row { min-height: 32px; }
+.dc-group--focus .dc-text { font-size: 14.5px; font-weight: 600; }
+.dc-row--done .dc-text { text-decoration: line-through; opacity: 0.55; font-weight: 400; }
+.dc-check--done {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+.dc-focus-hint {
+  font-size: 11px;
+  color: #7c3aed;
+  opacity: 0.75;
+  padding: 2px 8px 0;
+}
+.dc-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7c3aed;
+  background: rgba(139,92,246,0.10);
+  padding: 0 6px;
+  border-radius: 5px;
+}
+.dc-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.dc-row:hover .dc-actions { opacity: 1; }
+.dc-action {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+.dc-action:hover { background: rgba(139,92,246,0.12); color: var(--text-primary); }
+.dc-postpone-wrap { position: relative; display: inline-flex; }
+.dc-postpone-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  margin-top: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+}
+.dc-postpone-menu button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.dc-postpone-menu button:hover { background: rgba(139,92,246,0.10); }
