@@ -915,6 +915,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isNota = (node.types || []).includes('nota')
   const isBucle = (node.types || []).includes('bucle')
   const isBucleClosed = isBucle && node.status === 'done'
+  const isCaptura = (node.types || []).includes('captura')
   const nodeIcon = meta.icon ?? null
   // Color: deriva del primer tag que tenga color asignado (sin contar tags built-in)
   const nodeColor = (() => {
@@ -1250,7 +1251,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     // Auto-sync bidireccional: types[] refleja los @contextos del texto.
     // Los #tags han sido eliminados de Fromly — solo @ para contextos.
-    const BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const BUILTIN_TYPES = new Set(['bucle', 'captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const atTags = new Set([...(text.match(/@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
     const allContextTags = new Set([...atTags])
     const currentTypes = node.types || []
@@ -1654,7 +1655,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
     // Se ejecuta aquí (blur) y no en handleInput para no crear un nodo por cada tecla.
     const finalText = contentRef.current?.textContent || ''
-    const BUILTIN = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const BUILTIN = new Set(['bucle', 'captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const tags = [...(finalText.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
     for (const tag of tags) {
       if (!BUILTIN.has(tag)) {
@@ -3224,6 +3225,23 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </svg>
                 </button>
               </>
+            ) : isCaptura ? (
+              // Captura: nav-dot + icono claqueta (azul) → navega a la nota.
+              <>
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
+                <button
+                  className="bullet-btn bullet-btn--captura"
+                  onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
+                  tabIndex={-1}
+                  aria-label="Captura"
+                  title="Captura"
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#0ea5e9" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1.5" y="4.5" width="13" height="9" rx="1.5"/>
+                    <path d="M1.5 4.5 4 1.8M6 4.5 8.5 1.8M10.5 4.5 13 1.8"/>
+                  </svg>
+                </button>
+              </>
             ) : isBucle ? (
               // Bucle: nav-dot + icono de bucle. Abierto = arco violeta; cerrado = círculo gris.
               <>
@@ -3906,7 +3924,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // No mostrar chips de contexto en nodos restringidos (los propios
               // contextos, perfil, plantillas/prompts/agentes, papelera).
               if (isContextNode || isInsideRestrictedAncestor) return null
-              const BUILTIN = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
+              const BUILTIN = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
               const textLower = (displayNode.text || '').toLowerCase()
               const ctxRoot = findContextRoot()
               if (!ctxRoot) return null

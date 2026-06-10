@@ -42,6 +42,7 @@ const STATUS_CHIPS = [
 ]
 const BUCLE_CHIPS = [
   { labelKey: 'search.chipBucle', query: 'bucle' },
+  { labelKey: 'search.chipCaptura', query: 'captura' },
 ]
 
 function cartesian(arrays: string[][]): string[][] {

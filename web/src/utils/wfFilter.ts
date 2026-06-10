@@ -169,6 +169,8 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'activo':      return !!node.isActive
     case 'bucle':
     case 'loop':        return (node.types || []).includes('bucle') && node.status !== 'done'
+    case 'captura':
+    case 'capture':     return (node.types || []).includes('captura')
 
     default:
       // @tag o #tag
@@ -323,7 +325,7 @@ const SMART_OPERATORS = [
   'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
-  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'bucle',
+  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'bucle', 'captura',
   // English
   'today', 'tomorrow', 'week', 'month', 'past', 'future',
   'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
