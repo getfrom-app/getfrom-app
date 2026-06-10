@@ -459,6 +459,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">📅</span>
               {isEvent ? 'Quitar evento' : 'Evento'}
             </button>
+            <button className="context-menu-item context-menu-item--sub" onClick={run(() => {
+              const types = node.types || []
+              if (types.includes('bucle')) {
+                store.updateNode(node.id, { types: types.filter(t => t !== 'bucle'), status: null })
+              } else {
+                store.updateNode(node.id, { types: [...types, 'bucle'], status: null })
+              }
+            })}>
+              <span className="context-menu-icon">⟲</span>
+              {isBucle ? t('context.bucleRemove') : t('context.bucle')}
+            </button>
             <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
             {(['h1','h2','h3'] as const).map(level => (
               <button key={level} className="context-menu-item context-menu-item--sub"
@@ -501,16 +512,17 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
           {isFav ? t('context.removeFavorite') : t('context.addFavorite')}
         </button>
+        {/* Bucle: abierto = status≠done (flecha violeta) · cerrado = status='done' (reabrible).
+            Cerrar NO quita el tipo — para quitarlo está «Quitar bucle» en Convertir en. */}
         <button className="context-menu-item" onClick={run(() => {
-          const types = node.types || []
-          if (types.includes('bucle')) {
-            store.updateNode(node.id, { types: types.filter(t => t !== 'bucle') })
+          if (!isBucle) {
+            store.updateNode(node.id, { types: [...(node.types || []), 'bucle'], status: null })
           } else {
-            store.updateNode(node.id, { types: [...types, 'bucle'] })
+            store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
           }
         })}>
           <span className="context-menu-icon">⟲</span>
-          {isBucle ? 'Cerrar bucle' : 'Abrir bucle'}
+          {!isBucle ? t('context.bucleConvert') : node.status === 'done' ? t('context.bucleReopen') : t('context.bucleClose')}
         </button>
       </div>
 

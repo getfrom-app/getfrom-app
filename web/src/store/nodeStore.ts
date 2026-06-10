@@ -650,7 +650,8 @@ export class NodeStore {
 
   /** ¿Es una nota "container" (proyecto de facto)? Una nota normal que tiene
    *  ≥1 descendiente con status === 'pending'. No es ella misma tarea/evento/
-   *  recurso/diaria. Reemplaza al concepto antiguo de "bucle". */
+   *  recurso/diaria. (Concepto distinto del bucle, que es types:'bucle' con
+   *  estado abierto/cerrado explícito.) */
   isLiveContainer(node: Node, options?: { requireUnscheduled?: boolean }): boolean {
     if (!node || node.deletedAt) return false
     if (node.isDiaryEntry) return false

@@ -61,7 +61,7 @@ export default function NodeRightPanel({ node }: Props) {
   }
   function setPriority(priority: Node['priority']) { store.updateNode(node.id, { priority }) }
   function toggleFavorite() { store.updateNode(node.id, { isFavorite: !node.isFavorite }) }
-  // toggleSeguimiento eliminado en v8.25: el concepto bucle ya no existe.
+  // toggleSeguimiento eliminado en v8.25 (campo isSeguimiento). El bucle actual usa types:'bucle'.
   // ── Modal de creación de evento (centrado, grande) ───────────────────────
   const [showEventPopup, setShowEventPopup] = useState(false)
   const eventBtnRef = useRef<HTMLButtonElement>(null)

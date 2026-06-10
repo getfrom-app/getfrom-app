@@ -481,7 +481,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // 2. ¿El nodo tiene @mentions de contexto en el texto?
     if (/@\w/.test(node.text || '')) return true
     // 3. ¿El nodo tiene user-tags en types[] (contextos del árbol)?
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota','bucle'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length > 0) return true
     return false
@@ -2040,7 +2040,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       // Smart date parse FIRST — create sibling after assigning date
       if (applySmartDate(text)) { createSiblingBelow(); return }
 
-      // Detect inline shortcuts at end of text: -t (tarea), -b (bucle), -e (evento)
+      // Detect inline shortcuts at end of text: -t (tarea), -e (evento).
+      // -b (bucle) vive solo en la captura rápida (captureHelper), no en el outliner.
       const trimmed = text.trimEnd()
       if (trimmed.endsWith(' -t') || trimmed.endsWith(' -t')) {
         const cleanText = trimmed.slice(0, -3).trimEnd()
@@ -2050,7 +2051,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         if (contentRef.current) contentRef.current.textContent = cleanText
         // Fall through — create sibling below
       } else if (trimmed.endsWith(' -e') || trimmed.endsWith(' -e')) {
-        // (Eliminado sufijo -b: bucle ya no existe como concepto.)
         const cleanText = trimmed.slice(0, -3).trimEnd()
         nodeTextRef.current = cleanText
         const todayISO = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()

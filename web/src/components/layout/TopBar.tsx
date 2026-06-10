@@ -21,7 +21,6 @@ const VIEW_LABELS: Record<string, string> = {
   // agents eliminado en v9.1
   '/account': 'Cuenta',
   '/chat': 'Chat IA',
-  '/followup': 'Bucles',
   '/files': 'Archivos',
   '/inbox': 'Inbox',
   '/trash': 'Papelera',

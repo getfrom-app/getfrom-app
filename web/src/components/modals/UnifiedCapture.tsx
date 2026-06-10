@@ -574,8 +574,9 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
     // ── Vista BUCLES ──────────────────────────────────────────────────────
     if (view === 'bucles') {
+      // Solo bucles ABIERTOS (cerrado = status 'done')
       const allBucles = store.allActive().filter(n =>
-        !n.deletedAt && (n.types || []).includes('bucle')
+        !n.deletedAt && (n.types || []).includes('bucle') && n.status !== 'done'
       )
       const filtered = q ? allBucles.filter(n => normalizeText(n.text || '').includes(qNorm)) : allBucles
       if (filtered.length === 0) return [{
@@ -672,7 +673,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           id: 'cat-bucles',
           label: 'Bucles',
           sublabel: (() => {
-            const c = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes('bucle')).length
+            const c = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes('bucle') && n.status !== 'done').length
             return c > 0 ? `${c} bucles abiertos` : 'Sin bucles abiertos'
           })(),
           type: 'wf-action' as const,
@@ -773,7 +774,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       if (!agendaIds.has(n.id) && !n.isFavorite) continue
       const sc = scoreMatch(n.text || '', searchTerm)
       if (sc === 0) continue
-      const isBucleNode = (n.types || []).includes('bucle')
+      // Solo los bucles abiertos flotan arriba; uno cerrado se trata como nodo normal
+      const isBucleNode = (n.types || []).includes('bucle') && n.status !== 'done'
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
       results.push({
         id: `note-${n.id}`,
