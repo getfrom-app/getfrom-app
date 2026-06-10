@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { store } from '../store/nodeStore'
-import { collectDailyCockpit, toggleFocusToday, postponeTask, isFocusedToday, todayFocusKey } from '../utils/dailyCockpit'
+import { collectDailyCockpit, toggleFocusToday, postponeTask, isFocusedToday, todayFocusKey, toggleTaskDone } from '../utils/dailyCockpit'
 
 function iso(daysFromToday: number): string {
   const d = new Date()
@@ -33,12 +33,38 @@ describe('dailyCockpit — sección «Tu día»', () => {
     expect(collectDailyCockpit().bucles).toHaveLength(0)
   })
 
-  it('tareas completadas no aparecen aunque estén atrasadas', () => {
+  it('tareas completadas SIN _doneAt de hoy no aparecen (hechas otro día)', () => {
     const t = store.createNode({ text: 'Hecha ayer', parentId: null, isTask: true, due: iso(-1) })
     store.updateNode(t.id, { status: 'done' })
     const data = collectDailyCockpit()
     expect(data.overdue).toHaveLength(0)
     expect(data.today).toHaveLength(0)
+  })
+
+  it('completada HOY (toggleTaskDone) sigue visible, al final de su grupo', () => {
+    store.createNode({ text: 'Pendiente vieja', parentId: null, isTask: true, due: iso(-3) })
+    const t = store.createNode({ text: 'Hecha hoy', parentId: null, isTask: true, due: iso(-1) })
+
+    toggleTaskDone(store.getNode(t.id)!)
+    let data = collectDailyCockpit()
+    expect(store.getNode(t.id)!.status).toBe('done')
+    // Sigue en atrasadas, pero ordenada DESPUÉS de la pendiente (pese a due más reciente)
+    expect(data.overdue.map(n => n.text)).toEqual(['Pendiente vieja', 'Hecha hoy'])
+
+    // Des-completar la devuelve a pendiente y a su orden por due
+    toggleTaskDone(store.getNode(t.id)!)
+    data = collectDailyCockpit()
+    expect(store.getNode(t.id)!.status).toBe('pending')
+    expect(data.overdue.map(n => n.text)).toEqual(['Pendiente vieja', 'Hecha hoy'])
+    expect(JSON.parse(store.getNode(t.id)!.extraData || '{}')._doneAt).toBeUndefined()
+  })
+
+  it('completada con _doneAt de AYER no aparece (caduca sola)', () => {
+    const t = store.createNode({ text: 'Hecha ayer con flag', parentId: null, isTask: true, due: iso(-1) })
+    const y = new Date(); y.setDate(y.getDate() - 1)
+    const key = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`
+    store.updateNode(t.id, { status: 'done', extraData: JSON.stringify({ _doneAt: key }) })
+    expect(collectDailyCockpit().overdue).toHaveLength(0)
   })
 
   it('las notas diarias nunca cuentan', () => {

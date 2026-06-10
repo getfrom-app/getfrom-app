@@ -4,11 +4,11 @@
 // Triaje matinal: 🎯 manda al foco, ⏭ pospone (mañana/+1 semana/sin fecha).
 // Las filas se arrastran al planificador (dataTransfer 'nodeId') para ponerles hora,
 // y al interactuar con el bloque la columna derecha cambia a planificador.
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { collectDailyCockpit, toggleFocusToday, postponeTask } from '../../utils/dailyCockpit'
+import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -22,6 +22,36 @@ export default function DailyCockpit() {
 
   // Recalculado en cada render — un pase O(n) sobre el store, barato (~6k nodos)
   const data = collectDailyCockpit()
+
+  // ── Animación FLIP: las filas se deslizan a su nueva posición al reordenar ──
+  // (p.ej. al completar, la tarea baja al final de su grupo en vez de saltar).
+  const rowEls = useRef(new Map<string, HTMLDivElement>())
+  const prevTops = useRef(new Map<string, number>())
+  useLayoutEffect(() => {
+    const newTops = new Map<string, number>()
+    for (const [id, el] of rowEls.current) {
+      if (!el.isConnected) { rowEls.current.delete(id); continue }
+      const top = el.getBoundingClientRect().top
+      newTops.set(id, top)
+      const prev = prevTops.current.get(id)
+      if (prev !== undefined && Math.abs(prev - top) > 2) {
+        // Invertir al punto de partida y dejar que la transición lo lleve a 0
+        el.style.transition = 'none'
+        el.style.transform = `translateY(${prev - top}px)`
+        void el.offsetHeight // reflow
+        el.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.35, 1)'
+        el.style.transform = ''
+      }
+    }
+    prevTops.current = newTops
+  })
+
+  function registerRow(id: string) {
+    return (el: HTMLDivElement | null) => {
+      if (el) rowEls.current.set(id, el)
+      else rowEls.current.delete(id)
+    }
+  }
 
   const total = data.focus.length + data.overdue.length + data.today.length + data.bucles.length
   if (total === 0) return null
@@ -39,7 +69,7 @@ export default function DailyCockpit() {
 
   function completeTask(e: React.MouseEvent, n: Node) {
     e.stopPropagation()
-    store.updateNode(n.id, { status: n.status === 'done' ? 'pending' : 'done' })
+    toggleTaskDone(n) // estampa _doneAt=hoy → sigue visible (tachada) hasta mañana
   }
 
   function closeBucle(e: React.MouseEvent, n: Node) {
@@ -94,6 +124,7 @@ export default function DailyCockpit() {
   const renderTaskRow = (n: Node, opts: { showDue?: boolean; inFocus?: boolean }) => (
     <div
       key={n.id}
+      ref={registerRow(n.id)}
       className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
       onClick={() => navigate(`/node/${n.id}`)}
       {...dragProps(n)}
@@ -111,6 +142,8 @@ export default function DailyCockpit() {
       <span className="dc-actions">
         {opts.inFocus ? (
           <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
+        ) : n.status === 'done' ? (
+          null /* completada: sin triaje, solo des-completar con el checkbox */
         ) : (
           <>
             <button className="dc-action dc-action--focus" onClick={e => onFocusClick(e, n)} title={t('daily.toFocus')}>🎯</button>

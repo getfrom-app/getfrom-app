@@ -13282,12 +13282,13 @@ textarea:focus-visible,
 .dc-group--focus .dc-text { font-size: 14.5px; font-weight: 600; }
 .dc-row--done .dc-text { text-decoration: line-through; opacity: 0.55; font-weight: 400; }
 .dc-check--done {
-  background: #8b5cf6;
-  border-color: #8b5cf6;
+  background: #10b981;
+  border-color: #10b981;
   color: #fff;
   font-size: 10px;
   line-height: 1;
 }
+.dc-check--done:hover { border-color: #059669; background: #059669; }
 .dc-focus-hint {
   font-size: 11px;
   color: #7c3aed;

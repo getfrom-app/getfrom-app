@@ -40,6 +40,26 @@ export function toggleFocusToday(n: Node): void {
   store.updateNode(n.id, { extraData: JSON.stringify(extra) })
 }
 
+/** ¿Se completó la tarea HOY? (criterio para mantenerla visible, tachada, en el cockpit) */
+export function wasCompletedToday(n: Node): boolean {
+  if (n.status !== 'done') return false
+  try { return JSON.parse(n.extraData || '{}')._doneAt === todayFocusKey() } catch { return false }
+}
+
+/** Completa/reabre una tarea desde el cockpit. Al completar estampa _doneAt=hoy
+ *  para que siga visible (tachada) durante el día; mañana desaparece sola. */
+export function toggleTaskDone(n: Node): void {
+  let extra: Record<string, unknown> = {}
+  try { extra = JSON.parse(n.extraData || '{}') } catch { /* extraData corrupto → lo regeneramos */ }
+  if (n.status === 'done') {
+    delete extra._doneAt
+    store.updateNode(n.id, { status: 'pending', extraData: JSON.stringify(extra) })
+  } else {
+    extra._doneAt = todayFocusKey()
+    store.updateNode(n.id, { status: 'done', extraData: JSON.stringify(extra) })
+  }
+}
+
 /** Pospone una tarea: días desde hoy (1 = mañana, 7 = +1 semana) o null = sin fecha. */
 export function postponeTask(n: Node, days: number | null): void {
   if (days === null) {
@@ -88,8 +108,10 @@ export function collectDailyCockpit(): DailyCockpitData {
       bucles.push(n)
       continue
     }
-    if (n.status !== 'pending' || !n.due) continue
-    const due = new Date(n.due)
+    // Pendientes con due + completadas HOY (siguen visibles, tachadas, hasta mañana)
+    const qualifies = (n.status === 'pending' || wasCompletedToday(n)) && !!n.due
+    if (!qualifies) continue
+    const due = new Date(n.due!)
     if (isNaN(due.getTime())) continue
     if (due < today0) {
       if (isInPapelera(n.id)) continue
@@ -100,7 +122,11 @@ export function collectDailyCockpit(): DailyCockpitData {
     }
   }
 
-  const byDue = (a: Node, b: Node) => new Date(a.due!).getTime() - new Date(b.due!).getTime()
+  // Pendientes por due; las completadas al final de su grupo
+  const byDue = (a: Node, b: Node) => {
+    const da = a.status === 'done' ? 1 : 0, db = b.status === 'done' ? 1 : 0
+    return da - db || new Date(a.due!).getTime() - new Date(b.due!).getTime()
+  }
   overdue.sort(byDue)
   todayTasks.sort(byDue)
   bucles.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
