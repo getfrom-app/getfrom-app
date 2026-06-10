@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.288 · Mac v9.5.55 — 10 junio 2026 · Tu día: la nota diaria es ahora tu centro de mando
+
+- **«Tu día» en la nota diaria.** Al abrir Fromly aterrizas en el día de hoy y, arriba del todo, ves de un vistazo lo que importa: tus tareas **atrasadas**, las de **hoy** y tus **bucles abiertos** (lo que tienes en curso). Es la foto de tu día nada más empezar. Todo son enlaces a tus notas reales: completar una tarea o cerrar un bucle ahí mismo actúa sobre el nodo original. Se puede colapsar y no roba espacio a la nota.
+- **🎯 Foco del día.** De entre todo lo que te toca hoy, elige 2-3 cosas que realmente vas a hacer y súbelas al Foco (un lugar privilegiado arriba). El resto, despáchalo: pospón a mañana, a la semana que viene o quítale la fecha. Cada mañana el Foco amanece limpio.
+- **Arrastra al planificador.** Desde «Tu día» puedes arrastrar una tarea al planificador de la derecha para darle hora; queda con su chip de hora y sigue en tu lista.
+- **Completar es satisfactorio.** Al marcar una tarea, el check se pone **verde**, queda tachada y baja suavemente al final de la lista — la ves hecha sin que desaparezca de golpe.
+- **Planificador con vistas Día · Semana · Año.** Nueva vista **Día** (solo el día de hoy a pantalla completa) además de Semana y Año. Quitamos la franja «todo el día» (esas tareas ya viven en «Tu día»).
+- **Bucles más claros.** El bucle (ese nodo «en curso» con la flecha violeta) se abre y se cierra como debe desde la flecha o el menú, sin perder el tipo por error.
+- **Logs visuales.** Escribe `/log` o termina con `-l` y la línea queda con su **fecha y hora delante** — ideal para registros de proyecto, seguimientos de clientes o un diario de avances.
+- Fix: eliminado un parpadeo ocasional al cambiar de panel justo después de una actualización de la app.
+
 ## Web v9.6.279 · Mac v9.5.54 — 9 junio 2026 · IA más estable bajo carga
 
 - **Magic y la clasificación automática ya no fallan cuando hay mucha actividad.** Hemos hecho la conexión con la IA más resistente: si el proveedor está saturado, Fromly espera y reintenta solo, en vez de mostrarte un error.

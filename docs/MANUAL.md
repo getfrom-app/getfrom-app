@@ -1,4 +1,4 @@
-# Fromly — Manual de usuario v9.6
+# Fromly — Manual de usuario v9.6.288
 
 > Web · Mac · iPhone · fromly.app
 
@@ -191,6 +191,26 @@ El modal de creación de evento te permite:
 - Añadir hora de inicio y fin (opcional; si no hay hora, es un evento de todo el día).
 - Activar repetición.
 
+### Bucle ⟲
+
+Un bucle es un nodo que representa algo **en curso**, con dos estados: **abierto** o **cerrado**. En lugar del checkbox de una tarea, muestra una **flecha violeta** delante del texto cuando está abierto.
+
+A diferencia de una tarea (que se hace o no se hace de una vez), un bucle es para trabajo o seguimientos continuos que abres, dejas abiertos durante un tiempo y cierras cuando corresponde — y que puedes **reabrir** más adelante.
+
+**Cómo crear un bucle:**
+
+- Slash menu → `/` y elige el tipo, o desde el menú `···` del nodo → «Convertir en» → Bucle.
+- Termina el texto con `-b` y pulsa Enter (en la captura rápida).
+
+**Abrir / cerrar:**
+
+- Clic en la flecha violeta → cierra el bucle (pasa a un círculo gris).
+- Clic en el círculo gris → lo reabre.
+- También desde el menú `···` → «Cerrar bucle» / «Reabrir bucle».
+- Para que deje de ser bucle: `···` → «Convertir en» → «Quitar bucle».
+
+Tus bucles abiertos aparecen en la sección «Tu día» de la nota diaria y se pueden filtrar con el operador `bucle` (ver Filtros).
+
 ### Espejo ⬡
 
 Un espejo es una referencia sincronizada a otro nodo. Muestra exactamente el mismo contenido que el original. Si editas el espejo, editas el original (y viceversa). Si editas el original, el espejo refleja el cambio de inmediato.
@@ -287,6 +307,17 @@ Un prompt es una plantilla de texto reutilizable para la IA. Créalo una vez y �
 
 Útil para: "resume esto en 3 bullets", "extrae las tareas", "traduce al inglés", "mejora el tono formal".
 
+### Log 🕐
+
+Un log es un nodo con la **fecha y hora delante del texto**, en un chip discreto (p.ej. `10 jun 08:55`). Es para registros: avances de un proyecto, seguimientos de clientes, un diario de hechos con marca temporal.
+
+**Cómo crear un log:**
+
+- Slash menu → `/Log`.
+- Termina el texto con `-l` y pulsa Enter.
+
+La fecha/hora se estampa en el momento de crearlo y queda fijada en el chip (no se borra al editar el texto).
+
 ---
 
 ## 5. El Slash Menu — acciones rápidas
@@ -305,6 +336,7 @@ Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Puedes s
 | Cita | Bloque de cita con barra lateral |
 | Código | Bloque de código con fuente monoespaciada |
 | Separador | Línea horizontal divisoria |
+| Log | Entrada con fecha y hora delante (registro) |
 
 ### Objetos
 
@@ -313,6 +345,7 @@ Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Puedes s
 | Nota | Convierte el nodo en nota (tipo base) |
 | Tarea | Convierte el nodo en tarea con checkbox |
 | Evento | Convierte el nodo en evento con hora |
+| Bucle | Convierte el nodo en bucle abierto/cerrado (en curso) |
 | Recurso | Convierte el nodo en recurso (enlace externo) |
 | Ampliar | Convierte una tarea en un contenedor expandible |
 
@@ -534,6 +567,33 @@ Los favoritos son un marcador rápido para los nodos que usas con frecuencia.
 
 ## 11. La Agenda y el sistema de nodos
 
+### La nota diaria es tu centro de mando
+
+Al abrir Fromly aterrizas directamente en la **nota del día de hoy** (no en la raíz del árbol): es el sitio desde el que trabajas. Si navegas a otro nodo y pulsas **Escape**, vuelves a la nota de hoy. El botón de inicio sigue llevándote a la raíz del árbol cuando quieras la vista estructural.
+
+### «Tu día» — la foto de tu jornada
+
+Al inicio de la nota de hoy aparece el bloque **«Tu día»**, que reúne de un vistazo todo lo que requiere tu atención. Se puede colapsar y, si no hay nada, no se muestra. Tiene tres grupos:
+
+- **🎯 Foco** — las 2-3 cosas que has decidido hacer hoy (ver abajo).
+- **Atrasadas** — tareas pendientes cuya fecha ya pasó (con su día en rojo).
+- **Para hoy** — tareas con fecha de hoy.
+- **Bucles abiertos** — tus nodos en curso.
+
+Todo lo que ves son enlaces a tus notas reales: marcar una tarea o cerrar un bucle ahí mismo actúa sobre el nodo original. Clic en el texto te lleva a la nota.
+
+**El ritual matinal — Foco:** de entre todo lo que te toca hoy, elige unas pocas cosas que vas a hacer de verdad y mándalas al **Foco** (arriba del todo, destacado). El resto, despáchalo conscientemente:
+
+- Pasa el ratón sobre una tarea de Atrasadas/Hoy → aparecen dos acciones:
+  - **🎯 Al foco** — la sube al Foco.
+  - **⏭ Posponer** — *Mañana · +1 semana · Sin fecha*.
+- El Foco funciona mejor con 3 o menos (Fromly te lo recuerda si te pasas).
+- Cada mañana el Foco amanece vacío: el flag caduca solo al cambiar el día.
+
+**Completar:** al marcar una tarea, el check se pone **verde**, queda tachada y baja con una animación al final de su grupo — sigue visible hasta mañana, no desaparece de golpe.
+
+**Llevar al planificador:** arrastra cualquier fila de «Tu día» al planificador de la derecha para darle hora. La tarea sigue en tu lista y gana un chip con la hora.
+
 ### La Agenda — vista principal
 
 La vista de inicio de Fromly ES la Agenda. Al abrir la app ves directamente los años (2026, 2027...). Navegar es tan sencillo como expandir el año → mes → día.
@@ -609,7 +669,7 @@ Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la cons
 | `pendiente` | Tareas pendientes (no completadas) |
 | `hecho` | Tareas completadas |
 | `vencido` | Tareas cuya fecha ya pasó y no están hechas |
-| `bucle` | Notas/nodos con tareas pendientes en su interior (📁 contenedor vivo) |
+| `bucle` | Bucles abiertos (nodos en curso sin cerrar) |
 | `nota` | Todos los nodos de tipo nota |
 | `evento` | Todos los eventos |
 | `recurso` | Todos los recursos |
@@ -632,13 +692,11 @@ Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la cons
 
 La búsqueda ignora tildes y mayúsculas.
 
-### El operador `bucle` — contenedores vivos
+### El operador `bucle` — nodos en curso
 
-El operador `bucle` filtra los nodos que tienen tareas pendientes en su interior. Estos nodos muestran el icono 📁 (contenedor vivo) en el árbol aunque estén colapsados.
+El operador `bucle` filtra tus **bucles abiertos**: los nodos de tipo bucle que aún no has cerrado (ver «Bucle» en Tipos de nodo). Es ideal para ver de un vistazo todo lo que tienes en marcha sin terminar. Un bucle sale del filtro cuando lo cierras.
 
-Es ideal para ver qué proyectos, áreas o notas tienen trabajo sin terminar: filtra por `bucle` y ves de un vistazo todos los contenedores activos. Un nodo sale del filtro `bucle` cuando todas sus tareas internas están marcadas como hechas.
-
-No se aplica a: eventos, recursos, diary entries ni nodos temporales.
+> Nota: no confundir con el icono 📁 de «contenedor vivo» — ese es una pista visual de cualquier nota que tiene tareas pendientes dentro, independiente del tipo bucle.
 
 ### Filtrar desde Magic Chat
 
@@ -865,14 +923,15 @@ Los agentes se configuran en su panel de propiedades:
 
 El Planificador es la vista de calendario de Fromly. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
-### Dos vistas
+### Tres vistas: Día · Semana · Año
 
-**Vista Día**: timeline de 24 horas con tus tareas y eventos dividido en dos zonas:
+**Vista Día**: el día de hoy a pantalla completa (una sola columna). Timeline de horas con tus tareas y eventos con hora concreta; los bloques indican su hora de inicio y se pueden redimensionar para ajustar la duración.
 
-- **Franja "Todo el día"** (parte superior): muestra las tareas del día con fecha pero sin hora asignada, y los eventos de todo el día de Google Calendar. Es el punto de partida para planificar: aquí tienes todo lo que queda por ubicar en el tiempo.
-- **Timeline de horas** (parte inferior): muestra las tareas y eventos con hora concreta. Los bloques indican su hora de inicio y pueden redimensionarse para ajustar la duración.
+**Vista Semana**: varios días en columnas (entre 2 y 7; arrastra la cabecera para ver más o menos). El mismo timeline de horas por columna.
 
-**Vista Año**: los 12 meses del año en una grid responsive. Los días con tareas o eventos aparecen con un punto. Haz clic en cualquier día para navegar a la nota de ese día en la Agenda.
+**Vista Año**: los 12 meses del año en una grid. Los días con tareas o eventos aparecen con un punto. Haz clic en cualquier día para abrir su vista Día.
+
+> El planificador solo muestra lo que tiene **hora**. Las tareas con fecha pero sin hora viven en la sección «Tu día» de la nota diaria, desde donde puedes arrastrarlas al timeline para darles hora.
 
 **Navegación**: botones ‹ › para avanzar o retroceder. Botón **Hoy** para volver al día actual.
 
@@ -882,11 +941,7 @@ El Planificador no mueve ni duplica tus nodos del árbol. **El nodo siempre perm
 
 ### Planificar una tarea — asignar hora
 
-**Desde el árbol al timeline**: arrastra cualquier nodo desde el árbol central hacia el timeline del planificador. Se asigna la hora del punto donde sueltas. El nodo sigue en el mismo lugar del árbol — solo ha ganado una hora programada.
-
-**Desde el árbol a "Todo el día"**: arrastra un nodo a la franja superior para asignarle solo una fecha (sin hora). Aparece en la franja all-day hasta que le asignes hora.
-
-**Desde "Todo el día" al timeline**: arrastra un elemento de la franja all-day hacia el timeline para asignarle una hora concreta. A partir de ese momento aparece en el grid de horas.
+**Desde el árbol (o desde «Tu día») al timeline**: arrastra cualquier nodo hacia el timeline del planificador. Se asigna la hora del punto donde sueltas. El nodo sigue en el mismo lugar del árbol — solo ha ganado una hora programada.
 
 **Clic en hora vacía**: crea un nuevo nodo directamente en esa hora. Escribe el título y pulsa Enter.
 
@@ -907,7 +962,7 @@ Los eventos de Google Calendar también se muestran en el planificador con su co
 ### Clic derecho sobre un bloque
 
 - **Ir al nodo** — navega al nodo en el árbol.
-- **Quitar hora (→ todo el día)** — elimina la hora pero mantiene la fecha. El nodo vuelve a la franja all-day.
+- **Quitar hora** — elimina la hora pero mantiene la fecha. El nodo sale del timeline y vuelve a la lista de la nota diaria.
 - **Quitar del planificador** — elimina la fecha y hora por completo.
 - **Color** — cambia el color del bloque en el planificador.
 
@@ -1305,7 +1360,7 @@ Desde **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing
 Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de Fromly.
 
 **¿Qué es el filtro `bucle`?**
-El operador `bucle` muestra los nodos (proyectos, áreas, notas) que tienen tareas pendientes en su interior. Útil para ver de un vistazo qué contenedores tienen trabajo sin terminar. En el árbol, estos nodos muestran el icono 📁 aunque estén colapsados.
+El operador `bucle` muestra tus bucles abiertos: nodos de tipo bucle que tienes en curso y aún no has cerrado. Útil para ver de un vistazo todo lo que tienes en marcha.
 
 **¿La captura con Espacio y ⌘K son lo mismo?**
 Sí. `Espacio` abre el modal de captura unificada cuando el cursor no está editando texto. `⌘K` hace lo mismo y funciona siempre, aunque haya texto en edición. Son sinónimos del mismo modal.
