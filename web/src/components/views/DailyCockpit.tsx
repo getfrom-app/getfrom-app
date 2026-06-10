@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
+import { renderInline } from '../outliner/InlineRenderer'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -135,7 +136,7 @@ export default function DailyCockpit() {
         title={t('daily.markDone')}
         aria-label={t('daily.markDone')}
       >{n.status === 'done' ? '✓' : ''}</button>
-      <span className="dc-text">{n.text || t('common.noTitle')}</span>
+      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
       {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
       {opts.showDue && <span className="dc-due">{dueLabel(n)}</span>}
       {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
@@ -180,7 +181,7 @@ export default function DailyCockpit() {
           <path d="M11.5 1.8v2.7H8.8" />
         </svg>
       </button>
-      <span className="dc-text">{n.text || t('common.noTitle')}</span>
+      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
       {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
     </div>
   )
