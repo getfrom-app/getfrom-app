@@ -514,6 +514,16 @@ export default function MainLayout() {
         store.collapseAllLocal()
         store.setLoaded()
         store.startRemotePolling() // Polling 15s para recibir cambios remotos (MCP, otros clientes)
+        // Daily-first: la nota diaria de hoy es la vista por defecto al abrir.
+        // Solo si se entró por la raíz — los deep links (/node/x, /settings…) se respetan.
+        // (navigate se usa solo aquí dentro del .then, igual que en el catch — no re-ejecuta el effect.)
+        const path = window.location.pathname.replace(/\/+$/, '')
+        if (path === '' || path === '/app') {
+          try {
+            const diary = getTodayDiaryUnderAgenda()
+            if (diary) navigate(`/node/${diary.id}`, { replace: true })
+          } catch { /* si falla, se queda en la raíz — no bloquear el arranque */ }
+        }
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)
@@ -797,22 +807,15 @@ export default function MainLayout() {
           return
         }
 
-        // Prioridad 5: subir en la jerarquía (Escape sube al padre)
-        // Si el padre es Agenda (nodo transparente), ir al home en lugar de abrirlo
+        // Prioridad 5: volver a la nota diaria de hoy (daily-first). La diaria es
+        // el "home" de trabajo; la raíz del árbol queda como escape secundario.
         const match = window.location.pathname.match(/\/node\/([^/]+)/)
-        if (match) {
-          const nodeId = match[1]
-          const node = store.getNode(nodeId)
-          if (node?.parentId) {
-            const parent = store.getNode(node.parentId)
-            if (!parent || parent.text === '📅 Agenda') {
-              navigate('/')
-            } else {
-              navigate(`/node/${node.parentId}`)
-            }
-          } else {
-            navigate('/')
-          }
+        const todayDiary = store.todayDiary()
+        if (match && todayDiary && match[1] !== todayDiary.id) {
+          navigate(`/node/${todayDiary.id}`)
+        } else if (match) {
+          // Ya en la diaria (o no hay diaria) → raíz del árbol
+          navigate('/')
         }
         // Si ya estamos en root '/' no hacemos nada
       }

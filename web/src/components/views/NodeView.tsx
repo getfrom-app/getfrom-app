@@ -20,6 +20,7 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import WFTemporalView from './WFTemporalView'
+import DailyCockpit from './DailyCockpit'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
@@ -2599,7 +2600,11 @@ export default function NodeView() {
                 )}
                 {/* Diary entry en WF mode: temporal view por defecto, DiaryTimeline en vista calendario */}
                 {isWFMode && node.isDiaryEntry && viewKind !== 'calendar' && (
-                  <WFTemporalView node={node} temporalType="diary" />
+                  <>
+                    {/* «Tu día»: solo en la diaria de HOY — sección calculada, no materializa nodos */}
+                    {store.todayDiary()?.id === node.id && <DailyCockpit />}
+                    <WFTemporalView node={node} temporalType="diary" />
+                  </>
                 )}
                 {isWFMode && node.isDiaryEntry && viewKind === 'calendar' && (
                   <NodeCalendarView parentId={node.id} />

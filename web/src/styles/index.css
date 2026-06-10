@@ -13166,3 +13166,116 @@ textarea:focus-visible,
 .pcard-cta--ghost { background: transparent; color: #8b5cf6; border: 1.5px solid #d6c9f7; }
 .pcard-cta--ghost:hover:not(:disabled) { background: rgba(139,92,246,0.07); border-color: #8b5cf6; }
 .pcard-cta:disabled { opacity: .55; cursor: default; }
+
+/* ═══ Daily Cockpit — «Tu día» en la nota diaria ═══════════════════════════ */
+.daily-cockpit {
+  margin: 4px 0 18px;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+  border-radius: 10px;
+  background: var(--bg-secondary, rgba(0,0,0,0.02));
+  overflow: hidden;
+}
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.dc-header:hover { background: rgba(139,92,246,0.05); }
+.dc-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.dc-counts { display: flex; gap: 6px; align-items: center; flex: 1; }
+.dc-count {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: rgba(0,0,0,0.06);
+  color: var(--text-secondary);
+}
+.dc-count--overdue { background: rgba(239,68,68,0.12); color: #dc2626; }
+.dc-count--bucle { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+.dc-chevron { font-size: 12px; color: var(--text-tertiary); }
+.dc-body { padding: 2px 8px 10px; }
+.dc-group { margin-top: 6px; }
+.dc-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 3px 8px;
+}
+.dc-group-label--overdue { color: #dc2626; }
+.dc-group-label--bucle { color: #8b5cf6; }
+.dc-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 28px;
+}
+.dc-row:hover { background: rgba(139,92,246,0.06); }
+.dc-check {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--text-tertiary);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.dc-check:hover { border-color: #8b5cf6; background: rgba(139,92,246,0.12); }
+.dc-bucle {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #8b5cf6;
+  cursor: pointer;
+  padding: 0;
+}
+.dc-bucle:hover { color: #6d28d9; }
+.dc-text {
+  font-size: 13.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dc-due {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  background: rgba(239,68,68,0.09);
+  padding: 0 6px;
+  border-radius: 5px;
+}
+.dc-parent {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
