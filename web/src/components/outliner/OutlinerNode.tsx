@@ -855,6 +855,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const meta = nodeMeta(node)
   const extraBlock = meta.block
 
+  // Nodo-log: extraData._logAt (ISO) → chip con fecha+hora delante del texto.
+  // Para registros de proyecto, seguimiento de clientes, etc. (/log o sufijo -l)
+  const logAt = (() => {
+    try {
+      const v = JSON.parse(node.extraData || '{}')._logAt as string | undefined
+      return v ? new Date(v) : null
+    } catch { return null }
+  })()
+  const logChipLabel = logAt && !isNaN(logAt.getTime())
+    ? `${logAt.getDate()} ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][logAt.getMonth()]} ${String(logAt.getHours()).padStart(2,'0')}:${String(logAt.getMinutes()).padStart(2,'0')}`
+    : null
+
   // Mirror: si este nodo tiene _mirrorOf, usar el nodo original como fuente de texto
   const mirrorOfId = (() => {
     try { return JSON.parse(node.extraData || '{}')._mirrorOf as string | undefined } catch { return undefined }
@@ -2057,6 +2069,16 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         store.updateNode(node.id, { text: cleanText, isEvent: true, status: null, due: todayISO })
         if (contentRef.current) contentRef.current.textContent = cleanText
         // Fall through — create sibling below
+      } else if (trimmed.endsWith(' -l') || trimmed.endsWith('\u00a0-l')) {
+        // Nodo-log: fecha+hora de AHORA como chip delante del texto
+        const cleanText = trimmed.slice(0, -3).trimEnd()
+        nodeTextRef.current = cleanText
+        let edLog: Record<string, unknown> = {}
+        try { edLog = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+        edLog._logAt = new Date().toISOString()
+        store.updateNode(node.id, { text: cleanText, extraData: JSON.stringify(edLog) })
+        if (contentRef.current) contentRef.current.textContent = cleanText
+        // Fall through \u2014 create sibling below
       } else {
       // Paridad Mac v8.30: -a (agente), -p (prompt). Reusan NBSP variant.
       const nbspA = trimmed.endsWith('\u00a0-a')
@@ -2697,6 +2719,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       updates.isEvent = true
       updates.status = null
       if (!node.due) updates.due = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    } else if (action === 'log') {
+      // Nodo-log: estampa fecha+hora de AHORA → chip visual delante del texto
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed._logAt = new Date().toISOString()
+      updates.extraData = JSON.stringify(ed)
     } else if (action === 'whiteboard') {
       // Marcar como pizarra y navegar al nodo
       // updates.text ya contiene el texto limpio (sin el /pizarra) calculado por handleSlashSelect
@@ -3418,6 +3446,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           >
             {/* Icono inline del nodo */}
             {nodeIcon && <span className="node-inline-icon">{nodeIcon}</span>}
+            {/* Nodo-log: chip fecha+hora delante del texto */}
+            {logChipLabel && (
+              <span
+                className="node-log-chip"
+                contentEditable={false}
+                title={logAt!.toLocaleString('es-ES')}
+                aria-hidden="true"
+              >{logChipLabel}</span>
+            )}
             {/* Lista: dash visual "–" decorativo */}
             {isBullet && <span className="lista-dash" aria-hidden="true">–</span>}
             {/* Nodo tipo 'nota': texto clicable no editable que navega */}
