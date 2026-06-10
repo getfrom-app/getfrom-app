@@ -64,6 +64,44 @@ const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsMod
 const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
 const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
 const FeedbackButton = lazy(() => import('../feedback/FeedbackButton'))
+
+// ── Prefetch de chunks lazy ──────────────────────────────────────────────
+// Una pestaña abierta con un build viejo falla al montar un panel cuyo chunk ya
+// no existe tras un deploy (error + recarga ?v=, el "parpadeo morado"). Al
+// precargar TODOS los chunks en idle justo tras el arranque, los módulos quedan
+// en memoria de la pestaña y los deploys posteriores ya no pueden romper el
+// cambio de columna derecha / vistas. Vite dedupe: import() repetido = no-op.
+function prefetchLazyChunks() {
+  const factories = [
+    () => import('../views/SearchView'),
+    () => import('../views/AccountView'),
+    () => import('../views/SettingsView'),
+    () => import('../views/ResourcesView'),
+    () => import('../views/CalendarPlanner'),
+    () => import('../panels/PlannerPanel'),
+    () => import('../aichat/MagicChat'),
+    () => import('../modals/UnifiedCapture'),
+    () => import('../modals/NewTaskModal'),
+    () => import('../modals/NewNoteModal'),
+    () => import('../modals/NewEventModal'),
+    () => import('../modals/VoiceCaptureModal'),
+    () => import('../modals/TeachMagicModal'),
+    () => import('../modals/KeyboardShortcutsModal'),
+    () => import('../paywall/PaywallModal'),
+    () => import('../onboarding/OnboardingWidget'),
+    () => import('../feedback/FeedbackButton'),
+    () => import('../pdf/PdfViewer'),
+    () => import('../pdf/WhiteboardViewer'),
+  ]
+  // Secuencial con pequeño respiro entre chunks para no competir con el sync inicial.
+  // Los fallos se ignoran (offline, etc.) — NUNCA disparan la recarga de emergencia.
+  let i = 0
+  function next() {
+    if (i >= factories.length) return
+    factories[i++]().catch(() => {}).finally(() => setTimeout(next, 150))
+  }
+  next()
+}
 import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
@@ -520,6 +558,13 @@ export default function MainLayout() {
         store.collapseAllLocal()
         store.setLoaded()
         store.startRemotePolling() // Polling 15s para recibir cambios remotos (MCP, otros clientes)
+        // Precargar los chunks lazy en idle: blinda la pestaña contra deploys
+        // posteriores (chunks obsoletos al cambiar de panel/vista).
+        if ('requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(() => prefetchLazyChunks(), { timeout: 8000 })
+        } else {
+          setTimeout(prefetchLazyChunks, 4000)
+        }
         // Daily-first: la nota diaria de hoy es la vista por defecto al abrir.
         // Solo si se entró por la raíz — los deep links (/node/x, /settings…) se respetan.
         // (navigate se usa solo aquí dentro del .then, igual que en el catch — no re-ejecuta el effect.)
