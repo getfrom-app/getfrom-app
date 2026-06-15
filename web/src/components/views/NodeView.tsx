@@ -20,11 +20,6 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import PizarraView from './PizarraView'
-
-// Flag (Fase 1): la pizarra web vive detrás de localStorage `from_pizarra_web`.
-function isPizarraEnabled(): boolean {
-  try { return localStorage.getItem('from_pizarra_web') === '1' } catch { return false }
-}
 import WFTemporalView from './WFTemporalView'
 import DailyCockpit from './DailyCockpit'
 import NodeViewTabs from './NodeViewTabs'
@@ -238,7 +233,7 @@ export default function NodeView() {
   const viewBlock = useMemo(() => {
     let stored = 'lista'
     try { stored = JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { /* extraData corrupto */ }
-    const wantsPizarra = isPizarraEnabled() && stored === 'pizarra'
+    const wantsPizarra = stored === 'pizarra'
     // La nota diaria solo admite 'lista' o (con flag) 'pizarra' — nunca tabla/kanban/cal.
     if (node?.isDiaryEntry) return wantsPizarra ? 'pizarra' : 'lista'
     const parentNode = node?.parentId ? store.getNode(node.parentId) : null
@@ -298,7 +293,7 @@ export default function NodeView() {
     if (viewBlock === 'tabla') return 'table'
     if (viewBlock === 'kanban') return 'kanban'
     if (viewBlock === 'calendario') return 'calendar'
-    if (viewBlock === 'pizarra' && isPizarraEnabled()) return 'pizarra'
+    if (viewBlock === 'pizarra') return 'pizarra'
     return 'list'
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
@@ -2052,9 +2047,9 @@ export default function NodeView() {
                   </>
                 )
               })()}
-              {/* ── Toggle Pizarra (Fase 1, flag from_pizarra_web) — visible en la
-                     nota diaria y notas normales; oculto en estructura Año/Mes ── */}
-              {isPizarraEnabled() && (() => {
+              {/* ── Toggle Pizarra — visible en la nota diaria y notas normales;
+                     oculto en estructura Año/Mes ── */}
+              {(() => {
                 const parent = node.parentId ? store.getNode(node.parentId) : null
                 const isAgendaStructure = /^\d{4}$/.test(node.text || '') ||
                   (parent && /^\d{4}$/.test(parent.text || ''))
