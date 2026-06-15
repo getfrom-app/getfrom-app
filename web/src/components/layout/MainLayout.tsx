@@ -17,6 +17,7 @@ import AgentListPanel from '../panels/AgentListPanel'
 import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import AudioPanel from '../panels/AudioPanel'
+import DayPanel from '../panels/DayPanel'
 import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
 import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
@@ -149,6 +150,7 @@ export default function MainLayout() {
     | 'template'
     | 'settings'
     | 'audio'
+    | 'day'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
   // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
@@ -317,7 +319,9 @@ export default function MainLayout() {
 
   // Persistir preferencia de panel (excepto los paneles de detalle, que son temporales)
   useEffect(() => {
-    if (rightPanel !== 'context' && rightPanel !== 'prompt' && rightPanel !== 'agent') {
+    // 'day' es contextual (solo en pizarra de la diaria) — no persistir para no
+    // dejarlo pegado al recargar fuera de la diaria.
+    if (rightPanel !== 'context' && rightPanel !== 'prompt' && rightPanel !== 'agent' && rightPanel !== 'day') {
       localStorage.setItem('from-right-panel', rightPanel)
     }
   }, [rightPanel])
@@ -464,15 +468,23 @@ export default function MainLayout() {
     function onOpenPlanner() {
       setRightPanel(p => p === 'planner' ? p : 'planner')
     }
+    // Panel del día (pizarra): NodeView lo abre al ver la diaria como pizarra,
+    // y pide revertir (a filtro) al salir de ese modo.
+    function onOpenDay() { setRightPanel('day') }
+    function onCloseDay() { setRightPanel(p => p === 'day' ? 'filter' : p) }
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
     window.addEventListener('from:open-node', onOpenNode)
     window.addEventListener('from:open-planner', onOpenPlanner)
+    window.addEventListener('from:open-day-panel', onOpenDay)
+    window.addEventListener('from:close-day-panel', onCloseDay)
     return () => {
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
       window.removeEventListener('from:open-node', onOpenNode)
       window.removeEventListener('from:open-planner', onOpenPlanner)
+      window.removeEventListener('from:open-day-panel', onOpenDay)
+      window.removeEventListener('from:close-day-panel', onCloseDay)
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1045,6 +1057,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'audio' && currentNodeIdFromRoute && (
             <AudioPanel nodeId={currentNodeIdFromRoute} />
+          )}
+          {rightPanel === 'day' && (
+            <DayPanel nodeId={currentNodeIdFromRoute} />
           )}
           {rightPanel === 'context' && detailNodeId && (
             <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />

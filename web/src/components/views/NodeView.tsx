@@ -297,6 +297,20 @@ export default function NodeView() {
     return 'list'
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
+  // Panel del día (como iPad): al ver la nota diaria como PIZARRA, abrir la
+  // pestaña «Día» del panel derecho (tareas/bucles + nodos del día), dejando el
+  // lienzo libre. Al salir de ese modo, revertir.
+  useEffect(() => {
+    if (viewKind === 'pizarra' && node?.isDiaryEntry) {
+      const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
+      fire()
+      // Re-disparo diferido: en carga directa, el listener de MainLayout puede
+      // engancharse después de este efecto (orden hijo→padre).
+      const t = setTimeout(fire, 0)
+      return () => { clearTimeout(t); window.dispatchEvent(new CustomEvent('from:close-day-panel')) }
+    }
+  }, [viewKind, node?.isDiaryEntry, node?.id])
+
   function handleSelectView(id: string) {
     if (!node) return
     store.setActiveViewId(node.id, id)
@@ -2683,26 +2697,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && (
-                  node.isDiaryEntry ? (
-                    <div style={{ display: 'flex', alignItems: 'stretch', width: '100%', gap: 0 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <PizarraView parentId={node.id} />
-                      </div>
-                      {/* Columna derecha = panel del día (como iPad): «Tu día»
-                          (tareas/bucles, solo HOY) + TODOS los nodos del día. */}
-                      <div style={{
-                        width: 360, flexShrink: 0, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto',
-                        paddingLeft: 18, marginLeft: 6, borderLeft: '1px solid var(--border-subtle, #ececec)',
-                      }}>
-                        {store.todayDiary()?.id === node.id && <DailyCockpit />}
-                        <Outliner parentId={node.id} autoFocusEmpty disableLocalFilter />
-                      </div>
-                    </div>
-                  ) : (
-                    <PizarraView parentId={node.id} />
-                  )
-                )}
+                {viewKind === 'pizarra' && <PizarraView parentId={node.id} />}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
