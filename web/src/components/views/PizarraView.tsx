@@ -36,8 +36,6 @@ const AUTO_GAP = 84
 // Zoom.
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
-// Snap: distancia (en px de pantalla) para enganchar y mostrar guía.
-const SNAP_PX = 7
 
 interface Cam { x: number; y: number; scale: number }
 interface WorldPos { x: number; y: number }
@@ -84,8 +82,11 @@ export default function PizarraView({ parentId }: Props) {
   // Pan del lienzo (en curso).
   const panRef = useRef<{ startX: number; startY: number; camX: number; camY: number; moved: boolean } | null>(null)
 
-  // Hijos del nodo (las tarjetas).
-  const children = useMemo(() => store.children(parentId), [parentId, store.children(parentId).length, editingId])
+  // Hijos del nodo (las tarjetas). Fresco cada render: store.children está
+  // cacheado e invalida al cambiar un nodo, así que al persistir _pinX/_pinY el
+  // array cambia de referencia y el layout recalcula (antes se memoizaba por
+  // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
+  const children = store.children(parentId)
 
   // Posición efectiva de cada tarjeta: la persistida (_pinX/_pinY) o, si no hay,
   // un auto-layout en columna por orden (SOLO en memoria, no se persiste).
@@ -117,20 +118,28 @@ export default function PizarraView({ parentId }: Props) {
   }, [cam])
 
   // ── Zoom con la rueda, anclado al cursor ────────────────────────────────────
-  const onWheel = useCallback((e: React.WheelEvent) => {
+  // Listener NATIVO (no passive) para poder preventDefault: en modo pizarra la
+  // rueda hace SOLO zoom, no scroll de la página.
+  useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    const sx = e.clientX - rect.left
-    const sy = e.clientY - rect.top
-    setCam(prev => {
-      const factor = Math.exp(-e.deltaY * 0.0015)
-      const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * factor))
-      // Mantener fijo el punto de mundo bajo el cursor.
-      const wx = (sx - prev.x) / prev.scale
-      const wy = (sy - prev.y) / prev.scale
-      return { x: sx - wx * next, y: sy - wy * next, scale: next }
-    })
+    const handler = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const rect = el.getBoundingClientRect()
+      const sx = e.clientX - rect.left
+      const sy = e.clientY - rect.top
+      setCam(prev => {
+        const factor = Math.exp(-e.deltaY * 0.0015)
+        const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * factor))
+        // Mantener fijo el punto de mundo bajo el cursor.
+        const wx = (sx - prev.x) / prev.scale
+        const wy = (sy - prev.y) / prev.scale
+        return { x: sx - wx * next, y: sy - wy * next, scale: next }
+      })
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
   }, [])
 
   // ── Pointer down en el fondo → pan o crear nodo ─────────────────────────────
@@ -160,19 +169,11 @@ export default function PizarraView({ parentId }: Props) {
         e.clientX - containerRef.current!.getBoundingClientRect().left,
         e.clientY - containerRef.current!.getBoundingClientRect().top
       )
-      let nx = d.origin.x + (world.x - d.startWorld.x)
-      let ny = d.origin.y + (world.y - d.startWorld.y)
+      const nx = d.origin.x + (world.x - d.startWorld.x)
+      const ny = d.origin.y + (world.y - d.startWorld.y)
       if (Math.abs(world.x - d.startWorld.x) * cam.scale + Math.abs(world.y - d.startWorld.y) * cam.scale > 3) d.moved = true
-      // Snap contra los bordes/centros de las otras tarjetas.
-      const snapW = SNAP_PX / cam.scale
-      let gx: number | undefined, gy: number | undefined
-      for (const [id, p] of layout) {
-        if (id === d.id) continue
-        if (Math.abs(nx - p.x) < snapW) { nx = p.x; gx = p.x }
-        if (Math.abs(ny - p.y) < snapW) { ny = p.y; gy = p.y }
-      }
+      // Snap desactivado por ahora (daba problemas al arrastrar). Se retomará.
       setDragPos({ id: d.id, pos: { x: nx, y: ny } })
-      setGuides({ vx: gx, hy: gy })
       return
     }
   }, [cam.scale, layout, screenToWorld])
@@ -257,7 +258,6 @@ export default function PizarraView({ parentId }: Props) {
       ref={containerRef}
       data-bg="1"
       className="pizarra-view"
-      onWheel={onWheel}
       onPointerDown={onBackgroundPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
