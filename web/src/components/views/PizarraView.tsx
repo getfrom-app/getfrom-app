@@ -155,6 +155,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  // Multiselección con marco (Cmd/Ctrl + arrastrar sobre el fondo).
+  const [multiSel, setMultiSel] = useState<Set<string>>(new Set())
+  const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
+  const marqueeRef = useRef<{ x0: number; y0: number } | null>(null)
+
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<'select' | 'pen' | 'eraser'>('select')
   const toolRef = useRef(tool); toolRef.current = tool
@@ -329,6 +334,41 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     store.updateNode(id, { extraData: JSON.stringify(ed) })
   }, [])
 
+  // Duplicar un nodo (texto + cuerpo + tipo + pin desplazado para no solaparse).
+  // No copia identidad de Google Calendar (sería un evento fantasma).
+  const duplicateNode = useCallback((id: string, offset: number): string | null => {
+    const n = store.getNode(id); if (!n) return null
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(n.extraData || '{}') } catch { /* corrupto */ }
+    delete ed._gcalEventId; delete (ed as Record<string, unknown>).gcalEventId; delete ed._gcalSynced; delete ed._gcalColor
+    const pin = readPin(n)
+    if (pin) { ed[PIN_X] = String(Math.round(pin.x + offset)); ed[PIN_Y] = String(Math.round(pin.y + offset)) }
+    const dup = store.createNode({
+      text: n.text || '',
+      parentId: n.parentId,
+      siblingOrder: (n.siblingOrder ?? 0) + 0.25,
+      types: n.types,
+      extraData: Object.fromEntries(Object.entries(ed).map(([k, v]) => [k, String(v)])),
+    })
+    store.updateNode(dup.id, { status: n.status, priority: n.priority, body: n.body })
+    return dup.id
+  }, [])
+
+  // Acciones sobre la multiselección (menú contextual).
+  const deleteSelected = useCallback((ids: string[]) => {
+    for (const id of ids) {
+      const n = store.getNode(id)
+      if (n) deleteGcalEventForNode(n)
+      store.deleteNode(id)
+    }
+    setMultiSel(new Set())
+  }, [])
+  const duplicateSelected = useCallback((ids: string[]) => {
+    let i = 1
+    for (const id of ids) duplicateNode(id, 24 * i++)
+    setMultiSel(new Set())
+  }, [duplicateNode])
+
   // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
   // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
   const saveViewAsNode = useCallback((name: string) => {
@@ -440,7 +480,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       eraseAt(w.x, w.y)
       return
     }
+    // Multiselección con marco: Cmd (⌘) / Ctrl + arrastrar sobre el fondo.
+    if (e.metaKey || e.ctrlKey) {
+      el.setPointerCapture(e.pointerId)
+      marqueeRef.current = { x0: e.clientX, y0: e.clientY }
+      setMarquee({ x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY })
+      setMultiSel(new Set())
+      setSelectedId(null)
+      return
+    }
     setSelectedId(null)
+    setMultiSel(new Set())
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
   }, [cam, screenToWorld, eraseAt])
@@ -453,6 +503,23 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Marco de multiselección en curso → actualizar rect y marcar tarjetas dentro.
+    if (marqueeRef.current) {
+      const m = marqueeRef.current
+      setMarquee({ x0: m.x0, y0: m.y0, x1: e.clientX, y1: e.clientY })
+      const rx0 = Math.min(m.x0, e.clientX), rx1 = Math.max(m.x0, e.clientX)
+      const ry0 = Math.min(m.y0, e.clientY), ry1 = Math.max(m.y0, e.clientY)
+      const sel = new Set<string>()
+      containerRef.current?.querySelectorAll('[data-card][data-node-id]').forEach(el => {
+        const r = (el as HTMLElement).getBoundingClientRect()
+        if (r.left < rx1 && r.right > rx0 && r.top < ry1 && r.bottom > ry0) {
+          const id = (el as HTMLElement).getAttribute('data-node-id')
+          if (id) sel.add(id)
+        }
+      })
+      setMultiSel(sel)
+      return
+    }
     // Dibujo / borrado en curso (herramienta lápiz/borrador).
     if (drawRef.current) {
       const rect = containerRef.current!.getBoundingClientRect()
@@ -490,6 +557,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [cam.scale, layout, screenToWorld, eraseAt])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
+    // Fin del marco de multiselección: dejar la selección, ocultar el marco.
+    if (marqueeRef.current) {
+      marqueeRef.current = null
+      try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      setMarquee(null)
+      return
+    }
     // Fin de dibujo/borrado: persistir el trazo (lápiz).
     if (drawRef.current) {
       const pts = drawRef.current
@@ -602,6 +676,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       <style>{`.pizarra-card-body .node-drag-handle{display:none!important}
 .pizarra-node .pizarra-grip{opacity:0;transition:opacity .12s}
 .pizarra-node:hover .pizarra-grip{opacity:1}
+.pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:6px;background:rgba(108,92,231,0.06)}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
@@ -629,6 +704,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         <div style={{ position: 'absolute', top: cam.y + guides.hy * cam.scale, left: 0, height: 1, width: '100%', background: 'var(--accent, #6c5ce7)', opacity: 0.6, pointerEvents: 'none', zIndex: 5 }} />
       )}
 
+      {/* Marco de multiselección (Cmd/Ctrl + arrastrar) */}
+      {marquee && (
+        <div style={{
+          position: 'fixed',
+          left: Math.min(marquee.x0, marquee.x1),
+          top: Math.min(marquee.y0, marquee.y1),
+          width: Math.abs(marquee.x1 - marquee.x0),
+          height: Math.abs(marquee.y1 - marquee.y0),
+          background: 'rgba(108,92,231,0.10)',
+          border: '1px solid var(--accent, #6c5ce7)',
+          borderRadius: 4, zIndex: 50, pointerEvents: 'none',
+        }} />
+      )}
+
       {/* Tarjetas visibles (culling aplicado). Cada tarjeta embebe un OutlinerNode
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
           Escala por transform (contenido a tamaño de mundo). Se arrastra por el
@@ -642,7 +731,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const sx = cam.x + pos.x * cam.scale
         const sy = cam.y + pos.y * cam.scale
         return (
-          <div key={node.id} data-card="1" className="pizarra-node"
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{ position: 'absolute', left: sx, top: sy, width: CARD_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: dragPos?.id === node.id ? 10 : 1 }}>
             <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
@@ -669,7 +758,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           display: 'flex', flexDirection: 'column', gap: 2,
         }}>
           {flowNodes.map(node => dragPos?.id === node.id ? null : (
-            <div key={node.id} data-card="1" className="pizarra-node" style={{ position: 'relative', width: CARD_W }}
+            <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W }}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
               <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
                 <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
@@ -746,32 +835,55 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </div>
       )}
 
-      {/* Menú contextual de la pizarra: QUITAR (saca de la pizarra, NO borra) o
-          ELIMINAR (borra el nodo del todo, también de la columna). */}
-      {contextMenu && store.getNode(contextMenu.nodeId) && (
-        <>
-          <div onPointerDown={() => setContextMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
-          <div style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x, zIndex: 2000, minWidth: 200,
-            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
-            boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
-            <button onClick={() => { removeFromCanvas(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
-              Quitar de la pizarra
-            </button>
-            <button onClick={() => { window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextMenu.nodeId } })); navigate(`/node/${contextMenu.nodeId}`); setContextMenu(null) }} style={ctxItem}>
-              Abrir nodo
-            </button>
-            <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
-            <button onClick={() => {
-              const n = store.getNode(contextMenu.nodeId)
-              if (n) deleteGcalEventForNode(n) // si es evento de Google, lo borra también allí
-              store.deleteNode(contextMenu.nodeId)
-              setContextMenu(null)
-            }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
-              Eliminar nodo
-            </button>
-          </div>
-        </>
-      )}
+      {/* Menú contextual de la pizarra. Si el nodo clicado forma parte de una
+          MULTISELECCIÓN → acciones en lote (eliminar/duplicar todos). Si no →
+          menú normal: QUITAR (saca de la pizarra, NO borra) o ELIMINAR. */}
+      {contextMenu && store.getNode(contextMenu.nodeId) && (() => {
+        const isMulti = multiSel.has(contextMenu.nodeId) && multiSel.size > 1
+        const ids = [...multiSel]
+        return (
+          <>
+            <div onPointerDown={() => setContextMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+            <div style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x, zIndex: 2000, minWidth: 200,
+              background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
+              boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
+              {isMulti ? (
+                <>
+                  <div style={{ padding: '6px 12px 4px', fontSize: 12, color: 'var(--text-secondary,#888)' }}>{ids.length} seleccionados</div>
+                  <button onClick={() => { duplicateSelected(ids); setContextMenu(null) }} style={ctxItem}>
+                    Duplicar todos
+                  </button>
+                  <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+                  <button onClick={() => { deleteSelected(ids); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+                    Eliminar todos
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { removeFromCanvas(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
+                    Quitar de la pizarra
+                  </button>
+                  <button onClick={() => { window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextMenu.nodeId } })); navigate(`/node/${contextMenu.nodeId}`); setContextMenu(null) }} style={ctxItem}>
+                    Abrir nodo
+                  </button>
+                  <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+                  <button onClick={() => { duplicateNode(contextMenu.nodeId, 24); setContextMenu(null) }} style={ctxItem}>
+                    Duplicar
+                  </button>
+                  <button onClick={() => {
+                    const n = store.getNode(contextMenu.nodeId)
+                    if (n) deleteGcalEventForNode(n) // si es evento de Google, lo borra también allí
+                    store.deleteNode(contextMenu.nodeId)
+                    setContextMenu(null)
+                  }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+                    Eliminar nodo
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )
+      })()}
 
       {/* Modal: guardar esta vista (posición+zoom) como nodo */}
       {saveModal && (
