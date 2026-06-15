@@ -12,13 +12,14 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { diaryId } from '../../utils/deterministicId'
+import { takeTemporalFocus } from '../../utils/pizarraNav'
 
 // Lunes de referencia (epoch) para mapear fecha ↔ rejilla. 6-ene-2020 fue lunes.
 const EPOCH = new Date(2020, 0, 6).getTime()
 const DAY_MS = 86400000
 const CELL = 120 // px de mundo por celda de día
 const MIN_SCALE = 0.02
-const MAX_SCALE = 4
+const MAX_SCALE = 9
 
 interface Cam { x: number; y: number; scale: number }
 
@@ -33,14 +34,27 @@ export default function TemporalCanvasView() {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   const [viewport, setViewport] = useState({ w: 1000, h: 700 })
-  // Cámara inicial: hoy centrado, zoom cómodo de días.
+  // Cámara inicial: si venimos "buceando" desde la pizarra de un día, centrar en
+  // ese día/mes; si no, hoy. (takeTemporalFocus se consume una sola vez.)
   const [cam, setCam] = useState<Cam>(() => {
-    const di = dayIndexOf(new Date())
+    const focus = takeTemporalFocus()
+    const d = focus ? new Date(focus.date) : new Date()
+    const s = focus ? focus.scale : 0.9
+    const di = dayIndexOf(d)
     const col = ((di % 7) + 7) % 7, row = Math.floor(di / 7)
-    const s = 0.9
     return { x: -(col * CELL) * s + 500 - CELL * s / 2, y: -(row * CELL) * s + 350, scale: s }
   })
   const panRef = useRef<{ sx: number; sy: number; cx: number; cy: number; moved: boolean } | null>(null)
+  const camRef = useRef(cam); camRef.current = cam
+  const viewportRef = useRef(viewport); viewportRef.current = viewport
+  const divingRef = useRef(false)
+
+  // Día en el centro del viewport (para entrar al hacer zoom-in fuerte).
+  const centeredDay = (): Date => {
+    const c = camRef.current, { w, h } = viewportRef.current
+    const wx = (w / 2 - c.x) / c.scale, wy = (h / 2 - c.y) / c.scale
+    return dateFromColRow(Math.round(wx / CELL - 0.5), Math.round(wy / CELL - 0.5))
+  }
 
   useEffect(() => {
     const el = containerRef.current
@@ -59,15 +73,23 @@ export default function TemporalCanvasView() {
       e.preventDefault()
       const rect = el.getBoundingClientRect()
       const sx = e.clientX - rect.left, sy = e.clientY - rect.top
+      let nextScale = camRef.current.scale
       setCam(prev => {
         const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * Math.exp(-e.deltaY * 0.0015)))
+        nextScale = next
         const wx = (sx - prev.x) / prev.scale, wy = (sy - prev.y) / prev.scale
         return { x: sx - wx * next, y: sy - wy * next, scale: next }
       })
+      // Zoom-in fuerte (un día llena la pantalla) → ENTRAR a ese día (su pizarra).
+      if (!divingRef.current && CELL * nextScale > viewportRef.current.w * 0.6) {
+        divingRef.current = true
+        const node = ensureDayPath(centeredDay())
+        navigate(`/node/${node.id}`)
+      }
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
-  }, [])
+  }, [navigate])
 
   const goToday = useCallback(() => {
     const di = dayIndexOf(new Date())

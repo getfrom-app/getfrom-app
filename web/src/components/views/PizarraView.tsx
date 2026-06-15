@@ -18,6 +18,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { findRootByKey } from '../../utils/rootLookup'
+import { setTemporalFocus } from '../../utils/pizarraNav'
 import NodeContextMenu from '../outliner/NodeContextMenu'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
@@ -45,6 +47,9 @@ const AUTO_GAP = 84
 // Zoom.
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
+// Umbrales de "buceo" (dive): al cruzarlos con la rueda se navega de lienzo.
+const DIVE_OUT_SCALE = 0.08   // alejar mucho → subir al padre / mes
+const DIVE_IN_SCALE = 4.5     // acercar mucho sobre una tarjeta → entrar en ella
 
 interface Cam { x: number; y: number; scale: number }
 interface WorldPos { x: number; y: number }
@@ -135,6 +140,8 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   const camRef = useRef(cam); camRef.current = cam
   const viewportRef = useRef(viewport); viewportRef.current = viewport
   const flyRef = useRef<number | null>(null)
+  const divingRef = useRef(false) // anti-doble-disparo del buceo
+  const tryDiveRef = useRef<(s: number) => void>(() => {})
 
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -176,6 +183,49 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     }
     return map
   }, [children, flowUnpositioned])
+
+  // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
+  // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
+  // mes); si no → al nodo padre. Zoom-in fuerte sobre la tarjeta centrada → ENTRA.
+  tryDiveRef.current = (nextScale: number) => {
+    if (divingRef.current) return
+    const node = store.getNode(parentId)
+    if (!node) return
+    // SUBIR
+    if (nextScale <= DIVE_OUT_SCALE) {
+      if (node.isDiaryEntry && node.diaryDate) {
+        const agenda = findRootByKey('agenda')
+        if (agenda) {
+          divingRef.current = true
+          setTemporalFocus({ date: new Date(node.diaryDate).getTime(), scale: 0.5 }) // ~vista mes
+          navigate(`/node/${agenda.id}`)
+        }
+        return
+      }
+      // Nodo normal → su padre (si no es raíz de sistema/estructura).
+      if (node.parentId) {
+        divingRef.current = true
+        navigate(`/node/${node.parentId}`)
+      }
+      return
+    }
+    // ENTRAR: tarjeta más cercana al centro que domine la pantalla.
+    if (nextScale >= DIVE_IN_SCALE) {
+      const { w, h } = viewportRef.current
+      const c = camRef.current
+      let best: string | null = null, bestD = Infinity
+      for (const [id, pos] of layout) {
+        const sx = c.x + (pos.x + CARD_W / 2) * c.scale
+        const sy = c.y + (pos.y + CARD_MIN_H / 2) * c.scale
+        const d = Math.hypot(sx - w / 2, sy - h / 2)
+        if (d < bestD) { bestD = d; best = id }
+      }
+      if (best && CARD_W * nextScale > w * 0.55 && bestD < w * 0.35) {
+        divingRef.current = true
+        navigate(`/node/${best}`)
+      }
+    }
+  }
 
   // ── Medidas del viewport ──────────────────────────────────────────────────
   useEffect(() => {
@@ -273,14 +323,17 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       const rect = el.getBoundingClientRect()
       const sx = e.clientX - rect.left
       const sy = e.clientY - rect.top
+      let nextScale = camRef.current.scale
       setCam(prev => {
         const factor = Math.exp(-e.deltaY * 0.0015)
         const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * factor))
+        nextScale = next
         // Mantener fijo el punto de mundo bajo el cursor.
         const wx = (sx - prev.x) / prev.scale
         const wy = (sy - prev.y) / prev.scale
         return { x: sx - wx * next, y: sy - wy * next, scale: next }
       })
+      tryDiveRef.current(nextScale) // buceo si cruza umbral
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
@@ -463,11 +516,13 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         touchAction: 'none',
         cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'eraser' ? 'crosshair' : 'default'),
         borderRadius: 8,
+        animation: 'pizarra-dive 0.28s ease-out',
       }}
     >
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
-      <style>{`.pizarra-card-body .node-drag-handle{display:none!important}`}</style>
+      <style>{`.pizarra-card-body .node-drag-handle{display:none!important}
+@keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
       <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
