@@ -197,7 +197,7 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         const agenda = findRootByKey('agenda')
         if (agenda) {
           divingRef.current = true
-          setTemporalFocus({ date: new Date(node.diaryDate).getTime(), scale: 0.5 }) // ~vista mes
+          setTemporalFocus({ date: new Date(node.diaryDate).getTime(), level: 'months' }) // calendario anual 3×4
           navigate(`/node/${agenda.id}`)
         }
         return

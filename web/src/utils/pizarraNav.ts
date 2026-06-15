@@ -1,8 +1,9 @@
 // Hand-off entre la pizarra de un día y el calendario-lienzo (Agenda) al "bucear"
 // con zoom. Cuando la pizarra de un día hace zoom-out hasta el umbral, navega a la
-// Agenda y deja aquí la fecha + zoom destino para que TemporalCanvasView arranque
-// centrado en ese mes/día (en vez de en hoy).
-export interface TemporalFocus { date: number; scale: number }
+// Agenda y deja aquí la fecha + nivel destino para que TemporalCanvasView arranque
+// en el nivel correcto (meses 3×4) centrado en ese año/mes.
+export type TemporalLevel = 'roots' | 'years' | 'months' | 'days'
+export interface TemporalFocus { date: number; level: TemporalLevel }
 
 let pending: TemporalFocus | null = null
 
