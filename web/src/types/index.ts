@@ -87,7 +87,7 @@ export interface SyncResponse {
   workspaces: Workspace[]
 }
 
-export type ViewMode = 'list' | 'table' | 'kanban' | 'calendar'
+export type ViewMode = 'list' | 'table' | 'kanban' | 'calendar' | 'pizarra'
 
 export interface TagDefinition {
   id: string

@@ -19,6 +19,12 @@ import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
+import PizarraView from './PizarraView'
+
+// Flag (Fase 1): la pizarra web vive detrás de localStorage `from_pizarra_web`.
+function isPizarraEnabled(): boolean {
+  try { return localStorage.getItem('from_pizarra_web') === '1' } catch { return false }
+}
 import WFTemporalView from './WFTemporalView'
 import DailyCockpit from './DailyCockpit'
 import NodeViewTabs from './NodeViewTabs'
@@ -230,12 +236,17 @@ export default function NodeView() {
   // Para nodos de Agenda (día/mes/año) forzamos siempre 'lista' —
   // las vistas tabla/kanban/calendario no tienen sentido en la estructura temporal.
   const viewBlock = useMemo(() => {
-    if (node?.isDiaryEntry) return 'lista'
+    let stored = 'lista'
+    try { stored = JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { /* extraData corrupto */ }
+    const wantsPizarra = isPizarraEnabled() && stored === 'pizarra'
+    // La nota diaria solo admite 'lista' o (con flag) 'pizarra' — nunca tabla/kanban/cal.
+    if (node?.isDiaryEntry) return wantsPizarra ? 'pizarra' : 'lista'
     const parentNode = node?.parentId ? store.getNode(node.parentId) : null
     const isAgendaNode = /^\d{4}$/.test(node?.text || '') ||
       (parentNode && /^\d{4}$/.test(parentNode.text || ''))
+    // Año/Mes (estructura temporal): siempre lista.
     if (isAgendaNode) return 'lista'
-    try { return JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { return 'lista' }
+    return stored
   }, [node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setViewBlock(mode: string) {
@@ -287,6 +298,7 @@ export default function NodeView() {
     if (viewBlock === 'tabla') return 'table'
     if (viewBlock === 'kanban') return 'kanban'
     if (viewBlock === 'calendario') return 'calendar'
+    if (viewBlock === 'pizarra' && isPizarraEnabled()) return 'pizarra'
     return 'list'
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
@@ -2040,6 +2052,31 @@ export default function NodeView() {
                   </>
                 )
               })()}
+              {/* ── Toggle Pizarra (Fase 1, flag from_pizarra_web) — visible en la
+                     nota diaria y notas normales; oculto en estructura Año/Mes ── */}
+              {isPizarraEnabled() && (() => {
+                const parent = node.parentId ? store.getNode(node.parentId) : null
+                const isAgendaStructure = /^\d{4}$/.test(node.text || '') ||
+                  (parent && /^\d{4}$/.test(parent.text || ''))
+                if (isAgendaStructure) return null
+                return (
+                  <>
+                    <button
+                      className={`node-view-mode-btn ${viewBlock === 'pizarra' ? 'active' : ''}`}
+                      onClick={() => setViewBlock(viewBlock === 'pizarra' ? 'lista' : 'pizarra')}
+                      title="Pizarra"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+                        <circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+                        <rect x="8" y="5" width="4.5" height="3" rx="0.6" />
+                      </svg>
+                    </button>
+                    <div className="node-toolbar-sep" />
+                  </>
+                )
+              })()}
+
               {/* Pin/Atajo eliminado — favorito accesible vía ··· más opciones */}
 
               {/* Botón ✦ eliminado — "Lo que From sabe" se actualiza automáticamente al abrir el contexto */}
@@ -2648,11 +2685,16 @@ export default function NodeView() {
                 {/* ── Eventos de Google Calendar (solo en notas diarias con GCal conectado) ── */}
                 {/* GCal events son ahora nodos normales del outliner — no hay bloque especial */}
 
-                {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario ── */}
+                {/* ── Pizarra (Fase 1, flag from_pizarra_web): lienzo infinito.
+                       Funciona también en la nota diaria (caso estrella). ── */}
+                {viewKind === 'pizarra' && <PizarraView parentId={node.id} />}
+
+                {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
                 <div className={`outliner-section${
                   (viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal))
                   || (node.isDiaryEntry && viewKind === 'calendar')
+                  || viewKind === 'pizarra'
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
