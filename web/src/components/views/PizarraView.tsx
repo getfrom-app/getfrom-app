@@ -932,6 +932,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     }
   }, [layout, screenToWorld, parentId])
 
+  // Pointer down sobre la TARJETA: arrastra el nodo desde cualquier zona libre
+  // (debajo/derecha/izquierda del texto). NO arrastra si se pincha sobre el texto
+  // editable o un control (dot, checkbox, badges, botones) → deja editar/activar.
+  const onCardAreaPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
+    if (e.button !== 0) return
+    const t = e.target as HTMLElement
+    if (t.closest('.node-text, .bullet-btn, button, a, input, textarea, select, [contenteditable="true"], .node-due-badge, .node-qp-badge, .node-date-actions, .node-priority-dot, [class*="ghost"], [class*="chip"]')) return
+    onCardPointerDown(e, node)
+  }, [onCardPointerDown])
+
   // ── Redimensionado de TARJETA: manija izquierda (ancho) o esquina (escala) ──
   const onNodeResizeDown = useCallback((e: React.PointerEvent, node: Node, mode: 'width' | 'scale') => {
     if (e.button !== 0) return
@@ -1009,13 +1019,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     >
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
-      <style>{`.pizarra-card-body .node-drag-handle{display:none!important}
-.pizarra-node .pizarra-grip{opacity:0;transition:opacity .12s}
-.pizarra-node:hover .pizarra-grip{opacity:1}
-.pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:6px;background:rgba(108,92,231,0.06)}
-.pizarra-node--hover{box-shadow:0 0 0 1.5px rgba(108,92,231,0.45);border-radius:6px}
-.pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:4px}
+      <style>{`/* En la pizarra el tirador ⋮⋮ y los "..." sobran: arrastra desde cualquier
+   zona libre de la tarjeta; clic derecho = menú. */
+.pizarra-card-body .node-drag-handle{display:none!important}
+.pizarra-card-body .node-three-dot-btn{display:none!important}
+/* El texto NO llena la tarjeta → deja hueco libre (derecha) para arrastrar.
+   min-width para que un nodo vacío/corto siga teniendo zona clicable de edición. */
+.pizarra-card-body .node-text{flex:0 1 auto!important;min-width:160px}
+.pizarra-card-body{padding:4px 6px 8px}
+.pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:8px;background:rgba(108,92,231,0.06)}
+.pizarra-node--hover{box-shadow:0 0 0 1.5px rgba(108,92,231,0.45);border-radius:8px}
+.pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
 .pizarra-card-body .node-row{align-items:flex-start!important}
+/* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
+.pizarra-card-body .node-text{cursor:text}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
@@ -1232,11 +1249,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
+            onPointerDown={(e) => onCardAreaPointerDown(e, node)}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1) }}>
-            <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
-              <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
-            </div>
+            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: 'grab' }}>
             <div className="pizarra-card-body" style={{ minWidth: 0 }}>
               <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
             </div>
@@ -1268,11 +1283,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           display: 'flex', flexDirection: 'column', gap: 2,
         }}>
           {flowNodes.map(node => dragPos?.id === node.id ? null : (
-            <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W }}
+            <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W, cursor: 'grab' }}
+              onPointerDown={(e) => onCardAreaPointerDown(e, node)}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
-              <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
-              </div>
               <div className="pizarra-card-body" style={{ minWidth: 0 }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
@@ -1455,10 +1468,6 @@ const quickBtnActive: React.CSSProperties = {
 }
 const quickBtnDisabled: React.CSSProperties = {
   ...quickBtn, color: 'var(--text-secondary, #bbb)', cursor: 'not-allowed', opacity: 0.5,
-}
-const gripStyle: React.CSSProperties = {
-  position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cbcbcb)',
 }
 const ctxItem: React.CSSProperties = {
   display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 7,
