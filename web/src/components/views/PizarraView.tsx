@@ -144,7 +144,9 @@ function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: numb
 // [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
 const FENCE = '```from-pizarra'
 interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
-interface WBData { version: number; strokes: WBStroke[]; texts?: unknown[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
+// Texto LIBRE del lienzo (compatible iPad): x,y mundo; size=fuente; w=ancho; md=texto.
+interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string }
+interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
 
 function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
@@ -255,7 +257,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
-  const [tool, setTool] = useState<'select' | 'pen' | 'eraser'>('select')
+  const [tool, setTool] = useState<'select' | 'pen' | 'eraser' | 'text'>('select')
+  // Texto del lienzo en edición (id del WBText) y hover.
+  const [editText, setEditText] = useState<string | null>(null)
+  const [hoverText, setHoverText] = useState<string | null>(null)
   const toolRef = useRef(tool); toolRef.current = tool
   // Trazo en curso (puntos en MUNDO) mientras se dibuja.
   const [drawPts, setDrawPts] = useState<number[] | null>(null)
@@ -638,6 +643,56 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     setSelectedId(node.id)
   }, [parentId])
 
+  // ── Textos LIBRES del lienzo (herramienta «Texto») ────────────────────────────
+  const mutateTexts = useCallback((fn: (texts: WBText[]) => WBText[]) => {
+    const data = parsePizarra(store.getNode(parentId)?.body)
+    data.texts = fn(data.texts || [])
+    store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+  }, [parentId])
+
+  const createTextAt = useCallback((world: WorldPos) => {
+    const id = 't' + rid()
+    mutateTexts(texts => [...texts, { id, x: world.x, y: world.y, size: 16, w: 360, md: '' }])
+    setTool('select')
+    setEditText(id)
+  }, [mutateTexts])
+
+  const updateTextMd = useCallback((id: string, md: string) => {
+    mutateTexts(texts => texts.map(t => t.id === id ? { ...t, md } : t))
+  }, [mutateTexts])
+
+  const deleteText = useCallback((id: string) => {
+    mutateTexts(texts => texts.filter(t => t.id !== id))
+    setEditText(e => e === id ? null : e)
+  }, [mutateTexts])
+
+  // Persistencia diferida del texto mientras se escribe (evita reescribir el body
+  // en cada tecla; el textarea es no-controlado para no perder el cursor).
+  const textPersistTimer = useRef<number | null>(null)
+  const scheduleTextPersist = useCallback((id: string, md: string) => {
+    if (textPersistTimer.current) clearTimeout(textPersistTimer.current)
+    textPersistTimer.current = window.setTimeout(() => updateTextMd(id, md), 600)
+  }, [updateTextMd])
+
+  // Promociona un texto libre a NODO (documento): crea un nodo con ese texto fijado
+  // en su posición y elimina el texto del lienzo. El dot del hover lo dispara.
+  const promoteTextToNode = useCallback((t: WBText) => {
+    const lines = t.md.split('\n')
+    const node = store.createNode({
+      text: lines[0] || 'Nota',
+      parentId,
+      extraData: {
+        [PIN_X]: String(Math.round(t.x)),
+        [PIN_Y]: String(Math.round(t.y)),
+        [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
+      },
+    })
+    const body = lines.slice(1).join('\n').trim()
+    if (body) store.updateNode(node.id, { body })
+    deleteText(t.id)
+    setSelectedId(node.id)
+  }, [parentId, deleteText])
+
   // ── Pointer down en el fondo → pan, o dibujar/borrar según la herramienta ────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
@@ -660,6 +715,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       eraseAt(w.x, w.y)
       return
     }
+    // Texto: clic en el fondo crea un texto libre y entra en edición.
+    if (toolRef.current === 'text') {
+      createTextAt(w)
+      return
+    }
     // Multiselección con marco: Cmd (⌘) / Ctrl + arrastrar sobre el fondo.
     if (e.metaKey || e.ctrlKey) {
       el.setPointerCapture(e.pointerId)
@@ -673,7 +733,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     clearSelection()
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam, screenToWorld, eraseAt])
+  }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection])
 
   // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -1014,7 +1074,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
         backgroundPosition: `${cam.x}px ${cam.y}px`,
         touchAction: 'none',
-        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'eraser' ? 'crosshair' : 'default'),
+        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'eraser' ? 'crosshair' : tool === 'text' ? 'text' : 'default'),
         borderRadius: 8,
         animation: 'pizarra-dive 0.28s ease-out',
       }}
@@ -1271,6 +1331,44 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
+      {/* ── TEXTOS LIBRES del lienzo (herramienta «Texto»). Hover → dot que lo
+             convierte en NODO. Doble clic → editar. Clic derecho → eliminar. ── */}
+      {(parsePizarra(store.getNode(parentId)?.body).texts || []).map(t => {
+        const sx = cam.x + t.x * cam.scale
+        const sy = cam.y + t.y * cam.scale
+        const editing = editText === t.id
+        const hovered = hoverText === t.id && tool === 'select'
+        return (
+          <div key={t.id} data-card="1"
+            style={{ position: 'absolute', left: sx, top: sy, width: t.w, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
+            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverText(t.id) }}
+            onPointerLeave={() => setHoverText(h => h === t.id ? null : h)}
+            onDoubleClick={(e) => { e.stopPropagation(); setEditText(t.id) }}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); deleteText(t.id) }}>
+            {(hovered || editing) && (
+              <div title="Convertir en nodo" onPointerDown={(e) => { e.stopPropagation(); promoteTextToNode(t) }}
+                style={{ position: 'absolute', left: -22, top: 4, width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--accent,#6c5ce7)', background: '#fff', cursor: 'pointer' }} />
+            )}
+            {editing ? (
+              <textarea
+                autoFocus
+                defaultValue={t.md}
+                onChange={(e) => scheduleTextPersist(t.id, e.target.value)}
+                onBlur={(e) => { updateTextMd(t.id, e.target.value); if (!e.target.value.trim()) deleteText(t.id); setEditText(null) }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLTextAreaElement).blur() }}
+                style={{ width: '100%', minHeight: t.size * 1.8, fontSize: t.size, lineHeight: 1.5, border: '1px solid var(--accent,#6c5ce7)', borderRadius: 6, padding: '4px 6px', resize: 'none', color: t.c || 'var(--text,#222)', background: 'var(--bg-elevated,#fff)', outline: 'none', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}
+              />
+            ) : (
+              <div
+                style={{ fontSize: t.size, lineHeight: 1.5, color: t.c || 'var(--text,#222)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', padding: '4px 6px', borderRadius: 6, cursor: tool === 'select' ? 'text' : 'default', background: hovered ? 'rgba(108,92,231,0.05)' : 'transparent' }}>
+                {t.md || <span style={{ opacity: 0.4 }}>Texto…</span>}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
       {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
              Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
       {flowNodes.length > 0 && (
@@ -1332,7 +1430,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={toolBtnDisabled} disabled title="Texto / Lazo (próximamente)">
+        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
         <div style={vSep} />
