@@ -285,6 +285,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // Texto del lienzo en edición (id del WBText) y hover.
   const [editText, setEditText] = useState<string | null>(null)
   const [hoverText, setHoverText] = useState<string | null>(null)
+  // Retardo al quitar el hover del texto → el dot (fuera de la caja) sigue alcanzable.
+  const hoverTextTimer = useRef<number | null>(null)
+  const setHoverTextNow = useCallback((id: string | null) => {
+    if (hoverTextTimer.current) { clearTimeout(hoverTextTimer.current); hoverTextTimer.current = null }
+    if (id === null) hoverTextTimer.current = window.setTimeout(() => setHoverText(null), 280)
+    else setHoverText(id)
+  }, [])
   const toolRef = useRef(tool); toolRef.current = tool
   // Trazo en curso (puntos en MUNDO) mientras se dibuja.
   const [drawPts, setDrawPts] = useState<number[] | null>(null)
@@ -1412,13 +1419,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         return (
           <div key={t.id} data-card="1"
             style={{ position: 'absolute', left: sx, top: sy, width: t.w, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
-            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverText(t.id) }}
-            onPointerLeave={() => setHoverText(h => h === t.id ? null : h)}
+            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverTextNow(t.id) }}
+            onPointerLeave={() => setHoverTextNow(null)}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setTextMenu({ id: t.id, x: e.clientX, y: e.clientY }) }}>
-            {/* DOT pequeño arriba-izquierda (hover) → convertir en nodo/documento */}
+            {/* DOT pequeño arriba-izquierda (hover). Zona de hit ampliada para alcanzarlo. */}
             {(hovered || editing) && (
-              <div title="Abrir como documento" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(t) }}
-                style={{ position: 'absolute', left: -14, top: -2, width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff', cursor: 'pointer' }} />
+              <div title="Abrir como documento"
+                onPointerEnter={() => setHoverTextNow(t.id)}
+                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(t) }}
+                style={{ position: 'absolute', left: -22, top: -8, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <div style={{ width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff' }} />
+              </div>
             )}
             {/* Texto SUELTO, sin caja, fondo transparente. WYSIWYG al editar. */}
             <div

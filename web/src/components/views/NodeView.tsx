@@ -1710,7 +1710,7 @@ export default function NodeView() {
           )}
 
 
-          <div className="node-title-row">
+          <div className="node-title-row" style={isDoc ? { display: 'none' } : undefined}>
             {node.isEvent ? (
               // Icono calendario para eventos
               <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
