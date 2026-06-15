@@ -13249,6 +13249,15 @@ textarea:focus-visible,
   border-radius: 50%;
   background: #2563eb;
 }
+/* Bandeja «Capturas»: filas arrastrables al lienzo */
+.dc-row--capture { cursor: grab; }
+.dc-row--capture:active { cursor: grabbing; }
+.dc-capture-grip {
+  flex-shrink: 0;
+  color: var(--text-tertiary, #bbb);
+  font-size: 12px;
+  letter-spacing: -1px;
+}
 .dc-check {
   flex-shrink: 0;
   width: 15px;

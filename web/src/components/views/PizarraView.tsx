@@ -91,7 +91,13 @@ function writePin(node: Node, pos: WorldPos) {
   ed[PIN_Y] = String(Math.round(pos.y))
   if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
   delete ed[PIN_HIDDEN] // colocar un nodo en el lienzo lo hace visible (deja de ser marcador)
+  delete ed._capture    // y lo gradúa de la bandeja «Capturas» a nodo del lienzo
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+}
+
+// ¿Es una captura aún en la bandeja (no colocada en el lienzo)?
+function isCapturePin(node: Node): boolean {
+  try { return JSON.parse(node.extraData || '{}')._capture === '1' } catch { return false }
 }
 
 // ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
@@ -207,7 +213,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // columna derecha). Al arrastrar uno del flujo gana pin y pasa a flotar.
   const flowNodes = useMemo(() => {
     if (!flowUnpositioned) return [] as Node[]
-    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !getGcalEventId(n))
+    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !getGcalEventId(n) && !isCapturePin(n))
   }, [children, flowUnpositioned])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────

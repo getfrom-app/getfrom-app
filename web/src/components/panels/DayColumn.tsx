@@ -48,11 +48,22 @@ export default function DayColumn({
     </button>
   )
 
+  const isCapture = (n: Node) => {
+    try { return JSON.parse(n.extraData || '{}')._capture === '1' } catch { return false }
+  }
+  const hasPin = (n: Node) => {
+    try { const e = JSON.parse(n.extraData || '{}'); return e._pinX != null || e._pinY != null } catch { return false }
+  }
+
+  const dayChildren = store.children(node.id)
   // Eventos GCal del día (hijos con _gcalEventId), ordenados por hora de inicio.
-  const eventNodes = store.children(node.id)
+  const eventNodes = dayChildren
     .filter(c => getGcalEventId(c))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
-  const eventIds = new Set(eventNodes.map(c => c.id))
+  // Bandeja de capturas: marcadas `_capture` y aún SIN colocar en el lienzo.
+  const captureNodes = dayChildren.filter(c => isCapture(c) && !hasPin(c) && !getGcalEventId(c))
+  // El bloque «Nodos» (y el lienzo) no muestra eventos ni capturas-en-bandeja.
+  const eventIds = new Set([...eventNodes, ...captureNodes].map(c => c.id))
 
   // Empujar a Google los títulos de eventos editados (debounce; anti-bucle dentro).
   const evSig = eventNodes.map(c => `${c.id}:${c.text}`).join('|')
@@ -97,6 +108,27 @@ export default function DayColumn({
           {!collapsed.has('nodos') && (
             <Outliner parentId={node.id} excludeIds={eventIds} {...outlinerProps} />
           )}
+        </div>
+      )}
+
+      {/* 6. Capturas — bandeja de entrada (fondo). Arrástralas al lienzo para colocarlas. */}
+      {captureNodes.length > 0 && (
+        <div className="dc-group">
+          {header('capturas', 'Capturas')}
+          {!collapsed.has('capturas') && captureNodes.map(c => (
+            <div
+              key={c.id}
+              className="dc-row dc-row--capture"
+              data-node-id={c.id}
+              draggable
+              onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
+              onClick={() => navigate(`/node/${c.id}`)}
+              title="Arrastra al lienzo para colocarla"
+            >
+              <span className="dc-capture-grip">⠿</span>
+              <span className="dc-text">{c.text ? renderInline(c.text) : 'Captura'}</span>
+            </div>
+          ))}
         </div>
       )}
     </>

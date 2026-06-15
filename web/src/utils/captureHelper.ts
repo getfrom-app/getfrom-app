@@ -132,6 +132,16 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
     store.updateNode(node.id, { status: 'pending' })
   }
 
+  // Captura sin fecha ni evento → va a la BANDEJA «Capturas» (fondo de la columna
+  // del día), no al lienzo. Marcador `_capture`. Las que llevan fecha/evento ya
+  // tienen su sitio (Para hoy / Eventos), así que NO se marcan.
+  if (!isEvent && !dp?.parsed.date) {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+    ed._capture = '1'
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+  }
+
   if (opts.sync !== false) store.sync(true).catch(() => {})
 
   const type: CreateFromTextResult['type'] = isEvent ? 'event' : isBucle ? 'bucle' : isTask ? 'task' : 'note'
