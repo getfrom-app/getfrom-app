@@ -15,6 +15,7 @@ const knowledgeUpdateTimestamps = new Map<string, number>()
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
+import DayColumn from '../panels/DayColumn'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -309,7 +310,9 @@ export default function NodeView() {
   // lista muestra «Tu día» (los nodos siguen inline en el centro). Al salir de
   // la diaria, revertir el panel.
   useEffect(() => {
-    if (node?.isDiaryEntry) {
+    // Solo en pizarra: el panel derecho aloja la columna del día. En lista la
+    // columna se pinta inline en el centro (DayColumn) → no abrir el panel.
+    if (node?.isDiaryEntry && viewKind === 'pizarra') {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()
       // Re-disparo diferido: en carga directa, el listener de MainLayout puede
@@ -317,7 +320,7 @@ export default function NodeView() {
       const t = setTimeout(fire, 0)
       return () => { clearTimeout(t); window.dispatchEvent(new CustomEvent('from:close-day-panel')) }
     }
-  }, [node?.isDiaryEntry, node?.id])
+  }, [node?.isDiaryEntry, node?.id, viewKind])
 
   function handleSelectView(id: string) {
     if (!node) return
@@ -2698,15 +2701,29 @@ export default function NodeView() {
                       (abajo) — aquí NO, para no duplicar instancias. En la Agenda
                       (calendario-lienzo) tampoco se monta. */}
                   {viewKind !== 'pizarra' && !isAgendaRoot && (
-                    <Outliner
-                      parentId={node.id}
-                      autoFocusEmpty
-                      filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
-                      filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
-                      filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
-                      temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
-                      disableLocalFilter
-                    />
+                    node.isDiaryEntry ? (
+                      // Diaria en lista: columna unificada (eventos→atrasadas→hoy→bucles→nodos)
+                      <DayColumn
+                        node={node}
+                        outlinerProps={{
+                          autoFocusEmpty: true,
+                          filterText: isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined)),
+                          filterMatchIds: smartFilterResult?.matchIds,
+                          filterAncestorIds: smartFilterResult?.ancestorIds,
+                          disableLocalFilter: true,
+                        }}
+                      />
+                    ) : (
+                      <Outliner
+                        parentId={node.id}
+                        autoFocusEmpty
+                        filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
+                        filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
+                        filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
+                        temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
+                        disableLocalFilter
+                      />
+                    )
                   )}
                 </div>
               </>
