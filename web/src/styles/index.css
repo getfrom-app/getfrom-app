@@ -7577,33 +7577,6 @@ textarea:focus-visible,
 }
 .outliner-section--hidden { display: none; }
 
-/* ── Vista DOCUMENTO ───────────────────────────────────────────────────────────
-   Los mismos nodos, renderizados como un documento de texto rico y limpio:
-   columna centrada y legible, sin bullets en los párrafos (sí en listas/tareas),
-   tipografía de lectura. Cada bloque sigue siendo un nodo. */
-.outliner-section--document {
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
-}
-/* Párrafos (notas planas) → sin punto, texto corrido. Listas, tareas, eventos y
-   bucles conservan su marca. */
-.outliner-section--document .bullet-btn.nota-btn { display: none !important; }
-.outliner-section--document .node-text {
-  font-size: 15.5px;
-  line-height: 1.72;
-  padding: 1px 2px;
-}
-.outliner-section--document .node-row { padding: 2px 0; min-height: 24px; }
-.outliner-section--document .outliner-node { margin-bottom: 2px; }
-/* Encabezados con aire arriba (separación de documento) */
-.outliner-section--document .node-text--h1,
-.outliner-section--document .node-text--h2,
-.outliner-section--document .node-text--h3 { margin-top: 0.5em; }
-/* Tirador discreto: solo al hover (ya lo es), sin saturar el documento */
-.outliner-section--document .node-drag-handle { opacity: 0; }
-.outliner-section--document .node-row:hover .node-drag-handle { opacity: 0.5; }
-
 /* ── Tabla view ───────────────────────────────────────────────────────────── */
 .node-table-wrapper {
   width: 100%;

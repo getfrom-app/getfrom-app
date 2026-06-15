@@ -727,8 +727,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const note = store.createNode({
       text: title,
       parentId,
-      // Oculta del lienzo (_pinHidden) y se abre en vista DOCUMENTO para editar.
-      extraData: { [PIN_HIDDEN]: '1', viewBlock: 'documento' },
+      // Oculta del lienzo (_pinHidden) y se abre en LISTA para editar (una nota normal).
+      extraData: { [PIN_HIDDEN]: '1', viewBlock: 'lista' },
     })
     for (const b of blocks.slice(1)) {
       const child = store.createNode({ text: b.text, parentId: note.id })
