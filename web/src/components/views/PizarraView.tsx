@@ -18,9 +18,16 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 
-interface Props { parentId: string }
+interface Props {
+  parentId: string
+  // Si true, los hijos SIN posición se auto-colocan en columna (solo en memoria,
+  // no se persiste) para que el contenido sea visible en notas normales. En la
+  // diaria es false: el lienzo queda libre y el contenido vive en el panel del día.
+  flowUnpositioned?: boolean
+}
 
 // Claves de pin — DEBEN coincidir byte a byte con WBKeys del iPad.
 const PIN_X = '_pinX'
@@ -31,6 +38,9 @@ const PIN_SCALE = '_pinScale'
 const CARD_W = 220
 const CARD_MIN_H = 52
 // Auto-layout (nodos sin posición): columna en flujo.
+const AUTO_X = 40
+const AUTO_Y0 = 40
+const AUTO_GAP = 84
 // Zoom.
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
@@ -61,7 +71,7 @@ function writePin(node: Node, pos: WorldPos) {
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
-export default function PizarraView({ parentId }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned = false }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -71,6 +81,9 @@ export default function PizarraView({ parentId }: Props) {
   // Edición inline de una tarjeta.
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+
+  // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
+  const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
 
   // Drag de tarjeta (en curso): id + posición de mundo provisional + guías.
   const dragRef = useRef<{ id: string; startWorld: WorldPos; origin: WorldPos; moved: boolean } | null>(null)
@@ -91,12 +104,14 @@ export default function PizarraView({ parentId }: Props) {
   // en la columna derecha / vista lista. Así la pizarra queda libre.
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
+    let autoI = 0
     for (const n of children) {
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
+      else if (flowUnpositioned) { map.set(n.id, { x: AUTO_X, y: AUTO_Y0 + autoI * AUTO_GAP }); autoI++ }
     }
     return map
-  }, [children])
+  }, [children, flowUnpositioned])
 
   // ── Medidas del viewport ──────────────────────────────────────────────────
   useEffect(() => {
@@ -309,6 +324,7 @@ export default function PizarraView({ parentId }: Props) {
             data-card="1"
             onPointerDown={(e) => onCardPointerDown(e, node)}
             onDoubleClick={(e) => { e.stopPropagation(); setEditingId(node.id); setEditText(node.text) }}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{
               position: 'absolute',
               left: sx,
@@ -431,6 +447,18 @@ export default function PizarraView({ parentId }: Props) {
         <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
           Haz <b>doble clic</b> en cualquier parte para crear un nodo.
         </div>
+      )}
+
+      {/* Menú contextual de nodo (clic derecho) — idéntico al de la vista lista */}
+      {contextMenu && store.getNode(contextMenu.nodeId) && (
+        <NodeContextMenu
+          node={store.getNode(contextMenu.nodeId)!}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          onNavigate={navigate}
+          onSelect={() => { /* selección no aplica en el lienzo */ }}
+        />
       )}
     </div>
   )

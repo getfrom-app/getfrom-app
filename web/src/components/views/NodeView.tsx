@@ -230,26 +230,29 @@ export default function NodeView() {
   // Para nodos de Agenda (día/mes/año) forzamos siempre 'lista' —
   // las vistas tabla/kanban/calendario no tienen sentido en la estructura temporal.
   const viewBlock = useMemo(() => {
-    let stored = 'lista'
-    try { stored = JSON.parse(node?.extraData || '{}').viewBlock || 'lista' } catch { /* extraData corrupto */ }
-    const wantsPizarra = stored === 'pizarra'
-    // La nota diaria solo admite 'lista' o (con flag) 'pizarra' — nunca tabla/kanban/cal.
-    if (node?.isDiaryEntry) return wantsPizarra ? 'pizarra' : 'lista'
+    // Lo guardado manda siempre (si el usuario eligió una vista, se respeta).
+    let stored: string | null = null
+    try { stored = JSON.parse(node?.extraData || '{}').viewBlock || null } catch { /* corrupto */ }
+    if (stored) return stored
+    // Por defecto (sin elección previa):
+    // - Estructura/navegación (Año/Mes de la Agenda, raíces de sistema 🏠/Agenda/
+    //   Contexto/Prompts/Agentes/Plantillas/Papelera/Perfil) → LISTA.
+    // - El resto (notas normales y la diaria) → PIZARRA (vista por defecto de From).
     const parentNode = node?.parentId ? store.getNode(node.parentId) : null
     const isAgendaNode = /^\d{4}$/.test(node?.text || '') ||
       (parentNode && /^\d{4}$/.test(parentNode.text || ''))
-    // Año/Mes (estructura temporal): siempre lista.
     if (isAgendaNode) return 'lista'
-    return stored
-  }, [node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (node && isProtectedSystemRoot(node.id)) return 'lista'
+    return 'pizarra'
+  }, [node?.id, node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setViewBlock(mode: string) {
     if (!node) return
     // Siempre leer extraData existente para no perder _props, _views, etc.
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch { /* extraData corrupto — empezar vacío */ }
-    if (mode === 'lista') delete ed.viewBlock
-    else ed.viewBlock = mode
+    // Guardar SIEMPRE el modo (el default es pizarra, así que 'lista' debe persistir).
+    ed.viewBlock = mode
     store.updateNode(node.id, { extraData: JSON.stringify(ed) })
   }
 
@@ -2021,23 +2024,21 @@ export default function NodeView() {
             </div>{/* /node-title-wrap */}
 
             <div className="node-title-actions">
-              {/* View mode switcher — oculto en nodos de la estructura de Agenda (día, mes, año) */}
+              {/* Selector de vistas — SIEMPRE arriba a la derecha de la nota.
+                  Pizarra es la vista por defecto; Lista/Tabla/Kanban/Calendario son
+                  opt-in. Oculto solo en la estructura de Agenda (año/mes). */}
               {(() => {
                 const hasMultiViews = store.getViews(node.id).length > 0
                 if (hasMultiViews) return null  // los tabs abajo se encargan
-                // Ocultar en: nodos de día (isDiaryEntry), de año (/^\d{4}$/) y de mes
-                // (los meses son hijos de años dentro de la Agenda)
-                if (node.isDiaryEntry) return null
                 const isAgendaStructure = (() => {
-                  // Año: texto es 4 dígitos
                   if (/^\d{4}$/.test(node.text || '')) return true
-                  // Mes: padre es un año dentro de la Agenda
                   const parent = node.parentId ? store.getNode(node.parentId) : null
                   if (parent && /^\d{4}$/.test(parent.text || '')) return true
                   return false
                 })()
                 if (isAgendaStructure) return null
                 const modes = [
+                  { id: 'pizarra', title: 'Pizarra', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none"/><rect x="8" y="5" width="4.5" height="3" rx="0.6"/></svg> },
                   { id: 'lista', title: 'Lista', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
                   { id: 'tabla', title: 'Tabla', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg> },
                   { id: 'kanban', title: 'Kanban', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg> },
@@ -2057,30 +2058,6 @@ export default function NodeView() {
                         </button>
                       ))}
                     </div>
-                    <div className="node-toolbar-sep" />
-                  </>
-                )
-              })()}
-              {/* ── Toggle Pizarra — visible en la nota diaria y notas normales;
-                     oculto en estructura Año/Mes ── */}
-              {(() => {
-                const parent = node.parentId ? store.getNode(node.parentId) : null
-                const isAgendaStructure = /^\d{4}$/.test(node.text || '') ||
-                  (parent && /^\d{4}$/.test(parent.text || ''))
-                if (isAgendaStructure) return null
-                return (
-                  <>
-                    <button
-                      className={`node-view-mode-btn ${viewBlock === 'pizarra' ? 'active' : ''}`}
-                      onClick={() => setViewBlock(viewBlock === 'pizarra' ? 'lista' : 'pizarra')}
-                      title="Pizarra"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
-                        <circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" />
-                        <rect x="8" y="5" width="4.5" height="3" rx="0.6" />
-                      </svg>
-                    </button>
                     <div className="node-toolbar-sep" />
                   </>
                 )
@@ -2697,7 +2674,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && <PizarraView parentId={node.id} />}
+                {viewKind === 'pizarra' && <PizarraView parentId={node.id} flowUnpositioned={!node.isDiaryEntry} />}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
