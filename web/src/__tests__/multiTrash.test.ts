@@ -94,6 +94,19 @@ describe('Borrado múltiple — tryDeleteSelection (selección desde el DOM)', (
     expect(store.children(note.id).length).toBe(0)
   })
 
+  it('borra nodos con extraData DOBLE-codificado (regresión: _block en string)', () => {
+    const note = store.createNode({ text: 'N', parentId: null })
+    const a = store.createNode({ text: 'a', parentId: note.id, siblingOrder: 1 })
+    const b = store.createNode({ text: 'b', parentId: note.id, siblingOrder: 2 })
+    // Corromper extraData: doble JSON.stringify (lo que rompía trashNode)
+    store.updateNode(a.id, { extraData: JSON.stringify(JSON.stringify({ _block: 'bullet' })) })
+    store.updateNode(b.id, { extraData: JSON.stringify(JSON.stringify({ _block: 'h2' })) })
+
+    for (const id of [a.id, b.id]) renderSelectedRow(id)
+    expect(tryDeleteSelection()).toBe(true)
+    expect(store.children(note.id).length).toBe(0)
+  })
+
   it('no actúa si hay menos de 2 elementos', () => {
     const note = store.createNode({ text: 'N', parentId: null })
     const c1 = store.createNode({ text: 'uno', parentId: note.id })

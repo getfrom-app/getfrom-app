@@ -18,6 +18,18 @@ import { findRootByKey, isProtectedSystemRoot } from './rootLookup'
 
 const PAPELERA_NAME = '🗑 Papelera'
 
+/** Parsea extraData de forma robusta. Algunos nodos antiguos quedaron DOBLE-
+ *  codificados (un JSON string dentro de otro): `JSON.parse` devuelve un string
+ *  en vez de un objeto, y escribir una propiedad sobre él lanza. Aquí se re-parsea
+ *  hasta obtener un objeto, o `{}` si no se puede. */
+export function parseExtraData(raw: string | null | undefined): Record<string, unknown> {
+  let v: unknown = raw || '{}'
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+    try { v = JSON.parse(v) } catch { return {} }
+  }
+  return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
+}
+
 export function getPapeleraNode(): Node | undefined {
   // Papelera permanece en parentId=null (no se reparenta bajo 🏠 From), pero usamos
   // el lookup robusto por id determinista por consistencia.
@@ -61,8 +73,7 @@ export function trashNode(nodeId: string): void {
   const newParentId = parentIsInPapelera ? originalParentId : papelera.id
 
   // Guardar el parentId original para poder restaurar y reconectar
-  let ed: Record<string, unknown> = {}
-  try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+  const ed = parseExtraData(node.extraData)
   ed._trashedFromParentId = originalParentId
   ed._trashedAt = new Date().toISOString()
 
@@ -92,8 +103,7 @@ export function restoreNode(nodeId: string): string | null {
   const node = store.getNode(nodeId)
   if (!node) return null
 
-  let ed: Record<string, unknown> = {}
-  try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+  const ed = parseExtraData(node.extraData)
 
   const originalParentId = (ed._trashedFromParentId as string | null | undefined) ?? null
   delete ed._trashedFromParentId
@@ -157,11 +167,9 @@ function reconnectOrphanedChildren(parentId: string): void {
   // Buscar nodos en Papelera (hijos directos) que pertenecían a parentId
   const papeleraChildren = store.children(papelera.id)
   for (const child of papeleraChildren) {
-    try {
-      const ed = JSON.parse(child.extraData || '{}')
-      if (ed._trashedFromParentId === parentId) {
-        store.updateNode(child.id, { parentId })
-      }
-    } catch { /* ignore */ }
+    const ed = parseExtraData(child.extraData)
+    if (ed._trashedFromParentId === parentId) {
+      store.updateNode(child.id, { parentId })
+    }
   }
 }
