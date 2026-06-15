@@ -187,6 +187,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [groupDelta, setGroupDelta] = useState<WorldPos | null>(null)
   // Posición (pantalla) del mini-menú flotante de la selección (estilo iPad).
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
+  // Menú rápido (clic derecho en el fondo): herramientas favoritas, estilo iPad.
+  const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; world: WorldPos } | null>(null)
   const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
@@ -784,6 +786,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
       onDoubleClick={onBackgroundDoubleClick}
+      onContextMenu={(e) => {
+        // Clic derecho en el FONDO (no sobre una tarjeta) → menú rápido (estilo iPad).
+        if ((e.target as HTMLElement).dataset.bg !== '1') return
+        e.preventDefault()
+        const rect = containerRef.current!.getBoundingClientRect()
+        setQuickMenu({ x: e.clientX, y: e.clientY, world: screenToWorld(e.clientX - rect.left, e.clientY - rect.top) })
+      }}
       onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
       onDrop={onCanvasDrop}
       style={{
@@ -874,6 +883,36 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <button style={miniItem} onClick={() => duplicateSelection()}>Duplicar</button>
           <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>Eliminar</button>
         </div>
+      )}
+
+      {/* Menú rápido (clic derecho en el fondo) — herramientas favoritas, estilo
+          iPad: crear nodo aquí · lápiz · borrador · seleccionar · deshacer. */}
+      {quickMenu && (
+        <>
+          <div onPointerDown={() => setQuickMenu(null)} onContextMenu={(e) => { e.preventDefault(); setQuickMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1599 }} />
+          <div style={{
+            position: 'fixed', left: quickMenu.x, top: Math.max(8, quickMenu.y - 52), transform: 'translateX(-50%)',
+            zIndex: 1600, display: 'flex', alignItems: 'center', gap: 2, padding: 5,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
+            borderRadius: 999, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
+          }}>
+            <button style={quickBtn} title="Crear nodo aquí" onClick={() => { createNodeAt(quickMenu.world); setQuickMenu(null) }}>
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M10 5v10M5 10h10"/></svg>
+            </button>
+            <button style={tool === 'pen' ? quickBtnActive : quickBtn} title="Lápiz" onClick={() => { setTool('pen'); setQuickMenu(null) }}>
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+            </button>
+            <button style={tool === 'eraser' ? quickBtnActive : quickBtn} title="Borrador" onClick={() => { setTool('eraser'); setQuickMenu(null) }}>
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
+            </button>
+            <button style={tool === 'select' ? quickBtnActive : quickBtn} title="Seleccionar / mover" onClick={() => { setTool('select'); setQuickMenu(null) }}>
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
+            </button>
+            <button style={store.canUndo ? quickBtn : quickBtnDisabled} disabled={!store.canUndo} title="Deshacer" onClick={() => { store.undo(); setQuickMenu(null) }}>
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
+            </button>
+          </div>
+        </>
       )}
 
       {/* Tarjetas visibles (culling aplicado). Cada tarjeta embebe un OutlinerNode
@@ -1088,6 +1127,17 @@ const toolBtnActive: React.CSSProperties = {
 }
 const vSep: React.CSSProperties = {
   width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
+}
+const quickBtn: React.CSSProperties = {
+  width: 40, height: 40, borderRadius: 999, border: 'none', background: 'transparent',
+  color: 'var(--accent, #6c5ce7)', cursor: 'pointer', display: 'inline-flex',
+  alignItems: 'center', justifyContent: 'center',
+}
+const quickBtnActive: React.CSSProperties = {
+  ...quickBtn, background: 'var(--accent-soft, rgba(108,92,231,0.14))',
+}
+const quickBtnDisabled: React.CSSProperties = {
+  ...quickBtn, color: 'var(--text-secondary, #bbb)', cursor: 'not-allowed', opacity: 0.5,
 }
 const gripStyle: React.CSSProperties = {
   position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
