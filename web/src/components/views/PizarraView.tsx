@@ -189,6 +189,19 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
   // Menú rápido (clic derecho en el fondo): herramientas favoritas, estilo iPad.
   const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; world: WorldPos } | null>(null)
+  // Conjunto configurable de favoritos del menú rápido (CSV en localStorage).
+  const [quickTools, setQuickTools] = useState<string[]>(() => {
+    const raw = localStorage.getItem('pizarraQuickTools') || 'node,pen,eraser,select,undo'
+    return raw.split(',').map(s => s.trim()).filter(Boolean)
+  })
+  const [quickCfg, setQuickCfg] = useState(false) // panel de configuración abierto
+  const toggleQuickTool = (k: string) => {
+    setQuickTools(prev => {
+      const next = prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]
+      localStorage.setItem('pizarraQuickTools', next.join(','))
+      return next
+    })
+  }
 
   // Interacción de TRAZOS (con herramienta «seleccionar»): hover, mover, escalar.
   const [hoverStroke, setHoverStroke] = useState<string | null>(null)
@@ -1033,35 +1046,70 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </div>
       )}
 
-      {/* Menú rápido (clic derecho en el fondo) — herramientas favoritas, estilo
-          iPad: crear nodo aquí · lápiz · borrador · seleccionar · deshacer. */}
-      {quickMenu && (
-        <>
-          <div onPointerDown={() => setQuickMenu(null)} onContextMenu={(e) => { e.preventDefault(); setQuickMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1599 }} />
-          <div style={{
-            position: 'fixed', left: quickMenu.x, top: Math.max(8, quickMenu.y - 52), transform: 'translateX(-50%)',
-            zIndex: 1600, display: 'flex', alignItems: 'center', gap: 2, padding: 5,
-            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
-            borderRadius: 999, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
-          }}>
-            <button style={quickBtn} title="Crear nodo aquí" onClick={() => { createNodeAt(quickMenu.world); setQuickMenu(null) }}>
-              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M10 5v10M5 10h10"/></svg>
-            </button>
-            <button style={tool === 'pen' ? quickBtnActive : quickBtn} title="Lápiz" onClick={() => { setTool('pen'); setQuickMenu(null) }}>
-              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
-            </button>
-            <button style={tool === 'eraser' ? quickBtnActive : quickBtn} title="Borrador" onClick={() => { setTool('eraser'); setQuickMenu(null) }}>
-              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
-            </button>
-            <button style={tool === 'select' ? quickBtnActive : quickBtn} title="Seleccionar / mover" onClick={() => { setTool('select'); setQuickMenu(null) }}>
-              <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
-            </button>
-            <button style={store.canUndo ? quickBtn : quickBtnDisabled} disabled={!store.canUndo} title="Deshacer" onClick={() => { store.undo(); setQuickMenu(null) }}>
-              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
-            </button>
-          </div>
-        </>
-      )}
+      {/* Menú rápido (clic derecho en el fondo) — herramientas favoritas
+          CONFIGURABLES (estilo iPad). El engranaje abre la lista para elegir cuáles. */}
+      {quickMenu && (() => {
+        const runQuick = (key: string) => {
+          switch (key) {
+            case 'node': createNodeAt(quickMenu.world); break
+            case 'pen': setTool('pen'); break
+            case 'eraser': setTool('eraser'); break
+            case 'select': setTool('select'); break
+            case 'undo': store.undo(); break
+            case 'redo': store.redo(); break
+            case 'today': { const day = ensureDayPath(new Date()); navigate(`/node/${day.id}`); setCam({ x: 60, y: 60, scale: 1 }); window.dispatchEvent(new CustomEvent('from:open-day-panel')); break }
+            case 'saveView': setSaveName(''); setSaveModal(true); break
+          }
+          setQuickMenu(null)
+        }
+        const isActive = (k: string) => (k === 'pen' || k === 'eraser' || k === 'select') && tool === k
+        const isDisabled = (k: string) => (k === 'undo' && !store.canUndo) || (k === 'redo' && !store.canRedo)
+        return (
+          <>
+            <div onPointerDown={() => { setQuickMenu(null); setQuickCfg(false) }} onContextMenu={(e) => { e.preventDefault(); setQuickMenu(null); setQuickCfg(false) }} style={{ position: 'fixed', inset: 0, zIndex: 1599 }} />
+            <div style={{ position: 'fixed', left: quickMenu.x, top: Math.max(8, quickMenu.y - 52), transform: 'translateX(-50%)', zIndex: 1600 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 2, padding: 5,
+                background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
+                borderRadius: 999, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
+              }}>
+                {quickTools.map(k => (
+                  <button key={k} style={isDisabled(k) ? quickBtnDisabled : (isActive(k) ? quickBtnActive : quickBtn)} disabled={isDisabled(k)} title={QUICK_LABEL[k]} onClick={() => runQuick(k)}>
+                    {QUICK_ICON[k]}
+                  </button>
+                ))}
+                <div style={{ width: 1, height: 22, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
+                <button style={quickCfg ? quickBtnActive : quickBtn} title="Configurar accesos" onClick={() => setQuickCfg(c => !c)}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="2.4"/><path d="M10 1.6v2M10 16.4v2M3.6 10h-2M18.4 10h-2M5.2 5.2 3.8 3.8M16.2 16.2l-1.4-1.4M14.8 5.2l1.4-1.4M3.8 16.2l1.4-1.4"/></svg>
+                </button>
+              </div>
+              {quickCfg && (
+                <div style={{
+                  marginTop: 6, padding: 6, minWidth: 180,
+                  background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
+                  borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
+                }} onPointerDown={(e) => e.stopPropagation()}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary,#888)', padding: '4px 8px 6px' }}>Accesos del menú rápido</div>
+                  {QUICK_ALL.map(k => {
+                    const on = quickTools.includes(k)
+                    return (
+                      <button key={k} onClick={() => toggleQuickTool(k)} style={{
+                        display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left',
+                        border: 'none', background: 'transparent', cursor: 'pointer', padding: '6px 8px',
+                        borderRadius: 8, fontSize: 13, color: 'var(--text,#333)',
+                      }}>
+                        <span style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${on ? 'var(--accent,#6c5ce7)' : 'var(--border,#ccc)'}`, background: on ? 'var(--accent,#6c5ce7)' : 'transparent', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, flexShrink: 0 }}>{on ? '✓' : ''}</span>
+                        <span style={{ width: 20, display: 'inline-flex', justifyContent: 'center', color: 'var(--accent,#6c5ce7)' }}>{QUICK_ICON[k]}</span>
+                        {QUICK_LABEL[k]}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )
+      })()}
 
       {/* Tarjetas visibles (culling aplicado). Cada tarjeta embebe un OutlinerNode
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
@@ -1275,6 +1323,22 @@ const toolBtnActive: React.CSSProperties = {
 }
 const vSep: React.CSSProperties = {
   width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
+}
+// Catálogo de herramientas del menú rápido (configurable).
+const QUICK_ALL = ['node', 'pen', 'eraser', 'select', 'undo', 'redo', 'today', 'saveView'] as const
+const QUICK_LABEL: Record<string, string> = {
+  node: 'Crear nodo aquí', pen: 'Lápiz', eraser: 'Borrador', select: 'Seleccionar / mover',
+  undo: 'Deshacer', redo: 'Rehacer', today: 'Ir a hoy', saveView: 'Guardar vista',
+}
+const QUICK_ICON: Record<string, React.ReactNode> = {
+  node: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M10 5v10M5 10h10"/></svg>,
+  pen: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>,
+  eraser: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>,
+  select: <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>,
+  undo: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>,
+  redo: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>,
+  today: <svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>,
+  saveView: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>,
 }
 const quickBtn: React.CSSProperties = {
   width: 40, height: 40, borderRadius: 999, border: 'none', background: 'transparent',

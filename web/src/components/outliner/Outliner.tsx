@@ -40,6 +40,19 @@ function gClearSelected() {
 /** Exportado: obtener todos los IDs seleccionados actualmente */
 export function getGlobalSelectedIds(): Set<string> { return _gSelectedIds }
 
+/** Lee la selección VISUAL del DOM (filas con clase .multi-selected). Es la fuente
+ * de verdad de lo que el usuario ve resaltado, inmune a desincronizaciones del
+ * estado global `_gSelectedIds`. */
+export function domSelectedNodeIds(): string[] {
+  const out: string[] = []
+  document.querySelectorAll('.node-row.multi-selected').forEach(el => {
+    const host = (el as HTMLElement).closest('[data-node-id]') as HTMLElement | null
+    const id = host?.getAttribute('data-node-id')
+    if (id && !out.includes(id)) out.push(id)
+  })
+  return out
+}
+
 /** Exportado: limpiar toda la selección */
 export function clearGlobalSelection() {
   gClearSelected()
@@ -685,14 +698,20 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           return
         }
       }
-      if (_gSelectedIds.size === 0) return
+      // Borrado de multiselección: usar la selección global, y si está vacía pero el
+      // DOM muestra filas resaltadas (desincronización de estado), usar esas. Así
+      // «borrar varios» funciona aunque `_gSelectedIds` se haya quedado obsoleto.
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.preventDefault()
-        e.stopPropagation()
-        const ids = [..._gSelectedIds] // snapshot antes de mutar (trashNode notifica)
-        gClearSelected()
-        for (const id of ids) trashNode(id)
+        const ids = _gSelectedIds.size > 0 ? [..._gSelectedIds] : domSelectedNodeIds()
+        if (ids.length > 1) {
+          e.preventDefault()
+          e.stopPropagation()
+          gClearSelected()
+          for (const id of ids) trashNode(id)
+          return
+        }
       }
+      if (_gSelectedIds.size === 0) return
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         const flat = flatVisibleIdsRef.current()
         const texts = flat

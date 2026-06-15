@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
-import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, openSelectionMenu } from './Outliner'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, domSelectedNodeIds, openSelectionMenu } from './Outliner'
 import type { Node } from '../../types'
 import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
@@ -1705,10 +1705,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // caso en que el nodo activo tiene el cursor dentro de la selección.) ──
     if ((e.key === 'Backspace' || e.key === 'Delete') && !showSlash && !picker) {
       const sel = getGlobalSelectedIds()
-      if (sel.size > 1 && sel.has(node.id)) {
+      const ids = sel.size > 1 ? [...sel] : domSelectedNodeIds()
+      if (ids.length > 1 && ids.includes(node.id)) {
         e.preventDefault()
         e.stopPropagation()
-        const ids = [...sel]
         clearGlobalSelection()
         for (const id of ids) trashNode(id)
         return
