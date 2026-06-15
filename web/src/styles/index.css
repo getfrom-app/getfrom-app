@@ -7577,6 +7577,18 @@ textarea:focus-visible,
 }
 .outliner-section--hidden { display: none; }
 
+/* ── Editor de DOCUMENTO (TipTap) ── */
+.doc-editor .ProseMirror { outline: none; font-size: 16px; line-height: 1.72; color: var(--text, #1a1a1a); min-height: 320px; }
+.doc-editor .ProseMirror p { margin: 0.45em 0; }
+.doc-editor .ProseMirror h1 { font-size: 1.8em; font-weight: 700; margin: 0.6em 0 0.2em; line-height: 1.25; }
+.doc-editor .ProseMirror h2 { font-size: 1.4em; font-weight: 700; margin: 0.6em 0 0.2em; line-height: 1.3; }
+.doc-editor .ProseMirror h3 { font-size: 1.18em; font-weight: 700; margin: 0.5em 0 0.15em; }
+.doc-editor .ProseMirror ul, .doc-editor .ProseMirror ol { padding-left: 1.45em; margin: 0.45em 0; }
+.doc-editor .ProseMirror li { margin: 0.15em 0; }
+.doc-editor .ProseMirror a { color: var(--accent, #6c5ce7); text-decoration: underline; cursor: pointer; }
+.doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
+.doc-title::placeholder { color: var(--text-tertiary, #bbb); }
+
 /* ── Tabla view ───────────────────────────────────────────────────────────── */
 .node-table-wrapper {
   width: 100%;

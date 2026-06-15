@@ -721,20 +721,22 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       navigate(`/node/${t.nodeId}`)
       return
     }
+    // Título = 1ª línea; cuerpo = el resto del texto rico (HTML) → DOCUMENTO real
+    // (un solo nodo hoja, contenido en el body; se edita con TipTap, no son nodos).
     const blocks = htmlToBlocks(t.md)
     const title = blocks[0]?.text || 'Documento'
-    // Nota-documento: hija de la nota del lienzo, oculta del lienzo (_pinHidden).
+    const tmp = document.createElement('div'); tmp.innerHTML = t.md
+    // Quitar el primer bloque (que pasa a ser el título) del cuerpo.
+    if (tmp.firstChild) tmp.removeChild(tmp.firstChild)
+    const bodyHtml = tmp.innerHTML.trim()
     const note = store.createNode({
       text: title,
       parentId,
-      // Oculta del lienzo (_pinHidden) y se abre en LISTA para editar (una nota normal).
-      extraData: { [PIN_HIDDEN]: '1', viewBlock: 'lista' },
+      // _doc → editor de documento; _pinHidden → no aparece como tarjeta en el lienzo.
+      extraData: { _doc: '1', [PIN_HIDDEN]: '1' },
     })
-    for (const b of blocks.slice(1)) {
-      const child = store.createNode({ text: b.text, parentId: note.id })
-      if (b.block) store.updateNode(child.id, { extraData: JSON.stringify({ _block: b.block }) })
-    }
-    // Vincular el texto del lienzo a la nota (sin borrarlo).
+    if (bodyHtml) store.updateNode(note.id, { body: bodyHtml })
+    // Vincular el texto del lienzo al documento (sin borrarlo del lienzo).
     mutateTexts(texts => texts.map(x => x.id === t.id ? { ...x, nodeId: note.id } : x))
     navigate(`/node/${note.id}`)
   }, [parentId, mutateTexts, navigate])

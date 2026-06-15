@@ -16,6 +16,7 @@ import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
 import { getDayColumnData } from '../../utils/dayColumn'
+import DocEditor from './DocEditor'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -246,6 +247,11 @@ export default function NodeView() {
     return stored || 'pizarra'
   }, [node?.id, node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ¿Es un nodo-DOCUMENTO? (texto rico en el body, se edita con DocEditor, no outliner)
+  const isDoc = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}')._doc === '1' } catch { return false }
+  }, [node?.extraData])
+
   function setViewBlock(mode: string) {
     if (!node) return
     // Siempre leer extraData existente para no perder _props, _views, etc.
@@ -316,7 +322,7 @@ export default function NodeView() {
     // Diaria → columna del día (pizarra y lista). Nota normal en pizarra → columna
     // «Movidos». En calendario/agenda no se abre.
     const isDiary = !!node?.isDiaryEntry && (viewKind === 'pizarra' || viewKind === 'list')
-    const isNotePizarra = !!node && !node.isDiaryEntry && viewKind === 'pizarra' && !isAgendaRoot
+    const isNotePizarra = !!node && !node.isDiaryEntry && viewKind === 'pizarra' && !isAgendaRoot && !isDoc
     if (isDiary || isNotePizarra) {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()
@@ -325,7 +331,7 @@ export default function NodeView() {
       const t = setTimeout(fire, 0)
       return () => { clearTimeout(t); window.dispatchEvent(new CustomEvent('from:close-day-panel')) }
     }
-  }, [node?.isDiaryEntry, node?.id, viewKind, isAgendaRoot])
+  }, [node?.isDiaryEntry, node?.id, viewKind, isAgendaRoot, isDoc])
 
   function handleSelectView(id: string) {
     if (!node) return
@@ -2039,8 +2045,8 @@ export default function NodeView() {
             <div className="node-title-actions">
               {/* Selector de vistas — SIEMPRE arriba a la derecha de la nota.
                   Pizarra es la vista por defecto; Lista/Tabla/Kanban/Calendario son
-                  opt-in. Oculto solo en la estructura de Agenda (año/mes). */}
-              {(() => {
+                  opt-in. Oculto en la estructura de Agenda y en documentos. */}
+              {!isDoc && (() => {
                 const hasMultiViews = store.getViews(node.id).length > 0
                 if (hasMultiViews) return null  // los tabs abajo se encargan
                 const isAgendaStructure = (() => {
@@ -2131,8 +2137,8 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* ── Bucle: ciclo 3 estados (nodo → abierto → cerrado → nodo) ── */}
-              {(() => {
+              {/* Documento (texto rico) → editor dedicado; nodo normal → outliner/vistas. */}
+              {isDoc ? (<DocEditor node={node} />) : (() => {
                 const isBucle = (node.types || []).includes('bucle')
                 const closed = isBucle && node.status === 'done'
                 const open = isBucle && !closed
