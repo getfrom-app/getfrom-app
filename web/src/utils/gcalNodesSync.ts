@@ -14,7 +14,7 @@
 import { store } from '../store/nodeStore'
 import { nodeMeta } from '../store/nodeStore'
 import type { Node } from '../types'
-import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, type CalendarEvent } from '../api/googleCalendar'
+import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule, type CalendarEvent } from '../api/googleCalendar'
 
 // Último título sincronizado por evento (anti-bucle: evita re-empujar lo que vino
 // del propio pull de Google). Se rellena en el pull y en cada push.
@@ -26,22 +26,6 @@ function stripTimePrefix(text: string): string {
     .replace(/^\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}\s+/, '')
     .replace(/^\s*\d{1,2}:\d{2}\s+/, '')
     .trim()
-}
-
-// ── Formateo de hora ──────────────────────────────────────────────────────────
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  const h = d.getHours().toString().padStart(2, '0')
-  const m = d.getMinutes().toString().padStart(2, '0')
-  return `${h}:${m}`
-}
-
-function eventNodeText(ev: CalendarEvent): string {
-  if (ev.allDay) return ev.title
-  const start = formatTime(ev.start)
-  const end   = formatTime(ev.end)
-  return `${start}–${end} ${ev.title}`
 }
 
 // ── Sync GCal → nodos ────────────────────────────────────────────────────────
@@ -79,16 +63,19 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
   for (let i = 0; i < sorted.length; i++) {
     const ev = sorted[i]
     const existing = gcalChildren.find(c => c.gcalId === ev.id)
-    const newText = eventNodeText(ev)
+    // El nodo guarda el título LIMPIO; la hora vive en due/dueEnd y se muestra
+    // como badge (no incrustada en el texto → título editable y sync limpio).
+    const newText = ev.title
 
     lastSyncedTitle.set(ev.id, ev.title) // anti-bucle: este título viene de Google
 
     if (existing) {
       // Actualizar si cambió el texto o la fecha
-      if (existing.node.text !== newText || existing.node.due !== ev.start) {
+      if (existing.node.text !== newText || existing.node.due !== ev.start || existing.node.dueEnd !== ev.end) {
         store.updateNode(existing.node.id, {
           text: newText,
           due:  ev.start,
+          dueEnd: ev.end,
           siblingOrder: i + 0.001,  // orden cronológico
         })
       }
@@ -194,6 +181,28 @@ export async function pushEventTitleChanges(diaryNode: Node): Promise<void> {
       try { await updateCalendarEvent(gcalId, { title }) } catch { /* silencioso */ }
     }
   }
+}
+
+/**
+ * Empuja a Google el estado completo de un nodo-evento (título limpio + hora de
+ * inicio/fin + recurrencia). Se llama al editar el badge de hora/repetición desde
+ * la columna del día (donde el auto-sync de NodeView no aplica, porque el nodo
+ * abierto es la diaria, no el evento).
+ */
+export async function pushEventToGcal(node: Node): Promise<void> {
+  const gcalId = getGcalEventId(node)
+  if (!gcalId || !node.due) return
+  const end = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
+  const title = stripTimePrefix(node.text || 'Evento')
+  lastSyncedTitle.set(gcalId, title) // anti-bucle del push de títulos
+  try {
+    await updateCalendarEvent(gcalId, {
+      title,
+      start: node.due,
+      end,
+      recurrence: fromRecToRRule(node.recurrence),
+    })
+  } catch { /* sin conexión GCal — silencioso */ }
 }
 
 /**

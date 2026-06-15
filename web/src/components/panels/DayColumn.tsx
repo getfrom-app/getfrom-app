@@ -14,9 +14,37 @@ import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
-import { pushEventTitleChanges, getGcalEventId, getGcalColor } from '../../utils/gcalNodesSync'
+import { pushEventTitleChanges, pushEventToGcal, getGcalEventId, getGcalColor } from '../../utils/gcalNodesSync'
 
 type OutlinerExtraProps = Omit<React.ComponentProps<typeof Outliner>, 'parentId' | 'excludeIds'>
+
+// ── Badge de evento: hora + repetición ────────────────────────────────────────
+const REC_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'No se repite' },
+  { value: 'daily:1', label: 'Cada día' },
+  { value: 'weekly:1', label: 'Cada semana' },
+  { value: 'monthly:1', label: 'Cada mes' },
+  { value: 'yearly:1', label: 'Cada año' },
+]
+function hhmm(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+function withTime(baseIso: string, hm: string): string {
+  const d = new Date(baseIso)
+  const [h, m] = hm.split(':').map(Number)
+  d.setHours(h || 0, m || 0, 0, 0)
+  return d.toISOString()
+}
+function isAllDay(n: Node): boolean {
+  try { return JSON.parse(n.extraData || '{}')._gcalAllDay === '1' } catch { return false }
+}
+function recShort(rec?: string | null): string | null {
+  if (!rec) return null
+  const u = rec.split(':')[0]
+  return ({ daily: 'cada día', weekly: 'cada semana', monthly: 'cada mes', yearly: 'cada año' } as Record<string, string>)[u] || 'repite'
+}
 
 export default function DayColumn({
   node,
@@ -47,6 +75,14 @@ export default function DayColumn({
       <span className="dc-group-chevron">{collapsed.has(k) ? '›' : '▾'}</span>{label}
     </button>
   )
+
+  // Evento cuyo badge está en edición (popover hora/repetición).
+  const [editEv, setEditEv] = useState<string | null>(null)
+  const patchEvent = (id: string, updates: Partial<Node>) => {
+    store.updateNode(id, updates)
+    const fresh = store.getNode(id)
+    if (fresh) pushEventToGcal(fresh) // empuja hora/repetición/título a Google
+  }
 
   const isCapture = (n: Node) => {
     try { return JSON.parse(n.extraData || '{}')._capture === '1' } catch { return false }
@@ -82,15 +118,42 @@ export default function DayColumn({
           {header('eventos', 'Eventos de hoy', 'dc-group-label--event')}
           {!collapsed.has('eventos') && eventNodes.map(ev => {
             const color = getGcalColor(ev)
+            const allDay = isAllDay(ev)
+            const rec = recShort(ev.recurrence)
+            const timeLabel = allDay ? 'Todo el día' : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
             return (
-              <div
-                key={ev.id}
-                className="dc-row dc-row--event"
-                data-node-id={ev.id}
-                onClick={() => navigate(`/node/${ev.id}`)}
-              >
-                <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-                <span className="dc-text">{ev.text ? renderInline(ev.text) : 'Evento'}</span>
+              <div key={ev.id}>
+                <div className="dc-row dc-row--event" data-node-id={ev.id}>
+                  <span className="dc-event-dot" style={color ? { background: color } : undefined} />
+                  <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>
+                    {ev.text ? renderInline(ev.text) : 'Evento'}
+                  </span>
+                  <button
+                    className="dc-ev-badge"
+                    onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
+                    title="Editar hora y repetición"
+                  >
+                    {timeLabel}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+                  </button>
+                </div>
+                {editEv === ev.id && !allDay && ev.due && (
+                  <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
+                    <label>Inicio
+                      <input type="time" defaultValue={hhmm(ev.due)}
+                        onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
+                    </label>
+                    <label>Fin
+                      <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
+                        onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
+                    </label>
+                    <label>Repetición
+                      <select defaultValue={ev.recurrence || ''}
+                        onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
+                        {REC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
             )
           })}
