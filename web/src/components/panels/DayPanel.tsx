@@ -32,9 +32,9 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
 
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onPanelClick}>
-      {/* El outliner del día solo se monta aquí cuando el día está en PIZARRA
-          (en modo lista el outliner ya está inline en el centro → evitar duplicar). */}
-      {isPizarra && <DayColumn node={node} outlinerProps={{ autoFocusEmpty: true, disableLocalFilter: true }} />}
+      {/* En pizarra los NODOS del día viven en el lienzo (includeNodes=false):
+          aquí solo eventos + atrasadas/hoy/bucles. */}
+      {isPizarra && <DayColumn node={node} includeNodes={false} />}
     </div>
   )
 }

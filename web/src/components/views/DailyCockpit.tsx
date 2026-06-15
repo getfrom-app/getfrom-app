@@ -20,6 +20,18 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   const [postponeMenuId, setPostponeMenuId] = useState<string | null>(null)
+  // Colapsado por bloque (cabecera clicable). Persistente.
+  const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('from_dc_groups_collapsed') || '[]')) } catch { return new Set() }
+  })
+  function toggleG(k: string) {
+    setCollapsedG(prev => {
+      const next = new Set(prev)
+      next.has(k) ? next.delete(k) : next.add(k)
+      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   // Recalculado en cada render — un pase O(n) sobre el store, barato (~6k nodos)
   const data = collectDailyCockpit()
@@ -191,31 +203,40 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
+  const gHeader = (k: string, label: string, cls = '') => (
+    <button
+      className={`dc-group-label dc-group-toggle ${cls}`}
+      onClick={e => { e.stopPropagation(); toggleG(k) }}
+    >
+      <span className="dc-group-chevron">{collapsedG.has(k) ? '›' : '▾'}</span>{label}
+    </button>
+  )
+
   const groups = (
     <>
       {data.focus.length > 0 && (
         <div className="dc-group dc-group--focus">
-          <div className="dc-group-label dc-group-label--focus">{t('daily.focus')}</div>
-          {data.focus.map(n => renderTaskRow(n, { inFocus: true }))}
-          {pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
+          {gHeader('focus', t('daily.focus'), 'dc-group-label--focus')}
+          {!collapsedG.has('focus') && data.focus.map(n => renderTaskRow(n, { inFocus: true }))}
+          {!collapsedG.has('focus') && pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
         </div>
       )}
       {data.overdue.length > 0 && (
         <div className="dc-group">
-          <div className="dc-group-label dc-group-label--overdue">{t('daily.overdue')}</div>
-          {data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
+          {gHeader('overdue', t('daily.overdue'), 'dc-group-label--overdue')}
+          {!collapsedG.has('overdue') && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
       {data.today.length > 0 && (
         <div className="dc-group">
-          <div className="dc-group-label">{t('daily.todayTasks')}</div>
-          {data.today.map(n => renderTaskRow(n, {}))}
+          {gHeader('today', t('daily.todayTasks'))}
+          {!collapsedG.has('today') && data.today.map(n => renderTaskRow(n, {}))}
         </div>
       )}
       {data.bucles.length > 0 && (
         <div className="dc-group">
-          <div className="dc-group-label dc-group-label--bucle">{t('daily.openBucles')}</div>
-          {data.bucles.map(renderBucleRow)}
+          {gHeader('bucles', t('daily.openBucles'), 'dc-group-label--bucle')}
+          {!collapsedG.has('bucles') && data.bucles.map(renderBucleRow)}
         </div>
       )}
     </>

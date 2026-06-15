@@ -13205,6 +13205,25 @@ textarea:focus-visible,
   color: var(--text-tertiary);
   padding: 3px 8px;
 }
+/* Cabecera de bloque clicable (colapsa/expande su contenido) */
+.dc-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.dc-group-toggle:hover { color: var(--text-secondary); }
+.dc-group-chevron {
+  font-size: 9px;
+  opacity: 0.7;
+  width: 9px;
+  display: inline-block;
+}
 .dc-group-label--overdue { color: #dc2626; }
 .dc-group-label--bucle { color: #8b5cf6; }
 .dc-row {

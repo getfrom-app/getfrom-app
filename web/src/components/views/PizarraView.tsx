@@ -20,7 +20,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
-import { deleteGcalEventForNode } from '../../utils/gcalNodesSync'
+import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -44,6 +44,9 @@ const PIN_HIDDEN = '_pinHidden'
 // un nodo NO se encoja (mismo ancho flotante que en la columna/lista).
 const CARD_W = 700
 const CARD_MIN_H = 44
+// Columna de FLUJO: dónde empieza la pila de nodos sin posición (coords de mundo).
+const FLOW_X = 60
+const FLOW_Y = 40
 // Zoom.
 const MIN_SCALE = 0.04
 const MAX_SCALE = 50   // zoom profundo (antes 6 = 600%, escaso)
@@ -136,7 +139,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -193,6 +196,14 @@ export default function PizarraView({ parentId }: Props) {
     }
     return map
   }, [children])
+
+  // FLUJO: nodos del día SIN posición → se apilan en una columna sobre el lienzo
+  // (orden natural, sin solaparse). Los eventos GCal NO van al lienzo (viven en la
+  // columna derecha). Al arrastrar uno del flujo gana pin y pasa a flotar.
+  const flowNodes = useMemo(() => {
+    if (!flowUnpositioned) return [] as Node[]
+    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !getGcalEventId(n))
+  }, [children, flowUnpositioned])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
@@ -622,9 +633,9 @@ export default function PizarraView({ parentId }: Props) {
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
           Escala por transform (contenido a tamaño de mundo). Se arrastra por el
           tirador izquierdo (no por el texto, para no chocar con el cursor sagrado). */}
-      {/* Los nodos SIN posición viven en la COLUMNA DERECHA (panel del día), NO en
-          el lienzo. En la pizarra solo aparecen los COLOCADOS (arrastrados desde la
-          columna o creados con doble clic). Así no hay duplicidad. */}
+      {/* Nodos COLOCADOS (con pin) → flotan libres aquí. Los nodos SIN posición se
+          apilan en una columna de FLUJO sobre el lienzo (más abajo). Los eventos GCal
+          son la excepción: viven en la columna derecha, no en el lienzo. */}
 
       {/* ── FLOTANTES: nodos colocados + el que se arrastra ahora ── */}
       {visible.map(({ node, pos }) => {
@@ -643,6 +654,33 @@ export default function PizarraView({ parentId }: Props) {
           </div>
         )
       })}
+
+      {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
+             Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
+      {flowNodes.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          left: cam.x + FLOW_X * cam.scale,
+          top: cam.y + FLOW_Y * cam.scale,
+          width: CARD_W,
+          transform: `scale(${cam.scale})`,
+          transformOrigin: '0 0',
+          zIndex: 1,
+          display: 'flex', flexDirection: 'column', gap: 2,
+        }}>
+          {flowNodes.map(node => dragPos?.id === node.id ? null : (
+            <div key={node.id} data-card="1" className="pizarra-node" style={{ position: 'relative', width: CARD_W }}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+              <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
+              </div>
+              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Barra de herramientas (estilo iPad) — INFERIOR, horizontal ──
           position:fixed: el contenedor del lienzo desborda por debajo del viewport,
