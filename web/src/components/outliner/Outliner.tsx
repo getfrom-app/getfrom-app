@@ -61,14 +61,27 @@ export function tryDeleteSelection(): boolean {
   // los IDs ACTUALES del render (los del estado global pueden quedar obsoletos si un
   // nodo se re-normalizó —p.ej. markdown/encabezado— y cambió de id). Los obsoletos
   // que ya no existen son no-ops en trashNode; los actuales sí se borran.
-  const ids = [...new Set([..._gSelectedIds, ...domSelectedNodeIds()])]
+  const fromModule = [..._gSelectedIds]
+  const fromDom = domSelectedNodeIds()
+  const ids = [...new Set([...fromModule, ...fromDom])]
   // Cuenta de elementos REALES (ignorando ids obsoletos) para no actuar por error.
   const real = ids.filter(id => store.getNode(id))
+  // DIAGNÓSTICO TEMPORAL (quitar tras confirmar): qué ve el handler al pulsar borrar.
+  try {
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: {
+      message: `🗑 borrar — global:${fromModule.length} dom:${fromDom.length} reales:${real.length}`,
+      type: 'info',
+    } }))
+  } catch { /* noop */ }
   if (real.length < 2) return false
   gClearSelected()
+  let done = 0
   for (const id of real) {
-    try { trashNode(id) } catch { /* seguir con el resto */ }
+    try { trashNode(id); done++ } catch { /* seguir con el resto */ }
   }
+  try {
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `✅ borrados ${done}`, type: 'success' } }))
+  } catch { /* noop */ }
   return true
 }
 
