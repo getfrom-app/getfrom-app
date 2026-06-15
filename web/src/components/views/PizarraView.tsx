@@ -61,6 +61,14 @@ function readPin(node: Node): WorldPos | null {
   } catch { return null }
 }
 
+// Lee el zoom guardado del nodo (_pinScale). Default 1.
+function readPinScale(node: Node): number {
+  try {
+    const s = Number(JSON.parse(node.extraData || '{}')[PIN_SCALE])
+    return Number.isFinite(s) && s > 0 ? s : 1
+  } catch { return 1 }
+}
+
 // Escribe la posición en extraData preservando el resto de campos (patrón
 // crítico: nunca sobrescribir extraData entero).
 function writePin(node: Node, pos: WorldPos) {
@@ -78,6 +86,10 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   const containerRef = useRef<HTMLDivElement>(null)
   const [cam, setCam] = useState<Cam>({ x: 60, y: 60, scale: 1 })
   const [viewport, setViewport] = useState({ w: 1000, h: 700 })
+  // Refs espejo (para leer el valor actual dentro de animaciones/listeners sin stale).
+  const camRef = useRef(cam); camRef.current = cam
+  const viewportRef = useRef(viewport); viewportRef.current = viewport
+  const flyRef = useRef<number | null>(null)
 
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -129,6 +141,49 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     return { x: (sx - cam.x) / cam.scale, y: (sy - cam.y) / cam.scale }
   }, [cam])
 
+  // ── Vuelo animado de la cámara a (wx,wy) con el zoom destino (estilo iPad) ──
+  // Centra el punto de mundo en el viewport con un tween suave.
+  const flyTo = useCallback((wx: number, wy: number, targetScale: number) => {
+    if (flyRef.current) cancelAnimationFrame(flyRef.current)
+    const start = { ...camRef.current }
+    const { w, h } = viewportRef.current
+    const s2 = Math.min(MAX_SCALE, Math.max(MIN_SCALE, targetScale || start.scale))
+    const end = { scale: s2, x: w / 2 - wx * s2, y: h / 2 - wy * s2 }
+    const dur = 480
+    let t0 = -1
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+    const step = (now: number) => {
+      if (t0 < 0) t0 = now
+      const k = Math.min(1, (now - t0) / dur), e = ease(k)
+      setCam({
+        x: start.x + (end.x - start.x) * e,
+        y: start.y + (end.y - start.y) * e,
+        scale: start.scale + (end.scale - start.scale) * e,
+      })
+      if (k < 1) flyRef.current = requestAnimationFrame(step)
+      else flyRef.current = null
+    }
+    flyRef.current = requestAnimationFrame(step)
+  }, [])
+
+  // Volar a un nodo concreto (centra su tarjeta usando su zoom guardado).
+  const flyToNode = useCallback((node: Node) => {
+    const pin = readPin(node); if (!pin) return
+    flyTo(pin.x + CARD_W / 2, pin.y + CARD_MIN_H / 2, readPinScale(node))
+  }, [flyTo])
+
+  // Evento externo: el panel del día / árbol pueden pedir volar a un nodo.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const id = (e as CustomEvent<{ nodeId?: string }>).detail?.nodeId
+      if (!id) return
+      const n = store.getNode(id)
+      if (n && store.children(parentId).some(c => c.id === id)) flyToNode(n)
+    }
+    window.addEventListener('from:pizarra-flyto', h)
+    return () => window.removeEventListener('from:pizarra-flyto', h)
+  }, [flyToNode, parentId])
+
   // ── Zoom con la rueda, anclado al cursor ────────────────────────────────────
   // Listener NATIVO (no passive) para poder preventDefault: en modo pizarra la
   // rueda hace SOLO zoom, no scroll de la página.
@@ -138,6 +193,7 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     const handler = (e: WheelEvent) => {
       e.preventDefault()
       e.stopPropagation()
+      if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
       const rect = el.getBoundingClientRect()
       const sx = e.clientX - rect.left
       const sy = e.clientY - rect.top
@@ -157,10 +213,16 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   // Crear un nodo colocado en coordenadas de mundo y seleccionarlo (el
   // OutlinerNode embebido se enfoca al estar seleccionado → listo para escribir).
   const createNodeAt = useCallback((world: WorldPos) => {
+    // El nodo guarda el ZOOM actual del lienzo (_pinScale) → al pulsarlo después,
+    // la cámara vuela a su posición con ese zoom (estilo iPad).
     const node = store.createNode({
       text: '',
       parentId,
-      extraData: { [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1' },
+      extraData: {
+        [PIN_X]: String(Math.round(world.x)),
+        [PIN_Y]: String(Math.round(world.y)),
+        [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
+      },
     })
     setSelectedId(node.id)
   }, [parentId])
@@ -170,6 +232,7 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
+    if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
     setSelectedId(null)
     const el = containerRef.current!
     el.setPointerCapture(e.pointerId)
@@ -218,25 +281,29 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       return
     }
-    // Fin de drag de tarjeta: persistir posición si se movió.
+    // Fin de drag de tarjeta: persistir posición si se movió; si NO se movió,
+    // fue un clic en el tirador → volar a ese nodo (centra + zoom guardado).
     if (dragRef.current) {
       const d = dragRef.current
       const dp = dragPos
       dragRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       setGuides({})
+      const node = store.getNode(d.id)
       if (d.moved && dp) {
-        const node = store.getNode(d.id)
         if (node) writePin(node, dp.pos)
+      } else if (node) {
+        flyToNode(node)
       }
       setDragPos(null)
     }
-  }, [dragPos, parentId, screenToWorld])
+  }, [dragPos, flyToNode])
 
   // ── Pointer down en el TIRADOR de una tarjeta → iniciar drag de la tarjeta ──
   const onCardPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
     if (e.button !== 0) return
     e.stopPropagation() // no llega al fondo (no pan) ni al editor
+    if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     const origin = layout.get(node.id) || { x: 0, y: 0 }
