@@ -21,6 +21,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
+import { getDayColumnData } from '../../utils/dayColumn'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -299,8 +300,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // columna derecha). Al arrastrar uno del flujo gana pin y pasa a flotar.
   const flowNodes = useMemo(() => {
     if (!flowUnpositioned) return [] as Node[]
-    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !getGcalEventId(n) && !isCapturePin(n))
-  }, [children, flowUnpositioned])
+    // En la diaria, todo lo que vive en la columna derecha (eventos, capturas y
+    // tareas/bucles del cockpit) NO se pinta en el lienzo (evita duplicados).
+    const parent = store.getNode(parentId)
+    const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
+    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n))
+  }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su

@@ -32,9 +32,10 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
 
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onPanelClick}>
-      {/* En pizarra los NODOS del día viven en el lienzo (includeNodes=false):
-          aquí solo eventos + atrasadas/hoy/bucles. */}
-      {isPizarra && <DayColumn node={node} includeNodes={false} />}
+      {/* La columna derecha persiste en pizarra Y en lista: eventos + atrasadas/hoy/
+          bucles + capturas. Los NODOS del día NO van aquí (includeNodes=false):
+          viven en el lienzo (pizarra) o inline en el centro (lista). */}
+      <DayColumn node={node} includeNodes={false} />
     </div>
   )
 }

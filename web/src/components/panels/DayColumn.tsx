@@ -14,8 +14,9 @@ import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
-import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalEventId, getGcalColor } from '../../utils/gcalNodesSync'
+import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
+import { getDayColumnData } from '../../utils/dayColumn'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -92,22 +93,10 @@ export default function DayColumn({
     if (fresh) pushEventToGcal(fresh) // empuja hora/repetición/título a Google
   }
 
-  const isCapture = (n: Node) => {
-    try { return JSON.parse(n.extraData || '{}')._capture === '1' } catch { return false }
-  }
-  const hasPin = (n: Node) => {
-    try { const e = JSON.parse(n.extraData || '{}'); return e._pinX != null || e._pinY != null } catch { return false }
-  }
-
-  const dayChildren = store.children(node.id)
-  // Eventos GCal del día (hijos con _gcalEventId), ordenados por hora de inicio.
-  const eventNodes = dayChildren
-    .filter(c => getGcalEventId(c))
-    .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
-  // Bandeja de capturas: marcadas `_capture` y aún SIN colocar en el lienzo.
-  const captureNodes = dayChildren.filter(c => isCapture(c) && !hasPin(c) && !getGcalEventId(c))
-  // El bloque «Nodos» (y el lienzo) no muestra eventos ni capturas-en-bandeja.
-  const eventIds = new Set([...eventNodes, ...captureNodes].map(c => c.id))
+  // Datos de la columna (eventos + capturas SIN duplicar con el cockpit) + ids a
+  // excluir del bloque «Nodos» (todo lo que ya vive en la columna derecha).
+  const { eventNodes, captureNodes, rightColumnIds } = getDayColumnData(node)
+  const eventIds = rightColumnIds
 
   // Eliminar una fila de la columna (evento → también en Google; resto → Papelera).
   const deleteRow = (n: Node) => {

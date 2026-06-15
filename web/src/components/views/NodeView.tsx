@@ -15,7 +15,7 @@ const knowledgeUpdateTimestamps = new Map<string, number>()
 import { unfurlUrl, isUrl } from '../../api/unfurl'
 import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
-import DayColumn from '../panels/DayColumn'
+import { getDayColumnData } from '../../utils/dayColumn'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -310,9 +310,10 @@ export default function NodeView() {
   // lista muestra «Tu día» (los nodos siguen inline en el centro). Al salir de
   // la diaria, revertir el panel.
   useEffect(() => {
-    // Solo en pizarra: el panel derecho aloja la columna del día. En lista la
-    // columna se pinta inline en el centro (DayColumn) → no abrir el panel.
-    if (node?.isDiaryEntry && viewKind === 'pizarra') {
+    // La columna del día (panel derecho) persiste en pizarra Y en lista. En lista
+    // el centro muestra solo los NODOS; la columna (eventos/tareas/capturas) va
+    // siempre a la derecha. En calendario/agenda no se abre.
+    if (node?.isDiaryEntry && (viewKind === 'pizarra' || viewKind === 'list')) {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()
       // Re-disparo diferido: en carga directa, el listener de MainLayout puede
@@ -2701,29 +2702,19 @@ export default function NodeView() {
                       (abajo) — aquí NO, para no duplicar instancias. En la Agenda
                       (calendario-lienzo) tampoco se monta. */}
                   {viewKind !== 'pizarra' && !isAgendaRoot && (
-                    node.isDiaryEntry ? (
-                      // Diaria en lista: columna unificada (eventos→atrasadas→hoy→bucles→nodos)
-                      <DayColumn
-                        node={node}
-                        outlinerProps={{
-                          autoFocusEmpty: true,
-                          filterText: isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined)),
-                          filterMatchIds: smartFilterResult?.matchIds,
-                          filterAncestorIds: smartFilterResult?.ancestorIds,
-                          disableLocalFilter: true,
-                        }}
-                      />
-                    ) : (
-                      <Outliner
-                        parentId={node.id}
-                        autoFocusEmpty
-                        filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
-                        filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
-                        filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
-                        temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
-                        disableLocalFilter
-                      />
-                    )
+                    <Outliner
+                      parentId={node.id}
+                      autoFocusEmpty
+                      filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
+                      filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
+                      filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
+                      temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
+                      disableLocalFilter
+                      // Diaria en lista: el centro muestra SOLO los nodos del día (los
+                      // mismos que la pizarra); eventos/tareas/capturas viven en la
+                      // columna derecha (excluidos aquí para no duplicar).
+                      excludeIds={node.isDiaryEntry ? getDayColumnData(node).rightColumnIds : undefined}
+                    />
                   )}
                 </div>
               </>
