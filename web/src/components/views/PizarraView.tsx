@@ -80,6 +80,51 @@ function writePin(node: Node, pos: WorldPos) {
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
+// ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
+// Los trazos viven en el body del nodo-pizarra. `pts` = polilínea en MUNDO
+// [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
+const FENCE = '```from-pizarra'
+interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string }
+interface WBData { version: number; strokes: WBStroke[]; texts?: unknown[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
+
+function parsePizarra(body: string | null | undefined): WBData {
+  const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
+  if (!body) return def
+  const i = body.indexOf(FENCE)
+  if (i < 0) return def
+  const after = body.slice(i + FENCE.length)
+  const j = after.indexOf('```')
+  if (j < 0) return def
+  try {
+    const d = JSON.parse(after.slice(0, j).trim())
+    return { version: 1, strokes: [], texts: [], tasks: [], ...d }
+  } catch { return def }
+}
+function bodyWithPizarra(body: string | null | undefined, data: WBData): string {
+  const md = body || ''
+  const block = `${FENCE}\n${JSON.stringify(data)}\n\`\`\``
+  const i = md.indexOf(FENCE)
+  if (i >= 0) {
+    const after = md.slice(i + FENCE.length)
+    const j = after.indexOf('```')
+    if (j >= 0) return md.slice(0, i) + block + after.slice(j + 3)
+  }
+  return (md && !md.endsWith('\n') ? md + '\n' : md) + (md ? '\n' : '') + block + '\n'
+}
+function rid(): string {
+  // id corto único (no hace falta UUID v4 estricto para trazos).
+  return 'w' + Math.abs(Math.floor((performance.now() % 1) * 1e9)).toString(36) + (performance.now() | 0).toString(36)
+}
+// ¿Algún punto del trazo está a ≤ r (mundo) de (x,y)? (borrador, v1 por puntos).
+function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
+  const r2 = r * r
+  for (let i = 0; i + 1 < s.pts.length; i += 2) {
+    const dx = s.pts[i] - x, dy = s.pts[i + 1] - y
+    if (dx * dx + dy * dy <= r2) return true
+  }
+  return false
+}
+
 export default function PizarraView({ parentId, flowUnpositioned = false }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
@@ -93,6 +138,13 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
 
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
+  const [tool, setTool] = useState<'select' | 'pen' | 'eraser'>('select')
+  const toolRef = useRef(tool); toolRef.current = tool
+  // Trazo en curso (puntos en MUNDO) mientras se dibuja.
+  const [drawPts, setDrawPts] = useState<number[] | null>(null)
+  const drawRef = useRef<number[] | null>(null)
 
   // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
@@ -172,6 +224,30 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     flyTo(pin.x + CARD_W / 2, pin.y + CARD_MIN_H / 2, readPinScale(node))
   }, [flyTo])
 
+  // ── Dibujo: persistir un trazo nuevo (ancho en MUNDO = grosor-pantalla/scale) ──
+  const commitStroke = useCallback((worldPts: number[]) => {
+    if (worldPts.length < 4) return
+    const node = store.getNode(parentId); if (!node) return
+    const data = parsePizarra(node.body)
+    const wWorld = 2.4 / Math.max(0.0001, camRef.current.scale)
+    data.strokes = [...data.strokes, {
+      id: rid(), pts: worldPts.map(n => Math.round(n * 100) / 100), w: wWorld, c: '#222222', a: 1, k: 'free',
+    }]
+    store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
+  }, [parentId])
+
+  // Borrar trazos cerca de (wx,wy) en mundo.
+  const eraseAt = useCallback((wx: number, wy: number) => {
+    const node = store.getNode(parentId); if (!node) return
+    const data = parsePizarra(node.body)
+    const r = 12 / Math.max(0.0001, camRef.current.scale)
+    const keep = data.strokes.filter(s => !strokeNear(s, wx, wy, r))
+    if (keep.length !== data.strokes.length) {
+      data.strokes = keep
+      store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
+    }
+  }, [parentId])
+
   // Evento externo: el panel del día / árbol pueden pedir volar a un nodo.
   useEffect(() => {
     const h = (e: Event) => {
@@ -227,17 +303,32 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     setSelectedId(node.id)
   }, [parentId])
 
-  // ── Pointer down en el fondo → SOLO pan (crear nodo = doble clic) ────────────
+  // ── Pointer down en el fondo → pan, o dibujar/borrar según la herramienta ────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
     if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
-    setSelectedId(null)
     const el = containerRef.current!
+    const rect = el.getBoundingClientRect()
+    const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    // Lápiz: iniciar trazo. Borrador: borrar al pasar.
+    if (toolRef.current === 'pen') {
+      el.setPointerCapture(e.pointerId)
+      drawRef.current = [w.x, w.y]
+      setDrawPts([w.x, w.y])
+      return
+    }
+    if (toolRef.current === 'eraser') {
+      el.setPointerCapture(e.pointerId)
+      drawRef.current = [] // marca "borrando"
+      eraseAt(w.x, w.y)
+      return
+    }
+    setSelectedId(null)
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam])
+  }, [cam, screenToWorld, eraseAt])
 
   // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -247,6 +338,15 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Dibujo / borrado en curso (herramienta lápiz/borrador).
+    if (drawRef.current) {
+      const rect = containerRef.current!.getBoundingClientRect()
+      const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+      if (toolRef.current === 'eraser') { eraseAt(w.x, w.y); return }
+      drawRef.current.push(w.x, w.y)
+      setDrawPts([...drawRef.current])
+      return
+    }
     // Pan del lienzo.
     if (panRef.current) {
       // Capturar en local: setCam corre async y panRef.current puede ser null
@@ -272,9 +372,18 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       setDragPos({ id: d.id, pos: { x: nx, y: ny } })
       return
     }
-  }, [cam.scale, layout, screenToWorld])
+  }, [cam.scale, layout, screenToWorld, eraseAt])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
+    // Fin de dibujo/borrado: persistir el trazo (lápiz).
+    if (drawRef.current) {
+      const pts = drawRef.current
+      drawRef.current = null
+      try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      if (toolRef.current === 'pen') commitStroke(pts)
+      setDrawPts(null)
+      return
+    }
     // Fin de pan (el clic simple ya NO crea nodo — eso es doble clic).
     if (panRef.current) {
       panRef.current = null
@@ -297,7 +406,7 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       }
       setDragPos(null)
     }
-  }, [dragPos, flyToNode])
+  }, [dragPos, flyToNode, commitStroke])
 
   // ── Pointer down en el TIRADOR de una tarjeta → iniciar drag de la tarjeta ──
   const onCardPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
@@ -352,13 +461,30 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
         backgroundPosition: `${cam.x}px ${cam.y}px`,
         touchAction: 'none',
-        cursor: panRef.current ? 'grabbing' : 'default',
+        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'eraser' ? 'crosshair' : 'default'),
         borderRadius: 8,
       }}
     >
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
       <style>{`.pizarra-card-body .node-drag-handle{display:none!important}`}</style>
+
+      {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
+      <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        {parsePizarra(store.getNode(parentId)?.body).strokes.map(s => {
+          let d = ''
+          for (let i = 0; i + 1 < s.pts.length; i += 2) {
+            d += (i === 0 ? 'M' : 'L') + (cam.x + s.pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + s.pts[i + 1] * cam.scale).toFixed(1) + ' '
+          }
+          return <path key={s.id} d={d} fill="none" stroke={s.c || '#222'} strokeWidth={Math.max(0.4, s.w * cam.scale)} strokeOpacity={s.a ?? 1} strokeLinecap="round" strokeLinejoin="round" />
+        })}
+        {drawPts && drawPts.length >= 4 && (
+          <path
+            d={drawPts.reduce((acc, _v, i) => i % 2 === 0 ? acc + (i === 0 ? 'M' : 'L') + (cam.x + drawPts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + drawPts[i + 1] * cam.scale).toFixed(1) + ' ' : acc, '')}
+            fill="none" stroke="#222" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
+          />
+        )}
+      </svg>
 
       {/* Guías de alineación (snap) */}
       {guides.vx != null && (
@@ -448,18 +574,20 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
         </button>
         <div style={vSep} />
-        {/* Herramientas de anotación/dibujo — Fase 2 (los nodos se crean con DOBLE CLIC) */}
-        <button style={toolBtnDisabled} disabled title="Texto — anotaciones (próximamente)">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
+        {/* Seleccionar / mover */}
+        <button style={tool === 'select' ? toolBtnActive : toolBtn} title="Seleccionar / mover" onClick={() => setTool('select')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
         </button>
-        <button style={toolBtnDisabled} disabled title="Lápiz — dibujar (próximamente)">
+        {/* Lápiz — dibujar */}
+        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — dibujar" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
-        <button style={toolBtnDisabled} disabled title="Borrador (próximamente)">
+        {/* Borrador */}
+        <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={toolBtnDisabled} disabled title="Lazo (próximamente)">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="8" rx="7" ry="5"/><path d="M7 13c0 2 1 4 3 4"/></svg>
+        <button style={toolBtnDisabled} disabled title="Texto / Lazo (próximamente)">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
         <div style={vSep} />
         <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title="Deshacer"
@@ -508,6 +636,9 @@ const toolBtn: React.CSSProperties = {
 }
 const toolBtnDisabled: React.CSSProperties = {
   ...toolBtn, color: 'var(--text-secondary, #bbb)', cursor: 'not-allowed', opacity: 0.5,
+}
+const toolBtnActive: React.CSSProperties = {
+  ...toolBtn, background: 'var(--accent-soft, rgba(108,92,231,0.14))', color: 'var(--accent, #6c5ce7)',
 }
 const vSep: React.CSSProperties = {
   width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
