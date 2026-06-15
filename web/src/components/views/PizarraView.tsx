@@ -1385,10 +1385,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               className="pizarra-text"
               contentEditable={editing}
               suppressContentEditableWarning
-              onDoubleClick={(e) => { if (!editing) { e.stopPropagation(); setEditText(t.id) } }}
+              onPointerDown={!editing && tool === 'select' ? (e) => { e.stopPropagation(); setEditText(t.id) } : (editing ? (e) => e.stopPropagation() : undefined)}
               onInput={editing ? (e) => scheduleTextPersist(t.id, (e.target as HTMLElement).innerHTML) : undefined}
               onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; updateTextMd(t.id, html); if (!(e.target as HTMLElement).textContent?.trim()) deleteText(t.id); setEditText(null) } : undefined}
-              onPointerDown={editing ? (e) => e.stopPropagation() : undefined}
               onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
               dangerouslySetInnerHTML={editing ? undefined : { __html: t.md || '<span style="opacity:.4">Texto…</span>' }}
               style={{ fontSize: t.size, lineHeight: 1.5, color: t.c || 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : (tool === 'select' ? 'text' : 'default'), minHeight: t.size }}
