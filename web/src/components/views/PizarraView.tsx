@@ -100,11 +100,25 @@ function isCapturePin(node: Node): boolean {
   try { return JSON.parse(node.extraData || '{}')._capture === '1' } catch { return false }
 }
 
+// Grupo al que pertenece un nodo (se mueve como unidad con sus compañeros).
+function nodeGroupId(node: Node): string | null {
+  try { return JSON.parse(node.extraData || '{}')._groupId || null } catch { return null }
+}
+function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: number } | null {
+  if (!s.pts.length) return null
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (let i = 0; i + 1 < s.pts.length; i += 2) {
+    x0 = Math.min(x0, s.pts[i]); x1 = Math.max(x1, s.pts[i])
+    y0 = Math.min(y0, s.pts[i + 1]); y1 = Math.max(y1, s.pts[i + 1])
+  }
+  return { x0, y0, x1, y1 }
+}
+
 // ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
 // Los trazos viven en el body del nodo-pizarra. `pts` = polilínea en MUNDO
 // [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
 const FENCE = '```from-pizarra'
-interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string }
+interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
 interface WBData { version: number; strokes: WBStroke[]; texts?: unknown[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
 
 function parsePizarra(body: string | null | undefined): WBData {
@@ -162,9 +176,18 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Multiselección con marco (Cmd/Ctrl + arrastrar sobre el fondo).
+  // multiSel = nodos seleccionados; selStrokes = trazos (dibujos) seleccionados.
   const [multiSel, setMultiSel] = useState<Set<string>>(new Set())
+  const [selStrokes, setSelStrokes] = useState<Set<string>>(new Set())
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
   const marqueeRef = useRef<{ x0: number; y0: number } | null>(null)
+
+  // Arrastre de GRUPO (mover varios elementos como unidad).
+  const groupRef = useRef<{ gid: string; members: { id: string; origin: WorldPos }[]; strokeIds: string[]; strokeOrigins: Map<string, number[]> } | null>(null)
+  const [groupDelta, setGroupDelta] = useState<WorldPos | null>(null)
+  // Posición (pantalla) del mini-menú flotante de la selección (estilo iPad).
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
+  const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<'select' | 'pen' | 'eraser'>('select')
@@ -360,20 +383,63 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return dup.id
   }, [])
 
-  // Acciones sobre la multiselección (menú contextual).
-  const deleteSelected = useCallback((ids: string[]) => {
-    for (const id of ids) {
+  // ── Acciones sobre la selección (nodos + trazos) ──────────────────────────────
+  const deleteSelection = useCallback(() => {
+    for (const id of multiSel) {
       const n = store.getNode(id)
       if (n) deleteGcalEventForNode(n)
       store.deleteNode(id)
     }
-    setMultiSel(new Set())
-  }, [])
-  const duplicateSelected = useCallback((ids: string[]) => {
+    if (selStrokes.size) {
+      const data = parsePizarra(store.getNode(parentId)?.body)
+      data.strokes = data.strokes.filter(s => !selStrokes.has(s.id))
+      store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+    }
+    clearSelection()
+  }, [multiSel, selStrokes, parentId, clearSelection])
+
+  const duplicateSelection = useCallback(() => {
     let i = 1
-    for (const id of ids) duplicateNode(id, 24 * i++)
-    setMultiSel(new Set())
-  }, [duplicateNode])
+    for (const id of multiSel) duplicateNode(id, 24 * i++)
+    if (selStrokes.size) {
+      const data = parsePizarra(store.getNode(parentId)?.body)
+      const dups = data.strokes.filter(s => selStrokes.has(s.id))
+        .map(s => ({ ...s, id: rid(), g: undefined, pts: s.pts.map(v => v + 24) }))
+      data.strokes = [...data.strokes, ...dups]
+      store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+    }
+    clearSelection()
+  }, [multiSel, selStrokes, parentId, duplicateNode, clearSelection])
+
+  // Agrupar: los elementos seleccionados pasan a moverse como una unidad. Los
+  // nodos del flujo se fijan (pin) en su sitio actual y reciben `_groupId`; los
+  // trazos reciben `g`. Arrastrar cualquier miembro mueve a todo el grupo.
+  const groupSelection = useCallback(() => {
+    const gid = 'g' + rid()
+    const rect = containerRef.current?.getBoundingClientRect()
+    for (const id of multiSel) {
+      const n = store.getNode(id); if (!n) continue
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+      if (readPin(n) == null && rect) {
+        const el = containerRef.current?.querySelector(`[data-card][data-node-id="${id}"]`) as HTMLElement | null
+        if (el) {
+          const r = el.getBoundingClientRect()
+          const w = screenToWorld(r.left - rect.left, r.top - rect.top)
+          ed[PIN_X] = String(Math.round(w.x)); ed[PIN_Y] = String(Math.round(w.y))
+          if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
+        }
+      }
+      ed._groupId = gid
+      store.updateNode(id, { extraData: JSON.stringify(ed) })
+    }
+    if (selStrokes.size) {
+      const data = parsePizarra(store.getNode(parentId)?.body)
+      data.strokes = data.strokes.map(s => selStrokes.has(s.id) ? { ...s, g: gid } : s)
+      store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+    }
+    clearSelection()
+  }, [multiSel, selStrokes, parentId, screenToWorld, clearSelection])
 
   // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
   // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
@@ -491,12 +557,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       el.setPointerCapture(e.pointerId)
       marqueeRef.current = { x0: e.clientX, y0: e.clientY }
       setMarquee({ x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY })
-      setMultiSel(new Set())
+      clearSelection()
       setSelectedId(null)
       return
     }
     setSelectedId(null)
-    setMultiSel(new Set())
+    clearSelection()
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
   }, [cam, screenToWorld, eraseAt])
@@ -524,6 +590,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         }
       })
       setMultiSel(sel)
+      // Trazos (dibujos): probar su bbox contra el marco en coords de MUNDO.
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (rect) {
+        const a = screenToWorld(rx0 - rect.left, ry0 - rect.top)
+        const b = screenToWorld(rx1 - rect.left, ry1 - rect.top)
+        const wx0 = Math.min(a.x, b.x), wx1 = Math.max(a.x, b.x)
+        const wy0 = Math.min(a.y, b.y), wy1 = Math.max(a.y, b.y)
+        const ss = new Set<string>()
+        for (const s of parsePizarra(store.getNode(parentId)?.body).strokes) {
+          const bb = strokeBBox(s)
+          if (bb && bb.x0 < wx1 && bb.x1 > wx0 && bb.y0 < wy1 && bb.y1 > wy0) ss.add(s.id)
+        }
+        setSelStrokes(ss)
+      }
       return
     }
     // Dibujo / borrado en curso (herramienta lápiz/borrador).
@@ -558,6 +638,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       if (Math.abs(world.x - d.startWorld.x) * cam.scale + Math.abs(world.y - d.startWorld.y) * cam.scale > 3) d.moved = true
       // Snap desactivado por ahora (daba problemas al arrastrar). Se retomará.
       setDragPos({ id: d.id, pos: { x: nx, y: ny } })
+      // Grupo: el resto de miembros y los trazos se desplazan el mismo delta.
+      if (groupRef.current) setGroupDelta({ x: nx - d.origin.x, y: ny - d.origin.y })
       return
     }
   }, [cam.scale, layout, screenToWorld, eraseAt])
@@ -565,9 +647,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const endPointer = useCallback((e: React.PointerEvent) => {
     // Fin del marco de multiselección: dejar la selección, ocultar el marco.
     if (marqueeRef.current) {
+      const m = marqueeRef.current
       marqueeRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       setMarquee(null)
+      // Mini-menú arriba-centro del marco (solo si hay algo seleccionado — el
+      // render lo condiciona al tamaño de la selección).
+      setMenuPos({ x: (m.x0 + e.clientX) / 2, y: Math.min(m.y0, e.clientY) })
       return
     }
     // Fin de dibujo/borrado: persistir el trazo (lápiz).
@@ -590,18 +676,37 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     if (dragRef.current) {
       const d = dragRef.current
       const dp = dragPos
+      const grp = groupRef.current
       dragRef.current = null
+      groupRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       setGuides({})
       const node = store.getNode(d.id)
-      if (d.moved && dp) {
+      if (d.moved && dp && grp) {
+        // Commit del GRUPO: mueve todos los nodos y trazos el mismo delta.
+        const dx = dp.pos.x - d.origin.x, dy = dp.pos.y - d.origin.y
+        for (const m of grp.members) {
+          const n = store.getNode(m.id)
+          if (n) writePin(n, { x: m.origin.x + dx, y: m.origin.y + dy })
+        }
+        if (grp.strokeIds.length) {
+          const data = parsePizarra(store.getNode(parentId)?.body)
+          data.strokes = data.strokes.map(s => {
+            const orig = grp.strokeOrigins.get(s.id)
+            if (!orig) return s
+            return { ...s, pts: orig.map((v, i) => i % 2 === 0 ? v + dx : v + dy) }
+          })
+          store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+        }
+      } else if (d.moved && dp) {
         if (node) writePin(node, dp.pos)
       } else if (node) {
         flyToNode(node)
       }
       setDragPos(null)
+      setGroupDelta(null)
     }
-  }, [dragPos, flyToNode, commitStroke])
+  }, [dragPos, flyToNode, commitStroke, parentId])
 
   // ── Pointer down en el TIRADOR de una tarjeta → iniciar drag de la tarjeta ──
   const onCardPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
@@ -622,7 +727,27 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     containerRef.current!.setPointerCapture(e.pointerId)
     dragRef.current = { id: node.id, startWorld, origin, moved: false }
     setDragPos({ id: node.id, pos: origin })
-  }, [layout, screenToWorld])
+
+    // Si el nodo está AGRUPADO → preparar arrastre de grupo (mueve a todos juntos).
+    const gid = nodeGroupId(node)
+    if (gid) {
+      const members: { id: string; origin: WorldPos }[] = []
+      for (const c of store.children(parentId)) {
+        if (nodeGroupId(c) !== gid) continue
+        const p = readPin(c); if (p) members.push({ id: c.id, origin: p })
+      }
+      const strokeOrigins = new Map<string, number[]>()
+      const strokeIds: string[] = []
+      for (const s of parsePizarra(store.getNode(parentId)?.body).strokes) {
+        if (s.g === gid) { strokeIds.push(s.id); strokeOrigins.set(s.id, [...s.pts]) }
+      }
+      groupRef.current = { gid, members, strokeIds, strokeOrigins }
+      setGroupDelta({ x: 0, y: 0 })
+    } else {
+      groupRef.current = null
+      setGroupDelta(null)
+    }
+  }, [layout, screenToWorld, parentId])
 
   // ── Render ──────────────────────────────────────────────────────────────────
   // Culling: una tarjeta es visible si su rect en pantalla intersecta el viewport
@@ -683,16 +808,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-node .pizarra-grip{opacity:0;transition:opacity .12s}
 .pizarra-node:hover .pizarra-grip{opacity:1}
 .pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:6px;background:rgba(108,92,231,0.06)}
+.pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:4px}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
       <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         {parsePizarra(store.getNode(parentId)?.body).strokes.map(s => {
+          // Durante un arrastre de grupo, los trazos del grupo se desplazan el delta.
+          const inGroupDrag = groupDelta && groupRef.current?.strokeIds.includes(s.id)
+          const pts = inGroupDrag ? s.pts.map((v, i) => i % 2 === 0 ? v + groupDelta!.x : v + groupDelta!.y) : s.pts
           let d = ''
-          for (let i = 0; i + 1 < s.pts.length; i += 2) {
-            d += (i === 0 ? 'M' : 'L') + (cam.x + s.pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + s.pts[i + 1] * cam.scale).toFixed(1) + ' '
+          for (let i = 0; i + 1 < pts.length; i += 2) {
+            d += (i === 0 ? 'M' : 'L') + (cam.x + pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + pts[i + 1] * cam.scale).toFixed(1) + ' '
           }
-          return <path key={s.id} d={d} fill="none" stroke={s.c || '#222'} strokeWidth={Math.max(0.4, s.w * cam.scale)} strokeOpacity={s.a ?? 1} strokeLinecap="round" strokeLinejoin="round" />
+          const selected = selStrokes.has(s.id)
+          return (
+            <g key={s.id}>
+              {selected && <path d={d} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={Math.max(0.4, s.w * cam.scale) + 6} strokeOpacity={0.25} strokeLinecap="round" strokeLinejoin="round" />}
+              <path d={d} fill="none" stroke={s.c || '#222'} strokeWidth={Math.max(0.4, s.w * cam.scale)} strokeOpacity={s.a ?? 1} strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+          )
         })}
         {drawPts && drawPts.length >= 4 && (
           <path
@@ -724,6 +859,23 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         }} />
       )}
 
+      {/* Mini-menú flotante de la selección (estilo iPad): duplicar / eliminar /
+          agrupar (si hay más de un elemento). Aparece tras soltar el marco. */}
+      {menuPos && !marquee && !dragPos && (multiSel.size + selStrokes.size) > 0 && (
+        <div style={{
+          position: 'fixed', left: menuPos.x, top: Math.max(8, menuPos.y - 46), transform: 'translateX(-50%)',
+          zIndex: 1500, display: 'flex', gap: 2, padding: 4,
+          background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
+          borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
+        }}>
+          {(multiSel.size + selStrokes.size) > 1 && (
+            <button style={miniItem} onClick={() => groupSelection()}>Agrupar</button>
+          )}
+          <button style={miniItem} onClick={() => duplicateSelection()}>Duplicar</button>
+          <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>Eliminar</button>
+        </div>
+      )}
+
       {/* Tarjetas visibles (culling aplicado). Cada tarjeta embebe un OutlinerNode
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
           Escala por transform (contenido a tamaño de mundo). Se arrastra por el
@@ -734,10 +886,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 
       {/* ── FLOTANTES: nodos colocados + el que se arrastra ahora ── */}
       {visible.map(({ node, pos }) => {
-        const sx = cam.x + pos.x * cam.scale
-        const sy = cam.y + pos.y * cam.scale
+        // Miembro de un grupo en arrastre (que NO es el agarrado) → se desplaza el delta.
+        let p = pos
+        if (groupDelta && groupRef.current && node.id !== dragPos?.id) {
+          const m = groupRef.current.members.find(mm => mm.id === node.id)
+          if (m) p = { x: m.origin.x + groupDelta.x, y: m.origin.y + groupDelta.y }
+        }
+        const sx = cam.x + p.x * cam.scale
+        const sy = cam.y + p.y * cam.scale
+        const grouped = nodeGroupId(node) != null
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}`}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{ position: 'absolute', left: sx, top: sy, width: CARD_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: dragPos?.id === node.id ? 10 : 1 }}>
             <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
@@ -846,7 +1005,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           menú normal: QUITAR (saca de la pizarra, NO borra) o ELIMINAR. */}
       {contextMenu && store.getNode(contextMenu.nodeId) && (() => {
         const isMulti = multiSel.has(contextMenu.nodeId) && multiSel.size > 1
-        const ids = [...multiSel]
         return (
           <>
             <div onPointerDown={() => setContextMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
@@ -855,12 +1013,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
               {isMulti ? (
                 <>
-                  <div style={{ padding: '6px 12px 4px', fontSize: 12, color: 'var(--text-secondary,#888)' }}>{ids.length} seleccionados</div>
-                  <button onClick={() => { duplicateSelected(ids); setContextMenu(null) }} style={ctxItem}>
+                  <div style={{ padding: '6px 12px 4px', fontSize: 12, color: 'var(--text-secondary,#888)' }}>{multiSel.size + selStrokes.size} seleccionados</div>
+                  {(multiSel.size + selStrokes.size) > 1 && (
+                    <button onClick={() => { groupSelection(); setContextMenu(null) }} style={ctxItem}>
+                      Agrupar
+                    </button>
+                  )}
+                  <button onClick={() => { duplicateSelection(); setContextMenu(null) }} style={ctxItem}>
                     Duplicar todos
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
-                  <button onClick={() => { deleteSelected(ids); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+                  <button onClick={() => { deleteSelection(); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
                     Eliminar todos
                   </button>
                 </>
@@ -933,5 +1096,9 @@ const gripStyle: React.CSSProperties = {
 const ctxItem: React.CSSProperties = {
   display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 7,
   border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 14, color: 'var(--text,#333)',
+}
+const miniItem: React.CSSProperties = {
+  border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+  color: 'var(--text,#333)', padding: '6px 12px', borderRadius: 8, whiteSpace: 'nowrap',
 }
 
