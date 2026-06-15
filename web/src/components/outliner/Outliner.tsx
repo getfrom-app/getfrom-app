@@ -76,11 +76,18 @@ export function tryDeleteSelection(): boolean {
   if (real.length < 2) return false
   gClearSelected()
   let done = 0
+  let lastErr = ''
   for (const id of real) {
-    try { trashNode(id); done++ } catch { /* seguir con el resto */ }
+    try {
+      trashNode(id); done++
+    } catch (err) {
+      lastErr = err instanceof Error ? `${err.message} @ ${(err.stack || '').split('\n')[1] || ''}` : String(err)
+    }
   }
   try {
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `✅ borrados ${done}`, type: 'success' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: { message: done > 0 ? `✅ borrados ${done}` : `❌ error: ${lastErr.slice(0, 180)}`, type: done > 0 ? 'success' : 'error' },
+    }))
   } catch { /* noop */ }
   return true
 }
