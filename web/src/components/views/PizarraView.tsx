@@ -35,6 +35,9 @@ interface Props {
 const PIN_X = '_pinX'
 const PIN_Y = '_pinY'
 const PIN_SCALE = '_pinScale'
+// Marcador de vista: nodo que guarda una posición+zoom para "volver a esta vista",
+// pero NO se pinta como tarjeta en el lienzo (vive solo en la columna derecha).
+const PIN_HIDDEN = '_pinHidden'
 
 // Ancho del nodo en el lienzo — IGUAL al del flujo (FLOW_W) para que al arrastrar
 // un nodo NO se encoja (mismo ancho flotante que en la columna/lista).
@@ -62,6 +65,11 @@ function readPin(node: Node): WorldPos | null {
   } catch { return null }
 }
 
+// ¿Es un marcador de vista (no se pinta en el lienzo)?
+function isHiddenPin(node: Node): boolean {
+  try { return JSON.parse(node.extraData || '{}')[PIN_HIDDEN] === '1' } catch { return false }
+}
+
 // Lee el zoom guardado del nodo (_pinScale). Default 1.
 function readPinScale(node: Node): number {
   try {
@@ -78,6 +86,7 @@ function writePin(node: Node, pos: WorldPos) {
   ed[PIN_X] = String(Math.round(pos.x))
   ed[PIN_Y] = String(Math.round(pos.y))
   if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
+  delete ed[PIN_HIDDEN] // colocar un nodo en el lienzo lo hace visible (deja de ser marcador)
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
@@ -177,6 +186,7 @@ export default function PizarraView({ parentId }: Props) {
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
+      if (isHiddenPin(n)) continue // marcador de vista → no se pinta en el lienzo
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
     }
@@ -321,6 +331,7 @@ export default function PizarraView({ parentId }: Props) {
         [PIN_X]: String(Math.round(wx - CARD_W / 2)),
         [PIN_Y]: String(Math.round(wy - CARD_MIN_H / 2)),
         [PIN_SCALE]: String(Number(c.scale.toFixed(4))),
+        [PIN_HIDDEN]: '1', // marcador: solo en la columna, no se pinta en el lienzo
       },
     })
   }, [parentId])
