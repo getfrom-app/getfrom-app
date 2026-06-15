@@ -20,7 +20,6 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
-import NodeContextMenu from '../outliner/NodeContextMenu'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -41,10 +40,6 @@ const PIN_SCALE = '_pinScale'
 // un nodo NO se encoja (mismo ancho flotante que en la columna/lista).
 const CARD_W = 700
 const CARD_MIN_H = 44
-// FLUJO de nodos sin mover (se ven como la LISTA): columna ancho-completo.
-const FLOW_X = 40
-const FLOW_Y = 20
-const FLOW_W = 700
 // Zoom.
 const MIN_SCALE = 0.04
 const MAX_SCALE = 50   // zoom profundo (antes 6 = 600%, escaso)
@@ -290,6 +285,28 @@ export default function PizarraView({ parentId }: Props) {
     store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
   }, [parentId])
 
+  // Soltar un nodo arrastrado desde la columna derecha → colocarlo en la pizarra.
+  const onCanvasDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const id = e.dataTransfer.getData('text/plain')
+    if (!id) return
+    const node = store.getNode(id)
+    if (!node || !store.children(parentId).some(c => c.id === id)) return
+    const rect = containerRef.current!.getBoundingClientRect()
+    const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    writePin(node, { x: w.x - 16, y: w.y - 12 })
+  }, [parentId, screenToWorld])
+
+  // Quitar de la pizarra (NO borra el nodo): elimina _pinX/_pinY/_pinScale → vuelve
+  // a vivir solo en la columna derecha.
+  const removeFromCanvas = useCallback((id: string) => {
+    const node = store.getNode(id); if (!node) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* corrupto */ }
+    delete ed[PIN_X]; delete ed[PIN_Y]; delete ed[PIN_SCALE]
+    store.updateNode(id, { extraData: JSON.stringify(ed) })
+  }, [])
+
   // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
   // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
   const saveViewAsNode = useCallback((name: string) => {
@@ -528,10 +545,6 @@ export default function PizarraView({ parentId }: Props) {
     return out
   }, [children, layout, dragPos, cam, viewport])
 
-  // Flujo (lista): TODOS los hijos en orden. Los COLOCADOS (o el que se arrastra)
-  // se renderizan como hueco INVISIBLE → mantienen su slot para que mover uno NO
-  // reordene a los demás (cada nodo es independiente). Los demás, normales.
-  const flowNodes = children
 
   return (
     <div
@@ -543,6 +556,8 @@ export default function PizarraView({ parentId }: Props) {
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
       onDoubleClick={onBackgroundDoubleClick}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
+      onDrop={onCanvasDrop}
       style={{
         position: 'relative',
         width: '100%',
@@ -595,36 +610,11 @@ export default function PizarraView({ parentId }: Props) {
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
           Escala por transform (contenido a tamaño de mundo). Se arrastra por el
           tirador izquierdo (no por el texto, para no chocar con el cursor sagrado). */}
-      {/* ── FLUJO: nodos SIN mover → IGUAL que la LISTA (columna ancho completo,
-          apilada de forma natural, sin solaparse). Pan/zoom con la cámara. ── */}
-      {flowNodes.length > 0 && (
-        <div style={{
-          position: 'absolute', left: cam.x + FLOW_X * cam.scale, top: cam.y + FLOW_Y * cam.scale,
-          width: FLOW_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          {flowNodes.map(node => {
-            // Colocado (tiene pin) o arrastrándose → HUECO invisible (mantiene su slot).
-            const placeholder = layout.has(node.id) || (dragPos?.id === node.id)
-            return (
-              <div key={node.id} data-card={placeholder ? undefined : '1'} className="pizarra-node"
-                style={{ position: 'relative', width: '100%', visibility: placeholder ? 'hidden' : 'visible' }}
-                onContextMenu={placeholder ? undefined : (e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
-                {!placeholder && (
-                  <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
-                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
-                  </div>
-                )}
-                <div className="pizarra-card-body" style={{ minWidth: 0 }}>
-                  <OutlinerNode node={node} depth={0} isSelected={!placeholder && selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* Los nodos SIN posición viven en la COLUMNA DERECHA (panel del día), NO en
+          el lienzo. En la pizarra solo aparecen los COLOCADOS (arrastrados desde la
+          columna o creados con doble clic). Así no hay duplicidad. */}
 
-      {/* ── FLOTANTES: nodos colocados (arrastrados) + el que se arrastra ahora ── */}
+      {/* ── FLOTANTES: nodos colocados + el que se arrastra ahora ── */}
       {visible.map(({ node, pos }) => {
         const sx = cam.x + pos.x * cam.scale
         const sy = cam.y + pos.y * cam.scale
@@ -700,22 +690,32 @@ export default function PizarraView({ parentId }: Props) {
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
 
-      {children.length === 0 && (
+      {layout.size === 0 && (
         <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
           Haz <b>doble clic</b> en cualquier parte para crear un nodo.
         </div>
       )}
 
-      {/* Menú contextual de nodo (clic derecho) — idéntico al de la vista lista */}
+      {/* Menú contextual de la pizarra: QUITAR (saca de la pizarra, NO borra) o
+          ELIMINAR (borra el nodo del todo, también de la columna). */}
       {contextMenu && store.getNode(contextMenu.nodeId) && (
-        <NodeContextMenu
-          node={store.getNode(contextMenu.nodeId)!}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onClose={() => setContextMenu(null)}
-          onNavigate={navigate}
-          onSelect={() => { /* selección no aplica en el lienzo */ }}
-        />
+        <>
+          <div onPointerDown={() => setContextMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x, zIndex: 2000, minWidth: 200,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
+            boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
+            <button onClick={() => { removeFromCanvas(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
+              Quitar de la pizarra
+            </button>
+            <button onClick={() => { window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextMenu.nodeId } })); navigate(`/node/${contextMenu.nodeId}`); setContextMenu(null) }} style={ctxItem}>
+              Abrir nodo
+            </button>
+            <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+            <button onClick={() => { store.deleteNode(contextMenu.nodeId); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+              Eliminar nodo
+            </button>
+          </div>
+        </>
       )}
 
       {/* Modal: guardar esta vista (posición+zoom) como nodo */}
@@ -756,5 +756,9 @@ const vSep: React.CSSProperties = {
 const gripStyle: React.CSSProperties = {
   position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
   display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cbcbcb)',
+}
+const ctxItem: React.CSSProperties = {
+  display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 7,
+  border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 14, color: 'var(--text,#333)',
 }
 
