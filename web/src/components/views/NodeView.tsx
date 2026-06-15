@@ -2684,16 +2684,19 @@ export default function NodeView() {
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
                 {viewKind === 'pizarra' && (
-                  (node.isDiaryEntry && store.todayDiary()?.id === node.id) ? (
+                  node.isDiaryEntry ? (
                     <div style={{ display: 'flex', alignItems: 'stretch', width: '100%', gap: 0 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <PizarraView parentId={node.id} />
                       </div>
+                      {/* Columna derecha = panel del día (como iPad): «Tu día»
+                          (tareas/bucles, solo HOY) + TODOS los nodos del día. */}
                       <div style={{
                         width: 360, flexShrink: 0, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto',
                         paddingLeft: 18, marginLeft: 6, borderLeft: '1px solid var(--border-subtle, #ececec)',
                       }}>
-                        <DailyCockpit />
+                        {store.todayDiary()?.id === node.id && <DailyCockpit />}
+                        <Outliner parentId={node.id} autoFocusEmpty disableLocalFilter />
                       </div>
                     </div>
                   ) : (
@@ -2710,15 +2713,19 @@ export default function NodeView() {
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
-                  <Outliner
-                    parentId={node.id}
-                    autoFocusEmpty
-                    filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
-                    filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
-                    filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
-                    temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
-                    disableLocalFilter
-                  />
+                  {/* En pizarra el Outliner del día se monta en la columna derecha
+                      (abajo) — aquí NO, para no duplicar instancias. */}
+                  {viewKind !== 'pizarra' && (
+                    <Outliner
+                      parentId={node.id}
+                      autoFocusEmpty
+                      filterText={isPapeleraNode ? undefined : (smartFilterResult ? undefined : (activeFilterQuery || undefined))}
+                      filterMatchIds={isPapeleraNode ? papeleraFilter?.matchIds : smartFilterResult?.matchIds}
+                      filterAncestorIds={isPapeleraNode ? papeleraFilter?.ancestorIds : smartFilterResult?.ancestorIds}
+                      temporalSort={isWFTemporal ? temporalNodeType as 'year' | 'month' : undefined}
+                      disableLocalFilter
+                    />
+                  )}
                 </div>
               </>
             )
