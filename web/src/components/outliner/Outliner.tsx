@@ -57,15 +57,16 @@ export function domSelectedNodeIds(): string[] {
  * está vacío, las filas `.multi-selected` del DOM (lo que el usuario ve resaltado).
  * Devuelve true si actuó (≥2 elementos). Centralizado para poder testearlo. */
 export function tryDeleteSelection(): boolean {
-  // Fuente de verdad = lo que el usuario VE resaltado. Si el DOM muestra MÁS filas
-  // seleccionadas que el estado global (desincronización: el global se reduce pero
-  // React aún pinta el resaltado), gana el DOM. Así se borra lo que se ve.
-  const fromModule = [..._gSelectedIds]
-  const fromDom = domSelectedNodeIds()
-  const ids = fromDom.length > fromModule.length ? fromDom : fromModule
-  if (ids.length < 2) return false
+  // UNIÓN de la selección global y la del DOM (filas .multi-selected). El DOM lleva
+  // los IDs ACTUALES del render (los del estado global pueden quedar obsoletos si un
+  // nodo se re-normalizó —p.ej. markdown/encabezado— y cambió de id). Los obsoletos
+  // que ya no existen son no-ops en trashNode; los actuales sí se borran.
+  const ids = [...new Set([..._gSelectedIds, ...domSelectedNodeIds()])]
+  // Cuenta de elementos REALES (ignorando ids obsoletos) para no actuar por error.
+  const real = ids.filter(id => store.getNode(id))
+  if (real.length < 2) return false
   gClearSelected()
-  for (const id of ids) {
+  for (const id of real) {
     try { trashNode(id) } catch { /* seguir con el resto */ }
   }
   return true
