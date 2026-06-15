@@ -37,8 +37,9 @@ const PIN_X = '_pinX'
 const PIN_Y = '_pinY'
 const PIN_SCALE = '_pinScale'
 
-// Geometría base de una tarjeta en coordenadas de mundo.
-const CARD_W = 340
+// Ancho del nodo en el lienzo — IGUAL al del flujo (FLOW_W) para que al arrastrar
+// un nodo NO se encoja (mismo ancho flotante que en la columna/lista).
+const CARD_W = 700
 const CARD_MIN_H = 44
 // FLUJO de nodos sin mover (se ven como la LISTA): columna ancho-completo.
 const FLOW_X = 40
