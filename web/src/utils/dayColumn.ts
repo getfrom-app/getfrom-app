@@ -8,12 +8,29 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { collectDailyCockpit, collectDayTasks } from './dailyCockpit'
 import { getGcalEventId } from './gcalNodesSync'
+import { parseExtraData } from './papeleraHelper'
+import { isProtectedSystemRoot } from './rootLookup'
 
 export function isCaptureNode(n: Node): boolean {
-  try { return JSON.parse(n.extraData || '{}')._capture === '1' } catch { return false }
+  return parseExtraData(n.extraData)._capture === '1'
 }
 export function nodeHasPin(n: Node): boolean {
-  try { const e = JSON.parse(n.extraData || '{}'); return e._pinX != null || e._pinY != null } catch { return false }
+  const e = parseExtraData(n.extraData)
+  return e._pinX != null || e._pinY != null
+}
+export function isMovedNode(n: Node): boolean {
+  return parseExtraData(n.extraData)._moved === '1'
+}
+
+/** Marca un nodo como MOVIDO a una nota (aparece en su bloque «Movidos»). Solo se
+ *  marca al mover a una NOTA normal (no diaria, no raíz de sistema). */
+export function markMovedIntoNote(nodeId: string, targetId: string): void {
+  const target = store.getNode(targetId)
+  if (!target || target.isDiaryEntry || isProtectedSystemRoot(targetId)) return
+  const n = store.getNode(nodeId); if (!n) return
+  const ed = parseExtraData(n.extraData)
+  ed._moved = '1'
+  store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
 }
 
 export interface DayColumnData {

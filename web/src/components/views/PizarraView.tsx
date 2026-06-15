@@ -21,7 +21,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
-import { getDayColumnData } from '../../utils/dayColumn'
+import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -116,6 +116,7 @@ function writePin(node: Node, pos: WorldPos) {
   if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
   delete ed[PIN_HIDDEN] // colocar un nodo en el lienzo lo hace visible (deja de ser marcador)
   delete ed._capture    // y lo gradúa de la bandeja «Capturas» a nodo del lienzo
+  delete ed._moved      // y de «Movidos» (queda colocado en la nota)
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
@@ -304,7 +305,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     // tareas/bucles del cockpit) NO se pinta en el lienzo (evita duplicados).
     const parent = store.getNode(parentId)
     const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
-    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n))
+    // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
+    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────

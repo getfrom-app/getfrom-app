@@ -5,15 +5,33 @@
 
 import { store, useStore } from '../../store/nodeStore'
 import DayColumn from './DayColumn'
+import NoteColumn from './NoteColumn'
 
 export default function DayPanel({ nodeId }: { nodeId?: string }) {
   useStore()
   const node = nodeId ? store.getNode(nodeId) : undefined
 
-  if (!node?.isDiaryEntry) {
+  if (!node) {
     return (
       <div style={{ padding: 16, color: 'var(--text-secondary, #999)', fontSize: 14 }}>
-        Abre una nota diaria para ver su panel.
+        Abre una nota para ver su panel.
+      </div>
+    )
+  }
+
+  // Nota normal (no diaria) → columna «Movidos».
+  if (!node.isDiaryEntry) {
+    let isPizarra = false
+    try { isPizarra = JSON.parse(node.extraData || '{}').viewBlock === 'pizarra' } catch { /* ignore */ }
+    const onClick = (e: React.MouseEvent) => {
+      if (!isPizarra) return
+      const row = (e.target as HTMLElement).closest('[data-node-id]') as HTMLElement | null
+      const id = row?.getAttribute('data-node-id')
+      if (id) window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
+    }
+    return (
+      <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onClick}>
+        <NoteColumn node={node} />
       </div>
     )
   }

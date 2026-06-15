@@ -313,7 +313,11 @@ export default function NodeView() {
     // La columna del día (panel derecho) persiste en pizarra Y en lista. En lista
     // el centro muestra solo los NODOS; la columna (eventos/tareas/capturas) va
     // siempre a la derecha. En calendario/agenda no se abre.
-    if (node?.isDiaryEntry && (viewKind === 'pizarra' || viewKind === 'list')) {
+    // Diaria → columna del día (pizarra y lista). Nota normal en pizarra → columna
+    // «Movidos». En calendario/agenda no se abre.
+    const isDiary = !!node?.isDiaryEntry && (viewKind === 'pizarra' || viewKind === 'list')
+    const isNotePizarra = !!node && !node.isDiaryEntry && viewKind === 'pizarra' && !isAgendaRoot
+    if (isDiary || isNotePizarra) {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()
       // Re-disparo diferido: en carga directa, el listener de MainLayout puede
@@ -321,7 +325,7 @@ export default function NodeView() {
       const t = setTimeout(fire, 0)
       return () => { clearTimeout(t); window.dispatchEvent(new CustomEvent('from:close-day-panel')) }
     }
-  }, [node?.isDiaryEntry, node?.id, viewKind])
+  }, [node?.isDiaryEntry, node?.id, viewKind, isAgendaRoot])
 
   function handleSelectView(id: string) {
     if (!node) return

@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
+import { markMovedIntoNote } from '../../utils/dayColumn'
 import type { Node } from '../../types'
 
 interface Props {
@@ -127,6 +128,7 @@ export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
     idsToMove.forEach((id, i) => {
       if (id !== targetId) {
         store.updateNode(id, { parentId: targetId, siblingOrder: maxOrder + (i + 1) * 1000 })
+        markMovedIntoNote(id, targetId) // → bloque «Movidos» de la nota destino
       }
     })
     onClose()
