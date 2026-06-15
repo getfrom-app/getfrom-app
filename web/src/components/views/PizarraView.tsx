@@ -40,10 +40,10 @@ const PIN_SCALE = '_pinScale'
 // Geometría base de una tarjeta en coordenadas de mundo.
 const CARD_W = 340
 const CARD_MIN_H = 44
-// Auto-layout (nodos sin posición): columna en flujo.
-const AUTO_X = 40
-const AUTO_Y0 = 40
-const AUTO_GAP = 84
+// FLUJO de nodos sin mover (se ven como la LISTA): columna ancho-completo.
+const FLOW_X = 40
+const FLOW_Y = 20
+const FLOW_W = 700
 // Zoom.
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
@@ -130,7 +130,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId, flowUnpositioned = false }: Props) {
+export default function PizarraView({ parentId }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -170,19 +170,19 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
   const children = store.children(parentId)
 
-  // La pizarra muestra SOLO los nodos COLOCADOS (con _pinX/_pinY). Los hijos sin
-  // posición (bullets normales del día, tareas, etc.) NO ensucian el lienzo: viven
-  // en la columna derecha / vista lista. Así la pizarra queda libre.
+  // Modelo: los nodos COLOCADOS (con _pinX/_pinY) flotan libres en el lienzo; los
+  // demás fluyen como en la LISTA (columna ancho-completo, apilados naturalmente,
+  // sin solaparse). Al arrastrar uno del flujo, gana posición y pasa a flotar; al
+  // volver a Lista, todos vuelven a su orden.
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
-    let autoI = 0
     for (const n of children) {
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
-      else if (flowUnpositioned) { map.set(n.id, { x: AUTO_X, y: AUTO_Y0 + autoI * AUTO_GAP }); autoI++ }
     }
     return map
-  }, [children, flowUnpositioned])
+  }, [children])
+  const unpositioned = useMemo(() => children.filter(n => !readPin(n)), [children])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
@@ -468,7 +468,15 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    const origin = layout.get(node.id) || { x: 0, y: 0 }
+    // Origen = posición de mundo ACTUAL del nodo (rect real en pantalla). Vale para
+    // nodos flotantes y para los del flujo (lista): así al arrastrar uno del flujo
+    // no da un salto — empieza justo donde estaba y desde ahí queda flotando.
+    let origin = layout.get(node.id)
+    if (!origin) {
+      const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
+      if (cardEl) { const r = cardEl.getBoundingClientRect(); origin = screenToWorld(r.left - rect.left, r.top - rect.top) }
+    }
+    origin = origin || { x: 0, y: 0 }
     containerRef.current!.setPointerCapture(e.pointerId)
     dragRef.current = { id: node.id, startWorld, origin, moved: false }
     setDragPos({ id: node.id, pos: origin })
@@ -490,8 +498,19 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       if (sx + w < -margin || sx > viewport.w + margin || sy + CARD_MIN_H * cam.scale < -margin || sy > viewport.h + margin) continue
       out.push({ node: n, pos })
     }
+    // Si se está arrastrando un nodo del FLUJO (aún sin pin), renderizarlo flotando.
+    if (dragPos && !layout.has(dragPos.id)) {
+      const dn = store.getNode(dragPos.id)
+      if (dn) out.push({ node: dn, pos: dragPos.pos })
+    }
     return out
   }, [children, layout, dragPos, cam, viewport])
+
+  // Nodos del flujo (lista): los sin pin, salvo el que se esté arrastrando ahora.
+  const flowNodes = useMemo(
+    () => unpositioned.filter(n => !(dragPos && dragPos.id === n.id)),
+    [unpositioned, dragPos]
+  )
 
   return (
     <div
@@ -555,52 +574,41 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
           REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
           Escala por transform (contenido a tamaño de mundo). Se arrastra por el
           tirador izquierdo (no por el texto, para no chocar con el cursor sagrado). */}
+      {/* ── FLUJO: nodos SIN mover → IGUAL que la LISTA (columna ancho completo,
+          apilada de forma natural, sin solaparse). Pan/zoom con la cámara. ── */}
+      {flowNodes.length > 0 && (
+        <div style={{
+          position: 'absolute', left: cam.x + FLOW_X * cam.scale, top: cam.y + FLOW_Y * cam.scale,
+          width: FLOW_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {flowNodes.map(node => (
+            <div key={node.id} data-card="1" className="pizarra-node" style={{ position: 'relative', width: '100%' }}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+              <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
+              </div>
+              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── FLOTANTES: nodos colocados (arrastrados) + el que se arrastra ahora ── */}
       {visible.map(({ node, pos }) => {
         const sx = cam.x + pos.x * cam.scale
         const sy = cam.y + pos.y * cam.scale
         return (
-          <div
-            key={node.id}
-            data-card="1"
-            className="pizarra-node"
+          <div key={node.id} data-card="1" className="pizarra-node"
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{
-              position: 'absolute',
-              left: sx,
-              top: sy,
-              width: CARD_W,
-              transform: `scale(${cam.scale})`,
-              transformOrigin: '0 0',
-              zIndex: dragPos?.id === node.id ? 10 : 1,
-            }}
-          >
-            {/* Tirador de arrastre — solo visible al pasar el ratón (el nodo se ve
-                EXACTAMENTE como en lista; la única diferencia es que se arrastra). */}
-            <div
-              className="pizarra-grip"
-              onPointerDown={(e) => onCardPointerDown(e, node)}
-              title="Arrastrar"
-              style={{
-                position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cbcbcb)',
-              }}
-            >
+            style={{ position: 'absolute', left: sx, top: sy, width: CARD_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: dragPos?.id === node.id ? 10 : 1 }}>
+            <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
               <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
             </div>
-            {/* Contenido = nodo REAL (editor del outliner en modo flat), SIN caja */}
             <div className="pizarra-card-body" style={{ minWidth: 0 }}>
-              <OutlinerNode
-                node={node}
-                depth={0}
-                isSelected={selectedId === node.id}
-                selectedId={selectedId}
-                isMultiSelected={false}
-                onSelect={setSelectedId}
-                onSelectNext={() => {}}
-                onShiftSelect={() => {}}
-                filterText=""
-                flat
-              />
+              <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
             </div>
           </div>
         )
@@ -660,7 +668,7 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
 
-      {layout.size === 0 && (
+      {children.length === 0 && (
         <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
           Haz <b>doble clic</b> en cualquier parte para crear un nodo.
         </div>
@@ -694,5 +702,9 @@ const toolBtnActive: React.CSSProperties = {
 }
 const vSep: React.CSSProperties = {
   width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
+}
+const gripStyle: React.CSSProperties = {
+  position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cbcbcb)',
 }
 
