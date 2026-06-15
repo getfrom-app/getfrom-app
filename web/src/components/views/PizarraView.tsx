@@ -36,8 +36,8 @@ const PIN_Y = '_pinY'
 const PIN_SCALE = '_pinScale'
 
 // Geometría base de una tarjeta en coordenadas de mundo.
-const CARD_W = 220
-const CARD_MIN_H = 52
+const CARD_W = 340
+const CARD_MIN_H = 44
 // Auto-layout (nodos sin posición): columna en flujo.
 const AUTO_X = 40
 const AUTO_Y0 = 40
@@ -289,6 +289,10 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         borderRadius: 8,
       }}
     >
+      {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
+          el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
+      <style>{`.pizarra-card-body .node-drag-handle{display:none!important}`}</style>
+
       {/* Guías de alineación (snap) */}
       {guides.vx != null && (
         <div style={{ position: 'absolute', left: cam.x + guides.vx * cam.scale, top: 0, width: 1, height: '100%', background: 'var(--accent, #6c5ce7)', opacity: 0.6, pointerEvents: 'none', zIndex: 5 }} />
@@ -357,9 +361,11 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         )
       })}
 
-      {/* ── Barra de herramientas (estilo iPad) — INFERIOR, horizontal ── */}
+      {/* ── Barra de herramientas (estilo iPad) — INFERIOR, horizontal ──
+          position:fixed: el contenedor del lienzo desborda por debajo del viewport,
+          así que anclamos la barra a la parte inferior de la PANTALLA (siempre visible). */}
       <div style={{
-        position: 'absolute', left: '50%', bottom: 14, transform: 'translateX(-50%)', zIndex: 20,
+        position: 'fixed', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 60,
         display: 'flex', alignItems: 'center', gap: 2, padding: 5,
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
