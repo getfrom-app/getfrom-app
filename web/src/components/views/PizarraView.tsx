@@ -674,10 +674,27 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     textPersistTimer.current = window.setTimeout(() => updateTextMd(id, md), 600)
   }, [updateTextMd])
 
+  // contentEditable del texto en edición: cargar HTML y enfocar al entrar en edición.
+  const editDivRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!editText) return
+    const el = editDivRef.current
+    if (!el) return
+    const t = parsePizarra(store.getNode(parentId)?.body).texts?.find(x => x.id === editText)
+    el.innerHTML = t?.md || ''
+    el.focus()
+    const sel = window.getSelection(); const range = document.createRange()
+    range.selectNodeContents(el); range.collapse(false); sel?.removeAllRanges(); sel?.addRange(range)
+  }, [editText, parentId])
+  const fmt = (cmd: string, val?: string) => { editDivRef.current?.focus(); document.execCommand(cmd, false, val) }
+
   // Promociona un texto libre a NODO (documento): crea un nodo con ese texto fijado
   // en su posición y elimina el texto del lienzo. El dot del hover lo dispara.
   const promoteTextToNode = useCallback((t: WBText) => {
-    const lines = t.md.split('\n')
+    // El texto puede llevar HTML (negritas, etc.) → pasar a texto plano para el nodo.
+    const tmp = document.createElement('div'); tmp.innerHTML = t.md
+    const plain = (tmp.textContent || '').trim()
+    const lines = plain.split('\n')
     const node = store.createNode({
       text: lines[0] || 'Nota',
       parentId,
@@ -1101,6 +1118,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-card-body .node-row{align-items:flex-start!important}
 /* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
 .pizarra-card-body .node-text{cursor:text}
+/* Texto SUELTO del lienzo: sin caja, fondo transparente, WYSIWYG. */
+.pizarra-text{caret-color:var(--accent,#6c5ce7)}
+.pizarra-text:empty::before{content:'Texto…';opacity:.4;pointer-events:none}
+.pizarra-text h1{font-size:1.7em;font-weight:700;margin:.15em 0;line-height:1.25}
+.pizarra-text h2{font-size:1.35em;font-weight:700;margin:.15em 0;line-height:1.3}
+.pizarra-text ul,.pizarra-text ol{margin:.2em 0;padding-left:1.4em}
+.pizarra-text:focus{outline:none}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
@@ -1349,31 +1373,64 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             style={{ position: 'absolute', left: sx, top: sy, width: t.w, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
             onPointerEnter={() => { if (tool === 'select' && !editing) setHoverText(t.id) }}
             onPointerLeave={() => setHoverText(h => h === t.id ? null : h)}
-            onDoubleClick={(e) => { e.stopPropagation(); setEditText(t.id) }}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); deleteText(t.id) }}>
+            {/* DOT pequeño arriba-izquierda (hover) → convertir en nodo/documento */}
             {(hovered || editing) && (
               <div title="Convertir en nodo" onPointerDown={(e) => { e.stopPropagation(); promoteTextToNode(t) }}
-                style={{ position: 'absolute', left: -22, top: 4, width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--accent,#6c5ce7)', background: '#fff', cursor: 'pointer' }} />
+                style={{ position: 'absolute', left: -14, top: -2, width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff', cursor: 'pointer' }} />
             )}
-            {editing ? (
-              <textarea
-                autoFocus
-                defaultValue={t.md}
-                onChange={(e) => scheduleTextPersist(t.id, e.target.value)}
-                onBlur={(e) => { updateTextMd(t.id, e.target.value); if (!e.target.value.trim()) deleteText(t.id); setEditText(null) }}
-                onPointerDown={(e) => e.stopPropagation()}
-                onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLTextAreaElement).blur() }}
-                style={{ width: '100%', minHeight: t.size * 1.8, fontSize: t.size, lineHeight: 1.5, border: '1px solid var(--accent,#6c5ce7)', borderRadius: 6, padding: '4px 6px', resize: 'none', color: t.c || 'var(--text,#222)', background: 'var(--bg-elevated,#fff)', outline: 'none', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}
-              />
-            ) : (
-              <div
-                style={{ fontSize: t.size, lineHeight: 1.5, color: t.c || 'var(--text,#222)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', padding: '4px 6px', borderRadius: 6, cursor: tool === 'select' ? 'text' : 'default', background: hovered ? 'rgba(108,92,231,0.05)' : 'transparent' }}>
-                {t.md || <span style={{ opacity: 0.4 }}>Texto…</span>}
-              </div>
-            )}
+            {/* Texto SUELTO, sin caja, fondo transparente. WYSIWYG al editar. */}
+            <div
+              ref={editing ? editDivRef : undefined}
+              className="pizarra-text"
+              contentEditable={editing}
+              suppressContentEditableWarning
+              onDoubleClick={(e) => { if (!editing) { e.stopPropagation(); setEditText(t.id) } }}
+              onInput={editing ? (e) => scheduleTextPersist(t.id, (e.target as HTMLElement).innerHTML) : undefined}
+              onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; updateTextMd(t.id, html); if (!(e.target as HTMLElement).textContent?.trim()) deleteText(t.id); setEditText(null) } : undefined}
+              onPointerDown={editing ? (e) => e.stopPropagation() : undefined}
+              onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
+              dangerouslySetInnerHTML={editing ? undefined : { __html: t.md || '<span style="opacity:.4">Texto…</span>' }}
+              style={{ fontSize: t.size, lineHeight: 1.5, color: t.c || 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : (tool === 'select' ? 'text' : 'default'), minHeight: t.size }}
+            />
           </div>
         )
       })}
+
+      {/* ── Menú flotante de formato (estilo iPad) para el texto en edición ── */}
+      {editText && (() => {
+        const t = (parsePizarra(store.getNode(parentId)?.body).texts || []).find(x => x.id === editText)
+        if (!t) return null
+        const mx = cam.x + t.x * cam.scale
+        const my = cam.y + t.y * cam.scale
+        const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
+        const Btn = ({ label, onAct, title }: { label: React.ReactNode; onAct: () => void; title: string }) => (
+          <button title={title} onMouseDown={(e) => { e.preventDefault(); onAct() }}
+            style={{ minWidth: 26, height: 26, border: 'none', background: 'transparent', borderRadius: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text,#333)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{label}</button>
+        )
+        return (
+          <div onPointerDown={(e) => e.stopPropagation()} style={{
+            position: 'fixed', left: Math.max(8, mx), top: Math.max(8, my - 44), zIndex: 1700,
+            display: 'flex', alignItems: 'center', gap: 1, padding: 4,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
+            borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
+          }}>
+            <Btn title="Negrita" label={<b>B</b>} onAct={() => fmt('bold')} />
+            <Btn title="Cursiva" label={<i>I</i>} onAct={() => fmt('italic')} />
+            <Btn title="Subrayado" label={<u>U</u>} onAct={() => fmt('underline')} />
+            <div style={{ width: 1, height: 18, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
+            <Btn title="Encabezado grande" label="H1" onAct={() => fmt('formatBlock', 'H1')} />
+            <Btn title="Encabezado" label="H2" onAct={() => fmt('formatBlock', 'H2')} />
+            <Btn title="Texto normal" label="¶" onAct={() => fmt('formatBlock', 'DIV')} />
+            <Btn title="Lista" label="•" onAct={() => fmt('insertUnorderedList')} />
+            <div style={{ width: 1, height: 18, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
+            {COLORS.map(c => (
+              <button key={c} title="Color" onMouseDown={(e) => { e.preventDefault(); fmt('foreColor', c) }}
+                style={{ width: 16, height: 16, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', margin: '0 1px' }} />
+            ))}
+          </div>
+        )
+      })()}
 
       {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
              Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
