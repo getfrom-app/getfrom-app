@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
+import { ensureDayPath } from '../../utils/agendaHelper'
 import type { Node } from '../../types'
 
 interface Props { parentId: string }
@@ -376,15 +377,26 @@ export default function PizarraView({ parentId }: Props) {
         )
       })}
 
-      {/* ── Barra de herramientas (estilo iPad) — flotante a la izquierda ── */}
+      {/* ── Barra de herramientas (estilo iPad) — INFERIOR, horizontal ── */}
       <div style={{
-        position: 'absolute', left: 12, top: 12, zIndex: 20,
-        display: 'flex', flexDirection: 'column', gap: 4, padding: 5,
+        position: 'absolute', left: '50%', bottom: 14, transform: 'translateX(-50%)', zIndex: 20,
+        display: 'flex', alignItems: 'center', gap: 2, padding: 5,
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
-        borderRadius: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+        borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
       }}>
-        <button style={toolBtn} title="Texto — añadir nodo (o doble clic en el lienzo)"
-          onClick={() => createNodeAt(screenToWorld(viewport.w / 2, viewport.h / 2))}>
+        {/* Ir a hoy */}
+        <button style={toolBtn} title="Ir a hoy"
+          onClick={() => {
+            const day = ensureDayPath(new Date())
+            navigate(`/node/${day.id}`)
+            setCam({ x: 60, y: 60, scale: 1 })
+            window.dispatchEvent(new CustomEvent('from:open-day-panel'))
+          }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+        </button>
+        <div style={vSep} />
+        {/* Herramientas de anotación/dibujo — Fase 2 (los nodos se crean con DOBLE CLIC) */}
+        <button style={toolBtnDisabled} disabled title="Texto — anotaciones (próximamente)">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
         <button style={toolBtnDisabled} disabled title="Lápiz — dibujar (próximamente)">
@@ -396,7 +408,7 @@ export default function PizarraView({ parentId }: Props) {
         <button style={toolBtnDisabled} disabled title="Lazo (próximamente)">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="8" rx="7" ry="5"/><path d="M7 13c0 2 1 4 3 4"/></svg>
         </button>
-        <div style={{ height: 1, background: 'var(--border, #e2e2e2)', margin: '2px 4px' }} />
+        <div style={vSep} />
         <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title="Deshacer"
           onClick={() => store.undo()}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
@@ -405,15 +417,14 @@ export default function PizarraView({ parentId }: Props) {
           onClick={() => store.redo()}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>
         </button>
-      </div>
-
-      {/* Controles de zoom — abajo a la derecha */}
-      <div style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', gap: 6, zIndex: 20 }}>
-        <button onClick={() => setCam({ x: 60, y: 60, scale: 1 })} title="Centrar"
-          style={pillStyle}>⌖</button>
-        <button onClick={() => setCam(c => ({ ...c, scale: Math.max(MIN_SCALE, c.scale / 1.2) }))} style={pillStyle}>−</button>
-        <span style={{ ...pillStyle, minWidth: 44, textAlign: 'center', cursor: 'default' }}>{Math.round(cam.scale * 100)}%</span>
-        <button onClick={() => setCam(c => ({ ...c, scale: Math.min(MAX_SCALE, c.scale * 1.2) }))} style={pillStyle}>+</button>
+        <div style={vSep} />
+        <button style={toolBtn} title="Alejar"
+          onClick={() => setCam(c => ({ ...c, scale: Math.max(MIN_SCALE, c.scale / 1.2) }))}>−</button>
+        <span style={{ minWidth: 42, textAlign: 'center', fontSize: 12, color: 'var(--text-secondary, #888)' }}>{Math.round(cam.scale * 100)}%</span>
+        <button style={toolBtn} title="Acercar"
+          onClick={() => setCam(c => ({ ...c, scale: Math.min(MAX_SCALE, c.scale * 1.2) }))}>+</button>
+        <button style={toolBtn} title="Centrar"
+          onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
 
       {layout.size === 0 && (
@@ -433,10 +444,7 @@ const toolBtn: React.CSSProperties = {
 const toolBtnDisabled: React.CSSProperties = {
   ...toolBtn, color: 'var(--text-secondary, #bbb)', cursor: 'not-allowed', opacity: 0.5,
 }
-
-const pillStyle: React.CSSProperties = {
-  height: 28, minWidth: 28, padding: '0 8px', borderRadius: 14,
-  border: '1px solid var(--border, #d8d8d8)', background: 'var(--bg-elevated, #fff)',
-  color: 'var(--text, #333)', fontSize: 14, cursor: 'pointer', display: 'inline-flex',
-  alignItems: 'center', justifyContent: 'center',
+const vSep: React.CSSProperties = {
+  width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
 }
+
