@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
-import { findContextRoot, isProtectedSystemRoot } from '../../utils/rootLookup'
+import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import { listTemplates, applyTemplate } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
@@ -20,6 +20,7 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import PizarraView from './PizarraView'
+import TemporalCanvasView from './TemporalCanvasView'
 import WFTemporalView from './WFTemporalView'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
@@ -298,6 +299,12 @@ export default function NodeView() {
     if (viewBlock === 'pizarra') return 'pizarra'
     return 'list'
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
+
+  // ¿Es la raíz 📅 Agenda? → se muestra como CALENDARIO-LIENZO (zoom temporal LOD).
+  const isAgendaRoot = useMemo(() => {
+    if (!node) return false
+    return findRootByKey('agenda')?.id === node.id
+  }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Panel del día (como iPad): al ver CUALQUIER nota diaria, abrir la pestaña
   // «Día» del panel derecho. En pizarra muestra «Tu día» + nodos del día; en
@@ -2676,18 +2683,23 @@ export default function NodeView() {
                        libre — como en iPad. En notas normales ocupa todo. ── */}
                 {viewKind === 'pizarra' && <PizarraView parentId={node.id} flowUnpositioned={!node.isDiaryEntry} />}
 
-                {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra ── */}
+                {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
+                {isAgendaRoot && <TemporalCanvasView />}
+
+                {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra/agenda ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
                 <div className={`outliner-section${
                   (viewKind !== 'list' && !node.isDiaryEntry && !(isWFMode && isWFTemporal))
                   || (node.isDiaryEntry && viewKind === 'calendar')
                   || viewKind === 'pizarra'
+                  || isAgendaRoot
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
                   {/* En pizarra el Outliner del día se monta en la columna derecha
-                      (abajo) — aquí NO, para no duplicar instancias. */}
-                  {viewKind !== 'pizarra' && (
+                      (abajo) — aquí NO, para no duplicar instancias. En la Agenda
+                      (calendario-lienzo) tampoco se monta. */}
+                  {viewKind !== 'pizarra' && !isAgendaRoot && (
                     <Outliner
                       parentId={node.id}
                       autoFocusEmpty
