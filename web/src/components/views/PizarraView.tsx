@@ -145,7 +145,31 @@ function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: numb
 const FENCE = '```from-pizarra'
 interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
 // Texto LIBRE del lienzo (compatible iPad): x,y mundo; size=fuente; w=ancho; md=texto.
-interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string }
+interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string; nodeId?: string }
+
+// Parte el HTML del texto en bloques: 1ª = título, resto = párrafos (con tipo).
+function htmlToBlocks(html: string): { text: string; block?: string }[] {
+  const div = document.createElement('div'); div.innerHTML = html || ''
+  const blocks: { text: string; block?: string }[] = []
+  let cur = ''
+  const flush = () => { if (cur.trim()) blocks.push({ text: cur.trim() }); cur = '' }
+  for (const node of Array.from(div.childNodes)) {
+    if (node.nodeType === 3) { cur += node.textContent || ''; continue }
+    const el = node as HTMLElement
+    const tag = el.tagName
+    if (tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'P' || tag === 'DIV') {
+      flush()
+      const block = tag === 'H1' ? 'h1' : tag === 'H2' ? 'h2' : tag === 'H3' ? 'h3' : undefined
+      const txt = (el.textContent || '').trim()
+      if (txt) blocks.push({ text: txt, block })
+    } else if (tag === 'UL' || tag === 'OL') {
+      flush()
+      el.querySelectorAll('li').forEach(li => { const t = (li.textContent || '').trim(); if (t) blocks.push({ text: t, block: 'bullet' }) })
+    } else if (tag === 'BR') { flush() } else { cur += el.textContent || '' }
+  }
+  flush()
+  return blocks
+}
 interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
 
 function parsePizarra(body: string | null | undefined): WBData {
@@ -688,27 +712,32 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [editText, parentId])
   const fmt = (cmd: string, val?: string) => { editDivRef.current?.focus(); document.execCommand(cmd, false, val) }
 
-  // Promociona un texto libre a NODO (documento): crea un nodo con ese texto fijado
-  // en su posición y elimina el texto del lienzo. El dot del hover lo dispara.
-  const promoteTextToNode = useCallback((t: WBText) => {
-    // El texto puede llevar HTML (negritas, etc.) → pasar a texto plano para el nodo.
-    const tmp = document.createElement('div'); tmp.innerHTML = t.md
-    const plain = (tmp.textContent || '').trim()
-    const lines = plain.split('\n')
-    const node = store.createNode({
-      text: lines[0] || 'Nota',
+  // El DOT abre el texto como DOCUMENTO: nota nueva (hija de la nota del lienzo),
+  // 1ª línea = título, resto = nodos párrafo. NO borra el texto del lienzo (sigue
+  // visible igual); guarda el id de la nota en el texto para reabrir el mismo doc.
+  const openTextAsDoc = useCallback((t: WBText) => {
+    // Si ya tiene documento vinculado y existe → solo navegar.
+    if (t.nodeId && store.getNode(t.nodeId) && !store.getNode(t.nodeId)!.deletedAt) {
+      navigate(`/node/${t.nodeId}`)
+      return
+    }
+    const blocks = htmlToBlocks(t.md)
+    const title = blocks[0]?.text || 'Documento'
+    // Nota-documento: hija de la nota del lienzo, oculta del lienzo (_pinHidden).
+    const note = store.createNode({
+      text: title,
       parentId,
-      extraData: {
-        [PIN_X]: String(Math.round(t.x)),
-        [PIN_Y]: String(Math.round(t.y)),
-        [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
-      },
+      // Oculta del lienzo (_pinHidden) y se abre en vista DOCUMENTO para editar.
+      extraData: { [PIN_HIDDEN]: '1', viewBlock: 'documento' },
     })
-    const body = lines.slice(1).join('\n').trim()
-    if (body) store.updateNode(node.id, { body })
-    deleteText(t.id)
-    setSelectedId(node.id)
-  }, [parentId, deleteText])
+    for (const b of blocks.slice(1)) {
+      const child = store.createNode({ text: b.text, parentId: note.id })
+      if (b.block) store.updateNode(child.id, { extraData: JSON.stringify({ _block: b.block }) })
+    }
+    // Vincular el texto del lienzo a la nota (sin borrarlo).
+    mutateTexts(texts => texts.map(x => x.id === t.id ? { ...x, nodeId: note.id } : x))
+    navigate(`/node/${note.id}`)
+  }, [parentId, mutateTexts, navigate])
 
   // ── Pointer down en el fondo → pan, o dibujar/borrar según la herramienta ────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
@@ -1376,7 +1405,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); deleteText(t.id) }}>
             {/* DOT pequeño arriba-izquierda (hover) → convertir en nodo/documento */}
             {(hovered || editing) && (
-              <div title="Convertir en nodo" onPointerDown={(e) => { e.stopPropagation(); promoteTextToNode(t) }}
+              <div title="Abrir como documento" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(t) }}
                 style={{ position: 'absolute', left: -14, top: -2, width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff', cursor: 'pointer' }} />
             )}
             {/* Texto SUELTO, sin caja, fondo transparente. WYSIWYG al editar. */}
@@ -1400,6 +1429,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       {editText && (() => {
         const t = (parsePizarra(store.getNode(parentId)?.body).texts || []).find(x => x.id === editText)
         if (!t) return null
+        // Pegada justo encima del texto (su top en pantalla).
         const mx = cam.x + t.x * cam.scale
         const my = cam.y + t.y * cam.scale
         const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
@@ -1409,7 +1439,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
         return (
           <div onPointerDown={(e) => e.stopPropagation()} style={{
-            position: 'fixed', left: Math.max(8, mx), top: Math.max(8, my - 44), zIndex: 1700,
+            position: 'fixed', left: Math.max(8, mx), top: Math.max(8, my - 38), zIndex: 1700,
             display: 'flex', alignItems: 'center', gap: 1, padding: 4,
             background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
             borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
