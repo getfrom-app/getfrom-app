@@ -153,6 +153,10 @@ export default function PizarraView({ parentId }: Props) {
   const [drawPts, setDrawPts] = useState<number[] | null>(null)
   const drawRef = useRef<number[] | null>(null)
 
+  // Modal "guardar esta vista (posición+zoom) como nodo".
+  const [saveModal, setSaveModal] = useState(false)
+  const [saveName, setSaveName] = useState('')
+
   // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
 
@@ -283,6 +287,24 @@ export default function PizarraView({ parentId }: Props) {
       id: rid(), pts: worldPts.map(n => Math.round(n * 100) / 100), w: wWorld, c: '#222222', a: 1, k: 'free',
     }]
     store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
+  }, [parentId])
+
+  // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
+  // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
+  const saveViewAsNode = useCallback((name: string) => {
+    const c = camRef.current, vp = viewportRef.current
+    const wx = (vp.w / 2 - c.x) / c.scale
+    const wy = (vp.h / 2 - c.y) / c.scale
+    // El pin se guarda restando medio CARD para que al volar quede centrado igual.
+    store.createNode({
+      text: name.trim() || 'Vista',
+      parentId,
+      extraData: {
+        [PIN_X]: String(Math.round(wx - CARD_W / 2)),
+        [PIN_Y]: String(Math.round(wy - CARD_MIN_H / 2)),
+        [PIN_SCALE]: String(Number(c.scale.toFixed(4))),
+      },
+    })
   }, [parentId])
 
   // Borrar trazos cerca de (wx,wy) en mundo.
@@ -638,6 +660,10 @@ export default function PizarraView({ parentId }: Props) {
           }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
         </button>
+        {/* Guardar esta vista (posición+zoom) como nodo */}
+        <button style={toolBtn} title="Guardar esta vista como nodo" onClick={() => { setSaveName(''); setSaveModal(true) }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>
+        </button>
         <div style={vSep} />
         {/* Seleccionar / mover */}
         <button style={tool === 'select' ? toolBtnActive : toolBtn} title="Seleccionar / mover" onClick={() => setTool('select')}>
@@ -689,6 +715,24 @@ export default function PizarraView({ parentId }: Props) {
           onNavigate={navigate}
           onSelect={() => { /* selección no aplica en el lienzo */ }}
         />
+      )}
+
+      {/* Modal: guardar esta vista (posición+zoom) como nodo */}
+      {saveModal && (
+        <div onPointerDown={(e) => { e.stopPropagation(); if (e.target === e.currentTarget) setSaveModal(false) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onPointerDown={(e) => e.stopPropagation()}
+            style={{ background: 'var(--bg-elevated,#fff)', borderRadius: 14, padding: 20, width: 360, boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: 'var(--text,#222)' }}>Guardar esta vista como nodo</div>
+            <input autoFocus value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Nombre del nodo…"
+              onKeyDown={(e) => { if (e.key === 'Enter') { saveViewAsNode(saveName); setSaveModal(false) } if (e.key === 'Escape') setSaveModal(false) }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 11px', borderRadius: 9, border: '1px solid var(--border,#d8d8d8)', fontSize: 14, outline: 'none', background: 'var(--bg,#fff)', color: 'var(--text,#222)' }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+              <button onClick={() => setSaveModal(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border,#ddd)', background: 'transparent', cursor: 'pointer', color: 'var(--text,#333)' }}>Cancelar</button>
+              <button onClick={() => { saveViewAsNode(saveName); setSaveModal(false) }} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--accent,#6c5ce7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Guardar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
