@@ -81,6 +81,29 @@ function readPinScale(node: Node): number {
     return Number.isFinite(s) && s > 0 ? s : 1
   } catch { return 1 }
 }
+// Ancho de la tarjeta en la pizarra (_pinW, px de mundo). Default CARD_W.
+function readCardW(node: Node): number {
+  try {
+    const w = Number(JSON.parse(node.extraData || '{}')._pinW)
+    return Number.isFinite(w) && w >= 120 ? w : CARD_W
+  } catch { return CARD_W }
+}
+// Escala uniforme de la tarjeta (_cardScale). Default 1.
+function readCardScale(node: Node): number {
+  try {
+    const s = Number(JSON.parse(node.extraData || '{}')._cardScale)
+    return Number.isFinite(s) && s > 0 ? s : 1
+  } catch { return 1 }
+}
+// Escribe campos de tamaño (_pinW / _cardScale) preservando el resto.
+function writeCardSize(node: Node, fields: { w?: number; scale?: number; pin?: WorldPos }) {
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+  if (fields.w != null) ed._pinW = String(Math.round(fields.w))
+  if (fields.scale != null) ed._cardScale = String(Number(fields.scale.toFixed(3)))
+  if (fields.pin) { ed._pinX = String(Math.round(fields.pin.x)); ed._pinY = String(Math.round(fields.pin.y)) }
+  store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+}
 
 // Escribe la posición en extraData preservando el resto de campos (patrón
 // crítico: nunca sobrescribir extraData entero).
@@ -202,6 +225,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       return next
     })
   }
+
+  // Hover sobre una tarjeta de nodo (resaltado + manijas de redimensionado).
+  const [hoverNode, setHoverNode] = useState<string | null>(null)
+  // Redimensionado de tarjeta en curso: ancho (manija izquierda) o escala (esquina).
+  const nodeRzRef = useRef<null | { id: string; mode: 'width' | 'scale'; startW: number; startScale: number; startPin: WorldPos; startWorld: WorldPos; cardH: number; moved: boolean }>(null)
+  const nodeRzValRef = useRef<{ w: number; scale: number; pin: WorldPos } | null>(null)
+  const [nodeRz, setNodeRz] = useState<null | { id: string; w: number; scale: number; pin: WorldPos }>(null)
 
   // Interacción de TRAZOS (con herramienta «seleccionar»): hover, mover, escalar.
   const [hoverStroke, setHoverStroke] = useState<string | null>(null)
@@ -646,6 +676,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Redimensionado de tarjeta (ancho / escala) en curso → preview.
+    if (nodeRzRef.current) {
+      const r = nodeRzRef.current
+      const rect = containerRef.current!.getBoundingClientRect()
+      const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+      if (Math.abs(w.x - r.startWorld.x) + Math.abs(w.y - r.startWorld.y) > 1) r.moved = true
+      let val: { w: number; scale: number; pin: WorldPos }
+      if (r.mode === 'width') {
+        const rightEdge = r.startPin.x + r.startW * r.startScale
+        const newW = Math.max(120, r.startW - (w.x - r.startWorld.x) / r.startScale)
+        val = { w: newW, scale: r.startScale, pin: { x: rightEdge - newW * r.startScale, y: r.startPin.y } }
+      } else {
+        const d0 = Math.hypot(r.startW * r.startScale, r.cardH * r.startScale) || 1
+        const d1 = Math.hypot(w.x - r.startPin.x, w.y - r.startPin.y)
+        val = { w: r.startW, scale: Math.max(0.2, r.startScale * d1 / d0), pin: r.startPin }
+      }
+      nodeRzValRef.current = val
+      setNodeRz({ id: r.id, ...val })
+      return
+    }
     // Transformación de trazos (mover / escalar) en curso → preview.
     if (xfRef.current) {
       const t = xfRef.current
@@ -731,6 +781,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [cam.scale, layout, screenToWorld, eraseAt])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
+    // Fin de redimensionado de tarjeta: persistir _pinW / _cardScale (+ pin).
+    if (nodeRzRef.current) {
+      const r = nodeRzRef.current
+      const val = nodeRzValRef.current
+      nodeRzRef.current = null
+      nodeRzValRef.current = null
+      try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      if (r.moved && val) {
+        const n = store.getNode(r.id)
+        if (n) writeCardSize(n, r.mode === 'width' ? { w: val.w, pin: val.pin } : { scale: val.scale })
+      }
+      setNodeRz(null)
+      return
+    }
     // Fin de transformación de trazos (mover / escalar): persistir en el body.
     if (xfRef.current) {
       const t = xfRef.current
@@ -858,6 +922,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     }
   }, [layout, screenToWorld, parentId])
 
+  // ── Redimensionado de TARJETA: manija izquierda (ancho) o esquina (escala) ──
+  const onNodeResizeDown = useCallback((e: React.PointerEvent, node: Node, mode: 'width' | 'scale') => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const pin = readPin(node) || { x: 0, y: 0 }
+    const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
+    const cardH = cardEl ? cardEl.offsetHeight : CARD_MIN_H
+    const rect = containerRef.current!.getBoundingClientRect()
+    const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    nodeRzRef.current = { id: node.id, mode, startW: readCardW(node), startScale: readCardScale(node), startPin: pin, startWorld, cardH, moved: false }
+    nodeRzValRef.current = null
+    containerRef.current!.setPointerCapture(e.pointerId)
+    setNodeRz({ id: node.id, w: readCardW(node), scale: readCardScale(node), pin })
+  }, [screenToWorld])
+
   // ── Render ──────────────────────────────────────────────────────────────────
   // Culling: una tarjeta es visible si su rect en pantalla intersecta el viewport
   // (con margen). Solo montamos esas.
@@ -924,7 +1003,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-node .pizarra-grip{opacity:0;transition:opacity .12s}
 .pizarra-node:hover .pizarra-grip{opacity:1}
 .pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:6px;background:rgba(108,92,231,0.06)}
+.pizarra-node--hover{box-shadow:0 0 0 1.5px rgba(108,92,231,0.45);border-radius:6px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:4px}
+.pizarra-card-body .node-row{align-items:flex-start!important}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
@@ -1127,19 +1208,38 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           const m = groupRef.current.members.find(mm => mm.id === node.id)
           if (m) p = { x: m.origin.x + groupDelta.x, y: m.origin.y + groupDelta.y }
         }
+        // Tamaño: ancho (_pinW) y escala (_cardScale), con preview en vivo si se redimensiona.
+        const live = nodeRz?.id === node.id ? nodeRz : null
+        if (live) p = live.pin
+        const cardW = live ? live.w : readCardW(node)
+        const cardScale = live ? live.scale : readCardScale(node)
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
+        const hovered = hoverNode === node.id && tool === 'select'
+        const showHandles = (hovered || selectedId === node.id) && !dragPos
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+            onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
+            onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: CARD_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: dragPos?.id === node.id ? 10 : 1 }}>
+            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1) }}>
             <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
               <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
             </div>
             <div className="pizarra-card-body" style={{ minWidth: 0 }}>
               <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
             </div>
+            {showHandles && (
+              <>
+                {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
+                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
+                {/* Manija de ESCALA — esquina inferior derecha (escala uniforme desde arriba-izquierda). */}
+                <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+              </>
+            )}
           </div>
         )
       })}
