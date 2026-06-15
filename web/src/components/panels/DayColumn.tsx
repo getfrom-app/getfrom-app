@@ -17,6 +17,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
+import { toggleTaskDone } from '../../utils/dailyCockpit'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -95,7 +96,7 @@ export default function DayColumn({
 
   // Datos de la columna (eventos + capturas SIN duplicar con el cockpit) + ids a
   // excluir del bloque «Nodos» (todo lo que ya vive en la columna derecha).
-  const { eventNodes, captureNodes, rightColumnIds } = getDayColumnData(node)
+  const { eventNodes, captureNodes, isToday, dayTasks, rightColumnIds } = getDayColumnData(node)
   const eventIds = rightColumnIds
 
   // Eliminar una fila de la columna (evento → también en Google; resto → Papelera).
@@ -121,7 +122,7 @@ export default function DayColumn({
       {/* 1. Eventos de Google Calendar del día */}
       {eventNodes.length > 0 && (
         <div className="dc-group">
-          {header('eventos', 'Eventos de hoy', 'dc-group-label--event')}
+          {header('eventos', isToday ? 'Eventos de hoy' : 'Eventos del día', 'dc-group-label--event')}
           {!collapsed.has('eventos') && eventNodes.map(ev => {
             const color = getGcalColor(ev)
             const allDay = isAllDay(ev)
@@ -168,8 +169,29 @@ export default function DayColumn({
         </div>
       )}
 
-      {/* 2-4. Atrasadas · Para hoy · Bucles abiertos (sueltos, sin caja) */}
-      {store.todayDiary()?.id === node.id && <DailyCockpit bare disablePlanner />}
+      {/* 2-4. HOY → cockpit (Atrasadas · Para hoy · Bucles). */}
+      {isToday && <DailyCockpit bare disablePlanner />}
+
+      {/* Otros días → tareas con due en ESE día. */}
+      {!isToday && dayTasks.length > 0 && (
+        <div className="dc-group">
+          {header('tareas', 'Tareas del día')}
+          {!collapsed.has('tareas') && dayTasks.map(t => (
+            <div key={t.id} className={`dc-row ${t.status === 'done' ? 'dc-row--done' : ''}`} data-node-id={t.id}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(t) }}>
+              <button className={`dc-check ${t.status === 'done' ? 'dc-check--done' : ''}`}
+                onClick={e => { e.stopPropagation(); toggleTaskDone(t) }} title="Completar" aria-label="Completar">
+                {t.status === 'done' ? '✓' : ''}
+              </button>
+              <span className="dc-text" onClick={() => navigate(`/node/${t.id}`)} style={{ cursor: 'pointer' }}>
+                {t.text ? renderInline(t.text) : 'Tarea'}
+              </span>
+              {hhmm(t.due) !== '00:00' && t.due && <span className="dc-time">{hhmm(t.due)}</span>}
+              {delBtn(t)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 5. Nodos del día (sin los eventos, que ya van arriba). En pizarra NO se
              monta aquí: los nodos viven en el lienzo (includeNodes=false). */}

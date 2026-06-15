@@ -6,7 +6,7 @@
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { collectDailyCockpit } from './dailyCockpit'
+import { collectDailyCockpit, collectDayTasks } from './dailyCockpit'
 import { getGcalEventId } from './gcalNodesSync'
 
 export function isCaptureNode(n: Node): boolean {
@@ -19,7 +19,11 @@ export function nodeHasPin(n: Node): boolean {
 export interface DayColumnData {
   eventNodes: Node[]
   captureNodes: Node[]
-  /** IDs de tareas/bucles que el cockpit ya muestra (solo en la diaria de HOY). */
+  /** ¿Es la diaria de HOY? (HOY usa el cockpit; otros días, lista de tareas del día) */
+  isToday: boolean
+  /** Tareas con due en ESTE día (solo para días que no son hoy). */
+  dayTasks: Node[]
+  /** IDs de tareas/bucles que el cockpit/lista ya muestra. */
   cockpitIds: Set<string>
   /** IDs que viven SOLO en la columna derecha → excluir del lienzo y del centro. */
   rightColumnIds: Set<string>
@@ -32,11 +36,16 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
     .filter(c => getGcalEventId(c))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
 
-  // El cockpit (atrasadas/hoy/bucles) solo aplica a la diaria de HOY.
+  // HOY → cockpit (atrasadas/hoy/bucles). Otros días → tareas con due ese día.
+  const isToday = store.todayDiary()?.id === dayNode.id
   const cockpitIds = new Set<string>()
-  if (store.todayDiary()?.id === dayNode.id) {
+  let dayTasks: Node[] = []
+  if (isToday) {
     const d = collectDailyCockpit()
     for (const n of [...d.focus, ...d.overdue, ...d.today, ...d.bucles]) cockpitIds.add(n.id)
+  } else if (dayNode.diaryDate) {
+    dayTasks = collectDayTasks(new Date(dayNode.diaryDate))
+    for (const t of dayTasks) cockpitIds.add(t.id)
   }
 
   // Capturas = bandeja: marcadas `_capture`, sin colocar, NO eventos y NO ya
@@ -50,5 +59,5 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
   for (const c of captureNodes) rightColumnIds.add(c.id)
   for (const id of cockpitIds) rightColumnIds.add(id)
 
-  return { eventNodes, captureNodes, cockpitIds, rightColumnIds }
+  return { eventNodes, captureNodes, isToday, dayTasks, cockpitIds, rightColumnIds }
 }

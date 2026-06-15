@@ -82,6 +82,22 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
+/** Tareas con `due` en una fecha concreta (para la columna de días que NO son hoy:
+ *  el de hoy usa collectDailyCockpit con atrasadas/hoy/bucles). Incluye tareas
+ *  pendientes y completadas ese día; excluye eventos, diarias y papelera. */
+export function collectDayTasks(date: Date): Node[] {
+  const out: Node[] = []
+  for (const n of store.allActive()) {
+    if (n.isDiaryEntry || n.isEvent || !n.due) continue
+    if (n.status == null) continue // solo tareas (pendientes/completadas), no notas datadas
+    if (isInPapelera(n.id)) continue
+    if (!isSameDay(new Date(n.due), date)) continue
+    out.push(n)
+  }
+  out.sort((a, b) => (a.due || '').localeCompare(b.due || ''))
+  return out
+}
+
 /** Recolecta atrasadas + hoy + bucles abiertos, excluyendo papelera y nodos temporales. */
 export function collectDailyCockpit(): DailyCockpitData {
   const today0 = startOfToday()
