@@ -21,7 +21,7 @@ import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
-import { isInPapelera } from '../../utils/papeleraHelper'
+import { isInPapelera, trashNode } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -1698,6 +1698,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const text = contentRef.current?.textContent || ''
+
+    // ── Multiselección: si este nodo (enfocado) forma parte de una selección
+    // múltiple, Backspace/Delete elimina TODA la selección, no solo este nodo.
+    // (El handler global de Outliner ya cubre el caso sin foco; esto cubre el
+    // caso en que el nodo activo tiene el cursor dentro de la selección.) ──
+    if ((e.key === 'Backspace' || e.key === 'Delete') && !showSlash && !picker) {
+      const sel = getGlobalSelectedIds()
+      if (sel.size > 1 && sel.has(node.id)) {
+        e.preventDefault()
+        e.stopPropagation()
+        const ids = [...sel]
+        clearGlobalSelection()
+        for (const id of ids) trashNode(id)
+        return
+      }
+    }
 
     // If slash menu is open, let it handle arrow keys and Enter/Escape
     if (showSlash) {

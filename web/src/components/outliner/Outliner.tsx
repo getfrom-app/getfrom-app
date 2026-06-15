@@ -689,8 +689,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault()
         e.stopPropagation()
-        for (const id of _gSelectedIds) trashNode(id)
+        const ids = [..._gSelectedIds] // snapshot antes de mutar (trashNode notifica)
         gClearSelected()
+        for (const id of ids) trashNode(id)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         const flat = flatVisibleIdsRef.current()
