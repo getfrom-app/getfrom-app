@@ -138,16 +138,47 @@ export default function PizarraView({ parentId }: Props) {
     return () => el.removeEventListener('wheel', handler)
   }, [])
 
-  // ── Pointer down en el fondo → pan o crear nodo ─────────────────────────────
+  // Commit de edición inline. Si el nodo quedó vacío y sin hijos → borrar (no
+  // dejar tarjetas fantasma). Importante: se llama explícitamente (no por onBlur,
+  // que NO se dispara al desmontar el input al cambiar editingId).
+  const commitEdit = useCallback((id: string) => {
+    const node = store.getNode(id)
+    if (node && editText !== node.text) store.updateNode(id, { text: editText })
+    if (node && editText.trim() === '' && store.children(id).length === 0) {
+      store.deleteNode(id)
+    }
+    setEditingId(null)
+  }, [editText])
+
+  // Crear un nodo colocado en coordenadas de mundo y entrar en edición.
+  const createNodeAt = useCallback((world: WorldPos) => {
+    if (editingId) commitEdit(editingId)
+    const node = store.createNode({
+      text: '',
+      parentId,
+      extraData: { [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1' },
+    })
+    setEditingId(node.id)
+    setEditText('')
+  }, [editingId, commitEdit, parentId])
+
+  // ── Pointer down en el fondo → SOLO pan (crear nodo = doble clic) ────────────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
-    if (editingId) { setEditingId(null) }
+    if (editingId) commitEdit(editingId) // commit real (limpia vacíos), no solo blur
     const el = containerRef.current!
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam, editingId])
+  }, [cam, editingId, commitEdit])
+
+  // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
+  const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).dataset.bg !== '1') return
+    const rect = containerRef.current!.getBoundingClientRect()
+    createNodeAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
+  }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     // Pan del lienzo.
@@ -178,22 +209,10 @@ export default function PizarraView({ parentId }: Props) {
   }, [cam.scale, layout, screenToWorld])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
-    // Fin de pan: si no se movió, fue un clic en vacío → crear nodo ahí.
+    // Fin de pan (el clic simple ya NO crea nodo — eso es doble clic).
     if (panRef.current) {
-      const wasClick = !panRef.current.moved
       panRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
-      if (wasClick) {
-        const rect = containerRef.current!.getBoundingClientRect()
-        const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-        const node = store.createNode({
-          text: '',
-          parentId,
-          extraData: { [PIN_X]: String(Math.round(w.x)), [PIN_Y]: String(Math.round(w.y)), [PIN_SCALE]: '1' },
-        })
-        setEditingId(node.id)
-        setEditText('')
-      }
       return
     }
     // Fin de drag de tarjeta: persistir posición si se movió.
@@ -224,17 +243,6 @@ export default function PizarraView({ parentId }: Props) {
     setDragPos({ id: node.id, pos: origin })
   }, [editingId, layout, screenToWorld])
 
-  // Commit de edición inline.
-  const commitEdit = useCallback((id: string) => {
-    const node = store.getNode(id)
-    if (node && editText !== node.text) store.updateNode(id, { text: editText })
-    // Si quedó vacío y sin hijos → borrar (no dejar tarjetas fantasma).
-    if (node && editText.trim() === '' && store.children(id).length === 0) {
-      store.deleteNode(id)
-    }
-    setEditingId(null)
-  }, [editText])
-
   // ── Render ──────────────────────────────────────────────────────────────────
   // Culling: una tarjeta es visible si su rect en pantalla intersecta el viewport
   // (con margen). Solo montamos esas.
@@ -263,6 +271,7 @@ export default function PizarraView({ parentId }: Props) {
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
+      onDoubleClick={onBackgroundDoubleClick}
       style={{
         position: 'relative',
         width: '100%',
@@ -367,7 +376,38 @@ export default function PizarraView({ parentId }: Props) {
         )
       })}
 
-      {/* Barra de estado / controles mínimos */}
+      {/* ── Barra de herramientas (estilo iPad) — flotante a la izquierda ── */}
+      <div style={{
+        position: 'absolute', left: 12, top: 12, zIndex: 20,
+        display: 'flex', flexDirection: 'column', gap: 4, padding: 5,
+        background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
+        borderRadius: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+      }}>
+        <button style={toolBtn} title="Texto — añadir nodo (o doble clic en el lienzo)"
+          onClick={() => createNodeAt(screenToWorld(viewport.w / 2, viewport.h / 2))}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
+        </button>
+        <button style={toolBtnDisabled} disabled title="Lápiz — dibujar (próximamente)">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+        </button>
+        <button style={toolBtnDisabled} disabled title="Borrador (próximamente)">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
+        </button>
+        <button style={toolBtnDisabled} disabled title="Lazo (próximamente)">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="8" rx="7" ry="5"/><path d="M7 13c0 2 1 4 3 4"/></svg>
+        </button>
+        <div style={{ height: 1, background: 'var(--border, #e2e2e2)', margin: '2px 4px' }} />
+        <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title="Deshacer"
+          onClick={() => store.undo()}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
+        </button>
+        <button style={store.canRedo ? toolBtn : toolBtnDisabled} disabled={!store.canRedo} title="Rehacer"
+          onClick={() => store.redo()}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>
+        </button>
+      </div>
+
+      {/* Controles de zoom — abajo a la derecha */}
       <div style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', gap: 6, zIndex: 20 }}>
         <button onClick={() => setCam({ x: 60, y: 60, scale: 1 })} title="Centrar"
           style={pillStyle}>⌖</button>
@@ -378,11 +418,20 @@ export default function PizarraView({ parentId }: Props) {
 
       {layout.size === 0 && (
         <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
-          Haz clic en cualquier parte para crear un nodo.
+          Haz <b>doble clic</b> en cualquier parte para crear un nodo.
         </div>
       )}
     </div>
   )
+}
+
+const toolBtn: React.CSSProperties = {
+  width: 34, height: 34, borderRadius: 9, border: 'none', background: 'transparent',
+  color: 'var(--text, #333)', cursor: 'pointer', display: 'inline-flex',
+  alignItems: 'center', justifyContent: 'center',
+}
+const toolBtnDisabled: React.CSSProperties = {
+  ...toolBtn, color: 'var(--text-secondary, #bbb)', cursor: 'not-allowed', opacity: 0.5,
 }
 
 const pillStyle: React.CSSProperties = {
