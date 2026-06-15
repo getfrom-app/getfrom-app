@@ -21,7 +21,6 @@ import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import PizarraView from './PizarraView'
 import WFTemporalView from './WFTemporalView'
-import DailyCockpit from './DailyCockpit'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
@@ -297,11 +296,12 @@ export default function NodeView() {
     return 'list'
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
-  // Panel del día (como iPad): al ver la nota diaria como PIZARRA, abrir la
-  // pestaña «Día» del panel derecho (tareas/bucles + nodos del día), dejando el
-  // lienzo libre. Al salir de ese modo, revertir.
+  // Panel del día (como iPad): al ver CUALQUIER nota diaria, abrir la pestaña
+  // «Día» del panel derecho. En pizarra muestra «Tu día» + nodos del día; en
+  // lista muestra «Tu día» (los nodos siguen inline en el centro). Al salir de
+  // la diaria, revertir el panel.
   useEffect(() => {
-    if (viewKind === 'pizarra' && node?.isDiaryEntry) {
+    if (node?.isDiaryEntry) {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()
       // Re-disparo diferido: en carga directa, el listener de MainLayout puede
@@ -309,7 +309,7 @@ export default function NodeView() {
       const t = setTimeout(fire, 0)
       return () => { clearTimeout(t); window.dispatchEvent(new CustomEvent('from:close-day-panel')) }
     }
-  }, [viewKind, node?.isDiaryEntry, node?.id])
+  }, [node?.isDiaryEntry, node?.id])
 
   function handleSelectView(id: string) {
     if (!node) return
@@ -2647,8 +2647,8 @@ export default function NodeView() {
                 {/* Diary entry en WF mode: temporal view por defecto, DiaryTimeline en vista calendario */}
                 {isWFMode && node.isDiaryEntry && viewKind !== 'calendar' && viewKind !== 'pizarra' && (
                   <>
-                    {/* «Tu día»: solo en la diaria de HOY — sección calculada, no materializa nodos */}
-                    {store.todayDiary()?.id === node.id && <DailyCockpit />}
+                    {/* «Tu día» ya no va inline: vive en el panel derecho «Día»
+                        (se auto-abre al ver la diaria). */}
                     <WFTemporalView node={node} temporalType="diary" />
                   </>
                 )}

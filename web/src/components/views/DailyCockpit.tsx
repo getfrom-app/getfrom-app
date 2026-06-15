@@ -14,7 +14,7 @@ import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
 
-export default function DailyCockpit() {
+export default function DailyCockpit({ disablePlanner = false }: { disablePlanner?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -58,6 +58,9 @@ export default function DailyCockpit() {
   if (total === 0) return null
 
   function openPlanner() {
+    // En el panel del día NO se salta al planner al interactuar (el chevron solo
+    // expande/colapsa en la misma columna). Sí se mantiene al arrastrar fuera.
+    if (disablePlanner) return
     window.dispatchEvent(new CustomEvent('from:open-planner'))
   }
 

@@ -24,11 +24,15 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
   }
 
   const isToday = store.todayDiary()?.id === node.id
+  // El outliner del día solo se monta en el panel cuando el día está en PIZARRA
+  // (en modo lista el outliner ya está inline en el área central → evitar duplicar).
+  let isPizarra = false
+  try { isPizarra = JSON.parse(node.extraData || '{}').viewBlock === 'pizarra' } catch { /* ignore */ }
 
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }}>
-      {isToday && <DailyCockpit />}
-      <Outliner parentId={node.id} autoFocusEmpty disableLocalFilter />
+      {isToday && <DailyCockpit disablePlanner />}
+      {isPizarra && <Outliner parentId={node.id} autoFocusEmpty disableLocalFilter />}
     </div>
   )
 }
