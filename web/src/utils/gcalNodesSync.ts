@@ -14,7 +14,19 @@
 import { store } from '../store/nodeStore'
 import { nodeMeta } from '../store/nodeStore'
 import type { Node } from '../types'
-import { getCalendarEvents, updateCalendarEvent, type CalendarEvent } from '../api/googleCalendar'
+import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, type CalendarEvent } from '../api/googleCalendar'
+
+// Último título sincronizado por evento (anti-bucle: evita re-empujar lo que vino
+// del propio pull de Google). Se rellena en el pull y en cada push.
+const lastSyncedTitle = new Map<string, string>()
+
+// Quita el prefijo de hora del texto del nodo-evento → título limpio.
+function stripTimePrefix(text: string): string {
+  return text
+    .replace(/^\s*\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}\s+/, '')
+    .replace(/^\s*\d{1,2}:\d{2}\s+/, '')
+    .trim()
+}
 
 // ── Formateo de hora ──────────────────────────────────────────────────────────
 
@@ -68,6 +80,8 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
     const ev = sorted[i]
     const existing = gcalChildren.find(c => c.gcalId === ev.id)
     const newText = eventNodeText(ev)
+
+    lastSyncedTitle.set(ev.id, ev.title) // anti-bucle: este título viene de Google
 
     if (existing) {
       // Actualizar si cambió el texto o la fecha
@@ -158,6 +172,40 @@ export async function syncNodeMoveToGcal(nodeId: string, newParentId: string): P
       detail: { message: 'No se pudo actualizar el evento en Google Calendar', type: 'error' }
     }))
   }
+}
+
+// ── Sync Fromly → GCal: cambios de TÍTULO ─────────────────────────────────────
+/**
+ * Empuja a Google los títulos de eventos del día que el usuario haya editado.
+ * Conservador: solo TÍTULO (lo más reversible), con guarda anti-bucle (no re-empuja
+ * lo que vino del pull). Pensado para llamarse con debounce desde el panel del día.
+ */
+export async function pushEventTitleChanges(diaryNode: Node): Promise<void> {
+  if (!diaryNode?.isDiaryEntry) return
+  for (const child of store.children(diaryNode.id)) {
+    const gcalId = getGcalEventId(child)
+    if (!gcalId) continue
+    const title = stripTimePrefix(child.text)
+    const prev = lastSyncedTitle.get(gcalId)
+    lastSyncedTitle.set(gcalId, title)
+    if (prev === undefined) continue          // primera vez visto → solo registrar
+    if (prev !== title && title) {
+      try { await updateCalendarEvent(gcalId, { title }) } catch { /* silencioso */ }
+    }
+  }
+}
+
+/**
+ * Borra el evento en Google al ELIMINAR explícitamente un nodo-evento (acción del
+ * usuario). NO se llama desde la sincronización de bajada (evita borrados en masa).
+ * Devuelve true si era un evento (y se intentó borrar en Google).
+ */
+export async function deleteGcalEventForNode(node: Node): Promise<boolean> {
+  const gcalId = getGcalEventId(node)
+  if (!gcalId) return false
+  try { await deleteCalendarEvent(gcalId) } catch { /* silencioso */ }
+  lastSyncedTitle.delete(gcalId)
+  return true
 }
 
 /** Devuelve el _gcalEventId de un nodo, o null si no tiene */

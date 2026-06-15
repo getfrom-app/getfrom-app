@@ -7,13 +7,28 @@
 // outliner inline del día está desmontado, esta es la ÚNICA instancia del
 // outliner del día (sin duplicar).
 
+import { useEffect, useRef } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
+import { pushEventTitleChanges, getGcalEventId } from '../../utils/gcalNodesSync'
 
 export default function DayPanel({ nodeId }: { nodeId?: string }) {
   useStore()
   const node = nodeId ? store.getNode(nodeId) : undefined
+
+  // Empujar a Google los títulos de eventos editados (debounce; anti-bucle dentro).
+  // Firma = ids+texto de los nodos-evento del día → cambia al editar un título.
+  const evSig = node?.isDiaryEntry
+    ? store.children(node.id).filter(c => getGcalEventId(c)).map(c => `${c.id}:${c.text}`).join('|')
+    : ''
+  const titleTimer = useRef<number | null>(null)
+  useEffect(() => {
+    if (!node?.isDiaryEntry) return
+    if (titleTimer.current) clearTimeout(titleTimer.current)
+    titleTimer.current = window.setTimeout(() => { pushEventTitleChanges(node) }, 1400)
+    return () => { if (titleTimer.current) clearTimeout(titleTimer.current) }
+  }, [evSig, node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node?.isDiaryEntry) {
     return (

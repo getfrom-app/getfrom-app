@@ -20,6 +20,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
+import { deleteGcalEventForNode } from '../../utils/gcalNodesSync'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -722,7 +723,12 @@ export default function PizarraView({ parentId }: Props) {
               Abrir nodo
             </button>
             <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
-            <button onClick={() => { store.deleteNode(contextMenu.nodeId); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+            <button onClick={() => {
+              const n = store.getNode(contextMenu.nodeId)
+              if (n) deleteGcalEventForNode(n) // si es evento de Google, lo borra también allí
+              store.deleteNode(contextMenu.nodeId)
+              setContextMenu(null)
+            }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
               Eliminar nodo
             </button>
           </div>
