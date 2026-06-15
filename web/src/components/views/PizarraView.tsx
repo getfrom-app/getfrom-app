@@ -30,9 +30,6 @@ const PIN_SCALE = '_pinScale'
 const CARD_W = 220
 const CARD_MIN_H = 52
 // Auto-layout (nodos sin posición): columna en flujo.
-const AUTO_X = 40
-const AUTO_Y0 = 40
-const AUTO_GAP = 84
 // Zoom.
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
@@ -88,15 +85,14 @@ export default function PizarraView({ parentId }: Props) {
   // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
   const children = store.children(parentId)
 
-  // Posición efectiva de cada tarjeta: la persistida (_pinX/_pinY) o, si no hay,
-  // un auto-layout en columna por orden (SOLO en memoria, no se persiste).
+  // La pizarra muestra SOLO los nodos COLOCADOS (con _pinX/_pinY). Los hijos sin
+  // posición (bullets normales del día, tareas, etc.) NO ensucian el lienzo: viven
+  // en la columna derecha / vista lista. Así la pizarra queda libre.
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
-    let autoI = 0
     for (const n of children) {
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
-      else { map.set(n.id, { x: AUTO_X, y: AUTO_Y0 + autoI * AUTO_GAP }); autoI++ }
     }
     return map
   }, [children])
@@ -156,10 +152,13 @@ export default function PizarraView({ parentId }: Props) {
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     // Pan del lienzo.
     if (panRef.current) {
-      const dx = e.clientX - panRef.current.startX
-      const dy = e.clientY - panRef.current.startY
-      if (Math.abs(dx) + Math.abs(dy) > 3) panRef.current.moved = true
-      setCam(prev => ({ ...prev, x: panRef.current!.camX + dx, y: panRef.current!.camY + dy }))
+      // Capturar en local: setCam corre async y panRef.current puede ser null
+      // para entonces (pointerup) → leer .camX de null crasheaba.
+      const p = panRef.current
+      const dx = e.clientX - p.startX
+      const dy = e.clientY - p.startY
+      if (Math.abs(dx) + Math.abs(dy) > 3) p.moved = true
+      setCam(prev => ({ ...prev, x: p.camX + dx, y: p.camY + dy }))
       return
     }
     // Drag de tarjeta.
@@ -243,7 +242,9 @@ export default function PizarraView({ parentId }: Props) {
   const visible = useMemo(() => {
     const out: { node: Node; pos: WorldPos }[] = []
     for (const n of children) {
-      const pos = (dragPos && dragPos.id === n.id) ? dragPos.pos : layout.get(n.id)!
+      const base = layout.get(n.id)
+      if (!base) continue // sin posición → no va al lienzo
+      const pos = (dragPos && dragPos.id === n.id) ? dragPos.pos : base
       const sx = cam.x + pos.x * cam.scale
       const sy = cam.y + pos.y * cam.scale
       const w = CARD_W * cam.scale
@@ -375,7 +376,7 @@ export default function PizarraView({ parentId }: Props) {
         <button onClick={() => setCam(c => ({ ...c, scale: Math.min(MAX_SCALE, c.scale * 1.2) }))} style={pillStyle}>+</button>
       </div>
 
-      {children.length === 0 && (
+      {layout.size === 0 && (
         <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
           Haz clic en cualquier parte para crear un nodo.
         </div>

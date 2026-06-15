@@ -2631,7 +2631,7 @@ export default function NodeView() {
                   <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
                 )}
                 {/* Diary entry en WF mode: temporal view por defecto, DiaryTimeline en vista calendario */}
-                {isWFMode && node.isDiaryEntry && viewKind !== 'calendar' && (
+                {isWFMode && node.isDiaryEntry && viewKind !== 'calendar' && viewKind !== 'pizarra' && (
                   <>
                     {/* «Tu día»: solo en la diaria de HOY — sección calculada, no materializa nodos */}
                     {store.todayDiary()?.id === node.id && <DailyCockpit />}
@@ -2680,9 +2680,26 @@ export default function NodeView() {
                 {/* ── Eventos de Google Calendar (solo en notas diarias con GCal conectado) ── */}
                 {/* GCal events son ahora nodos normales del outliner — no hay bloque especial */}
 
-                {/* ── Pizarra (Fase 1, flag from_pizarra_web): lienzo infinito.
-                       Funciona también en la nota diaria (caso estrella). ── */}
-                {viewKind === 'pizarra' && <PizarraView parentId={node.id} />}
+                {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
+                       COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
+                       libre — como en iPad. En notas normales ocupa todo. ── */}
+                {viewKind === 'pizarra' && (
+                  (node.isDiaryEntry && store.todayDiary()?.id === node.id) ? (
+                    <div style={{ display: 'flex', alignItems: 'stretch', width: '100%', gap: 0 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <PizarraView parentId={node.id} />
+                      </div>
+                      <div style={{
+                        width: 360, flexShrink: 0, maxHeight: 'calc(100vh - 150px)', overflowY: 'auto',
+                        paddingLeft: 18, marginLeft: 6, borderLeft: '1px solid var(--border-subtle, #ececec)',
+                      }}>
+                        <DailyCockpit />
+                      </div>
+                    </div>
+                  ) : (
+                    <PizarraView parentId={node.id} />
+                  )
+                )}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
