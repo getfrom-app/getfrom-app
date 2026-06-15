@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { diaryId } from '../../utils/deterministicId'
 
 // Lunes de referencia (epoch) para mapear fecha ↔ rejilla. 6-ene-2020 fue lunes.
 const EPOCH = new Date(2020, 0, 6).getTime()
@@ -98,6 +99,18 @@ export default function TemporalCanvasView() {
   const cellScreen = CELL * cam.scale
   const showDayNumbers = cellScreen >= 26
   const showMonthLabels = cellScreen < 70
+  // Al acercar bastante, mostrar un PEEK del contenido del día (nodos) dentro de
+  // la celda — el "contenido infinito dentro de los días" empieza a verse aquí.
+  const showContent = cellScreen >= 150
+
+  // Devuelve los hijos (no borrados) de la nota diaria de esa fecha, SIN crearla.
+  const dayChildren = (date: Date): { id: string; text: string }[] => {
+    const id = diaryId(date)
+    if (!id) return []
+    const d = store.getNode(id)
+    if (!d || d.deletedAt) return []
+    return store.children(d.id).filter(c => !c.deletedAt).map(c => ({ id: c.id, text: c.text || '' }))
+  }
 
   // Rango de columnas/filas visibles (culling).
   const cells = useMemo(() => {
@@ -131,6 +144,21 @@ export default function TemporalCanvasView() {
   }, [cells, showMonthLabels])
 
   const today = midnight(new Date()).getTime()
+
+  // Días con contenido (una sola pasada sobre el store, no por celda → evita
+  // hashear SHA-256 por celda en cada frame de pan). Clave: "YYYY-M-D".
+  const daysWithContent = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const n of store.nodes.values()) {
+      if (!n.parentId || n.deletedAt) continue
+      const p = store.getNode(n.parentId)
+      if (!p || !p.isDiaryEntry || !p.diaryDate) continue
+      const d = new Date(p.diaryDate)
+      counts.set(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, 1)
+    }
+    return counts
+  }, [store.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 
   return (
     <div
@@ -174,6 +202,34 @@ export default function TemporalCanvasView() {
               }}>
                 {date.getDate() === 1 ? `${MONTHS[date.getMonth()]} 1` : date.getDate()}
               </span>
+            )}
+            {showContent && (() => {
+              const kids = dayChildren(date)
+              if (kids.length === 0) return null
+              return (
+                <div style={{
+                  position: 'absolute', top: size * 0.26, left: size * 0.08, right: size * 0.08,
+                  display: 'flex', flexDirection: 'column', gap: size * 0.02, overflow: 'hidden',
+                }}>
+                  {kids.slice(0, 6).map(k => (
+                    <div key={k.id} style={{
+                      fontSize: Math.min(14, size * 0.06), lineHeight: 1.25, color: 'var(--text-secondary, #777)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>• {k.text || 'Nota vacía'}</div>
+                  ))}
+                  {kids.length > 6 && (
+                    <div style={{ fontSize: Math.min(12, size * 0.05), color: 'var(--text-tertiary, #aaa)' }}>+{kids.length - 6} más</div>
+                  )}
+                </div>
+              )
+            })()}
+            {/* Punto indicador de contenido cuando NO se ve el peek (zoom medio) */}
+            {!showContent && showDayNumbers && daysWithContent.has(dayKey(date)) && (
+              <span style={{
+                position: 'absolute', bottom: size * 0.12, left: '50%', transform: 'translateX(-50%)',
+                width: Math.max(3, size * 0.05), height: Math.max(3, size * 0.05), borderRadius: '50%',
+                background: 'var(--accent, #6c5ce7)', opacity: 0.6,
+              }} />
             )}
           </div>
         )

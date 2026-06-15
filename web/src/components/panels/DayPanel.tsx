@@ -29,8 +29,17 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
   let isPizarra = false
   try { isPizarra = JSON.parse(node.extraData || '{}').viewBlock === 'pizarra' } catch { /* ignore */ }
 
+  // Clic en un nodo del panel → si está colocado en el lienzo, la pizarra vuela a
+  // él (estilo iPad). No bloquea la edición; PizarraView filtra a hijos-del-día.
+  const onPanelClick = (e: React.MouseEvent) => {
+    if (!isPizarra) return
+    const row = (e.target as HTMLElement).closest('[data-node-id]') as HTMLElement | null
+    const id = row?.getAttribute('data-node-id')
+    if (id) window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
+  }
+
   return (
-    <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }}>
+    <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onPanelClick}>
       {isToday && <DailyCockpit disablePlanner />}
       {isPizarra && <Outliner parentId={node.id} autoFocusEmpty disableLocalFilter />}
     </div>
