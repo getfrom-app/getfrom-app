@@ -189,6 +189,24 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
   // Menú rápido (clic derecho en el fondo): herramientas favoritas, estilo iPad.
   const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; world: WorldPos } | null>(null)
+
+  // Interacción de TRAZOS (con herramienta «seleccionar»): hover, mover, escalar.
+  const [hoverStroke, setHoverStroke] = useState<string | null>(null)
+  // Transformación en vivo de los trazos seleccionados (preview; commit al soltar).
+  const xfRef = useRef<null | {
+    kind: 'move' | 'scale'
+    ids: string[]
+    origin: Map<string, number[]>      // pts originales por id de trazo
+    startWidth: Map<string, number>    // ancho original por id (para escalar)
+    start: WorldPos
+    anchor?: WorldPos                  // escalar: esquina opuesta (fija)
+    corner?: WorldPos                  // escalar: esquina agarrada (original)
+    moved: boolean
+  }>(null)
+  type XfVal = { kind: 'move'; dx: number; dy: number } | { kind: 'scale'; ax: number; ay: number; s: number }
+  const [xf, setXf] = useState<XfVal | null>(null)
+  const xfValRef = useRef<XfVal | null>(null)
+  const setXfBoth = (v: XfVal) => { xfValRef.current = v; setXf(v) }
   const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
@@ -443,6 +461,44 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     clearSelection()
   }, [multiSel, selStrokes, parentId, screenToWorld, clearSelection])
 
+  // ── Interacción de TRAZOS (herramienta «seleccionar») ─────────────────────────
+  // Pointer down sobre un trazo → seleccionarlo (o conservar la multiselección si ya
+  // estaba) e iniciar arrastre para MOVERLO.
+  const onStrokePointerDown = useCallback((e: React.PointerEvent, sid: string) => {
+    if (e.button !== 0 || toolRef.current !== 'select') return
+    e.stopPropagation()
+    if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null }
+    const all = parsePizarra(store.getNode(parentId)?.body).strokes
+    const alreadySel = selStrokes.has(sid) && selStrokes.size > 1
+    const ids = alreadySel ? [...selStrokes] : [sid]
+    if (!alreadySel) { setMultiSel(new Set()); setSelStrokes(new Set([sid])); setMenuPos(null) }
+    const origin = new Map<string, number[]>()
+    const startWidth = new Map<string, number>()
+    for (const s of all) if (ids.includes(s.id)) { origin.set(s.id, [...s.pts]); startWidth.set(s.id, s.w) }
+    const rect = containerRef.current!.getBoundingClientRect()
+    const start = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    xfRef.current = { kind: 'move', ids, origin, startWidth, start, moved: false }
+    containerRef.current!.setPointerCapture(e.pointerId)
+    setXf({ kind: 'move', dx: 0, dy: 0 })
+  }, [parentId, selStrokes, screenToWorld])
+
+  // Pointer down en una manija de esquina → ESCALAR (uniforme) respecto a la esquina
+  // opuesta (anclada). `corner` y `anchor` en coords de mundo.
+  const onScaleHandlePointerDown = useCallback((e: React.PointerEvent, corner: WorldPos, anchor: WorldPos) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const all = parsePizarra(store.getNode(parentId)?.body).strokes
+    const ids = [...selStrokes]
+    const origin = new Map<string, number[]>()
+    const startWidth = new Map<string, number>()
+    for (const s of all) if (selStrokes.has(s.id)) { origin.set(s.id, [...s.pts]); startWidth.set(s.id, s.w) }
+    const rect = containerRef.current!.getBoundingClientRect()
+    const start = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    xfRef.current = { kind: 'scale', ids, origin, startWidth, start, anchor, corner, moved: false }
+    containerRef.current!.setPointerCapture(e.pointerId)
+    setXf({ kind: 'scale', ax: anchor.x, ay: anchor.y, s: 1 })
+  }, [parentId, selStrokes, screenToWorld])
+
   // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
   // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
   const saveViewAsNode = useCallback((name: string) => {
@@ -577,6 +633,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Transformación de trazos (mover / escalar) en curso → preview.
+    if (xfRef.current) {
+      const t = xfRef.current
+      const rect = containerRef.current!.getBoundingClientRect()
+      const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+      if (Math.abs(w.x - t.start.x) * cam.scale + Math.abs(w.y - t.start.y) * cam.scale > 3) t.moved = true
+      if (t.kind === 'move') {
+        setXfBoth({ kind: 'move', dx: w.x - t.start.x, dy: w.y - t.start.y })
+      } else if (t.anchor && t.corner) {
+        const d0 = Math.hypot(t.corner.x - t.anchor.x, t.corner.y - t.anchor.y) || 1
+        const d1 = Math.hypot(w.x - t.anchor.x, w.y - t.anchor.y)
+        setXfBoth({ kind: 'scale', ax: t.anchor.x, ay: t.anchor.y, s: Math.max(0.05, d1 / d0) })
+      }
+      return
+    }
     // Marco de multiselección en curso → actualizar rect y marcar tarjetas dentro.
     if (marqueeRef.current) {
       const m = marqueeRef.current
@@ -647,6 +718,29 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [cam.scale, layout, screenToWorld, eraseAt])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
+    // Fin de transformación de trazos (mover / escalar): persistir en el body.
+    if (xfRef.current) {
+      const t = xfRef.current
+      xfRef.current = null
+      try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      const cur = xfValRef.current
+      xfValRef.current = null
+      if (t.moved && cur) {
+        const data = parsePizarra(store.getNode(parentId)?.body)
+        data.strokes = data.strokes.map(s => {
+          const orig = t.origin.get(s.id); if (!orig) return s
+          if (cur.kind === 'move') {
+            return { ...s, pts: orig.map((v, i) => i % 2 === 0 ? v + cur.dx : v + cur.dy) }
+          }
+          // scale uniforme respecto al ancla
+          const w0 = t.startWidth.get(s.id) ?? s.w
+          return { ...s, w: Math.max(0.2, w0 * cur.s), pts: orig.map((v, i) => i % 2 === 0 ? cur.ax + (v - cur.ax) * cur.s : cur.ay + (v - cur.ay) * cur.s) }
+        })
+        store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+      }
+      setXf(null)
+      return
+    }
     // Fin del marco de multiselección: dejar la selección, ocultar el marco.
     if (marqueeRef.current) {
       const m = marqueeRef.current
@@ -820,21 +914,41 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:4px}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
-      {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
+      {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
+             (hover, clic-seleccionar, arrastrar para mover). ── */}
       <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         {parsePizarra(store.getNode(parentId)?.body).strokes.map(s => {
-          // Durante un arrastre de grupo, los trazos del grupo se desplazan el delta.
-          const inGroupDrag = groupDelta && groupRef.current?.strokeIds.includes(s.id)
-          const pts = inGroupDrag ? s.pts.map((v, i) => i % 2 === 0 ? v + groupDelta!.x : v + groupDelta!.y) : s.pts
+          const selected = selStrokes.has(s.id)
+          const hovered = hoverStroke === s.id
+          // pts mostrados: arrastre de grupo, o transformación (mover/escalar) si el trazo
+          // está seleccionado, o los originales.
+          let pts = s.pts
+          let widthMul = 1
+          if (groupDelta && groupRef.current?.strokeIds.includes(s.id)) {
+            pts = s.pts.map((v, i) => i % 2 === 0 ? v + groupDelta.x : v + groupDelta.y)
+          } else if (selected && xf) {
+            if (xf.kind === 'move') pts = s.pts.map((v, i) => i % 2 === 0 ? v + xf.dx : v + xf.dy)
+            else { pts = s.pts.map((v, i) => i % 2 === 0 ? xf.ax + (v - xf.ax) * xf.s : xf.ay + (v - xf.ay) * xf.s); widthMul = xf.s }
+          }
           let d = ''
           for (let i = 0; i + 1 < pts.length; i += 2) {
             d += (i === 0 ? 'M' : 'L') + (cam.x + pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + pts[i + 1] * cam.scale).toFixed(1) + ' '
           }
-          const selected = selStrokes.has(s.id)
+          const sw = Math.max(0.4, s.w * widthMul * cam.scale)
           return (
             <g key={s.id}>
-              {selected && <path d={d} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={Math.max(0.4, s.w * cam.scale) + 6} strokeOpacity={0.25} strokeLinecap="round" strokeLinejoin="round" />}
-              <path d={d} fill="none" stroke={s.c || '#222'} strokeWidth={Math.max(0.4, s.w * cam.scale)} strokeOpacity={s.a ?? 1} strokeLinecap="round" strokeLinejoin="round" />
+              {(selected || (hovered && tool === 'select')) && <path d={d} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={sw + 6} strokeOpacity={selected ? 0.25 : 0.18} strokeLinecap="round" strokeLinejoin="round" />}
+              <path d={d} fill="none" stroke={s.c || '#222'} strokeWidth={sw} strokeOpacity={s.a ?? 1} strokeLinecap="round" strokeLinejoin="round" />
+              {tool === 'select' && (
+                <path
+                  d={d} fill="none" stroke="transparent" strokeWidth={Math.max(16, sw + 14)}
+                  style={{ pointerEvents: 'stroke', cursor: selected ? 'move' : 'pointer' }}
+                  onPointerEnter={() => { if (!xfRef.current && !marqueeRef.current && !panRef.current) setHoverStroke(s.id) }}
+                  onPointerLeave={() => setHoverStroke(h => h === s.id ? null : h)}
+                  onPointerDown={(e) => onStrokePointerDown(e, s.id)}
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setMultiSel(new Set()); setSelStrokes(new Set([s.id])); setMenuPos({ x: e.clientX, y: e.clientY }) }}
+                />
+              )}
             </g>
           )
         })}
@@ -853,6 +967,40 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       {guides.hy != null && (
         <div style={{ position: 'absolute', top: cam.y + guides.hy * cam.scale, left: 0, height: 1, width: '100%', background: 'var(--accent, #6c5ce7)', opacity: 0.6, pointerEvents: 'none', zIndex: 5 }} />
       )}
+
+      {/* Recuadro de selección de trazos + manijas de esquina (ampliar/reducir). */}
+      {tool === 'select' && selStrokes.size > 0 && (() => {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+        for (const s of parsePizarra(store.getNode(parentId)?.body).strokes) {
+          if (!selStrokes.has(s.id)) continue
+          let pts = s.pts
+          if (xf) {
+            if (xf.kind === 'move') pts = s.pts.map((v, i) => i % 2 === 0 ? v + xf.dx : v + xf.dy)
+            else pts = s.pts.map((v, i) => i % 2 === 0 ? xf.ax + (v - xf.ax) * xf.s : xf.ay + (v - xf.ay) * xf.s)
+          }
+          for (let i = 0; i + 1 < pts.length; i += 2) { x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]); y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]) }
+        }
+        if (!isFinite(x0)) return null
+        const S = cam.scale
+        const sx0 = cam.x + x0 * S, sy0 = cam.y + y0 * S, sx1 = cam.x + x1 * S, sy1 = cam.y + y1 * S
+        const corners = [
+          { wx: x0, wy: y0, ax: x1, ay: y1, sx: sx0, sy: sy0, cur: 'nwse-resize' },
+          { wx: x1, wy: y0, ax: x0, ay: y1, sx: sx1, sy: sy0, cur: 'nesw-resize' },
+          { wx: x0, wy: y1, ax: x1, ay: y0, sx: sx0, sy: sy1, cur: 'nesw-resize' },
+          { wx: x1, wy: y1, ax: x0, ay: y0, sx: sx1, sy: sy1, cur: 'nwse-resize' },
+        ]
+        return (
+          <>
+            <div style={{ position: 'absolute', left: Math.min(sx0, sx1) - 4, top: Math.min(sy0, sy1) - 4, width: Math.abs(sx1 - sx0) + 8, height: Math.abs(sy1 - sy0) + 8, border: '1px dashed var(--accent,#6c5ce7)', borderRadius: 3, pointerEvents: 'none', zIndex: 6 }} />
+            {corners.map((c, i) => (
+              <div key={i}
+                onPointerDown={(e) => onScaleHandlePointerDown(e, { x: c.wx, y: c.wy }, { x: c.ax, y: c.ay })}
+                style={{ position: 'absolute', left: c.sx - 6, top: c.sy - 6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: c.cur, zIndex: 7, touchAction: 'none' }}
+              />
+            ))}
+          </>
+        )
+      })()}
 
       {/* Marco de multiselección (Cmd/Ctrl + arrastrar) */}
       {marquee && (
