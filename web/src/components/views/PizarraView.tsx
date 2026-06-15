@@ -690,6 +690,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     setEditText(e => e === id ? null : e)
   }, [mutateTexts])
 
+  const duplicateText = useCallback((id: string) => {
+    mutateTexts(texts => {
+      const t = texts.find(x => x.id === id); if (!t) return texts
+      return [...texts, { ...t, id: 't' + rid(), x: t.x + 24, y: t.y + 24, nodeId: undefined }]
+    })
+  }, [mutateTexts])
+
+  // Menú contextual de un texto del lienzo (clic derecho): duplicar / eliminar.
+  const [textMenu, setTextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+
   // Persistencia diferida del texto mientras se escribe (evita reescribir el body
   // en cada tecla; el textarea es no-controlado para no perder el cursor).
   const textPersistTimer = useRef<number | null>(null)
@@ -1404,7 +1414,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             style={{ position: 'absolute', left: sx, top: sy, width: t.w, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
             onPointerEnter={() => { if (tool === 'select' && !editing) setHoverText(t.id) }}
             onPointerLeave={() => setHoverText(h => h === t.id ? null : h)}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); deleteText(t.id) }}>
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setTextMenu({ id: t.id, x: e.clientX, y: e.clientY }) }}>
             {/* DOT pequeño arriba-izquierda (hover) → convertir en nodo/documento */}
             {(hovered || editing) && (
               <div title="Abrir como documento" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(t) }}
@@ -1462,6 +1472,19 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           </div>
         )
       })()}
+
+      {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
+      {textMenu && (
+        <>
+          <div onPointerDown={() => setTextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setTextMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div style={{ position: 'fixed', top: textMenu.y, left: textMenu.x, zIndex: 2000, minWidth: 160,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
+            boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
+            <button onClick={() => { duplicateText(textMenu.id); setTextMenu(null) }} style={ctxItem}>Duplicar</button>
+            <button onClick={() => { deleteText(textMenu.id); setTextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>Eliminar</button>
+          </div>
+        </>
+      )}
 
       {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
              Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
