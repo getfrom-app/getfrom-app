@@ -715,11 +715,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       eraseAt(w.x, w.y)
       return
     }
-    // Texto: clic en el fondo crea un texto libre y entra en edición.
-    if (toolRef.current === 'text') {
-      createTextAt(w)
-      return
-    }
+    // Texto: NO crear aquí (en pointerdown) para no provocar un blur inmediato del
+    // textarea. Se crea en el onClick del contenedor (gesto completo). Solo evitamos
+    // que arranque el pan.
+    if (toolRef.current === 'text') return
     // Multiselección con marco: Cmd (⌘) / Ctrl + arrastrar sobre el fondo.
     if (e.metaKey || e.ctrlKey) {
       el.setPointerCapture(e.pointerId)
@@ -1053,6 +1052,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
+      onClick={(e) => {
+        // Herramienta Texto: clic completo en el fondo → crear texto libre y editar.
+        if (toolRef.current !== 'text') return
+        if ((e.target as HTMLElement).dataset.bg !== '1') return
+        const rect = containerRef.current!.getBoundingClientRect()
+        createTextAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
+      }}
       onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
         // Clic derecho en el FONDO (no sobre una tarjeta) → menú rápido (estilo iPad).
