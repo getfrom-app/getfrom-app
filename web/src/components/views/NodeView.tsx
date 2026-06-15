@@ -231,20 +231,18 @@ export default function NodeView() {
   // Para nodos de Agenda (día/mes/año) forzamos siempre 'lista' —
   // las vistas tabla/kanban/calendario no tienen sentido en la estructura temporal.
   const viewBlock = useMemo(() => {
-    // Lo guardado manda siempre (si el usuario eligió una vista, se respeta).
-    let stored: string | null = null
-    try { stored = JSON.parse(node?.extraData || '{}').viewBlock || null } catch { /* corrupto */ }
-    if (stored) return stored
-    // Por defecto (sin elección previa):
-    // - Estructura/navegación (Año/Mes de la Agenda, raíces de sistema 🏠/Agenda/
-    //   Contexto/Prompts/Agentes/Plantillas/Papelera/Perfil) → LISTA.
-    // - El resto (notas normales y la diaria) → PIZARRA (vista por defecto de From).
+    // Estructura/navegación (Año/Mes de la Agenda y raíces de sistema 🏠/Agenda/
+    // Contexto/Prompts/…) → SIEMPRE lista (ignora lo guardado): la Agenda tiene su
+    // propio calendario y no debe montar la pizarra encima (causaba doble toolbar).
     const parentNode = node?.parentId ? store.getNode(node.parentId) : null
     const isAgendaNode = /^\d{4}$/.test(node?.text || '') ||
       (parentNode && /^\d{4}$/.test(parentNode.text || ''))
     if (isAgendaNode) return 'lista'
     if (node && isProtectedSystemRoot(node.id)) return 'lista'
-    return 'pizarra'
+    // El resto: lo guardado manda; por defecto PIZARRA (vista por defecto de From).
+    let stored: string | null = null
+    try { stored = JSON.parse(node?.extraData || '{}').viewBlock || null } catch { /* corrupto */ }
+    return stored || 'pizarra'
   }, [node?.id, node?.extraData, node?.isDiaryEntry, node?.parentId, node?.text]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setViewBlock(mode: string) {
@@ -2681,7 +2679,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && <PizarraView parentId={node.id} flowUnpositioned={!node.isDiaryEntry} />}
+                {viewKind === 'pizarra' && !isAgendaRoot && <PizarraView parentId={node.id} flowUnpositioned={!node.isDiaryEntry} />}
 
                 {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
                 {isAgendaRoot && <TemporalCanvasView />}

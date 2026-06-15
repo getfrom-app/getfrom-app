@@ -48,8 +48,8 @@ const AUTO_GAP = 84
 const MIN_SCALE = 0.05
 const MAX_SCALE = 6
 // Umbrales de "buceo" (dive): al cruzarlos con la rueda se navega de lienzo.
-const DIVE_OUT_SCALE = 0.08   // alejar mucho → subir al padre / mes
-const DIVE_IN_SCALE = 4.5     // acercar mucho sobre una tarjeta → entrar en ella
+const DIVE_OUT_SCALE = 0.32   // alejar → subir al padre / mes (antes 0.08 = demasiado)
+const DIVE_IN_SCALE = 4.0     // acercar sobre una tarjeta → entrar en ella
 
 interface Cam { x: number; y: number; scale: number }
 interface WorldPos { x: number; y: number }
@@ -522,6 +522,8 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
       <style>{`.pizarra-card-body .node-drag-handle{display:none!important}
+.pizarra-node .pizarra-grip{opacity:0;transition:opacity .12s}
+.pizarra-node:hover .pizarra-grip{opacity:1}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
 
       {/* ── Capa de trazos (dibujo) — detrás de las tarjetas, sin capturar el puntero ── */}
@@ -560,38 +562,33 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
           <div
             key={node.id}
             data-card="1"
+            className="pizarra-node"
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{
               position: 'absolute',
               left: sx,
               top: sy,
               width: CARD_W,
-              minHeight: CARD_MIN_H,
               transform: `scale(${cam.scale})`,
               transformOrigin: '0 0',
-              background: 'var(--bg-elevated, #fff)',
-              border: '1px solid var(--border, #d8d8d8)',
-              borderRadius: 10,
-              boxShadow: dragPos?.id === node.id ? '0 8px 24px rgba(0,0,0,0.16)' : '0 2px 8px rgba(0,0,0,0.08)',
-              boxSizing: 'border-box',
               zIndex: dragPos?.id === node.id ? 10 : 1,
-              display: 'flex', alignItems: 'stretch',
             }}
           >
-            {/* Tirador de arrastre (mueve la tarjeta por el lienzo) */}
+            {/* Tirador de arrastre — solo visible al pasar el ratón (el nodo se ve
+                EXACTAMENTE como en lista; la única diferencia es que se arrastra). */}
             <div
+              className="pizarra-grip"
               onPointerDown={(e) => onCardPointerDown(e, node)}
               title="Arrastrar"
               style={{
-                width: 18, flexShrink: 0, cursor: 'grab', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cfcfcf)',
-                borderRight: '1px solid var(--border-subtle, #f0f0f0)', borderRadius: '10px 0 0 10px',
+                position: 'absolute', left: -22, top: 1, width: 18, height: 22, cursor: 'grab',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cbcbcb)',
               }}
             >
               <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
             </div>
-            {/* Contenido = nodo REAL (editor del outliner en modo flat) */}
-            <div className="pizarra-card-body" style={{ flex: 1, minWidth: 0, padding: '5px 6px' }}>
+            {/* Contenido = nodo REAL (editor del outliner en modo flat), SIN caja */}
+            <div className="pizarra-card-body" style={{ minWidth: 0 }}>
               <OutlinerNode
                 node={node}
                 depth={0}
