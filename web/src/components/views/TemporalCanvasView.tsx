@@ -78,10 +78,17 @@ export default function TemporalCanvasView() {
     wheelAcc.current = 0
     wheelCooldown.current = t + 320
     if (dir === 'in') {
-      if (level === 'days') return // en días se ENTRA con clic en un día concreto
+      if (level === 'days') {
+        // Entrar al día bajo el cursor (zoom-in también, no solo clic).
+        const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+        const cell = el?.closest('[data-day]') as HTMLElement | null
+        const ds = cell?.getAttribute('data-day')
+        if (ds) { const [y, m, d] = ds.split('-').map(Number); navigate(`/node/${ensureDayPath(new Date(y, m, d)).id}`) }
+        return
+      }
       zoomIn()
     } else zoomOut()
-  }, [level, zoomIn, zoomOut]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [level, zoomIn, zoomOut, navigate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Raíces (hijos de 🏠 From) para el nivel 'roots'.
   const roots = useMemo(() => {
@@ -177,7 +184,7 @@ export default function TemporalCanvasView() {
                   const isToday = year === now.getFullYear() && month === now.getMonth() && d === now.getDate()
                   const has = content.days.has(`${year}-${month}-${d}`)
                   return (
-                    <button key={i} onClick={() => navigate(`/node/${ensureDayPath(new Date(year, month, d)).id}`)}
+                    <button key={i} data-day={`${year}-${month}-${d}`} onClick={() => navigate(`/node/${ensureDayPath(new Date(year, month, d)).id}`)}
                       style={{ ...card, alignItems: 'flex-start', justifyContent: 'flex-start', padding: 8, position: 'relative',
                         background: isToday ? 'var(--accent-soft, rgba(108,92,231,0.10))' : card.background as string,
                         border: isToday ? '2px solid var(--accent,#6c5ce7)' : card.border }}>

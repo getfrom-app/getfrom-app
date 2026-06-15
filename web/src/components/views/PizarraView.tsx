@@ -45,8 +45,8 @@ const FLOW_X = 40
 const FLOW_Y = 20
 const FLOW_W = 700
 // Zoom.
-const MIN_SCALE = 0.05
-const MAX_SCALE = 6
+const MIN_SCALE = 0.04
+const MAX_SCALE = 50   // zoom profundo (antes 6 = 600%, escaso)
 // Umbrales de "buceo" (dive): al cruzarlos con la rueda se navega de lienzo.
 const DIVE_OUT_SCALE = 0.32   // alejar → subir al padre / mes (antes 0.08 = demasiado)
 const DIVE_IN_SCALE = 4.0     // acercar sobre una tarjeta → entrar en ella
@@ -182,7 +182,6 @@ export default function PizarraView({ parentId }: Props) {
     }
     return map
   }, [children])
-  const unpositioned = useMemo(() => children.filter(n => !readPin(n)), [children])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
@@ -506,11 +505,10 @@ export default function PizarraView({ parentId }: Props) {
     return out
   }, [children, layout, dragPos, cam, viewport])
 
-  // Nodos del flujo (lista): los sin pin, salvo el que se esté arrastrando ahora.
-  const flowNodes = useMemo(
-    () => unpositioned.filter(n => !(dragPos && dragPos.id === n.id)),
-    [unpositioned, dragPos]
-  )
+  // Flujo (lista): TODOS los hijos en orden. Los COLOCADOS (o el que se arrastra)
+  // se renderizan como hueco INVISIBLE → mantienen su slot para que mover uno NO
+  // reordene a los demás (cada nodo es independiente). Los demás, normales.
+  const flowNodes = children
 
   return (
     <div
@@ -582,17 +580,24 @@ export default function PizarraView({ parentId }: Props) {
           width: FLOW_W, transform: `scale(${cam.scale})`, transformOrigin: '0 0',
           display: 'flex', flexDirection: 'column',
         }}>
-          {flowNodes.map(node => (
-            <div key={node.id} data-card="1" className="pizarra-node" style={{ position: 'relative', width: '100%' }}
-              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
-              <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
+          {flowNodes.map(node => {
+            // Colocado (tiene pin) o arrastrándose → HUECO invisible (mantiene su slot).
+            const placeholder = layout.has(node.id) || (dragPos?.id === node.id)
+            return (
+              <div key={node.id} data-card={placeholder ? undefined : '1'} className="pizarra-node"
+                style={{ position: 'relative', width: '100%', visibility: placeholder ? 'hidden' : 'visible' }}
+                onContextMenu={placeholder ? undefined : (e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+                {!placeholder && (
+                  <div className="pizarra-grip" onPointerDown={(e) => onCardPointerDown(e, node)} title="Arrastrar" style={gripStyle}>
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
+                  </div>
+                )}
+                <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+                  <OutlinerNode node={node} depth={0} isSelected={!placeholder && selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+                </div>
               </div>
-              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
-                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
