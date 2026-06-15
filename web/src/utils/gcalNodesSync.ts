@@ -105,6 +105,7 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
         dueEnd:  ev.end,
         extraData: JSON.stringify({
           _gcalEventId:    ev.id,
+          gcalEventId:     ev.id, // clave que usa el auto-sync de NodeView → evita crear duplicado
           _gcalAllDay:     ev.allDay ? '1' : '0',
           _gcalColor:      ev.backgroundColor || '',
           _gcalSynced:     '1',
