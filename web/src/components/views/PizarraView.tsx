@@ -1339,11 +1339,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
 
-      {layout.size === 0 && (
-        <div style={{ position: 'absolute', left: cam.x + 40 * cam.scale, top: cam.y + 40 * cam.scale, color: 'var(--text-secondary, #999)', fontSize: 14, pointerEvents: 'none' }}>
-          Haz <b>doble clic</b> en cualquier parte para crear un nodo.
-        </div>
-      )}
 
       {/* Menú contextual de la pizarra. Si el nodo clicado forma parte de una
           MULTISELECCIÓN → acciones en lote (eliminar/duplicar todos). Si no →
