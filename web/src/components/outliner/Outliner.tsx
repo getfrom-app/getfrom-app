@@ -53,6 +53,24 @@ export function domSelectedNodeIds(): string[] {
   return out
 }
 
+/** Borra (a Papelera) la selección múltiple actual. Fuente: `_gSelectedIds`, y si
+ * está vacío, las filas `.multi-selected` del DOM (lo que el usuario ve resaltado).
+ * Devuelve true si actuó (≥2 elementos). Centralizado para poder testearlo. */
+export function tryDeleteSelection(): boolean {
+  // Fuente de verdad = lo que el usuario VE resaltado. Si el DOM muestra MÁS filas
+  // seleccionadas que el estado global (desincronización: el global se reduce pero
+  // React aún pinta el resaltado), gana el DOM. Así se borra lo que se ve.
+  const fromModule = [..._gSelectedIds]
+  const fromDom = domSelectedNodeIds()
+  const ids = fromDom.length > fromModule.length ? fromDom : fromModule
+  if (ids.length < 2) return false
+  gClearSelected()
+  for (const id of ids) {
+    try { trashNode(id) } catch { /* seguir con el resto */ }
+  }
+  return true
+}
+
 /** Exportado: limpiar toda la selección */
 export function clearGlobalSelection() {
   gClearSelected()
@@ -702,12 +720,9 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
       // DOM muestra filas resaltadas (desincronización de estado), usar esas. Así
       // «borrar varios» funciona aunque `_gSelectedIds` se haya quedado obsoleto.
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        const ids = _gSelectedIds.size > 0 ? [..._gSelectedIds] : domSelectedNodeIds()
-        if (ids.length > 1) {
+        if (tryDeleteSelection()) {
           e.preventDefault()
           e.stopPropagation()
-          gClearSelected()
-          for (const id of ids) trashNode(id)
           return
         }
       }

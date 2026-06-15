@@ -13293,6 +13293,23 @@ textarea:focus-visible,
   background: var(--bg-elevated, #fff);
   color: var(--text, #222);
 }
+/* Botón eliminar (visible al hover) en cualquier fila de la columna del día */
+.dc-del {
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary, #bbb);
+  padding: 3px;
+  border-radius: 5px;
+  display: inline-flex;
+  transition: opacity 0.12s;
+}
+.dc-row:hover .dc-del { opacity: 0.7; }
+.dc-del:hover { opacity: 1 !important; color: var(--danger, #e03131); background: rgba(224,49,49,0.1); }
+.dc-row--event .dc-del { margin-left: 8px; }
 /* Bandeja «Capturas»: filas arrastrables al lienzo */
 .dc-row--capture { cursor: grab; }
 .dc-row--capture:active { cursor: grabbing; }

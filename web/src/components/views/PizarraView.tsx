@@ -814,6 +814,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           return { ...s, w: Math.max(0.2, w0 * cur.s), pts: orig.map((v, i) => i % 2 === 0 ? cur.ax + (v - cur.ax) * cur.s : cur.ay + (v - cur.ay) * cur.s) }
         })
         store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+      } else if (t.kind === 'move') {
+        // Clic limpio (sin arrastrar) sobre un trazo → mini-menú duplicar/eliminar.
+        setMenuPos({ x: e.clientX, y: e.clientY })
       }
       setXf(null)
       return
@@ -874,7 +877,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       } else if (d.moved && dp) {
         if (node) writePin(node, dp.pos)
       } else if (node) {
-        flyToNode(node)
+        // Clic limpio en el tirador (sin arrastrar) → seleccionar + mini-menú.
+        setSelStrokes(new Set()); setMultiSel(new Set([node.id]))
+        setMenuPos({ x: e.clientX, y: e.clientY })
       }
       setDragPos(null)
       setGroupDelta(null)

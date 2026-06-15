@@ -14,7 +14,15 @@ import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
-import { pushEventTitleChanges, pushEventToGcal, getGcalEventId, getGcalColor } from '../../utils/gcalNodesSync'
+import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalEventId, getGcalColor } from '../../utils/gcalNodesSync'
+import { trashNode } from '../../utils/papeleraHelper'
+
+// Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
+const TrashIcon = (
+  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
+  </svg>
+)
 
 type OutlinerExtraProps = Omit<React.ComponentProps<typeof Outliner>, 'parentId' | 'excludeIds'>
 
@@ -101,6 +109,15 @@ export default function DayColumn({
   // El bloque «Nodos» (y el lienzo) no muestra eventos ni capturas-en-bandeja.
   const eventIds = new Set([...eventNodes, ...captureNodes].map(c => c.id))
 
+  // Eliminar una fila de la columna (evento → también en Google; resto → Papelera).
+  const deleteRow = (n: Node) => {
+    deleteGcalEventForNode(n)
+    trashNode(n.id)
+  }
+  const delBtn = (n: Node) => (
+    <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); deleteRow(n) }}>{TrashIcon}</button>
+  )
+
   // Empujar a Google los títulos de eventos editados (debounce; anti-bucle dentro).
   const evSig = eventNodes.map(c => `${c.id}:${c.text}`).join('|')
   const titleTimer = useRef<number | null>(null)
@@ -123,7 +140,8 @@ export default function DayColumn({
             const timeLabel = allDay ? 'Todo el día' : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
             return (
               <div key={ev.id}>
-                <div className="dc-row dc-row--event" data-node-id={ev.id}>
+                <div className="dc-row dc-row--event" data-node-id={ev.id}
+                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(ev) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
                   <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>
                     {ev.text ? renderInline(ev.text) : 'Evento'}
@@ -135,6 +153,7 @@ export default function DayColumn({
                   >
                     {timeLabel}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
                   </button>
+                  {delBtn(ev)}
                 </div>
                 {editEv === ev.id && !allDay && ev.due && (
                   <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
@@ -186,10 +205,12 @@ export default function DayColumn({
               draggable
               onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
               onClick={() => navigate(`/node/${c.id}`)}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(c) }}
               title="Arrastra al lienzo para colocarla"
             >
               <span className="dc-capture-grip">⠿</span>
               <span className="dc-text">{c.text ? renderInline(c.text) : 'Captura'}</span>
+              {delBtn(c)}
             </div>
           ))}
         </div>

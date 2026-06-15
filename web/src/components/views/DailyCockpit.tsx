@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
+import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import type { Node } from '../../types'
 
@@ -137,12 +138,19 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     }
   }
 
+  const delBtn = (n: Node) => (
+    <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); trashNode(n.id) }}>
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" /></svg>
+    </button>
+  )
+
   const renderTaskRow = (n: Node, opts: { showDue?: boolean; inFocus?: boolean }) => (
     <div
       key={n.id}
       ref={registerRow(n.id)}
       className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
       onClick={() => navigate(`/node/${n.id}`)}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); trashNode(n.id) }}
       {...dragProps(n)}
     >
       <button
@@ -180,11 +188,14 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           </>
         )}
       </span>
+      {delBtn(n)}
     </div>
   )
 
   const renderBucleRow = (n: Node) => (
-    <div key={n.id} className="dc-row" onClick={() => navigate(`/node/${n.id}`)} {...dragProps(n)}>
+    <div key={n.id} className="dc-row" onClick={() => navigate(`/node/${n.id}`)}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); trashNode(n.id) }}
+      {...dragProps(n)}>
       <button
         className="dc-bucle"
         onClick={e => closeBucle(e, n)}
@@ -198,6 +209,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       </button>
       <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
       {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
+      {delBtn(n)}
     </div>
   )
 

@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
-import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, domSelectedNodeIds, openSelectionMenu } from './Outliner'
+import { useGlobalSelection, toggleNodeSelection, clearGlobalSelection, getGlobalSelectedIds, domSelectedNodeIds, tryDeleteSelection, openSelectionMenu } from './Outliner'
 import type { Node } from '../../types'
 import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
@@ -21,7 +21,7 @@ import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
-import { isInPapelera, trashNode } from '../../utils/papeleraHelper'
+import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -1704,13 +1704,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // (El handler global de Outliner ya cubre el caso sin foco; esto cubre el
     // caso en que el nodo activo tiene el cursor dentro de la selección.) ──
     if ((e.key === 'Backspace' || e.key === 'Delete') && !showSlash && !picker) {
+      // Si este nodo enfocado está dentro de una multiselección, borrar TODA la
+      // selección (no solo este nodo). Centralizado en tryDeleteSelection.
       const sel = getGlobalSelectedIds()
-      const ids = sel.size > 1 ? [...sel] : domSelectedNodeIds()
-      if (ids.length > 1 && ids.includes(node.id)) {
+      const inSel = sel.has(node.id) || domSelectedNodeIds().includes(node.id)
+      if (inSel && tryDeleteSelection()) {
         e.preventDefault()
         e.stopPropagation()
-        clearGlobalSelection()
-        for (const id of ids) trashNode(id)
         return
       }
     }
