@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import NodeContextMenu from '../outliner/NodeContextMenu'
+import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
 interface Props {
@@ -78,9 +79,8 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
   const [cam, setCam] = useState<Cam>({ x: 60, y: 60, scale: 1 })
   const [viewport, setViewport] = useState({ w: 1000, h: 700 })
 
-  // Edición inline de una tarjeta.
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editText, setEditText] = useState('')
+  // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
@@ -154,40 +154,27 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     return () => el.removeEventListener('wheel', handler)
   }, [])
 
-  // Commit de edición inline. Si el nodo quedó vacío y sin hijos → borrar (no
-  // dejar tarjetas fantasma). Importante: se llama explícitamente (no por onBlur,
-  // que NO se dispara al desmontar el input al cambiar editingId).
-  const commitEdit = useCallback((id: string) => {
-    const node = store.getNode(id)
-    if (node && editText !== node.text) store.updateNode(id, { text: editText })
-    if (node && editText.trim() === '' && store.children(id).length === 0) {
-      store.deleteNode(id)
-    }
-    setEditingId(null)
-  }, [editText])
-
-  // Crear un nodo colocado en coordenadas de mundo y entrar en edición.
+  // Crear un nodo colocado en coordenadas de mundo y seleccionarlo (el
+  // OutlinerNode embebido se enfoca al estar seleccionado → listo para escribir).
   const createNodeAt = useCallback((world: WorldPos) => {
-    if (editingId) commitEdit(editingId)
     const node = store.createNode({
       text: '',
       parentId,
       extraData: { [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1' },
     })
-    setEditingId(node.id)
-    setEditText('')
-  }, [editingId, commitEdit, parentId])
+    setSelectedId(node.id)
+  }, [parentId])
 
   // ── Pointer down en el fondo → SOLO pan (crear nodo = doble clic) ────────────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
-    if (editingId) commitEdit(editingId) // commit real (limpia vacíos), no solo blur
+    setSelectedId(null)
     const el = containerRef.current!
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam, editingId, commitEdit])
+  }, [cam])
 
   // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -246,18 +233,17 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
     }
   }, [dragPos, parentId, screenToWorld])
 
-  // ── Pointer down en una tarjeta → iniciar drag ──────────────────────────────
+  // ── Pointer down en el TIRADOR de una tarjeta → iniciar drag de la tarjeta ──
   const onCardPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
     if (e.button !== 0) return
-    if (editingId === node.id) return // editando: no arrastrar
-    e.stopPropagation()
+    e.stopPropagation() // no llega al fondo (no pan) ni al editor
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     const origin = layout.get(node.id) || { x: 0, y: 0 }
     containerRef.current!.setPointerCapture(e.pointerId)
     dragRef.current = { id: node.id, startWorld, origin, moved: false }
     setDragPos({ id: node.id, pos: origin })
-  }, [editingId, layout, screenToWorld])
+  }, [layout, screenToWorld])
 
   // ── Render ──────────────────────────────────────────────────────────────────
   // Culling: una tarjeta es visible si su rect en pantalla intersecta el viewport
@@ -311,84 +297,62 @@ export default function PizarraView({ parentId, flowUnpositioned = false }: Prop
         <div style={{ position: 'absolute', top: cam.y + guides.hy * cam.scale, left: 0, height: 1, width: '100%', background: 'var(--accent, #6c5ce7)', opacity: 0.6, pointerEvents: 'none', zIndex: 5 }} />
       )}
 
-      {/* Tarjetas visibles (culling aplicado) */}
+      {/* Tarjetas visibles (culling aplicado). Cada tarjeta embebe un OutlinerNode
+          REAL → hereda dot en hover, Magic, predictivo de fecha, anticipación, etc.
+          Escala por transform (contenido a tamaño de mundo). Se arrastra por el
+          tirador izquierdo (no por el texto, para no chocar con el cursor sagrado). */}
       {visible.map(({ node, pos }) => {
         const sx = cam.x + pos.x * cam.scale
         const sy = cam.y + pos.y * cam.scale
-        const childCount = store.children(node.id).length
-        const isEditing = editingId === node.id
-        const isTask = node.status === 'pending' || node.status === 'done'
         return (
           <div
             key={node.id}
             data-card="1"
-            onPointerDown={(e) => onCardPointerDown(e, node)}
-            onDoubleClick={(e) => { e.stopPropagation(); setEditingId(node.id); setEditText(node.text) }}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{
               position: 'absolute',
               left: sx,
               top: sy,
-              width: CARD_W * cam.scale,
-              minHeight: CARD_MIN_H * cam.scale,
+              width: CARD_W,
+              minHeight: CARD_MIN_H,
+              transform: `scale(${cam.scale})`,
               transformOrigin: '0 0',
               background: 'var(--bg-elevated, #fff)',
-              border: `${Math.max(1, 1.5)}px solid var(--border, #d8d8d8)`,
-              borderRadius: 10 * cam.scale,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              padding: `${10 * cam.scale}px ${12 * cam.scale}px`,
-              fontSize: 14 * cam.scale,
-              lineHeight: 1.35,
-              color: 'var(--text, #1a1a1a)',
-              cursor: isEditing ? 'text' : 'grab',
-              userSelect: isEditing ? 'text' : 'none',
+              border: '1px solid var(--border, #d8d8d8)',
+              borderRadius: 10,
+              boxShadow: dragPos?.id === node.id ? '0 8px 24px rgba(0,0,0,0.16)' : '0 2px 8px rgba(0,0,0,0.08)',
               boxSizing: 'border-box',
               zIndex: dragPos?.id === node.id ? 10 : 1,
-              overflow: 'hidden',
+              display: 'flex', alignItems: 'stretch',
             }}
           >
-            <div style={{ display: 'flex', gap: 6 * cam.scale, alignItems: 'flex-start' }}>
-              {isTask && (
-                <span style={{
-                  width: 14 * cam.scale, height: 14 * cam.scale, marginTop: 3 * cam.scale, flexShrink: 0,
-                  borderRadius: 4 * cam.scale, border: `${1.5 * cam.scale}px solid var(--border, #bbb)`,
-                  background: node.status === 'done' ? 'var(--accent, #6c5ce7)' : 'transparent',
-                }} />
-              )}
-              {isEditing ? (
-                <input
-                  autoFocus
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onBlur={() => commitEdit(node.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); commitEdit(node.id) }
-                    if (e.key === 'Escape') { e.preventDefault(); setEditingId(null) }
-                  }}
-                  style={{
-                    flex: 1, border: 'none', outline: 'none', background: 'transparent',
-                    fontSize: 14 * cam.scale, color: 'inherit', fontFamily: 'inherit', padding: 0,
-                  }}
-                />
-              ) : (
-                <span style={{ flex: 1, wordBreak: 'break-word', textDecoration: node.status === 'done' ? 'line-through' : 'none', opacity: node.text ? 1 : 0.4 }}>
-                  {node.text || 'Nota vacía'}
-                </span>
-              )}
+            {/* Tirador de arrastre (mueve la tarjeta por el lienzo) */}
+            <div
+              onPointerDown={(e) => onCardPointerDown(e, node)}
+              title="Arrastrar"
+              style={{
+                width: 18, flexShrink: 0, cursor: 'grab', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #cfcfcf)',
+                borderRight: '1px solid var(--border-subtle, #f0f0f0)', borderRadius: '10px 0 0 10px',
+              }}
+            >
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="3" r="1"/><circle cx="6" cy="3" r="1"/><circle cx="2" cy="7" r="1"/><circle cx="6" cy="7" r="1"/><circle cx="2" cy="11" r="1"/><circle cx="6" cy="11" r="1"/></svg>
             </div>
-            {childCount > 0 && !isEditing && (
-              <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
-                style={{
-                  marginTop: 6 * cam.scale, fontSize: 11 * cam.scale, color: 'var(--text-secondary, #888)',
-                  background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
-                }}
-              >
-                {childCount} {childCount === 1 ? 'elemento' : 'elementos'} ›
-              </button>
-            )}
+            {/* Contenido = nodo REAL (editor del outliner en modo flat) */}
+            <div className="pizarra-card-body" style={{ flex: 1, minWidth: 0, padding: '5px 6px' }}>
+              <OutlinerNode
+                node={node}
+                depth={0}
+                isSelected={selectedId === node.id}
+                selectedId={selectedId}
+                isMultiSelected={false}
+                onSelect={setSelectedId}
+                onSelectNext={() => {}}
+                onShiftSelect={() => {}}
+                filterText=""
+                flat
+              />
+            </div>
           </div>
         )
       })}
