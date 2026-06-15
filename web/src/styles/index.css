@@ -13217,6 +13217,19 @@ textarea:focus-visible,
   min-height: 28px;
 }
 .dc-row:hover { background: rgba(139,92,246,0.06); }
+/* Cockpit «bare»: bloques sueltos sin caja blanca (panel del día) */
+.daily-cockpit-bare { padding: 2px 0 8px; }
+.daily-cockpit-bare .dc-group { margin-top: 8px; }
+/* Bloque de eventos GCal del día */
+.dc-group-label--event { color: #2563eb; }
+.dc-row--event { gap: 9px; }
+.dc-event-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+}
 .dc-check {
   flex-shrink: 0;
   width: 15px;

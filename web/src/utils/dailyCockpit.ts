@@ -93,6 +93,7 @@ export function collectDailyCockpit(): DailyCockpitData {
 
   for (const n of store.allActive()) {
     if (n.isDiaryEntry) continue
+    if (n.isEvent) continue // los eventos GCal tienen su propio bloque, no son tareas
     const isBucle = (n.types || []).includes('bucle')
 
     // 🎯 Foco de hoy — tiene prioridad sobre el resto de grupos.

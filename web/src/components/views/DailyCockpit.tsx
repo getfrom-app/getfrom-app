@@ -14,7 +14,7 @@ import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
 
-export default function DailyCockpit({ disablePlanner = false }: { disablePlanner?: boolean } = {}) {
+export default function DailyCockpit({ disablePlanner = false, bare = false }: { disablePlanner?: boolean; bare?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -191,6 +191,41 @@ export default function DailyCockpit({ disablePlanner = false }: { disablePlanne
 
   const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
+  const groups = (
+    <>
+      {data.focus.length > 0 && (
+        <div className="dc-group dc-group--focus">
+          <div className="dc-group-label dc-group-label--focus">{t('daily.focus')}</div>
+          {data.focus.map(n => renderTaskRow(n, { inFocus: true }))}
+          {pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
+        </div>
+      )}
+      {data.overdue.length > 0 && (
+        <div className="dc-group">
+          <div className="dc-group-label dc-group-label--overdue">{t('daily.overdue')}</div>
+          {data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
+        </div>
+      )}
+      {data.today.length > 0 && (
+        <div className="dc-group">
+          <div className="dc-group-label">{t('daily.todayTasks')}</div>
+          {data.today.map(n => renderTaskRow(n, {}))}
+        </div>
+      )}
+      {data.bucles.length > 0 && (
+        <div className="dc-group">
+          <div className="dc-group-label dc-group-label--bucle">{t('daily.openBucles')}</div>
+          {data.bucles.map(renderBucleRow)}
+        </div>
+      )}
+    </>
+  )
+
+  // Modo «bare»: sin caja blanca ni header — bloques sueltos (panel del día pizarra)
+  if (bare) {
+    return <div className="daily-cockpit-bare" onMouseDown={openPlanner}>{groups}</div>
+  }
+
   return (
     <div
       className={`daily-cockpit ${collapsed ? 'daily-cockpit--collapsed' : ''}`}
@@ -207,35 +242,7 @@ export default function DailyCockpit({ disablePlanner = false }: { disablePlanne
         <span className="dc-chevron">{collapsed ? '›' : '▾'}</span>
       </button>
 
-      {!collapsed && (
-        <div className="dc-body">
-          {data.focus.length > 0 && (
-            <div className="dc-group dc-group--focus">
-              <div className="dc-group-label dc-group-label--focus">{t('daily.focus')}</div>
-              {data.focus.map(n => renderTaskRow(n, { inFocus: true }))}
-              {pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
-            </div>
-          )}
-          {data.overdue.length > 0 && (
-            <div className="dc-group">
-              <div className="dc-group-label dc-group-label--overdue">{t('daily.overdue')}</div>
-              {data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
-            </div>
-          )}
-          {data.today.length > 0 && (
-            <div className="dc-group">
-              <div className="dc-group-label">{t('daily.todayTasks')}</div>
-              {data.today.map(n => renderTaskRow(n, {}))}
-            </div>
-          )}
-          {data.bucles.length > 0 && (
-            <div className="dc-group">
-              <div className="dc-group-label dc-group-label--bucle">{t('daily.openBucles')}</div>
-              {data.bucles.map(renderBucleRow)}
-            </div>
-          )}
-        </div>
-      )}
+      {!collapsed && <div className="dc-body">{groups}</div>}
     </div>
   )
 }

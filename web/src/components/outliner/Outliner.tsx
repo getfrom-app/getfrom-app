@@ -238,6 +238,8 @@ interface Props {
   excludeDiaryEntries?: boolean
   /** Si true, deshabilita el filtro local (Cmd+F) — el padre gestiona el filtro globalmente */
   disableLocalFilter?: boolean
+  /** IDs a ocultar de la raíz (p.ej. eventos GCal que se muestran en su propio bloque) */
+  excludeIds?: Set<string>
 }
 
 type SortMode = 'none' | 'alpha' | 'due' | 'priority' | 'status'
@@ -265,7 +267,7 @@ function getDayNumber(node: Node): number {
   return m ? parseInt(m[1]) : 999
 }
 
-export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries, disableLocalFilter }: Props) {
+export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries, disableLocalFilter, excludeIds }: Props) {
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selectedIds = useGlobalSelection()
@@ -295,6 +297,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     // Excluir siempre nodos sistema (_system: true) del árbol visible
     let list = all.filter(n => { try { return !JSON.parse(n.extraData || '{}')._system } catch { return true } })
     list = excludeDiaryEntries ? list.filter(n => !n.isDiaryEntry) : list
+    if (excludeIds && excludeIds.size > 0) list = list.filter(n => !excludeIds.has(n.id))
     // Con filtro activo: solo mostrar nodos que son match o ancestros de match.
     // Esto evita renderizar miles de nodos hermanos irrelevantes.
     if (filterMatchIds && filterMatchIds.size > 0) {
@@ -368,6 +371,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
   const canVirtualizeBase = isVirtualizedOutliner()
     && sortMode === 'none' && !temporalSort
     && !filterMatchIds && !effectiveFilter
+    && !(excludeIds && excludeIds.size > 0)
   const flatRows = useMemo(
     () => canVirtualizeBase ? flattenVisibleTree(s, parentId, { excludeDiaryEntries }) : [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
