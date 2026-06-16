@@ -23,6 +23,7 @@ import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
+import { isCanvasText, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -364,11 +365,19 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
       if (isHiddenPin(n)) continue // marcador de vista → no se pinta en el lienzo
+      if (isCanvasText(n)) continue // elemento-texto → render propio (no tarjeta)
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
     }
     return map
   }, [children])
+
+  // Elementos-texto del lienzo (nodos `_ctext` anclados). Son la fuente única del
+  // texto: el mismo nodo se pinta aquí y se abre en solitario con DocEditor.
+  const textNodes = useMemo(
+    () => children.filter(n => isCanvasText(n) && readPin(n) != null),
+    [children],
+  )
 
   // FLUJO: nodos del día SIN posición → se apilan en una columna sobre el lienzo
   // (orden natural, sin solaparse). Los eventos GCal NO van al lienzo (viven en la
@@ -380,7 +389,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const parent = store.getNode(parentId)
     const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
-    return children.filter(n => !isHiddenPin(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
+    return children.filter(n => !isHiddenPin(n) && !isCanvasText(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
@@ -718,13 +727,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     setSelectedId(node.id)
   }, [parentId])
 
-  // ── Textos LIBRES del lienzo (herramienta «Texto») ────────────────────────────
-  const mutateTexts = useCallback((fn: (texts: WBText[]) => WBText[]) => {
-    const data = parsePizarra(store.getNode(parentId)?.body)
-    data.texts = fn(data.texts || [])
-    store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
-  }, [parentId])
-
   // Herramienta Tarea: crea un nodo-tarea (con due/recurrencia por lenguaje natural)
   // hijo de la nota del lienzo. Vive por DUE → aparece en la columna del día.
   const createTaskFromText = useCallback((text: string) => {
@@ -740,82 +742,95 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     store.updateNode(node.id, updates)
   }, [parentId])
 
-  const createTextAt = useCallback((world: WorldPos) => {
-    const id = 't' + rid()
-    mutateTexts(texts => [...texts, { id, x: world.x, y: world.y, size: 16, w: 360, md: '' }])
-    setTool('select')
-    setEditText(id)
-  }, [mutateTexts])
+  // ── Elementos-texto del lienzo = NODOS `_doc`+`_ctext` anclados (FUENTE ÚNICA) ─
+  // El texto del lienzo ya NO vive como WBText en el body de la pizarra: es un nodo
+  // hijo. El MISMO nodo se pinta aquí y se abre en solitario con DocEditor; ambos
+  // editan `node.body`. Sin copias ni sincronización.
+  const newTextExtra = (world: WorldPos): Record<string, string> => ({
+    [DOC]: '1', [CTEXT]: '1',
+    [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1',
+  })
 
-  const updateTextMd = useCallback((id: string, md: string) => {
-    mutateTexts(texts => texts.map(t => t.id === id ? { ...t, md } : t))
-  }, [mutateTexts])
+  const createTextAt = useCallback((world: WorldPos) => {
+    const node = store.createNode({ text: '', parentId, extraData: newTextExtra(world) })
+    setTool('select')
+    setEditText(node.id)
+  }, [parentId])
+
+  // Guardar el cuerpo del nodo-texto + reflejar el título (1ª línea) en node.text.
+  const saveTextBody = useCallback((id: string, html: string) => {
+    store.updateNode(id, { body: html, text: firstLineTitle(html) })
+  }, [])
 
   const deleteText = useCallback((id: string) => {
-    mutateTexts(texts => texts.filter(t => t.id !== id))
+    store.deleteNode(id)
     setEditText(e => e === id ? null : e)
-  }, [mutateTexts])
+  }, [])
 
   const duplicateText = useCallback((id: string) => {
-    mutateTexts(texts => {
-      const t = texts.find(x => x.id === id); if (!t) return texts
-      return [...texts, { ...t, id: 't' + rid(), x: t.x + 24, y: t.y + 24, nodeId: undefined }]
-    })
-  }, [mutateTexts])
+    const n = store.getNode(id); if (!n) return
+    const pin = readPin(n) || { x: 0, y: 0 }
+    const copy = store.createNode({ text: n.text, parentId, extraData: newTextExtra({ x: pin.x + 24, y: pin.y + 24 }) })
+    if (n.body) store.updateNode(copy.id, { body: n.body })
+    setEditText(copy.id)
+  }, [parentId])
 
   // Menú contextual de un texto del lienzo (clic derecho): duplicar / eliminar.
   const [textMenu, setTextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
 
-  // Persistencia diferida del texto mientras se escribe (evita reescribir el body
-  // en cada tecla; el textarea es no-controlado para no perder el cursor).
+  // Persistencia diferida mientras se escribe (el contentEditable es no-controlado
+  // para no perder el cursor; persistimos el HTML 600 ms después de la última tecla).
   const textPersistTimer = useRef<number | null>(null)
-  const scheduleTextPersist = useCallback((id: string, md: string) => {
+  const scheduleTextPersist = useCallback((id: string, html: string) => {
     if (textPersistTimer.current) clearTimeout(textPersistTimer.current)
-    textPersistTimer.current = window.setTimeout(() => updateTextMd(id, md), 600)
-  }, [updateTextMd])
+    textPersistTimer.current = window.setTimeout(() => saveTextBody(id, html), 600)
+  }, [saveTextBody])
 
-  // contentEditable del texto en edición: cargar HTML y enfocar al entrar en edición.
+  // contentEditable del texto en edición: cargar el body del nodo y enfocar.
   const editDivRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     if (!editText) return
     const el = editDivRef.current
     if (!el) return
-    const t = parsePizarra(store.getNode(parentId)?.body).texts?.find(x => x.id === editText)
-    el.innerHTML = t?.md || ''
+    el.innerHTML = store.getNode(editText)?.body || ''
     el.focus()
     const sel = window.getSelection(); const range = document.createRange()
     range.selectNodeContents(el); range.collapse(false); sel?.removeAllRanges(); sel?.addRange(range)
-  }, [editText, parentId])
+  }, [editText])
   const fmt = (cmd: string, val?: string) => { editDivRef.current?.focus(); document.execCommand(cmd, false, val) }
 
-  // El DOT abre el texto como DOCUMENTO: nota nueva (hija de la nota del lienzo),
-  // 1ª línea = título, resto = nodos párrafo. NO borra el texto del lienzo (sigue
-  // visible igual); guarda el id de la nota en el texto para reabrir el mismo doc.
-  const openTextAsDoc = useCallback((t: WBText) => {
-    // Si ya tiene documento vinculado y existe → solo navegar.
-    if (t.nodeId && store.getNode(t.nodeId) && !store.getNode(t.nodeId)!.deletedAt) {
-      navigate(`/node/${t.nodeId}`)
-      return
+  // El DOT abre el MISMO nodo en solitario (DocEditor). No hay copia ni sync.
+  const openTextAsDoc = useCallback((id: string) => { navigate(`/node/${id}`) }, [navigate])
+
+  // ── Migración: WBText legacy (JSON en el body de la pizarra) → nodos `_ctext` ──
+  // Una sola vez por pizarra. Reúne lo existente sin duplicar: si el WBText ya tenía
+  // documento vinculado (nodeId), ese nodo pasa a ser el elemento-texto; si no, se
+  // crea uno. Después se vacía `texts[]` del body.
+  const migratedRef = useRef(false)
+  useEffect(() => {
+    if (migratedRef.current) return
+    migratedRef.current = true
+    const data = parsePizarra(store.getNode(parentId)?.body)
+    if (!data.texts || !data.texts.length) return
+    for (const t of data.texts) {
+      const linked = t.nodeId ? store.getNode(t.nodeId) : null
+      if (linked && !linked.deletedAt) {
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(linked.extraData || '{}') } catch { /* vacío */ }
+        ed[DOC] = '1'; ed[CTEXT] = '1'; delete ed[PIN_HIDDEN]
+        ed[PIN_X] = String(Math.round(t.x)); ed[PIN_Y] = String(Math.round(t.y))
+        if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
+        const body = t.md || linked.body || ''
+        store.updateNode(linked.id, { extraData: JSON.stringify(ed), body, text: firstLineTitle(body) })
+      } else {
+        const node = store.createNode({ text: firstLineTitle(t.md), parentId, extraData: newTextExtra({ x: t.x, y: t.y }) })
+        if (t.md) store.updateNode(node.id, { body: t.md })
+      }
     }
-    // Título = 1ª línea; cuerpo = el resto del texto rico (HTML) → DOCUMENTO real
-    // (un solo nodo hoja, contenido en el body; se edita con TipTap, no son nodos).
-    const blocks = htmlToBlocks(t.md)
-    const title = blocks[0]?.text || 'Documento'
-    const tmp = document.createElement('div'); tmp.innerHTML = t.md
-    // Quitar el primer bloque (que pasa a ser el título) del cuerpo.
-    if (tmp.firstChild) tmp.removeChild(tmp.firstChild)
-    const bodyHtml = tmp.innerHTML.trim()
-    const note = store.createNode({
-      text: title,
-      parentId,
-      // _doc → editor de documento; _pinHidden → no aparece como tarjeta en el lienzo.
-      extraData: { _doc: '1', [PIN_HIDDEN]: '1' },
-    })
-    if (bodyHtml) store.updateNode(note.id, { body: bodyHtml })
-    // Vincular el texto del lienzo al documento (sin borrarlo del lienzo).
-    mutateTexts(texts => texts.map(x => x.id === t.id ? { ...x, nodeId: note.id } : x))
-    navigate(`/node/${note.id}`)
-  }, [parentId, mutateTexts, navigate])
+    const d2 = parsePizarra(store.getNode(parentId)?.body)
+    d2.texts = []
+    store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, d2) })
+  }, [parentId])
 
   // ── Pointer down en el fondo → pan, o dibujar/borrar según la herramienta ────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
@@ -1490,24 +1505,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
-      {/* ── TEXTOS LIBRES del lienzo (herramienta «Texto»). Hover → dot que lo
-             convierte en NODO. Doble clic → editar. Clic derecho → eliminar. ── */}
-      {(parsePizarra(store.getNode(parentId)?.body).texts || []).map(t => {
-        const sx = cam.x + t.x * cam.scale
-        const sy = cam.y + t.y * cam.scale
-        const editing = editText === t.id
-        const hovered = hoverText === t.id && tool === 'select'
+      {/* ── ELEMENTOS-TEXTO del lienzo = nodos `_ctext`. El MISMO nodo se pinta aquí
+             y se abre en solitario (DocEditor) con el dot. Editar = node.body. ── */}
+      {textNodes.map(n => {
+        const pos = readPin(n) || { x: 0, y: 0 }
+        const sx = cam.x + pos.x * cam.scale
+        const sy = cam.y + pos.y * cam.scale
+        const tw = readCardW(n)
+        const editing = editText === n.id
+        const hovered = hoverText === n.id && tool === 'select'
         return (
-          <div key={t.id} data-card="1"
-            style={{ position: 'absolute', left: sx, top: sy, width: t.w, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
-            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverTextNow(t.id) }}
+          <div key={n.id} data-card="1"
+            style={{ position: 'absolute', left: sx, top: sy, width: tw, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
+            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverTextNow(n.id) }}
             onPointerLeave={() => setHoverTextNow(null)}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setTextMenu({ id: t.id, x: e.clientX, y: e.clientY }) }}>
-            {/* DOT pequeño arriba-izquierda (hover). Zona de hit ampliada para alcanzarlo. */}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setTextMenu({ id: n.id, x: e.clientX, y: e.clientY }) }}>
+            {/* DOT arriba-izquierda (hover) → abre el documento en solitario. */}
             {(hovered || editing) && (
               <div title="Abrir como documento"
-                onPointerEnter={() => setHoverTextNow(t.id)}
-                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(t) }}
+                onPointerEnter={() => setHoverTextNow(n.id)}
+                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(n.id) }}
                 style={{ position: 'absolute', left: -22, top: -8, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <div style={{ width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff' }} />
               </div>
@@ -1518,24 +1535,24 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               className="pizarra-text"
               contentEditable={editing}
               suppressContentEditableWarning
-              onPointerDown={!editing && tool === 'select' ? (e) => { e.stopPropagation(); setEditText(t.id) } : (editing ? (e) => e.stopPropagation() : undefined)}
-              onInput={editing ? (e) => scheduleTextPersist(t.id, (e.target as HTMLElement).innerHTML) : undefined}
-              onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; updateTextMd(t.id, html); if (!(e.target as HTMLElement).textContent?.trim()) deleteText(t.id); setEditText(null) } : undefined}
+              onPointerDown={!editing && tool === 'select' ? (e) => { e.stopPropagation(); setEditText(n.id) } : (editing ? (e) => e.stopPropagation() : undefined)}
+              onInput={editing ? (e) => scheduleTextPersist(n.id, (e.target as HTMLElement).innerHTML) : undefined}
+              onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(n.id); else saveTextBody(n.id, html); setEditText(null) } : undefined}
               onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
-              dangerouslySetInnerHTML={editing ? undefined : { __html: t.md || '<span style="opacity:.4">Texto…</span>' }}
-              style={{ fontSize: t.size, lineHeight: 1.5, color: t.c || 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : (tool === 'select' ? 'text' : 'default'), minHeight: t.size }}
+              dangerouslySetInnerHTML={editing ? undefined : { __html: n.body || '<span style="opacity:.4">Texto…</span>' }}
+              style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : (tool === 'select' ? 'text' : 'default'), minHeight: 16 }}
             />
           </div>
         )
       })}
 
       {/* ── Menú flotante de formato (estilo iPad) para el texto en edición ── */}
-      {editText && (() => {
-        const t = (parsePizarra(store.getNode(parentId)?.body).texts || []).find(x => x.id === editText)
-        if (!t) return null
+      {editText && store.getNode(editText) && isCanvasText(store.getNode(editText)) && (() => {
+        const tn = store.getNode(editText)!
+        const tpos = readPin(tn) || { x: 0, y: 0 }
         // Pegada justo encima del texto (su top en pantalla).
-        const mx = cam.x + t.x * cam.scale
-        const my = cam.y + t.y * cam.scale
+        const mx = cam.x + tpos.x * cam.scale
+        const my = cam.y + tpos.y * cam.scale
         const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
         const Btn = ({ label, onAct, title }: { label: React.ReactNode; onAct: () => void; title: string }) => (
           <button title={title} onMouseDown={(e) => { e.preventDefault(); onAct() }}

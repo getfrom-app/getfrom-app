@@ -1,0 +1,33 @@
+// Nodo-documento y elemento-texto del lienzo.
+//
+// Un DOCUMENTO es un nodo hoja con `extraData._doc='1'`: su contenido vive en el
+// `body` (HTML de TipTap), NO troceado en nodos hijos. Se edita con DocEditor.
+//
+// Un ELEMENTO-TEXTO DEL LIENZO es además `_ctext='1'` y está anclado (`_pinX/_pinY`):
+// se dibuja en el lienzo como texto suelto y se abre en solitario como el MISMO
+// nodo (sin copia ni sincronización). El lienzo y el documento comparten `body`.
+
+import type { Node } from '../types'
+
+export const DOC = '_doc'
+export const CTEXT = '_ctext'
+
+export function isDocNode(node: Node | null | undefined): boolean {
+  if (!node) return false
+  try { return JSON.parse(node.extraData || '{}')[DOC] === '1' } catch { return false }
+}
+
+export function isCanvasText(node: Node | null | undefined): boolean {
+  if (!node) return false
+  try { return JSON.parse(node.extraData || '{}')[CTEXT] === '1' } catch { return false }
+}
+
+// Título del documento = primer bloque/línea del HTML del body. Se refleja en
+// `node.text` para que el árbol, breadcrumb y listados muestren algo legible.
+export function firstLineTitle(html: string | null | undefined): string {
+  const d = document.createElement('div')
+  d.innerHTML = html || ''
+  const txt = (d.textContent || '').replace(/ /g, ' ').trim()
+  const first = txt.split('\n').map(s => s.trim()).find(Boolean) || ''
+  return first.slice(0, 120) || 'Documento'
+}

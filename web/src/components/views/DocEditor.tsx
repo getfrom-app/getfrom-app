@@ -14,7 +14,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import { store, useStore } from '../../store/nodeStore'
-import { updateLinkedCanvasText } from '../../utils/pizarraBody'
+import { firstLineTitle } from '../../utils/docNode'
 import type { Node } from '../../types'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
@@ -22,12 +22,6 @@ const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5'
 const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const safeName = (s: string) => (s || 'documento').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() || 'documento'
-
-// HTML del texto del lienzo enlazado = título (1er bloque) + cuerpo del documento.
-// htmlToBlocks (PizarraView) toma el 1er bloque como título al re-promover, así que
-// el título va en un <div> propio delante del cuerpo.
-const canvasMd = (title: string | undefined, bodyHtml: string) =>
-  `<div>${escapeHtml(title || 'Documento')}</div>${bodyHtml || ''}`
 
 // HTML (TipTap) → Markdown ligero. Cubre títulos, negrita/cursiva/tachado/código,
 // enlaces, listas (orden/desorden), citas y párrafos.
@@ -86,11 +80,9 @@ export default function DocEditor({ node }: { node: Node }) {
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()
-      saveTimer.current = window.setTimeout(() => {
-        store.updateNode(node.id, { body: html })
-        // Reflejar el contenido en el texto del lienzo enlazado (si existe).
-        updateLinkedCanvasText(node.parentId, node.id, canvasMd(node.text, html))
-      }, 600)
+      // Fuente única: el body. El título (node.text) se deriva de la 1ª línea, así
+      // el lienzo (que pinta el mismo body) y el documento son EL MISMO contenido.
+      saveTimer.current = window.setTimeout(() => store.updateNode(node.id, { body: html, text: firstLineTitle(html) }), 600)
     },
   }, [node.id])
 
@@ -99,8 +91,7 @@ export default function DocEditor({ node }: { node: Node }) {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (editor) {
       const html = editor.getHTML()
-      store.updateNode(node.id, { body: html })
-      updateLinkedCanvasText(node.parentId, node.id, canvasMd(node.text, html))
+      store.updateNode(node.id, { body: html, text: firstLineTitle(html) })
     }
   }, [editor, node.id])
 
@@ -134,13 +125,14 @@ export default function DocEditor({ node }: { node: Node }) {
     }
   }
 
-  // ── Contenido del documento para copiar / exportar (título + cuerpo HTML) ──
-  const title = node.text || 'Documento'
+  // ── Contenido del documento para copiar / exportar. Fuente única = el body
+  //    (incluye el título como 1ª línea). El nombre/título se deriva de él. ──
   const bodyHtml = () => editor.getHTML()
-  const richHtml = () => `<h1>${escapeHtml(title)}</h1>\n${bodyHtml()}`
-  const markdown = () => `# ${title}\n\n${htmlToMarkdown(bodyHtml())}`.trim()
+  const title = () => firstLineTitle(bodyHtml())
+  const richHtml = () => bodyHtml()
+  const markdown = () => htmlToMarkdown(bodyHtml()).trim()
   const standaloneHtml = () => `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(title)}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(title())}</title>
 <style>
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.65;color:#1a1a1a;max-width:720px;margin:40px auto;padding:0 24px;}
   h1{font-size:2rem;margin:0 0 1rem;color:#111;} h2{font-size:1.5rem;margin:1.4em 0 .5em;} h3{font-size:1.2rem;margin:1.2em 0 .4em;}
@@ -148,7 +140,7 @@ export default function DocEditor({ node }: { node: Node }) {
   a{color:#1971c2;} code{background:#f3f3f3;padding:.1em .35em;border-radius:4px;font-size:.9em;}
   footer{margin-top:48px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:.8rem;color:#aaa;}
 </style></head>
-<body><h1>${escapeHtml(title)}</h1>${bodyHtml()}<footer>Generado con Fromly</footer></body></html>`
+<body>${bodyHtml()}<footer>Generado con Fromly</footer></body></html>`
 
   const copyMarkdown = () => navigator.clipboard.writeText(markdown()).then(() => toast('Markdown copiado')).catch(() => {})
   const copyRich = () => {
@@ -163,7 +155,7 @@ export default function DocEditor({ node }: { node: Node }) {
     const blob = new Blob([content], { type: mime })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = `${safeName(title)}.${ext}`; a.click()
+    a.href = url; a.download = `${safeName(title())}.${ext}`; a.click()
     URL.revokeObjectURL(url)
   }
   const exportMarkdown = () => { download(markdown(), 'text/markdown', 'md'); toast('Exportado a Markdown') }
@@ -235,17 +227,8 @@ export default function DocEditor({ node }: { node: Node }) {
         </Act>
       </div>
 
-      {/* Título del documento = node.text */}
-      <input
-        className="doc-title"
-        defaultValue={node.text}
-        placeholder="Título del documento"
-        onChange={e => {
-          store.updateNode(node.id, { text: e.target.value })
-          updateLinkedCanvasText(node.parentId, node.id, canvasMd(e.target.value, editor.getHTML()))
-        }}
-        style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: 30, fontWeight: 700, color: 'var(--text,#111)', marginBottom: 8 }}
-      />
+      {/* Sin título aparte: la 1ª línea del cuerpo ES el título (como en el lienzo).
+          Da formato de título a la primera línea con H1 desde la barra. */}
 
       {/* Barra flotante de formato (sobre la selección) */}
       <BubbleMenu editor={editor} tippyOptions={{ duration: 120 }}>
