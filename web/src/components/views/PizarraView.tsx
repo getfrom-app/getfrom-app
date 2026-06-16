@@ -679,6 +679,30 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [editText, multiSel, selStrokes, deleteSelection])
 
+  // Atajos de herramienta (una letra, estilo Figma/Excalidraw). No se disparan con
+  // modificadores, editando texto, ni con el foco en un campo. Pulsar la misma letra
+  // vuelve a Seleccionar (toggle), igual que clicar su botón.
+  const TOOL_KEYS: Record<string, CanvasTool> = {
+    v: 'select', b: 'pen', m: 'marker', h: 'highlighter', e: 'eraser',
+    t: 'text', a: 'arrow', l: 'line', r: 'rect', o: 'ellipse',
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (editTextRef.current) return
+      const ae = document.activeElement as HTMLElement | null
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return
+      const t = TOOL_KEYS[e.key.toLowerCase()]
+      if (!t) return
+      e.preventDefault()
+      setArrowAnchor(null)
+      setTool(cur => (t !== 'select' && cur === t) ? 'select' : t)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Agrupar: los elementos seleccionados pasan a moverse como una unidad. Los
   // nodos del flujo se fijan (pin) en su sitio actual y reciben `_groupId`; los
   // trazos reciben `g`. Arrastrar cualquier miembro mueve a todo el grupo.
@@ -1361,6 +1385,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return out
   }, [children, layout, dragPos, cam, viewport])
 
+  // Lienzo vacío: sin elementos colocados, sin flujo, sin trazos ni conectores.
+  // Muestra una pista que invita a empezar (no bloquea: pointerEvents none).
+  const isCanvasEmpty = layout.size === 0 && flowNodes.length === 0 && (() => {
+    const d = parsePizarra(store.getNode(parentId)?.body)
+    return (d.strokes?.length ?? 0) === 0 && (d.connectors?.length ?? 0) === 0
+  })()
+
 
   return (
     <div
@@ -1432,6 +1463,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-text ul,.pizarra-text ol{margin:.2em 0;padding-left:1.4em}
 .pizarra-text:focus{outline:none}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
+
+      {/* Estado vacío: pista que invita a empezar. No bloquea (pointerEvents none). */}
+      {isCanvasEmpty && !editText && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', userSelect: 'none', zIndex: 0 }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-secondary,#888)', marginBottom: 8 }}>Tu día, en blanco</div>
+          <div style={{ fontSize: 14, color: 'var(--text-tertiary,#aaa)', lineHeight: 1.7, textAlign: 'center' }}>
+            Escribe (<b>T</b>), dibuja (<b>B</b>) o suelta una imagen, un PDF o un enlace.<br />
+            Rueda para alejar y ver el mes y el año. Doble clic crea un nodo.
+          </div>
+        </div>
+      )}
 
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
              (hover, clic-seleccionar, arrastrar para mover). ── */}
@@ -1918,19 +1960,19 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </button>
         <div style={vSep} />
         {/* Seleccionar / mover */}
-        <button style={tool === 'select' ? toolBtnActive : toolBtn} title="Seleccionar / mover" onClick={() => setTool('select')}>
+        <button style={tool === 'select' ? toolBtnActive : toolBtn} title="Seleccionar / mover (V)" onClick={() => setTool('select')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
         </button>
         {/* Lápiz — dibujar */}
-        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — fino" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
+        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — fino (B)" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
         {/* Rotulador — grueso */}
-        <button style={tool === 'marker' ? toolBtnActive : toolBtn} title="Rotulador — grueso" onClick={() => setTool(t => t === 'marker' ? 'select' : 'marker')}>
+        <button style={tool === 'marker' ? toolBtnActive : toolBtn} title="Rotulador — grueso (M)" onClick={() => setTool(t => t === 'marker' ? 'select' : 'marker')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
         {/* Subrayador — translúcido */}
-        <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title="Subrayador" onClick={() => setTool(t => t === 'highlighter' ? 'select' : 'highlighter')}>
+        <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title="Subrayador (H)" onClick={() => setTool(t => t === 'highlighter' ? 'select' : 'highlighter')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
         </button>
         {/* Color de tinta */}
@@ -1962,10 +2004,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           )}
         </div>
         {/* Borrador */}
-        <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
+        <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador (E)" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
+        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo (T)" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
         {/* Tarea — con fecha por lenguaje natural */}
@@ -1985,16 +2027,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </button>
         <div style={vSep} />
         {/* Formas */}
-        <button style={tool === 'line' ? toolBtnActive : toolBtn} title="Línea" onClick={() => setTool(t => t === 'line' ? 'select' : 'line')}>
+        <button style={tool === 'line' ? toolBtnActive : toolBtn} title="Línea (L)" onClick={() => setTool(t => t === 'line' ? 'select' : 'line')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 16L16 4"/></svg>
         </button>
-        <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title="Flecha" onClick={() => setTool(t => t === 'arrow' ? 'select' : 'arrow')}>
+        <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title="Flecha (A)" onClick={() => setTool(t => t === 'arrow' ? 'select' : 'arrow')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16L16 4M9 4h7v7"/></svg>
         </button>
-        <button style={tool === 'rect' ? toolBtnActive : toolBtn} title="Rectángulo" onClick={() => setTool(t => t === 'rect' ? 'select' : 'rect')}>
+        <button style={tool === 'rect' ? toolBtnActive : toolBtn} title="Rectángulo (R)" onClick={() => setTool(t => t === 'rect' ? 'select' : 'rect')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3.5" y="5" width="13" height="10" rx="1"/></svg>
         </button>
-        <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title="Elipse" onClick={() => setTool(t => t === 'ellipse' ? 'select' : 'ellipse')}>
+        <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title="Elipse (O)" onClick={() => setTool(t => t === 'ellipse' ? 'select' : 'ellipse')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="10" rx="7" ry="5.5"/></svg>
         </button>
         <div style={vSep} />
