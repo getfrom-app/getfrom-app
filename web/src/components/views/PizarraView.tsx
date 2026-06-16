@@ -142,6 +142,9 @@ function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: numb
 // ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
 // Los trazos viven en el body del nodo-pizarra. `pts` = polilínea en MUNDO
 // [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
+type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text' | 'line' | 'rect' | 'ellipse' | 'arrow'
+const isShapeTool = (t: CanvasTool) => t === 'line' || t === 'rect' || t === 'ellipse' || t === 'arrow'
+const isInkTool = (t: CanvasTool) => t === 'pen' || t === 'marker' || t === 'highlighter'
 const FENCE = '```from-pizarra'
 interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
 // Texto LIBRE del lienzo (compatible iPad): x,y mundo; size=fuente; w=ancho; md=texto.
@@ -281,7 +284,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
-  const [tool, setTool] = useState<'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text'>('select')
+  const [tool, setTool] = useState<CanvasTool>('select')
   // Color de tinta (pluma/rotulador/subrayador) + paleta abierta.
   const [penColor, setPenColor] = useState<string>('#222222')
   const penColorRef = useRef(penColor); penColorRef.current = penColor
@@ -444,13 +447,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     if (worldPts.length < 4) return
     const node = store.getNode(parentId); if (!node) return
     const data = parsePizarra(node.body)
-    // Grosor en pantalla según la herramienta (pluma/rotulador/subrayador), → mundo.
+    // Grosor en pantalla según la herramienta, → mundo. Formas: kind + 2 puntos.
     const t = toolRef.current
+    const shape = isShapeTool(t)
     const screenW = t === 'highlighter' ? 18 : t === 'marker' ? 6 : 2.5
     const alpha = t === 'highlighter' ? 0.32 : 1
     const wWorld = screenW / Math.max(0.0001, camRef.current.scale)
+    const pts = shape ? [worldPts[0], worldPts[1], worldPts[worldPts.length - 2], worldPts[worldPts.length - 1]] : worldPts
     data.strokes = [...data.strokes, {
-      id: rid(), pts: worldPts.map(n => Math.round(n * 100) / 100), w: wWorld, c: penColorRef.current, a: alpha, k: 'free',
+      id: rid(), pts: pts.map(n => Math.round(n * 100) / 100), w: wWorld, c: penColorRef.current, a: alpha, k: shape ? t : 'free',
     }]
     store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
   }, [parentId])
@@ -776,7 +781,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const rect = el.getBoundingClientRect()
     const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     // Lápiz: iniciar trazo. Borrador: borrar al pasar.
-    if (toolRef.current === 'pen' || toolRef.current === 'marker' || toolRef.current === 'highlighter') {
+    if (isInkTool(toolRef.current) || isShapeTool(toolRef.current)) {
       el.setPointerCapture(e.pointerId)
       drawRef.current = [w.x, w.y]
       setDrawPts([w.x, w.y])
@@ -886,7 +891,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       const rect = containerRef.current!.getBoundingClientRect()
       const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
       if (toolRef.current === 'eraser') { eraseAt(w.x, w.y); return }
-      drawRef.current.push(w.x, w.y)
+      // Formas: solo 2 puntos (inicio fijo, fin sigue al cursor).
+      if (isShapeTool(toolRef.current)) {
+        drawRef.current = [drawRef.current[0], drawRef.current[1], w.x, w.y]
+      } else {
+        drawRef.current.push(w.x, w.y)
+      }
       setDrawPts([...drawRef.current])
       return
     }
@@ -976,7 +986,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       const pts = drawRef.current
       drawRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
-      if (toolRef.current === 'pen' || toolRef.current === 'marker' || toolRef.current === 'highlighter') commitStroke(pts)
+      if (isInkTool(toolRef.current) || isShapeTool(toolRef.current)) commitStroke(pts)
       setDrawPts(null)
       return
     }
@@ -1199,11 +1209,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             if (xf.kind === 'move') pts = s.pts.map((v, i) => i % 2 === 0 ? v + xf.dx : v + xf.dy)
             else { pts = s.pts.map((v, i) => i % 2 === 0 ? xf.ax + (v - xf.ax) * xf.s : xf.ay + (v - xf.ay) * xf.s); widthMul = xf.s }
           }
-          let d = ''
-          for (let i = 0; i + 1 < pts.length; i += 2) {
-            d += (i === 0 ? 'M' : 'L') + (cam.x + pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + pts[i + 1] * cam.scale).toFixed(1) + ' '
-          }
           const sw = Math.max(0.4, s.w * widthMul * cam.scale)
+          let d = ''
+          if (s.k && s.k !== 'free' && pts.length >= 4) {
+            // Forma: definida por 2 puntos (inicio, fin).
+            const x0 = cam.x + pts[0] * cam.scale, y0 = cam.y + pts[1] * cam.scale
+            const x1 = cam.x + pts[2] * cam.scale, y1 = cam.y + pts[3] * cam.scale
+            if (s.k === 'line') d = `M${x0} ${y0}L${x1} ${y1}`
+            else if (s.k === 'rect') d = `M${x0} ${y0}H${x1}V${y1}H${x0}Z`
+            else if (s.k === 'ellipse') { const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2; d = `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0` }
+            else if (s.k === 'arrow') { const ang = Math.atan2(y1 - y0, x1 - x0); const head = Math.max(9, sw * 3); const a1 = ang + Math.PI * 0.82, a2 = ang - Math.PI * 0.82; d = `M${x0} ${y0}L${x1} ${y1}M${x1} ${y1}L${x1 + Math.cos(a1) * head} ${y1 + Math.sin(a1) * head}M${x1} ${y1}L${x1 + Math.cos(a2) * head} ${y1 + Math.sin(a2) * head}` }
+          } else {
+            for (let i = 0; i + 1 < pts.length; i += 2) {
+              d += (i === 0 ? 'M' : 'L') + (cam.x + pts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + pts[i + 1] * cam.scale).toFixed(1) + ' '
+            }
+          }
           return (
             <g key={s.id}>
               {(selected || (hovered && tool === 'select')) && <path d={d} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={sw + 6} strokeOpacity={selected ? 0.25 : 0.18} strokeLinecap="round" strokeLinejoin="round" />}
@@ -1221,12 +1241,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             </g>
           )
         })}
-        {drawPts && drawPts.length >= 4 && (
-          <path
-            d={drawPts.reduce((acc, _v, i) => i % 2 === 0 ? acc + (i === 0 ? 'M' : 'L') + (cam.x + drawPts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + drawPts[i + 1] * cam.scale).toFixed(1) + ' ' : acc, '')}
-            fill="none" stroke={penColor} strokeWidth={tool === 'highlighter' ? 18 : tool === 'marker' ? 6 : 2.5} strokeOpacity={tool === 'highlighter' ? 0.32 : 1} strokeLinecap="round" strokeLinejoin="round"
-          />
-        )}
+        {drawPts && drawPts.length >= 4 && (() => {
+          let d = ''
+          if (isShapeTool(tool)) {
+            const x0 = cam.x + drawPts[0] * cam.scale, y0 = cam.y + drawPts[1] * cam.scale
+            const x1 = cam.x + drawPts[drawPts.length - 2] * cam.scale, y1 = cam.y + drawPts[drawPts.length - 1] * cam.scale
+            if (tool === 'line') d = `M${x0} ${y0}L${x1} ${y1}`
+            else if (tool === 'rect') d = `M${x0} ${y0}H${x1}V${y1}H${x0}Z`
+            else if (tool === 'ellipse') { const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2; d = `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0` }
+            else if (tool === 'arrow') { const ang = Math.atan2(y1 - y0, x1 - x0); const head = 12; const a1 = ang + Math.PI * 0.82, a2 = ang - Math.PI * 0.82; d = `M${x0} ${y0}L${x1} ${y1}M${x1} ${y1}L${x1 + Math.cos(a1) * head} ${y1 + Math.sin(a1) * head}M${x1} ${y1}L${x1 + Math.cos(a2) * head} ${y1 + Math.sin(a2) * head}` }
+          } else {
+            d = drawPts.reduce((acc, _v, i) => i % 2 === 0 ? acc + (i === 0 ? 'M' : 'L') + (cam.x + drawPts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + drawPts[i + 1] * cam.scale).toFixed(1) + ' ' : acc, '')
+          }
+          return <path d={d} fill="none" stroke={penColor} strokeWidth={tool === 'highlighter' ? 18 : tool === 'marker' ? 6 : 2.5} strokeOpacity={tool === 'highlighter' ? 0.32 : 1} strokeLinecap="round" strokeLinejoin="round" />
+        })()}
       </svg>
 
       {/* Guías de alineación (snap) */}
@@ -1593,6 +1621,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </button>
         <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
+        </button>
+        <div style={vSep} />
+        {/* Formas */}
+        <button style={tool === 'line' ? toolBtnActive : toolBtn} title="Línea" onClick={() => setTool(t => t === 'line' ? 'select' : 'line')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 16L16 4"/></svg>
+        </button>
+        <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title="Flecha" onClick={() => setTool(t => t === 'arrow' ? 'select' : 'arrow')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16L16 4M9 4h7v7"/></svg>
+        </button>
+        <button style={tool === 'rect' ? toolBtnActive : toolBtn} title="Rectángulo" onClick={() => setTool(t => t === 'rect' ? 'select' : 'rect')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3.5" y="5" width="13" height="10" rx="1"/></svg>
+        </button>
+        <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title="Elipse" onClick={() => setTool(t => t === 'ellipse' ? 'select' : 'ellipse')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="10" rx="7" ry="5.5"/></svg>
         </button>
         <div style={vSep} />
         <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title="Deshacer"
