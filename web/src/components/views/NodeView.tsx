@@ -2137,8 +2137,10 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* Documento (texto rico) → editor dedicado; nodo normal → outliner/vistas. */}
-              {isDoc ? (<DocEditor node={node} />) : (() => {
+              {/* Nodo normal → dot/bucle + título en la cabecera. El documento (isDoc)
+                  no pinta nada aquí: su editor (DocEditor) va en .view-body, porque
+                  esta fila (.node-title-row) está oculta con display:none para docs. */}
+              {isDoc ? null : (() => {
                 const isBucle = (node.types || []).includes('bucle')
                 const closed = isBucle && node.status === 'done'
                 const open = isBucle && !closed
@@ -2235,8 +2237,12 @@ export default function NodeView() {
         </div>
 
         <div className="view-body">
+          {/* ── Documento (texto rico, TipTap) — ocupa toda la view-body y reemplaza
+                el resto de vistas. La fila de título va oculta (DocEditor trae la suya). ── */}
+          {isDoc && <DocEditor node={node} />}
+
           {/* ── Pizarra digital ── */}
-          {(() => {
+          {!isDoc && (() => {
             try {
               const ed = JSON.parse(node.extraData || '{}')
               if (ed._isWhiteboard === '1') return <WhiteboardContainer nodeId={node.id} />
