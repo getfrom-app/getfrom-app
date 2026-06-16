@@ -125,7 +125,6 @@ export default function NodeView() {
     const n = store.getNode(effectiveId)
     return n?.body || ''
   })
-  const [_showProperties, _setShowProperties] = useState(false) // unused — panel siempre visible
   const [focusMode, setFocusMode] = useState(false)
   const [titleContextMenu, setTitleContextMenu] = useState<{ x: number; y: number } | null>(null)
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)

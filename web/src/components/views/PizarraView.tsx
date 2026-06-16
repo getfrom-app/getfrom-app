@@ -157,29 +157,6 @@ interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolea
 // Texto LIBRE del lienzo (compatible iPad): x,y mundo; size=fuente; w=ancho; md=texto.
 interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string; nodeId?: string }
 
-// Parte el HTML del texto en bloques: 1ª = título, resto = párrafos (con tipo).
-function htmlToBlocks(html: string): { text: string; block?: string }[] {
-  const div = document.createElement('div'); div.innerHTML = html || ''
-  const blocks: { text: string; block?: string }[] = []
-  let cur = ''
-  const flush = () => { if (cur.trim()) blocks.push({ text: cur.trim() }); cur = '' }
-  for (const node of Array.from(div.childNodes)) {
-    if (node.nodeType === 3) { cur += node.textContent || ''; continue }
-    const el = node as HTMLElement
-    const tag = el.tagName
-    if (tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'P' || tag === 'DIV') {
-      flush()
-      const block = tag === 'H1' ? 'h1' : tag === 'H2' ? 'h2' : tag === 'H3' ? 'h3' : undefined
-      const txt = (el.textContent || '').trim()
-      if (txt) blocks.push({ text: txt, block })
-    } else if (tag === 'UL' || tag === 'OL') {
-      flush()
-      el.querySelectorAll('li').forEach(li => { const t = (li.textContent || '').trim(); if (t) blocks.push({ text: t, block: 'bullet' }) })
-    } else if (tag === 'BR') { flush() } else { cur += el.textContent || '' }
-  }
-  flush()
-  return blocks
-}
 // Conector: flecha que une DOS elementos (nodos). a/b = ids de nodo; c = punto de
 // control (mundo) para curvar. Se redibuja según la posición actual de cada nodo.
 interface WBConnector { id: string; a: string; b: string; c?: [number, number] }
@@ -337,16 +314,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [hoverConn, setHoverConn] = useState<string | null>(null)
   // Arrastre del tirador de curvatura (preview en vivo del punto de control, mundo).
   const [connDrag, setConnDrag] = useState<{ id: string; cx: number; cy: number } | null>(null)
-  // Texto del lienzo en edición (id del WBText) y hover.
+  // Texto del lienzo en edición (id del nodo-documento).
   const [editText, setEditText] = useState<string | null>(null)
-  const [hoverText, setHoverText] = useState<string | null>(null)
-  // Retardo al quitar el hover del texto → el dot (fuera de la caja) sigue alcanzable.
-  const hoverTextTimer = useRef<number | null>(null)
-  const setHoverTextNow = useCallback((id: string | null) => {
-    if (hoverTextTimer.current) { clearTimeout(hoverTextTimer.current); hoverTextTimer.current = null }
-    if (id === null) hoverTextTimer.current = window.setTimeout(() => setHoverText(null), 280)
-    else setHoverText(id)
-  }, [])
   const toolRef = useRef(tool); toolRef.current = tool
   // Trazo en curso (puntos en MUNDO) mientras se dibuja.
   const [drawPts, setDrawPts] = useState<number[] | null>(null)
