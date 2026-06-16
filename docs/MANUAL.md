@@ -286,14 +286,26 @@ La Pizarra es un lienzo infinito de dibujo, escritura y organización dentro de 
 
 - **Lápiz, rotulador y subrayador** — con paleta de colores y 6 grosores. El subrayador es semitransparente.
 - **Formas** — línea, flecha, rectángulo y elipse, dibujadas arrastrando de un punto a otro.
-- **Texto** — escribe libremente encima del lienzo (sin caja). Al seleccionar el texto aparece una barra flotante para darle formato (negrita, cursiva, subrayado, encabezados, listas, colores).
+- **Texto** — escribe libremente encima del lienzo, sin caja ni marco. La barra de formato (negrita, encabezados, listas, colores…) aparece justo encima del texto al escribir.
 - **Tarea** — escribe en lenguaje natural («Llamar a Marina mañana», «Repasar cada lunes») y se crea una tarea con su fecha y recurrencia; aparece en la columna del día.
+- **Tabla, Kanban, Calendario** — añade uno de estos elementos al lienzo (ver abajo).
+- **Flecha** — conecta dos elementos (ver «Conectar elementos»).
 - **Borrador** — borra trazos y formas.
-- **Seleccionar** — arrastra un marco (⌘/Ctrl + arrastrar) para seleccionar varios elementos y **duplicarlos, eliminarlos o agruparlos** para moverlos juntos.
+- **Seleccionar** — clic en un elemento para seleccionarlo, o arrastra un marco (⌘/Ctrl + arrastrar) para varios. Con la selección hecha: clic derecho para **duplicar / eliminar / agrupar**, o pulsa **Retroceso** para borrar. Con cualquier herramienta activa, el **clic derecho** vuelve a «seleccionar».
 
-**De texto a documento.** Al pasar el ratón sobre un texto del lienzo aparece un punto: púlsalo y ese texto se convierte en un **documento** — una página de texto rico (título, párrafos, enlaces a otras notas de Fromly o a webs externas) que vive como una nota más. El texto se queda en el lienzo como portada enlazada al documento.
+**Elementos del lienzo (la misma pieza dentro y fuera).** Texto, tablas, kanban y calendarios son **elementos** del lienzo. Cada uno:
+- Se mueve, se redimensiona (tirador de ancho a la derecha, escala en la esquina) y se borra como cualquier pieza.
+- Se **abre en su propia página** con un clic en su **punto** (a la izquierda del texto, o en la cabecera de tabla/kanban/calendario). Es exactamente la misma pieza: lo que cambies dentro del lienzo o a pantalla completa es lo mismo.
 
-**Nodos en el lienzo.** Puedes arrastrar cualquier nodo (tarea, nota, captura) al lienzo. Se muestra como una tarjeta que arrastras desde cualquier zona libre y a la que puedes ajustar el ancho y la escala con sus tiradores. Clic derecho abre el menú (duplicar, eliminar, convertir en bucle, marcar como favorito).
+**Tablas.** Crea una tabla vacía y empieza a escribir en las celdas. Muévete como en una hoja de cálculo: **Enter** baja, **Tab** va a la derecha, **Mayús+Tab** a la izquierda. Arrastra el **borde de una columna** para ajustar su ancho. Con el botón **+** de la cabecera añades propiedades (estado, fecha, prioridad, select, checkbox, tags…).
+
+**Calendario.** Cambia entre **Mes**, **Semana** y **Timeline** (línea de tiempo de todo lo que tiene fecha) con el selector de arriba a la derecha.
+
+**Conectar elementos.** Con la herramienta **Flecha**: haz **clic en un elemento** (ancla el inicio) y **clic en otro** (lo conecta). La flecha **sigue a los elementos** cuando los mueves. Pasa el ratón por encima de la flecha y arrastra su **punto central** para curvarla; clic derecho sobre ella la elimina.
+
+**Nodos y notas en el lienzo.** Arrastra cualquier nodo (tarea, nota, captura) al lienzo: se muestra como una tarjeta. Clic derecho abre el menú (duplicar, eliminar, convertir en bucle, favorito).
+
+**Guardar una vista (Áreas).** El botón de **marcador** de la barra guarda la posición y el zoom actuales como un acceso directo: aparece en el panel del día bajo **Áreas**; al pulsarlo, la cámara vuela a esa zona del lienzo.
 
 Todo se guarda automáticamente.
 

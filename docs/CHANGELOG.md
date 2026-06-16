@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.372 — 16 junio 2026 · La Pizarra, hecha de piezas reales
+
+- **Cada elemento del lienzo es una pieza de verdad.** Texto, tabla, kanban y calendario ya no son "vistas": son **elementos** que pones en el lienzo y que puedes **abrir en su propia página** con un clic en su punto. Lo que ves dentro del lienzo es exactamente lo mismo que ves al abrirlo a pantalla completa — es la misma pieza, sin copias.
+- **Escribir es escribir.** El texto flota limpio sobre el lienzo, sin cajas ni marcos. Su barra de formato aparece justo encima cuando escribes, y es la misma tanto en el lienzo como a pantalla completa. El título es siempre la primera línea.
+- **Tablas que se usan como tablas.** Crea una tabla vacía, escribe en las celdas y muévete con **Enter** (baja), **Tab** (derecha) y **Mayús+Tab** (izquierda), como en una hoja de cálculo. **Ajusta el ancho de cada columna** arrastrando su borde. Sus propiedades (estado, fecha, prioridad, select…) siguen ahí cuando las necesitas.
+- **Calendario con tres vistas.** Cambia entre **Mes**, **Semana** y **Timeline** (una línea de tiempo de todo lo que tiene fecha).
+- **Conecta ideas con flechas.** Con la herramienta de flecha, **clic en un elemento y clic en otro** y quedan unidos; la flecha **sigue a los elementos** cuando los mueves, y puedes **curvarla** arrastrando su punto central.
+- **Más a mano:** clic derecho con una herramienta activa vuelve a "seleccionar"; **Retroceso** borra lo seleccionado; y un botón **Guardar vista** deja un acceso directo a esa zona del lienzo en el panel del día (bloque **Áreas**).
+
+---
+
 ## Web v9.6.352 — 16 junio 2026 · La Pizarra se convierte en tu lienzo de trabajo (y nacen los Documentos)
 
 - **Escribe, dibuja y ordena, todo en el mismo lienzo.** La Pizarra ahora tiene un set de herramientas completo: **lápiz, rotulador y subrayador** (con paleta de colores y 6 grosores), **formas** (línea, flecha, rectángulo, elipse) y **texto libre** que escribes directamente encima del lienzo, sin cajas, con su barra de formato flotante (negrita, encabezados, listas, colores).
