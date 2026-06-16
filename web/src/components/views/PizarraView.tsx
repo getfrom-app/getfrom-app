@@ -405,6 +405,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
   const children = store.children(parentId)
 
+  // Cuerpo de la pizarra (trazos + conectores) parseado UNA vez por cambio de body,
+  // no en cada render. Pan/zoom no tocan el body (salvo el guardado de cámara cada
+  // ~700ms), así que evita el JSON.parse por frame en el render de trazos/conectores.
+  const parentBody = store.getNode(parentId)?.body
+  const wbData = useMemo(() => parsePizarra(parentBody), [parentBody])
+
   // Modelo: los nodos COLOCADOS (con _pinX/_pinY) flotan libres en el lienzo; los
   // demás fluyen como en la LISTA (columna ancho-completo, apilados naturalmente,
   // sin solaparse). Al arrastrar uno del flujo, gana posición y pasa a flotar; al
@@ -1397,10 +1403,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 
   // Lienzo vacío: sin elementos colocados, sin flujo, sin trazos ni conectores.
   // Muestra una pista que invita a empezar (no bloquea: pointerEvents none).
-  const isCanvasEmpty = layout.size === 0 && flowNodes.length === 0 && (() => {
-    const d = parsePizarra(store.getNode(parentId)?.body)
-    return (d.strokes?.length ?? 0) === 0 && (d.connectors?.length ?? 0) === 0
-  })()
+  const isCanvasEmpty = layout.size === 0 && flowNodes.length === 0 &&
+    (wbData.strokes?.length ?? 0) === 0 && (wbData.connectors?.length ?? 0) === 0
 
 
   return (
@@ -1472,11 +1476,14 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-text h2{font-size:1.35em;font-weight:700;margin:.15em 0;line-height:1.3}
 .pizarra-text ul,.pizarra-text ol{margin:.2em 0;padding-left:1.4em}
 .pizarra-text:focus{outline:none}
-@keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}`}</style>
+/* Transiciones suaves: el contorno de hover/selección no aparece de golpe. */
+.pizarra-node{transition:box-shadow .14s ease}
+@keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
+@keyframes pizarra-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Estado vacío: pista que invita a empezar. No bloquea (pointerEvents none). */}
       {isCanvasEmpty && !editText && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', userSelect: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', userSelect: 'none', zIndex: 0, animation: 'pizarra-fade 0.45s ease' }}>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-secondary,#888)', marginBottom: 8 }}>Tu día, en blanco</div>
           <div style={{ fontSize: 14, color: 'var(--text-tertiary,#aaa)', lineHeight: 1.7, textAlign: 'center' }}>
             Escribe (<b>T</b>), dibuja (<b>B</b>) o suelta una imagen, un PDF o un enlace.<br />
@@ -1488,7 +1495,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
              (hover, clic-seleccionar, arrastrar para mover). ── */}
       <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 15, pointerEvents: 'none' }}>
-        {parsePizarra(store.getNode(parentId)?.body).strokes.map(s => {
+        {wbData.strokes.map(s => {
           const selected = selStrokes.has(s.id)
           const hovered = hoverStroke === s.id
           // pts mostrados: arrastre de grupo, o transformación (mover/escalar) si el trazo
@@ -1555,7 +1562,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             const g = (s * len + gap) / len
             return { x: R.cx + dx * g, y: R.cy + dy * g }
           }
-          const conns = parsePizarra(store.getNode(parentId)?.body).connectors || []
+          const conns = wbData.connectors || []
           return conns.map(conn => {
             const RA = rectInfo(conn.a), RB = rectInfo(conn.b)
             if (!RA || !RB) return null
