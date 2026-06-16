@@ -23,7 +23,16 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const [postponeMenuId, setPostponeMenuId] = useState<string | null>(null)
   // Colapsado por bloque (cabecera clicable). Persistente.
   const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('from_dc_groups_collapsed') || '[]')) } catch { return new Set() }
+    let set: Set<string>
+    try { set = new Set(JSON.parse(localStorage.getItem('from_dc_groups_collapsed') || '[]')) } catch { set = new Set() }
+    // SEGUIMIENTO colapsado por defecto (una sola vez): suele tener muchas tareas
+    // sin fecha. Después se respeta la preferencia del usuario al desplegar/plegar.
+    if (localStorage.getItem('from_dc_seg_collapsed_init') !== '1') {
+      set.add('seguimiento')
+      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
+      localStorage.setItem('from_dc_seg_collapsed_init', '1')
+    }
+    return set
   })
   function toggleG(k: string) {
     setCollapsedG(prev => {
@@ -247,7 +256,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       )}
       {data.seguimiento.length > 0 && (
         <div className="dc-group">
-          {gHeader('seguimiento', t('daily.followup'), 'dc-group-label--followup')}
+          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length}`, 'dc-group-label--followup')}
           {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
