@@ -23,7 +23,7 @@ import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
-import { isCanvasText, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
+import { isCanvasText, isDocNode, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import TextToolbar from './TextToolbar'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
@@ -382,7 +382,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const parent = store.getNode(parentId)
     const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
-    return children.filter(n => !isHiddenPin(n) && !isCanvasText(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
+    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
@@ -828,6 +828,23 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, d2) })
   }, [parentId])
 
+  // Auto-coloca en el lienzo los DOCUMENTOS (elementos de texto) que aún no tienen
+  // posición → el lienzo muestra los MISMOS elementos que la lista. Se apilan en una
+  // columna; el usuario los recoloca. (No toca tareas/eventos: viven en la columna.)
+  useEffect(() => {
+    const unplaced = children.filter(n => isDocNode(n) && !isHiddenPin(n) && !readPin(n))
+    if (!unplaced.length) return
+    unplaced.forEach((n, i) => {
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+      ed[DOC] = '1'; if (ed[CTEXT] == null) ed[CTEXT] = '1'
+      ed[PIN_X] = String(FLOW_X); ed[PIN_Y] = String(FLOW_Y + i * 200)
+      if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
+      if (ed._pinW == null) ed._pinW = '360'
+      store.updateNode(n.id, { extraData: JSON.stringify(ed) })
+    })
+  }, [parentId, children])
+
   // ── Pointer down en el fondo → pan, o dibujar/borrar según la herramienta ────
   const onBackgroundPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
@@ -1083,7 +1100,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       } else if (node) {
         // Clic limpio (sin arrastrar): el texto entra a EDITAR; el resto, seleccionar.
         // El mini-menú (duplicar/eliminar) vive SOLO en el clic derecho.
-        if (isCanvasText(node)) {
+        if (isDocNode(node)) {
           setSelStrokes(new Set()); setMultiSel(new Set())
           setSelectedId(node.id); setEditText(node.id)
         } else {
@@ -1480,7 +1497,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
         const hovered = hoverNode === node.id && tool === 'select'
-        const isText = isCanvasText(node)
+        const isText = isDocNode(node)
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         return (
@@ -1503,7 +1520,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(node.id); else saveTextBody(node.id, html); setEditText(null) } : undefined}
                 onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
                 dangerouslySetInnerHTML={editing ? undefined : { __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
-                style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20 }}
+                style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20, userSelect: editing ? 'text' : 'none', WebkitUserSelect: editing ? 'text' : 'none' }}
               />
             ) : (
               <div className="pizarra-card-body" style={{ minWidth: 0 }}>
@@ -1519,23 +1536,27 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85 }} />
               </div>
             )}
-            {showHandles && (
+            {showHandles && (isText ? (
+              // Texto: un único punto pequeño a la DERECHA para ajustar el ancho. Minimalista.
+              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                style={{ position: 'absolute', right: -5, top: '50%', width: 8, height: 8, marginTop: -4, background: 'var(--text-tertiary,#bbb)', borderRadius: '50%', cursor: 'ew-resize', touchAction: 'none' }} />
+            ) : (
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: isText ? 'var(--text-tertiary,#999)' : 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
+                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
                 {/* Manija de ESCALA — esquina inferior derecha (escala uniforme desde arriba-izquierda). */}
                 <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: `2px solid ${isText ? 'var(--text-tertiary,#999)' : 'var(--accent,#6c5ce7)'}`, borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
-            )}
+            ))}
           </div>
         )
       })}
 
       {/* ── Barra de formato del texto en edición — la MISMA que en la vista
              independiente (TextToolbar), fija abajo (donde la barra del lienzo). ── */}
-      {editText && isCanvasText(store.getNode(editText)) && (
+      {editText && isDocNode(store.getNode(editText)) && (
         <div style={{ position: 'fixed', left: '50%', bottom: 18, transform: 'translateX(-50%)', zIndex: 1700 }}>
           <TextToolbar />
         </div>
@@ -1602,7 +1623,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       <div style={{
         position: 'fixed', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 60,
         // Al editar un texto se muestra su barra de formato (TextToolbar) en su lugar.
-        display: editText && isCanvasText(store.getNode(editText)) ? 'none' : 'flex',
+        display: editText && isDocNode(store.getNode(editText)) ? 'none' : 'flex',
         alignItems: 'center', gap: 2, padding: 5,
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
