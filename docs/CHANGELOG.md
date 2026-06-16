@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone.
 
 ---
 
+## Web v9.6.352 — 16 junio 2026 · La Pizarra se convierte en tu lienzo de trabajo (y nacen los Documentos)
+
+- **Escribe, dibuja y ordena, todo en el mismo lienzo.** La Pizarra ahora tiene un set de herramientas completo: **lápiz, rotulador y subrayador** (con paleta de colores y 6 grosores), **formas** (línea, flecha, rectángulo, elipse) y **texto libre** que escribes directamente encima del lienzo, sin cajas, con su barra de formato flotante (negrita, encabezados, listas, colores).
+- **Documentos de verdad.** Cuando escribes un texto en el lienzo, un pequeño punto al pasar el ratón lo convierte en un **documento**: una página de texto rico que editas como tal — título, párrafos, y **enlaces** a cualquier nota de Fromly o a webs externas. El texto se queda en tu lienzo como portada; el documento vive como una nota más.
+- **Tareas desde el lienzo.** Con la herramienta **Tarea**, escribe en lenguaje natural («Llamar a Marina mañana», «Reunión cada lunes») y se crea con su fecha y recurrencia, y aparece en la columna de su día.
+- **Nodos más limpios y manejables.** Arrastra una tarjeta desde cualquier zona libre, cámbiale el ancho o la escala con sus tiradores, y selecciona varios a la vez (⌘ + arrastrar) para **duplicar, eliminar o agrupar**. Clic derecho para el menú (incluye convertir en bucle o favorito).
+- **Tu día, mejor montado.** La columna del día se reordena (eventos · atrasadas · hoy · bucles · nodos), con bloques que se colapsan, una bandeja de **Capturas**, y ahora **cualquier día** muestra sus tareas (no solo hoy). Los eventos de Google traen su badge de hora y repetición, editable y sincronizado.
+
+---
+
 ## Web v9.6.289 · Mac v9.5.56 · iPhone — 10 junio 2026 · Compartir a Fromly: guarda y transcribe cualquier vídeo
 
 - **Comparte a Fromly desde cualquier app.** Ves un TikTok (o un Reel, un vídeo de YouTube, X…) y quieres quedarte con lo que dice, no con el vídeo. Pulsa **Compartir → Fromly** y listo: se guarda una **captura** en tu diario con el enlace, el autor y la **transcripción** completa del audio. En segundo plano y sin esperas: la nota aparece al instante y el texto se rellena solo en unos segundos.

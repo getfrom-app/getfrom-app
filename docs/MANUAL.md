@@ -275,14 +275,27 @@ Las anotaciones se guardan en Fromly y se **incrustan permanentemente** en el PD
 
 ### Pizarra
 
-Una pizarra es un canvas SVG de dibujo libre dentro de un nodo.
+La Pizarra es un lienzo infinito de dibujo, escritura y organización dentro de un nodo. Es el mismo lienzo que en el iPad: lo que pintas o escribes se sincroniza entre la web y la tablet.
 
 **Cómo crear una pizarra:**
 
 - Slash menu → `/Pizarra`.
 - Escribe `pizarra` o `whiteboard` en cualquier parte del texto de un nodo: aparece un ghost text de confirmación. Pulsa `Enter` para confirmar.
 
-La pizarra usa las mismas herramientas que el visor de PDF (lápiz, subrayado, texto, borrador). Las anotaciones se guardan automáticamente.
+**Herramientas (barra superior):**
+
+- **Lápiz, rotulador y subrayador** — con paleta de colores y 6 grosores. El subrayador es semitransparente.
+- **Formas** — línea, flecha, rectángulo y elipse, dibujadas arrastrando de un punto a otro.
+- **Texto** — escribe libremente encima del lienzo (sin caja). Al seleccionar el texto aparece una barra flotante para darle formato (negrita, cursiva, subrayado, encabezados, listas, colores).
+- **Tarea** — escribe en lenguaje natural («Llamar a Marina mañana», «Repasar cada lunes») y se crea una tarea con su fecha y recurrencia; aparece en la columna del día.
+- **Borrador** — borra trazos y formas.
+- **Seleccionar** — arrastra un marco (⌘/Ctrl + arrastrar) para seleccionar varios elementos y **duplicarlos, eliminarlos o agruparlos** para moverlos juntos.
+
+**De texto a documento.** Al pasar el ratón sobre un texto del lienzo aparece un punto: púlsalo y ese texto se convierte en un **documento** — una página de texto rico (título, párrafos, enlaces a otras notas de Fromly o a webs externas) que vive como una nota más. El texto se queda en el lienzo como portada enlazada al documento.
+
+**Nodos en el lienzo.** Puedes arrastrar cualquier nodo (tarea, nota, captura) al lienzo. Se muestra como una tarjeta que arrastras desde cualquier zona libre y a la que puedes ajustar el ancho y la escala con sus tiradores. Clic derecho abre el menú (duplicar, eliminar, convertir en bucle, marcar como favorito).
+
+Todo se guarda automáticamente.
 
 ### Agente IA
 
