@@ -268,7 +268,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const viewportRef = useRef(viewport); viewportRef.current = viewport
   const flyRef = useRef<number | null>(null)
   const divingRef = useRef(false) // anti-doble-disparo del buceo
-  const tryDiveRef = useRef<(s: number) => void>(() => {})
+  const tryDiveRef = useRef<(next: number, prev: number) => void>(() => {})
 
   // Zoom de los botones +/− ANCLADO al centro del viewport (no al origen del mundo,
   // que hacía que el contenido se fuera de pantalla al alejar).
@@ -435,12 +435,14 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
   // mes); si no → al nodo padre. Zoom-in fuerte sobre la tarjeta centrada → ENTRA.
-  tryDiveRef.current = (nextScale: number) => {
+  tryDiveRef.current = (nextScale: number, prevScale: number) => {
     if (divingRef.current) return
     const node = store.getNode(parentId)
     if (!node) return
-    // SUBIR
-    if (nextScale <= DIVE_OUT_SCALE) {
+    const zoomingOut = nextScale < prevScale
+    const zoomingIn = nextScale > prevScale
+    // SUBIR — solo al ALEJAR y cruzar el umbral (no por estar ya por debajo).
+    if (zoomingOut && nextScale <= DIVE_OUT_SCALE) {
       if (node.isDiaryEntry && node.diaryDate) {
         const agenda = findRootByKey('agenda')
         if (agenda) {
@@ -457,8 +459,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       }
       return
     }
-    // ENTRAR: tarjeta más cercana al centro que domine la pantalla.
-    if (nextScale >= DIVE_IN_SCALE) {
+    // ENTRAR — solo al ACERCAR y cruzar el umbral sobre una tarjeta dominante.
+    if (zoomingIn && nextScale >= DIVE_IN_SCALE) {
       const { w, h } = viewportRef.current
       const c = camRef.current
       let best: string | null = null, bestD = Infinity
@@ -828,7 +830,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       const rect = el.getBoundingClientRect()
       const sx = e.clientX - rect.left
       const sy = e.clientY - rect.top
-      let nextScale = camRef.current.scale
+      const prevScale = camRef.current.scale
+      let nextScale = prevScale
       setCam(prev => {
         const factor = Math.exp(-e.deltaY * 0.0015)
         const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * factor))
@@ -838,7 +841,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const wy = (sy - prev.y) / prev.scale
         return { x: sx - wx * next, y: sy - wy * next, scale: next }
       })
-      tryDiveRef.current(nextScale) // buceo si cruza umbral
+      // Solo bucea si el gesto va en el sentido del salto (salir al alejar, entrar
+      // al acercar). Si no, estar por debajo/encima del umbral no debe disparar nada.
+      tryDiveRef.current(nextScale, prevScale)
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
