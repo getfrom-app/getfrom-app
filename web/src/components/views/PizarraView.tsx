@@ -51,6 +51,9 @@ const PIN_HIDDEN = '_pinHidden'
 // Ancho del nodo en el lienzo — IGUAL al del flujo (FLOW_W) para que al arrastrar
 // un nodo NO se encoja (mismo ancho flotante que en la columna/lista).
 const CARD_W = 700
+// Por debajo de este zoom, las tarjetas se simplifican a una píldora con su título
+// (LOD): mejor legibilidad y rendimiento (no se montan tablas/outliner diminutos).
+const LOD_SCALE = 0.5
 const CARD_MIN_H = 44
 // Columna de FLUJO: dónde empieza la pila de nodos sin posición (coords de mundo).
 const FLOW_X = 60
@@ -1652,16 +1655,25 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
+        // LOD: con zoom bajo, píldora con el título (no se monta el contenido pesado).
+        const lod = cam.scale < LOD_SCALE && !editing
+        const lodTitle = (node.text || (isText ? 'Documento' : elView ? (elView[0].toUpperCase() + elView.slice(1)) : 'Sin título')).slice(0, 60)
         return (
           <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
-            onPointerDown={elView ? undefined : (e) => onCardAreaPointerDown(e, node)}
+            onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab' }}>
-            {isText ? (
+            {lod ? (
+              // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
+              <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {elView && <span style={{ opacity: 0.5, marginRight: 8 }}>▦</span>}
+                {lodTitle}
+              </div>
+            ) : isText ? (
               // Elemento-texto: el MISMO nodo que el documento (body HTML). Doble clic
               // edita; un clic selecciona/arrastra (como cualquier tarjeta).
               <div
