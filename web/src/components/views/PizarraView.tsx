@@ -1734,7 +1734,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       {/* Editando un texto del lienzo → panel de formato a la DERECHA (estilo Pages),
           el MISMO que en el documento en solitario. Lee el editor TipTap activo. */}
       {editText && (
-        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 1800, display: 'flex' }}>
+        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 268, zIndex: 1800,
+          borderLeft: '1px solid var(--border,#e6e6e6)', background: 'var(--bg-elevated,#fafafa)',
+          boxShadow: '-8px 0 24px rgba(0,0,0,0.06)' }}>
           <DocInspector />
         </div>
       )}

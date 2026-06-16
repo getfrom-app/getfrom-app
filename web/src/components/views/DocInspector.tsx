@@ -38,7 +38,7 @@ export default function DocInspector() {
 
   return (
     <div className="doc-inspector" style={{
-      width: 268, flexShrink: 0, borderLeft: '1px solid var(--border,#e6e6e6)',
+      width: '100%', height: '100%', minHeight: 0,
       background: 'var(--bg-elevated,#fafafa)', padding: '14px 16px 40px', overflowY: 'auto',
       display: 'flex', flexDirection: 'column',
     }}>

@@ -52,6 +52,8 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import SearchPanel from '../panels/SearchPanel'
+import DocInspector from '../views/DocInspector'
+import { isDocNode } from '../../utils/docNode'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
 const PlannerPanel = lazy(() => import('../panels/PlannerPanel'))
 const MagicChat = lazy(() => import('../aichat/MagicChat'))
@@ -151,6 +153,7 @@ export default function MainLayout() {
     | 'settings'
     | 'audio'
     | 'day'
+    | 'doc'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
   // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
@@ -348,15 +351,21 @@ export default function MainLayout() {
     // propiedades en la columna derecha. La navegación es por el árbol; el detalle
     // se abre solo (ya no hace falta clicar en una pestaña lista).
     const kind = navId ? classifyNodeRoot(navId) : null
+    const navNode = navId ? store.getNode(navId) : null
+    const navIsDoc = !!navNode && isDocNode(navNode)
     if (atSettings) {
       // Ajustes: la columna derecha lista las pestañas, el centro muestra el contenido.
       if (rightPanel !== 'settings') setRightPanel('settings')
+    } else if (navIsDoc) {
+      // DOCUMENTO: la columna derecha es el inspector de formato (estilo Pages).
+      if (rightPanel !== 'doc') setRightPanel('doc')
+      setDetailNodeId(null)
     } else if (navId && kind) {
       if (rightPanel !== kind || detailNodeId !== navId) {
         setDetailNodeId(navId)
         setRightPanel(kind)
       }
-    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || rightPanel === 'template' || rightPanel === 'settings') {
+    } else if (rightPanel === 'context' || rightPanel === 'prompt' || rightPanel === 'agent' || rightPanel === 'template' || rightPanel === 'settings' || rightPanel === 'doc') {
       // Salimos a un nodo normal o al home → cerrar el detalle y volver al filtro.
       setRightPanel('filter')
       setDetailNodeId(null)
@@ -1060,6 +1069,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={currentNodeIdFromRoute} />
+          )}
+          {rightPanel === 'doc' && (
+            <DocInspector />
           )}
           {rightPanel === 'context' && detailNodeId && (
             <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />
