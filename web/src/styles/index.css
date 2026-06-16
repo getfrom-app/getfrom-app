@@ -7600,6 +7600,14 @@ textarea:focus-visible,
 .pizarra-node--text.pizarra-node--hover,
 .pizarra-node--text.pizarra-node--sel,
 .pizarra-node--text.pizarra-node--editing { border-color: var(--border, #d8d8d8); }
+
+/* Elemento de VISTA (tabla/kanban/calendario) embebido en el lienzo. */
+.pizarra-node--el { border: 1px solid var(--border, #e2e2e2); border-radius: 10px; background: var(--bg, #fff); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.pizarra-node--el.pizarra-node--hover, .pizarra-node--el.pizarra-node--sel { border-color: var(--text-tertiary, #bbb); }
+.pizarra-el-head { display: flex; align-items: center; gap: 7px; padding: 7px 11px; border-bottom: 1px solid var(--border-subtle, #eee); background: var(--bg-subtle, #fafafa); user-select: none; }
+.pizarra-el-grip { color: var(--text-tertiary, #bbb); font-size: 12px; line-height: 1; }
+.pizarra-el-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #666); }
+.pizarra-el-body { max-height: 540px; overflow: auto; padding: 6px 10px 10px; }
 .pizarra-text h1 { font-size: 1.8em; font-weight: 700; margin: 0 0 0.2em; line-height: 1.25; }
 .pizarra-text h2 { font-size: 1.4em; font-weight: 700; margin: 0.4em 0 0.15em; line-height: 1.3; }
 .pizarra-text h3 { font-size: 1.18em; font-weight: 700; margin: 0.35em 0 0.1em; }

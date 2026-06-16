@@ -22,6 +22,18 @@ export function isCanvasText(node: Node | null | undefined): boolean {
   try { return JSON.parse(node.extraData || '{}')[CTEXT] === '1' } catch { return false }
 }
 
+// Elementos de VISTA del lienzo (tabla/kanban/calendario). Igual que el texto: un
+// nodo hijo con `extraData.viewBlock`, embebido en el lienzo y abrible en solitario
+// (NodeView ya renderiza su vista al navegar). Devuelve el tipo o null.
+export type CanvasViewKind = 'tabla' | 'kanban' | 'calendario'
+export function canvasViewKind(node: Node | null | undefined): CanvasViewKind | null {
+  if (!node) return null
+  try {
+    const vb = JSON.parse(node.extraData || '{}').viewBlock
+    return vb === 'tabla' || vb === 'kanban' || vb === 'calendario' ? vb : null
+  } catch { return null }
+}
+
 // Título del documento = primer bloque/línea del HTML del body. Se refleja en
 // `node.text` para que el árbol, breadcrumb y listados muestren algo legible.
 export function firstLineTitle(html: string | null | undefined): string {

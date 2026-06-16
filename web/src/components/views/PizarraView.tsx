@@ -23,9 +23,13 @@ import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
-import { isCanvasText, isDocNode, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
+import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
+import type { CanvasViewKind } from '../../utils/docNode'
 import TextToolbar from './TextToolbar'
 import OutlinerNode from '../outliner/OutlinerNode'
+import NodeTableView from './NodeTableView'
+import NodeKanbanView from './NodeKanbanView'
+import NodeCalendarView from './NodeCalendarView'
 import type { Node } from '../../types'
 
 interface Props {
@@ -382,7 +386,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const parent = store.getNode(parentId)
     const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
-    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
+    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
@@ -769,6 +773,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const copy = store.createNode({ text: n.text, parentId, extraData: newTextExtra({ x: pin.x + 24, y: pin.y + 24 }) })
     if (n.body) store.updateNode(copy.id, { body: n.body })
     setEditText(copy.id)
+  }, [parentId])
+
+  // ── Elementos de VISTA del lienzo (tabla/kanban/calendario) ──────────────────
+  // Un nodo hijo con `extraData.viewBlock`; se embebe en el lienzo y se abre en
+  // solitario igual (NodeView ya renderiza su vista). Se crea en el centro de la
+  // vista actual; el usuario lo recoloca/redimensiona como cualquier elemento.
+  const createViewElement = useCallback((kind: CanvasViewKind) => {
+    const c = camRef.current, vp = viewportRef.current
+    const wx = (vp.w / 2 - c.x) / c.scale
+    const wy = (vp.h / 2 - c.y) / c.scale
+    const titles: Record<CanvasViewKind, string> = { tabla: 'Tabla', kanban: 'Kanban', calendario: 'Calendario' }
+    const width = kind === 'kanban' ? '760' : kind === 'calendario' ? '720' : '560'
+    const node = store.createNode({
+      text: titles[kind], parentId,
+      extraData: { viewBlock: kind, [PIN_X]: String(Math.round(wx - Number(width) / 2)), [PIN_Y]: String(Math.round(wy - 120)), [PIN_SCALE]: '1', _pinW: width },
+    })
+    // Tabla: un par de filas de muestra para que se vea como tabla desde el inicio.
+    if (kind === 'tabla') { store.createNode({ text: 'Fila 1', parentId: node.id }); store.createNode({ text: 'Fila 2', parentId: node.id }) }
+    setTool('select')
+    setSelectedId(node.id)
   }, [parentId])
 
   // Menú contextual de un texto del lienzo (clic derecho): duplicar / eliminar.
@@ -1498,13 +1522,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const grouped = nodeGroupId(node) != null
         const hovered = hoverNode === node.id && tool === 'select'
         const isText = isDocNode(node)
+        const elView = canvasViewKind(node)
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
+        const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${(multiSel.has(node.id) || (isText && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
-            onPointerDown={(e) => onCardAreaPointerDown(e, node)}
+            onPointerDown={elView ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
             style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab' }}>
@@ -1522,14 +1548,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 dangerouslySetInnerHTML={editing ? undefined : { __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
                 style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20, userSelect: editing ? 'text' : 'none', WebkitUserSelect: editing ? 'text' : 'none' }}
               />
+            ) : elView && ViewComp ? (
+              // Elemento de VISTA (tabla/kanban/calendario): el MISMO nodo que se abre
+              // en solitario. Cabecera = tirador para mover; el cuerpo es la vista real.
+              <div className="pizarra-el">
+                <div className="pizarra-el-head" onPointerDown={(e) => onCardPointerDown(e, node)} style={{ cursor: 'grab' }}>
+                  <span className="pizarra-el-grip">⠿</span>
+                  <span className="pizarra-el-title">{node.text || 'Vista'}</span>
+                </div>
+                <div className="pizarra-el-body">
+                  <ViewComp parentId={node.id} />
+                </div>
+              </div>
             ) : (
               <div className="pizarra-card-body" style={{ minWidth: 0 }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
-            {/* DOT (texto, hover/seleccionado) → abre el documento en solitario.
+            {/* DOT (texto/vista, hover/seleccionado) → abre el elemento en solitario.
                 Mismo estilo que el bullet de un nodo y alineado a la 1ª línea. */}
-            {isText && (hovered || selectedId === node.id) && !editing && (
+            {(isText || elView) && (hovered || selectedId === node.id) && !editing && (
               <div title="Abrir como documento"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: -18, top: 8, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
@@ -1697,6 +1735,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         {/* Tarea — con fecha por lenguaje natural */}
         <button style={tool === 'task' ? toolBtnActive : toolBtn} title="Tarea — con fecha (lenguaje natural)" onClick={() => setTool(t => t === 'task' ? 'select' : 'task')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M6.5 10.5l2 2 4-4.5"/></svg>
+        </button>
+        <div style={vSep} />
+        {/* Elementos: Tabla / Kanban / Calendario (nodos hijos del lienzo) */}
+        <button style={toolBtn} title="Tabla" onClick={() => createViewElement('tabla')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8h14M3 12h14M9 4v12"/></svg>
+        </button>
+        <button style={toolBtn} title="Kanban" onClick={() => createViewElement('kanban')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="4" height="12" rx="1"/><rect x="8.5" y="4" width="4" height="8" rx="1"/><rect x="14" y="4" width="3" height="10" rx="1"/></svg>
+        </button>
+        <button style={toolBtn} title="Calendario" onClick={() => createViewElement('calendario')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 3v3M13 3v3"/></svg>
         </button>
         <div style={vSep} />
         {/* Formas */}
