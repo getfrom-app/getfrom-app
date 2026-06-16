@@ -1385,6 +1385,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return out
   }, [children, layout, dragPos, cam, viewport])
 
+  // Herramientas que PINTAN sobre el fondo (no la flecha, que conecta tarjetas).
+  // Con una activa, las tarjetas se vuelven transparentes al puntero para poder
+  // dibujar/borrar ENCIMA de ellas, y la tinta se renderiza por encima (estilo pizarra).
+  const inkActive = isInkTool(tool) || tool === 'line' || tool === 'rect' || tool === 'ellipse' || tool === 'eraser'
+
   // Lienzo vacío: sin elementos colocados, sin flujo, sin trazos ni conectores.
   // Muestra una pista que invita a empezar (no bloquea: pointerEvents none).
   const isCanvasEmpty = layout.size === 0 && flowNodes.length === 0 && (() => {
@@ -1477,7 +1482,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 
       {/* ── Capa de trazos (dibujo). Con herramienta «seleccionar» son interactivos
              (hover, clic-seleccionar, arrastrar para mover). ── */}
-      <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+      <svg width={viewport.w} height={viewport.h} style={{ position: 'absolute', inset: 0, zIndex: 15, pointerEvents: 'none' }}>
         {parsePizarra(store.getNode(parentId)?.body).strokes.map(s => {
           const selected = selStrokes.has(s.id)
           const hovered = hoverStroke === s.id
@@ -1793,7 +1798,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab' }}>
+            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined }}>
             {lod ? (
               // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
               <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1943,6 +1948,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           transformOrigin: '0 0',
           zIndex: 1,
           display: 'flex', flexDirection: 'column', gap: 2,
+          pointerEvents: inkActive ? 'none' : undefined,
         }}>
           {flowNodes.map(node => dragPos?.id === node.id ? null : (
             <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W, cursor: 'grab' }}
