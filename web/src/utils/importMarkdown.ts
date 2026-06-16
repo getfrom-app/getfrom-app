@@ -48,6 +48,51 @@ function parseLines(md: string): Line[] {
   return out
 }
 
+// ── Markdown → HTML (para crear DOCUMENTOS, no árboles de nodos) ──────────────
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+function inlineMd(s: string): string {
+  let t = esc(s)
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, txt, url) => `<a href="${url}">${txt}</a>`)
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>')
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>')
+  return t
+}
+/** Convierte markdown a HTML limpio (subset: h1-3, p, ul/ol, blockquote, pre, b/i/code/links). */
+export function markdownToHtml(md: string): string {
+  const raw = md.replace(/\r\n/g, '\n').split('\n')
+  const out: string[] = []
+  let inCode = false; let codeBuf: string[] = []
+  let listType: 'ul' | 'ol' | null = null
+  const closeList = () => { if (listType) { out.push(`</${listType}>`); listType = null } }
+  for (const line of raw) {
+    const trimmed = line.trim()
+    if (trimmed.startsWith('```')) {
+      if (inCode) { out.push(`<pre><code>${esc(codeBuf.join('\n'))}</code></pre>`); codeBuf = []; inCode = false }
+      else { closeList(); inCode = true }
+      continue
+    }
+    if (inCode) { codeBuf.push(line); continue }
+    if (!trimmed) { closeList(); continue }
+    const h = trimmed.match(/^(#{1,6})\s+(.*)$/)
+    if (h) { closeList(); const lvl = Math.min(3, h[1].length); out.push(`<h${lvl}>${inlineMd(h[2].trim())}</h${lvl}>`); continue }
+    const quote = trimmed.match(/^>\s?(.*)$/)
+    if (quote) { closeList(); out.push(`<blockquote><p>${inlineMd(quote[1])}</p></blockquote>`); continue }
+    const ol = trimmed.match(/^\d+\.\s+(.*)$/)
+    const ul = trimmed.match(/^[-*+]\s+(.*)$/)
+    if (ol || ul) {
+      const want = ol ? 'ol' : 'ul'
+      if (listType !== want) { closeList(); out.push(`<${want}>`); listType = want }
+      const txt = (ol ? ol[1] : ul![1]).replace(/^\[( |x|X)\]\s+/, '')
+      out.push(`<li>${inlineMd(txt)}</li>`); continue
+    }
+    closeList(); out.push(`<p>${inlineMd(trimmed)}</p>`)
+  }
+  closeList()
+  if (inCode && codeBuf.length) out.push(`<pre><code>${esc(codeBuf.join('\n'))}</code></pre>`)
+  return out.join('') || '<p></p>'
+}
+
 /** Crea bajo `parentId` los nodos del contenido markdown. */
 function buildContent(parentId: string, lines: Line[]): void {
   // Pila de [profundidadVisual, nodeId]. Encabezados anidan por nivel (#),
@@ -97,13 +142,13 @@ export async function importMarkdownFiles(files: ImportFile[]): Promise<{ notes:
     const segments = f.path.split('/').filter(Boolean)
     const fileName = segments.pop() || 'Nota'
     const folderId = ensureFolder(segments.filter(s => !/\.(md|markdown|txt)$/i.test(s)))
-    const lines = parseLines(f.content)
-    // Título = primer H1 si existe; si no, el nombre del archivo sin extensión
-    const firstH1 = lines.find(l => l.isHeading && l.depth === 0)
-    const title = firstH1 ? firstH1.text : fileName.replace(/\.(md|markdown|txt)$/i, '')
-    const body = firstH1 ? lines.filter(l => l !== firstH1) : lines
+    // Cada archivo → un DOCUMENTO (`_doc`): el markdown se convierte a HTML en el
+    // body (no se trocea en nodos). Título = primer # o nombre del archivo.
+    const firstH = f.content.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).find(l => /^#{1,6}\s+/.test(l))
+    const title = firstH ? firstH.replace(/^#{1,6}\s+/, '') : fileName.replace(/\.(md|markdown|txt)$/i, '')
+    const html = markdownToHtml(f.content)
     const note = store.createNode({ text: title, parentId: folderId })
-    buildContent(note.id, body)
+    store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: html, text: title })
     notes++
   }
   return { notes, container: container.id }
