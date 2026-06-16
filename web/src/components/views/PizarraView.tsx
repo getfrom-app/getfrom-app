@@ -205,8 +205,34 @@ function rid(): string {
   return 'w' + Math.abs(Math.floor((performance.now() % 1) * 1e9)).toString(36) + (performance.now() | 0).toString(36)
 }
 // ¿Algún punto del trazo está a ≤ r (mundo) de (x,y)? (borrador, v1 por puntos).
+// Distancia² de un punto al segmento (a,b).
+function distToSeg2(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax, dy = by - ay
+  const len2 = dx * dx + dy * dy
+  let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0
+  t = Math.max(0, Math.min(1, t))
+  const cx = ax + t * dx, cy = ay + t * dy
+  return (px - cx) * (px - cx) + (py - cy) * (py - cy)
+}
 function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   const r2 = r * r
+  // Formas (2 puntos): distancia a su geometría, no solo a los extremos.
+  if (s.k && s.k !== 'free' && s.pts.length >= 4) {
+    const x0 = s.pts[0], y0 = s.pts[1], x1 = s.pts[2], y1 = s.pts[3]
+    if (s.k === 'line' || s.k === 'arrow') return distToSeg2(x, y, x0, y0, x1, y1) <= r2
+    if (s.k === 'rect') {
+      return distToSeg2(x, y, x0, y0, x1, y0) <= r2 || distToSeg2(x, y, x1, y0, x1, y1) <= r2
+        || distToSeg2(x, y, x1, y1, x0, y1) <= r2 || distToSeg2(x, y, x0, y1, x0, y0) <= r2
+    }
+    if (s.k === 'ellipse') { // muestreo del perímetro
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 16) {
+        const ex = cx + Math.cos(a) * rx, ey = cy + Math.sin(a) * ry
+        if ((ex - x) * (ex - x) + (ey - y) * (ey - y) <= r2) return true
+      }
+      return false
+    }
+  }
   for (let i = 0; i + 1 < s.pts.length; i += 2) {
     const dx = s.pts[i] - x, dy = s.pts[i + 1] - y
     if (dx * dx + dy * dy <= r2) return true
@@ -1743,6 +1769,24 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                     Abrir nodo
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+                  {/* Bucle / Favorito (paridad iPad) */}
+                  {(() => {
+                    const n = store.getNode(contextMenu.nodeId)
+                    const types = n?.types || []
+                    const hasBucle = types.includes('bucle')
+                    return (
+                      <>
+                        <button onClick={() => {
+                          store.updateNode(contextMenu.nodeId, { types: hasBucle ? types.filter(t => t !== 'bucle') : [...types, 'bucle'], status: hasBucle ? null : 'pending' })
+                          setContextMenu(null)
+                        }} style={ctxItem}>{hasBucle ? '↺ Quitar bucle' : '↺ Convertir en bucle'}</button>
+                        <button onClick={() => { store.updateNode(contextMenu.nodeId, { isFavorite: !n?.isFavorite }); setContextMenu(null) }} style={ctxItem}>
+                          {n?.isFavorite ? '★ Quitar de favoritos' : '☆ Favorito'}
+                        </button>
+                        <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+                      </>
+                    )
+                  })()}
                   <button onClick={() => { duplicateNode(contextMenu.nodeId, 24); setContextMenu(null) }} style={ctxItem}>
                     Duplicar
                   </button>
