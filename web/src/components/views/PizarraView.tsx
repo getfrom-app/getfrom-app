@@ -296,7 +296,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // Hover sobre una tarjeta de nodo (resaltado + manijas de redimensionado).
   const [hoverNode, setHoverNode] = useState<string | null>(null)
   // Redimensionado de tarjeta en curso: ancho (manija izquierda) o escala (esquina).
-  const nodeRzRef = useRef<null | { id: string; mode: 'width' | 'scale'; startW: number; startScale: number; startPin: WorldPos; startWorld: WorldPos; cardH: number; moved: boolean }>(null)
+  const nodeRzRef = useRef<null | { id: string; mode: 'width' | 'widthR' | 'scale'; startW: number; startScale: number; startPin: WorldPos; startWorld: WorldPos; cardH: number; moved: boolean }>(null)
   const nodeRzValRef = useRef<{ w: number; scale: number; pin: WorldPos } | null>(null)
   const [nodeRz, setNodeRz] = useState<null | { id: string; w: number; scale: number; pin: WorldPos }>(null)
 
@@ -975,7 +975,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
       if (Math.abs(w.x - r.startWorld.x) + Math.abs(w.y - r.startWorld.y) > 1) r.moved = true
       let val: { w: number; scale: number; pin: WorldPos }
-      if (r.mode === 'width') {
+      if (r.mode === 'widthR') {
+        // Tirador DERECHO: el borde izquierdo (pin) queda fijo; crece hacia la derecha.
+        const newW = Math.max(120, r.startW + (w.x - r.startWorld.x) / r.startScale)
+        val = { w: newW, scale: r.startScale, pin: r.startPin }
+      } else if (r.mode === 'width') {
         const rightEdge = r.startPin.x + r.startW * r.startScale
         const newW = Math.max(120, r.startW - (w.x - r.startWorld.x) / r.startScale)
         val = { w: newW, scale: r.startScale, pin: { x: rightEdge - newW * r.startScale, y: r.startPin.y } }
@@ -1087,7 +1091,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       if (r.moved && val) {
         const n = store.getNode(r.id)
-        if (n) writeCardSize(n, r.mode === 'width' ? { w: val.w, pin: val.pin } : { scale: val.scale })
+        if (n) writeCardSize(n, (r.mode === 'width' || r.mode === 'widthR') ? { w: val.w, pin: val.pin } : { scale: val.scale })
       }
       setNodeRz(null)
       return
@@ -1239,7 +1243,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [onCardPointerDown])
 
   // ── Redimensionado de TARJETA: manija izquierda (ancho) o esquina (escala) ──
-  const onNodeResizeDown = useCallback((e: React.PointerEvent, node: Node, mode: 'width' | 'scale') => {
+  const onNodeResizeDown = useCallback((e: React.PointerEvent, node: Node, mode: 'width' | 'widthR' | 'scale') => {
     if (e.button !== 0) return
     e.stopPropagation()
     const pin = readPin(node) || { x: 0, y: 0 }
@@ -1684,13 +1688,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             )}
             {showHandles && (isText ? (
               // Texto: ancho = barra vertical fina a la DERECHA (forma distinta al dot
-              // redondo de la izquierda, para no confundirlos).
-              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+              // redondo de la izquierda, para no confundirlos). Ancla el borde izquierdo.
+              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -6, top: '50%', width: 4, height: 20, marginTop: -10, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none' }} />
             ) : elView ? (
               // Vista (tabla/kanban/calendario): ancho a la DERECHA + escala en la esquina.
               <>
-                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                   style={{ position: 'absolute', right: -5, top: '50%', width: 7, height: 28, marginTop: -14, background: 'var(--text-tertiary,#bbb)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.9, touchAction: 'none' }} />
                 <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
