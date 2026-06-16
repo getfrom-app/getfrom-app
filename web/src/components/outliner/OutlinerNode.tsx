@@ -8,6 +8,7 @@ import { ensureDayPath, getTodayDiaryUnderAgenda } from '../../utils/agendaHelpe
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from './InlineRenderer'
 import { unfurlUrl, isUrl } from '../../api/unfurl'
+import { firstLineTitle } from '../../utils/docNode'
 import SlashMenu, { type SlashSelectPayload } from './SlashMenu'
 import { includesNormalized } from '../../utils/normalize'
 import TemplateCodePicker from './TemplateCodePicker'
@@ -3682,6 +3683,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 return
               }
               e.preventDefault()
+
+              // PEGAR LARGO/PROSA en un nodo VACÍO → crear un DOCUMENTO (no trocear en
+              // nodos). El nodo se convierte en `_doc` (texto plano, seguro) y se abre.
+              const curEmpty = (contentRef.current?.textContent || '').trim() === ''
+              if (curEmpty && (clipText.length > 500 || lines.length >= 6)) {
+                const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                const docHtml = lines.map((l, i) => i === 0 ? `<h1>${esc(l)}</h1>` : `<p>${esc(l)}</p>`).join('')
+                let ed: Record<string, unknown> = {}
+                try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+                ed._doc = '1'; delete ed._block
+                store.updateNode(node.id, { extraData: JSON.stringify(ed), body: docHtml, text: firstLineTitle(docHtml) })
+                navigate(`/node/${node.id}`)
+                return
+              }
 
               // Helper: detectar formato markdown de una línea y extraer texto + metadatos
               function parseMarkdownLine(raw: string): { text: string; blockType: string | null; isTask: boolean; status: string | null } {
