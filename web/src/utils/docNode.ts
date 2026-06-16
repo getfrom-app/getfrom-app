@@ -40,9 +40,14 @@ export function firstLineTitle(html: string | null | undefined): string {
   const d = document.createElement('div')
   d.innerHTML = html || ''
   const txt = (d.textContent || '').replace(/ /g, ' ').trim()
-  for (const child of Array.from(d.children)) {
-    const bt = (child.textContent || '').trim()
-    if (bt) return bt.slice(0, 120)
+  // Primer NODO hijo con texto, RECORRIENDO también los nodos de texto sueltos:
+  // en un contentEditable la 1ª línea suele ir SIN envolver en <div>/<p>, así que
+  // mirar solo `children` (elementos) se la saltaría y cogería el 2º bloque.
+  for (const child of Array.from(d.childNodes)) {
+    if (child.nodeType === 3 || child.nodeType === 1) {
+      const bt = (child.textContent || '').trim()
+      if (bt) return bt.slice(0, 120)
+    }
   }
   const first = (d.textContent || '').trim()
   return first.slice(0, 120) || 'Documento'
