@@ -20,7 +20,7 @@ import { uploadFile } from '../../api/client'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
 
-export default function DocEditor({ node }: { node: { id: string; body?: string | null; text?: string } }) {
+export default function DocEditor({ node, compact }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean }) {
   useStore()
   const navigate = useNavigate()
   const saveTimer = useRef<number | null>(null)
@@ -47,6 +47,7 @@ export default function DocEditor({ node }: { node: { id: string; body?: string 
       Image.configure({ inline: false, allowBase64: false }),
     ],
     content: node.body || '',
+    autofocus: compact ? 'end' : false,
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()
@@ -107,9 +108,11 @@ export default function DocEditor({ node }: { node: { id: string; body?: string 
   const Sep = () => <div style={{ width: 1, height: 20, background: 'var(--border,#e2e2e2)', margin: '0 4px', flexShrink: 0 }} />
 
   return (
-    <div className="doc-editor" style={{ maxWidth: 760, margin: '0 auto', padding: '4px 4px 120px' }}>
-      {/* Barra fija ENCIMA del texto */}
-      <div className="doc-toolbar" style={{ position: 'sticky', top: 6, zIndex: 1500, display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+    <div className="doc-editor" style={compact ? { padding: '2px 2px 6px', position: 'relative' } : { maxWidth: 760, margin: '0 auto', padding: '4px 4px 120px' }}>
+      {/* Barra de formato ENCIMA del texto (en compact = flotante sobre el elemento). */}
+      <div className="doc-toolbar" style={compact
+        ? { position: 'absolute', left: 0, top: -46, zIndex: 1500, display: 'flex' }
+        : { position: 'sticky', top: 6, zIndex: 1500, display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 1, padding: '6px 8px', flexWrap: 'wrap',
           background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 14, boxShadow: '0 6px 22px rgba(0,0,0,0.12)' }}>
           <Btn title="Título 1" on={editor.isActive('heading', { level: 1 })} act={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>H1</Btn>

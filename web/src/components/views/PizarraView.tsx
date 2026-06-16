@@ -25,7 +25,7 @@ import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import type { CanvasViewKind } from '../../utils/docNode'
-import TextToolbar from './TextToolbar'
+import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -949,6 +949,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
+    if (editText) setEditText(null) // salir de la edición de un texto al tocar el fondo
     // Flecha con un elemento ya anclado: clic en vacío → cancelar la conexión.
     if (toolRef.current === 'arrow' && arrowAnchor) { setArrowAnchor(null); setArrowCursor(null); return }
     if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
@@ -984,7 +985,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     clearSelection()
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection, arrowAnchor])
+  }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection, arrowAnchor, editText])
 
   // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -1223,6 +1224,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const onCardPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
     if (e.button !== 0) return
     e.stopPropagation() // no llega al fondo (no pan) ni al editor
+    setEditText(et => (et && et !== node.id) ? null : et) // salir de edición de OTRO texto
     if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
@@ -1685,19 +1687,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 {lodTitle}
               </div>
             ) : isText ? (
-              // Elemento-texto: el MISMO nodo que el documento (body HTML). Doble clic
-              // edita; un clic selecciona/arrastra (como cualquier tarjeta).
-              <div
-                ref={editing ? editDivRef : undefined}
-                className="pizarra-text"
-                contentEditable={editing}
-                suppressContentEditableWarning
-                onInput={editing ? (e) => scheduleTextPersist(node.id, (e.target as HTMLElement).innerHTML) : undefined}
-                onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(node.id); else saveTextBody(node.id, html); setEditText(null) } : undefined}
-                onKeyDown={editing ? (e) => { e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); (e.target as HTMLElement).blur() } } : undefined}
-                dangerouslySetInnerHTML={editing ? undefined : { __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
-                style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20, userSelect: editing ? 'text' : 'none', WebkitUserSelect: editing ? 'text' : 'none' }}
-              />
+              // Elemento-texto = el MISMO nodo que el documento. Editando → editor
+              // TipTap completo (DocEditor compact); en reposo → body estático (ligero).
+              editing ? (
+                <DocEditor node={node} compact />
+              ) : (
+                <div className="pizarra-text"
+                  dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                  style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
+                />
+              )
             ) : elView && ViewComp ? (
               // Elemento de VISTA (tabla/kanban/calendario): el MISMO nodo que se abre
               // en solitario. Cabecera = tirador para mover; el cuerpo es la vista real.
@@ -1754,21 +1753,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
-      {/* ── Barra de formato del texto en edición — la MISMA que en la vista
-             independiente (TextToolbar), flotando ENCIMA del texto que se edita.
-             La barra del lienzo se queda en su sitio (abajo). ── */}
-      {editText && isDocNode(store.getNode(editText)) && (() => {
-        const tn = store.getNode(editText)!
-        const pin = readPin(tn) || { x: 0, y: 0 }
-        const sx = cam.x + pin.x * cam.scale
-        const sy = cam.y + pin.y * cam.scale
-        return (
-          <div onPointerDown={(e) => e.stopPropagation()}
-            style={{ position: 'fixed', left: Math.max(8, Math.min(sx, viewport.w - 360)), top: Math.max(8, sy - 48), zIndex: 1700 }}>
-            <TextToolbar />
-          </div>
-        )
-      })()}
+      {/* La barra de formato del texto en edición la pinta el propio DocEditor
+          (TipTap, modo compact) flotando encima del elemento. */}
 
       {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
       {textMenu && (
