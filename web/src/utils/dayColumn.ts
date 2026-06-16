@@ -66,7 +66,7 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
   let dayTasks: Node[] = []
   if (isToday) {
     const d = collectDailyCockpit()
-    for (const n of [...d.focus, ...d.overdue, ...d.today, ...d.bucles]) cockpitIds.add(n.id)
+    for (const n of [...d.focus, ...d.overdue, ...d.today, ...d.seguimiento]) cockpitIds.add(n.id)
   } else if (dayNode.diaryDate) {
     dayTasks = collectDayTasks(new Date(dayNode.diaryDate))
     for (const t of dayTasks) cockpitIds.add(t.id)

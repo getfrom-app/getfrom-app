@@ -2055,12 +2055,11 @@ export default function NodeView() {
                   return false
                 })()
                 if (isAgendaStructure) return null
+                // Solo Lienzo + Lista. Tabla/Kanban/Calendario se insertan como
+                // ELEMENTOS del lienzo (/tabla, /kanban, /calendario), no como modo de nodo.
                 const modes = [
-                  { id: 'pizarra', title: 'Pizarra', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none"/><rect x="8" y="5" width="4.5" height="3" rx="0.6"/></svg> },
+                  { id: 'pizarra', title: 'Lienzo', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none"/><rect x="8" y="5" width="4.5" height="3" rx="0.6"/></svg> },
                   { id: 'lista', title: 'Lista', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
-                  { id: 'tabla', title: 'Tabla', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg> },
-                  { id: 'kanban', title: 'Kanban', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg> },
-                  { id: 'calendario', title: 'Calendario', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="2" width="14" height="13" rx="1"/><line x1="1" y1="6" x2="15" y2="6"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg> },
                 ]
                 return (
                   <>
@@ -2139,47 +2138,7 @@ export default function NodeView() {
               {/* Nodo normal → dot/bucle + título en la cabecera. El documento (isDoc)
                   no pinta nada aquí: su editor (DocEditor) va en .view-body, porque
                   esta fila (.node-title-row) está oculta con display:none para docs. */}
-              {isDoc ? null : (() => {
-                const isBucle = (node.types || []).includes('bucle')
-                const closed = isBucle && node.status === 'done'
-                const open = isBucle && !closed
-                // Estado actual y siguiente acción al hacer clic
-                const cycle = () => {
-                  if (!isBucle) {
-                    // nodo → bucle abierto
-                    store.updateNode(node!.id, { types: [...(node!.types || []), 'bucle'], status: null })
-                  } else if (open) {
-                    // abierto → cerrado
-                    store.updateNode(node!.id, { status: 'done' })
-                  } else {
-                    // cerrado → nodo normal
-                    store.updateNode(node!.id, { types: (node!.types || []).filter(t => t !== 'bucle'), status: null })
-                  }
-                }
-                const title = !isBucle ? 'Convertir en bucle'
-                  : open ? 'Bucle abierto — clic para cerrar'
-                  : 'Bucle cerrado — clic para volver a nodo'
-                const color = open ? '#8b5cf6' : closed ? 'var(--text-tertiary)' : undefined
-                return (
-                  <button
-                    className={`node-action-icon-btn ${open ? 'active' : ''}`}
-                    onClick={cycle}
-                    title={title}
-                    style={{ color }}
-                  >
-                    {closed ? (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <circle cx="7" cy="7" r="4.5"/>
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
-                        <path d="M11.5 1.8v2.7H8.8"/>
-                      </svg>
-                    )}
-                  </button>
-                )
-              })()}
+              {/* (Botón «bucle» eliminado: el seguimiento es ahora una tarea sin fecha.) */}
 
               {/* ── ··· Más opciones → NodeContextMenu (menú ÚNICO de nodo) ── */}
               <div style={{ position: 'relative' }}>

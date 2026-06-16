@@ -12,8 +12,9 @@ export interface DailyCockpitData {
   overdue: Node[]
   /** Tareas pendientes con due = hoy (excluye las que están en foco) */
   today: Node[]
-  /** Bucles abiertos (types:'bucle' y status ≠ 'done') */
-  bucles: Node[]
+  /** SEGUIMIENTO: tareas abiertas SIN fecha (sustituye a los «bucles»; incluye
+   *  los bucles antiguos por compatibilidad). Permanecen hasta hechas/borradas. */
+  seguimiento: Node[]
 }
 
 /** Fecha local YYYY-MM-DD de hoy — el formato de extraData._focusDate. */
@@ -105,24 +106,27 @@ export function collectDailyCockpit(): DailyCockpitData {
   const focus: Node[] = []
   const overdue: Node[] = []
   const todayTasks: Node[] = []
-  const bucles: Node[] = []
+  const seguimiento: Node[] = []
 
   for (const n of store.allActive()) {
     if (n.isDiaryEntry) continue
     if (n.isEvent) continue // los eventos GCal tienen su propio bloque, no son tareas
-    const isBucle = (n.types || []).includes('bucle')
+    const legacyBucle = (n.types || []).includes('bucle')
 
     // 🎯 Foco de hoy — tiene prioridad sobre el resto de grupos.
     // Incluye completadas (se ven tachadas: el cierre natural del día).
-    if (isFocusedToday(n) && !isBucle) {
+    if (isFocusedToday(n)) {
       if (isInPapelera(n.id)) continue
       focus.push(n)
       continue
     }
 
-    if (isBucle && n.status !== 'done') {
+    // SEGUIMIENTO: tarea ABIERTA y SIN fecha (incluye los bucles antiguos).
+    // Es lo que antes era un «bucle», ahora sin tipo aparte: una tarea sin fecha
+    // que permanece hasta marcarla hecha o borrarla.
+    if (n.status !== 'done' && !n.due && (n.status === 'pending' || legacyBucle)) {
       if (isInPapelera(n.id)) continue
-      bucles.push(n)
+      seguimiento.push(n)
       continue
     }
     // Pendientes con due + completadas HOY (siguen visibles, tachadas, hasta mañana)
@@ -146,12 +150,12 @@ export function collectDailyCockpit(): DailyCockpitData {
   }
   overdue.sort(byDue)
   todayTasks.sort(byDue)
-  bucles.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+  seguimiento.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
   // Foco: pendientes primero, completadas al final; estable por texto
   focus.sort((a, b) => {
     const da = a.status === 'done' ? 1 : 0, db = b.status === 'done' ? 1 : 0
     return da - db || (a.text || '').localeCompare(b.text || '')
   })
 
-  return { focus, overdue, today: todayTasks, bucles }
+  return { focus, overdue, today: todayTasks, seguimiento }
 }

@@ -22,11 +22,14 @@ interface Props {
 const UNCLASSIFIED_FILTER_ID = '__unclassified__'
 
 const TYPE_CHIPS = [
-  { labelKey: 'search.chipNote',    query: 'nota' },
-  { labelKey: 'search.chipTask',    query: 'tarea' },
-  { labelKey: 'search.chipEvent',   query: 'evento' },
-  { labelKey: 'search.chipFile',    query: 'archivo' },
-  { labelKey: 'search.chipLink',    query: 'enlace' },
+  { labelKey: 'search.chipNote',     query: 'nota' },
+  { labelKey: 'search.chipTask',     query: 'tarea' },
+  { labelKey: 'search.chipEvent',    query: 'evento' },
+  { labelKey: 'search.chipDocument', query: 'documento' },
+  { labelKey: 'search.chipPdf',      query: 'pdf' },
+  { labelKey: 'search.chipImage',    query: 'imagen' },
+  { labelKey: 'search.chipLink',     query: 'enlace' },
+  { labelKey: 'search.chipFile',     query: 'archivo' },
 ]
 const TIME_CHIPS = [
   { labelKey: 'search.chipToday',     query: 'hoy' },
@@ -41,7 +44,6 @@ const STATUS_CHIPS = [
   { labelKey: 'search.chipNoDate',   query: 'sin-fecha' },
 ]
 const BUCLE_CHIPS = [
-  { labelKey: 'search.chipBucle', query: 'bucle' },
   { labelKey: 'search.chipCaptura', query: 'captura' },
 ]
 

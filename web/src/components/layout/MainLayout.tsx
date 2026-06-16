@@ -310,6 +310,23 @@ export default function MainLayout() {
   // Colapsar manualmente la columna derecha (persistente).
   const [rightCollapsed, setRightCollapsed] = useState(() => localStorage.getItem('right-collapsed') === '1')
   useEffect(() => { localStorage.setItem('right-collapsed', rightCollapsed ? '1' : '0') }, [rightCollapsed])
+
+  // Migración única: BUCLES → tareas de seguimiento (tarea SIN fecha). Idempotente
+  // y acotada (solo nodos con el tipo 'bucle'): quita el tipo y fija status (abierto
+  // → pending, cerrado → done). Espera a que carguen los nodos antes de marcar hecho.
+  useEffect(() => {
+    if (localStorage.getItem('migrated-bucles-seguimiento') === '1') return
+    const all = store.allActive()
+    if (all.length === 0) return // nodos aún no cargados → reintenta al cambiar nodesVersion
+    const bucles = all.filter(n => (n.types || []).includes('bucle'))
+    for (const n of bucles) {
+      store.updateNode(n.id, {
+        types: (n.types || []).filter(t => t !== 'bucle'),
+        status: n.status === 'done' ? 'done' : 'pending',
+      })
+    }
+    localStorage.setItem('migrated-bucles-seguimiento', '1')
+  }, [s.nodesVersion])
   const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Slide animation state

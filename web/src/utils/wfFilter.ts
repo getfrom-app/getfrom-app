@@ -166,6 +166,26 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
         return !ed._resourceKey && !['image','pdf','file'].includes(ed._resourceType)
       } catch { return false }
     }
+    case 'documento':
+    case 'document':
+    case 'doc': {
+      // Documento de texto rico (TipTap): extraData._doc === '1'
+      try { return JSON.parse(node.extraData || '{}')._doc === '1' } catch { return false }
+    }
+    case 'pdf': {
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        return ed._resourceType === 'pdf' || /\.pdf($|\?)/i.test(ed._resourceUrl || node.resourceUrl || '')
+      } catch { return false }
+    }
+    case 'imagen':
+    case 'image':
+    case 'img': {
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        return ed._resourceType === 'image' || /\.(jpe?g|png|gif|webp|svg)($|\?)/i.test(ed._resourceUrl || node.resourceUrl || '')
+      } catch { return false }
+    }
     case 'activo':      return !!node.isActive
     case 'bucle':
     case 'loop':        return (node.types || []).includes('bucle') && node.status !== 'done'
@@ -326,10 +346,12 @@ const SMART_OPERATORS = [
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
   'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'bucle', 'captura',
+  'documento', 'pdf', 'imagen',
   // English
   'today', 'tomorrow', 'week', 'month', 'past', 'future',
   'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
   'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event', 'loop',
+  'document', 'doc', 'image', 'img',
 ]
 
 export function isSmartQuery(text: string): boolean {

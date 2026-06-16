@@ -24,13 +24,13 @@ describe('dailyCockpit — sección «Tu día»', () => {
     const data = collectDailyCockpit()
     expect(data.overdue.map(n => n.text)).toEqual(['Atrasada'])
     expect(data.today.map(n => n.text)).toEqual(['Para hoy'])
-    expect(data.bucles.map(n => n.text)).toEqual(['Bucle abierto'])
+    expect(data.seguimiento.map(n => n.text)).toEqual(['Bucle abierto'])
   })
 
   it('un bucle cerrado (status done) no aparece', () => {
     const bucle = store.createNode({ text: 'Bucle cerrado', parentId: null })
     store.updateNode(bucle.id, { types: ['bucle'], status: 'done' })
-    expect(collectDailyCockpit().bucles).toHaveLength(0)
+    expect(collectDailyCockpit().seguimiento).toHaveLength(0)
   })
 
   it('tareas completadas SIN _doneAt de hoy no aparecen (hechas otro día)', () => {

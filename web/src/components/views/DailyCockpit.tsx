@@ -67,7 +67,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     }
   }
 
-  const total = data.focus.length + data.overdue.length + data.today.length + data.bucles.length
+  const total = data.focus.length + data.overdue.length + data.today.length + data.seguimiento.length
   if (total === 0) return null
 
   function openPlanner() {
@@ -245,10 +245,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('today') && data.today.map(n => renderTaskRow(n, {}))}
         </div>
       )}
-      {data.bucles.length > 0 && (
+      {data.seguimiento.length > 0 && (
         <div className="dc-group">
-          {gHeader('bucles', t('daily.openBucles'), 'dc-group-label--bucle')}
-          {!collapsedG.has('bucles') && data.bucles.map(renderBucleRow)}
+          {gHeader('seguimiento', t('daily.followup'), 'dc-group-label--followup')}
+          {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
     </>
@@ -270,7 +270,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {data.focus.length > 0 && <span className="dc-count dc-count--focus">🎯 {data.focus.length}</span>}
           {data.overdue.length > 0 && <span className="dc-count dc-count--overdue">{data.overdue.length} {t('daily.overdueShort')}</span>}
           {data.today.length > 0 && <span className="dc-count">{data.today.length} {t('daily.todayShort')}</span>}
-          {data.bucles.length > 0 && <span className="dc-count dc-count--bucle">⟲ {data.bucles.length}</span>}
+          {data.seguimiento.length > 0 && <span className="dc-count dc-count--followup">{data.seguimiento.length} {t('daily.followupShort')}</span>}
         </span>
         <span className="dc-chevron">{collapsed ? '›' : '▾'}</span>
       </button>
