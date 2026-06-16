@@ -307,6 +307,9 @@ export default function MainLayout() {
     const saved = localStorage.getItem('right-panel-w')
     return saved ? Math.max(320, Math.min(900, parseInt(saved))) : 480
   })
+  // Colapsar manualmente la columna derecha (persistente).
+  const [rightCollapsed, setRightCollapsed] = useState(() => localStorage.getItem('right-collapsed') === '1')
+  useEffect(() => { localStorage.setItem('right-collapsed', rightCollapsed ? '1' : '0') }, [rightCollapsed])
   const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Slide animation state
@@ -1054,7 +1057,22 @@ export default function MainLayout() {
       </main>
 
       {/* ── Columna derecha — siempre visible ── */}
-      <div className="right-panel-unified" style={{
+      {rightCollapsed && (
+        <button
+          title="Mostrar panel"
+          onClick={() => setRightCollapsed(false)}
+          style={{
+            position: 'fixed', top: 64, right: 0, zIndex: 40,
+            width: 22, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1px solid var(--border)', borderRight: 'none', borderRadius: '8px 0 0 8px',
+            background: 'var(--bg-elevated, #fff)', color: 'var(--text-secondary, #888)', cursor: 'pointer',
+            boxShadow: '-2px 0 8px rgba(0,0,0,0.05)',
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3L5 8l5 5" /></svg>
+        </button>
+      )}
+      {!rightCollapsed && <div className="right-panel-unified" style={{
         width: rightPanelW,
         display: 'flex', flexDirection: 'column',
         borderLeft: '1px solid var(--border)',
@@ -1062,6 +1080,17 @@ export default function MainLayout() {
         position: 'relative',
       }}>
         <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
+        <button
+          title="Ocultar panel"
+          onClick={() => setRightCollapsed(true)}
+          style={{
+            position: 'absolute', top: 8, right: 8, zIndex: 6,
+            width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: 'none', borderRadius: 6, background: 'transparent', color: 'var(--text-tertiary, #aaa)', cursor: 'pointer',
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
+        </button>
         <Suspense fallback={null}>
         <div
           key={panelKey}
@@ -1121,7 +1150,7 @@ export default function MainLayout() {
           )}
         </div>
         </Suspense>
-      </div>
+      </div>}
 
       </div>{/* .main-body */}
 
