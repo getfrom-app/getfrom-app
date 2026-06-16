@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
 import { getDayColumnData } from '../../utils/dayColumn'
 import DocEditor from './DocEditor'
+import DocInspector from './DocInspector'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -2240,18 +2241,21 @@ export default function NodeView() {
                 el resto de vistas. La fila de título va oculta (el título es la 1ª
                 línea del cuerpo). Arriba-derecha: menú ··· estándar (copiar/exportar). ── */}
           {isDoc && (
-            <div style={{ position: 'relative' }}>
-              <button
-                className={`node-action-icon-btn ${titleContextMenu ? 'active' : ''}`}
-                title="Más opciones"
-                onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setTitleContextMenu({ x: r.right - 220, y: r.bottom + 4 }) }}
-                style={{ position: 'absolute', top: 4, right: 12, zIndex: 30 }}
-              >
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                  <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
-                </svg>
-              </button>
-              <DocEditor node={node} />
+            <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 0, height: '100%' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 0, overflowY: 'auto' }}>
+                <button
+                  className={`node-action-icon-btn ${titleContextMenu ? 'active' : ''}`}
+                  title="Más opciones"
+                  onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setTitleContextMenu({ x: r.right - 220, y: r.bottom + 4 }) }}
+                  style={{ position: 'absolute', top: 4, right: 12, zIndex: 30 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                    <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+                  </svg>
+                </button>
+                <DocEditor node={node} />
+              </div>
+              <DocInspector />
             </div>
           )}
 

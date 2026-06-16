@@ -7459,6 +7459,16 @@ textarea:focus-visible,
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
 
+/* En el lienzo (compact) el editor debe calcar al preview estático .pizarra-text
+   para que al pasar a edición el texto NO se desplace ni reflowee. */
+.doc-editor--compact .ProseMirror { min-height: 20px; line-height: 1.6; font-size: 16px; }
+.doc-editor--compact .ProseMirror p { margin: 0.3em 0; }
+.doc-editor--compact .ProseMirror h1 { margin: 0 0 0.2em; }
+.doc-editor--compact .ProseMirror h2 { margin: 0.4em 0 0.15em; }
+.doc-editor--compact .ProseMirror h3 { margin: 0.35em 0 0.1em; }
+.doc-editor--compact .ProseMirror ul, .doc-editor--compact .ProseMirror ol { margin: 0.3em 0; padding-left: 1.4em; }
+.doc-editor--compact .ProseMirror blockquote { margin: 0.4em 0; padding: 0.1em 0 0.1em 0.8em; }
+
 /* ── Elemento-texto del lienzo (mismo nodo que el documento): la 1ª línea (H1) se
       ve como título, igual que en DocEditor. ── */
 .pizarra-text { white-space: pre-wrap; background: none; }

@@ -26,6 +26,7 @@ import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
+import DocInspector from './DocInspector'
 import OutlinerNode from '../outliner/OutlinerNode'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -796,11 +797,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     setEditText(node.id)
   }, [parentId])
 
-  // Guardar el cuerpo del nodo-texto + reflejar el título (1ª línea) en node.text.
-  const saveTextBody = useCallback((id: string, html: string) => {
-    store.updateNode(id, { body: html, text: firstLineTitle(html) })
-  }, [])
-
   const deleteText = useCallback((id: string) => {
     store.deleteNode(id)
     setEditText(e => e === id ? null : e)
@@ -873,26 +869,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // Menú contextual de un texto del lienzo (clic derecho): duplicar / eliminar.
   const [textMenu, setTextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
 
-  // Persistencia diferida mientras se escribe (el contentEditable es no-controlado
-  // para no perder el cursor; persistimos el HTML 600 ms después de la última tecla).
-  const textPersistTimer = useRef<number | null>(null)
-  const scheduleTextPersist = useCallback((id: string, html: string) => {
-    if (textPersistTimer.current) clearTimeout(textPersistTimer.current)
-    textPersistTimer.current = window.setTimeout(() => saveTextBody(id, html), 600)
-  }, [saveTextBody])
-
-  // contentEditable del texto en edición: cargar el body del nodo y enfocar.
-  const editDivRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (!editText) return
-    const el = editDivRef.current
-    if (!el) return
-    el.innerHTML = store.getNode(editText)?.body || ''
-    el.focus()
-    const sel = window.getSelection(); const range = document.createRange()
-    range.selectNodeContents(el); range.collapse(false); sel?.removeAllRanges(); sel?.addRange(range)
-  }, [editText])
-  const fmt = (cmd: string, val?: string) => { editDivRef.current?.focus(); document.execCommand(cmd, false, val) }
+  // (La edición de texto del lienzo la gestiona DocEditor (TipTap) en modo compact;
+  //  ya no hay contentEditable propio ni persistencia manual aquí.)
 
   // El DOT abre el MISMO nodo en solitario (DocEditor). No hay copia ni sync.
   const openTextAsDoc = useCallback((id: string) => { navigate(`/node/${id}`) }, [navigate])
@@ -1717,21 +1695,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
-            {/* DOT (texto/vista, hover/seleccionado) → abre el elemento en solitario.
-                Mismo estilo que el bullet de un nodo y alineado a la 1ª línea. */}
-            {isText && (hovered || selectedId === node.id) && !editing && (
-              <div title="Abrir como documento"
+            {/* DOT (texto/vista, hover/seleccionado/editando) → abre el elemento en su
+                página. Grande y separado, alineado a la 1ª línea. */}
+            {isText && (hovered || selectedId === node.id || editing) && (
+              <div title="Abrir en su página"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
-                style={{ position: 'absolute', left: -18, top: 0, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85 }} />
+                style={{ position: 'absolute', left: -30, top: 0, height: 30, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {showHandles && (isText ? (
-              // Texto: ancho = barra vertical fina a la DERECHA (forma distinta al dot
-              // redondo de la izquierda, para no confundirlos). Ancla el borde izquierdo.
+            {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
+            {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                style={{ position: 'absolute', right: -6, top: '50%', width: 4, height: 20, marginTop: -10, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none' }} />
-            ) : elView ? (
+                style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+            )}
+            {showHandles && !isText && (elView ? (
               // Vista (tabla/kanban/calendario): ancho a la DERECHA + escala en la esquina.
               <>
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
@@ -1753,8 +1731,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
-      {/* La barra de formato del texto en edición la pinta el propio DocEditor
-          (TipTap, modo compact) flotando encima del elemento. */}
+      {/* Editando un texto del lienzo → panel de formato a la DERECHA (estilo Pages),
+          el MISMO que en el documento en solitario. Lee el editor TipTap activo. */}
+      {editText && (
+        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 1800, display: 'flex' }}>
+          <DocInspector />
+        </div>
+      )}
 
       {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
       {textMenu && (

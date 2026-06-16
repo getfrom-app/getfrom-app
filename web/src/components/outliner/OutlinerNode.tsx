@@ -2755,6 +2755,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       store.updateNode(node.id, updates)
       navigate(`/node/${node.id}`)
       return
+    } else if (action === 'document') {
+      // Convertir este nodo en DOCUMENTO de texto rico (TipTap) y abrirlo.
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+      ed._doc = '1'
+      delete ed._block
+      updates.extraData = JSON.stringify(ed)
+      const title = String((updates.text as string | undefined) ?? node.text ?? '').trim()
+      updates.body = title ? `<h1>${title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h1>` : ''
+      store.updateNode(node.id, updates)
+      navigate(`/node/${node.id}`)
+      return
     } else if (action === 'nota') {
       // Crear nodo vacío con tipo nota y navegar inmediatamente
       const existingTypes = node.types || []

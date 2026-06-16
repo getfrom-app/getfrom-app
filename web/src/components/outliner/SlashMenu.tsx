@@ -18,6 +18,7 @@ export type SlashAction =
   | 'add-shortcut'
   | 'recurrence'
   | 'whiteboard'
+  | 'document'
   | 'log'
 
 export interface SlashMenuOption {
@@ -42,6 +43,7 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Texto', label: 'Separador',  icon: '—',   prefix: '---',   description: 'Línea divisoria',        action: 'text' },
   { group: 'Texto', label: 'Log',        icon: '🕐',  prefix: '',      description: 'Entrada con fecha y hora (registro)', action: 'log' },
   // ── Objetos ─────────────────────────────────────────────────────────────
+  { group: 'Objetos', label: 'Documento', icon: '📝', prefix: '',      description: 'Documento de texto rico (editor)', action: 'document' },
   { group: 'Objetos', label: 'Pizarra',  icon: '🖊',  prefix: '',      description: 'Pizarra digital para dibujar', action: 'whiteboard' },
   { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
   { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
