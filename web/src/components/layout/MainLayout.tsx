@@ -54,6 +54,7 @@ const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import SearchPanel from '../panels/SearchPanel'
 import DocInspector from '../views/DocInspector'
 import { isDocNode } from '../../utils/docNode'
+import { useHasActiveDocEditor } from '../../utils/docEditorStore'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
 const PlannerPanel = lazy(() => import('../panels/PlannerPanel'))
 const MagicChat = lazy(() => import('../aichat/MagicChat'))
@@ -310,6 +311,12 @@ export default function MainLayout() {
   // Colapsar manualmente la columna derecha (persistente).
   const [rightCollapsed, setRightCollapsed] = useState(() => localStorage.getItem('right-collapsed') === '1')
   useEffect(() => { localStorage.setItem('right-collapsed', rightCollapsed ? '1' : '0') }, [rightCollapsed])
+
+  // Editor de documento ACTIVO (documento en solitario o texto del lienzo en edición).
+  // Cuando lo hay, la columna derecha SE CONVIERTE en el panel de formato (en lugar de
+  // superponerse). Igual que en la vista de documento; sin overlay flotante.
+  const activeDocEditor = useHasActiveDocEditor()
+  const showDocInspector = rightPanel === 'doc' || activeDocEditor
 
   // Migración única: BUCLES → tareas de seguimiento (tarea SIN fecha). Idempotente
   // y acotada (solo nodos con el tipo 'bucle'): quita el tipo y fija status (abierto
@@ -1074,7 +1081,7 @@ export default function MainLayout() {
       </main>
 
       {/* ── Columna derecha — siempre visible ── */}
-      {rightCollapsed && (
+      {rightCollapsed && !activeDocEditor && (
         <button
           title="Mostrar panel"
           onClick={() => setRightCollapsed(false)}
@@ -1089,7 +1096,7 @@ export default function MainLayout() {
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3L5 8l5 5" /></svg>
         </button>
       )}
-      {!rightCollapsed && <div className="right-panel-unified" style={{
+      {(!rightCollapsed || !!activeDocEditor) && <div className="right-panel-unified" style={{
         width: rightPanelW,
         display: 'flex', flexDirection: 'column',
         borderLeft: '1px solid var(--border)',
@@ -1109,6 +1116,11 @@ export default function MainLayout() {
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
         </button>
         <Suspense fallback={null}>
+        {showDocInspector ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            <DocInspector />
+          </div>
+        ) : (
         <div
           key={panelKey}
           className={`right-panel-slide right-panel-slide--${panelSlideDir}`}
@@ -1131,9 +1143,6 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={currentNodeIdFromRoute} />
-          )}
-          {rightPanel === 'doc' && (
-            <DocInspector />
           )}
           {rightPanel === 'context' && detailNodeId && (
             <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />
@@ -1166,6 +1175,7 @@ export default function MainLayout() {
             <SettingsListPanel />
           )}
         </div>
+        )}
         </Suspense>
       </div>}
 

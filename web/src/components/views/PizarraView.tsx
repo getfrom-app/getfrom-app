@@ -27,7 +27,6 @@ import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
-import DocInspector from './DocInspector'
 import OutlinerNode from '../outliner/OutlinerNode'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -1872,12 +1871,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
-            {/* DOT (texto/vista, hover/seleccionado/editando) → abre el elemento en su
-                página. Grande y separado, alineado a la 1ª línea. */}
-            {(isText || res) && (hovered || selectedId === node.id || editing) && (
+            {/* DOT → abre el elemento en su página. SIEMPRE visible (como en la tabla),
+                clicable directo, alineado al centro de la 1ª línea (título). */}
+            {(isText || res) && (
               <div title="Abrir en su página"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
-                style={{ position: 'absolute', left: -30, top: 0, height: 30, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
@@ -1908,15 +1907,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
-      {/* Editando un texto del lienzo → panel de formato a la DERECHA (estilo Pages),
-          el MISMO que en el documento en solitario. Lee el editor TipTap activo. */}
-      {editText && (
-        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 268, zIndex: 1800,
-          borderLeft: '1px solid var(--border,#e6e6e6)', background: 'var(--bg-elevated,#fafafa)',
-          boxShadow: '-8px 0 24px rgba(0,0,0,0.06)' }}>
-          <DocInspector />
-        </div>
-      )}
+      {/* Al editar un texto del lienzo, la COLUMNA DERECHA se reconvierte en el panel
+          de formato (lo gestiona MainLayout leyendo el editor TipTap activo), igual
+          que en la vista de documento. Ya no hay overlay flotante encima del panel. */}
 
       {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
       {textMenu && (
