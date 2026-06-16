@@ -281,7 +281,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
-  const [tool, setTool] = useState<'select' | 'pen' | 'eraser' | 'text'>('select')
+  const [tool, setTool] = useState<'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text'>('select')
+  // Color de tinta (pluma/rotulador/subrayador) + paleta abierta.
+  const [penColor, setPenColor] = useState<string>('#222222')
+  const penColorRef = useRef(penColor); penColorRef.current = penColor
+  const [paletteOpen, setPaletteOpen] = useState(false)
   // Texto del lienzo en edición (id del WBText) y hover.
   const [editText, setEditText] = useState<string | null>(null)
   const [hoverText, setHoverText] = useState<string | null>(null)
@@ -440,9 +444,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     if (worldPts.length < 4) return
     const node = store.getNode(parentId); if (!node) return
     const data = parsePizarra(node.body)
-    const wWorld = 2.4 / Math.max(0.0001, camRef.current.scale)
+    // Grosor en pantalla según la herramienta (pluma/rotulador/subrayador), → mundo.
+    const t = toolRef.current
+    const screenW = t === 'highlighter' ? 18 : t === 'marker' ? 6 : 2.5
+    const alpha = t === 'highlighter' ? 0.32 : 1
+    const wWorld = screenW / Math.max(0.0001, camRef.current.scale)
     data.strokes = [...data.strokes, {
-      id: rid(), pts: worldPts.map(n => Math.round(n * 100) / 100), w: wWorld, c: '#222222', a: 1, k: 'free',
+      id: rid(), pts: worldPts.map(n => Math.round(n * 100) / 100), w: wWorld, c: penColorRef.current, a: alpha, k: 'free',
     }]
     store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
   }, [parentId])
@@ -768,7 +776,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const rect = el.getBoundingClientRect()
     const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     // Lápiz: iniciar trazo. Borrador: borrar al pasar.
-    if (toolRef.current === 'pen') {
+    if (toolRef.current === 'pen' || toolRef.current === 'marker' || toolRef.current === 'highlighter') {
       el.setPointerCapture(e.pointerId)
       drawRef.current = [w.x, w.y]
       setDrawPts([w.x, w.y])
@@ -968,7 +976,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       const pts = drawRef.current
       drawRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
-      if (toolRef.current === 'pen') commitStroke(pts)
+      if (toolRef.current === 'pen' || toolRef.current === 'marker' || toolRef.current === 'highlighter') commitStroke(pts)
       setDrawPts(null)
       return
     }
@@ -1145,7 +1153,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
         backgroundPosition: `${cam.x}px ${cam.y}px`,
         touchAction: 'none',
-        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'eraser' ? 'crosshair' : tool === 'text' ? 'text' : 'default'),
+        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' ? 'crosshair' : tool === 'text' ? 'text' : 'default'),
         borderRadius: 8,
         animation: 'pizarra-dive 0.28s ease-out',
       }}
@@ -1216,7 +1224,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         {drawPts && drawPts.length >= 4 && (
           <path
             d={drawPts.reduce((acc, _v, i) => i % 2 === 0 ? acc + (i === 0 ? 'M' : 'L') + (cam.x + drawPts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + drawPts[i + 1] * cam.scale).toFixed(1) + ' ' : acc, '')}
-            fill="none" stroke="#222" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
+            fill="none" stroke={penColor} strokeWidth={tool === 'highlighter' ? 18 : tool === 'marker' ? 6 : 2.5} strokeOpacity={tool === 'highlighter' ? 0.32 : 1} strokeLinecap="round" strokeLinejoin="round"
           />
         )}
       </svg>
@@ -1551,9 +1559,34 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
         </button>
         {/* Lápiz — dibujar */}
-        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — dibujar" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
+        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — fino" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
+        {/* Rotulador — grueso */}
+        <button style={tool === 'marker' ? toolBtnActive : toolBtn} title="Rotulador — grueso" onClick={() => setTool(t => t === 'marker' ? 'select' : 'marker')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+        </button>
+        {/* Subrayador — translúcido */}
+        <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title="Subrayador" onClick={() => setTool(t => t === 'highlighter' ? 'select' : 'highlighter')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
+        </button>
+        {/* Color de tinta */}
+        <div style={{ position: 'relative' }}>
+          <button style={toolBtn} title="Color" onClick={() => setPaletteOpen(o => !o)}>
+            <span style={{ width: 16, height: 16, borderRadius: '50%', background: penColor, border: '1.5px solid rgba(0,0,0,0.15)', display: 'inline-block' }} />
+          </button>
+          {paletteOpen && (
+            <>
+              <div onPointerDown={() => setPaletteOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 70 }} />
+              <div style={{ position: 'absolute', bottom: 42, left: '50%', transform: 'translateX(-50%)', zIndex: 71, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, padding: 8, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.18)' }}>
+                {['#222222', '#868e96', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#ffffff'].map(c => (
+                  <button key={c} onClick={() => { setPenColor(c); setPaletteOpen(false); if (tool !== 'pen' && tool !== 'marker' && tool !== 'highlighter') setTool('pen') }}
+                    style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: penColor === c ? '2px solid var(--accent,#6c5ce7)' : '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         {/* Borrador */}
         <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
