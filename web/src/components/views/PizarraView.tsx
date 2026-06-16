@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
+import { uploadFile } from '../../api/client'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
@@ -115,6 +116,23 @@ function writeCardSize(node: Node, fields: { w?: number; scale?: number; pin?: W
   if (fields.scale != null) ed._cardScale = String(Number(fields.scale.toFixed(3)))
   if (fields.pin) { ed._pinX = String(Math.round(fields.pin.x)); ed._pinY = String(Math.round(fields.pin.y)) }
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+}
+
+// ── Recursos (PDF / imagen / enlace / archivo) embebidos en el lienzo ──
+// Un nodo-recurso lleva `extraData._resourceUrl` + `_resourceType`; el lienzo lo
+// pinta como tarjeta-embed y el dot lo abre en su página (NodeView ya renderiza el
+// recurso). Mismas claves que un recurso normal → cero divergencia con la lista.
+type ResourceKind = 'image' | 'pdf' | 'url' | 'file'
+interface ResourceMeta { url: string; type: ResourceKind }
+function readResource(node: Node): ResourceMeta | null {
+  try {
+    const ed = JSON.parse(node.extraData || '{}')
+    const url = ed._resourceUrl as string | undefined
+    if (!url) return null
+    const t = (ed._resourceType as string) || 'file'
+    const type: ResourceKind = t === 'image' || t === 'pdf' || t === 'url' ? t : 'file'
+    return { url, type }
+  } catch { return null }
 }
 
 // Escribe la posición en extraData preservando el resto de campos (patrón
@@ -360,6 +378,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [connDrag, setConnDrag] = useState<{ id: string; cx: number; cy: number } | null>(null)
   // Texto del lienzo en edición (id del nodo-documento).
   const [editText, setEditText] = useState<string | null>(null)
+  const editTextRef = useRef(editText); editTextRef.current = editText
   const toolRef = useRef(tool); toolRef.current = tool
   // Trazo en curso (puntos en MUNDO) mientras se dibuja.
   const [drawPts, setDrawPts] = useState<number[] | null>(null)
@@ -521,17 +540,70 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     store.updateNode(parentId, { body: bodyWithPizarra(node.body, data) })
   }, [parentId])
 
-  // Soltar un nodo arrastrado desde la columna derecha → colocarlo en la pizarra.
+  // ── Entidades soltadas/pegadas en el lienzo: PDF / imagen / enlace ───────────
+  // Crea un nodo-recurso anclado en el punto del mundo y devuelve su id.
+  const RES_W: Record<ResourceKind, number> = { image: 340, pdf: 360, url: 320, file: 280 }
+  const createResourceAt = useCallback((world: WorldPos, meta: { url: string; type: ResourceKind; key?: string; title?: string }) => {
+    const ed: Record<string, string> = {
+      _resourceUrl: meta.url, _resourceType: meta.type,
+      [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1',
+      _pinW: String(RES_W[meta.type]),
+    }
+    if (meta.key) ed._resourceKey = meta.key
+    const title = meta.title || (meta.type === 'url' ? meta.url : 'Archivo')
+    const node = store.createNode({ text: title, parentId, extraData: ed })
+    store.updateNode(node.id, { isResource: true })
+    return node.id
+  }, [parentId])
+
+  // Sube archivos a R2 y los ancla como tarjetas (apiladas con un pequeño offset).
+  const uploadAndPinFiles = useCallback(async (files: File[], world: WorldPos) => {
+    let i = 0
+    for (const file of files) {
+      const off = { x: world.x + i * 28, y: world.y + i * 28 }
+      const type: ResourceKind = file.type.startsWith('image/') ? 'image' : file.type === 'application/pdf' ? 'pdf' : 'file'
+      try {
+        const { key, publicUrl } = await uploadFile(file)
+        createResourceAt(off, { url: publicUrl, type, key, title: file.name })
+      } catch { /* subida fallida → se ignora ese archivo */ }
+      i++
+    }
+  }, [createResourceAt])
+
+  // Soltar sobre la pizarra: archivos→subida+ancla; un nodo interno arrastrado de la
+  // columna derecha→se coloca; una URL externa→nodo-enlace anclado en el punto.
   const onCanvasDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    const id = e.dataTransfer.getData('text/plain')
-    if (!id) return
-    const node = store.getNode(id)
-    if (!node || !store.children(parentId).some(c => c.id === id)) return
     const rect = containerRef.current!.getBoundingClientRect()
     const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    writePin(node, { x: w.x - 16, y: w.y - 12 })
-  }, [parentId, screenToWorld])
+    const files = Array.from(e.dataTransfer.files || [])
+    if (files.length) { void uploadAndPinFiles(files, w); return }
+    const id = e.dataTransfer.getData('text/plain')
+    const internal = id && store.getNode(id) && store.children(parentId).some(c => c.id === id)
+    if (internal) { writePin(store.getNode(id)!, { x: w.x - 16, y: w.y - 12 }); return }
+    const uri = (e.dataTransfer.getData('text/uri-list') || id || '').trim()
+    if (/^https?:\/\/\S+$/i.test(uri)) createResourceAt(w, { url: uri, type: 'url', title: uri })
+  }, [parentId, screenToWorld, uploadAndPinFiles, createResourceAt])
+
+  // Pegar (⌘V) sobre el lienzo en reposo → imagen del portapapeles o URL como
+  // entidad, en el centro de la vista. No interceptamos si se edita un texto
+  // (TipTap) o el foco está en un campo (lo gestiona el editor correspondiente).
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (editTextRef.current) return
+      const ae = document.activeElement as HTMLElement | null
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return
+      const items = Array.from(e.clipboardData?.items || [])
+      const c = camRef.current, vp = viewportRef.current
+      const world = { x: (vp.w / 2 - c.x) / c.scale, y: (vp.h / 2 - c.y) / c.scale }
+      const img = items.find(it => it.type.startsWith('image/'))
+      if (img) { const f = img.getAsFile(); if (f) { e.preventDefault(); void uploadAndPinFiles([f], world) } return }
+      const text = (e.clipboardData?.getData('text/plain') || '').trim()
+      if (/^https?:\/\/\S+$/i.test(text)) { e.preventDefault(); createResourceAt(world, { url: text, type: 'url', title: text }) }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [uploadAndPinFiles, createResourceAt])
 
   // Quitar de la pizarra (NO borra el nodo): elimina _pinX/_pinY/_pinScale → vuelve
   // a vivir solo en la columna derecha.
@@ -1643,6 +1715,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const hovered = hoverNode === node.id && tool === 'select'
         const isText = isDocNode(node)
         const elView = canvasViewKind(node)
+        const res = !isText && !elView ? readResource(node) : null
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
@@ -1690,6 +1763,30 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                   <ViewComp parentId={node.id} />
                 </div>
               </div>
+            ) : res ? (
+              // Entidad embebida (imagen / PDF / enlace / archivo) soltada o pegada.
+              // El dot la abre en su página (NodeView renderiza el recurso completo).
+              <div className="pizarra-res" style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e4e4e4)', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+                {res.type === 'image' ? (
+                  <img src={res.url} alt={node.text || ''} draggable={false}
+                    style={{ display: 'block', width: '100%', height: 'auto', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }} />
+                ) : res.type === 'pdf' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px' }}>
+                    <span style={{ fontSize: 30, lineHeight: 1 }}>📄</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{node.text || 'Documento PDF'}</span>
+                  </div>
+                ) : res.type === 'url' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>🔗</span>
+                    <span style={{ fontSize: 14, color: 'var(--accent,#6c5ce7)', wordBreak: 'break-all', textDecoration: 'underline' }}>{node.text || res.url}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>📎</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{node.text || 'Archivo'}</span>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="pizarra-card-body" style={{ minWidth: 0 }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
@@ -1697,7 +1794,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             )}
             {/* DOT (texto/vista, hover/seleccionado/editando) → abre el elemento en su
                 página. Grande y separado, alineado a la 1ª línea. */}
-            {isText && (hovered || selectedId === node.id || editing) && (
+            {(isText || res) && (hovered || selectedId === node.id || editing) && (
               <div title="Abrir en su página"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: -30, top: 0, height: 30, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
@@ -1709,8 +1806,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
-            {showHandles && !isText && (elView ? (
-              // Vista (tabla/kanban/calendario): ancho a la DERECHA + escala en la esquina.
+            {showHandles && !isText && ((elView || res) ? (
+              // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
               <>
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                   style={{ position: 'absolute', right: -5, top: '50%', width: 7, height: 28, marginTop: -14, background: 'var(--text-tertiary,#bbb)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.9, touchAction: 'none' }} />
