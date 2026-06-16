@@ -7591,15 +7591,13 @@ textarea:focus-visible,
 
 /* ── Elemento-texto del lienzo (mismo nodo que el documento): la 1ª línea (H1) se
       ve como título, igual que en DocEditor. ── */
-.pizarra-text { white-space: pre-wrap; }
-/* Elemento-texto en el lienzo: borde gris fino y sutil (para ver sus límites y
-   que los tiradores tengan sentido). Sin marcos morados. */
-/* Sin tocar: el texto flota sin marco (borde transparente para no descuadrar al
-   aparecer). Al pasar el ratón, seleccionar o editar → borde GRIS fino (sin morado). */
-.pizarra-node--text { border: 1px solid transparent; border-radius: 6px; padding: 8px 12px; transition: border-color .12s; }
+.pizarra-text { white-space: pre-wrap; background: none; }
+/* El texto del lienzo SIEMPRE flota sin nada: ni borde ni fondo, en ningún estado
+   (hover, selección o edición). Solo el texto sobre el lienzo. */
+.pizarra-node--text,
 .pizarra-node--text.pizarra-node--hover,
 .pizarra-node--text.pizarra-node--sel,
-.pizarra-node--text.pizarra-node--editing { border-color: var(--border, #d8d8d8); }
+.pizarra-node--text.pizarra-node--editing { border: none !important; background: none !important; box-shadow: none !important; padding: 0; }
 
 /* Elemento de VISTA (tabla/kanban/calendario) embebido en el lienzo. */
 .pizarra-node--el { border: 1px solid var(--border, #e2e2e2); border-radius: 10px; background: var(--bg, #fff); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }

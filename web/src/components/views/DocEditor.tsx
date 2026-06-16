@@ -50,7 +50,12 @@ export default function DocEditor({ node }: { node: Node }) {
   }
 
   return (
-    <div className="doc-editor" style={{ maxWidth: 760, margin: '0 auto', padding: '8px 4px 120px' }}>
+    <div className="doc-editor" style={{ maxWidth: 760, margin: '0 auto', padding: '4px 4px 120px' }}>
+      {/* Barra de formato — la MISMA que en el lienzo, ENCIMA del texto (pegada arriba). */}
+      <div style={{ position: 'sticky', top: 6, zIndex: 1500, display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+        <TextToolbar />
+      </div>
+
       <div
         ref={ref}
         className="pizarra-text"
@@ -61,11 +66,6 @@ export default function DocEditor({ node }: { node: Node }) {
         onClick={onClick}
         style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', outline: 'none', minHeight: 320, wordBreak: 'break-word' }}
       />
-
-      {/* Barra de formato — la MISMA que en el lienzo, fija abajo. */}
-      <div style={{ position: 'fixed', left: '50%', bottom: 18, transform: 'translateX(-50%)', zIndex: 1500 }}>
-        <TextToolbar />
-      </div>
     </div>
   )
 }

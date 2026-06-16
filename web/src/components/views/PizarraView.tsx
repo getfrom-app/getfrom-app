@@ -1570,14 +1570,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             {(isText || elView) && (hovered || selectedId === node.id) && !editing && (
               <div title="Abrir como documento"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
-                style={{ position: 'absolute', left: -18, top: 8, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                style={{ position: 'absolute', left: -18, top: 0, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85 }} />
               </div>
             )}
             {showHandles && (isText ? (
-              // Texto: un único punto pequeño a la DERECHA para ajustar el ancho. Minimalista.
+              // Texto: ancho = barra vertical fina a la DERECHA (forma distinta al dot
+              // redondo de la izquierda, para no confundirlos).
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                style={{ position: 'absolute', right: -5, top: '50%', width: 8, height: 8, marginTop: -4, background: 'var(--text-tertiary,#bbb)', borderRadius: '50%', cursor: 'ew-resize', touchAction: 'none' }} />
+                style={{ position: 'absolute', right: -6, top: '50%', width: 4, height: 20, marginTop: -10, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none' }} />
             ) : (
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
@@ -1593,12 +1594,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       })}
 
       {/* ── Barra de formato del texto en edición — la MISMA que en la vista
-             independiente (TextToolbar), fija abajo (donde la barra del lienzo). ── */}
-      {editText && isDocNode(store.getNode(editText)) && (
-        <div style={{ position: 'fixed', left: '50%', bottom: 18, transform: 'translateX(-50%)', zIndex: 1700 }}>
-          <TextToolbar />
-        </div>
-      )}
+             independiente (TextToolbar), flotando ENCIMA del texto que se edita.
+             La barra del lienzo se queda en su sitio (abajo). ── */}
+      {editText && isDocNode(store.getNode(editText)) && (() => {
+        const tn = store.getNode(editText)!
+        const pin = readPin(tn) || { x: 0, y: 0 }
+        const sx = cam.x + pin.x * cam.scale
+        const sy = cam.y + pin.y * cam.scale
+        return (
+          <div onPointerDown={(e) => e.stopPropagation()}
+            style={{ position: 'fixed', left: Math.max(8, Math.min(sx, viewport.w - 360)), top: Math.max(8, sy - 48), zIndex: 1700 }}>
+            <TextToolbar />
+          </div>
+        )
+      })()}
 
       {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
       {textMenu && (
@@ -1660,9 +1669,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           así que anclamos la barra a la parte inferior de la PANTALLA (siempre visible). */}
       <div style={{
         position: 'fixed', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 60,
-        // Al editar un texto se muestra su barra de formato (TextToolbar) en su lugar.
-        display: editText && isDocNode(store.getNode(editText)) ? 'none' : 'flex',
-        alignItems: 'center', gap: 2, padding: 5,
+        display: 'flex', alignItems: 'center', gap: 2, padding: 5,
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
       }}>
