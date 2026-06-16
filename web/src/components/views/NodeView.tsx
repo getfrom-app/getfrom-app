@@ -2693,7 +2693,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && !isAgendaRoot && <PizarraView parentId={node.id} flowUnpositioned />}
+                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && <PizarraView parentId={node.id} flowUnpositioned />}
 
                 {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
                 {isAgendaRoot && <TemporalCanvasView />}
