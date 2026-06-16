@@ -227,17 +227,23 @@ function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
   )
 }
 
-function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef; parentId: string; onClose: () => void }) {
+function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: PropDef; parentId: string; onClose: () => void; onNav?: (dir: 'down' | 'right' | 'left') => void }) {
   const current = store.getPropValue(node.id, def.id)
   const [val, setVal] = useState<string>(current === undefined || current === null ? '' : String(current))
   const ref = useRef<HTMLInputElement | HTMLSelectElement>(null)
   useEffect(() => { ref.current?.focus(); if (ref.current && 'select' in ref.current && def.type !== 'select') ref.current.select() }, [def.type])
-  function commit(v: string) {
+  function storeVal(v: string) {
     let stored: unknown = v
     if (def.type === 'number') stored = v === '' ? null : Number(v)
     if (def.type === 'checkbox') stored = v === 'true'
     store.setPropValue(node.id, def.id, stored)
-    onClose()
+  }
+  function commit(v: string) { storeVal(v); onClose() }
+  // Enter/Tab: guarda y navega (hoja de cálculo). Escape: cierra.
+  function navKey(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); storeVal(val); onNav ? onNav('down') : onClose() }
+    else if (e.key === 'Tab') { e.preventDefault(); storeVal(val); onNav ? onNav(e.shiftKey ? 'left' : 'right') : onClose() }
+    else if (e.key === 'Escape') onClose()
   }
   if (def.type === 'select') {
     const options = def.options || []
@@ -359,7 +365,7 @@ function CellEditor({ node, def, parentId, onClose }: { node: Node; def: PropDef
       value={val}
       onChange={e => setVal(e.target.value)}
       onBlur={() => commit(val)}
-      onKeyDown={e => { if (e.key === 'Enter') commit(val); if (e.key === 'Escape') onClose() }}
+      onKeyDown={navKey}
       className="node-table-cell-editor"
     />
   )
@@ -507,6 +513,7 @@ export default function NodeTableView({ parentId }: Props) {
   const [colMenu, setColMenu] = useState<string | null>(null)
   const [groupBy, setGroupBy] = useState<string | null>(null)   // null = sin agrupar
   const [filterText, setFilterText] = useState('')
+  const [resizeCol, setResizeCol] = useState<{ id: string; w: number } | null>(null)  // preview de ancho
 
   const children = store.children(parentId).filter(n => !n.deletedAt)
   const customCols = store.getPropSchema(parentId)
@@ -572,6 +579,60 @@ export default function NodeTableView({ parentId }: Props) {
     setEditingCell({ nodeId: node.id, colId: '__title' })
   }
 
+  // ── Navegación tipo hoja de cálculo entre celdas de TEXTO/número ──
+  // Columnas navegables: título + columnas de texto/número (donde se escribe).
+  const navCols = ['__title', ...customCols.filter(c => c.type === 'text' || c.type === 'number').map(c => c.id)]
+  const rowIds = sortedChildren.map(n => n.id)
+  function moveCell(rowId: string, colId: string, dir: 'down' | 'right' | 'left') {
+    const ri = rowIds.indexOf(rowId), ci = navCols.indexOf(colId)
+    if (ri < 0 || ci < 0) { setEditingCell(null); return }
+    if (dir === 'down') {
+      if (ri + 1 < rowIds.length) setEditingCell({ nodeId: rowIds[ri + 1], colId })
+      else { const n = store.createNode({ text: '', parentId, siblingOrder: Date.now() }); setEditingCell({ nodeId: n.id, colId }) }
+    } else if (dir === 'right') {
+      if (ci + 1 < navCols.length) setEditingCell({ nodeId: rowId, colId: navCols[ci + 1] })
+      else if (ri + 1 < rowIds.length) setEditingCell({ nodeId: rowIds[ri + 1], colId: navCols[0] })
+      else setEditingCell(null)
+    } else {
+      if (ci - 1 >= 0) setEditingCell({ nodeId: rowId, colId: navCols[ci - 1] })
+      else if (ri - 1 >= 0) setEditingCell({ nodeId: rowIds[ri - 1], colId: navCols[navCols.length - 1] })
+      else setEditingCell(null)
+    }
+  }
+  // Maneja Enter/Tab/Shift+Tab en un input de celda: commitea (cb) y navega.
+  function cellNavKey(e: React.KeyboardEvent, rowId: string, colId: string, commit: () => void) {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); moveCell(rowId, colId, 'down') }
+    else if (e.key === 'Tab') { e.preventDefault(); commit(); moveCell(rowId, colId, e.shiftKey ? 'left' : 'right') }
+    else if (e.key === 'Escape') { e.preventDefault(); setEditingCell(null) }
+  }
+
+  // ── Anchos de columna (persisten en extraData._colW del nodo-tabla) ──
+  const colWidths: Record<string, number> = (() => {
+    try { const w = JSON.parse(store.getNode(parentId)?.extraData || '{}')._colW; return (w && typeof w === 'object') ? w : {} } catch { return {} }
+  })()
+  function setColWidth(colId: string, px: number) {
+    const n = store.getNode(parentId); if (!n) return
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+    ed._colW = { ...(ed._colW as object || {}), [colId]: Math.max(60, Math.round(px)) }
+    store.updateNode(parentId, { extraData: JSON.stringify(ed) })
+  }
+  function onColResize(e: React.PointerEvent, colId: string) {
+    e.preventDefault(); e.stopPropagation()
+    const th = (e.currentTarget as HTMLElement).closest('th') as HTMLElement | null
+    const startX = e.clientX, startW = th ? th.offsetWidth : (colWidths[colId] || 140)
+    const move = (ev: PointerEvent) => setResizeCol({ id: colId, w: Math.max(60, startW + (ev.clientX - startX)) })
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up)
+      setResizeCol(cur => { if (cur) setColWidth(cur.id, cur.w); return null })
+    }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
+  }
+  const ColResizer = ({ colId }: { colId: string }) => (
+    <span onPointerDown={e => onColResize(e, colId)} onClick={e => e.stopPropagation()}
+      style={{ position: 'absolute', right: -3, top: 0, height: '100%', width: 6, cursor: 'col-resize', zIndex: 2 }} />
+  )
+
   function handleAddCol(name: string, type: ColType) {
     store.addPropColumn(parentId, name, type)
     setNewColOpen(false)
@@ -601,49 +662,38 @@ export default function NodeTableView({ parentId }: Props) {
   const sortIcon = (colId: string) =>
     sortBy !== colId ? '' : sortDir === 'asc' ? ' ▲' : sortDir === 'desc' ? ' ▼' : ''
 
+  const colOrder: string[] = ['__title',
+    ...(hasStatus ? ['__status'] : []), ...(hasDue ? ['__due'] : []), ...(hasPriority ? ['__priority'] : []),
+    ...(hasTags ? ['__tags'] : []), ...customCols.map(c => c.id), '__add']
+
   return (
     <div className="node-table-wrapper">
-      <div className="node-table-toolbar">
-        <input
-          className="node-table-filter"
-          placeholder={`${t('common.search')}…`}
-          value={filterText}
-          onChange={e => setFilterText(e.target.value)}
-        />
-        <div className="node-table-toolbar-spacer" />
-        <label className="node-table-toolbar-label">{t('sidebar.groupLabel')}:</label>
-        <select className="node-table-toolbar-select" value={groupBy || ''} onChange={e => setGroupBy(e.target.value || null)}>
-          <option value="">{t('sidebar.groupNone')}</option>
-          {groupableCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        {sortBy && (
-          <button className="node-table-toolbar-clear" onClick={() => { setSortBy(null); setSortDir(null) }} title="Quitar ordenación">
-            ↕ {sortBy === '__title' ? 'Título' : groupableCols.find(c => c.id === sortBy)?.name || sortBy} {sortDir === 'asc' ? '▲' : '▼'} ✕
-          </button>
-        )}
-      </div>
-      <table className="node-table">
+      <table className="node-table" style={{ tableLayout: Object.keys(colWidths).length ? 'fixed' : undefined }}>
+        <colgroup>
+          {colOrder.map(id => { const w = resizeCol?.id === id ? resizeCol.w : colWidths[id]; return <col key={id} style={w ? { width: w } : undefined} /> })}
+        </colgroup>
         <thead>
           <tr>
-            <th className="node-table-th node-table-th--title" onClick={() => toggleSort('__title')}>
-              {t('kanban.title')}{sortIcon('__title')}
+            <th className="node-table-th node-table-th--title" style={{ position: 'relative' }} onClick={() => toggleSort('__title')}>
+              {t('kanban.title')}{sortIcon('__title')}<ColResizer colId="__title" />
             </th>
             {hasStatus && (
-              <th className="node-table-th" onClick={() => toggleSort('__status')}>{t('kanban.byStatus')}{sortIcon('__status')}</th>
+              <th className="node-table-th" style={{ position: 'relative' }} onClick={() => toggleSort('__status')}>{t('kanban.byStatus')}{sortIcon('__status')}<ColResizer colId="__status" /></th>
             )}
             {hasDue && (
-              <th className="node-table-th" onClick={() => toggleSort('__due')}>{t('modal.dueDate')}{sortIcon('__due')}</th>
+              <th className="node-table-th" style={{ position: 'relative' }} onClick={() => toggleSort('__due')}>{t('modal.dueDate')}{sortIcon('__due')}<ColResizer colId="__due" /></th>
             )}
             {hasPriority && (
-              <th className="node-table-th" onClick={() => toggleSort('__priority')}>{t('kanban.byPriority')}{sortIcon('__priority')}</th>
+              <th className="node-table-th" style={{ position: 'relative' }} onClick={() => toggleSort('__priority')}>{t('kanban.byPriority')}{sortIcon('__priority')}<ColResizer colId="__priority" /></th>
             )}
             {hasTags && (
-              <th className="node-table-th">{t('sidebar.groupTag')}s</th>
+              <th className="node-table-th" style={{ position: 'relative' }}>{t('sidebar.groupTag')}s<ColResizer colId="__tags" /></th>
             )}
             {customCols.map(col => (
               <th
                 key={col.id}
                 className="node-table-th node-table-th--custom"
+                style={{ position: 'relative' }}
                 onClick={() => toggleSort(col.id)}
                 onContextMenu={e => { e.preventDefault(); setColMenu(col.id) }}
               >
@@ -655,6 +705,7 @@ export default function NodeTableView({ parentId }: Props) {
                     <button onClick={() => setColMenu(null)}>Cerrar</button>
                   </div>
                 )}
+                <ColResizer colId={col.id} />
               </th>
             ))}
             <th className="node-table-th node-table-th--add">
@@ -692,11 +743,8 @@ export default function NodeTableView({ parentId }: Props) {
                       className="node-table-cell-editor"
                       defaultValue={node.text}
                       placeholder={t('common.noTitle')}
-                      onBlur={e => { store.updateNode(node.id, { text: e.target.value }); setEditingCell(null) }}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') { store.updateNode(node.id, { text: (e.target as HTMLInputElement).value }); setEditingCell(null) }
-                        if (e.key === 'Escape') setEditingCell(null)
-                      }}
+                      onBlur={e => { store.updateNode(node.id, { text: e.target.value }); setEditingCell(cur => (cur?.nodeId === node.id && cur?.colId === '__title') ? null : cur) }}
+                      onKeyDown={e => cellNavKey(e, node.id, '__title', () => store.updateNode(node.id, { text: (e.target as HTMLInputElement).value }))}
                     />
                   ) : (
                     <span className="node-table-title" style={{ cursor: 'text' }}
@@ -837,7 +885,9 @@ export default function NodeTableView({ parentId }: Props) {
                       <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />
                       {isEditing && !useModal && (
                         <div className="node-table-cell-overlay">
-                          <CellEditor node={node} def={col} parentId={parentId} onClose={() => setEditingCell(null)} />
+                          <CellEditor node={node} def={col} parentId={parentId}
+                            onClose={() => setEditingCell(cur => (cur?.nodeId === node.id && cur?.colId === col.id) ? null : cur)}
+                            onNav={(dir) => moveCell(node.id, col.id, dir)} />
                         </div>
                       )}
                       {isEditing && useModal && (

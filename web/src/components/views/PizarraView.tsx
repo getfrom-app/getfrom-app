@@ -1337,8 +1337,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
    min-width para que un nodo vacío/corto siga teniendo zona clicable de edición. */
 .pizarra-card-body .node-text{flex:0 1 auto!important;min-width:160px}
 .pizarra-card-body{padding:4px 6px 8px}
-.pizarra-node--sel{box-shadow:0 0 0 2px var(--accent,#6c5ce7);border-radius:8px;background:rgba(108,92,231,0.06)}
-.pizarra-node--hover{box-shadow:0 0 0 1.5px rgba(108,92,231,0.45);border-radius:8px}
+.pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
+.pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
+.pizarra-node--text.pizarra-node--sel,.pizarra-node--text.pizarra-node--hover{box-shadow:none}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
 .pizarra-card-body .node-row{align-items:flex-start!important}
 /* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
@@ -1665,7 +1666,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               // en solitario. Cabecera = tirador para mover; el cuerpo es la vista real.
               <div className="pizarra-el">
                 <div className="pizarra-el-head" onPointerDown={(e) => onCardPointerDown(e, node)} style={{ cursor: 'grab' }}>
-                  <span className="pizarra-el-grip">⠿</span>
+                  {/* DOT a la izquierda → abre el elemento en su propia página. */}
+                  <span className="pizarra-el-dot" title="Abrir en su página"
+                    onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
+                    style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85, cursor: 'pointer', flexShrink: 0 }} />
                   <span className="pizarra-el-title">{node.text || 'Vista'}</span>
                 </div>
                 <div className="pizarra-el-body">
@@ -1679,7 +1683,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             )}
             {/* DOT (texto/vista, hover/seleccionado) → abre el elemento en solitario.
                 Mismo estilo que el bullet de un nodo y alineado a la 1ª línea. */}
-            {(isText || elView) && (hovered || selectedId === node.id) && !editing && (
+            {isText && (hovered || selectedId === node.id) && !editing && (
               <div title="Abrir como documento"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: -18, top: 0, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
