@@ -28,6 +28,10 @@ export function firstLineTitle(html: string | null | undefined): string {
   const d = document.createElement('div')
   d.innerHTML = html || ''
   const txt = (d.textContent || '').replace(/ /g, ' ').trim()
-  const first = txt.split('\n').map(s => s.trim()).find(Boolean) || ''
+  for (const child of Array.from(d.children)) {
+    const bt = (child.textContent || '').trim()
+    if (bt) return bt.slice(0, 120)
+  }
+  const first = (d.textContent || '').trim()
   return first.slice(0, 120) || 'Documento'
 }

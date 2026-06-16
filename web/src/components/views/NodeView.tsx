@@ -2238,7 +2238,21 @@ export default function NodeView() {
 
         <div className="view-body">
           {/* ── Documento (texto rico, TipTap) — ocupa toda la view-body y reemplaza
-                el resto de vistas. La fila de título va oculta (DocEditor trae la suya). ── */}
+                el resto de vistas. La fila de título va oculta (el título es la 1ª
+                línea del cuerpo). Arriba-derecha: menú ··· estándar (copiar/exportar). ── */}
+          {isDoc && (
+            <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', justifyContent: 'flex-end', padding: '4px 4px 0' }}>
+              <button
+                className={`node-action-icon-btn ${titleContextMenu ? 'active' : ''}`}
+                title="Más opciones"
+                onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setTitleContextMenu({ x: r.right - 220, y: r.bottom + 4 }) }}
+              >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                  <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+                </svg>
+              </button>
+            </div>
+          )}
           {isDoc && <DocEditor node={node} />}
 
           {/* ── Pizarra digital ── */}

@@ -753,6 +753,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 
   const createTextAt = useCallback((world: WorldPos) => {
     const node = store.createNode({ text: '', parentId, extraData: newTextExtra(world) })
+    // La 1ª línea es el TÍTULO → arranca como H1 (se ve como tal en lienzo y doc).
+    store.updateNode(node.id, { body: '<h1></h1>' })
     setTool('select')
     setEditText(node.id)
   }, [parentId])

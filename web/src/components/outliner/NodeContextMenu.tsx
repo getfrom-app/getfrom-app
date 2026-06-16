@@ -24,6 +24,8 @@ import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { publishNote, unpublishNote } from '../../api/client'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
+import { isDocNode } from '../../utils/docNode'
+import { htmlToMarkdown, docStandaloneHtml } from '../../utils/htmlMarkdown'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -243,7 +245,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
     }).join('')
   }
+  // Documento: el contenido es HTML en el body (no hijos). Markdown = conversión.
+  const isDoc = isDocNode(node)
   function fullMd(): string {
+    if (isDoc) return htmlToMarkdown(node.body || '')
     return `# ${node.text || 'Nota'}\n\n${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`.trim()
   }
   function buildHtml(parentId: string): string {
@@ -257,7 +262,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     navigator.clipboard.writeText(fullMd()).then(() => toast('Markdown copiado')).catch(() => {})
   }
   function copyRich() {
-    const html = `<h1>${escapeHtml(node.text || '')}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}`
+    const html = isDoc
+      ? (node.body || '')
+      : `<h1>${escapeHtml(node.text || '')}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}`
     try {
       navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -277,6 +284,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   }
   // Documento HTML autónomo (para exportar HTML y para el PDF limpio).
   function standaloneHtml(): string {
+    if (isDoc) return docStandaloneHtml(node.text || 'Documento', node.body || '')
     const safeTitle = escapeHtml(node.text || 'Nota')
     return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safeTitle}</title>

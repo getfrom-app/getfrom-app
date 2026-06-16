@@ -7589,6 +7589,16 @@ textarea:focus-visible,
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
 
+/* ── Elemento-texto del lienzo (mismo nodo que el documento): la 1ª línea (H1) se
+      ve como título, igual que en DocEditor. ── */
+.pizarra-text { white-space: pre-wrap; }
+.pizarra-text h1 { font-size: 1.8em; font-weight: 700; margin: 0 0 0.2em; line-height: 1.25; }
+.pizarra-text h2 { font-size: 1.4em; font-weight: 700; margin: 0.4em 0 0.15em; line-height: 1.3; }
+.pizarra-text h3 { font-size: 1.18em; font-weight: 700; margin: 0.35em 0 0.1em; }
+.pizarra-text p { margin: 0.3em 0; }
+.pizarra-text ul, .pizarra-text ol { padding-left: 1.4em; margin: 0.3em 0; }
+.pizarra-text a { color: var(--accent, #6c5ce7); text-decoration: underline; }
+
 /* ── Tabla view ───────────────────────────────────────────────────────────── */
 .node-table-wrapper {
   width: 100%;
