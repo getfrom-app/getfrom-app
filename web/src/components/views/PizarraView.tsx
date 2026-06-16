@@ -789,8 +789,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       text: titles[kind], parentId,
       extraData: { viewBlock: kind, [PIN_X]: String(Math.round(wx - Number(width) / 2)), [PIN_Y]: String(Math.round(wy - 120)), [PIN_SCALE]: '1', _pinW: width },
     })
-    // Tabla: un par de filas de muestra para que se vea como tabla desde el inicio.
-    if (kind === 'tabla') { store.createNode({ text: 'Fila 1', parentId: node.id }); store.createNode({ text: 'Fila 2', parentId: node.id }) }
+    // Se crea VACÍA: la tabla muestra «+ Añadir fila» para empezar.
     setTool('select')
     setSelectedId(node.id)
   }, [parentId])
@@ -1579,6 +1578,14 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               // redondo de la izquierda, para no confundirlos).
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
                 style={{ position: 'absolute', right: -6, top: '50%', width: 4, height: 20, marginTop: -10, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none' }} />
+            ) : elView ? (
+              // Vista (tabla/kanban/calendario): ancho a la DERECHA + escala en la esquina.
+              <>
+                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                  style={{ position: 'absolute', right: -5, top: '50%', width: 7, height: 28, marginTop: -14, background: 'var(--text-tertiary,#bbb)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.9, touchAction: 'none' }} />
+                <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+              </>
             ) : (
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}

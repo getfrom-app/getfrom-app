@@ -8048,6 +8048,18 @@ textarea:focus-visible,
 }
 .node-calendar-nav-btn:hover { background: var(--bg-hover); }
 .node-calendar-month { font-size: 14px; font-weight: 600; text-transform: capitalize; }
+
+/* Vista SEMANA */
+.node-calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 6px 0; }
+.node-calendar-week-col { display: flex; flex-direction: column; gap: 4px; min-height: 160px; border: 1px solid var(--border-subtle, #eee); border-radius: 8px; padding: 6px; }
+.node-calendar-week-head { font-size: 12px; font-weight: 600; color: var(--text-secondary, #777); text-transform: capitalize; margin-bottom: 2px; }
+/* Vista TIMELINE */
+.node-calendar-timeline { display: flex; flex-direction: column; gap: 14px; padding: 8px 2px; }
+.node-calendar-tl-group { display: flex; gap: 12px; align-items: flex-start; }
+.node-calendar-tl-date { flex: 0 0 130px; font-size: 12px; font-weight: 600; color: var(--text-secondary, #777); text-transform: capitalize; padding-top: 3px; border-right: 2px solid var(--border-subtle, #eee); }
+.node-calendar-tl-date.today { color: var(--accent, #6c5ce7); border-right-color: var(--accent, #6c5ce7); }
+.node-calendar-tl-items { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.node-calendar-empty { padding: 24px; text-align: center; color: var(--text-tertiary, #aaa); font-size: 13px; }
 .node-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

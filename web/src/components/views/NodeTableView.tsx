@@ -567,8 +567,9 @@ export default function NodeTableView({ parentId }: Props) {
   }
 
   function handleAddRow() {
+    // Crear fila VACÍA y editar su título inline (sin salir de la tabla).
     const node = store.createNode({ text: '', parentId, siblingOrder: Date.now() })
-    navigate(`/node/${node.id}`)
+    setEditingCell({ nodeId: node.id, colId: '__title' })
   }
 
   function handleAddCol(name: string, type: ColType) {
@@ -683,12 +684,32 @@ export default function NodeTableView({ parentId }: Props) {
               >
                 <td
                   className="node-table-td node-table-td--title"
-                  onClick={() => navigate(`/node/${node.id}`)}
-                  style={{ cursor: 'pointer' }}
-                  title="Abrir nota"
+                  style={{ position: 'relative' }}
                 >
-                  <span className="node-table-title">{node.text || t('common.noTitle')}</span>
+                  {isBuiltinEditing('__title') ? (
+                    <input
+                      autoFocus
+                      className="node-table-cell-editor"
+                      defaultValue={node.text}
+                      placeholder={t('common.noTitle')}
+                      onBlur={e => { store.updateNode(node.id, { text: e.target.value }); setEditingCell(null) }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { store.updateNode(node.id, { text: (e.target as HTMLInputElement).value }); setEditingCell(null) }
+                        if (e.key === 'Escape') setEditingCell(null)
+                      }}
+                    />
+                  ) : (
+                    <span className="node-table-title" style={{ cursor: 'text' }}
+                      onClick={() => setEditingCell({ nodeId: node.id, colId: '__title' })}>
+                      {node.text || <span className="node-table-empty-cell">{t('common.noTitle')}</span>}
+                    </span>
+                  )}
                   {grandchildren > 0 && <span className="node-table-children-badge">{grandchildren}</span>}
+                  <button
+                    onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
+                    title="Abrir nota"
+                    style={{ position: 'absolute', right: 6, top: '50%', marginTop: -10, width: 20, height: 20, border: 'none', background: 'transparent', color: 'var(--text-tertiary,#bbb)', cursor: 'pointer', borderRadius: 4, fontSize: 13, lineHeight: 1 }}
+                  >↗</button>
                 </td>
                 {hasStatus && (
                   <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__status' })} style={{ position: 'relative' }}>
