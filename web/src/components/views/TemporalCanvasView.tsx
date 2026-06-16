@@ -4,8 +4,10 @@
 //   · Zoom-in (rueda↑ / +) baja de nivel: raíces→años→meses→días→[entra al día].
 //   · Zoom-out (rueda↓ / −) sube: días→meses→años→raíces.
 //   · Clic en una celda baja de nivel (o entra al día / al nodo raíz).
-// Solo se NAVEGA (cambia de nodo) al entrar a un día concreto o a una raíz que no
-// sea la Agenda.
+// Transición CONTINUA (morph de 2 capas): la capa saliente se aleja/acerca y se
+// desvanece mientras la entrante crece/encoge desde el lado correcto (bucear =
+// crece desde pequeño; subir = encoge desde grande). Da sensación de un solo
+// espacio infinito, no de pantallas separadas.
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -19,6 +21,9 @@ const MONTHS_LONG = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Jul
 const WD = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 const ORDER: TemporalLevel[] = ['roots', 'years', 'months', 'days']
+const MORPH_MS = 320
+
+type Snapshot = { level: TemporalLevel; year: number; month: number }
 
 export default function TemporalCanvasView() {
   useStore()
@@ -30,10 +35,15 @@ export default function TemporalCanvasView() {
   const [level, setLevel] = useState<TemporalLevel>(init ? init.level : 'months')
   const [year, setYear] = useState(initDate.getFullYear())
   const [month, setMonth] = useState(initDate.getMonth()) // 0-11
-  // Animación de transición entre niveles.
-  const [anim, setAnim] = useState<{ k: number; dir: 'in' | 'out' }>({ k: 0, dir: 'in' })
+  // Morph: capa SALIENTE (la que dejamos) + dirección. La entrante es el estado vivo.
+  const [outgoing, setOutgoing] = useState<{ snap: Snapshot; dir: 'in' | 'out'; k: number } | null>(null)
+  const [animK, setAnimK] = useState(0)
+  const [animDir, setAnimDir] = useState<'in' | 'out'>('in')
+  const outTimer = useRef<number | null>(null)
   const wheelAcc = useRef(0)
   const wheelCooldown = useRef(0)
+
+  useEffect(() => () => { if (outTimer.current) clearTimeout(outTimer.current) }, [])
 
   // Días con contenido (1 pasada sobre el store). Clave "YYYY-M-D" y "YYYY-M".
   const content = useMemo(() => {
@@ -50,9 +60,13 @@ export default function TemporalCanvasView() {
   }, [store.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const goLevel = useCallback((next: TemporalLevel, dir: 'in' | 'out') => {
-    setAnim(a => ({ k: a.k + 1, dir }))
+    // Snapshot de lo que dejamos → capa saliente que se anima fuera.
+    setOutgoing({ snap: { level, year, month }, dir, k: animK })
+    setAnimDir(dir); setAnimK(k => k + 1)
     setLevel(next)
-  }, [])
+    if (outTimer.current) clearTimeout(outTimer.current)
+    outTimer.current = window.setTimeout(() => setOutgoing(null), MORPH_MS)
+  }, [level, year, month, animK])
 
   const zoomIn = useCallback(() => {
     const i = ORDER.indexOf(level)
@@ -76,10 +90,9 @@ export default function TemporalCanvasView() {
     if (Math.abs(wheelAcc.current) < 90) return
     const dir = wheelAcc.current < 0 ? 'in' : 'out'
     wheelAcc.current = 0
-    wheelCooldown.current = t + 320
+    wheelCooldown.current = t + 360
     if (dir === 'in') {
       if (level === 'days') {
-        // Entrar al día bajo el cursor (zoom-in también, no solo clic).
         const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
         const cell = el?.closest('[data-day]') as HTMLElement | null
         const ds = cell?.getAttribute('data-day')
@@ -90,7 +103,6 @@ export default function TemporalCanvasView() {
     } else zoomOut()
   }, [level, zoomIn, zoomOut, navigate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Raíces (hijos de 🏠 From) para el nivel 'roots'.
   const roots = useMemo(() => {
     const home = findRootByKey('home')
     if (!home) return []
@@ -98,105 +110,120 @@ export default function TemporalCanvasView() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const agendaId = useMemo(() => findRootByKey('agenda')?.id, [])
 
+  // ── Render de UN nivel (header + rejilla). Parametrizado por nivel/año/mes para
+  //    poder pintar la capa entrante (estado vivo) y la saliente (snapshot). ──
+  const renderLevel = (lvl: TemporalLevel, yr: number, mo: number) => (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        {lvl !== 'roots' && <button onClick={zoomOut} title="Subir un nivel" style={hdrBtn}>‹</button>}
+        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, #222)' }}>
+          {lvl === 'roots' && 'From'}
+          {lvl === 'years' && 'Años'}
+          {lvl === 'months' && yr}
+          {lvl === 'days' && `${MONTHS_LONG[mo]} ${yr}`}
+        </div>
+      </div>
+
+      {lvl === 'roots' && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignContent: 'flex-start' }}>
+          {roots.map(r => (
+            <button key={r.id} onClick={() => { if (r.id === agendaId) goLevel('years', 'in'); else navigate(`/node/${r.id}`) }}
+              style={{ ...card, width: 240, height: 120 }}>
+              <span style={{ fontSize: 19, fontWeight: 600 }}>{r.text || 'Sin título'}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary,#999)' }}>{store.children(r.id).filter(c => !c.deletedAt).length} elementos</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {lvl === 'years' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, maxWidth: 760 }}>
+          {Array.from({ length: 12 }, (_, i) => now.getFullYear() - 5 + i).map(y => (
+            <button key={y} onClick={() => { setYear(y); goLevel('months', 'in') }}
+              style={{ ...card, height: 84, fontSize: 22, fontWeight: y === now.getFullYear() ? 700 : 500, color: y === now.getFullYear() ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>
+              {y}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {lvl === 'months' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: 16, flex: 1, maxWidth: 880 }}>
+          {MONTHS.map((m, mi) => {
+            const isThis = yr === now.getFullYear() && mi === now.getMonth()
+            const has = content.months.has(`${yr}-${mi}`)
+            return (
+              <button key={mi} onClick={() => { setMonth(mi); goLevel('days', 'in') }}
+                style={{ ...card, alignItems: 'flex-start', justifyContent: 'flex-start', padding: 16, position: 'relative',
+                  border: isThis ? '2px solid var(--accent,#6c5ce7)' : card.border }}>
+                <span style={{ fontSize: 18, fontWeight: 600, color: isThis ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>{m.toUpperCase()}</span>
+                {has && <span style={{ position: 'absolute', top: 16, right: 16, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent,#6c5ce7)', opacity: 0.7 }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {lvl === 'days' && (() => {
+        const first = new Date(yr, mo, 1)
+        const lead = (first.getDay() + 6) % 7
+        const ndays = new Date(yr, mo + 1, 0).getDate()
+        const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: ndays }, (_, i) => i + 1)]
+        while (cells.length % 7 !== 0) cells.push(null)
+        return (
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, marginBottom: 6 }}>
+              {WD.map((w, i) => <div key={i} style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary,#999)', padding: '4px 0' }}>{w}</div>)}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(64px, 1fr)', gap: 6 }}>
+              {cells.map((d, i) => {
+                if (d == null) return <div key={i} />
+                const isToday = yr === now.getFullYear() && mo === now.getMonth() && d === now.getDate()
+                const has = content.days.has(`${yr}-${mo}-${d}`)
+                return (
+                  <button key={i} data-day={`${yr}-${mo}-${d}`} onClick={() => navigate(`/node/${ensureDayPath(new Date(yr, mo, d)).id}`)}
+                    style={{ ...card, alignItems: 'flex-start', justifyContent: 'flex-start', padding: 8, position: 'relative',
+                      background: isToday ? 'var(--accent-soft, rgba(108,92,231,0.10))' : card.background as string,
+                      border: isToday ? '2px solid var(--accent,#6c5ce7)' : card.border }}>
+                    <span style={{ fontSize: 15, fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>{d}</span>
+                    {has && <span style={{ position: 'absolute', bottom: 8, left: 10, width: 6, height: 6, borderRadius: '50%', background: 'var(--accent,#6c5ce7)', opacity: 0.7 }} />}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+    </div>
+  )
+
   return (
     <div onWheel={onWheel} style={{
       position: 'relative', width: '100%', height: 'calc(100vh - 160px)', minHeight: 480,
       overflow: 'hidden', background: 'var(--bg, #fff)', borderRadius: 8, userSelect: 'none',
     }}>
-      <style>{`@keyframes tc-in{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
-@keyframes tc-out{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}`}</style>
+      <style>{`
+@keyframes tc-in-in{from{opacity:0;transform:scale(0.82)}to{opacity:1;transform:scale(1)}}
+@keyframes tc-in-out{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.35)}}
+@keyframes tc-out-in{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:scale(1)}}
+@keyframes tc-out-out{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.78)}}`}</style>
 
-      <div key={anim.k} style={{
-        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-        animation: `tc-${anim.dir} 0.26s ease-out`, padding: '28px 32px 80px',
-      }}>
-        {/* Cabecera con breadcrumb de nivel */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-          {level !== 'roots' && (
-            <button onClick={zoomOut} title="Subir un nivel" style={hdrBtn}>‹</button>
-          )}
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, #222)' }}>
-            {level === 'roots' && 'From'}
-            {level === 'years' && 'Años'}
-            {level === 'months' && year}
-            {level === 'days' && `${MONTHS_LONG[month]} ${year}`}
-          </div>
+      {/* Capa SALIENTE (snapshot del nivel que dejamos) — se anima fuera. */}
+      {outgoing && (
+        <div key={`out-${outgoing.k}`} style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', padding: '28px 32px 80px',
+          pointerEvents: 'none', transformOrigin: 'center', animation: `tc-${outgoing.dir}-out ${MORPH_MS}ms ease-out forwards`,
+        }}>
+          {renderLevel(outgoing.snap.level, outgoing.snap.year, outgoing.snap.month)}
         </div>
+      )}
 
-        {/* ── Nivel RAÍCES ── */}
-        {level === 'roots' && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignContent: 'flex-start' }}>
-            {roots.map(r => (
-              <button key={r.id} onClick={() => { if (r.id === agendaId) goLevel('years', 'in'); else navigate(`/node/${r.id}`) }}
-                style={{ ...card, width: 240, height: 120 }}>
-                <span style={{ fontSize: 19, fontWeight: 600 }}>{r.text || 'Sin título'}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary,#999)' }}>{store.children(r.id).filter(c => !c.deletedAt).length} elementos</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Nivel AÑOS ── */}
-        {level === 'years' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, maxWidth: 760 }}>
-            {Array.from({ length: 12 }, (_, i) => now.getFullYear() - 5 + i).map(y => (
-              <button key={y} onClick={() => { setYear(y); goLevel('months', 'in') }}
-                style={{ ...card, height: 84, fontSize: 22, fontWeight: y === now.getFullYear() ? 700 : 500, color: y === now.getFullYear() ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>
-                {y}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Nivel MESES (calendario anual 3 columnas × 4 filas) ── */}
-        {level === 'months' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: 16, flex: 1, maxWidth: 880 }}>
-            {MONTHS.map((m, mi) => {
-              const isThis = year === now.getFullYear() && mi === now.getMonth()
-              const has = content.months.has(`${year}-${mi}`)
-              return (
-                <button key={mi} onClick={() => { setMonth(mi); goLevel('days', 'in') }}
-                  style={{ ...card, alignItems: 'flex-start', justifyContent: 'flex-start', padding: 16, position: 'relative',
-                    border: isThis ? '2px solid var(--accent,#6c5ce7)' : card.border }}>
-                  <span style={{ fontSize: 18, fontWeight: 600, color: isThis ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>{m.toUpperCase()}</span>
-                  {has && <span style={{ position: 'absolute', top: 16, right: 16, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent,#6c5ce7)', opacity: 0.7 }} />}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {/* ── Nivel DÍAS (mes con rejilla semanal) ── */}
-        {level === 'days' && (() => {
-          const first = new Date(year, month, 1)
-          const lead = (first.getDay() + 6) % 7 // lunes=0
-          const ndays = new Date(year, month + 1, 0).getDate()
-          const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: ndays }, (_, i) => i + 1)]
-          while (cells.length % 7 !== 0) cells.push(null)
-          return (
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, marginBottom: 6 }}>
-                {WD.map((w, i) => <div key={i} style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary,#999)', padding: '4px 0' }}>{w}</div>)}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(64px, 1fr)', gap: 6 }}>
-                {cells.map((d, i) => {
-                  if (d == null) return <div key={i} />
-                  const isToday = year === now.getFullYear() && month === now.getMonth() && d === now.getDate()
-                  const has = content.days.has(`${year}-${month}-${d}`)
-                  return (
-                    <button key={i} data-day={`${year}-${month}-${d}`} onClick={() => navigate(`/node/${ensureDayPath(new Date(year, month, d)).id}`)}
-                      style={{ ...card, alignItems: 'flex-start', justifyContent: 'flex-start', padding: 8, position: 'relative',
-                        background: isToday ? 'var(--accent-soft, rgba(108,92,231,0.10))' : card.background as string,
-                        border: isToday ? '2px solid var(--accent,#6c5ce7)' : card.border }}>
-                      <span style={{ fontSize: 15, fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--accent,#6c5ce7)' : 'var(--text,#333)' }}>{d}</span>
-                      {has && <span style={{ position: 'absolute', bottom: 8, left: 10, width: 6, height: 6, borderRadius: '50%', background: 'var(--accent,#6c5ce7)', opacity: 0.7 }} />}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })()}
+      {/* Capa ENTRANTE (estado vivo). */}
+      <div key={`in-${animK}`} style={{
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', padding: '28px 32px 80px',
+        transformOrigin: 'center', animation: `tc-${animDir}-in ${MORPH_MS}ms ease-out`,
+      }}>
+        {renderLevel(level, year, month)}
       </div>
 
       {/* Toolbar inferior ÚNICA (fija) */}
