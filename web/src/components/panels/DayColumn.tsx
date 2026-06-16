@@ -96,8 +96,10 @@ export default function DayColumn({
 
   // Datos de la columna (eventos + capturas SIN duplicar con el cockpit) + ids a
   // excluir del bloque «Nodos» (todo lo que ya vive en la columna derecha).
-  const { eventNodes, captureNodes, isToday, dayTasks, rightColumnIds } = getDayColumnData(node)
+  const { eventNodes, captureNodes, isToday, dayTasks, areaNodes, rightColumnIds } = getDayColumnData(node)
   const eventIds = rightColumnIds
+  // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
+  const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
 
   // Eliminar una fila de la columna (evento → también en Google; resto → Papelera).
   const deleteRow = (n: Node) => {
@@ -188,6 +190,23 @@ export default function DayColumn({
               </span>
               {hhmm(t.due) !== '00:00' && t.due && <span className="dc-time">{hhmm(t.due)}</span>}
               {delBtn(t)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Áreas — vistas guardadas del lienzo. Pulsa para volar a esa vista. */}
+      {areaNodes.length > 0 && (
+        <div className="dc-group">
+          {header('areas', 'Áreas')}
+          {!collapsed.has('areas') && areaNodes.map(a => (
+            <div key={a.id} className="dc-row" data-node-id={a.id}
+              onClick={() => flyToArea(a.id)}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(a) }}
+              title="Ir a esta vista del lienzo" style={{ cursor: 'pointer' }}>
+              <span className="dc-event-dot" style={{ background: 'var(--accent,#6c5ce7)' }} />
+              <span className="dc-text">{a.text ? renderInline(a.text) : 'Área'}</span>
+              {delBtn(a)}
             </div>
           ))}
         </div>

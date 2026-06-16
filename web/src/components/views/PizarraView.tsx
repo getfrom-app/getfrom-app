@@ -24,6 +24,7 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { isCanvasText, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
+import TextToolbar from './TextToolbar'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -649,6 +650,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       text: name.trim() || 'Vista',
       parentId,
       extraData: {
+        _area: '1', // vista guardada → bloque «Áreas» de la columna derecha
         [PIN_X]: String(Math.round(wx - CARD_W / 2)),
         [PIN_Y]: String(Math.round(wy - CARD_MIN_H / 2)),
         [PIN_SCALE]: String(Number(c.scale.toFixed(4))),
@@ -1548,41 +1550,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         )
       })}
 
-      {/* ── Menú flotante de formato (estilo iPad) para el texto en edición ── */}
-      {editText && store.getNode(editText) && isCanvasText(store.getNode(editText)) && (() => {
-        const tn = store.getNode(editText)!
-        const tpos = readPin(tn) || { x: 0, y: 0 }
-        // Pegada justo encima del texto (su top en pantalla).
-        const mx = cam.x + tpos.x * cam.scale
-        const my = cam.y + tpos.y * cam.scale
-        const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
-        const Btn = ({ label, onAct, title }: { label: React.ReactNode; onAct: () => void; title: string }) => (
-          <button title={title} onMouseDown={(e) => { e.preventDefault(); onAct() }}
-            style={{ minWidth: 26, height: 26, border: 'none', background: 'transparent', borderRadius: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text,#333)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{label}</button>
-        )
-        return (
-          <div onPointerDown={(e) => e.stopPropagation()} style={{
-            position: 'fixed', left: Math.max(8, mx), top: Math.max(8, my - 38), zIndex: 1700,
-            display: 'flex', alignItems: 'center', gap: 1, padding: 4,
-            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
-            borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
-          }}>
-            <Btn title="Negrita" label={<b>B</b>} onAct={() => fmt('bold')} />
-            <Btn title="Cursiva" label={<i>I</i>} onAct={() => fmt('italic')} />
-            <Btn title="Subrayado" label={<u>U</u>} onAct={() => fmt('underline')} />
-            <div style={{ width: 1, height: 18, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
-            <Btn title="Encabezado grande" label="H1" onAct={() => fmt('formatBlock', 'H1')} />
-            <Btn title="Encabezado" label="H2" onAct={() => fmt('formatBlock', 'H2')} />
-            <Btn title="Texto normal" label="¶" onAct={() => fmt('formatBlock', 'DIV')} />
-            <Btn title="Lista" label="•" onAct={() => fmt('insertUnorderedList')} />
-            <div style={{ width: 1, height: 18, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
-            {COLORS.map(c => (
-              <button key={c} title="Color" onMouseDown={(e) => { e.preventDefault(); fmt('foreColor', c) }}
-                style={{ width: 16, height: 16, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', margin: '0 1px' }} />
-            ))}
-          </div>
-        )
-      })()}
+      {/* ── Barra de formato del texto en edición — la MISMA que en la vista
+             independiente (TextToolbar), fija abajo (donde la barra del lienzo). ── */}
+      {editText && isCanvasText(store.getNode(editText)) && (
+        <div style={{ position: 'fixed', left: '50%', bottom: 18, transform: 'translateX(-50%)', zIndex: 1700 }}>
+          <TextToolbar />
+        </div>
+      )}
 
       {/* Menú contextual de un texto del lienzo: duplicar / eliminar. */}
       {textMenu && (
@@ -1644,7 +1618,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           así que anclamos la barra a la parte inferior de la PANTALLA (siempre visible). */}
       <div style={{
         position: 'fixed', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 60,
-        display: 'flex', alignItems: 'center', gap: 2, padding: 5,
+        // Al editar un texto se muestra su barra de formato (TextToolbar) en su lugar.
+        display: editText && isCanvasText(store.getNode(editText)) ? 'none' : 'flex',
+        alignItems: 'center', gap: 2, padding: 5,
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
       }}>

@@ -21,6 +21,11 @@ export function nodeHasPin(n: Node): boolean {
 export function isMovedNode(n: Node): boolean {
   return parseExtraData(n.extraData)._moved === '1'
 }
+// Área = vista guardada del lienzo (posición+zoom). Vive en la columna derecha
+// bajo «Áreas»; al pulsarla, la cámara vuela a esa vista.
+export function isAreaNode(n: Node): boolean {
+  return parseExtraData(n.extraData)._area === '1'
+}
 
 /** Marca un nodo como MOVIDO a una nota (aparece en su bloque «Movidos»). Solo se
  *  marca al mover a una NOTA normal (no diaria, no raíz de sistema). */
@@ -40,6 +45,8 @@ export interface DayColumnData {
   isToday: boolean
   /** Tareas con due en ESTE día (solo para días que no son hoy). */
   dayTasks: Node[]
+  /** Vistas guardadas del lienzo (bloque «Áreas»). */
+  areaNodes: Node[]
   /** IDs de tareas/bucles que el cockpit/lista ya muestra. */
   cockpitIds: Set<string>
   /** IDs que viven SOLO en la columna derecha → excluir del lienzo y del centro. */
@@ -71,10 +78,14 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
     isCaptureNode(c) && !nodeHasPin(c) && !getGcalEventId(c) && !cockpitIds.has(c.id)
   )
 
+  // Áreas = vistas guardadas del lienzo (marcador `_area`).
+  const areaNodes = children.filter(isAreaNode)
+
   const rightColumnIds = new Set<string>()
   for (const c of eventNodes) rightColumnIds.add(c.id)
   for (const c of captureNodes) rightColumnIds.add(c.id)
+  for (const c of areaNodes) rightColumnIds.add(c.id)
   for (const id of cockpitIds) rightColumnIds.add(id)
 
-  return { eventNodes, captureNodes, isToday, dayTasks, cockpitIds, rightColumnIds }
+  return { eventNodes, captureNodes, isToday, dayTasks, areaNodes, cockpitIds, rightColumnIds }
 }
