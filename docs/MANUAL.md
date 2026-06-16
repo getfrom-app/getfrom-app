@@ -1,4 +1,4 @@
-# Fromly — Manual de usuario v9.6.288
+# Fromly — Manual de usuario v9.6.397
 
 > Web · Mac · iPhone · fromly.app
 
@@ -191,25 +191,15 @@ El modal de creación de evento te permite:
 - Añadir hora de inicio y fin (opcional; si no hay hora, es un evento de todo el día).
 - Activar repetición.
 
-### Bucle ⟲
+### Tarea de seguimiento (tarea sin fecha)
 
-Un bucle es un nodo que representa algo **en curso**, con dos estados: **abierto** o **cerrado**. En lugar del checkbox de una tarea, muestra una **flecha violeta** delante del texto cuando está abierto.
+No hay un tipo aparte para «lo que tienes en curso»: es simplemente una **tarea sin fecha**. Una tarea con fecha cae en su día; una tarea **sin fecha** es de **seguimiento** y permanece visible en la sección **«Seguimiento»** del panel del día hasta que la marcas hecha o la borras. Checkbox normal, sin decidir tipos.
 
-A diferencia de una tarea (que se hace o no se hace de una vez), un bucle es para trabajo o seguimientos continuos que abres, dejas abiertos durante un tiempo y cierras cuando corresponde — y que puedes **reabrir** más adelante.
+- **Crear:** una tarea a la que no le pones fecha. Ya está en seguimiento.
+- **Cerrar:** márcala hecha (su checkbox). Para volver a tenerla en seguimiento, ponle o quítale la fecha desde su menú de triaje.
+- La sección «Seguimiento» del día arranca **colapsada con un contador** (suele haber muchas tareas sin fecha); despliégala cuando quieras.
 
-**Cómo crear un bucle:**
-
-- Slash menu → `/` y elige el tipo, o desde el menú `···` del nodo → «Convertir en» → Bucle.
-- Termina el texto con `-b` y pulsa Enter (en la captura rápida).
-
-**Abrir / cerrar:**
-
-- Clic en la flecha violeta → cierra el bucle (pasa a un círculo gris).
-- Clic en el círculo gris → lo reabre.
-- También desde el menú `···` → «Cerrar bucle» / «Reabrir bucle».
-- Para que deje de ser bucle: `···` → «Convertir en» → «Quitar bucle».
-
-Tus bucles abiertos aparecen en la sección «Tu día» de la nota diaria y se pueden filtrar con el operador `bucle` (ver Filtros).
+> Nota: la idea anterior de «bucles» se sustituyó por esto. Tus bucles antiguos se convierten solos en tareas de seguimiento.
 
 ### Espejo ⬡
 
@@ -301,9 +291,17 @@ La Pizarra es un lienzo infinito de dibujo, escritura y organización dentro de 
 
 **Calendario.** Cambia entre **Mes**, **Semana** y **Timeline** (línea de tiempo de todo lo que tiene fecha) con el selector de arriba a la derecha.
 
-**Conectar elementos.** Con la herramienta **Flecha**: haz **clic en un elemento** (ancla el inicio) y **clic en otro** (lo conecta). La flecha **sigue a los elementos** cuando los mueves. Pasa el ratón por encima de la flecha y arrastra su **punto central** para curvarla; clic derecho sobre ella la elimina.
+**Documentos.** Un texto del lienzo es un **documento** de verdad (editor rico). Al editarlo —en el lienzo o a pantalla completa— la **columna derecha se convierte en su panel de formato** (estilo de párrafo, fuente, color, listas, enlace, imagen). Su **punto** (siempre visible, a la izquierda del título) lo abre en su página. También puedes crear uno directo con `/documento`, y pegar prosa larga en una nota vacía la convierte en documento.
 
-**Nodos y notas en el lienzo.** Arrastra cualquier nodo (tarea, nota, captura) al lienzo: se muestra como una tarjeta. Clic derecho abre el menú (duplicar, eliminar, convertir en bucle, favorito).
+**Soltar y pegar entidades.** Arrastra (o pega) un **PDF, una imagen o un enlace** sobre el lienzo y queda anclado donde lo soltaste, como una tarjeta que abres en su página. Pega una imagen del portapapeles o una URL y aparece en el sitio.
+
+**Dibujar por encima.** El **lápiz, las formas y el borrador** funcionan sobre las tarjetas (tablas, documentos, imágenes): puedes anotar, tachar o rodear cualquier elemento, como en una pizarra de verdad.
+
+**Conectar elementos.** Con la herramienta **Flecha**: haz **clic en un elemento** (ancla el inicio) y **clic en otro** (lo conecta). La flecha empieza y termina en el **borde** de cada tarjeta y **sigue a los elementos** cuando los mueves. Pasa el ratón por encima de la flecha y arrastra su **punto central** para curvarla; clic derecho sobre ella la elimina.
+
+**Atajos de teclado** (una letra por herramienta): **V** seleccionar · **B** lápiz · **M** rotulador · **H** subrayador · **E** borrador · **T** texto · **A** flecha · **L** línea · **R** rectángulo · **O** elipse. **⌫** borra lo seleccionado.
+
+**Nodos y notas en el lienzo.** Arrastra cualquier nodo (tarea, nota, captura) al lienzo: se muestra como una tarjeta. Clic derecho abre el menú (duplicar, eliminar, favorito).
 
 **Guardar una vista (Áreas).** El botón de **marcador** de la barra guarda la posición y el zoom actuales como un acceso directo: aparece en el panel del día bajo **Áreas**; al pulsarlo, la cámara vuela a esa zona del lienzo.
 
@@ -386,7 +384,6 @@ Escribe `/` en cualquier nodo para abrir el menú de acciones rápidas. Puedes s
 | Nota | Convierte el nodo en nota (tipo base) |
 | Tarea | Convierte el nodo en tarea con checkbox |
 | Evento | Convierte el nodo en evento con hora |
-| Bucle | Convierte el nodo en bucle abierto/cerrado (en curso) |
 | Recurso | Convierte el nodo en recurso (enlace externo) |
 | Ampliar | Convierte una tarea en un contenedor expandible |
 
@@ -460,7 +457,9 @@ Empieza a escribir y Fromly busca en tiempo real:
 - **"hoy" / "mañana"** → acceso rápido a esos días
 - **Texto libre** → si no hay coincidencias, aparece "Crear: [tu texto]" para crear un nodo nuevo
 
-La búsqueda ignora tildes y mayúsculas.
+La búsqueda ignora tildes y mayúsculas. Todo lo que escribes en el lienzo (textos y documentos) es buscable, porque son nodos.
+
+**Filtrar por tipo.** En el panel de búsqueda tienes chips para acotar por tipo: **Nota · Tarea · Evento · Documento · PDF · Imagen · Enlace · Archivo** (además de estado, fecha y contextos). Útil para encontrar, por ejemplo, todos tus PDFs o todas las imágenes.
 
 ### Crear con flags
 
@@ -619,9 +618,9 @@ Al inicio de la nota de hoy aparece el bloque **«Tu día»**, que reúne de un 
 - **🎯 Foco** — las 2-3 cosas que has decidido hacer hoy (ver abajo).
 - **Atrasadas** — tareas pendientes cuya fecha ya pasó (con su día en rojo).
 - **Para hoy** — tareas con fecha de hoy.
-- **Bucles abiertos** — tus nodos en curso.
+- **Seguimiento** — tus tareas **sin fecha** (lo que tienes en curso); arranca colapsado con un contador.
 
-Todo lo que ves son enlaces a tus notas reales: marcar una tarea o cerrar un bucle ahí mismo actúa sobre el nodo original. Clic en el texto te lleva a la nota.
+Todo lo que ves son enlaces a tus notas reales: marcar una tarea ahí mismo actúa sobre el nodo original. Clic en el texto te lleva a la nota.
 
 **El ritual matinal — Foco:** de entre todo lo que te toca hoy, elige unas pocas cosas que vas a hacer de verdad y mándalas al **Foco** (arriba del todo, destacado). El resto, despáchalo conscientemente:
 
@@ -1073,13 +1072,13 @@ La app de iPhone está disponible en el App Store. Organiza en cinco pestañas a
 Vista de filtrado rápido por chips multiselect. Selecciona combinaciones de chips para ver exactamente lo que necesitas:
 
 **Tipo:**
-- Nota, Tarea, Evento, Archivo, Enlace
+- Nota, Tarea, Evento, Documento, PDF, Imagen, Enlace, Archivo
 
 **Fecha:**
 - Hoy, Esta semana, Este mes, Pasado, Futuro
 
 **Estado:**
-- Pendiente, Hecho, Sin fecha, Bucle
+- Pendiente, Hecho, Sin fecha
 
 **Contextos** (chips morados): filtra por el contexto asignado a cada nodo.
 

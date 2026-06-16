@@ -1,6 +1,37 @@
 # Changelog — Fromly
 
-Historial de versiones. Plataformas: Web · Mac · iPhone.
+Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
+
+---
+
+## Web v9.6.397 · iPad — 17 junio 2026 · El lienzo, listo: documentos, entidades y paridad con el iPad
+
+Una tanda grande de pulido que deja el lienzo presentable de punta a punta.
+
+**Documentos**
+- **Documentos de verdad en el lienzo.** Los textos largos son documentos con editor rico (encabezados, listas, cita, código, **enlaces** e **imágenes** embebidas). Pega prosa larga en una nota vacía y se convierte sola en un documento. Importar Markdown/Notion también crea documentos.
+- **Panel de formato a la derecha, estilo Pages.** Al editar un documento —en su página o como elemento del lienzo— la **columna derecha se convierte en el panel de formato** (estilo, fuente, color, listas, insertar, deshacer). Sin barras flotantes que estorben.
+- **Crear documento directo.** Escribe `/documento` y empiezas a escribir, sin pasar por el lienzo.
+- **El punto para abrir** un texto del lienzo está siempre visible, alineado con el título, y se pulsa directo para abrir el documento.
+
+**Suelta y pega lo que sea**
+- **Arrastra o pega un PDF, una imagen o un enlace** sobre el lienzo y queda anclado donde lo soltaste, como una tarjeta que abres en su página. Pega una imagen del portapapeles o una URL y aparece en el sitio.
+
+**El lienzo, más fino**
+- **Dibuja por encima de todo.** El lápiz, las formas y el borrador funcionan **sobre** las tarjetas (tablas, documentos, imágenes), como en una pizarra de verdad.
+- **Flechas que se ven.** Los conectores empiezan y terminan en el **borde** de cada tarjeta, no tapados debajo.
+- **Zoom sin sorpresas.** Acercar es acercar: ya no salta a la vista de mes por error.
+- **Estado vacío que invita** + **atajos de teclado** (una letra por herramienta) + microanimaciones.
+
+**Tu día, más simple**
+- **Adiós a los «bucles».** Ahora todo son **tareas**: una tarea **sin fecha** es de **seguimiento** y permanece hasta que la cierras. Sin decidir tipos.
+- **Vistas de nodo a lo justo:** Lienzo + Lista (tabla/kanban/calendario se insertan como elemento del lienzo).
+- **Columna derecha colapsable** y con el mismo estilo de cabeceras en todas partes.
+- **Buscar por tipo:** filtra por **Documento, PDF, Imagen, Enlace** además de nota/tarea/evento. Y todo lo que escribes en el lienzo es buscable.
+
+**iPad — paridad con la web**
+- Los **textos y documentos** del lienzo se **comparten** entre iPad y web: lo que escribes en uno aparece en el otro (mismo nodo, sin copias).
+- En el iPad ya se ven y se crean **imágenes, PDFs y enlaces** en el lienzo, y se trazan **flechas** entre tarjetas.
 
 ---
 
