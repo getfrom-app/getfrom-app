@@ -1032,9 +1032,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       marqueeRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       setMarquee(null)
-      // Mini-menú arriba-centro del marco (solo si hay algo seleccionado — el
-      // render lo condiciona al tamaño de la selección).
-      setMenuPos({ x: (m.x0 + e.clientX) / 2, y: Math.min(m.y0, e.clientY) })
+      // El marco solo SELECCIONA. El mini-menú (duplicar/eliminar) vive en el clic
+      // derecho sobre la selección, no aparece solo (molestaba en medio del lienzo).
       return
     }
     // Fin de dibujo/borrado: persistir el trazo (lápiz).
@@ -1082,9 +1081,14 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       } else if (d.moved && dp) {
         if (node) writePin(node, dp.pos)
       } else if (node) {
-        // Clic limpio en el tirador (sin arrastrar) → seleccionar + mini-menú.
-        setSelStrokes(new Set()); setMultiSel(new Set([node.id]))
-        setMenuPos({ x: e.clientX, y: e.clientY })
+        // Clic limpio (sin arrastrar): el texto entra a EDITAR; el resto, seleccionar.
+        // El mini-menú (duplicar/eliminar) vive SOLO en el clic derecho.
+        if (isCanvasText(node)) {
+          setSelStrokes(new Set()); setMultiSel(new Set())
+          setSelectedId(node.id); setEditText(node.id)
+        } else {
+          setSelStrokes(new Set()); setMultiSel(new Set([node.id])); setSelectedId(node.id)
+        }
       }
       setDragPos(null)
       setGroupDelta(null)
