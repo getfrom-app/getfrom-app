@@ -381,6 +381,22 @@ export default function MainLayout() {
     }
   }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Inspector de documento como columna derecha. Va aparte del efecto de arriba
+  // porque en recarga dura los nodos cargan async: hay que reevaluar cuando el
+  // nodo de la ruta ya está disponible (s.nodesVersion). Conservador: solo
+  // auto-abre 'doc' si la columna está en su estado por defecto ('filter'), para
+  // no pisar una elección manual (magic/planner/grabador).
+  useEffect(() => {
+    void s.nodesVersion
+    const n = currentNodeIdFromRoute ? store.getNode(currentNodeIdFromRoute) : null
+    const docHere = !!n && isDocNode(n)
+    setRightPanel(prev => {
+      if (docHere && prev === 'filter') return 'doc'
+      if (!docHere && prev === 'doc') return 'filter'
+      return prev
+    })
+  }, [currentNodeIdFromRoute, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     function onSetFilter() {
       // Al aplicar filtro, si estábamos en un panel de detalle volvemos a filtro
