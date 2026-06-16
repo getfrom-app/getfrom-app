@@ -7449,6 +7449,13 @@ textarea:focus-visible,
 .doc-editor .ProseMirror ul, .doc-editor .ProseMirror ol { padding-left: 1.45em; margin: 0.45em 0; }
 .doc-editor .ProseMirror li { margin: 0.15em 0; }
 .doc-editor .ProseMirror a { color: var(--accent, #6c5ce7); text-decoration: underline; cursor: pointer; }
+.doc-editor .ProseMirror img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.5em 0; display: block; }
+.doc-editor .ProseMirror img.ProseMirror-selectednode { outline: 2px solid var(--accent, #6c5ce7); }
+.doc-editor .ProseMirror blockquote { border-left: 3px solid var(--border, #ddd); margin: 0.6em 0; padding: 0.2em 0 0.2em 1em; color: var(--text-secondary, #666); }
+.doc-editor .ProseMirror code { background: var(--bg-subtle, #f3f3f3); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+.doc-editor .ProseMirror pre { background: var(--bg-subtle, #f3f3f3); padding: 0.8em 1em; border-radius: 8px; overflow-x: auto; }
+.doc-editor .ProseMirror pre code { background: none; padding: 0; }
+.doc-editor .ProseMirror s { text-decoration: line-through; }
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
 
@@ -7475,6 +7482,9 @@ textarea:focus-visible,
 .pizarra-text p { margin: 0.3em 0; }
 .pizarra-text ul, .pizarra-text ol { padding-left: 1.4em; margin: 0.3em 0; }
 .pizarra-text a { color: var(--accent, #6c5ce7); text-decoration: underline; }
+.pizarra-text img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.3em 0; display: block; }
+.pizarra-text blockquote { border-left: 3px solid var(--border, #ddd); margin: 0.4em 0; padding: 0.1em 0 0.1em 0.8em; color: var(--text-secondary, #666); }
+.pizarra-text code { background: var(--bg-subtle, #f3f3f3); padding: 0.1em 0.3em; border-radius: 4px; font-size: 0.9em; }
 
 /* ── Tabla view ───────────────────────────────────────────────────────────── */
 .node-table-wrapper {
