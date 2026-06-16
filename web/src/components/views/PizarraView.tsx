@@ -1484,7 +1484,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${(multiSel.has(node.id) || (isText && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDown={(e) => onCardAreaPointerDown(e, node)}
@@ -1523,10 +1523,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
+                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: isText ? 'var(--text-tertiary,#999)' : 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
                 {/* Manija de ESCALA — esquina inferior derecha (escala uniforme desde arriba-izquierda). */}
                 <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: `2px solid ${isText ? 'var(--text-tertiary,#999)' : 'var(--accent,#6c5ce7)'}`, borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             )}
           </div>
