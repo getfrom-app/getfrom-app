@@ -1510,12 +1510,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
-            {/* DOT (texto, hover/seleccionado) → abre el documento en solitario. */}
+            {/* DOT (texto, hover/seleccionado) → abre el documento en solitario.
+                Mismo estilo que el bullet de un nodo y alineado a la 1ª línea. */}
             {isText && (hovered || selectedId === node.id) && !editing && (
               <div title="Abrir como documento"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
-                style={{ position: 'absolute', left: -22, top: -2, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <div style={{ width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff' }} />
+                style={{ position: 'absolute', left: -18, top: 8, height: 26, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85 }} />
               </div>
             )}
             {showHandles && (
