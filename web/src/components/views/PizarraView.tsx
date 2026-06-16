@@ -1528,18 +1528,32 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         {(() => {
           const cont = containerRef.current?.getBoundingClientRect()
           if (!cont) return null
-          const center = (id: string): { x: number; y: number } | null => {
+          // Rect del elemento (centro + semiejes) en coords del contenedor.
+          const rectInfo = (id: string): { cx: number; cy: number; hw: number; hh: number } | null => {
             const el = containerRef.current?.querySelector(`[data-node-id="${CSS.escape(id)}"]`)
             if (!el) return null
             const r = (el as HTMLElement).getBoundingClientRect()
-            return { x: r.left + r.width / 2 - cont.left, y: r.top + r.height / 2 - cont.top }
+            return { cx: r.left + r.width / 2 - cont.left, cy: r.top + r.height / 2 - cont.top, hw: r.width / 2, hh: r.height / 2 }
+          }
+          // Punto del BORDE del rect en la dirección de (tx,ty), con un pequeño hueco
+          // para que la flecha no toque la tarjeta. Así inicio y fin quedan visibles.
+          const clip = (R: { cx: number; cy: number; hw: number; hh: number }, tx: number, ty: number, gap = 4) => {
+            const dx = tx - R.cx, dy = ty - R.cy
+            if (dx === 0 && dy === 0) return { x: R.cx, y: R.cy }
+            const s = Math.min(R.hw / Math.abs(dx || 1e-6), R.hh / Math.abs(dy || 1e-6))
+            const len = Math.hypot(dx, dy)
+            const g = (s * len + gap) / len
+            return { x: R.cx + dx * g, y: R.cy + dy * g }
           }
           const conns = parsePizarra(store.getNode(parentId)?.body).connectors || []
           return conns.map(conn => {
-            const A = center(conn.a), B = center(conn.b)
-            if (!A || !B) return null
+            const RA = rectInfo(conn.a), RB = rectInfo(conn.b)
+            if (!RA || !RB) return null
             const cw = connDrag?.id === conn.id ? [connDrag.cx, connDrag.cy] as [number, number] : conn.c
-            const ctrl = cw ? { x: cam.x + cw[0] * cam.scale, y: cam.y + cw[1] * cam.scale } : { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }
+            const ctrl = cw ? { x: cam.x + cw[0] * cam.scale, y: cam.y + cw[1] * cam.scale } : { x: (RA.cx + RB.cx) / 2, y: (RA.cy + RB.cy) / 2 }
+            // Recorta cada extremo al borde de su tarjeta, en la dirección del control.
+            const A = clip(RA, ctrl.x, ctrl.y)
+            const B = clip(RB, ctrl.x, ctrl.y)
             const d = `M${A.x} ${A.y}Q${ctrl.x} ${ctrl.y} ${B.x} ${B.y}`
             const ang = Math.atan2(B.y - ctrl.y, B.x - ctrl.x); const head = 11
             const a1 = ang + Math.PI * 0.82, a2 = ang - Math.PI * 0.82
@@ -1573,8 +1587,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           const el = containerRef.current?.querySelector(`[data-node-id="${CSS.escape(arrowAnchor)}"]`)
           if (!el) return null
           const r = (el as HTMLElement).getBoundingClientRect()
-          const ax = r.left + r.width / 2 - cont.left, ay = r.top + r.height / 2 - cont.top
-          return <path d={`M${ax} ${ay}L${arrowCursor.x - cont.left} ${arrowCursor.y - cont.top}`} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={2} strokeDasharray="5 5" strokeOpacity={0.7} />
+          const cx = r.left + r.width / 2 - cont.left, cy = r.top + r.height / 2 - cont.top
+          const tx = arrowCursor.x - cont.left, ty = arrowCursor.y - cont.top
+          // Arranca en el BORDE de la tarjeta ancla (hacia el cursor), no en su centro.
+          const dx = tx - cx, dy = ty - cy
+          const s = Math.min((r.width / 2) / Math.abs(dx || 1e-6), (r.height / 2) / Math.abs(dy || 1e-6))
+          const len = Math.hypot(dx, dy) || 1
+          const g = (s * len + 4) / len
+          const ax = cx + dx * g, ay = cy + dy * g
+          return <path d={`M${ax} ${ay}L${tx} ${ty}`} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={2} strokeDasharray="5 5" strokeOpacity={0.7} />
         })()}
         {drawPts && drawPts.length >= 4 && (() => {
           let d = ''
