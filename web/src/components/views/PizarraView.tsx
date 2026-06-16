@@ -180,7 +180,10 @@ function htmlToBlocks(html: string): { text: string; block?: string }[] {
   flush()
   return blocks
 }
-interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; camX?: number; camY?: number; camScale?: number }
+// Conector: flecha que une DOS elementos (nodos). a/b = ids de nodo; c = punto de
+// control (mundo) para curvar. Se redibuja según la posición actual de cada nodo.
+interface WBConnector { id: string; a: string; b: string; c?: [number, number] }
+interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; connectors?: WBConnector[]; camX?: number; camY?: number; camScale?: number }
 
 function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
@@ -326,6 +329,14 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [penWidth, setPenWidth] = useState<number>(2.5)
   const penWidthRef = useRef(penWidth); penWidthRef.current = penWidth
   const [paletteOpen, setPaletteOpen] = useState(false)
+  // ── Conectores (flechas entre elementos) ──
+  // Primer elemento clicado con la herramienta flecha (ancla el inicio).
+  const [arrowAnchor, setArrowAnchor] = useState<string | null>(null)
+  // Posición del cursor (pantalla) para la previsualización mientras se conecta.
+  const [arrowCursor, setArrowCursor] = useState<{ x: number; y: number } | null>(null)
+  const [hoverConn, setHoverConn] = useState<string | null>(null)
+  // Arrastre del tirador de curvatura (preview en vivo del punto de control, mundo).
+  const [connDrag, setConnDrag] = useState<{ id: string; cx: number; cy: number } | null>(null)
   // Texto del lienzo en edición (id del WBText) y hover.
   const [editText, setEditText] = useState<string | null>(null)
   const [hoverText, setHoverText] = useState<string | null>(null)
@@ -794,6 +805,43 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     setSelectedId(node.id)
   }, [parentId])
 
+  // ── Conectores: leer/escribir en el body de la pizarra ──
+  const mutateConnectors = useCallback((fn: (cs: WBConnector[]) => WBConnector[]) => {
+    const data = parsePizarra(store.getNode(parentId)?.body)
+    data.connectors = fn(data.connectors || [])
+    store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+  }, [parentId])
+
+  // Herramienta flecha: 1er clic en un elemento ancla el inicio; 2º clic en OTRO
+  // elemento crea el conector. Devuelve true si gestionó el clic (para no arrastrar).
+  const handleArrowClick = useCallback((nodeId: string): boolean => {
+    if (toolRef.current !== 'arrow') return false
+    if (!arrowAnchor) { setArrowAnchor(nodeId); return true }
+    if (arrowAnchor === nodeId) { setArrowAnchor(null); return true }
+    const a = arrowAnchor
+    mutateConnectors(cs => [...cs, { id: 'c' + rid(), a, b: nodeId }])
+    setArrowAnchor(null); setArrowCursor(null); setTool('select')
+    return true
+  }, [arrowAnchor, mutateConnectors])
+
+  // Arrastre del tirador de curvatura de un conector (previsualiza, commitea al soltar).
+  const onConnHandleDown = useCallback((e: React.PointerEvent, id: string) => {
+    e.preventDefault(); e.stopPropagation()
+    const move = (ev: PointerEvent) => {
+      const cont = containerRef.current?.getBoundingClientRect(); if (!cont) return
+      const w = screenToWorld(ev.clientX - cont.left, ev.clientY - cont.top)
+      setConnDrag({ id, cx: Math.round(w.x), cy: Math.round(w.y) })
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up)
+      setConnDrag(cur => {
+        if (cur && cur.id === id) mutateConnectors(cs => cs.map(c => c.id === id ? { ...c, c: [cur.cx, cur.cy] } : c))
+        return null
+      })
+    }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up)
+  }, [screenToWorld, mutateConnectors])
+
   // Menú contextual de un texto del lienzo (clic derecho): duplicar / eliminar.
   const [textMenu, setTextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
 
@@ -873,6 +921,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     if (e.button !== 0) return
     // Solo si el target es el fondo (no una tarjeta).
     if ((e.target as HTMLElement).dataset.bg !== '1') return
+    // Flecha con un elemento ya anclado: clic en vacío → cancelar la conexión.
+    if (toolRef.current === 'arrow' && arrowAnchor) { setArrowAnchor(null); setArrowCursor(null); return }
     if (flyRef.current) { cancelAnimationFrame(flyRef.current); flyRef.current = null } // cancelar vuelo
     const el = containerRef.current!
     const rect = el.getBoundingClientRect()
@@ -906,7 +956,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     clearSelection()
     el.setPointerCapture(e.pointerId)
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
-  }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection])
+  }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection, arrowAnchor])
 
   // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
@@ -916,6 +966,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   }, [createNodeAt, screenToWorld])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Conectando con la flecha: seguir el cursor para previsualizar la línea.
+    if (toolRef.current === 'arrow' && arrowAnchor) setArrowCursor({ x: e.clientX, y: e.clientY })
     // Redimensionado de tarjeta (ancho / escala) en curso → preview.
     if (nodeRzRef.current) {
       const r = nodeRzRef.current
@@ -1023,7 +1075,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       if (groupRef.current) setGroupDelta({ x: nx - d.origin.x, y: ny - d.origin.y })
       return
     }
-  }, [cam.scale, layout, screenToWorld, eraseAt])
+  }, [cam.scale, layout, screenToWorld, eraseAt, arrowAnchor])
 
   const endPointer = useCallback((e: React.PointerEvent) => {
     // Fin de redimensionado de tarjeta: persistir _pinW / _cardScale (+ pin).
@@ -1244,6 +1296,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       }}
       onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
+        // Con una herramienta activa (no «seleccionar»), el clic derecho vuelve a
+        // Seleccionar/mover (atajo rápido), sin abrir el menú.
+        if (toolRef.current !== 'select') { e.preventDefault(); setTool('select'); setArrowAnchor(null); return }
         // Clic derecho en el FONDO (no sobre una tarjeta) → menú rápido (estilo iPad).
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         e.preventDefault()
@@ -1341,6 +1396,59 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             </g>
           )
         })}
+        {/* ── CONECTORES (flechas entre elementos). Se redibujan según la posición
+               actual de cada nodo (centro del rect en pantalla). ── */}
+        {(() => {
+          const cont = containerRef.current?.getBoundingClientRect()
+          if (!cont) return null
+          const center = (id: string): { x: number; y: number } | null => {
+            const el = containerRef.current?.querySelector(`[data-node-id="${CSS.escape(id)}"]`)
+            if (!el) return null
+            const r = (el as HTMLElement).getBoundingClientRect()
+            return { x: r.left + r.width / 2 - cont.left, y: r.top + r.height / 2 - cont.top }
+          }
+          const conns = parsePizarra(store.getNode(parentId)?.body).connectors || []
+          return conns.map(conn => {
+            const A = center(conn.a), B = center(conn.b)
+            if (!A || !B) return null
+            const cw = connDrag?.id === conn.id ? [connDrag.cx, connDrag.cy] as [number, number] : conn.c
+            const ctrl = cw ? { x: cam.x + cw[0] * cam.scale, y: cam.y + cw[1] * cam.scale } : { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }
+            const d = `M${A.x} ${A.y}Q${ctrl.x} ${ctrl.y} ${B.x} ${B.y}`
+            const ang = Math.atan2(B.y - ctrl.y, B.x - ctrl.x); const head = 11
+            const a1 = ang + Math.PI * 0.82, a2 = ang - Math.PI * 0.82
+            const headD = `M${B.x} ${B.y}L${B.x + Math.cos(a1) * head} ${B.y + Math.sin(a1) * head}M${B.x} ${B.y}L${B.x + Math.cos(a2) * head} ${B.y + Math.sin(a2) * head}`
+            const hovered = hoverConn === conn.id
+            return (
+              <g key={conn.id}>
+                {hovered && <path d={d} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={7} strokeOpacity={0.18} strokeLinecap="round" />}
+                <path d={d} fill="none" stroke="var(--text-secondary,#555)" strokeWidth={2} strokeLinecap="round" />
+                <path d={headD} fill="none" stroke="var(--text-secondary,#555)" strokeWidth={2} strokeLinecap="round" />
+                {tool === 'select' && (
+                  <path d={d} fill="none" stroke="transparent" strokeWidth={16}
+                    style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                    onPointerEnter={() => setHoverConn(conn.id)}
+                    onPointerLeave={() => setHoverConn(h => h === conn.id ? null : h)}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); mutateConnectors(cs => cs.filter(c => c.id !== conn.id)); setHoverConn(null) }} />
+                )}
+                {(hovered || connDrag?.id === conn.id) && tool === 'select' && (
+                  <circle cx={ctrl.x} cy={ctrl.y} r={6} fill="#fff" stroke="var(--accent,#6c5ce7)" strokeWidth={2}
+                    style={{ pointerEvents: 'all', cursor: 'grab' }}
+                    onPointerEnter={() => setHoverConn(conn.id)}
+                    onPointerDown={(e) => onConnHandleDown(e, conn.id)} />
+                )}
+              </g>
+            )
+          })
+        })()}
+        {/* Previsualización mientras se conecta (flecha activa, 1er elemento anclado). */}
+        {tool === 'arrow' && arrowAnchor && arrowCursor && (() => {
+          const cont = containerRef.current?.getBoundingClientRect(); if (!cont) return null
+          const el = containerRef.current?.querySelector(`[data-node-id="${CSS.escape(arrowAnchor)}"]`)
+          if (!el) return null
+          const r = (el as HTMLElement).getBoundingClientRect()
+          const ax = r.left + r.width / 2 - cont.left, ay = r.top + r.height / 2 - cont.top
+          return <path d={`M${ax} ${ay}L${arrowCursor.x - cont.left} ${arrowCursor.y - cont.top}`} fill="none" stroke="var(--accent,#6c5ce7)" strokeWidth={2} strokeDasharray="5 5" strokeOpacity={0.7} />
+        })()}
         {drawPts && drawPts.length >= 4 && (() => {
           let d = ''
           if (isShapeTool(tool)) {
@@ -1529,6 +1637,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
+            onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
             onPointerDown={elView ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
