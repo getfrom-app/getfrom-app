@@ -251,6 +251,17 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const divingRef = useRef(false) // anti-doble-disparo del buceo
   const tryDiveRef = useRef<(s: number) => void>(() => {})
 
+  // Zoom de los botones +/− ANCLADO al centro del viewport (no al origen del mundo,
+  // que hacía que el contenido se fuera de pantalla al alejar).
+  const zoomAtCenter = useCallback((factor: number) => {
+    setCam(c => {
+      const ns = Math.min(MAX_SCALE, Math.max(MIN_SCALE, c.scale * factor))
+      const cx = viewportRef.current.w / 2, cy = viewportRef.current.h / 2
+      const wx = (cx - c.x) / c.scale, wy = (cy - c.y) / c.scale
+      return { x: cx - wx * ns, y: cy - wy * ns, scale: ns }
+    })
+  }, [])
+
   // Restaurar la cámara guardada al cambiar de nodo (la diaria de hoy → otra).
   useEffect(() => {
     restoringCamRef.current = true
@@ -1683,7 +1694,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 suppressContentEditableWarning
                 onInput={editing ? (e) => scheduleTextPersist(node.id, (e.target as HTMLElement).innerHTML) : undefined}
                 onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(node.id); else saveTextBody(node.id, html); setEditText(null) } : undefined}
-                onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
+                onKeyDown={editing ? (e) => { e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); (e.target as HTMLElement).blur() } } : undefined}
                 dangerouslySetInnerHTML={editing ? undefined : { __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
                 style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20, userSelect: editing ? 'text' : 'none', WebkitUserSelect: editing ? 'text' : 'none' }}
               />
@@ -1928,11 +1939,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>
         </button>
         <div style={vSep} />
-        <button style={toolBtn} title="Alejar"
-          onClick={() => setCam(c => ({ ...c, scale: Math.max(MIN_SCALE, c.scale / 1.2) }))}>−</button>
+        <button style={toolBtn} title="Alejar" onClick={() => zoomAtCenter(1 / 1.2)}>−</button>
         <span style={{ minWidth: 42, textAlign: 'center', fontSize: 12, color: 'var(--text-secondary, #888)' }}>{Math.round(cam.scale * 100)}%</span>
-        <button style={toolBtn} title="Acercar"
-          onClick={() => setCam(c => ({ ...c, scale: Math.min(MAX_SCALE, c.scale * 1.2) }))}>+</button>
+        <button style={toolBtn} title="Acercar" onClick={() => zoomAtCenter(1.2)}>+</button>
         <button style={toolBtn} title="Centrar"
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>

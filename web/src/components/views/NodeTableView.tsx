@@ -601,6 +601,7 @@ export default function NodeTableView({ parentId }: Props) {
   }
   // Maneja Enter/Tab/Shift+Tab en un input de celda: commitea (cb) y navega.
   function cellNavKey(e: React.KeyboardEvent, rowId: string, colId: string, commit: () => void) {
+    e.stopPropagation() // que Esc/Backspace no disparen atajos globales (subir/borrar)
     if (e.key === 'Enter') { e.preventDefault(); commit(); moveCell(rowId, colId, 'down') }
     else if (e.key === 'Tab') { e.preventDefault(); commit(); moveCell(rowId, colId, e.shiftKey ? 'left' : 'right') }
     else if (e.key === 'Escape') { e.preventDefault(); setEditingCell(null) }
