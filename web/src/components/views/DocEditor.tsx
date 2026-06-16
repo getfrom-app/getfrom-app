@@ -14,6 +14,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import { store, useStore } from '../../store/nodeStore'
+import { updateLinkedCanvasText } from '../../utils/pizarraBody'
 import type { Node } from '../../types'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5']
@@ -21,6 +22,12 @@ const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5'
 const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const safeName = (s: string) => (s || 'documento').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() || 'documento'
+
+// HTML del texto del lienzo enlazado = título (1er bloque) + cuerpo del documento.
+// htmlToBlocks (PizarraView) toma el 1er bloque como título al re-promover, así que
+// el título va en un <div> propio delante del cuerpo.
+const canvasMd = (title: string | undefined, bodyHtml: string) =>
+  `<div>${escapeHtml(title || 'Documento')}</div>${bodyHtml || ''}`
 
 // HTML (TipTap) → Markdown ligero. Cubre títulos, negrita/cursiva/tachado/código,
 // enlaces, listas (orden/desorden), citas y párrafos.
@@ -78,14 +85,23 @@ export default function DocEditor({ node }: { node: Node }) {
     content: node.body || '',
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = window.setTimeout(() => store.updateNode(node.id, { body: editor.getHTML() }), 600)
+      const html = editor.getHTML()
+      saveTimer.current = window.setTimeout(() => {
+        store.updateNode(node.id, { body: html })
+        // Reflejar el contenido en el texto del lienzo enlazado (si existe).
+        updateLinkedCanvasText(node.parentId, node.id, canvasMd(node.text, html))
+      }, 600)
     },
   }, [node.id])
 
   // Guardar al desmontar (sin perder el último cambio del debounce).
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    if (editor) store.updateNode(node.id, { body: editor.getHTML() })
+    if (editor) {
+      const html = editor.getHTML()
+      store.updateNode(node.id, { body: html })
+      updateLinkedCanvasText(node.parentId, node.id, canvasMd(node.text, html))
+    }
   }, [editor, node.id])
 
   // Búsqueda de nodos para enlazar (internos).
@@ -224,7 +240,10 @@ export default function DocEditor({ node }: { node: Node }) {
         className="doc-title"
         defaultValue={node.text}
         placeholder="Título del documento"
-        onChange={e => store.updateNode(node.id, { text: e.target.value })}
+        onChange={e => {
+          store.updateNode(node.id, { text: e.target.value })
+          updateLinkedCanvasText(node.parentId, node.id, canvasMd(e.target.value, editor.getHTML()))
+        }}
         style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: 30, fontWeight: 700, color: 'var(--text,#111)', marginBottom: 8 }}
       />
 
