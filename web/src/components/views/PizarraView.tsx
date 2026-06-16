@@ -22,6 +22,7 @@ import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
+import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import OutlinerNode from '../outliner/OutlinerNode'
 import type { Node } from '../../types'
 
@@ -142,7 +143,7 @@ function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: numb
 // ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
 // Los trazos viven en el body del nodo-pizarra. `pts` = polilínea en MUNDO
 // [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
-type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text' | 'line' | 'rect' | 'ellipse' | 'arrow'
+type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text' | 'task' | 'line' | 'rect' | 'ellipse' | 'arrow'
 const isShapeTool = (t: CanvasTool) => t === 'line' || t === 'rect' || t === 'ellipse' || t === 'arrow'
 const isInkTool = (t: CanvasTool) => t === 'pen' || t === 'marker' || t === 'highlighter'
 const FENCE = '```from-pizarra'
@@ -285,9 +286,13 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<CanvasTool>('select')
-  // Color de tinta (pluma/rotulador/subrayador) + paleta abierta.
+  // Herramienta Tarea: input flotante en el punto de clic (fecha por lenguaje natural).
+  const [taskInput, setTaskInput] = useState<{ x: number; y: number } | null>(null)
+  // Color y grosor de tinta (pluma/rotulador/subrayador) + paleta abierta.
   const [penColor, setPenColor] = useState<string>('#222222')
   const penColorRef = useRef(penColor); penColorRef.current = penColor
+  const [penWidth, setPenWidth] = useState<number>(2.5)
+  const penWidthRef = useRef(penWidth); penWidthRef.current = penWidth
   const [paletteOpen, setPaletteOpen] = useState(false)
   // Texto del lienzo en edición (id del WBText) y hover.
   const [editText, setEditText] = useState<string | null>(null)
@@ -450,7 +455,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     // Grosor en pantalla según la herramienta, → mundo. Formas: kind + 2 puntos.
     const t = toolRef.current
     const shape = isShapeTool(t)
-    const screenW = t === 'highlighter' ? 18 : t === 'marker' ? 6 : 2.5
+    const screenW = t === 'highlighter' ? 18 : t === 'marker' ? 6 : penWidthRef.current
     const alpha = t === 'highlighter' ? 0.32 : 1
     const wWorld = screenW / Math.max(0.0001, camRef.current.scale)
     const pts = shape ? [worldPts[0], worldPts[1], worldPts[worldPts.length - 2], worldPts[worldPts.length - 1]] : worldPts
@@ -694,6 +699,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
   }, [parentId])
 
+  // Herramienta Tarea: crea un nodo-tarea (con due/recurrencia por lenguaje natural)
+  // hijo de la nota del lienzo. Vive por DUE → aparece en la columna del día.
+  const createTaskFromText = useCallback((text: string) => {
+    const raw = text.trim(); if (!raw) return
+    const dp = extractDateFromEnd(raw)
+    const clean = (dp ? dp.cleanText : raw).trim() || raw
+    const node = store.createNode({ text: clean, parentId, isTask: true })
+    const updates: Record<string, unknown> = { status: 'pending' }
+    if (dp?.parsed.date) {
+      updates.due = dp.parsed.date.toISOString()
+      if (dp.parsed.recurrence) updates.recurrence = recurrenceToString(dp.parsed.recurrence)
+    }
+    store.updateNode(node.id, updates)
+  }, [parentId])
+
   const createTextAt = useCallback((world: WorldPos) => {
     const id = 't' + rid()
     mutateTexts(texts => [...texts, { id, x: world.x, y: world.y, size: 16, w: 360, md: '' }])
@@ -793,10 +813,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       eraseAt(w.x, w.y)
       return
     }
-    // Texto: NO crear aquí (en pointerdown) para no provocar un blur inmediato del
-    // textarea. Se crea en el onClick del contenedor (gesto completo). Solo evitamos
-    // que arranque el pan.
-    if (toolRef.current === 'text') return
+    // Texto/Tarea: NO crear aquí (en pointerdown) para no provocar un blur inmediato.
+    // Se crea en el onClick del contenedor (gesto completo). Solo evitamos el pan.
+    if (toolRef.current === 'text' || toolRef.current === 'task') return
     // Multiselección con marco: Cmd (⌘) / Ctrl + arrastrar sobre el fondo.
     if (e.metaKey || e.ctrlKey) {
       el.setPointerCapture(e.pointerId)
@@ -1136,11 +1155,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
       onClick={(e) => {
-        // Herramienta Texto: clic completo en el fondo → crear texto libre y editar.
-        if (toolRef.current !== 'text') return
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         const rect = containerRef.current!.getBoundingClientRect()
-        createTextAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
+        // Texto → crear texto libre y editar. Tarea → input flotante en el punto.
+        if (toolRef.current === 'text') createTextAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
+        else if (toolRef.current === 'task') setTaskInput({ x: e.clientX, y: e.clientY })
       }}
       onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
@@ -1163,7 +1182,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
         backgroundPosition: `${cam.x}px ${cam.y}px`,
         touchAction: 'none',
-        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' ? 'crosshair' : tool === 'text' ? 'text' : 'default'),
+        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' || isShapeTool(tool) ? 'crosshair' : tool === 'text' || tool === 'task' ? 'text' : 'default'),
         borderRadius: 8,
         animation: 'pizarra-dive 0.28s ease-out',
       }}
@@ -1253,7 +1272,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           } else {
             d = drawPts.reduce((acc, _v, i) => i % 2 === 0 ? acc + (i === 0 ? 'M' : 'L') + (cam.x + drawPts[i] * cam.scale).toFixed(1) + ' ' + (cam.y + drawPts[i + 1] * cam.scale).toFixed(1) + ' ' : acc, '')
           }
-          return <path d={d} fill="none" stroke={penColor} strokeWidth={tool === 'highlighter' ? 18 : tool === 'marker' ? 6 : 2.5} strokeOpacity={tool === 'highlighter' ? 0.32 : 1} strokeLinecap="round" strokeLinejoin="round" />
+          return <path d={d} fill="none" stroke={penColor} strokeWidth={tool === 'highlighter' ? 18 : tool === 'marker' ? 6 : penWidth} strokeOpacity={tool === 'highlighter' ? 0.32 : 1} strokeLinecap="round" strokeLinejoin="round" />
         })()}
       </svg>
 
@@ -1533,6 +1552,23 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </>
       )}
 
+      {/* Input de TAREA (herramienta Tarea): escribe con fecha en lenguaje natural. */}
+      {taskInput && (
+        <>
+          <div onPointerDown={() => { setTaskInput(null); setTool('select') }} style={{ position: 'fixed', inset: 0, zIndex: 1599 }} />
+          <div style={{ position: 'fixed', left: Math.min(taskInput.x, viewport.w - 280), top: taskInput.y, zIndex: 1600, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', width: 270,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)' }}>
+            <span style={{ width: 15, height: 15, border: '1.6px solid var(--text-tertiary,#bbb)', borderRadius: 4, flexShrink: 0 }} />
+            <input autoFocus placeholder="Tarea… (ej: Llamar a Marina mañana)"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { createTaskFromText((e.target as HTMLInputElement).value); setTaskInput(null); setTool('select') }
+                if (e.key === 'Escape') { setTaskInput(null); setTool('select') }
+              }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--text,#222)' }} />
+          </div>
+        </>
+      )}
+
       {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
              Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
       {flowNodes.length > 0 && (
@@ -1606,11 +1642,22 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           {paletteOpen && (
             <>
               <div onPointerDown={() => setPaletteOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 70 }} />
-              <div style={{ position: 'absolute', bottom: 42, left: '50%', transform: 'translateX(-50%)', zIndex: 71, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, padding: 8, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.18)' }}>
-                {['#222222', '#868e96', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#ffffff'].map(c => (
-                  <button key={c} onClick={() => { setPenColor(c); setPaletteOpen(false); if (tool !== 'pen' && tool !== 'marker' && tool !== 'highlighter') setTool('pen') }}
-                    style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: penColor === c ? '2px solid var(--accent,#6c5ce7)' : '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
-                ))}
+              <div style={{ position: 'absolute', bottom: 42, left: '50%', transform: 'translateX(-50%)', zIndex: 71, padding: 8, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.18)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+                  {['#222222', '#868e96', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#ffffff'].map(c => (
+                    <button key={c} onClick={() => { setPenColor(c); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
+                      style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: penColor === c ? '2px solid var(--accent,#6c5ce7)' : '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
+                  ))}
+                </div>
+                {/* Grosor de la pluma (paridad iPad: 6 niveles) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle,#eee)' }}>
+                  {[1.5, 2.5, 4, 7, 12, 20].map(wv => (
+                    <button key={wv} title={`Grosor ${wv}`} onClick={() => { setPenWidth(wv); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
+                      style={{ width: 26, height: 26, borderRadius: 7, border: penWidth === wv ? '2px solid var(--accent,#6c5ce7)' : '1px solid var(--border,#e2e2e2)', background: 'transparent', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ width: Math.min(18, wv + 2), height: Math.min(18, wv + 2), borderRadius: '50%', background: penColor }} />
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -1621,6 +1668,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </button>
         <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
+        </button>
+        {/* Tarea — con fecha por lenguaje natural */}
+        <button style={tool === 'task' ? toolBtnActive : toolBtn} title="Tarea — con fecha (lenguaje natural)" onClick={() => setTool(t => t === 'task' ? 'select' : 'task')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M6.5 10.5l2 2 4-4.5"/></svg>
         </button>
         <div style={vSep} />
         {/* Formas */}
