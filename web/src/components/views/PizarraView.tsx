@@ -230,7 +230,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [cam, setCam] = useState<Cam>({ x: 60, y: 60, scale: 1 })
+  // Cámara: se PERSISTE en el body (camX/Y/Scale, el mismo campo que el iPad) para
+  // volver a donde lo dejaste. Init perezoso + restauración al cambiar de nodo.
+  const readSavedCam = useCallback((pid: string): Cam => {
+    const d = parsePizarra(store.getNode(pid)?.body)
+    if (d.camScale != null && d.camX != null) return { x: d.camX, y: d.camY ?? 60, scale: d.camScale }
+    return { x: 60, y: 60, scale: 1 }
+  }, [])
+  const [cam, setCam] = useState<Cam>(() => readSavedCam(parentId))
+  const restoringCamRef = useRef(false)
+  const camSaveTimer = useRef<number | null>(null)
   const [viewport, setViewport] = useState({ w: 1000, h: 700 })
   // Refs espejo (para leer el valor actual dentro de animaciones/listeners sin stale).
   const camRef = useRef(cam); camRef.current = cam
@@ -238,6 +247,26 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const flyRef = useRef<number | null>(null)
   const divingRef = useRef(false) // anti-doble-disparo del buceo
   const tryDiveRef = useRef<(s: number) => void>(() => {})
+
+  // Restaurar la cámara guardada al cambiar de nodo (la diaria de hoy → otra).
+  useEffect(() => {
+    restoringCamRef.current = true
+    setCam(readSavedCam(parentId))
+  }, [parentId, readSavedCam])
+
+  // Persistir la cámara (debounce) en el body. El primer cambio tras restaurar se ignora.
+  useEffect(() => {
+    if (restoringCamRef.current) { restoringCamRef.current = false; return }
+    if (camSaveTimer.current) clearTimeout(camSaveTimer.current)
+    camSaveTimer.current = window.setTimeout(() => {
+      const body = store.getNode(parentId)?.body
+      const d = parsePizarra(body)
+      const nx = Math.round(cam.x), ny = Math.round(cam.y), ns = Number(cam.scale.toFixed(4))
+      if (d.camX === nx && d.camY === ny && d.camScale === ns) return
+      d.camX = nx; d.camY = ny; d.camScale = ns
+      store.updateNode(parentId, { body: bodyWithPizarra(body, d) })
+    }, 700)
+  }, [cam, parentId])
 
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
