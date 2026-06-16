@@ -366,19 +366,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
       if (isHiddenPin(n)) continue // marcador de vista → no se pinta en el lienzo
-      if (isCanvasText(n)) continue // elemento-texto → render propio (no tarjeta)
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
     }
     return map
   }, [children])
-
-  // Elementos-texto del lienzo (nodos `_ctext` anclados). Son la fuente única del
-  // texto: el mismo nodo se pinta aquí y se abre en solitario con DocEditor.
-  const textNodes = useMemo(
-    () => children.filter(n => isCanvasText(n) && readPin(n) != null),
-    [children],
-  )
 
   // FLUJO: nodos del día SIN posición → se apilan en una columna sobre el lienzo
   // (orden natural, sin solaparse). Los eventos GCal NO van al lienzo (viven en la
@@ -749,7 +741,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // hijo. El MISMO nodo se pinta aquí y se abre en solitario con DocEditor; ambos
   // editan `node.body`. Sin copias ni sincronización.
   const newTextExtra = (world: WorldPos): Record<string, string> => ({
-    [DOC]: '1', [CTEXT]: '1',
+    [DOC]: '1', [CTEXT]: '1', _pinW: '360',
     [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1',
   })
 
@@ -1484,17 +1476,44 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
         const hovered = hoverNode === node.id && tool === 'select'
-        const showHandles = (hovered || selectedId === node.id) && !dragPos
+        const isText = isCanvasText(node)
+        const editing = isText && editText === node.id
+        const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDown={(e) => onCardAreaPointerDown(e, node)}
+            onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: 'grab' }}>
-            <div className="pizarra-card-body" style={{ minWidth: 0 }}>
-              <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
-            </div>
+            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab' }}>
+            {isText ? (
+              // Elemento-texto: el MISMO nodo que el documento (body HTML). Doble clic
+              // edita; un clic selecciona/arrastra (como cualquier tarjeta).
+              <div
+                ref={editing ? editDivRef : undefined}
+                className="pizarra-text"
+                contentEditable={editing}
+                suppressContentEditableWarning
+                onInput={editing ? (e) => scheduleTextPersist(node.id, (e.target as HTMLElement).innerHTML) : undefined}
+                onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(node.id); else saveTextBody(node.id, html); setEditText(null) } : undefined}
+                onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
+                dangerouslySetInnerHTML={editing ? undefined : { __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : 'inherit', minHeight: 20 }}
+              />
+            ) : (
+              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+              </div>
+            )}
+            {/* DOT (texto, hover/seleccionado) → abre el documento en solitario. */}
+            {isText && (hovered || selectedId === node.id) && !editing && (
+              <div title="Abrir como documento"
+                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
+                style={{ position: 'absolute', left: -22, top: -2, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <div style={{ width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff' }} />
+              </div>
+            )}
             {showHandles && (
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
@@ -1505,47 +1524,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             )}
-          </div>
-        )
-      })}
-
-      {/* ── ELEMENTOS-TEXTO del lienzo = nodos `_ctext`. El MISMO nodo se pinta aquí
-             y se abre en solitario (DocEditor) con el dot. Editar = node.body. ── */}
-      {textNodes.map(n => {
-        const pos = readPin(n) || { x: 0, y: 0 }
-        const sx = cam.x + pos.x * cam.scale
-        const sy = cam.y + pos.y * cam.scale
-        const tw = readCardW(n)
-        const editing = editText === n.id
-        const hovered = hoverText === n.id && tool === 'select'
-        return (
-          <div key={n.id} data-card="1"
-            style={{ position: 'absolute', left: sx, top: sy, width: tw, transform: `scale(${cam.scale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (hovered ? 5 : 2), pointerEvents: (tool === 'select' || tool === 'text' || editing) ? 'auto' : 'none' }}
-            onPointerEnter={() => { if (tool === 'select' && !editing) setHoverTextNow(n.id) }}
-            onPointerLeave={() => setHoverTextNow(null)}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setTextMenu({ id: n.id, x: e.clientX, y: e.clientY }) }}>
-            {/* DOT arriba-izquierda (hover) → abre el documento en solitario. */}
-            {(hovered || editing) && (
-              <div title="Abrir como documento"
-                onPointerEnter={() => setHoverTextNow(n.id)}
-                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(n.id) }}
-                style={{ position: 'absolute', left: -22, top: -8, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <div style={{ width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--accent,#6c5ce7)', background: '#fff' }} />
-              </div>
-            )}
-            {/* Texto SUELTO, sin caja, fondo transparente. WYSIWYG al editar. */}
-            <div
-              ref={editing ? editDivRef : undefined}
-              className="pizarra-text"
-              contentEditable={editing}
-              suppressContentEditableWarning
-              onPointerDown={!editing && tool === 'select' ? (e) => { e.stopPropagation(); setEditText(n.id) } : (editing ? (e) => e.stopPropagation() : undefined)}
-              onInput={editing ? (e) => scheduleTextPersist(n.id, (e.target as HTMLElement).innerHTML) : undefined}
-              onBlur={editing ? (e) => { const html = (e.target as HTMLElement).innerHTML; if (!(e.target as HTMLElement).textContent?.trim()) deleteText(n.id); else saveTextBody(n.id, html); setEditText(null) } : undefined}
-              onKeyDown={editing ? (e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur() } : undefined}
-              dangerouslySetInnerHTML={editing ? undefined : { __html: n.body || '<span style="opacity:.4">Texto…</span>' }}
-              style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--text,#222)', wordBreak: 'break-word', outline: 'none', cursor: editing ? 'text' : (tool === 'select' ? 'text' : 'default'), minHeight: 16 }}
-            />
           </div>
         )
       })}

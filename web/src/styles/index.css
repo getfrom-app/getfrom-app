@@ -7592,6 +7592,10 @@ textarea:focus-visible,
 /* ── Elemento-texto del lienzo (mismo nodo que el documento): la 1ª línea (H1) se
       ve como título, igual que en DocEditor. ── */
 .pizarra-text { white-space: pre-wrap; }
+/* Elemento-texto en el lienzo: sin caja; al pasar el ratón o seleccionarlo se
+   marca el contorno (para ver sus límites y los tiradores de redimensión). */
+.pizarra-node--text.pizarra-node--hover,
+.pizarra-node--text.pizarra-node--sel { outline: 1.5px solid var(--accent, #6c5ce7); outline-offset: 5px; border-radius: 4px; }
 .pizarra-text h1 { font-size: 1.8em; font-weight: 700; margin: 0 0 0.2em; line-height: 1.25; }
 .pizarra-text h2 { font-size: 1.4em; font-weight: 700; margin: 0.4em 0 0.15em; line-height: 1.3; }
 .pizarra-text h3 { font-size: 1.18em; font-weight: 700; margin: 0.35em 0 0.1em; }
