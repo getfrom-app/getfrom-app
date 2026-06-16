@@ -578,6 +578,22 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     clearSelection()
   }, [multiSel, selStrokes, parentId, duplicateNode, clearSelection])
 
+  // Retroceso / Suprimir: borra los elementos seleccionados del lienzo. No se
+  // dispara mientras se edita texto o se escribe en un campo (deja borrar letras).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Backspace' && e.key !== 'Delete') return
+      if (editText) return
+      const ae = document.activeElement as HTMLElement | null
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return
+      if (multiSel.size === 0 && selStrokes.size === 0) return
+      e.preventDefault()
+      deleteSelection()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [editText, multiSel, selStrokes, deleteSelection])
+
   // Agrupar: los elementos seleccionados pasan a moverse como una unidad. Los
   // nodos del flujo se fijan (pin) en su sitio actual y reciben `_groupId`; los
   // trazos reciben `g`. Arrastrar cualquier miembro mueve a todo el grupo.
