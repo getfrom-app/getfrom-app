@@ -679,13 +679,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return () => window.removeEventListener('paste', onPaste)
   }, [uploadAndPinFiles, createResourceAt])
 
-  // Quitar de la pizarra (NO borra el nodo): elimina _pinX/_pinY/_pinScale → vuelve
-  // a vivir solo en la columna derecha.
+  // Quitar de la pizarra (NO borra el nodo): elimina el pin y lo marca `_moved` para
+  // que salga del lienzo y aparezca en la lista «Movidos» de la columna derecha de la
+  // nota (NoteColumn), de donde se puede arrastrar de vuelta o eliminar con su icono.
   const removeFromCanvas = useCallback((id: string) => {
     const node = store.getNode(id); if (!node) return
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch { /* corrupto */ }
     delete ed[PIN_X]; delete ed[PIN_Y]; delete ed[PIN_SCALE]
+    ed._moved = '1'
     store.updateNode(id, { extraData: JSON.stringify(ed) })
   }, [])
 
@@ -2234,17 +2236,21 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                     Abrir nodo
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
-                  {/* Bucle / Favorito (paridad iPad) */}
+                  {/* Convertir en tarea (hoy) / Favorito */}
                   {(() => {
                     const n = store.getNode(contextMenu.nodeId)
-                    const types = n?.types || []
-                    const hasBucle = types.includes('bucle')
+                    const isTask = n?.status != null
                     return (
                       <>
                         <button onClick={() => {
-                          store.updateNode(contextMenu.nodeId, { types: hasBucle ? types.filter(t => t !== 'bucle') : [...types, 'bucle'], status: hasBucle ? null : 'pending' })
+                          if (isTask) {
+                            store.updateNode(contextMenu.nodeId, { status: null })
+                          } else {
+                            const today = new Date(); today.setHours(23, 59, 59, 0)
+                            store.updateNode(contextMenu.nodeId, { status: 'pending', due: today.toISOString() })
+                          }
                           setContextMenu(null)
-                        }} style={ctxItem}>{hasBucle ? '↺ Quitar bucle' : '↺ Convertir en bucle'}</button>
+                        }} style={ctxItem}>{isTask ? '○ Quitar tarea' : '☑ Convertir en tarea'}</button>
                         <button onClick={() => { store.updateNode(contextMenu.nodeId, { isFavorite: !n?.isFavorite }); setContextMenu(null) }} style={ctxItem}>
                           {n?.isFavorite ? '★ Quitar de favoritos' : '☆ Favorito'}
                         </button>
