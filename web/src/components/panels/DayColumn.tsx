@@ -18,6 +18,7 @@ import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcal
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
+import RowContextChip from './RowContextChip'
 import { passesLens, allContextKeys } from '../../utils/contextLens'
 import { useLensContextId } from '../../store/contextLensStore'
 
@@ -201,6 +202,7 @@ export default function DayColumn({
                 {t.text ? renderInline(t.text) : 'Tarea'}
               </span>
               {hhmm(t.due) !== '00:00' && t.due && <span className="dc-time">{hhmm(t.due)}</span>}
+              <RowContextChip node={t} />
               {delBtn(t)}
             </div>
           ))}
@@ -252,6 +254,7 @@ export default function DayColumn({
             >
               <span className="dc-capture-grip">⠿</span>
               <span className="dc-text">{c.text ? renderInline(c.text) : 'Captura'}</span>
+              <RowContextChip node={c} />
               {delBtn(c)}
             </div>
           ))}

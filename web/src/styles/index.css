@@ -13209,6 +13209,24 @@ textarea:focus-visible,
 .ctx-lens-item:hover { background: var(--bg-hover, rgba(0,0,0,0.05)); }
 .ctx-lens-item.active { color: var(--accent, #6c5ce7); font-weight: 600; }
 .ctx-lens-sep { height: 1px; background: var(--border, #e2e2e2); margin: 4px 2px; }
+
+/* Chip de contexto en filas de la columna derecha */
+.dc-ctx-chip-wrap { display: inline-flex; align-items: center; flex-shrink: 0; }
+.dc-ctx-chip {
+  font-size: 10.5px; line-height: 1; padding: 2px 6px; border-radius: 999px;
+  cursor: pointer; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;
+  background: var(--accent-soft, rgba(108,92,231,0.1)); color: var(--accent, #6c5ce7);
+  border: 1px solid transparent;
+}
+.dc-ctx-chip:hover { border-color: var(--accent, #6c5ce7); }
+.dc-ctx-chip--empty {
+  background: transparent; color: var(--text-tertiary, #bbb);
+  border: 1px dashed var(--border, #ddd); width: 16px; height: 16px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 700;
+  opacity: 0; transition: opacity .12s;
+}
+.dc-row:hover .dc-ctx-chip--empty { opacity: 0.7; }
+.dc-ctx-chip--empty:hover { opacity: 1; color: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
 /* Cabecera de sección de las columnas derechas (Buscar/Filtros/Favoritos/Magic):
    misma gramática visual que el panel del día (.dc-group-label). */
 .rp-section-label {

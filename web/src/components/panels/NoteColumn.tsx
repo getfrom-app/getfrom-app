@@ -8,6 +8,7 @@ import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { isMovedNode, nodeHasPin } from '../../utils/dayColumn'
 import { trashNode } from '../../utils/papeleraHelper'
+import RowContextChip from './RowContextChip'
 
 const TrashIcon = (
   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -42,6 +43,7 @@ export default function NoteColumn({ node }: { node: Node }) {
         >
           <span className="dc-capture-grip">⠿</span>
           <span className="dc-text">{c.text ? renderInline(c.text) : 'Nodo'}</span>
+          <RowContextChip node={c} />
           <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); trashNode(c.id) }}>{TrashIcon}</button>
         </div>
       ))}

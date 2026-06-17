@@ -14,6 +14,7 @@ import { useLensContextId } from '../../store/contextLensStore'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
+import RowContextChip from '../panels/RowContextChip'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -192,6 +193,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       {opts.showDue && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
         onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
       {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
+      <RowContextChip node={n} />
       <span className="dc-actions">
         {opts.inFocus ? (
           <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
