@@ -250,18 +250,11 @@ Arrastra cualquier archivo PDF desde tu ordenador a un nodo en Fromly. El PDF se
 
 - Arrastra el archivo `.pdf` desde el Finder directamente a cualquier nodo. Se crea automáticamente un nodo hijo con el nombre del archivo y el badge **PDF** (rojo).
 
-**Visor y anotaciones:**
+**El PDF se abre EN el lienzo:**
 
-Al abrir un nodo PDF, aparece el visor integrado con barra de herramientas:
+Al abrir un nodo PDF, el documento aparece **sobre la pizarra**, a tamaño completo y **nítido al ampliar**. Encima puedes usar todas las herramientas del lienzo —lápiz, formas, flechas, texto— para marcarlo, igual que con cualquier otro contenido del lienzo. Las marcas son trazos del lienzo y se guardan solas.
 
-| Herramienta | Función |
-|---|---|
-| ✏️ Lápiz | Trazo libre. Elige color y grosor. |
-| 🖍 Subrayado | Pincel semitransparente amarillo. |
-| T Texto | Haz clic en el PDF para insertar texto flotante. |
-| ◻ Borrador | Elimina anotaciones. |
-
-Las anotaciones se guardan en Fromly y se **incrustan permanentemente** en el PDF al salir. Si abres el PDF fuera de Fromly, las anotaciones siguen ahí.
+En el iPad, además, los PDF que ancles en un lienzo muestran su **primera página** en la tarjeta (no un icono), con el badge **PDF** (rojo).
 
 ### Pizarra
 
