@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.422 · iPad v2.8 — 18 junio 2026 · PDF en el lienzo, calendario navegable y paridad con el iPad
+
+**El lienzo**
+- **Los PDF se abren EN el lienzo.** Abre un PDF y lo ves a tamaño completo sobre la pizarra, nítido al ampliar, y puedes **marcarlo con las herramientas del lienzo** (lápiz, formas, flechas). En el iPad, además, los PDF anclados muestran su primera página en la tarjeta, no un icono.
+- **Lente de contexto en el iPad.** Elige un contexto y el lienzo **atenúa** todo lo que no es de ese contexto, para centrarte en una sola cosa. Lo que no tiene contexto sigue visible.
+- **Escribe una tarea y ya está.** Con la herramienta de texto del iPad, si escribes algo con fecha («Comprar pan mañana») se convierte solo en una **tarea** con su fecha.
+
+**Calendario navegable (web)**
+- **Año y mes como un calendario.** Abre un año y ves sus meses en tres columnas; abre un mes y ves la rejilla de días. Acercar y alejar te lleva entre niveles con una transición suave, igual que en el iPad.
+
+**Tablas en el iPad**
+- **Ordena y organiza.** Toca una cabecera para ordenar; mantén pulsada una columna para **renombrarla, cambiar su tipo o eliminarla**; mantén pulsada una fila para **abrirla, duplicarla o borrarla**.
+
+---
+
 ## Web v9.6.397 · iPad — 17 junio 2026 · El lienzo, listo: documentos, entidades y paridad con el iPad
 
 Una tanda grande de pulido que deja el lienzo presentable de punta a punta.
