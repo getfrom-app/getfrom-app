@@ -64,6 +64,7 @@ const NewNoteModal = lazy(() => import('../modals/NewNoteModal'))
 const NewEventModal = lazy(() => import('../modals/NewEventModal'))
 const VoiceCaptureModal = lazy(() => import('../modals/VoiceCaptureModal'))
 const TeachMagicModal = lazy(() => import('../modals/TeachMagicModal'))
+const TaskPropsModal = lazy(() => import('../modals/TaskPropsModal'))
 const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsModal'))
 const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
 const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
@@ -478,6 +479,7 @@ export default function MainLayout() {
   const [slugInput, setSlugInput] = useState('')
   const slugModalInputRef = useRef<HTMLInputElement>(null)
   const [teachNodeId, setTeachNodeId] = useState<string | null>(null)
+  const [taskPropsId, setTaskPropsId] = useState<string | null>(null)
 
   // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
   useEffect(() => {
@@ -951,6 +953,21 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:open-slug-modal', handleOpenSlugModal)
   }, [])
 
+  // Listener del modal de PROPIEDADES DE TAREA — disparado desde NodeContextMenu.
+  // Solo abre el modal global si el nodo NO está montado como fila de outliner: en el
+  // outliner (y en el lienzo) ya lo gestiona el popup inline de OutlinerNode anclado a
+  // la fila; desde la cabecera de la nota esa fila no existe → abrimos el modal.
+  useEffect(() => {
+    function handleTaskProps(e: Event) {
+      const detail = (e as CustomEvent).detail as { nodeId: string }
+      if (!detail?.nodeId) return
+      const inOutliner = document.querySelector(`.outliner-node[data-node-id="${detail.nodeId}"]`)
+      if (!inOutliner) setTaskPropsId(detail.nodeId)
+    }
+    window.addEventListener('from:open-task-props', handleTaskProps)
+    return () => window.removeEventListener('from:open-task-props', handleTaskProps)
+  }, [])
+
   // Listener del modal "Enseñar a Magic" — disparado desde NodeContextMenu
   useEffect(() => {
     function handleTeach(e: Event) {
@@ -1218,6 +1235,7 @@ export default function MainLayout() {
         {showNewEvent && <NewEventModal onClose={() => setShowNewEvent(false)} />}
         {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
         {teachNodeId && <TeachMagicModal nodeId={teachNodeId} onClose={() => setTeachNodeId(null)} />}
+        {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}
         {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </Suspense>
       {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}
