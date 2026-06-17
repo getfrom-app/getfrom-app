@@ -27,6 +27,7 @@ import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } f
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
+import PdfCanvasPreview from './PdfCanvasPreview'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
@@ -1987,10 +1988,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                   <img src={res.url} alt={node.text || ''} draggable={false}
                     style={{ display: 'block', width: '100%', height: 'auto', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }} />
                 ) : res.type === 'pdf' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px' }}>
-                    <span style={{ fontSize: 30, lineHeight: 1 }}>📄</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{node.text || 'Documento PDF'}</span>
-                  </div>
+                  // El lienzo carga el PROPIO PDF (1ª página, nítido al ampliar). El
+                  // dot lo abre en su página para marcarlo/editarlo.
+                  <PdfCanvasPreview url={res.url} width={cardW} title={node.text} />
                 ) : res.type === 'url' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
                     <span style={{ fontSize: 22, lineHeight: 1 }}>🔗</span>
