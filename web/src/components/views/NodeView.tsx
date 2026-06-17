@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
+import { classifyNodeRoot } from '../../utils/homeHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import { listTemplates, applyTemplate } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
@@ -321,7 +322,10 @@ export default function NodeView() {
     // Diaria → columna del día (pizarra y lista). Nota normal en pizarra → columna
     // «Movidos». En calendario/agenda no se abre.
     const isDiary = !!node?.isDiaryEntry && (viewKind === 'pizarra' || viewKind === 'list')
-    const isNotePizarra = !!node && !node.isDiaryEntry && viewKind === 'pizarra' && !isAgendaRoot && !isDoc
+    // Los nodos de CONFIG (agente/prompt/contexto/plantilla) NO abren la columna
+    // «Movidos»: su columna derecha es su panel de propiedades especial.
+    const isConfigNode = !!node && classifyNodeRoot(node.id) !== null
+    const isNotePizarra = !!node && !node.isDiaryEntry && viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !isConfigNode
     if (isDiary || isNotePizarra) {
       const fire = () => window.dispatchEvent(new CustomEvent('from:open-day-panel'))
       fire()

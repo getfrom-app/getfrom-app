@@ -426,6 +426,23 @@ export default function MainLayout() {
     })
   }, [currentNodeIdFromRoute, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Panel especial de CONFIG (agente / prompt / contexto / plantilla) — reevaluado
+  // cuando el árbol carga async (recarga dura): el efecto de ruta corre antes de que
+  // el árbol esté listo y classifyNodeRoot devuelve null → se quedaba en 'day'
+  // (columna «Movidos», que para un agente no tiene sentido). Conservador: solo
+  // auto-abre el panel si estamos en un estado por defecto ('filter'/'day'), para no
+  // pisar una elección manual (magic/planner/grabador).
+  useEffect(() => {
+    void s.nodesVersion
+    const navId = currentNodeIdFromRoute
+    if (!navId) return
+    const kind = classifyNodeRoot(navId)
+    if (kind && (rightPanel === 'filter' || rightPanel === 'day') && detailNodeId !== navId) {
+      setDetailNodeId(navId)
+      setRightPanel(kind)
+    }
+  }, [currentNodeIdFromRoute, s.nodesVersion, rightPanel, detailNodeId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     function onSetFilter() {
       // Al aplicar filtro, si estábamos en un panel de detalle volvemos a filtro

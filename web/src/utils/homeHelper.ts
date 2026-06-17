@@ -99,6 +99,14 @@ export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | '
   // Solo los DESCENDIENTES (un agente/prompt/contexto/plantilla concreto) abren su panel.
   if (nodeId === agentesId || nodeId === promptsId || nodeId === contextId || nodeId === plantillasId) return null
 
+  // Casamos por id de raíz Y por NOMBRE de raíz: así una raíz DUPLICADA (id aleatorio
+  // que es el padre real) también clasifica, en vez de quedarse sin panel.
+  const nameKind: Record<string, 'agent' | 'prompt' | 'context' | 'template'> = {
+    '🤖 Agentes': 'agent',
+    '⚡ Prompts': 'prompt',
+    '🧠 Contexto': 'context', '🏷 Tags': 'context',
+    '📋 Plantillas': 'template', 'Plantillas': 'template',
+  }
   let cur = store.getNode(nodeId)
   const visited = new Set<string>()
   let depth = 0
@@ -108,6 +116,8 @@ export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | '
     if (cur.id === promptsId) return 'prompt'
     if (cur.id === contextId) return 'context'
     if (cur.id === plantillasId) return 'template'
+    const byName = nameKind[(cur.text || '').trim()]
+    if (byName) return byName
     if (!cur.parentId) break
     cur = store.getNode(cur.parentId)
     depth++
