@@ -498,6 +498,73 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return { x: (sx - cam.x) / cam.scale, y: (sy - cam.y) / cam.scale }
   }, [cam])
 
+  // ── Mover elementos con BOTÓN DERECHO + arrastrar ────────────────────────────
+  // Pulsa el botón derecho sobre CUALQUIER parte de un elemento y arrastra → se
+  // mueve (da igual dónde piques). Soltar SIN mover = menú contextual; soltar tras
+  // mover = solo mueve (sin menú). Listeners NATIVOS en captura: funciona aunque un
+  // hijo (editor) pare la propagación y controla el contextmenu en toda plataforma.
+  // Las TABLAS (`pizarra-node--el`) se excluyen: ahí el clic derecho es para sus
+  // filas/columnas (se mueven desde su cabecera).
+  const suppressContextRef = useRef(false)
+  const layoutRef = useRef(layout); layoutRef.current = layout
+  const nodeCtx = useCallback((e: React.MouseEvent, id: string) => {
+    e.preventDefault(); e.stopPropagation()
+    if (suppressContextRef.current) return   // lo gestiona el right-drag (lo abre en pointerup)
+    setContextMenu({ nodeId: id, x: e.clientX, y: e.clientY })
+  }, [])
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return
+    const s2w = (sx: number, sy: number): WorldPos => ({ x: (sx - camRef.current.x) / camRef.current.scale, y: (sy - camRef.current.y) / camRef.current.scale })
+    let rd: { id: string; sw: WorldPos; origin: WorldPos; sx: number; sy: number; moved: boolean; last: WorldPos } | null = null
+    const onDown = (e: PointerEvent) => {
+      suppressContextRef.current = false   // resetea de un right-click anterior
+      if (e.button !== 2) return
+      const card = (e.target as HTMLElement)?.closest?.('[data-card][data-node-id]') as HTMLElement | null
+      if (!card || card.classList.contains('pizarra-node--el')) return
+      const id = card.getAttribute('data-node-id'); if (!id) return
+      const r = el.getBoundingClientRect()
+      const sw = s2w(e.clientX - r.left, e.clientY - r.top)
+      let origin = layoutRef.current.get(id)
+      if (!origin) { const cr = card.getBoundingClientRect(); origin = s2w(cr.left - r.left, cr.top - r.top) }
+      const o = origin || { x: 0, y: 0 }
+      rd = { id, sw, origin: o, sx: e.clientX, sy: e.clientY, moved: false, last: o }
+      suppressContextRef.current = true     // este right-click lo abre/maneja el right-drag
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!rd) return
+      if (!rd.moved && Math.abs(e.clientX - rd.sx) + Math.abs(e.clientY - rd.sy) < 4) return
+      if (!rd.moved) { rd.moved = true; try { el.setPointerCapture(e.pointerId) } catch { /* noop */ } }
+      const r = el.getBoundingClientRect()
+      const w = s2w(e.clientX - r.left, e.clientY - r.top)
+      rd.last = { x: rd.origin.x + (w.x - rd.sw.x), y: rd.origin.y + (w.y - rd.sw.y) }
+      setDragPos({ id: rd.id, pos: rd.last })
+    }
+    const onUp = (e: PointerEvent) => {
+      if (!rd) return
+      const cur = rd; rd = null
+      try { el.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      if (cur.moved) {
+        const node = store.getNode(cur.id)
+        if (node) writePin(node, cur.last)
+        setDragPos(null)
+      } else {
+        // Clic derecho limpio (sin mover) → menú contextual del nodo.
+        setContextMenu({ nodeId: cur.id, x: e.clientX, y: e.clientY })
+      }
+    }
+    const onCtx = (e: MouseEvent) => { if (suppressContextRef.current) { e.preventDefault(); e.stopPropagation() } }
+    el.addEventListener('pointerdown', onDown, true)
+    window.addEventListener('pointermove', onMove, true)
+    window.addEventListener('pointerup', onUp, true)
+    el.addEventListener('contextmenu', onCtx, true)
+    return () => {
+      el.removeEventListener('pointerdown', onDown, true)
+      window.removeEventListener('pointermove', onMove, true)
+      window.removeEventListener('pointerup', onUp, true)
+      el.removeEventListener('contextmenu', onCtx, true)
+    }
+  }, [])
+
   // ── Vuelo animado de la cámara a (wx,wy) con el zoom destino (estilo iPad) ──
   // Centra el punto de mundo en el viewport con un tween suave.
   const flyTo = useCallback((wx: number, wy: number, targetScale: number) => {
@@ -1833,7 +1900,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
             onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
+            onContextMenu={(e) => nodeCtx(e, node.id)}
             style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
               // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre)
               // DENTRO del border-box → al mover el ratón al dot/handle no se pierde el hover.
@@ -1899,7 +1966,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
                 /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
                    editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
                    pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin
@@ -2017,12 +2084,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           {flowNodes.map(node => dragPos?.id === node.id ? null : (
             <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W, cursor: 'grab' }}
               onPointerDown={(e) => onCardAreaPointerDown(e, node)}
-              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+              onContextMenu={(e) => nodeCtx(e, node.id)}>
               <div className="pizarra-card-body" style={{ minWidth: 0 }}
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
                 /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
                    editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
                    pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin

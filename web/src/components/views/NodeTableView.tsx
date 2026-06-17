@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
@@ -464,42 +465,6 @@ function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () 
   return <span onClick={onEdit}>{String(v)}</span>
 }
 
-// ── New column modal ─────────────────────────────────────────────────────────
-
-function NewColumnModal({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string, type: ColType) => void }) {
-  const [name, setName] = useState('')
-  const [type, setType] = useState<ColType>('text')
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal--small" onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">Nueva propiedad</h3>
-        <div className="modal-field">
-          <label>Nombre</label>
-          <input
-            autoFocus
-            value={name}
-            onChange={e => setName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && name.trim()) { onCreate(name.trim(), type); } if (e.key === 'Escape') onClose() }}
-            placeholder="Ej. Comentario"
-          />
-        </div>
-        <div className="modal-field">
-          <label>Tipo</label>
-          <select value={type} onChange={e => setType(e.target.value as ColType)}>
-            {(Object.entries(COL_TYPE_LABELS) as [ColType, string][]).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </select>
-        </div>
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn-secondary">Cancelar</button>
-          <button onClick={() => name.trim() && onCreate(name.trim(), type)} disabled={!name.trim()} className="btn-primary">Crear</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Main view ────────────────────────────────────────────────────────────────
 
 export default function NodeTableView({ parentId }: Props) {
@@ -509,8 +474,9 @@ export default function NodeTableView({ parentId }: Props) {
   const [sortBy, setSortBy] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>(null)
   const [editingCell, setEditingCell] = useState<{ nodeId: string; colId: string } | null>(null)
-  const [newColOpen, setNewColOpen] = useState(false)
-  const [colMenu, setColMenu] = useState<string | null>(null)
+  const [editingColId, setEditingColId] = useState<string | null>(null)            // rename inline de columna
+  const [colMenu, setColMenu] = useState<{ id: string; x: number; y: number } | null>(null)  // menú de columna
+  const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)   // menú de fila
   const [groupBy, setGroupBy] = useState<string | null>(null)   // null = sin agrupar
   const [filterText, setFilterText] = useState('')
   const [resizeCol, setResizeCol] = useState<{ id: string; w: number } | null>(null)  // preview de ancho
@@ -654,23 +620,43 @@ export default function NodeTableView({ parentId }: Props) {
       style={{ position: 'absolute', right: -3, top: 0, height: '100%', width: 6, cursor: 'col-resize', zIndex: 2 }} />
   )
 
-  function handleAddCol(name: string, type: ColType) {
-    store.addPropColumn(parentId, name, type)
-    setNewColOpen(false)
+  // Crear columna INSTANTÁNEA: sin modal. Nace con nombre por defecto y tipo texto;
+  // se entra directamente a renombrarla en línea (el tipo se cambia por menú).
+  function addColumnInstant() {
+    const id = store.addPropColumn(parentId, `Columna ${customCols.length + 1}`, 'text')
+    setEditingColId(id)
   }
-
+  function commitColName(colId: string, name: string) {
+    const n = name.trim()
+    if (n) store.renamePropColumn(parentId, colId, n)
+    setEditingColId(null)
+  }
+  function changeColType(colId: string, type: ColType) {
+    const schema = store.getPropSchema(parentId)
+    const col = schema.find(c => c.id === colId)
+    if (col) { col.type = type; store.setPropSchema(parentId, schema) }
+    setColMenu(null)
+  }
   function handleDeleteCol(colId: string) {
-    if (!confirm('¿Eliminar esta columna? Los valores se conservan en cada nodo pero dejarán de mostrarse.')) return
     store.deletePropColumn(parentId, colId)
     setColMenu(null)
   }
-
-  function handleRenameCol(colId: string) {
-    const cur = customCols.find(c => c.id === colId)
-    if (!cur) return
-    const newName = prompt('Nuevo nombre:', cur.name)
-    if (newName && newName.trim()) store.renamePropColumn(parentId, colId, newName.trim())
-    setColMenu(null)
+  // ── Filas ──
+  function addRow() {
+    const n = store.createNode({ text: '', parentId, siblingOrder: Date.now() })
+    setEditingCell({ nodeId: n.id, colId: '__title' })
+  }
+  function deleteRow(id: string) { store.deleteNode(id); setRowMenu(null) }
+  function duplicateRow(id: string) {
+    const src = store.getNode(id); if (!src) return
+    const copy = store.createNode({ text: src.text, parentId, siblingOrder: src.siblingOrder + 1 })
+    // copiar props personalizadas + estado/fecha/prioridad
+    for (const col of customCols) {
+      const v = store.getPropValue(id, col.id)
+      if (v !== undefined && v !== null) store.setPropValue(copy.id, col.id, v)
+    }
+    store.updateNode(copy.id, { status: src.status, due: src.due, priority: src.priority, types: src.types })
+    setRowMenu(null)
   }
 
 
@@ -709,22 +695,40 @@ export default function NodeTableView({ parentId }: Props) {
                 key={col.id}
                 className="node-table-th node-table-th--custom"
                 style={{ position: 'relative' }}
-                onClick={() => toggleSort(col.id)}
-                onContextMenu={e => { e.preventDefault(); setColMenu(col.id) }}
+                title="Clic: ordenar · clic en el nombre: renombrar · clic derecho: opciones"
+                onClick={() => { if (editingColId !== col.id) toggleSort(col.id) }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setColMenu({ id: col.id, x: e.clientX, y: e.clientY }) }}
               >
-                {col.name}{sortIcon(col.id)}
-                {colMenu === col.id && (
-                  <div className="node-table-col-menu" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleRenameCol(col.id)}>Renombrar</button>
-                    <button onClick={() => handleDeleteCol(col.id)} className="danger">Eliminar</button>
-                    <button onClick={() => setColMenu(null)}>Cerrar</button>
-                  </div>
+                {editingColId === col.id ? (
+                  <input
+                    autoFocus
+                    className="node-table-colname-editor"
+                    defaultValue={col.name}
+                    onClick={e => e.stopPropagation()}
+                    onPointerDown={e => e.stopPropagation()}
+                    onFocus={e => e.currentTarget.select()}
+                    onBlur={e => commitColName(col.id, e.target.value)}
+                    onKeyDown={e => {
+                      e.stopPropagation()
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                      else if (e.key === 'Escape') setEditingColId(null)
+                    }}
+                  />
+                ) : (
+                  <>
+                    {/* Clic en el NOMBRE → renombrar; clic en el resto de la cabecera → ordenar. */}
+                    <span className="node-table-colname" style={{ cursor: 'text' }}
+                      onClick={e => { e.stopPropagation(); setEditingColId(col.id) }}>
+                      {col.name}
+                    </span>
+                    <span className="node-table-sort-ind">{sortIcon(col.id)}</span>
+                  </>
                 )}
                 <ColResizer colId={col.id} />
               </th>
             ))}
             <th className="node-table-th node-table-th--add">
-              <button className="node-table-add-col" onClick={() => setNewColOpen(true)} title="Añadir propiedad">＋</button>
+              <button className="node-table-add-col" onClick={addColumnInstant} title="Añadir columna">＋</button>
             </th>
           </tr>
         </thead>
@@ -747,6 +751,7 @@ export default function NodeTableView({ parentId }: Props) {
               <tr
                 key={node.id}
                 className={`node-table-row ${node.status === 'done' ? 'node-table-row--done' : ''}`}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setRowMenu({ id: node.id, x: e.clientX, y: e.clientY }) }}
               >
                 <td
                   className="node-table-td node-table-td--title"
@@ -921,12 +926,60 @@ export default function NodeTableView({ parentId }: Props) {
               })}
             </>
           ))}
+          {/* Añadir fila rápido (además de Enter en la última celda). */}
+          <tr className="node-table-addrow" onClick={addRow}>
+            <td className="node-table-td node-table-addrow-cell"
+              colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
+              ＋ Añadir fila
+            </td>
+          </tr>
         </tbody>
       </table>
 
-      {newColOpen && (
-        <NewColumnModal onClose={() => setNewColOpen(false)} onCreate={handleAddCol} />
-      )}
+      {/* Menú de COLUMNA (clic derecho en la cabecera): renombrar, tipo, ordenar, eliminar.
+          Portal a body: la tabla puede vivir dentro de una tarjeta del lienzo con
+          transform:scale, donde position:fixed se ancla al ancestro transformado. */}
+      {colMenu && (() => {
+        const col = customCols.find(c => c.id === colMenu.id)
+        if (!col) return null
+        return createPortal((
+          <>
+            <div onPointerDown={() => setColMenu(null)} onContextMenu={e => { e.preventDefault(); setColMenu(null) }}
+              style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
+            <div className="node-ctx-menu" style={{ position: 'fixed', top: colMenu.y, left: colMenu.x, zIndex: 3000 }}
+              onClick={e => e.stopPropagation()}>
+              <button className="node-ctx-item" onClick={() => { setEditingColId(col.id); setColMenu(null) }}>✏️ Renombrar</button>
+              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('asc'); setColMenu(null) }}>▲ Ordenar ascendente</button>
+              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('desc'); setColMenu(null) }}>▼ Ordenar descendente</button>
+              <div className="node-ctx-sep" />
+              <div className="node-ctx-label">Tipo</div>
+              {(Object.entries(COL_TYPE_LABELS) as [ColType, string][]).map(([k, v]) => (
+                <button key={k} className={`node-ctx-item node-ctx-item--type ${col.type === k ? 'active' : ''}`}
+                  onClick={() => changeColType(col.id, k)}>
+                  {col.type === k ? '● ' : '○ '}{v}
+                </button>
+              ))}
+              <div className="node-ctx-sep" />
+              <button className="node-ctx-item node-ctx-item--danger" onClick={() => handleDeleteCol(col.id)}>🗑 Eliminar columna</button>
+            </div>
+          </>
+        ), document.body)
+      })()}
+
+      {/* Menú de FILA (clic derecho en la fila): abrir, duplicar, eliminar. Portal a body. */}
+      {rowMenu && store.getNode(rowMenu.id) && createPortal((
+        <>
+          <div onPointerDown={() => setRowMenu(null)} onContextMenu={e => { e.preventDefault(); setRowMenu(null) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
+          <div className="node-ctx-menu" style={{ position: 'fixed', top: rowMenu.y, left: rowMenu.x, zIndex: 3000 }}
+            onClick={e => e.stopPropagation()}>
+            <button className="node-ctx-item" onClick={() => { navigate(`/node/${rowMenu.id}`); setRowMenu(null) }}>↗ Abrir nota</button>
+            <button className="node-ctx-item" onClick={() => duplicateRow(rowMenu.id)}>⧉ Duplicar fila</button>
+            <div className="node-ctx-sep" />
+            <button className="node-ctx-item node-ctx-item--danger" onClick={() => deleteRow(rowMenu.id)}>🗑 Eliminar fila</button>
+          </div>
+        </>
+      ), document.body)}
     </div>
   )
 }

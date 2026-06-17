@@ -7641,6 +7641,42 @@ textarea:focus-visible,
 .node-table-col-menu button:hover { background: var(--bg-hover); }
 .node-table-col-menu button.danger { color: #ef4444; }
 
+/* Cabecera: nombre (clic = renombrar) + indicador de orden (clic en zona vacía = ordenar) */
+.node-table-colname { padding: 1px 2px; border-radius: 3px; }
+.node-table-colname:hover { background: var(--bg-hover); }
+.node-table-sort-ind { color: var(--text-tertiary); margin-left: 2px; }
+.node-table-colname-editor {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--accent);
+  border-radius: 4px; padding: 1px 4px; font: inherit; font-weight: inherit;
+  background: var(--bg-primary); color: var(--text-primary); outline: none;
+}
+
+/* Fila "+ añadir fila" */
+.node-table-addrow { cursor: pointer; }
+.node-table-addrow-cell {
+  color: var(--text-tertiary); font-size: 12px; padding: 6px 10px !important;
+  text-align: left; user-select: none;
+}
+.node-table-addrow:hover .node-table-addrow-cell { background: var(--bg-hover); color: var(--accent); }
+
+/* Menú contextual de fila/columna (posicionado, estilo lienzo) */
+.node-ctx-menu {
+  min-width: 184px; background: var(--bg-elevated, #fff);
+  border: 1px solid var(--border, #e2e2e2); border-radius: 10px; padding: 5px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+}
+.node-ctx-item {
+  display: block; width: 100%; text-align: left; background: transparent;
+  border: none; padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; color: var(--text-primary); line-height: 1.2;
+}
+.node-ctx-item:hover { background: var(--bg-hover); }
+.node-ctx-item--type { padding: 5px 10px; font-size: 12.5px; }
+.node-ctx-item--type.active { color: var(--accent); font-weight: 600; }
+.node-ctx-item--danger { color: var(--danger, #e03131); }
+.node-ctx-sep { height: 1px; background: var(--border, #e2e2e2); margin: 4px 2px; }
+.node-ctx-label { padding: 4px 10px 2px; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
+
 /* Editable cell */
 .node-table-cell-editor {
   width: 100%; border: 1px solid var(--accent); border-radius: 4px;
