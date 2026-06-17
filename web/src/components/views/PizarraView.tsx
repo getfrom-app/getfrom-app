@@ -1990,7 +1990,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 ) : res.type === 'pdf' ? (
                   // El lienzo carga el PROPIO PDF (1ª página, nítido al ampliar). El
                   // dot lo abre en su página para marcarlo/editarlo.
-                  <PdfCanvasPreview url={res.url} width={cardW} title={node.text} />
+                  <PdfCanvasPreview url={res.url} width={cardW} scale={cam.scale * cardScale} title={node.text} />
                 ) : res.type === 'url' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
                     <span style={{ fontSize: 22, lineHeight: 1 }}>🔗</span>
