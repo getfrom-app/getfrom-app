@@ -1355,12 +1355,16 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const pin = readPin(node) || { x: 0, y: 0 }
     const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
     const cardH = cardEl ? cardEl.offsetHeight : CARD_MIN_H
+    // Texto limpio sin _pinW fijado (ancho max-content) → arrancar del ancho REAL
+    // renderizado (offsetWidth), no de CARD_W, para que el tirador no salte.
+    const hasW = (() => { try { return JSON.parse(node.extraData || '{}')._pinW != null } catch { return false } })()
+    const startW = hasW ? readCardW(node) : Math.max(120, cardEl?.offsetWidth ?? readCardW(node))
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    nodeRzRef.current = { id: node.id, mode, startW: readCardW(node), startScale: readCardScale(node), startPin: pin, startWorld, cardH, moved: false }
+    nodeRzRef.current = { id: node.id, mode, startW, startScale: readCardScale(node), startPin: pin, startWorld, cardH, moved: false }
     nodeRzValRef.current = null
     containerRef.current!.setPointerCapture(e.pointerId)
-    setNodeRz({ id: node.id, w: readCardW(node), scale: readCardScale(node), pin })
+    setNodeRz({ id: node.id, w: startW, scale: readCardScale(node), pin })
   }, [screenToWorld])
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -1479,6 +1483,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-node--cleantext .auto-ctx-badge--placeholder{display:none!important}
 .pizarra-node--cleantext .node-text:empty::before{content:''!important}
 .pizarra-node--cleantext .node-text:focus{outline:none}
+/* El texto limpio abraza su contenido (la tarjeta es max-content): sin el min-width
+   de 160px del outliner-en-pizarra, así el tirador queda pegado al final del texto. */
+.pizarra-node--cleantext .node-text{min-width:24px!important;flex:0 0 auto!important}
 .pizarra-node--cleantext .node-row{padding-left:0!important;background:none!important}
 .pizarra-node--cleantext .pizarra-card-body{padding:0}
 .pizarra-node--cleantext.pizarra-node--hover,.pizarra-node--cleantext.pizarra-node--sel{box-shadow:none!important}
@@ -1807,6 +1814,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         // OutlinerNode pero SIN cromo (CSS `.pizarra-node--cleantext`). Solo cursor
         // al crear; dot (zoom) y tirador de ancho aparecen en hover.
         const isPlain = !isText && !elView && !res
+        // ¿Tiene ancho FIJADO por el usuario (_pinW)? Si no, el Texto limpio crece
+        // con su contenido (max-content) → el tirador queda pegado al final del texto.
+        const hasFixedW = (() => { try { return JSON.parse(node.extraData || '{}')._pinW != null } catch { return false } })()
+        const cleanAutoW = isPlain && !hasFixedW
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
@@ -1821,7 +1832,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined }}>
+            style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined }}>
             {lod ? (
               // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
               <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1883,7 +1894,33 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
+                /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
+                   editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
+                   pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin
+                   posición → saltaría al flujo, arriba). Guardas: solo nodos de texto plano
+                   CON pin; sin pin (flujo) o no-texto → comportamiento normal. */
+                onKeyDownCapture={(e) => {
+                  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
+                  const p = readPin(node)
+                  if (!p || isDocNode(node) || canvasViewKind(node) || readResource(node)) return
+                  e.preventDefault(); e.stopPropagation()
+                  const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
+                  const dy = (cardEl?.offsetHeight ?? 28) * readCardScale(node)
+                  const ed: Record<string, string> = {
+                    [PIN_X]: String(Math.round(p.x)),
+                    [PIN_Y]: String(Math.round(p.y + dy)),
+                    [PIN_SCALE]: String(readPinScale(node)),
+                  }
+                  try {
+                    const src = JSON.parse(node.extraData || '{}')
+                    if (src._pinW != null) ed._pinW = String(src._pinW)
+                    if (src._cardScale != null) ed._cardScale = String(src._cardScale)
+                  } catch {}
+                  const nn = store.createNode({ text: '', parentId, extraData: ed })
+                  setTool('select')
+                  setSelectedId(nn.id)
+                }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
@@ -1900,12 +1937,15 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 la izquierda y el tirador de ancho a la derecha. Nada más. */}
             {isPlain && hovered && !dragPos && (
               <>
+                {/* Dot a la izquierda, centrado en la 1ª línea (alto = node-row 26px). */}
                 <div title="Ir aquí (zoom)" onPointerDown={(e) => { e.stopPropagation(); flyToNode(node) }}
-                  style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
-                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
+                  style={{ position: 'absolute', left: -22, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
                 </div>
-                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                  style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                {/* Tirador de ancho MÍNIMO: cuadradito pegado al final del texto
+                    (la tarjeta es max-content), centrado en la 1ª línea. */}
+                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+                  style={{ position: 'absolute', right: -3, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
               </>
             )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
@@ -1975,7 +2015,33 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
+                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
+                /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
+                   editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
+                   pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin
+                   posición → saltaría al flujo, arriba). Guardas: solo nodos de texto plano
+                   CON pin; sin pin (flujo) o no-texto → comportamiento normal. */
+                onKeyDownCapture={(e) => {
+                  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
+                  const p = readPin(node)
+                  if (!p || isDocNode(node) || canvasViewKind(node) || readResource(node)) return
+                  e.preventDefault(); e.stopPropagation()
+                  const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
+                  const dy = (cardEl?.offsetHeight ?? 28) * readCardScale(node)
+                  const ed: Record<string, string> = {
+                    [PIN_X]: String(Math.round(p.x)),
+                    [PIN_Y]: String(Math.round(p.y + dy)),
+                    [PIN_SCALE]: String(readPinScale(node)),
+                  }
+                  try {
+                    const src = JSON.parse(node.extraData || '{}')
+                    if (src._pinW != null) ed._pinW = String(src._pinW)
+                    if (src._cardScale != null) ed._cardScale = String(src._cardScale)
+                  } catch {}
+                  const nn = store.createNode({ text: '', parentId, extraData: ed })
+                  setTool('select')
+                  setSelectedId(nn.id)
+                }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             </div>
