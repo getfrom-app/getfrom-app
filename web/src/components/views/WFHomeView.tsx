@@ -10,6 +10,8 @@
 import { useMemo, useEffect, useState, useCallback } from 'react'
 import Outliner from '../outliner/Outliner'
 import { useStore, store } from '../../store/nodeStore'
+import { allContextKeys, nodeHasAnyContext } from '../../utils/contextLens'
+import { useLensContextId } from '../../store/contextLensStore'
 import { applyWFFilter } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from './FilterResultsView'
@@ -53,12 +55,15 @@ const NON_AGENDA_SYSTEM_TEXTS = new Set([
 //   1. node.types incluye el ID del nodo contexto (via @ picker)
 //   2. node.types incluye el slug o texto del contexto (via auto-sync de @mention)
 //   3. El texto del nodo contiene @NombreContexto (case-insensitive)
-function buildContextFilter(contextNodeId: string): {
+function buildContextFilter(contextNodeId: string, includeUncontextualized = false): {
   matchIds: Set<string>
   ancestorIds: Set<string>
 } | null {
   const ctxNode = store.getNode(contextNodeId)
   if (!ctxNode) return null
+  // Lente global: además del contexto activo, mostrar lo que NO tiene ningún
+  // contexto (solo se ocultan los nodos de OTROS contextos).
+  const allKeys = includeUncontextualized ? allContextKeys() : null
 
   // ── Jerarquía: recoger el contexto + todos sus subcontextos descendientes ──
   // Un nodo asignado a un subcontexto hereda el contexto padre: filtrar por el
@@ -126,6 +131,8 @@ function buildContextFilter(contextNodeId: string): {
 
     if (matchByTypes || matchByAtMention) {
       matchIds.add(n.id)
+    } else if (allKeys && !nodeHasAnyContext(n, allKeys)) {
+      matchIds.add(n.id)  // sin ningún contexto → siempre visible bajo la lente
     }
   })
 
@@ -143,6 +150,7 @@ function buildContextFilter(contextNodeId: string): {
 
 export default function WFHomeView({ filterText, contextFilterId }: Props) {
   const s = useStore()
+  const lensId = useLensContextId()
 
   // ── Loading gate ──────────────────────────────────────────────────────────
   const [storeReady, setStoreReady] = useState(() => store.isLoaded)
@@ -184,11 +192,15 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
   // El resto de filtros de contexto calculan matchIds, que se pasan a FilteredList.
 
   const contextFilter = useMemo(() => {
-    if (!contextFilterId) return null
+    // Filtro explícito (búsqueda/«Sin clasificar») tiene prioridad sobre la lente.
+    if (contextFilterId && contextFilterId !== UNCLASSIFIED_FILTER_ID) return buildContextFilter(contextFilterId)
     if (contextFilterId === UNCLASSIFIED_FILTER_ID) return null
-    return buildContextFilter(contextFilterId)
+    // Lente de contexto global: filtra el árbol por el contexto activo (+ lo sin
+    // contexto). Solo se ocultan los nodos de OTROS contextos.
+    if (lensId) return buildContextFilter(lensId, true)
+    return null
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextFilterId, s.nodesVersion])
+  }, [contextFilterId, lensId, s.nodesVersion])
 
   // ── Filtro por texto ───────────────────────────────────────────────────────
   const filterResult = useMemo(() => {
