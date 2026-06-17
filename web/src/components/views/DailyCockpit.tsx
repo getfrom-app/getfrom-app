@@ -11,6 +11,7 @@ import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
+import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -21,6 +22,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   const [postponeMenuId, setPostponeMenuId] = useState<string | null>(null)
+  // Modal de fecha+recurrencia al tocar el badge de fecha de una tarea
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   // Colapsado por bloque (cabecera clicable). Persistente.
   const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
     let set: Set<string>
@@ -170,7 +173,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       >{n.status === 'done' ? '✓' : ''}</button>
       <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
       {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-      {opts.showDue && <span className="dc-due">{dueLabel(n)}</span>}
+      {opts.showDue && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
+        onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
       {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
       <span className="dc-actions">
         {opts.inFocus ? (
@@ -263,9 +267,17 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     </>
   )
 
+  // Modal de fecha+recurrencia (al tocar el badge de fecha de una tarea).
+  const propsNode = propsNodeId
+    ? [...data.focus, ...data.overdue, ...data.today, ...data.seguimiento].find(n => n.id === propsNodeId)
+    : null
+  const propsModal = propsNode
+    ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
+    : null
+
   // Modo «bare»: sin caja blanca ni header — bloques sueltos (panel del día pizarra)
   if (bare) {
-    return <div className="daily-cockpit-bare" onMouseDown={openPlanner}>{groups}</div>
+    return <div className="daily-cockpit-bare" onMouseDown={openPlanner}>{groups}{propsModal}</div>
   }
 
   return (
@@ -285,6 +297,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       </button>
 
       {!collapsed && <div className="dc-body">{groups}</div>}
+      {propsModal}
     </div>
   )
 }
