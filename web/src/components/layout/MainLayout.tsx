@@ -226,9 +226,9 @@ export default function MainLayout() {
   }
   function handleSelectPrompt(nodeId: string) { openDetail('prompt', nodeId) }
   function handleSelectAgent(nodeId: string)  { openDetail('agent', nodeId) }
-  // Probar un prompt en Magic: activarlo + abrir el panel Magic.
+  // Probar un prompt en Magic: cargar su texto en el input (editable) + abrir Magic.
   function handleTestPromptInMagic(promptId: string) {
-    aiChatStore.setActivePrompt(promptId, false)
+    aiChatStore.loadPromptIntoInput(promptId, currentNodeIdFromRoute)
     openPanel('magic')
   }
 

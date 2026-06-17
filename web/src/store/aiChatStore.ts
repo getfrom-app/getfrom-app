@@ -117,6 +117,11 @@ class AIChatStore {
   /** true si el prompt activo se activó automáticamente (por contexto), no por el usuario. */
   activePromptAuto = false
 
+  /** Texto pendiente de cargar en el input de Magic (al elegir un prompt el usuario:
+   *  su texto resuelto va al input para editarlo o enviarlo con Enter). MagicChat lo
+   *  consume al montarse/cambiar. null = nada pendiente. */
+  pendingInput: string | null = null
+
   /** Nodo al que pertenece la conversación en memoria (para resetear al cambiar de nodo). */
   boundNodeKey: string | null = null
 
@@ -178,6 +183,25 @@ class AIChatStore {
     this.activePromptId = promptId
     this.activePromptAuto = auto
     this.notify()
+  }
+
+  /** El usuario elige un prompt → su TEXTO resuelto va al input de Magic (editable),
+   *  no como instrucción de fondo. Así basta con Enter para que actúe sobre el nodo
+   *  actual; o puede añadir más antes de enviar. */
+  loadPromptIntoInput(promptId: string, currentNodeId?: string) {
+    let text = ''
+    try { text = (resolvePrompt(promptId, { currentNodeId }) || '').trim() } catch { text = '' }
+    if (!text) return
+    this.activePromptId = null   // no duplicar como instrucción activa
+    this.activePromptAuto = false
+    this.pendingInput = text
+    this.notify()
+  }
+  /** Consume (lee y limpia) el texto pendiente para el input. Sin notify (es lectura). */
+  consumePendingInput(): string | null {
+    const t = this.pendingInput
+    this.pendingInput = null
+    return t
   }
 
   subscribe(fn: Listener): () => void {

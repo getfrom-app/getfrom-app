@@ -426,6 +426,23 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     return map
   }, [children])
 
+  // ── Minimapa: rectángulos (en MUNDO) de todo el contenido del lienzo, para
+  // dibujar la «vista de pájaro» abajo a la izquierda. Se recalcula solo cuando
+  // cambian los elementos o los trazos (no en cada pan/zoom). ──────────────────
+  const miniRects = useMemo(() => {
+    const rects: { x: number; y: number; w: number; h: number }[] = []
+    for (const [id, pos] of layout) {
+      const n = store.getNode(id); if (!n) continue
+      const w = readCardW(n) * readCardScale(n)
+      const h = 120 * readCardScale(n)
+      rects.push({ x: pos.x, y: pos.y, w, h })
+    }
+    for (const s of (wbData.strokes || [])) {
+      const b = strokeBBox(s); if (b) rects.push({ x: b.x0, y: b.y0, w: b.x1 - b.x0, h: b.y1 - b.y0 })
+    }
+    return rects
+  }, [layout, wbData])
+
   // FLUJO: nodos del día SIN posición → se apilan en una columna sobre el lienzo
   // (orden natural, sin solaparse). Los eventos GCal NO van al lienzo (viven en la
   // columna derecha). Al arrastrar uno del flujo gana pin y pasa a flotar.
@@ -2311,6 +2328,45 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Minimapa (vista de pájaro): abajo-izquierda, sin tapar Feedback. Muestra
+            todo el contenido del lienzo y un recuadro con lo que se ve en pantalla;
+            clic en cualquier punto → la cámara vuela allí. ── */}
+      {miniRects.length > 0 && (() => {
+        const MW = 152, MH = 104, PAD = 8
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+        for (const r of miniRects) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h) }
+        const vx0 = -cam.x / cam.scale, vy0 = -cam.y / cam.scale
+        const vx1 = (viewport.w - cam.x) / cam.scale, vy1 = (viewport.h - cam.y) / cam.scale
+        x0 = Math.min(x0, vx0); y0 = Math.min(y0, vy0); x1 = Math.max(x1, vx1); y1 = Math.max(y1, vy1)
+        const bw = (x1 - x0) || 1, bh = (y1 - y0) || 1
+        x0 -= bw * 0.06; x1 += bw * 0.06; y0 -= bh * 0.06; y1 += bh * 0.06
+        const W = x1 - x0, H = y1 - y0
+        const s = Math.min((MW - PAD * 2) / W, (MH - PAD * 2) / H)
+        const offX = PAD + ((MW - PAD * 2) - W * s) / 2
+        const offY = PAD + ((MH - PAD * 2) - H * s) / 2
+        const m = (wx: number, wy: number) => ({ x: offX + (wx - x0) * s, y: offY + (wy - y0) * s })
+        const vp0 = m(vx0, vy0), vp1 = m(vx1, vy1)
+        const goTo = (e: React.PointerEvent) => {
+          e.stopPropagation()
+          const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+          const wx = (e.clientX - r.left - offX) / s + x0
+          const wy = (e.clientY - r.top - offY) / s + y0
+          setCam(c => ({ ...c, x: viewport.w / 2 - wx * c.scale, y: viewport.h / 2 - wy * c.scale }))
+        }
+        return (
+          <div style={{ position: 'absolute', left: 12, bottom: 80, width: MW, height: MH, zIndex: 40,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', cursor: 'pointer', touchAction: 'none' }}
+            onPointerDown={goTo} title="Mapa del lienzo · clic para ir">
+            <svg width={MW} height={MH} style={{ display: 'block' }}>
+              {miniRects.map((r, i) => { const a = m(r.x, r.y); return <rect key={i} x={a.x} y={a.y} width={Math.max(1.5, r.w * s)} height={Math.max(1.5, r.h * s)} rx={1} fill="var(--text-tertiary,#bbb)" opacity={0.5} /> })}
+              <rect x={vp0.x} y={vp0.y} width={Math.max(4, vp1.x - vp0.x)} height={Math.max(4, vp1.y - vp0.y)}
+                fill="var(--accent,#6c5ce7)" fillOpacity={0.12} stroke="var(--accent,#6c5ce7)" strokeWidth={1.5} rx={2} />
+            </svg>
+          </div>
+        )
+      })()}
     </div>
   )
 }

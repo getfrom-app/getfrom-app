@@ -88,9 +88,22 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
   }, [currentNodeId, chat.messages.length])
 
   function activatePrompt(id: string) {
-    chat.setActivePrompt(id, false)
+    // El usuario elige un prompt → su texto va al INPUT (editable), no como
+    // instrucción de fondo: a veces con el prompt + Enter basta para actuar.
+    chat.loadPromptIntoInput(id, currentNodeId)
     setTimeout(() => taRef.current?.focus(), 30)
   }
+
+  // Cargar al input el texto de un prompt elegido (desde aquí o desde «Probar en
+  // Magic» de la lista de prompts). Se consume una vez.
+  useEffect(() => {
+    if (chat.pendingInput == null) return
+    const t = chat.consumePendingInput()
+    if (t) {
+      setInput(prev => prev.trim() ? `${prev.replace(/\s+$/, '')} ${t}` : t)
+      setTimeout(() => taRef.current?.focus(), 30)
+    }
+  }, [chat.pendingInput]) // eslint-disable-line react-hooks/exhaustive-deps
   function clearActivePrompt() {
     // Al quitarlo a mano: no re-activarlo automáticamente (ni por contexto ni por
     // palabra clave) mientras el usuario siga en este nodo / escribiendo.
