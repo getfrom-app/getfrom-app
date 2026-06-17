@@ -18,7 +18,6 @@ import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcal
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
-import ContextLensBar from './ContextLensBar'
 import { passesLens, allContextKeys } from '../../utils/contextLens'
 import { useLensContextId } from '../../store/contextLensStore'
 
@@ -134,9 +133,6 @@ export default function DayColumn({
 
   return (
     <>
-      {/* Lente de contexto: filtra toda la columna por el contexto elegido. */}
-      <ContextLensBar />
-
       {/* 1. Eventos de Google Calendar del día */}
       {eventNodes.length > 0 && (
         <div className="dc-group">
@@ -149,7 +145,7 @@ export default function DayColumn({
             return (
               <div key={ev.id}>
                 <div className="dc-row dc-row--event" data-node-id={ev.id}
-                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(ev) }}>
+                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
                   <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>
                     {ev.text ? renderInline(ev.text) : 'Evento'}
@@ -196,7 +192,7 @@ export default function DayColumn({
           {header('tareas', 'Tareas del día')}
           {!collapsed.has('tareas') && dayTasks.map(t => (
             <div key={t.id} className={`dc-row ${t.status === 'done' ? 'dc-row--done' : ''}`} data-node-id={t.id}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(t) }}>
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: t.id, x: e.clientX, y: e.clientY } })) }}>
               <button className={`dc-check ${t.status === 'done' ? 'dc-check--done' : ''}`}
                 onClick={e => { e.stopPropagation(); toggleTaskDone(t) }} title="Completar" aria-label="Completar">
                 {t.status === 'done' ? '✓' : ''}
@@ -218,7 +214,7 @@ export default function DayColumn({
           {!collapsed.has('areas') && areaNodes.map(a => (
             <div key={a.id} className="dc-row" data-node-id={a.id}
               onClick={() => flyToArea(a.id)}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(a) }}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}
               title="Ir a esta vista del lienzo" style={{ cursor: 'pointer' }}>
               <span className="dc-event-dot" style={{ background: 'var(--accent,#6c5ce7)' }} />
               <span className="dc-text">{a.text ? renderInline(a.text) : 'Área'}</span>
@@ -251,7 +247,7 @@ export default function DayColumn({
               draggable
               onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
               onClick={() => navigate(`/node/${c.id}`)}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); deleteRow(c) }}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
               title="Arrastra al lienzo para colocarla"
             >
               <span className="dc-capture-grip">⠿</span>

@@ -540,8 +540,9 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     setAssignedCtx([])
     lockedForceTypeRef.current = null
     showToast(`✓ ${labelForType(result.type)} creado`)
+    // Captura rápida: NO navegar dentro del nodo creado — molesto cuando solo
+    // quieres soltar una tarea y seguir donde estabas. Se queda donde está.
     onClose()
-    navigate(`/node/${result.node.id}`)
   }
 
   // ── buildItems (del CommandPalette, sin panel-save) ────────────────────────

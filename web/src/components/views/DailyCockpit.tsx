@@ -178,7 +178,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       ref={registerRow(n.id)}
       className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
       onClick={() => navigate(`/node/${n.id}`)}
-      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); trashNode(n.id) }}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps(n)}
     >
       <button
@@ -223,7 +223,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   const renderBucleRow = (n: Node) => (
     <div key={n.id} className="dc-row" onClick={() => navigate(`/node/${n.id}`)}
-      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); trashNode(n.id) }}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps(n)}>
       <button
         className="dc-bucle"

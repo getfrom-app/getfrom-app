@@ -37,7 +37,7 @@ export default function NoteColumn({ node }: { node: Node }) {
           draggable
           onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
           onClick={() => navigate(`/node/${c.id}`)}
-          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); trashNode(c.id) }}
+          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
           title="Arrastra al lienzo para colocarlo"
         >
           <span className="dc-capture-grip">⠿</span>

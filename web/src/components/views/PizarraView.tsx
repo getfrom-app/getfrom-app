@@ -314,6 +314,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [groupDelta, setGroupDelta] = useState<WorldPos | null>(null)
   // Posición (pantalla) del mini-menú flotante de la selección (estilo iPad).
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
+  // Menú de un conector (flecha): el clic derecho NO borra; abre este mini-menú.
+  const [connMenu, setConnMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   // Menú rápido (clic derecho en el fondo): herramientas favoritas, estilo iPad.
   const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; world: WorldPos } | null>(null)
   // Conjunto configurable de favoritos del menú rápido (CSV en localStorage).
@@ -1672,7 +1674,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                     style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
                     onPointerEnter={() => setHoverConn(conn.id)}
                     onPointerLeave={() => setHoverConn(h => h === conn.id ? null : h)}
-                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); mutateConnectors(cs => cs.filter(c => c.id !== conn.id)); setHoverConn(null) }} />
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setConnMenu({ id: conn.id, x: e.clientX, y: e.clientY }) }} />
                 )}
                 {(hovered || connDrag?.id === conn.id) && tool === 'select' && (
                   <circle cx={ctrl.x} cy={ctrl.y} r={6} fill="#fff" stroke="var(--accent,#6c5ce7)" strokeWidth={2}
@@ -1787,6 +1789,22 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <button style={miniItem} onClick={() => duplicateSelection()}>Duplicar</button>
           <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>Eliminar</button>
         </div>
+      )}
+
+      {/* Menú de un conector (flecha): clic derecho ya NO borra; abre esto. */}
+      {connMenu && (
+        <>
+          <div onPointerDown={() => setConnMenu(null)} onContextMenu={(e) => { e.preventDefault(); setConnMenu(null) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1499 }} />
+          <div style={{ position: 'fixed', left: connMenu.x, top: connMenu.y, zIndex: 1500, padding: 4,
+            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}
+            onClick={(e) => e.stopPropagation()}>
+            <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }}
+              onClick={() => { mutateConnectors(cs => cs.filter(c => c.id !== connMenu.id)); setHoverConn(null); setConnMenu(null) }}>
+              Eliminar flecha
+            </button>
+          </div>
+        </>
       )}
 
       {/* Menú rápido (clic derecho en el fondo) — herramientas favoritas

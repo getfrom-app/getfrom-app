@@ -65,6 +65,7 @@ const NewEventModal = lazy(() => import('../modals/NewEventModal'))
 const VoiceCaptureModal = lazy(() => import('../modals/VoiceCaptureModal'))
 const TeachMagicModal = lazy(() => import('../modals/TeachMagicModal'))
 const TaskPropsModal = lazy(() => import('../modals/TaskPropsModal'))
+const RightColMenu = lazy(() => import('../panels/RightColMenu'))
 const KeyboardShortcutsModal = lazy(() => import('../modals/KeyboardShortcutsModal'))
 const PaywallModal = lazy(() => import('../paywall/PaywallModal'))
 const OnboardingWidget = lazy(() => import('../onboarding/OnboardingWidget'))
@@ -480,6 +481,7 @@ export default function MainLayout() {
   const slugModalInputRef = useRef<HTMLInputElement>(null)
   const [teachNodeId, setTeachNodeId] = useState<string | null>(null)
   const [taskPropsId, setTaskPropsId] = useState<string | null>(null)
+  const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
 
   // Abrir Magic Chat con texto prellenado (ej. desde Grabadora → "Resumir con IA")
   useEffect(() => {
@@ -968,6 +970,17 @@ export default function MainLayout() {
     return () => window.removeEventListener('from:open-task-props', handleTaskProps)
   }, [])
 
+  // Listener del menú contextual de la COLUMNA DERECHA (filas cockpit/capturas/etc).
+  // Antes el clic derecho borraba la fila; ahora abre RightColMenu.
+  useEffect(() => {
+    function handleRowMenu(e: Event) {
+      const d = (e as CustomEvent).detail as { nodeId: string; x: number; y: number }
+      if (d?.nodeId) setRowMenu({ nodeId: d.nodeId, x: d.x, y: d.y })
+    }
+    window.addEventListener('from:open-rowmenu', handleRowMenu)
+    return () => window.removeEventListener('from:open-rowmenu', handleRowMenu)
+  }, [])
+
   // Listener del modal "Enseñar a Magic" — disparado desde NodeContextMenu
   useEffect(() => {
     function handleTeach(e: Event) {
@@ -1236,6 +1249,7 @@ export default function MainLayout() {
         {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
         {teachNodeId && <TeachMagicModal nodeId={teachNodeId} onClose={() => setTeachNodeId(null)} />}
         {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}
+        {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
         {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </Suspense>
       {/* Modal URL corta — renderizado a nivel global para sobrevivir al desmontaje del menú contextual */}

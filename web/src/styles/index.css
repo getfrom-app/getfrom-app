@@ -13174,8 +13174,12 @@ textarea:focus-visible,
   padding: 3px 8px;
 }
 
-/* ── Lente de contexto (filtro por contexto en la columna del día) ── */
+/* ── Lente de contexto (filtro por contexto) ── */
 .ctx-lens { position: relative; padding: 4px 8px 8px; }
+/* Modo inline (top bar): sin padding, menú alineado a la derecha. */
+.ctx-lens--inline { padding: 0; display: inline-flex; }
+.ctx-lens--inline .ctx-lens-pill { padding: 4px 9px; font-size: 12px; max-width: 200px; }
+.ctx-lens--inline .ctx-lens-menu { left: auto; right: 0; }
 .ctx-lens-pill {
   display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
   padding: 5px 10px; border-radius: 999px; cursor: pointer; font-size: 12.5px;

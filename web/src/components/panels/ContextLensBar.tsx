@@ -6,7 +6,7 @@ import { store } from '../../store/nodeStore'
 import { listContexts } from '../../utils/contextLens'
 import { useLensContextId, setLensContextId } from '../../store/contextLensStore'
 
-export default function ContextLensBar() {
+export default function ContextLensBar({ inline = false }: { inline?: boolean } = {}) {
   const activeId = useLensContextId()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -24,7 +24,7 @@ export default function ContextLensBar() {
   const activeLabel = active && !active.deletedAt ? (active.text || 'Contexto') : null
 
   return (
-    <div className="ctx-lens" ref={ref}>
+    <div className={`ctx-lens${inline ? ' ctx-lens--inline' : ''}`} ref={ref}>
       <button
         className={`ctx-lens-pill${activeLabel ? ' ctx-lens-pill--on' : ''}`}
         onClick={() => setOpen(o => !o)}

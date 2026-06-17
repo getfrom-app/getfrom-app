@@ -10,6 +10,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
+import ContextLensBar from '../panels/ContextLensBar'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -158,6 +159,9 @@ export default function WFTopBar({
       </div>
 
       <div className="wf-topbar-spacer" />
+
+      {/* Lente de contexto GLOBAL: filtra toda la app por contexto desde aquí arriba. */}
+      <ContextLensBar inline />
 
       {/* Grabadora: el botón se movió al FAB «REC» (abajo-derecha), que abre la
           columna ya grabando. La barra ya no necesita su icono. ⌘R sigue abriéndola. */}
