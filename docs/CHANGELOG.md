@@ -33,6 +33,10 @@ Una tanda grande de pulido que deja el lienzo presentable de punta a punta.
 - Los **textos y documentos** del lienzo se **comparten** entre iPad y web: lo que escribes en uno aparece en el otro (mismo nodo, sin copias).
 - En el iPad ya se ven y se crean **imágenes, PDFs y enlaces** en el lienzo, y se trazan **flechas** entre tarjetas.
 
+**Cada dispositivo, a lo suyo**
+- **iPhone** se centra en consultar y capturar: tu **Día** (atrasadas, hoy y seguimiento), **Buscar** y el botón de **captura**.
+- **iPad** pone el **lienzo en el centro**, a pantalla completa: todo se crea desde ahí, y Buscar/Magic/Ajustes están a un toque sobre el propio lienzo.
+
 ---
 
 ## Web v9.6.372 — 16 junio 2026 · La Pizarra, hecha de piezas reales
