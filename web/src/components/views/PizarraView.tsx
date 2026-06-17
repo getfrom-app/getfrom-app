@@ -23,7 +23,6 @@ import { findRootByKey } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
-import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
@@ -170,7 +169,7 @@ function strokeBBox(s: WBStroke): { x0: number; y0: number; x1: number; y1: numb
 // ── Trazos (dibujo) — formato compatible con iPad (bloque ```from-pizarra```) ──
 // Los trazos viven en el body del nodo-pizarra. `pts` = polilínea en MUNDO
 // [x0,y0,x1,y1,…]; `w` = ancho en MUNDO (grosor constante: screenW = w*scale).
-type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text' | 'task' | 'line' | 'rect' | 'ellipse' | 'arrow'
+type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text' | 'doc' | 'line' | 'rect' | 'ellipse' | 'arrow'
 const isShapeTool = (t: CanvasTool) => t === 'line' || t === 'rect' || t === 'ellipse' || t === 'arrow'
 const isInkTool = (t: CanvasTool) => t === 'pen' || t === 'marker' || t === 'highlighter'
 const FENCE = '```from-pizarra'
@@ -319,8 +318,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; world: WorldPos } | null>(null)
   // Conjunto configurable de favoritos del menú rápido (CSV en localStorage).
   const [quickTools, setQuickTools] = useState<string[]>(() => {
-    const raw = localStorage.getItem('pizarraQuickTools') || 'node,pen,eraser,select,undo'
-    return raw.split(',').map(s => s.trim()).filter(Boolean)
+    const raw = localStorage.getItem('pizarraQuickTools') || 'text,pen,eraser,select,undo'
+    // Migra el antiguo 'node' → 'text' (ahora el texto ES el nodo-outliner).
+    const list = raw.split(',').map(s => s.trim()).filter(Boolean).map(k => k === 'node' ? 'text' : k)
+    return Array.from(new Set(list))
   })
   const [quickCfg, setQuickCfg] = useState(false) // panel de configuración abierto
   const toggleQuickTool = (k: string) => {
@@ -360,7 +361,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<CanvasTool>('select')
   // Herramienta Tarea: input flotante en el punto de clic (fecha por lenguaje natural).
-  const [taskInput, setTaskInput] = useState<{ x: number; y: number } | null>(null)
   // Color y grosor de tinta (pluma/rotulador/subrayador) + paleta abierta.
   const [penColor, setPenColor] = useState<string>('#222222')
   const penColorRef = useRef(penColor); penColorRef.current = penColor
@@ -868,23 +868,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
       },
     })
+    // Tras crear, pasar a 'select' (como el Documento): el nodo queda enfocado
+    // (cursor parpadeando) listo para escribir; el hover mostrará dot/tirador.
+    setTool('select')
     setSelectedId(node.id)
   }, [parentId])
 
-  // Herramienta Tarea: crea un nodo-tarea (con due/recurrencia por lenguaje natural)
-  // hijo de la nota del lienzo. Vive por DUE → aparece en la columna del día.
-  const createTaskFromText = useCallback((text: string) => {
-    const raw = text.trim(); if (!raw) return
-    const dp = extractDateFromEnd(raw)
-    const clean = (dp ? dp.cleanText : raw).trim() || raw
-    const node = store.createNode({ text: clean, parentId, isTask: true })
-    const updates: Record<string, unknown> = { status: 'pending' }
-    if (dp?.parsed.date) {
-      updates.due = dp.parsed.date.toISOString()
-      if (dp.parsed.recurrence) updates.recurrence = recurrenceToString(dp.parsed.recurrence)
-    }
-    store.updateNode(node.id, updates)
-  }, [parentId])
 
   // ── Elementos-texto del lienzo = NODOS `_doc`+`_ctext` anclados (FUENTE ÚNICA) ─
   // El texto del lienzo ya NO vive como WBText en el body de la pizarra: es un nodo
@@ -930,7 +919,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       text: titles[kind], parentId,
       extraData: { viewBlock: kind, [PIN_X]: String(Math.round(wx - Number(width) / 2)), [PIN_Y]: String(Math.round(wy - 120)), [PIN_SCALE]: '1', _pinW: width },
     })
-    // Se crea VACÍA: la tabla muestra «+ Añadir fila» para empezar.
+    // La TABLA arranca con una fila vacía → las celdas aparecen ya y se puede escribir al
+    // instante (NodeTableView enfoca la 1ª celda). Enter crea la siguiente, sin botón.
+    if (kind === 'tabla') store.createNode({ text: '', parentId: node.id, siblingOrder: Date.now() })
     setTool('select')
     setSelectedId(node.id)
   }, [parentId])
@@ -1053,9 +1044,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       eraseAt(w.x, w.y)
       return
     }
-    // Texto/Tarea: NO crear aquí (en pointerdown) para no provocar un blur inmediato.
+    // Texto/Documento: NO crear aquí (en pointerdown) para no provocar un blur inmediato.
     // Se crea en el onClick del contenedor (gesto completo). Solo evitamos el pan.
-    if (toolRef.current === 'text' || toolRef.current === 'task') return
+    if (toolRef.current === 'text' || toolRef.current === 'doc') return
     // Multiselección con marco: Cmd (⌘) / Ctrl + arrastrar sobre el fondo.
     if (e.metaKey || e.ctrlKey) {
       el.setPointerCapture(e.pointerId)
@@ -1419,9 +1410,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       onClick={(e) => {
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         const rect = containerRef.current!.getBoundingClientRect()
-        // Texto → crear texto libre y editar. Tarea → input flotante en el punto.
-        if (toolRef.current === 'text') createTextAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
-        else if (toolRef.current === 'task') setTaskInput({ x: e.clientX, y: e.clientY })
+        const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+        // Texto → nodo-outliner (cada línea un nodo, Magic detecta tareas).
+        // Documento → nodo `_doc` (TipTap, título + un solo dot).
+        if (toolRef.current === 'text') createNodeAt(world)
+        else if (toolRef.current === 'doc') createTextAt(world)
       }}
       onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
@@ -1447,7 +1440,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
         backgroundPosition: `${cam.x}px ${cam.y}px`,
         touchAction: 'none',
-        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' || isShapeTool(tool) ? 'crosshair' : tool === 'text' || tool === 'task' ? 'text' : 'default'),
+        cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' || isShapeTool(tool) ? 'crosshair' : tool === 'text' || tool === 'doc' ? 'text' : 'default'),
         borderRadius: 8,
         animation: 'pizarra-dive 0.28s ease-out',
       }}
@@ -1477,6 +1470,18 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-text h2{font-size:1.35em;font-weight:700;margin:.15em 0;line-height:1.3}
 .pizarra-text ul,.pizarra-text ol{margin:.2em 0;padding-left:1.4em}
 .pizarra-text:focus{outline:none}
+/* ── Texto LIMPIO del lienzo (nodo-tarea con Magic) ──────────────────────────
+   Al crear con la herramienta Texto: SOLO el cursor. Nada de bullet, chip de
+   contexto, placeholder, recuadro ni tiradores. Magic añade badges al escribir;
+   el dot (zoom) y el tirador de ancho aparecen únicamente en hover. */
+.pizarra-node--cleantext .node-bullet-slot{display:none!important}
+.pizarra-node--cleantext .collapse-btn,.pizarra-node--cleantext .node-collapse{display:none!important}
+.pizarra-node--cleantext .auto-ctx-badge--placeholder{display:none!important}
+.pizarra-node--cleantext .node-text:empty::before{content:''!important}
+.pizarra-node--cleantext .node-text:focus{outline:none}
+.pizarra-node--cleantext .node-row{padding-left:0!important;background:none!important}
+.pizarra-node--cleantext .pizarra-card-body{padding:0}
+.pizarra-node--cleantext.pizarra-node--hover,.pizarra-node--cleantext.pizarra-node--sel{box-shadow:none!important}
 /* Transiciones suaves: el contorno de hover/selección no aparece de golpe. */
 .pizarra-node{transition:box-shadow .14s ease}
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
@@ -1488,7 +1493,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-secondary,#888)', marginBottom: 8 }}>Tu día, en blanco</div>
           <div style={{ fontSize: 14, color: 'var(--text-tertiary,#aaa)', lineHeight: 1.7, textAlign: 'center' }}>
             Escribe (<b>T</b>), dibuja (<b>B</b>) o suelta una imagen, un PDF o un enlace.<br />
-            Rueda para alejar y ver el mes y el año. Doble clic crea un nodo.
+            Rueda para alejar y ver el mes y el año. Doble clic crea un texto.
           </div>
         </div>
       )}
@@ -1709,7 +1714,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       {quickMenu && (() => {
         const runQuick = (key: string) => {
           switch (key) {
-            case 'node': createNodeAt(quickMenu.world); break
+            case 'text': createNodeAt(quickMenu.world); break   // Texto = nodo-outliner
+            case 'node': createNodeAt(quickMenu.world); break   // compat
             case 'pen': setTool('pen'); break
             case 'eraser': setTool('eraser'); break
             case 'select': setTool('select'); break
@@ -1797,6 +1803,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const isText = isDocNode(node)
         const elView = canvasViewKind(node)
         const res = !isText && !elView ? readResource(node) : null
+        // Texto LIMPIO = nodo plano (ni doc, ni vista, ni recurso): se pinta vía
+        // OutlinerNode pero SIN cromo (CSS `.pizarra-node--cleantext`). Solo cursor
+        // al crear; dot (zoom) y tirador de ancho aparecen en hover.
+        const isPlain = !isText && !elView && !res
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
@@ -1804,7 +1814,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         const lod = cam.scale < LOD_SCALE && !editing
         const lodTitle = (node.text || (isText ? 'Documento' : elView ? (elView[0].toUpperCase() + elView.slice(1)) : 'Sin título')).slice(0, 60)
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isPlain ? ' pizarra-node--cleantext' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
@@ -1869,7 +1879,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 )}
               </div>
             ) : (
-              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+              <div className="pizarra-card-body" style={{ minWidth: 0 }}
+                /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
+                   (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
+                   la duplicidad de dos menús superpuestos. */
+                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
@@ -1882,12 +1896,24 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
+            {/* TEXTO LIMPIO: SOLO en hover (no al crear) aparece el dot (zoom a su pin) a
+                la izquierda y el tirador de ancho a la derecha. Nada más. */}
+            {isPlain && hovered && !dragPos && (
+              <>
+                <div title="Ir aquí (zoom)" onPointerDown={(e) => { e.stopPropagation(); flyToNode(node) }}
+                  style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
+                </div>
+                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                  style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+              </>
+            )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
             {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
-            {showHandles && !isText && ((elView || res) ? (
+            {showHandles && !isText && !isPlain && ((elView || res) ? (
               // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
               <>
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
@@ -1926,22 +1952,6 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         </>
       )}
 
-      {/* Input de TAREA (herramienta Tarea): escribe con fecha en lenguaje natural. */}
-      {taskInput && (
-        <>
-          <div onPointerDown={() => { setTaskInput(null); setTool('select') }} style={{ position: 'fixed', inset: 0, zIndex: 1599 }} />
-          <div style={{ position: 'fixed', left: Math.min(taskInput.x, viewport.w - 280), top: taskInput.y, zIndex: 1600, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', width: 270,
-            background: 'var(--bg-elevated,#fff)', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)' }}>
-            <span style={{ width: 15, height: 15, border: '1.6px solid var(--text-tertiary,#bbb)', borderRadius: 4, flexShrink: 0 }} />
-            <input autoFocus placeholder="Tarea… (ej: Llamar a Marina mañana)"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') { createTaskFromText((e.target as HTMLInputElement).value); setTaskInput(null); setTool('select') }
-                if (e.key === 'Escape') { setTaskInput(null); setTool('select') }
-              }}
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--text,#222)' }} />
-          </div>
-        </>
-      )}
 
       {/* ── FLUJO: nodos del día SIN posición, apilados en columna sobre el lienzo.
              Orden natural (sin solaparse). Se arrastran por el tirador para fijarlos. ── */}
@@ -1961,7 +1971,11 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${multiSel.has(node.id) ? ' pizarra-node--sel' : ''}`} style={{ position: 'relative', width: CARD_W, cursor: 'grab' }}
               onPointerDown={(e) => onCardAreaPointerDown(e, node)}
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
-              <div className="pizarra-card-body" style={{ minWidth: 0 }}>
+              <div className="pizarra-card-body" style={{ minWidth: 0 }}
+                /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
+                   (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
+                   la duplicidad de dos menús superpuestos. */
+                onContextMenuCapture={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             </div>
@@ -2041,12 +2055,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador (E)" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — escribe libre en el lienzo (T)" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
+        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — cada línea un nodo; Magic detecta fechas y tareas (T)" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
-        {/* Tarea — con fecha por lenguaje natural */}
-        <button style={tool === 'task' ? toolBtnActive : toolBtn} title="Tarea — con fecha (lenguaje natural)" onClick={() => setTool(t => t === 'task' ? 'select' : 'task')}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M6.5 10.5l2 2 4-4.5"/></svg>
+        {/* Documento — texto largo con título (TipTap, un solo dot) */}
+        <button style={tool === 'doc' ? toolBtnActive : toolBtn} title="Documento — texto largo con título" onClick={() => setTool(t => t === 'doc' ? 'select' : 'doc')}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M5 3h7l3 3v11H5z"/><path d="M12 3v3h3"/><path d="M7.5 11h5M7.5 13.5h5"/></svg>
         </button>
         <div style={vSep} />
         {/* Elementos: Tabla / Kanban / Calendario (nodos hijos del lienzo) */}
@@ -2199,12 +2213,13 @@ const vSep: React.CSSProperties = {
   width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px',
 }
 // Catálogo de herramientas del menú rápido (configurable).
-const QUICK_ALL = ['node', 'pen', 'eraser', 'select', 'undo', 'redo', 'today', 'saveView'] as const
+const QUICK_ALL = ['text', 'pen', 'eraser', 'select', 'undo', 'redo', 'today', 'saveView'] as const
 const QUICK_LABEL: Record<string, string> = {
-  node: 'Crear nodo aquí', pen: 'Lápiz', eraser: 'Borrador', select: 'Seleccionar / mover',
+  text: 'Texto', node: 'Texto', pen: 'Lápiz', eraser: 'Borrador', select: 'Seleccionar / mover',
   undo: 'Deshacer', redo: 'Rehacer', today: 'Ir a hoy', saveView: 'Guardar vista',
 }
 const QUICK_ICON: Record<string, React.ReactNode> = {
+  text: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>,
   node: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M10 5v10M5 10h10"/></svg>,
   pen: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>,
   eraser: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>,

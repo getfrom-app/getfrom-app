@@ -2147,6 +2147,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
     if (e.key === 'Tab') {
       e.preventDefault()
+
+      // Texto del lienzo (nodo pineado de nivel 0, sin _doc ni viewBlock): Tab lo
+      // CONVIERTE EN TABLA — el texto pasa a la 1ª celda y el cursor salta a la 1ª celda
+      // de la 2ª columna para seguir escribiendo (rápido desde texto plano, estilo Excel).
+      if (!e.shiftKey && depth === 0) {
+        let ed: Record<string, unknown> = {}
+        try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+        const isCanvasText = ed._pinX != null && !ed.viewBlock && ed._doc !== '1' && ed._ctext !== '1'
+        if (isCanvasText) {
+          const txt = text.trim()
+          ed.viewBlock = 'tabla'
+          store.updateNode(node.id, { text: 'Tabla', extraData: JSON.stringify(ed) })
+          const row = store.createNode({ text: txt, parentId: node.id, siblingOrder: Date.now() })
+          const colId = store.addPropColumn(node.id, 'Columna', 'text')
+          // La tabla se monta tras el re-render; el evento enfoca la celda (row, 2ª col).
+          setTimeout(() => window.dispatchEvent(new CustomEvent('from:table-focus-cell', { detail: { nodeId: row.id, colId } })), 100)
+          return
+        }
+      }
+
       // Smart date parse on Tab too
       if (applySmartDate(text)) return
 

@@ -517,6 +517,31 @@ export default function NodeTableView({ parentId }: Props) {
 
   const children = store.children(parentId).filter(n => !n.deletedAt)
   const customCols = store.getPropSchema(parentId)
+
+  // Minimalista: la fila inicial la crea quien crea la tabla (createViewElement), para
+  // evitar carreras de carga. Aquí solo ENFOCAMOS la 1ª celda si la tabla está recién
+  // creada (una única fila vacía, sin columnas personalizadas). Ref → una sola vez.
+  const didFocusFirst = useRef(false)
+  useEffect(() => {
+    if (!didFocusFirst.current && children.length === 1 && !children[0].text && customCols.length === 0) {
+      didFocusFirst.current = true
+      setEditingCell({ nodeId: children[0].id, colId: '__title' })
+    }
+  }, [children, customCols.length])
+
+  // Convertir Texto→Tabla con Tab (desde OutlinerNode): enfoca la celda indicada
+  // (fila recién creada, 2ª columna) para seguir escribiendo al instante.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail as { nodeId?: string; colId?: string }
+      if (d?.nodeId && store.getNode(d.nodeId)?.parentId === parentId) {
+        setEditingCell({ nodeId: d.nodeId, colId: d.colId || '__title' })
+      }
+    }
+    window.addEventListener('from:table-focus-cell', h)
+    return () => window.removeEventListener('from:table-focus-cell', h)
+  }, [parentId])
+
   const groupableCols = [
     { id: '__status', name: 'Estado' },
     { id: '__priority', name: 'Prioridad' },
@@ -573,11 +598,6 @@ export default function NodeTableView({ parentId }: Props) {
     if (sortDir === 'desc') { setSortBy(null); setSortDir(null); return }
   }
 
-  function handleAddRow() {
-    // Crear fila VACÍA y editar su título inline (sin salir de la tabla).
-    const node = store.createNode({ text: '', parentId, siblingOrder: Date.now() })
-    setEditingCell({ nodeId: node.id, colId: '__title' })
-  }
 
   // ── Navegación tipo hoja de cálculo entre celdas de TEXTO/número ──
   // Columnas navegables: título + columnas de texto/número (donde se escribe).
@@ -653,12 +673,6 @@ export default function NodeTableView({ parentId }: Props) {
     setColMenu(null)
   }
 
-  if (children.length === 0 && customCols.length === 0) return (
-    <div className="node-table-empty">
-      <p>Sin elementos</p>
-      <button className="btn-primary" onClick={handleAddRow} style={{ marginTop: 12 }}>＋ Añadir fila</button>
-    </div>
-  )
 
   const sortIcon = (colId: string) =>
     sortBy !== colId ? '' : sortDir === 'asc' ? ' ▲' : sortDir === 'desc' ? ' ▼' : ''
@@ -907,11 +921,6 @@ export default function NodeTableView({ parentId }: Props) {
               })}
             </>
           ))}
-          <tr className="node-table-row node-table-row--add" onClick={handleAddRow}>
-            <td className="node-table-td node-table-td--title" colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
-              ＋ Añadir fila
-            </td>
-          </tr>
         </tbody>
       </table>
 
