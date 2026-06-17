@@ -22,7 +22,6 @@ import { trashNode, isInPapelera, restoreNode } from '../../utils/papeleraHelper
 import { isProtectedSystemRoot } from '../../utils/rootLookup'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
-import { publishNote, unpublishNote } from '../../api/client'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
 import { isDocNode } from '../../utils/docNode'
 import { htmlToMarkdown, docStandaloneHtml } from '../../utils/htmlMarkdown'
@@ -102,7 +101,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const [showPrediction, setShowPrediction] = useState(false)
   // Texto seleccionado en el momento de abrir el menú
   const selectedText = window.getSelection()?.toString().trim() || ''
-  const [publishing, setPublishing] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const isTask = node.status !== null && node.status !== undefined
@@ -113,7 +111,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const currentBlock = meta.block ?? null
   const isDiary = node.isDiaryEntry
   const isTemporal = isTemporalNode(node)
-  const publicSlug = node.publicSlug
 
   // Color — detectar si es un nodo de tag para usar setTagColor
   const tagSlug = getNodeTagSlug(node.id)  // null si no está bajo 🏷 Tags
@@ -201,18 +198,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     })
     store.updateNode(dup.id, { priority: node.priority, status: node.status })
     onSelect(dup.id)
-  }
-
-  function createMirror() {
-    const mirror = store.createNode({
-      text: node.text,
-      parentId: null,
-      extraData: { _mirrorOf: node.id },
-    })
-    window.dispatchEvent(new CustomEvent('from:toast', {
-      detail: { message: `Espejo creado: "${(node.text || 'Nodo').slice(0, 30)}"`, type: 'success' }
-    }))
-    onSelect(mirror.id)
   }
 
   function toggleTask() {
@@ -323,41 +308,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace interno copiado', type: 'success' } }))
   }
 
-  async function handlePublicLink() {
-    setPublishing(true)
-    try {
-      if (publicSlug) {
-        // Ya publicado → copiar URL
-        const url = `https://fromly.app/p/${publicSlug}`
-        await navigator.clipboard.writeText(url)
-        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace público copiado', type: 'success' } }))
-      } else {
-        // Publicar y copiar — title = node.text, content = node.body o vacío
-        const result = await publishNote(node.text || 'Sin título', node.body || '')
-        if (result?.slug) {
-          // Guardar el slug en el nodo
-          store.updateNode(node.id, { publicSlug: result.slug } as any)
-          const url = `https://fromly.app/p/${result.slug}`
-          await navigator.clipboard.writeText(url)
-          window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Publicado y enlace copiado', type: 'success' } }))
-        }
-      }
-    } catch {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Error al publicar', type: 'error' } }))
-    }
-    setPublishing(false)
-  }
-
-  async function handleUnpublish() {
-    if (!publicSlug) return
-    try {
-      await unpublishNote(publicSlug)
-      store.updateNode(node.id, { publicSlug: null } as any)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Nota despublicada', type: 'info' } }))
-    } catch {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Error al despublicar', type: 'error' } }))
-    }
-  }
+  // Publicar / despublicar / enlace público viven en el icono 🌐 de la cabecera
+  // (NodeView), no en este menú. Aquí solo queda el enlace INTERNO.
 
   function applyTemplate(template: Node) {
     store.updateNode(node.id, { body: template.body || '' })
@@ -393,12 +345,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       }))
     } else {
       // Mover a Papelera (jerarquía preservada)
-      store.allActive().forEach(n => {
-        try {
-          const ed = JSON.parse(n.extraData || '{}')
-          if (ed._mirrorOf === node.id) store.updateNode(n.id, { deletedAt: new Date().toISOString() })
-        } catch {}
-      })
       trashNode(node.id)
       window.dispatchEvent(new CustomEvent('from:toast', {
         detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" movido a Papelera`, type: 'info' }
@@ -427,14 +373,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           {effectiveIds.length} nodos seleccionados
         </div>
       )}
-      {/* Duplicar + Mover + Espejo */}
+      {/* Duplicar + Mover */}
       <div className="context-menu-section">
         <button className="context-menu-item" onClick={run(duplicate)}>
           <span className="context-menu-icon">⧉</span> {t('context.duplicate')}
           <span className="context-menu-shortcut">⌘D</span>
-        </button>
-        <button className="context-menu-item" onClick={run(createMirror)}>
-          <span className="context-menu-icon">⬡</span> {t('context.createMirror')}
         </button>
         <button className="context-menu-item" onClick={e => {
           e.preventDefault(); e.stopPropagation()
@@ -567,19 +510,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
             <button className="context-menu-item" onClick={run(openTaskProps)}>
               <span className="context-menu-icon">⚙</span> {t('panel.taskProperties')}
             </button>
-            {node.status !== 'done' ? (
-              <button className="context-menu-item" onClick={run(() =>
-                store.updateNode(node.id, { status: 'done' })
-              )}>
-                <span className="context-menu-icon">✓</span> {t('inbox.markDone')}
-              </button>
-            ) : (
-              <button className="context-menu-item" onClick={run(() =>
-                store.updateNode(node.id, { status: 'pending' })
-              )}>
-                <span className="context-menu-icon">↺</span> {t('search.chipPending')}
-              </button>
-            )}
           </div>
         </>
       )}
@@ -628,17 +558,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </div>
         )}
         <button className="context-menu-item" onClick={run(copyInternalLink)}>
-          <span className="context-menu-icon">🔗</span> {t('context.copyLink')}
+          <span className="context-menu-icon">🔗</span> Copiar enlace interno
         </button>
-        <button className="context-menu-item" onClick={run(handlePublicLink)} disabled={publishing}>
-          <span className="context-menu-icon">👁</span>
-          {publishing ? 'Publicando…' : publicSlug ? 'Copiar enlace público' : 'Publicar y copiar enlace'}
-        </button>
-        {publicSlug && (
-          <button className="context-menu-item" onClick={run(handleUnpublish)}>
-            <span className="context-menu-icon">🔒</span> Despublicar
-          </button>
-        )}
+        {/* Publicar / despublicar / copiar enlace público viven en el icono 🌐 de la
+            cabecera (NodeView), no duplicados aquí. */}
         <button className="context-menu-item" onClick={(e) => {
           e.preventDefault(); e.stopPropagation()
           const currentSlug = node.publicSlug || ''
