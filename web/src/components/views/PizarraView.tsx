@@ -1241,8 +1241,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
       marqueeRef.current = null
       try { containerRef.current?.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       setMarquee(null)
-      // El marco solo SELECCIONA. El mini-menú (duplicar/eliminar) vive en el clic
-      // derecho sobre la selección, no aparece solo (molestaba en medio del lienzo).
+      // Tras el marco, mostrar el mini-menú (Duplicar/Eliminar) sobre la selección.
+      // Solo se pinta si hay algo seleccionado (guard en el render de menuPos).
+      setMenuPos({ x: e.clientX, y: e.clientY })
       return
     }
     // Fin de dibujo/borrado: persistir el trazo (lápiz).
@@ -1463,7 +1464,8 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 .pizarra-card-body{padding:4px 6px 8px}
 .pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
 .pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
-.pizarra-node--text.pizarra-node--sel,.pizarra-node--text.pizarra-node--hover{box-shadow:none}
+.pizarra-node--text.pizarra-node--hover,.pizarra-node--text.pizarra-node--editing{box-shadow:none}
+.pizarra-node--text.pizarra-node--sel:not(.pizarra-node--editing){box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
 .pizarra-card-body .node-row{align-items:flex-start!important}
 /* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
