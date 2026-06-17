@@ -1355,10 +1355,12 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
     const pin = readPin(node) || { x: 0, y: 0 }
     const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
     const cardH = cardEl ? cardEl.offsetHeight : CARD_MIN_H
-    // Texto limpio sin _pinW fijado (ancho max-content) → arrancar del ancho REAL
-    // renderizado (offsetWidth), no de CARD_W, para que el tirador no salte.
+    // Texto limpio sin _pinW fijado (ancho max-content) → arrancar del ancho REAL del
+    // CONTENIDO (offsetWidth menos el padding gutter de 22+30=52), no de CARD_W, para
+    // que el tirador no salte y _pinW guarde el ancho de texto, no el del border-box.
     const hasW = (() => { try { return JSON.parse(node.extraData || '{}')._pinW != null } catch { return false } })()
-    const startW = hasW ? readCardW(node) : Math.max(120, cardEl?.offsetWidth ?? readCardW(node))
+    const plain = !isDocNode(node) && !canvasViewKind(node) && !readResource(node)
+    const startW = hasW ? readCardW(node) : Math.max(120, (cardEl?.offsetWidth ?? readCardW(node)) - (plain ? 52 : 0))
     const rect = containerRef.current!.getBoundingClientRect()
     const startWorld = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     nodeRzRef.current = { id: node.id, mode, startW, startScale: readCardScale(node), startPin: pin, startWorld, cardH, moved: false }
@@ -1832,7 +1834,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
             onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
             onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ nodeId: node.id, x: e.clientX, y: e.clientY }) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined }}>
+            style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
+              // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre)
+              // DENTRO del border-box → al mover el ratón al dot/handle no se pierde el hover.
+              ...(isPlain ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
             {lod ? (
               // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
               <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1935,17 +1940,19 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             )}
             {/* TEXTO LIMPIO: SOLO en hover (no al crear) aparece el dot (zoom a su pin) a
                 la izquierda y el tirador de ancho a la derecha. Nada más. */}
-            {isPlain && hovered && !dragPos && (
+            {isPlain && (hovered || selectedId === node.id) && !dragPos && (
               <>
-                {/* Dot a la izquierda, centrado en la 1ª línea (alto = node-row 26px). */}
+                {/* Dot en el gutter izquierdo (dentro del border-box), centrado en la 1ª
+                    línea (alto = node-row 26px). Clic = volar/zoom a su posición. */}
                 <div title="Ir aquí (zoom)" onPointerDown={(e) => { e.stopPropagation(); flyToNode(node) }}
-                  style={{ position: 'absolute', left: -22, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
+                  style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
                 </div>
-                {/* Tirador de ancho MÍNIMO: cuadradito pegado al final del texto
-                    (la tarjeta es max-content), centrado en la 1ª línea. */}
+                {/* Tirador de ancho MÍNIMO: cuadradito con ESPACIO tras el texto (vive en
+                    el padding derecho), centrado en la 1ª línea. El hueco entre texto y
+                    tirador es zona de arrastre (onCardAreaPointerDown mueve el nodo). */}
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                  style={{ position: 'absolute', right: -3, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                  style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
               </>
             )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
