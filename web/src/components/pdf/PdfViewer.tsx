@@ -360,6 +360,12 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         {annotations.length>0 && (
           <button className="pdf-tb-btn" onClick={handleUndo} title="Deshacer última anotación">↩</button>
         )}
+        {annotations.length>0 && (
+          <button className="pdf-tb-btn" title="Restaurar — quitar todo el marcaje (el PDF vuelve a estar limpio)"
+            onClick={() => { if (confirm('¿Quitar todo el marcaje del PDF? El PDF vuelve a estar limpio.')) onAnnotationsChange([]) }}>
+            ⟲ Restaurar
+          </button>
+        )}
         {/* Indicador de guardado automático */}
         {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>Guardando…</span>}
         {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ Guardado</span>}
