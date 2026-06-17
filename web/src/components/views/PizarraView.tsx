@@ -1563,8 +1563,10 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
 @keyframes pizarra-dive{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
 @keyframes pizarra-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      {/* Estado vacío: pista que invita a empezar. No bloquea (pointerEvents none). */}
-      {isCanvasEmpty && !editText && (
+      {/* Estado vacío: pista que invita a empezar. Solo en el NODO-DÍA (nota diaria):
+          el texto es específico del día ("Tu día, en blanco", calendario). En nodos
+          normales no se muestra nada. No bloquea (pointerEvents none). */}
+      {isCanvasEmpty && !editText && store.getNode(parentId)?.isDiaryEntry && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', userSelect: 'none', zIndex: 0, animation: 'pizarra-fade 0.45s ease' }}>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-secondary,#888)', marginBottom: 8 }}>Tu día, en blanco</div>
           <div style={{ fontSize: 14, color: 'var(--text-tertiary,#aaa)', lineHeight: 1.7, textAlign: 'center' }}>
