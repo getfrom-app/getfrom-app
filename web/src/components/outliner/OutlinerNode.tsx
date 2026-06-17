@@ -27,6 +27,7 @@ import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToS
 import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
+import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
 import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
 
@@ -303,6 +304,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isCollapsed = ((node.isCollapsed !== false) && children.length > 0)
   const [isEditing, setIsEditing] = useState(false)
   const [hovered, setHovered] = useState(false)
+  // Modal de fecha+recurrencia (al tocar el badge de fecha o el de recurrencia)
+  const [taskPropsOpen, setTaskPropsOpen] = useState(false)
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   // Predicción de pizarra — el texto es exactamente "pizarra"
   const [whiteboardPrediction, setWhiteboardPrediction] = useState(false)
@@ -4017,7 +4020,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <span className="node-due-badge-wrap">
                 <span
                   className={`node-due-badge${taskDueBadge.overdue ? ' node-due-badge--overdue' : ''}`}
-                  title={new Date(node.due!).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  title="Editar fecha y recurrencia"
+                  style={{ cursor: 'pointer' }}
+                  onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); setTaskPropsOpen(true) }}
                 >
                   {taskDueBadge.label}
                 </span>
@@ -4046,10 +4052,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {/* Badge de recurrencia — lee de node.recurrence o extraData._recurrence */}
             {node.status !== null && !node.isEvent && (() => {
               // Prioritario: node.recurrence (campo DB unificado)
+              const openProps = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setTaskPropsOpen(true) }
               if (node.recurrence) {
                 const rec = recurrenceFromString(node.recurrence)
                 if (rec) return (
-                  <span className="node-recurrence-badge" title={`Repite: ${rec.display}`}>
+                  <span className="node-recurrence-badge" title="Editar fecha y recurrencia"
+                    style={{ cursor: 'pointer' }} onMouseDown={e => { e.preventDefault(); e.stopPropagation() }} onClick={openProps}>
                     ↻ {rec.display}
                   </span>
                 )
@@ -4059,12 +4067,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
                 if (!rec) return null
                 return (
-                  <span className="node-recurrence-badge" title={`Repite: ${rec.display}`}>
+                  <span className="node-recurrence-badge" title="Editar fecha y recurrencia"
+                    style={{ cursor: 'pointer' }} onMouseDown={e => { e.preventDefault(); e.stopPropagation() }} onClick={openProps}>
                     ↻ {rec.display}
                   </span>
                 )
               } catch { return null }
             })()}
+
+            {/* Modal de fecha + recurrencia (al tocar el badge de fecha/recurrencia) */}
+            {taskPropsOpen && (
+              <TaskPropsPopover node={node} allowRename allowDelete onClose={() => setTaskPropsOpen(false)} />
+            )}
 
             {/* Badge combinado tarea+fecha */}
             {taskPrediction && datePrediction && isEditing && !ctxCompletion && (
