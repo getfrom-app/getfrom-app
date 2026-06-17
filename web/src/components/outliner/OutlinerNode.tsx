@@ -1690,13 +1690,34 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }, [node.id, node.isDiaryEntry])
 
+  // Si este nodo es un TEXTO DEL LIENZO (pin _pinX, sin viewBlock/_doc), el hermano
+  // que crea Enter debe nacer anclado JUSTO DEBAJO (mismo x, +1 alto de línea), no
+  // sin posición (que lo mandaría al flujo). Hereda ancho/escala para alinear líneas.
+  function canvasPinBelow(): Record<string, string> | undefined {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { return undefined }
+    if (ed._pinX == null || ed.viewBlock || ed._doc === '1') return undefined
+    const cardEl = contentRef.current?.closest('[data-card]') as HTMLElement | null
+    const cardScale = Number(ed._cardScale) || 1
+    const dy = (cardEl?.offsetHeight ?? 28) * cardScale
+    const out: Record<string, string> = {
+      _pinX: String(ed._pinX),
+      _pinY: String(Math.round(Number(ed._pinY || 0) + dy)),
+      _pinScale: String(ed._pinScale ?? 1),
+    }
+    if (ed._pinW != null) out._pinW = String(ed._pinW)
+    if (ed._cardScale != null) out._cardScale = String(ed._cardScale)
+    return out
+  }
+
   function createSiblingBelow() {
     if (store.atFreeNodeLimit()) return  // free: bloquea al llegar a 1.000 nodos + muestra paywall
     const sibs = store.children(node.parentId).sort((a, b) => a.siblingOrder - b.siblingOrder)
     const i = sibs.findIndex(n => n.id === node.id)
     const next = sibs[i + 1]
     const newOrder = next ? (node.siblingOrder + next.siblingOrder) / 2 : node.siblingOrder + 1
-    const newNode = store.createNode({ text: '', parentId: node.parentId, siblingOrder: newOrder })
+    const ex = canvasPinBelow()
+    const newNode = store.createNode({ text: '', parentId: node.parentId, siblingOrder: newOrder, ...(ex ? { extraData: ex } : {}) })
     onSelect(newNode.id)
   }
 
@@ -2137,10 +2158,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const newOrder = nextSibling
         ? (node.siblingOrder + nextSibling.siblingOrder) / 2
         : node.siblingOrder + 1
+      const exPin = canvasPinBelow()
       const newNode = store.createNode({
         text: '',
         parentId: node.parentId,
         siblingOrder: newOrder,
+        ...(exPin ? { extraData: exPin } : {}),
       })
       onSelect(newNode.id)
     }

@@ -1885,6 +1885,9 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         // OutlinerNode pero SIN cromo (CSS `.pizarra-node--cleantext`). Solo cursor
         // al crear; dot (zoom) y tirador de ancho aparecen en hover.
         const isPlain = !isText && !elView && !res
+        // ¿Tiene nodos hijos? (como las notas): si los tiene, el dot se muestra SIEMPRE
+        // (marcado); si no, solo en hover. Misma lógica que los nodos del outliner.
+        const plainHasKids = isPlain && store.children(node.id).some(c => !c.deletedAt)
         // ¿Tiene ancho FIJADO por el usuario (_pinW)? Si no, el Texto limpio crece
         // con su contenido (max-content) → el tirador queda pegado al final del texto.
         const hasFixedW = (() => { try { return JSON.parse(node.extraData || '{}')._pinW != null } catch { return false } })()
@@ -1968,33 +1971,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
-                /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
-                   editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
-                   pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin
-                   posición → saltaría al flujo, arriba). Guardas: solo nodos de texto plano
-                   CON pin; sin pin (flujo) o no-texto → comportamiento normal. */
-                onKeyDownCapture={(e) => {
-                  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
-                  const p = readPin(node)
-                  if (!p || isDocNode(node) || canvasViewKind(node) || readResource(node)) return
-                  e.preventDefault(); e.stopPropagation()
-                  const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
-                  const dy = (cardEl?.offsetHeight ?? 28) * readCardScale(node)
-                  const ed: Record<string, string> = {
-                    [PIN_X]: String(Math.round(p.x)),
-                    [PIN_Y]: String(Math.round(p.y + dy)),
-                    [PIN_SCALE]: String(readPinScale(node)),
-                  }
-                  try {
-                    const src = JSON.parse(node.extraData || '{}')
-                    if (src._pinW != null) ed._pinW = String(src._pinW)
-                    if (src._cardScale != null) ed._cardScale = String(src._cardScale)
-                  } catch {}
-                  const nn = store.createNode({ text: '', parentId, extraData: ed })
-                  setTool('select')
-                  setSelectedId(nn.id)
-                }}>
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
@@ -2009,20 +1986,20 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
             )}
             {/* TEXTO LIMPIO: SOLO en hover (no al crear) aparece el dot (zoom a su pin) a
                 la izquierda y el tirador de ancho a la derecha. Nada más. */}
-            {isPlain && (hovered || selectedId === node.id) && !dragPos && (
-              <>
-                {/* Dot en el gutter izquierdo (dentro del border-box), centrado en la 1ª
-                    línea (alto = node-row 26px). Clic = volar/zoom a su posición. */}
-                <div title="Ir aquí (zoom)" onPointerDown={(e) => { e.stopPropagation(); flyToNode(node) }}
-                  style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
-                </div>
-                {/* Tirador de ancho MÍNIMO: cuadradito con ESPACIO tras el texto (vive en
-                    el padding derecho), centrado en la 1ª línea. El hueco entre texto y
-                    tirador es zona de arrastre (onCardAreaPointerDown mueve el nodo). */}
-                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                  style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
-              </>
+            {/* DOT del texto del lienzo: en hover SIEMPRE; sin hover, solo si tiene hijos
+                (marcado, como una nota). Al crear/editar NO aparece: solo el cursor.
+                Clic = ENTRAR en el nodo (su propia página), igual que el bullet de un nodo. */}
+            {isPlain && (hovered || plainHasKids) && !dragPos && (
+              <div title="Abrir nodo" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
+                style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
+              </div>
+            )}
+            {/* Tirador de ancho MÍNIMO (cuadradito): SOLO en hover. El hueco entre el texto
+                y el tirador (padding derecho) es zona de arrastre del nodo. */}
+            {isPlain && hovered && !dragPos && (
+              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+                style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
             {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
@@ -2091,33 +2068,7 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
-                /* ENTER en un Texto limpio anclado = nueva línea JUSTO DEBAJO (como un
-                   editor): crea otro nodo anclado bajo este (mismo x, ancho/escala) y le
-                   pasa el foco. Capturamos antes que OutlinerNode (que crearía un nodo sin
-                   posición → saltaría al flujo, arriba). Guardas: solo nodos de texto plano
-                   CON pin; sin pin (flujo) o no-texto → comportamiento normal. */
-                onKeyDownCapture={(e) => {
-                  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return
-                  const p = readPin(node)
-                  if (!p || isDocNode(node) || canvasViewKind(node) || readResource(node)) return
-                  e.preventDefault(); e.stopPropagation()
-                  const cardEl = (e.currentTarget as HTMLElement).closest('[data-card]') as HTMLElement | null
-                  const dy = (cardEl?.offsetHeight ?? 28) * readCardScale(node)
-                  const ed: Record<string, string> = {
-                    [PIN_X]: String(Math.round(p.x)),
-                    [PIN_Y]: String(Math.round(p.y + dy)),
-                    [PIN_SCALE]: String(readPinScale(node)),
-                  }
-                  try {
-                    const src = JSON.parse(node.extraData || '{}')
-                    if (src._pinW != null) ed._pinW = String(src._pinW)
-                    if (src._cardScale != null) ed._cardScale = String(src._cardScale)
-                  } catch {}
-                  const nn = store.createNode({ text: '', parentId, extraData: ed })
-                  setTool('select')
-                  setSelectedId(nn.id)
-                }}>
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             </div>
