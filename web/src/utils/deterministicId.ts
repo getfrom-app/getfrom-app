@@ -121,6 +121,15 @@ export function structuralId(key: string): string | null {
   return id
 }
 
+/** ID determinista de un nodo-EVENTO de Google Calendar (a partir de su gcalEventId).
+ *  Hace idempotente la sincronización: el mismo evento → el mismo id → el upsert lo
+ *  fusiona en vez de duplicar (evita la carrera sync-antes-de-bootstrap). */
+export function gcalEventNodeId(gcalEventId: string): string | null {
+  const uid = serverUserId()
+  if (!uid) return null
+  return uuidFromString(`from.gcal.${uid}.${gcalEventId}`)
+}
+
 /** ID determinista del diario de un día (idéntico a iOS canonicalDiaryId). */
 export function diaryId(date: Date): string | null {
   const uid = serverUserId()

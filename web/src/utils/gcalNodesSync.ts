@@ -15,6 +15,7 @@ import { store } from '../store/nodeStore'
 import { nodeMeta } from '../store/nodeStore'
 import type { Node } from '../types'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, fromRecToRRule, type CalendarEvent } from '../api/googleCalendar'
+import { gcalEventNodeId } from './deterministicId'
 
 // Último título sincronizado por evento (anti-bucle: evita re-empujar lo que vino
 // del propio pull de Google). Se rellena en el pull y en cada push.
@@ -54,7 +55,31 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
     } catch { /* ignore */ }
   }
 
-  const existingIds = new Set(gcalChildren.map(c => c.gcalId))
+  // Auto-saneo: si hay VARIOS nodos para el mismo evento (duplicados de la carrera
+  // sync-antes-de-bootstrap), conservar el canónico (id determinista si existe, si no
+  // el más antiguo) y mandar el resto a la papelera. Idempotente.
+  const byGcalId = new Map<string, Node[]>()
+  for (const c of gcalChildren) {
+    const arr = byGcalId.get(c.gcalId) || []
+    arr.push(c.node); byGcalId.set(c.gcalId, arr)
+  }
+  const trashedDupIds = new Set<string>()
+  for (const [gid, list] of byGcalId) {
+    if (list.length <= 1) continue
+    const detId = gcalEventNodeId(gid)
+    list.sort((a, b) =>
+      (a.id === detId ? -1 : 0) - (b.id === detId ? -1 : 0) ||
+      new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+    for (const dup of list.slice(1)) {
+      try { const { trashNode } = await import('./papeleraHelper'); trashNode(dup.id) }
+      catch { store.updateNode(dup.id, { deletedAt: new Date().toISOString() }) }
+      trashedDupIds.add(dup.id)
+    }
+  }
+  // Trabajar solo con los nodos vivos tras el saneo.
+  const liveGcalChildren = gcalChildren.filter(c => !trashedDupIds.has(c.node.id))
+
+  const existingIds = new Set(liveGcalChildren.map(c => c.gcalId))
   const incomingIds = new Set(events.map(e => e.id))
 
   // Ordenar eventos por hora de inicio
@@ -62,7 +87,7 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
 
   for (let i = 0; i < sorted.length; i++) {
     const ev = sorted[i]
-    const existing = gcalChildren.find(c => c.gcalId === ev.id)
+    const existing = liveGcalChildren.find(c => c.gcalId === ev.id)
     // El nodo guarda el título LIMPIO; la hora vive en due/dueEnd y se muestra
     // como badge (no incrustada en el texto → título editable y sync limpio).
     const newText = ev.title
@@ -80,11 +105,13 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
         })
       }
     } else {
-      // Crear nuevo nodo GCal
+      // Crear nuevo nodo GCal con id DETERMINISTA (idempotente: la misma carrera o
+      // un re-sync produce el mismo id → el upsert lo fusiona, no duplica).
       const node = store.createNode({
         text:     newText,
         parentId: diaryNode.id,
         siblingOrder: i + 0.001,
+        predefinedId: gcalEventNodeId(ev.id) ?? undefined,
       })
       store.updateNode(node.id, {
         isEvent: true,
@@ -102,7 +129,7 @@ export async function syncGcalEventsToNodes(diaryNode: Node): Promise<void> {
   }
 
   // Eliminar nodos cuyo evento ya no existe en GCal
-  for (const child of gcalChildren) {
+  for (const child of liveGcalChildren) {
     if (!incomingIds.has(child.gcalId)) {
       // Soft-delete: mover a papelera
       try {
