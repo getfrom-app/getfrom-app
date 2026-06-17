@@ -13173,6 +13173,38 @@ textarea:focus-visible,
   color: var(--text-tertiary);
   padding: 3px 8px;
 }
+
+/* ── Lente de contexto (filtro por contexto en la columna del día) ── */
+.ctx-lens { position: relative; padding: 4px 8px 8px; }
+.ctx-lens-pill {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+  padding: 5px 10px; border-radius: 999px; cursor: pointer; font-size: 12.5px;
+  border: 1px solid var(--border, #e2e2e2); background: var(--bg-elevated, #fff);
+  color: var(--text-secondary, #666); transition: border-color .12s, background .12s, color .12s;
+}
+.ctx-lens-pill:hover { border-color: var(--text-tertiary, #bbb); }
+.ctx-lens-pill--on {
+  border-color: var(--accent, #6c5ce7); color: var(--accent, #6c5ce7);
+  background: var(--accent-soft, rgba(108,92,231,0.08)); font-weight: 600;
+}
+.ctx-lens-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-lens-caret { opacity: 0.6; font-size: 10px; }
+.ctx-lens-clear { opacity: 0.7; font-size: 11px; padding: 0 2px; border-radius: 4px; }
+.ctx-lens-clear:hover { opacity: 1; background: var(--bg-hover, rgba(0,0,0,0.06)); }
+.ctx-lens-menu {
+  position: absolute; top: 100%; left: 8px; z-index: 50; margin-top: 3px;
+  min-width: 200px; max-height: 320px; overflow-y: auto;
+  background: var(--bg-elevated, #fff); border: 1px solid var(--border, #e2e2e2);
+  border-radius: 10px; padding: 5px; box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+}
+.ctx-lens-item {
+  display: block; width: 100%; text-align: left; background: transparent; border: none;
+  padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px;
+  color: var(--text-primary); line-height: 1.2;
+}
+.ctx-lens-item:hover { background: var(--bg-hover, rgba(0,0,0,0.05)); }
+.ctx-lens-item.active { color: var(--accent, #6c5ce7); font-weight: 600; }
+.ctx-lens-sep { height: 1px; background: var(--border, #e2e2e2); margin: 4px 2px; }
 /* Cabecera de sección de las columnas derechas (Buscar/Filtros/Favoritos/Magic):
    misma gramática visual que el panel del día (.dc-group-label). */
 .rp-section-label {

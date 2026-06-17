@@ -18,6 +18,9 @@ import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcal
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
+import ContextLensBar from './ContextLensBar'
+import { passesLens, allContextKeys } from '../../utils/contextLens'
+import { useLensContextId } from '../../store/contextLensStore'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -96,8 +99,18 @@ export default function DayColumn({
 
   // Datos de la columna (eventos + capturas SIN duplicar con el cockpit) + ids a
   // excluir del bloque «Nodos» (todo lo que ya vive en la columna derecha).
-  const { eventNodes, captureNodes, isToday, dayTasks, areaNodes, rightColumnIds } = getDayColumnData(node)
+  const raw = getDayColumnData(node)
+  const { isToday, rightColumnIds } = raw
   const eventIds = rightColumnIds
+  // ── LENTE DE CONTEXTO: filtra cada bloque por el contexto activo (lo «sin
+  // contexto» siempre pasa). useLensContextId fuerza re-render al cambiar la lente.
+  const lensId = useLensContextId()
+  const ctxKeys = allContextKeys()
+  const lensFilter = <T extends Node>(arr: T[]): T[] => lensId ? arr.filter(n => passesLens(n, ctxKeys)) : arr
+  const eventNodes = lensFilter(raw.eventNodes)
+  const captureNodes = lensFilter(raw.captureNodes)
+  const dayTasks = lensFilter(raw.dayTasks)
+  const areaNodes = raw.areaNodes  // las áreas (vistas del lienzo) no se filtran por contexto
   // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
   const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
 
@@ -121,6 +134,9 @@ export default function DayColumn({
 
   return (
     <>
+      {/* Lente de contexto: filtra toda la columna por el contexto elegido. */}
+      <ContextLensBar />
+
       {/* 1. Eventos de Google Calendar del día */}
       {eventNodes.length > 0 && (
         <div className="dc-group">
