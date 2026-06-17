@@ -25,16 +25,20 @@ const MORPH_MS = 320
 
 type Snapshot = { level: TemporalLevel; year: number; month: number }
 
-export default function TemporalCanvasView() {
+// Foco inicial opcional: al abrir un nodo Año/Mes directamente, arrancamos el
+// calendario en ese nivel/año/mes (en vez de la raíz Agenda en nivel 'months').
+interface Props { focusLevel?: TemporalLevel; focusYear?: number; focusMonth?: number }
+
+export default function TemporalCanvasView({ focusLevel, focusYear, focusMonth }: Props = {}) {
   useStore()
   const navigate = useNavigate()
   const now = new Date()
 
   const init = takeTemporalFocus()
   const initDate = init ? new Date(init.date) : now
-  const [level, setLevel] = useState<TemporalLevel>(init ? init.level : 'months')
-  const [year, setYear] = useState(initDate.getFullYear())
-  const [month, setMonth] = useState(initDate.getMonth()) // 0-11
+  const [level, setLevel] = useState<TemporalLevel>(focusLevel ?? (init ? init.level : 'months'))
+  const [year, setYear] = useState(focusYear ?? initDate.getFullYear())
+  const [month, setMonth] = useState(focusMonth ?? initDate.getMonth()) // 0-11
   // Morph: capa SALIENTE (la que dejamos) + dirección. La entrante es el estado vivo.
   const [outgoing, setOutgoing] = useState<{ snap: Snapshot; dir: 'in' | 'out'; k: number } | null>(null)
   const [animK, setAnimK] = useState(0)

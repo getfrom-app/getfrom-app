@@ -978,6 +978,21 @@ export default function NodeView() {
     return null
   })()
 
+  // Calendario tipo iPad para nodos Año/Mes: al abrirlos directamente se muestran
+  // como el calendario-lienzo (Año → meses en 3 columnas; Mes → rejilla de días),
+  // con la MISMA navegación zoom-in/out animada que la Agenda. El foco inicial
+  // posiciona el calendario en ese año/mes concretos.
+  const temporalCalendarFocus: { focusLevel: 'months' | 'days'; focusYear: number; focusMonth?: number } | null = (() => {
+    if (temporalNodeType === 'year') return { focusLevel: 'months', focusYear: parseInt(node.text || '', 10) }
+    if (temporalNodeType === 'month') {
+      const mi = MONTHS_ES.findIndex(m => m.toLowerCase() === (node.text || '').toLowerCase())
+      const py = parseInt(store.getNode(node.parentId || '')?.text || '', 10)
+      return { focusLevel: 'days', focusYear: isNaN(py) ? new Date().getFullYear() : py, focusMonth: mi < 0 ? 0 : mi }
+    }
+    return null
+  })()
+  const temporalCalendar = temporalCalendarFocus !== null
+
   // Crumbs temporales: Año / Mes / Semana (a partir del ancestro diario)
   const diaryTemporalCrumbs: { label: string; type: 'year' | 'month' | 'week' }[] = []
   let diaryDateRef: Date | null = null
@@ -2618,8 +2633,8 @@ export default function NodeView() {
 
             return (
               <>
-                {/* ── Modo WF: temporal nodes ── */}
-                {isWFTemporal && (
+                {/* ── Modo WF: temporal nodes (oculto si se muestra el calendario iPad) ── */}
+                {isWFTemporal && !temporalCalendar && (
                   <WFTemporalView node={node} temporalType={temporalNodeType as 'year' | 'month'} />
                 )}
                 {/* Diary entry en WF mode: temporal view por defecto, DiaryTimeline en vista calendario */}
@@ -2644,7 +2659,7 @@ export default function NodeView() {
                         onSelect={handleSelectView}
                       />
                     )}
-                    {temporalNodeType && (
+                    {temporalNodeType && !temporalCalendar && (
                       <TemporalChildrenBlock
                         node={node}
                         type={temporalNodeType}
@@ -2675,10 +2690,20 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned />}
+                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !temporalCalendar && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned />}
 
                 {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
                 {isAgendaRoot && <TemporalCanvasView />}
+
+                {/* ── Nodo Año/Mes abierto directamente = mismo calendario-lienzo,
+                       enfocado en ese año (meses 3 col) o mes (rejilla de días). ── */}
+                {temporalCalendarFocus && (
+                  <TemporalCanvasView
+                    focusLevel={temporalCalendarFocus.focusLevel}
+                    focusYear={temporalCalendarFocus.focusYear}
+                    focusMonth={temporalCalendarFocus.focusMonth}
+                  />
+                )}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra/agenda ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}
@@ -2687,13 +2712,14 @@ export default function NodeView() {
                   || (node.isDiaryEntry && viewKind === 'calendar')
                   || viewKind === 'pizarra'
                   || isAgendaRoot
+                  || temporalCalendar
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
                   {/* En pizarra el Outliner del día se monta en la columna derecha
                       (abajo) — aquí NO, para no duplicar instancias. En la Agenda
                       (calendario-lienzo) tampoco se monta. */}
-                  {viewKind !== 'pizarra' && !isAgendaRoot && (
+                  {viewKind !== 'pizarra' && !isAgendaRoot && !temporalCalendar && (
                     <Outliner
                       parentId={node.id}
                       autoFocusEmpty
