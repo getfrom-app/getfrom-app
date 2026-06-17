@@ -21,7 +21,7 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
       try {
         const pdfjs = await import('pdfjs-dist')
         pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
-        const doc = await pdfjs.getDocument(url).promise
+        const doc = await pdfjs.getDocument({ url }).promise
         if (cancelled) return
         docRef.current = doc
         renderedTargetRef.current = 0

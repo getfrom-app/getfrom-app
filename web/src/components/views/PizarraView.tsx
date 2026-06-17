@@ -39,7 +39,13 @@ interface Props {
   // no se persiste) para que el contenido sea visible en notas normales. En la
   // diaria es false: el lienzo queda libre y el contenido vive en el panel del día.
   flowUnpositioned?: boolean
+  // Si se pasa una URL de PDF, se renderiza como FONDO del lienzo (ancla mundo 0,0),
+  // nítido al ampliar, detrás de trazos y tarjetas. Las herramientas marcan encima.
+  pdfBackground?: string
 }
+
+// Ancho en unidades de mundo del PDF de fondo (alto se ajusta solo por página).
+const PDF_BG_W = 820
 
 // Claves de pin — DEBEN coincidir byte a byte con WBKeys del iPad.
 const PIN_X = '_pinX'
@@ -247,7 +253,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId, flowUnpositioned }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned, pdfBackground }: Props) {
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -1540,6 +1546,22 @@ export default function PizarraView({ parentId, flowUnpositioned }: Props) {
         animation: 'pizarra-dive 0.28s ease-out',
       }}
     >
+      {/* PDF de fondo: anclado al mundo (0,0), escala con la cámara → pequeño de lejos,
+          nítido de cerca. Detrás de trazos (z15) y tarjetas; no captura el puntero, así
+          las herramientas del lienzo marcan por encima. */}
+      {pdfBackground && (
+        <div
+          style={{
+            position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
+            transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.scale})`,
+            width: PDF_BG_W, pointerEvents: 'none', zIndex: 1,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.10)', borderRadius: 4, overflow: 'hidden',
+          }}
+        >
+          <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} />
+        </div>
+      )}
+
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
       <style>{`/* En la pizarra el tirador ⋮⋮ y los "..." sobran: arrastra desde cualquier

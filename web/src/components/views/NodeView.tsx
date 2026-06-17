@@ -42,7 +42,6 @@ import { nodeMeta } from '../../store/nodeStore'
 import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
 import EmojiPicker from '../EmojiPicker'
 import SlashMenu from '../outliner/SlashMenu'
-import PdfContainer from '../pdf/PdfContainer'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
@@ -2227,8 +2226,15 @@ export default function NodeView() {
             return null
           })()}
 
-          {/* ── Recurso principal (imagen / PDF / URL) ── */}
-          {nodeResourceMeta?.url && (
+          {/* ── PDF: se abre EN EL LIENZO (fondo nítido al ampliar) con las
+                 herramientas del lienzo para marcarlo. El dot/edición vive en el
+                 propio lienzo; el marcaje son trazos en el body (autoguardado). ── */}
+          {nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url)) && !isAgendaRoot ? (
+            <PizarraView parentId={node.id} flowUnpositioned pdfBackground={nodeResourceMeta.url} />
+          ) : null}
+
+          {/* ── Recurso principal (imagen / URL) ── */}
+          {nodeResourceMeta?.url && !(nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url)) && (
             <div className="node-resource-preview">
               {nodeResourceMeta.type === 'image' || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(nodeResourceMeta.url) ? (
                 <img
@@ -2236,13 +2242,6 @@ export default function NodeView() {
                   alt={node.text || ''}
                   className="node-resource-image"
                   onClick={() => window.open(nodeResourceMeta.url, '_blank')}
-                />
-              ) : nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url) ? (
-                <PdfContainer
-                  url={nodeResourceMeta.url}
-                  nodeId={node.id}
-                  filename={node.text || 'documento'}
-                  resourceKey={(() => { try { return JSON.parse(node.extraData||'{}')._resourceKey as string|undefined } catch { return undefined } })()}
                 />
               ) : (
                 /* URL / enlace genérico */
@@ -2676,7 +2675,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && <PizarraView parentId={node.id} flowUnpositioned />}
+                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned />}
 
                 {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
                 {isAgendaRoot && <TemporalCanvasView />}
