@@ -20,7 +20,7 @@ import FormatToolbar from './FormatToolbar'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
-import { ensureTagInTree } from '../../utils/tagsHelper'
+import { ensureTagInTree, findTagNodeBySlug } from '../../utils/tagsHelper'
 import { listContexts, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
@@ -3691,7 +3691,24 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
               const target = e.target as HTMLElement
 
-              // Click en @context-inline → animar y filtrar
+              // Click en la X de un @context-inline → quitar el contexto del nodo.
+              const ctxRemove = target.classList.contains('ctx-chip-remove')
+                ? target
+                : (target.closest('.context-inline .ctx-chip-remove') as HTMLElement | null)
+              if (ctxRemove && !isEditing) {
+                e.preventDefault(); e.stopPropagation()
+                const slug = (ctxRemove.dataset.slug || ctxRemove.closest('.context-inline')?.getAttribute('data-slug') || '')
+                if (slug) {
+                  const targetId = mirrorOfId ?? node.id
+                  const newTypes = (node.types || []).filter(t => t !== slug)
+                  const esc = slug.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+                  const newText = (node.text || '').replace(new RegExp('\\s*@' + esc + '\\b', 'gi'), '').trim()
+                  store.updateNode(targetId, { types: newTypes, text: newText })
+                }
+                return
+              }
+
+              // Click en @context-inline → navegar al contexto.
               const ctxEl = target.classList.contains('context-inline')
                 ? target
                 : target.closest('.context-inline') as HTMLElement | null
@@ -3699,9 +3716,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 e.preventDefault()
                 e.stopPropagation()
                 const slug = ctxEl.dataset.slug || ''
-                if (slug && document.querySelector('.wf-layout')) {
-                  flyToFilter(ctxEl, `@${slug}`)
-                }
+                const ctxNode = slug ? findTagNodeBySlug(slug) : null
+                if (ctxNode) navigate(`/node/${ctxNode.id}`)
+                else if (slug && document.querySelector('.wf-layout')) flyToFilter(ctxEl, `@${slug}`)
                 return
               }
 
