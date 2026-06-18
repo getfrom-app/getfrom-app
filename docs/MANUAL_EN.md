@@ -1,4 +1,4 @@
-# Fromly — User manual v9.6
+# Fromly — User manual v9.6.424
 
 > Web · Mac · iPhone · fromly.app
 
@@ -173,6 +173,15 @@ When you turn a node into a task (with `-t` + Enter or `⌘Enter`), an empty sib
 
 **Expand a task:** when you discover a task is bigger than you thought and needs sub-tasks or notes, use `/Expand` from the slash menu. The task becomes a container that can have children.
 
+### Custom properties
+
+Beyond Status, Date and Priority, **any node can have custom properties**: text, number, list (select), checkbox, date, link or tag. They live in two places at once:
+
+- **In a container's table**, each property is a **column**. Use the header **＋** to add one; tap/long-press a header to rename it, change its type or sort by it.
+- **In a node's detail** (the «Properties» section), you see and edit that node's values and, with **＋**, add a property that also appears as a column in the container's table — and vice versa.
+
+It works the same on iPhone and iPad: open a node and you'll see its «Properties» section under the title; list (select) values show their label with a colored dot.
+
 ### Event
 
 Events have a start time and an end time. They appear in the Planner and in the Agenda view of the matching day. If you have Google Calendar connected, events sync automatically in both directions.
@@ -190,6 +199,8 @@ The event creation modal lets you:
 - Choose a date (required).
 - Add a start and end time (optional; without a time, it's an all-day event).
 - Enable repetition.
+
+**Edit an event (iPhone and iPad).** In an event node's detail (or via «Turn into event» from its menu) you can adjust the **start and end time** and the **place**. If Google Calendar is connected, saving **creates or updates** it there, and «Delete event» removes it from Google Calendar too.
 
 ### Mirror ⬡
 

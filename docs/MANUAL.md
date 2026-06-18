@@ -1,4 +1,4 @@
-# Fromly — Manual de usuario v9.6.397
+# Fromly — Manual de usuario v9.6.424
 
 > Web · Mac · iPhone · fromly.app
 
@@ -173,6 +173,15 @@ Al convertir un nodo en tarea (con `-t` + Enter o `⌘Enter`), siempre se crea u
 
 **Ampliar una tarea:** cuando descubres que una tarea es más grande de lo que pensabas y necesita sub-tareas o notas, usa `/Ampliar` desde el slash menu. La tarea se convierte en un contenedor que puede tener hijos.
 
+### Propiedades personalizadas
+
+Además de Estado, Fecha y Prioridad, **cualquier nodo puede tener propiedades a tu medida**: texto, número, lista (select), casilla, fecha, enlace o etiqueta. Son las mismas en dos sitios:
+
+- **En la tabla de un contenedor**, cada propiedad es una **columna**. Con el botón **＋** de la cabecera añades una; mantén pulsada (o haz clic en) la cabecera para renombrarla, cambiar su tipo u ordenarla.
+- **En el detalle de un nodo** (sección «Propiedades»), ves y editas los valores de ese nodo y, con **＋**, añades una propiedad que aparecerá también como columna en la tabla del contenedor — y al revés.
+
+En iPhone y iPad funciona igual: abre un nodo y verás su sección «Propiedades» bajo el título; las listas (select) muestran su etiqueta con un punto de color.
+
 ### Evento
 
 Los eventos tienen hora de inicio y hora de fin. Aparecen en el Planificador y en la vista de la Agenda del día correspondiente. Si tienes Google Calendar conectado, los eventos sincronizan automáticamente en ambas direcciones.
@@ -190,6 +199,8 @@ El modal de creación de evento te permite:
 - Elegir fecha (obligatoria).
 - Añadir hora de inicio y fin (opcional; si no hay hora, es un evento de todo el día).
 - Activar repetición.
+
+**Editar un evento (iPhone y iPad).** En el detalle de un nodo-evento (o con «Convertir en evento» desde su menú) puedes ajustar la **hora de inicio y fin** y el **lugar**. Si tienes Google Calendar conectado, al guardar se **crea o actualiza** allí, y «Eliminar evento» lo borra también de Google Calendar.
 
 ### Tarea de seguimiento (tarea sin fecha)
 

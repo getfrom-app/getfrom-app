@@ -4,6 +4,36 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.424 · iPhone/iPad v2.8 (build 138) — 18 junio 2026 · Paridad total en iPhone y iPad
+
+Una tanda enorme que deja la app de iPhone y iPad a la altura de la web, y la versión **2.8 enviada a revisión**.
+
+**En el detalle de un nodo (iPhone y iPad)**
+- **Propiedades a tu medida.** Añade propiedades a cualquier nodo (texto, número, lista, casilla, fecha, enlace, etiqueta) desde el propio detalle. Aparecen también en la tabla del contenedor, y al revés.
+- **Eventos con Google Calendar.** Convierte un nodo en evento, edita su hora de inicio y fin y el lugar; si tienes Google Calendar conectado, se **crea, actualiza y borra** también allí.
+- **Repetición.** Marca una tarea como diaria, semanal, mensual o anual, con intervalo («cada 2 semanas»).
+- **Ver contexto.** Un toque te lleva del nodo a su contexto en 🧠 Contexto.
+
+**El planificador (iPhone y iPad)**
+- **Menú en cada bloque:** ir al nodo, **cambiar el color**, quitar la hora o eliminar. **Pellizca** para acercar o alejar la línea de horas.
+
+**El buscador del iPad**
+- **«Sin clasificar».** Filtra de un toque los nodos de tu agenda que aún no tienen contexto.
+- **Edita tus filtros y favoritos:** renómbralos o bórralos desde la lista.
+- **Contexto a la vista** en cada resultado.
+
+**Vistas del iPad**
+- **Tabla, kanban y calendario** abren con el **mismo marco que el lienzo** (migas de pan arriba, columna derecha y botón redondo). El **calendario** del mes ahora ocupa toda la pantalla. El nodo-lienzo encuadra su contenido al abrirse.
+
+**iPhone**
+- Un nodo de tipo tabla/kanban/calendario se consulta como **lista** (las vistas de base de datos son para el iPad).
+
+**Web**
+- Al añadir un contexto a una tarea en **captura rápida**, deja de verse como nota: se mantiene como tarea.
+- El **badge de contexto** de las filas de la columna derecha ahora aplica bien el contexto elegido.
+
+---
+
 ## Web v9.6.422 · iPad v2.8 — 18 junio 2026 · PDF en el lienzo, calendario navegable y paridad con el iPad
 
 **El lienzo**
