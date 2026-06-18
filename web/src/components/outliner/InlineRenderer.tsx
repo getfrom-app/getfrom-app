@@ -324,7 +324,8 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
     })
     // @contextos \u2014 badge con fondo de color (mismo estilo que AutoContextBadge)
     .replace(/(?<!\w)@([\w\u00C0-\u024F][\w\u00C0-\u024F\s\-]*)/g, (_match, slug) => {
-      const hex = '#7c3aed'
+      // Color real del contexto (_tagColor de su definici\u00F3n) en vez de lila fijo.
+      const hex = store.contextColor(slug.trim())
       // De-slug: tomar \u00FAltima parte del path y capitalizar
       const part = (slug.trim().split('/').pop() || slug.trim())
         .replace(/-/g, ' ')

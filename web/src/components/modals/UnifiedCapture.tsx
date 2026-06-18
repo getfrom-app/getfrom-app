@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
+import { listCajones, assignCajon, isCajon as isCajonNode } from '../../utils/cajones'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -161,6 +162,7 @@ interface CtxSuggestion {
   displayName: string
   typedLen: number
   ghost: string
+  cajonId?: string   // si está, la sugerencia es un CAJÓN (proyecto), no un contexto
 }
 
 interface PaletteItem {
@@ -215,6 +217,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
   const [taskPrediction, setTaskPrediction] = useState(false)
   const [ctxSuggestion, setCtxSuggestion] = useState<CtxSuggestion | null>(null)
+  // Cajones (proyectos) aceptados vía ghost-text → se asignan al nodo al crearlo.
+  const [pendingCajones, setPendingCajones] = useState<string[]>([])
   const [forceType, setForceType] = useState<ForceType>(null)
   const [atPicker, setAtPicker] = useState<{ query: string; items: { id: string; label: string }[]; activeIdx: number } | null>(null)
   // Contextos asignados como chips (sin @ en el texto)
@@ -322,7 +326,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (t.length >= 3) {
       const ctxRoot = findContextRoot()
       const ctxNodes = ctxRoot
-        ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
+        ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text && !isCajonNode(n))
         : []
 
       let found: CtxSuggestion | null = null
@@ -346,6 +350,24 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           }
         }
         if (found) break
+      }
+      // Cajones ABIERTOS (proyectos) — mismo escaneo; al aceptar se asigna el cajón.
+      if (!found) {
+        for (const cj of listCajones()) {
+          if (!cj.text || pendingCajones.includes(cj.id)) continue
+          const normName = normalizeNFD(cj.text)
+          for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
+            const tail = normT.slice(-len)
+            const charBefore = t[t.length - len - 1]
+            // `#` cuenta como inicio de palabra → "#locucion" también sugiere el cajón.
+            const isWordStart = !charBefore || /[\s,;:([\-#]/.test(charBefore)
+            if (isWordStart && normName.startsWith(tail)) {
+              found = { nodeId: cj.id, displayName: cj.text, typedLen: len, ghost: cj.text.slice(len), cajonId: cj.id }
+              break
+            }
+          }
+          if (found) break
+        }
       }
       setCtxSuggestion(found)
     } else {
@@ -457,6 +479,25 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
+    // Cajón (proyecto): se asignará al nodo al crearlo. Se quita lo tecleado del
+    // texto (no deja token) y se recuerda en pendingCajones.
+    if (ctxSuggestion.cajonId) {
+      const cid = ctxSuggestion.cajonId
+      setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
+      const t = getCurrentText()
+      const cleaned = t.slice(0, -ctxSuggestion.typedLen).replace(/#$/, '').replace(/\s+$/, '') + ' '
+      skipNextInputRef.current = true
+      inputRef.current.textContent = cleaned.trimStart() === '' ? '' : cleaned
+      const range = document.createRange()
+      const sel = window.getSelection()
+      const textNode = inputRef.current.firstChild
+      if (textNode) { range.setStart(textNode, (inputRef.current.textContent || '').length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
+      setText(inputRef.current.textContent || '')
+      setCtxSuggestion(null)
+      setAtPicker(null)
+      setJustAcceptedCtx(true)
+      return
+    }
     // Añadir chip de contexto
     const slug = ctxSuggestion.displayName.toLowerCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -544,7 +585,11 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     })
     if (!result) { onClose(); return }
 
+    // Asignar los cajones aceptados vía ghost-text al nodo recién creado.
+    for (const cid of pendingCajones) assignCajon(result.node.id, cid)
+
     setAssignedCtx([])
+    setPendingCajones([])
     lockedForceTypeRef.current = null
     showToast(`✓ ${labelForType(result.type)} creado`)
     // Captura rápida: NO navegar dentro del nodo creado — molesto cuando solo
@@ -902,7 +947,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
   const ghostLabel = (() => {
     if (ctxSuggestion) {
       const typed = ctxSuggestion.displayName.slice(0, ctxSuggestion.typedLen)
-      return `${typed}${ctxSuggestion.ghost}`
+      return `${ctxSuggestion.cajonId ? '📦 ' : ''}${typed}${ctxSuggestion.ghost}`
     }
     if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
@@ -1031,6 +1076,31 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>↵</kbd>
             <kbd style={{ fontSize: 10, color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 5px' }}>ESC</kbd>
+            {/* Convertir en tarea — alternativa visual al atajo «-t ». Activa/desactiva
+                el modo tarea (mismo forceType). Resaltado cuando está activo. */}
+            <button
+              title={forceType === 'task' ? 'Quitar tarea' : 'Convertir en tarea (-t)'}
+              onMouseDown={e => {
+                e.preventDefault()
+                const next: ForceType = forceType === 'task' ? null : 'task'
+                lockedForceTypeRef.current = next
+                setForceType(next)
+                inputRef.current?.focus()
+              }}
+              style={{
+                background: forceType === 'task' ? 'var(--accent)' : 'none',
+                border: forceType === 'task' ? 'none' : '1px solid var(--border)',
+                borderRadius: 4, cursor: 'pointer',
+                color: forceType === 'task' ? 'white' : 'var(--text-tertiary)',
+                padding: '2px 4px', display: 'flex', alignItems: 'center',
+                transition: 'all 0.15s',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1.5" y="1.5" width="11" height="11" rx="2.5"/>
+                <path d="M4 7l2 2 4-4"/>
+              </svg>
+            </button>
             {/* Mic / Stop */}
             <button
               title={isRecording ? 'Parar grabación' : 'Grabar voz (mantén Espacio)'}
@@ -1113,6 +1183,26 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
                 >×</button>
               </span>
             ))}
+            {/* Chips de cajones (proyectos) asignados vía ghost-text */}
+            {pendingCajones.map(cid => {
+              const cj = store.getNode(cid)
+              if (!cj) return null
+              return (
+                <span key={cid} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                  background: '#0ea5a4', color: 'white',
+                  borderRadius: 20, padding: '2px 6px 2px 5px',
+                  fontSize: 11, fontWeight: 500, flexShrink: 0,
+                }}>
+                  <span style={{ opacity: 0.85 }}>📦</span>
+                  {cj.text}
+                  <button
+                    onMouseDown={e => { e.preventDefault(); setPendingCajones(prev => prev.filter(x => x !== cid)) }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'white', opacity: 0.7, padding: 0, fontSize: 11, lineHeight: 1 }}
+                  >×</button>
+                </span>
+              )
+            })}
             {/* Ghost text (tarea, fecha, contexto incompleto) */}
             {ghostLabel && (
               <span className="from-ghost" style={{ flexShrink: 0 }}>

@@ -45,6 +45,7 @@ import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
+import { isCajon as isCajonNode, isCajonClosed, setCajonClosed, cajonColor, cajonParentContext, nodesInCajon, unassignCajon } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -2211,6 +2212,53 @@ export default function NodeView() {
           )}
 
         </div>
+
+        {/* ── Banner de CAJÓN (proyecto temporal): estado abierto/cerrado + lo que
+              contiene (tareas/notas asignadas con #). El propio body/hijos del cajón
+              son la "nota del proyecto". ── */}
+        {isCajonNode(node) && (() => {
+          const closed = isCajonClosed(node)
+          const color = cajonColor(node.id)
+          const ctx = cajonParentContext(node.id)
+          const assigned = nodesInCajon(node.id)
+          return (
+            <div className="cajon-banner" style={{ margin: '0 0 14px', padding: '10px 14px', borderRadius: 10, border: `1px solid ${color}40`, background: color + '12' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, color }}>📦 Cajón</span>
+                {ctx && (
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>en <button onClick={() => navigate(`/node/${ctx.id}`)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, font: 'inherit' }}>{ctx.text}</button></span>
+                )}
+                <span style={{ flex: 1 }} />
+                <span style={{ fontSize: 12, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>
+                  {closed ? 'Cerrado' : 'Abierto'}
+                </span>
+                <button
+                  onClick={() => setCajonClosed(node.id, !closed)}
+                  title={closed ? 'Reabrir cajón' : 'Cerrar cajón (proyecto terminado)'}
+                  style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}
+                >
+                  {closed ? 'Reabrir' : 'Cerrar'}
+                </button>
+              </div>
+              {assigned.length > 0 && (
+                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Contiene · {assigned.length}</div>
+                  {assigned.map(a => (
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
+                        {a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}
+                      </span>
+                      <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>
+                        {a.text || '(sin texto)'}
+                      </button>
+                      <button onClick={() => unassignCajon(a.id, node.id)} title="Quitar del cajón" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         <div className="view-body">
           {/* ── Documento (texto rico, TipTap) — ocupa toda la view-body y reemplaza

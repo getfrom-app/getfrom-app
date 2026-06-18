@@ -21,6 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
+import { listCajones, createCajon, assignCajon, nodeCajones, cajonColor, cajonParentContext, isCajonClosed } from '../../utils/cajones'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
@@ -166,12 +167,14 @@ interface PickerItem {
   status?: string | null
   types?: string[]
   bodyPreview?: string
-  group?: 'context' | 'note'  // para @ picker con dos secciones
+  group?: 'context' | 'note' | 'cajon'  // para @ picker con dos secciones / # cajones
   isNote?: boolean            // nota (tiene hijos) vs párrafo (hoja)
+  cajonCreate?: string        // si está, es el item "+ Crear cajón 'X'" (texto del nombre)
+  contextLabel?: string       // contexto padre del cajón (para mostrar de dónde cuelga)
 }
 
 interface InlinePicker {
-  type: '@' | 'mirror' | 'move'
+  type: '@' | '#' | 'mirror' | 'move'
   query: string
   items: PickerItem[]
   activeIdx: number
@@ -316,7 +319,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const prevStatusRef = useRef<string | null | undefined>(node.status)
   // Autocompletado de contextos — detecta nombres de 🧠 Contexto mientras escribes
   const [ctxCompletion, setCtxCompletion] = useState<{
-    slug: string; displayName: string; typedLen: number; ghost: string
+    slug: string; displayName: string; typedLen: number; ghost: string; cajonId?: string
   } | null>(null)
   const [showSlash, setShowSlash] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
@@ -1167,6 +1170,26 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   }
 
+  // # — cajones (proyectos temporales) ABIERTOS que coinciden con el query, más
+  // la opción de crear uno nuevo si el query no coincide exactamente.
+  function buildCajonPickerItems(query: string): PickerItem[] {
+    const q = query.trim().toLowerCase()
+    const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    const cajones = listCajones() // solo abiertos
+      .filter(c => !q || norm(c.text || '').includes(norm(q)))
+      .sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+      .slice(0, 8)
+    const items: PickerItem[] = cajones.map(c => {
+      const ctx = cajonParentContext(c.id)
+      return { id: c.id, label: c.text || 'Cajón', group: 'cajon' as const, contextLabel: ctx?.text }
+    })
+    const exact = cajones.some(c => norm(c.text || '') === norm(q))
+    if (q.length > 0 && !exact) {
+      items.push({ id: '__create__', label: query.trim(), group: 'cajon' as const, cajonCreate: query.trim() })
+    }
+    return items
+  }
+
   function buildPickerItems(type: '@', query: string): PickerItem[] {
     if (type === '@') {
       // @ — contextos del árbol 🧠 Contexto: buscar por nombre visible, no por slug
@@ -1176,6 +1199,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         function collectContextNodes(parentId: string, prefix: string) {
           for (const child of store.children(parentId)) {
             if (child.deletedAt) continue
+            // Los cajones (proyectos temporales) NO son contextos → fuera del picker @.
+            try { if (JSON.parse(child.extraData || '{}')._cajon === '1') continue } catch { /* ignore */ }
             const slug = (prefix ? prefix + '/' : '') +
               (child.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
             treeItems.push({ id: slug, label: child.text || slug, slug })
@@ -1356,6 +1381,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const before = text.slice(0, pos)
 
     const atMatch = before.match(/@([^@\n]*)$/)
+    // # → picker de CAJONES (proyectos temporales). El `#` debe ir pegado a un
+    // carácter no-espacio (o estar solo) para no chocar con los encabezados `# `.
+    const hashMatch = before.match(/(?:^|\s)#([^\s#]*)$/)
 
     // Detectar "mover a [query]" en el texto completo (case-insensitive, ignora acentos)
     const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
@@ -1376,6 +1404,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const query = atMatch[1]
       const items = buildPickerItems('@', query)
       setPicker({ type: '@', query, items, activeIdx: 0 })
+    } else if (hashMatch) {
+      const query = hashMatch[1]
+      const items = buildCajonPickerItems(query)
+      setPicker({ type: '#', query, items, activeIdx: 0 })
     } else {
       setPicker(null)
     }
@@ -1463,6 +1495,25 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           }
           if (found) break
         }
+        // Cajones ABIERTOS — mismo escaneo; al aceptar se ASIGNA el cajón (no @).
+        // Los cerrados no aparecen como sugerencia.
+        if (!found) {
+          for (const cj of listCajones()) {
+            const cjNorm = normStr(cj.text || '')
+            if (!cjNorm) continue
+            for (let len = Math.min(beforeCursor.length, cjNorm.length - 1); len >= 3; len--) {
+              const tail = normStr(beforeCursor.slice(-len))
+              const charBefore = beforeCursor[beforeCursor.length - len - 1]
+              // `#` cuenta como inicio de palabra → "#locucion" también sugiere el cajón.
+              const isWordStart = !charBefore || /[\s,;:([\-#]/.test(charBefore)
+              if (isWordStart && cjNorm.startsWith(tail) && tail !== cjNorm) {
+                found = { slug: '', displayName: cj.text || '', typedLen: len, ghost: (cj.text || '').slice(len), cajonId: cj.id }
+                break
+              }
+            }
+            if (found) break
+          }
+        }
         setCtxCompletion(found)
       } else {
         setCtxCompletion(null)
@@ -1502,6 +1553,36 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (contentRef.current) contentRef.current.textContent = originalNode.text || ''
       setPicker(null)
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `⬡ Espejo de "${(originalNode.text || '').slice(0, 30)}" creado`, type: 'success' } }))
+      return
+    }
+
+    // ── # Cajón: asignar (o crear) un cajón al nodo. No deja token en el texto;
+    //    la asignación vive en extraData._cajones. Solo se quita el `#query`. ──
+    if (picker.type === '#') {
+      const rawText = contentRef.current.textContent || ''
+      const cleanText = rawText.replace(/(?:^|\s)#[^\s#]*$/, '').replace(/\s+$/, '')
+      let cajonId = item.id
+      if (item.cajonCreate) {
+        // Crear el cajón bajo el contexto del nodo (si lo tiene), si no, en la raíz.
+        const parentCtxId = manuallySetContextId
+        const created = createCajon(item.cajonCreate, parentCtxId)
+        cajonId = created.id
+      }
+      const targetNodeId = mirrorOfId ?? node.id
+      store.updateNode(targetNodeId, { text: cleanText })
+      assignCajon(targetNodeId, cajonId)
+      if (contentRef.current) {
+        contentRef.current.innerHTML = renderInlineToHtml(cleanText)
+        const range = document.createRange()
+        const sel = window.getSelection()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+      setPicker(null)
+      const cj = store.getNode(cajonId)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📦 En cajón "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
       return
     }
 
@@ -1858,11 +1939,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         }
         return
       }
-      if (e.key === 'Tab' && picker.type === '@') {
+      if (e.key === 'Tab' && (picker.type === '@' || picker.type === '#')) {
         e.preventDefault()
         if (picker.items.length > 0) {
           applyPickerSelection(picker.items[picker.activeIdx])
-        } else if (picker.query) {
+        } else if (picker.type === '@' && picker.query) {
           setPicker(null)
           try { ensureTagInTree(picker.query) } catch { /* silencioso */ }
         }
@@ -2505,8 +2586,29 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const pos = getCaretPosition(contentRef.current)
     const before = text.slice(0, pos)
     const after = text.slice(pos)
-    // Quitar el trozo que ya escribió el usuario y reemplazar por @slug al final
+    // Quitar el trozo que ya escribió el usuario.
     const beforeWithout = before.slice(0, before.length - ctxCompletion.typedLen)
+    // Cajón: asignar (no deja token en el texto) y limpiar lo tecleado (incl. un `#`).
+    if (ctxCompletion.cajonId) {
+      const cleanText = (beforeWithout.replace(/#$/, '') + after).replace(/\s+$/, '').trim()
+      const targetNodeId = mirrorOfId ?? node.id
+      store.updateNode(targetNodeId, { text: cleanText })
+      assignCajon(targetNodeId, ctxCompletion.cajonId)
+      if (contentRef.current) {
+        contentRef.current.innerHTML = renderInlineToHtml(cleanText)
+        const range = document.createRange()
+        const sel = window.getSelection()
+        range.selectNodeContents(contentRef.current)
+        range.collapse(false)
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+      const cj = store.getNode(ctxCompletion.cajonId)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📦 En cajón "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
+      setCtxCompletion(null)
+      return
+    }
+    // Quitar el trozo que ya escribió el usuario y reemplazar por @slug al final
     const cleanText = (beforeWithout + after).trim()
     const tagText = `@${ctxCompletion.slug}`
     const newText = cleanText + (cleanText ? ' ' : '') + tagText
@@ -4020,7 +4122,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               return (node.types || [])
                 .filter(slug => {
                   if (BUILTIN.has(slug)) return false
-                  // Ignorar si ya está como @slug en el texto
+                  // Ignorar si ya está como @mención en el texto. El @ puede escribirse
+                  // con guiones (@media-sector) o sin ellos (@mediasector) → comprobar ambos.
+                  if (textLower.includes('@' + slug)) return false
                   if (textLower.includes('@' + slug.replace(/-/g, ''))) return false
                   return true
                 })
@@ -4056,6 +4160,37 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   )
                 })
                 .filter(Boolean)
+            })()}
+
+            {/* Chips de CAJÓN (proyectos temporales) asignados vía extraData._cajones.
+                Icono 📦 + color heredado del contexto padre. Clic → abre el cajón. */}
+            {!isContextNode && !isInsideRestrictedAncestor && (() => {
+              const ids = nodeCajones(node)
+              if (ids.length === 0) return null
+              return ids.map(cid => {
+                const cj = store.getNode(cid)
+                if (!cj || cj.deletedAt) return null
+                const color = cajonColor(cid)
+                const closed = isCajonClosed(cj)
+                return (
+                  <span
+                    key={`cajon-${cid}`}
+                    className="cajon-inline"
+                    title={closed ? 'Cajón cerrado — clic para abrirlo' : 'Abrir cajón'}
+                    onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 3,
+                      background: color + '18', color, border: `1px solid ${color}40`,
+                      borderRadius: 4, fontSize: '0.8em', fontWeight: 500,
+                      padding: '0 5px', marginLeft: 4, cursor: 'pointer',
+                      opacity: closed ? 0.55 : 1,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.9em' }}>📦</span>{cj.text || 'Cajón'}
+                  </span>
+                )
+              }).filter(Boolean)
             })()}
 
             {/* Badge de fecha + botones de acción rápida en hover */}
@@ -4155,6 +4290,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {/* Autocompletado de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
               <span className="from-ghost from-ghost--ctx">
+                {ctxCompletion.cajonId && <span className="from-ghost-text">📦 </span>}
                 <span className="from-ghost-text">{ctxCompletion.ghost}</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">⇥</span>
@@ -4295,7 +4431,28 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 )}
               </>
             )
-          })() : picker.items.map((item, idx) => (
+          })() : picker.type === '#' ? (
+            <>
+              <div className="inline-picker-section-header">📦 Cajones</div>
+              {picker.items.map((item, idx) => (
+                <button
+                  key={item.id}
+                  className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
+                  onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
+                >
+                  <span className="inline-picker-icon">{item.cajonCreate ? '+' : '📦'}</span>
+                  <span className="inline-picker-content">
+                    <span className="inline-picker-label">
+                      {item.cajonCreate ? `Crear cajón «${item.label}»` : item.label}
+                    </span>
+                    {item.contextLabel && (
+                      <span className="inline-picker-preview">en {item.contextLabel}</span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </>
+          ) : picker.items.map((item, idx) => (
             <button
               key={item.id}
               className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}

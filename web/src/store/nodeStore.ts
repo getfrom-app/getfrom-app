@@ -621,6 +621,23 @@ export class NodeStore {
           const body = this.getTagDefNode(tagName)?.body?.trim()
           if (body) out[tagName] = body
         }
+        // Cajones (proyectos temporales) asignados a este nodo: incluir el body del
+        // cajón Y el de sus contextos ancestros (sube por el árbol 🧠 Contexto) para
+        // que Magic sepa el proyecto y a qué contexto amplio pertenece.
+        let cajonIds: string[] = []
+        try {
+          const v = JSON.parse(current.extraData || '{}')._cajones
+          if (Array.isArray(v)) cajonIds = v.filter((x): x is string => typeof x === 'string')
+        } catch { /* ignore */ }
+        for (const cid of cajonIds) {
+          let cj: Node | undefined = this.nodes.get(cid)
+          let g2 = 0
+          while (cj && g2++ < 50) {
+            const key = cj.text || cid
+            if (!out[key]) { const b = cj.body?.trim(); if (b) out[key] = b }
+            cj = cj.parentId ? this.nodes.get(cj.parentId) : undefined
+          }
+        }
       }
       current = current.parentId ? this.nodes.get(current.parentId) : undefined
     }
@@ -808,6 +825,29 @@ export class NodeStore {
     let hash = 0
     for (let i = 0; i < tagName.length; i++) hash = tagName.charCodeAt(i) + ((hash << 5) - hash)
     return COLORS[Math.abs(hash) % COLORS.length]
+  }
+
+  /** Color de un contexto (hijo de 🧠 Contexto) por su slug normalizado. Lee
+   *  _tagColor de la definición del contexto; si no, lila por defecto. Misma
+   *  resolución que el chip de contexto del outliner. */
+  contextColor(slug: string): string {
+    let root: Node | undefined
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      const t = (n.text || '').trim()
+      if (t === '🧠 Contexto' || t === '🏷 Tags') { root = n; break }
+    }
+    if (!root) return '#7c3aed'
+    const target = (slug || '').toLowerCase()
+    for (const n of this.children(root.id)) {
+      if (n.deletedAt) continue
+      const s = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-/]/g, '')
+      if (s === target) {
+        try { const ed = JSON.parse(n.extraData || '{}'); if (ed._tagColor) return ed._tagColor } catch { /* ignore */ }
+        return '#7c3aed'
+      }
+    }
+    return '#7c3aed'
   }
 
   /** Borrar un tag de todos los nodos y eliminar su definición */

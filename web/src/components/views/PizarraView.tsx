@@ -1944,7 +1944,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         // Texto LIMPIO = nodo plano (ni doc, ni vista, ni recurso): se pinta vía
         // OutlinerNode pero SIN cromo (CSS `.pizarra-node--cleantext`). Solo cursor
         // al crear; dot (zoom) y tirador de ancho aparecen en hover.
-        const isPlain = !isText && !elView && !res
+        // EXCEPCIÓN: una tarea/evento/bucle/captura conserva su marcador (checkbox,
+        // icono) → NO es texto limpio, se pinta con el cromo completo de OutlinerNode.
+        const hasChrome = node.status !== null || node.isEvent || (node.types || []).some(t => t === 'bucle' || t === 'captura')
+        const isPlain = !isText && !elView && !res && !hasChrome
         // ¿Tiene nodos hijos? (como las notas): si los tiene, el dot se muestra SIEMPRE
         // (marcado); si no, solo en hover. Misma lógica que los nodos del outliner.
         const plainHasKids = isPlain && store.children(node.id).some(c => !c.deletedAt)
