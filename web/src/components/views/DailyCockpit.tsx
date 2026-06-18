@@ -15,7 +15,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
-import { listContexts, contextColor, contextParent, nodesInContext } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -284,7 +284,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         </div>
       )}
       {(() => {
-        const subs = listContexts({ onlySub: true }) // subcontextos abiertos
+        const subs = listActiveContexts() // contextos en uso (abiertos)
         if (subs.length === 0) return null
         return (
           <div className="dc-group">

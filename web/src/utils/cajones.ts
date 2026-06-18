@@ -170,7 +170,31 @@ export function assignContext(nodeId: string, contextId: string): void {
   const cur = nodeCtxRefs(n)
   if (!cur.includes(contextId)) e._ctxRefs = [...cur, contextId]
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
+  // Marcar el contexto destino como proyecto (_ctx) si aún no lo está, para que
+  // aparezca en los listados aunque se creara por una vía antigua.
+  const c = store.getNode(contextId)
+  if (c && !isProject(c)) {
+    const ce = ed(c); ce._ctx = '1'
+    store.updateNode(contextId, { extraData: JSON.stringify(ce) })
+  }
   try { touchContext(contextId, new Date().toISOString()) } catch { /* ignore */ }
+}
+
+/** Contextos a mostrar en listados de "en uso": proyectos marcados (_ctx) +
+ *  cualquier contexto referenciado por algún nodo (_ctxRefs). Solo ABIERTOS. */
+export function listActiveContexts(): Node[] {
+  const ids = new Set<string>()
+  for (const n of store.allActive()) {
+    if (n.deletedAt) continue
+    if (isProject(n) && !isContextClosed(n)) ids.add(n.id)
+    for (const cid of nodeCtxRefs(n)) ids.add(cid)
+  }
+  const out: Node[] = []
+  for (const id of ids) {
+    const c = store.getNode(id)
+    if (c && !c.deletedAt && !isContextClosed(c)) out.push(c)
+  }
+  return out.sort((a, b) => activityTs(b) - activityTs(a))
 }
 
 export function unassignContext(nodeId: string, contextId: string): void {
