@@ -191,6 +191,9 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'loop':        return (node.types || []).includes('bucle') && node.status !== 'done'
     case 'captura':
     case 'capture':     return (node.types || []).includes('captura')
+    case 'cajon':
+    case 'cajón':
+    case 'cajones':     { try { return JSON.parse(node.extraData || '{}')._cajon === '1' && JSON.parse(node.extraData || '{}')._cajonClosed !== '1' } catch { return false } }
 
     default:
       // @tag o #tag

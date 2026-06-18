@@ -22,6 +22,7 @@ import { trashNode, isInPapelera, restoreNode } from '../../utils/papeleraHelper
 import { isProtectedSystemRoot } from '../../utils/rootLookup'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
+import { isCajon, setCajon } from '../../utils/cajones'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
 import { isDocNode } from '../../utils/docNode'
 import { htmlToMarkdown, docStandaloneHtml } from '../../utils/htmlMarkdown'
@@ -452,6 +453,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         <button className="context-menu-item" onClick={run(toggleShortcut)}>
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
           {isFav ? t('context.removeFavorite') : t('context.addFavorite')}
+        </button>
+        {/* Convertir en cajón (contenedor temporal de proyecto) — cualquier nodo. */}
+        <button className="context-menu-item" onClick={run(() => setCajon(node.id, !isCajon(node)))}>
+          <span className="context-menu-icon">📦</span>
+          {isCajon(node) ? 'Quitar cajón' : 'Convertir en cajón'}
         </button>
         {/* (Bucle eliminado: el seguimiento es ahora una tarea sin fecha.) */}
       </div>

@@ -15,6 +15,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
+import { listCajones, cajonColor, nodesInCajon } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -282,6 +283,26 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
+      {(() => {
+        const cajones = listCajones() // abiertos
+        if (cajones.length === 0) return null
+        return (
+          <div className="dc-group">
+            {gHeader('cajones', `📦 Cajones abiertos · ${cajones.length}`)}
+            {!collapsedG.has('cajones') && cajones.map(c => {
+              const color = cajonColor(c.id)
+              const n = nodesInCajon(c.id).length
+              return (
+                <button key={c.id} className="dc-row dc-row--cajon" onClick={() => navigate(`/node/${c.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 0' }}>
+                  <span style={{ color, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.text || 'Cajón'}</span>
+                  {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{n}</span>}
+                </button>
+              )
+            })}
+          </div>
+        )
+      })()}
     </>
   )
 

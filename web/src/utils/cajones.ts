@@ -58,22 +58,15 @@ export function cajonColor(cajonId: string): string {
   return CAJON_DEFAULT_COLOR
 }
 
-/** Todos los cajones del árbol de contexto. Por defecto, solo los ABIERTOS. */
+/** Todos los cajones (CUALQUIER nodo con flag `_cajon`, viva donde viva en el
+ *  árbol). Por defecto, solo los ABIERTOS. Excluye la papelera. */
 export function listCajones(opts?: { includeClosed?: boolean }): Node[] {
-  const root = findContextRoot()
-  if (!root) return []
   const out: Node[] = []
-  const walk = (parentId: string, guard = 0) => {
-    if (guard > 50) return
-    for (const c of store.children(parentId)) {
-      if (c.deletedAt) continue
-      if (isCajon(c)) {
-        if (opts?.includeClosed || !isCajonClosed(c)) out.push(c)
-      }
-      walk(c.id, guard + 1) // cajones anidados bajo contextos/subcontextos
-    }
+  for (const n of store.allActive()) {
+    if (!isCajon(n)) continue
+    if (!opts?.includeClosed && isCajonClosed(n)) continue
+    out.push(n)
   }
-  walk(root.id)
   return out
 }
 
@@ -91,6 +84,16 @@ export function createCajon(name: string, parentContextId?: string | null): Node
   })
   ensureTagDefinition(node.id)
   return node
+}
+
+/** Convierte CUALQUIER nodo en cajón (o le quita el flag), sin moverlo. */
+export function setCajon(nodeId: string, on: boolean): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  const e = ed(n)
+  if (on) { e._cajon = '1' }
+  else { delete e._cajon; delete e._cajonClosed }
+  store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
 export function setCajonClosed(cajonId: string, closed: boolean): void {
