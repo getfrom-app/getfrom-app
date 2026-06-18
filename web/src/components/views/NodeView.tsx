@@ -45,7 +45,7 @@ import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContexts, reparentContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -2223,7 +2223,7 @@ export default function NodeView() {
           return (
             <div className="ctx-banner" style={{ margin: '0 0 14px', padding: '10px 14px', borderRadius: 10, border: `1px solid ${color}40`, background: color + '12' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 600, color }}>{parent ? 'Proyecto' : 'Contexto'}</span>
+                <span style={{ fontWeight: 600, color }}>{isProject(node) ? 'Proyecto' : 'Contexto'}</span>
                 {/* Contexto padre: aplicar un contexto a un contexto lo reparenta
                     (lo convierte en subcontexto del elegido). Badge vacío si no tiene. */}
                 {(() => {
@@ -2234,7 +2234,7 @@ export default function NodeView() {
                     while (cur && g++ < 60) { if (cur.id === node.id) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null }
                     return false
                   }
-                  const candidates = listContexts({ includeClosed: false }).filter(c => c.id !== node.id && !isDesc(c.id) && c.id !== parent?.id)
+                  const candidates = listContextsForParent().filter(c => c.id !== node.id && !isDesc(c.id) && c.id !== parent?.id)
                   return (
                     <select
                       value=""
@@ -2248,9 +2248,8 @@ export default function NodeView() {
                   )
                 })()}
                 <span style={{ flex: 1 }} />
-                {/* Solo los SUBCONTEXTOS (proyectos) se abren/cierran. Los contextos
-                    raíz son la base: siempre activos, sin toggle. */}
-                {parent && (
+                {/* Solo los PROYECTOS se abren/cierran. Las áreas son la base. */}
+                {isProject(node) && (
                   <>
                     <span style={{ fontSize: 12, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>
                       {closed ? 'Cerrado' : 'Abierto'}

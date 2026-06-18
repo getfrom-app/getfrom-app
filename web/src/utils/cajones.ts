@@ -27,21 +27,25 @@ function ed(n: Node | null | undefined): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
 
-/** ¿El nodo es un contexto (descendiente de 🧠 Contexto)? */
-export function isContextNode(nodeId: string): boolean {
+/** ¿Es un PROYECTO (contexto creado/designado explícitamente)? Marcado `_ctx='1'`.
+ *  Distingue un contexto real del CONTENIDO que cuelga dentro de un contexto
+ *  (p. ej. los guiones diarios filtrados bajo un área). */
+export function isProject(n: Node | null | undefined): boolean {
+  return ed(n)._ctx === '1'
+}
+
+/** ¿Es un ÁREA? = hijo DIRECTO de la raíz 🧠 Contexto (los contextos de base). */
+export function isArea(nodeId: string): boolean {
   const root = findContextRoot()
   if (!root) return false
-  let cur: Node | null | undefined = store.getNode(nodeId)
-  let guard = 0
-  while (cur && guard++ < 60) {
-    if (cur.id === root.id) return false      // la raíz no es un contexto
-    if (cur.parentId === root.id) return true // hijo directo o más abajo
-    if (cur.parentId == null) return false
-    const parent = store.getNode(cur.parentId)
-    if (parent && parent.id === root.id) return true
-    cur = parent
-  }
-  return false
+  const n = store.getNode(nodeId)
+  return !!n && !n.deletedAt && n.parentId === root.id
+}
+
+/** ¿El nodo es un contexto REAL (área o proyecto)? NO el contenido interno. */
+export function isContextNode(nodeId: string): boolean {
+  const n = store.getNode(nodeId)
+  return isArea(nodeId) || isProject(n)
 }
 
 export function isContextClosed(n: Node | null | undefined): boolean {
@@ -86,28 +90,28 @@ export function touchContext(nodeId: string, isoNow: string): void {
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
-/** Todos los contextos del árbol. Opciones: solo abiertos, solo subcontextos. */
+/** PROYECTOS (contextos creados, `_ctx='1'`). Por defecto solo los ABIERTOS.
+ *  `onlySub` se mantiene por compatibilidad pero ya no cambia nada (todos los
+ *  proyectos son contextos designados, no contenido). */
 export function listContexts(opts?: { includeClosed?: boolean; onlySub?: boolean }): Node[] {
-  const root = findContextRoot()
-  if (!root) return []
-  const out: Node[] = []
-  const walk = (parentId: string, depth: number, guard = 0) => {
-    if (guard > 60) return
-    for (const c of store.children(parentId)) {
-      if (c.deletedAt) continue
-      // Excluir el nodo de conocimiento «🧠 Lo que From sabe» y similares de config.
-      if ((c.text || '').startsWith('🧠')) { continue }
-      if (!opts?.onlySub || depth >= 1) {
-        if (opts?.includeClosed || !isContextClosed(c)) out.push(c)
-      }
-      walk(c.id, depth + 1, guard + 1)
-    }
-  }
-  walk(root.id, 0)
-  return out.sort((a, b) => activityTs(b) - activityTs(a)) // última actividad primero
+  void opts?.onlySub
+  return store.allActive()
+    .filter(n => !n.deletedAt && isProject(n) && (opts?.includeClosed || !isContextClosed(n)))
+    .sort((a, b) => activityTs(b) - activityTs(a)) // última actividad primero
 }
 
-/** Crea un contexto bajo el padre dado (o la raíz de Contexto). */
+/** Contextos donde se puede anidar (como padre): ÁREAS + PROYECTOS abiertos. */
+export function listContextsForParent(): Node[] {
+  const root = findContextRoot()
+  const areas = root ? store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠')) : []
+  const projects = listContexts()
+  const seen = new Set<string>()
+  const out: Node[] = []
+  for (const n of [...areas, ...projects]) { if (!seen.has(n.id)) { seen.add(n.id); out.push(n) } }
+  return out
+}
+
+/** Crea un PROYECTO (contexto designado `_ctx='1'`) bajo el padre dado (o la raíz). */
 export function createContext(name: string, parentContextId?: string | null): Node {
   const root = findContextRoot()
   const parentId = (parentContextId && store.getNode(parentContextId)) ? parentContextId : (root?.id ?? null)
@@ -117,6 +121,7 @@ export function createContext(name: string, parentContextId?: string | null): No
     text: name.trim(),
     parentId,
     siblingOrder: maxOrder + 1000,
+    extraData: { _ctx: '1' },
   })
   ensureTagDefinition(node.id)
   return node
@@ -125,8 +130,8 @@ export function createContext(name: string, parentContextId?: string | null): No
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  // Los contextos RAÍZ (sin contexto padre) son la base: no se cierran.
-  if (!contextParent(nodeId)) return
+  // Solo los PROYECTOS se cierran; las áreas son la base.
+  if (!isProject(n)) return
   const e = ed(n)
   if (closed) e._closed = '1'
   else delete e._closed
