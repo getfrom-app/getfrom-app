@@ -482,8 +482,13 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     setCtxSuggestion(null)
     setAtPicker(null)
     setJustAcceptedCtx(true)
-    const { forceType: ft } = detectForceType(newText)
-    setForceType(ft)
+    // Preservar el tipo ya detectado: añadir un contexto NO debe degradar la tarea a
+    // nota visualmente. Mantener el forceType bloqueado y recomputar la predicción de
+    // tarea por verbo sobre el texto nuevo (taskPrediction queda intacto si sigue válido).
+    setForceType(lockedForceTypeRef.current)
+    if (!lockedForceTypeRef.current) {
+      setTaskPrediction(newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText)))
+    }
   }
 
   function acceptDate() {
@@ -515,12 +520,14 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     setAtPicker(null)
     setJustAcceptedCtx(true)  // ocultar resultados tras seleccionar @contexto
     // NO llamar analyze: detectaría "@Media Sector " al final y reabriría el atPicker.
-    // Solo actualizamos predicciones de fecha/tarea sin tocar el atPicker.
-    const { forceType: ft } = detectForceType(newText)
-    setForceType(ft)
+    // Solo actualizamos predicciones de fecha/tarea sin tocar el atPicker. Preservar el
+    // tipo bloqueado y la detección de tarea: enlazar un contexto no degrada la tarea a nota.
+    setForceType(lockedForceTypeRef.current)
     setCtxSuggestion(null)
-    setDatePrediction(null)
-    setTaskPrediction(false)
+    setDatePrediction(newText.length > 3 ? extractDateFromEnd(newText) : null)
+    if (!lockedForceTypeRef.current) {
+      setTaskPrediction(newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText)))
+    }
   }
 
   // ── saveAndClose (igual que QuickCaptureNode) ──────────────────────────────
