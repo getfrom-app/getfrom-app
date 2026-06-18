@@ -938,9 +938,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       // 1. @ picker (ya manejado arriba)
       // 2. ctx suggestion → aceptar ghost text
       if (ctxSuggestion) { acceptCtx(); return }
-      // 2.5. Cajón vía #nombre al final → crear/encontrar el cajón con ESTE Enter; el
-      //      texto restante queda para la tarea (segundo Enter). Si el cajón existe,
-      //      el ghost-text (paso 2) ya lo habría capturado; aquí van los NUEVOS.
+      // 2.5. Contexto vía #nombre al final.
       {
         const cur = getCurrentText()
         const m = cur.match(/(?:^|\s)#([^#@]+?)\s*$/)
@@ -949,8 +947,16 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
           const existing = listContexts().find(c => norm(c.text || '') === norm(name))
           const cid = existing ? existing.id : createContext(name).id
-          setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
           const cleaned = cur.replace(/(?:\s*)#[^#@]+?\s*$/, '').replace(/\s+$/, '')
+          // Sin texto previo → era SOLO crear el contexto: navegar a él y cerrar.
+          if (!cleaned.trim()) {
+            navigate(`/node/${cid}`)
+            onClose()
+            return
+          }
+          // Con texto previo → es una tarea filtrada en el contexto: asignar y dejar
+          // el texto para crearla con el siguiente Enter.
+          setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
           skipNextInputRef.current = true
           if (inputRef.current) inputRef.current.textContent = cleaned
           setText(cleaned)
