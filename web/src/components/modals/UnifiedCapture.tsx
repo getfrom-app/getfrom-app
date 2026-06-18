@@ -323,6 +323,24 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     }
 
     // Sugerencia de contexto
+    // ── Caso `#token` EXPLÍCITO: el usuario escribe un proyecto con #. Se busca por
+    //    PREFIJO del token (no por sufijo del texto). Si ninguno coincide, NO se
+    //    sugiere nada → el ghost «Crear «token»» (newCajonName) permite crearlo. ──
+    const hashTok = t.match(/(?:^|\s)#([^#@]+?)\s*$/)
+    if (hashTok && hashTok[1].trim().length >= 1) {
+      const tokNorm = normalizeNFD(hashTok[1].trim())
+      let found: CtxSuggestion | null = null
+      for (const cj of listContexts()) {
+        if (!cj.text || pendingCajones.includes(cj.id)) continue
+        const nm = normalizeNFD(cj.text)
+        if (nm.startsWith(tokNorm) && nm !== tokNorm) {
+          found = { nodeId: cj.id, displayName: cj.text, typedLen: hashTok[1].trim().length, ghost: cj.text.slice(hashTok[1].trim().length), cajonId: cj.id }
+          break
+        }
+      }
+      setCtxSuggestion(found)
+      return
+    }
     if (t.length >= 3) {
       const ctxRoot = findContextRoot()
       const ctxNodes = ctxRoot
