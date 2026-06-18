@@ -1439,7 +1439,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   const onCardAreaPointerDown = useCallback((e: React.PointerEvent, node: Node) => {
     if (e.button !== 0) return
     const t = e.target as HTMLElement
-    if (t.closest('.node-text, .bullet-btn, button, a, input, textarea, select, [contenteditable="true"], .node-due-badge, .node-qp-badge, .node-date-actions, .node-priority-dot, [class*="ghost"], [class*="chip"]')) return
+    if (t.closest('.node-text, .bullet-btn, button, a, input, textarea, select, [contenteditable="true"], .node-due-badge, .node-qp-badge, .node-date-actions, .node-priority-dot, [class*="ghost"], [class*="chip"], .context-inline, .cajon-inline')) return
     onCardPointerDown(e, node)
   }, [onCardPointerDown])
 
