@@ -21,7 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
-import { listCajones, createCajon, assignCajon, nodeCajones, cajonColor, cajonParentContext, isCajonClosed } from '../../utils/cajones'
+import { listContexts, createContext, assignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
@@ -1170,20 +1170,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   }
 
-  // # — cajones (proyectos temporales) ABIERTOS que coinciden con el query, más
-  // la opción de crear uno nuevo si el query no coincide exactamente.
+  // # — contextos/proyectos ABIERTOS que coinciden con el query, más la opción de
+  // crear uno nuevo si el query no coincide exactamente.
   function buildCajonPickerItems(query: string): PickerItem[] {
     const q = query.trim().toLowerCase()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    const cajones = listCajones() // solo abiertos
+    const ctxs = listContexts() // solo abiertos, ordenados por actividad
       .filter(c => !q || norm(c.text || '').includes(norm(q)))
-      .sort((a, b) => (a.text || '').localeCompare(b.text || ''))
       .slice(0, 8)
-    const items: PickerItem[] = cajones.map(c => {
-      const ctx = cajonParentContext(c.id)
-      return { id: c.id, label: c.text || 'Cajón', group: 'cajon' as const, contextLabel: ctx?.text }
+    const items: PickerItem[] = ctxs.map(c => {
+      const parent = contextParent(c.id)
+      return { id: c.id, label: c.text || 'Contexto', group: 'cajon' as const, contextLabel: parent?.text }
     })
-    const exact = cajones.some(c => norm(c.text || '') === norm(q))
+    const exact = ctxs.some(c => norm(c.text || '') === norm(q))
     if (q.length > 0 && !exact) {
       items.push({ id: '__create__', label: query.trim(), group: 'cajon' as const, cajonCreate: query.trim() })
     }
@@ -1199,8 +1198,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         function collectContextNodes(parentId: string, prefix: string) {
           for (const child of store.children(parentId)) {
             if (child.deletedAt) continue
-            // Los cajones (proyectos temporales) NO son contextos → fuera del picker @.
-            try { if (JSON.parse(child.extraData || '{}')._cajon === '1') continue } catch { /* ignore */ }
+            // Los contextos CERRADOS no se ofrecen en el picker @.
+            try { if (JSON.parse(child.extraData || '{}')._closed === '1') continue } catch { /* ignore */ }
             const slug = (prefix ? prefix + '/' : '') +
               (child.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
             treeItems.push({ id: slug, label: child.text || slug, slug })
@@ -1495,10 +1494,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
           }
           if (found) break
         }
-        // Cajones ABIERTOS — mismo escaneo; al aceptar se ASIGNA el cajón (no @).
+        // Contextos/proyectos ABIERTOS — mismo escaneo; al aceptar se ASIGNA (no @).
         // Los cerrados no aparecen como sugerencia.
         if (!found) {
-          for (const cj of listCajones()) {
+          for (const cj of listContexts()) {
             const cjNorm = normStr(cj.text || '')
             if (!cjNorm) continue
             for (let len = Math.min(beforeCursor.length, cjNorm.length - 1); len >= 3; len--) {
@@ -1556,21 +1555,21 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     }
 
-    // ── # Cajón: asignar (o crear) un cajón al nodo. No deja token en el texto;
-    //    la asignación vive en extraData._cajones. Solo se quita el `#query`. ──
+    // ── # Contexto/proyecto: asignar (o crear) un contexto al nodo. No deja token
+    //    en el texto; la asignación vive en extraData._ctxRefs. Solo quita `#query`. ──
     if (picker.type === '#') {
       const rawText = contentRef.current.textContent || ''
       const cleanText = rawText.replace(/(?:^|\s)#[^\s#]*$/, '').replace(/\s+$/, '')
-      let cajonId = item.id
+      let ctxId = item.id
       if (item.cajonCreate) {
-        // Crear el cajón bajo el contexto del nodo (si lo tiene), si no, en la raíz.
+        // Crear el contexto bajo el contexto del nodo (si lo tiene), si no, en la raíz.
         const parentCtxId = manuallySetContextId
-        const created = createCajon(item.cajonCreate, parentCtxId)
-        cajonId = created.id
+        const created = createContext(item.cajonCreate, parentCtxId)
+        ctxId = created.id
       }
       const targetNodeId = mirrorOfId ?? node.id
       store.updateNode(targetNodeId, { text: cleanText })
-      assignCajon(targetNodeId, cajonId)
+      assignContext(targetNodeId, ctxId)
       if (contentRef.current) {
         contentRef.current.innerHTML = renderInlineToHtml(cleanText)
         const range = document.createRange()
@@ -1581,8 +1580,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         sel?.addRange(range)
       }
       setPicker(null)
-      const cj = store.getNode(cajonId)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📦 En cajón "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
+      const cj = store.getNode(ctxId)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `En contexto "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
       return
     }
 
@@ -2588,12 +2587,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const after = text.slice(pos)
     // Quitar el trozo que ya escribió el usuario.
     const beforeWithout = before.slice(0, before.length - ctxCompletion.typedLen)
-    // Cajón: asignar (no deja token en el texto) y limpiar lo tecleado (incl. un `#`).
+    // Contexto/proyecto: asignar (no deja token) y limpiar lo tecleado (incl. un `#`).
     if (ctxCompletion.cajonId) {
       const cleanText = (beforeWithout.replace(/#$/, '') + after).replace(/\s+$/, '').trim()
       const targetNodeId = mirrorOfId ?? node.id
       store.updateNode(targetNodeId, { text: cleanText })
-      assignCajon(targetNodeId, ctxCompletion.cajonId)
+      assignContext(targetNodeId, ctxCompletion.cajonId)
       if (contentRef.current) {
         contentRef.current.innerHTML = renderInlineToHtml(cleanText)
         const range = document.createRange()
@@ -2604,7 +2603,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         sel?.addRange(range)
       }
       const cj = store.getNode(ctxCompletion.cajonId)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📦 En cajón "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `En contexto "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
       setCtxCompletion(null)
       return
     }
@@ -4162,33 +4161,34 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 .filter(Boolean)
             })()}
 
-            {/* Chips de CAJÓN (proyectos temporales) asignados vía extraData._cajones.
-                Icono 📦 + color heredado del contexto padre. Clic → abre el cajón. */}
+            {/* Chips de CONTEXTO/PROYECTO asignados por ID vía extraData._ctxRefs.
+                Se pintan como un contexto (con caja) y el color del contexto. Clic →
+                abre el contexto. Cerrado → tachado y atenuado. */}
             {!isContextNode && !isInsideRestrictedAncestor && (() => {
-              const ids = nodeCajones(node)
+              const ids = nodeCtxRefs(node)
               if (ids.length === 0) return null
               return ids.map(cid => {
                 const cj = store.getNode(cid)
                 if (!cj || cj.deletedAt) return null
-                const color = cajonColor(cid)
-                const closed = isCajonClosed(cj)
+                const color = contextColor(cid)
+                const closed = isContextClosed(cj)
+                const parent = contextParent(cid)
                 return (
                   <span
-                    key={`cajon-${cid}`}
-                    className="cajon-inline"
-                    title={closed ? 'Cajón cerrado — clic para abrirlo' : 'Abrir cajón'}
+                    key={`ctxref-${cid}`}
+                    className="context-inline"
+                    title={closed ? 'Contexto cerrado — clic para abrirlo' : (parent ? `${parent.text} › ${cj.text}` : 'Abrir contexto')}
                     onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                     onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
                     style={{
-                      // Cajón = texto limpio coloreado, SIN fondo ni borde (a diferencia
-                      // del contexto, que sí lleva caja). Solo el color lo distingue.
-                      color, fontWeight: 600, fontSize: '0.85em',
-                      marginLeft: 5, cursor: 'pointer',
+                      background: color + '18', color, border: `1px solid ${color}40`,
+                      borderRadius: 4, fontSize: '0.8em', fontWeight: 500,
+                      padding: '0 5px', marginLeft: 4, cursor: 'pointer',
                       textDecoration: closed ? 'line-through' : 'none',
                       opacity: closed ? 0.6 : 1,
                     }}
                   >
-                    {cj.text || 'Cajón'}
+                    {cj.text || 'Contexto'}
                   </span>
                 )
               }).filter(Boolean)

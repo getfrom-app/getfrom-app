@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
-import { listCajones, assignCajon, isCajon as isCajonNode, createCajon, cajonColor } from '../../utils/cajones'
+import { listContexts, assignContext, createContext, contextColor } from '../../utils/cajones'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -326,7 +326,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (t.length >= 3) {
       const ctxRoot = findContextRoot()
       const ctxNodes = ctxRoot
-        ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text && !isCajonNode(n))
+        ? store.children(ctxRoot.id).filter(n => !n.deletedAt && n.text)
         : []
 
       let found: CtxSuggestion | null = null
@@ -353,7 +353,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       }
       // Cajones ABIERTOS (proyectos) — mismo escaneo; al aceptar se asigna el cajón.
       if (!found) {
-        for (const cj of listCajones()) {
+        for (const cj of listContexts({ onlySub: true })) {
           if (!cj.text || pendingCajones.includes(cj.id)) continue
           const normName = normalizeNFD(cj.text)
           for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
@@ -586,7 +586,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (!result) { onClose(); return }
 
     // Asignar los cajones aceptados vía ghost-text al nodo recién creado.
-    for (const cid of pendingCajones) assignCajon(result.node.id, cid)
+    for (const cid of pendingCajones) assignContext(result.node.id, cid)
 
     setAssignedCtx([])
     setPendingCajones([])
@@ -929,8 +929,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         if (m && m[1].trim()) {
           const name = m[1].trim()
           const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-          const existing = listCajones().find(c => norm(c.text || '') === norm(name))
-          const cid = existing ? existing.id : createCajon(name).id
+          const existing = listContexts().find(c => norm(c.text || '') === norm(name))
+          const cid = existing ? existing.id : createContext(name).id
           setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
           const cleaned = cur.replace(/(?:\s*)#[^#@]+?\s*$/, '').replace(/\s+$/, '')
           skipNextInputRef.current = true
@@ -971,7 +971,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (!m || !m[1].trim()) return null
     const name = m[1].trim()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    if (listCajones().some(c => norm(c.text || '') === norm(name))) return null // existe → ghost normal
+    if (listContexts().some(c => norm(c.text || '') === norm(name))) return null // existe → ghost normal
     return name
   })()
 
@@ -1219,7 +1219,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             {pendingCajones.map(cid => {
               const cj = store.getNode(cid)
               if (!cj) return null
-              const color = cajonColor(cid)
+              const color = contextColor(cid)
               return (
                 <span key={cid} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 3,

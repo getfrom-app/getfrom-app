@@ -193,7 +193,9 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'capture':     return (node.types || []).includes('captura')
     case 'cajon':
     case 'cajón':
-    case 'cajones':     { try { return JSON.parse(node.extraData || '{}')._cajon === '1' && JSON.parse(node.extraData || '{}')._cajonClosed !== '1' } catch { return false } }
+    case 'cajones':
+    case 'proyecto':
+    case 'proyectos':   { try { const a = JSON.parse(node.extraData || '{}')._ctxRefs; return Array.isArray(a) && a.length > 0 } catch { return false } }
 
     default:
       // @tag o #tag

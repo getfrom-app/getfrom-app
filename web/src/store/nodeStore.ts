@@ -621,12 +621,12 @@ export class NodeStore {
           const body = this.getTagDefNode(tagName)?.body?.trim()
           if (body) out[tagName] = body
         }
-        // Cajones (proyectos temporales) asignados a este nodo: incluir el body del
-        // cajón Y el de sus contextos ancestros (sube por el árbol 🧠 Contexto) para
-        // que Magic sepa el proyecto y a qué contexto amplio pertenece.
+        // Contextos/proyectos asignados por ID (_ctxRefs): incluir el body del
+        // contexto Y el de sus ancestros (sube por el árbol 🧠 Contexto) para que
+        // Magic sepa el proyecto y a qué contexto amplio pertenece.
         let cajonIds: string[] = []
         try {
-          const v = JSON.parse(current.extraData || '{}')._cajones
+          const v = JSON.parse(current.extraData || '{}')._ctxRefs
           if (Array.isArray(v)) cajonIds = v.filter((x): x is string => typeof x === 'string')
         } catch { /* ignore */ }
         for (const cid of cajonIds) {
