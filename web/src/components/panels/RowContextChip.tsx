@@ -11,11 +11,20 @@ import type { Node } from '../../types'
 export default function RowContextChip({ node }: { node: Node }) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const contexts = listContexts()
 
   useEffect(() => {
     if (!menu) return
-    const h = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as globalThis.Node)) setMenu(null) }
+    // El menú va en un PORTAL a document.body → NO está dentro de `ref`. Hay que
+    // comprobar también `menuRef`, o el pointerdown lo cierra antes del onClick
+    // (el contexto no se aplicaba: ese era el bug).
+    const h = (e: PointerEvent) => {
+      const t = e.target as globalThis.Node
+      if (ref.current?.contains(t)) return
+      if (menuRef.current?.contains(t)) return
+      setMenu(null)
+    }
     window.addEventListener('pointerdown', h, true)
     return () => window.removeEventListener('pointerdown', h, true)
   }, [menu])
@@ -53,7 +62,7 @@ export default function RowContextChip({ node }: { node: Node }) {
         <span className="dc-ctx-chip dc-ctx-chip--empty" title="Asignar contexto" onClick={open}>?</span>
       )}
       {menu && createPortal((
-        <div className="node-ctx-menu" style={{ position: 'fixed', top: menu.y, left: menu.x, zIndex: 3000, maxHeight: '60vh', overflowY: 'auto', minWidth: 170 }}
+        <div ref={menuRef} className="node-ctx-menu" style={{ position: 'fixed', top: menu.y, left: menu.x, zIndex: 3000, maxHeight: '60vh', overflowY: 'auto', minWidth: 170 }}
           onClick={e => e.stopPropagation()}>
           <div className="node-ctx-label">Contexto</div>
           {contexts.map(c => {
