@@ -1592,6 +1592,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
    contexto, placeholder, recuadro ni tiradores. Magic añade badges al escribir;
    el dot (zoom) y el tirador de ancho aparecen únicamente en hover. */
 .pizarra-node--cleantext .node-bullet-slot{display:none!important}
+/* Tarea/evento/bucle/captura limpios: SÍ muestran su marcador (checkbox/icono),
+   pegado al texto, sin gutter. El resto del cromo (caja, tiradores) sigue oculto. */
+.pizarra-node--cleantext.pizarra-node--check .node-bullet-slot{display:inline-flex!important;width:auto!important;min-width:0!important;margin-right:4px!important}
 .pizarra-node--cleantext .collapse-btn,.pizarra-node--cleantext .node-collapse{display:none!important}
 .pizarra-node--cleantext .auto-ctx-badge--placeholder{display:none!important}
 .pizarra-node--cleantext .node-text:empty::before{content:''!important}
@@ -1941,20 +1944,20 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const isText = isDocNode(node)
         const elView = canvasViewKind(node)
         const res = !isText && !elView ? readResource(node) : null
-        // Texto LIMPIO = nodo plano (ni doc, ni vista, ni recurso): se pinta vía
-        // OutlinerNode pero SIN cromo (CSS `.pizarra-node--cleantext`). Solo cursor
-        // al crear; dot (zoom) y tirador de ancho aparecen en hover.
-        // EXCEPCIÓN: una tarea/evento/bucle/captura conserva su marcador (checkbox,
-        // icono) → NO es texto limpio, se pinta con el cromo completo de OutlinerNode.
+        // LIMPIO = nodo plano (ni doc, ni vista, ni recurso): se pinta vía OutlinerNode
+        // pero SIN cromo (CSS `.pizarra-node--cleantext`): sin caja ni tiradores grandes.
+        // Una TAREA/evento/bucle/captura también va LIMPIA (mismo estilo que un nodo
+        // normal), pero conserva su MARCADOR (checkbox/icono) → clase `--check`.
         const hasChrome = node.status !== null || node.isEvent || (node.types || []).some(t => t === 'bucle' || t === 'captura')
-        const isPlain = !isText && !elView && !res && !hasChrome
+        const isPlainText = !isText && !elView && !res && !hasChrome   // texto puro
+        const isClean = !isText && !elView && !res                      // limpio (texto o tarea)
         // ¿Tiene nodos hijos? (como las notas): si los tiene, el dot se muestra SIEMPRE
         // (marcado); si no, solo en hover. Misma lógica que los nodos del outliner.
-        const plainHasKids = isPlain && store.children(node.id).some(c => !c.deletedAt)
+        const plainHasKids = isPlainText && store.children(node.id).some(c => !c.deletedAt)
         // ¿Tiene ancho FIJADO por el usuario (_pinW)? Si no, el Texto limpio crece
         // con su contenido (max-content) → el tirador queda pegado al final del texto.
         const hasFixedW = (() => { try { return JSON.parse(node.extraData || '{}')._pinW != null } catch { return false } })()
-        const cleanAutoW = isPlain && !hasFixedW
+        const cleanAutoW = isPlainText && !hasFixedW
         const editing = isText && editText === node.id
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
@@ -1962,7 +1965,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const lod = cam.scale < LOD_SCALE && !editing
         const lodTitle = (node.text || (isText ? 'Documento' : elView ? (elView[0].toUpperCase() + elView.slice(1)) : 'Sin título')).slice(0, 60)
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isPlain ? ' pizarra-node--cleantext' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isClean ? ' pizarra-node--cleantext' : ''}${hasChrome ? ' pizarra-node--check' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
@@ -1972,7 +1975,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
               // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre)
               // DENTRO del border-box → al mover el ratón al dot/handle no se pierde el hover.
-              ...(isPlain ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
+              ...(isPlainText ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
             {lod ? (
               // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
               <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -2051,7 +2054,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             {/* DOT del texto del lienzo: en hover SIEMPRE; sin hover, solo si tiene hijos
                 (marcado, como una nota). Al crear/editar NO aparece: solo el cursor.
                 Clic = ENTRAR en el nodo (su propia página), igual que el bullet de un nodo. */}
-            {isPlain && (hovered || plainHasKids) && !dragPos && (
+            {isPlainText && (hovered || plainHasKids) && !dragPos && (
               <div title="Abrir nodo" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
@@ -2059,7 +2062,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             )}
             {/* Tirador de ancho MÍNIMO (cuadradito): SOLO en hover. El hueco entre el texto
                 y el tirador (padding derecho) es zona de arrastre del nodo. */}
-            {isPlain && hovered && !dragPos && (
+            {isPlainText && hovered && !dragPos && (
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
@@ -2068,7 +2071,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
               <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
-            {showHandles && !isText && !isPlain && ((elView || res) ? (
+            {showHandles && !isText && !isClean && ((elView || res) ? (
               // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
               <>
                 <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
