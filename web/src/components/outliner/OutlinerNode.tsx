@@ -21,7 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree } from '../../utils/tagsHelper'
-import { listContexts, createContext, assignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
+import { listContexts, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
@@ -4142,19 +4142,37 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       key={`ctx-type-${slug}`}
                       className="context-inline"
                       data-slug={slug}
+                      title={`Abrir ${ctxNode.text}`}
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${ctxNode.id}`) }}
                       style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
                         background: ctxColor + '18',
                         color: ctxColor,
                         border: `1px solid ${ctxColor}40`,
                         borderRadius: 4,
                         fontSize: '0.8em',
                         fontWeight: 500,
-                        padding: '0 5px',
+                        padding: '0 4px 0 5px',
                         marginLeft: 4,
                         cursor: 'pointer',
                       }}
                     >
                       {ctxNode.text}
+                      <button
+                        className="ctx-chip-remove"
+                        title="Quitar contexto del nodo"
+                        onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                        onClick={e => {
+                          e.preventDefault(); e.stopPropagation()
+                          const targetId = mirrorOfId ?? node.id
+                          const newTypes = (node.types || []).filter(t => t !== slug)
+                          // Quitar también la @mención del texto si la hubiera.
+                          const newText = (node.text || '').replace(new RegExp('\\s*@' + slug.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&') + '\\b', 'gi'), '').trim()
+                          store.updateNode(targetId, { types: newTypes, text: newText })
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: ctxColor, opacity: 0.6, padding: 0, fontSize: '1em', lineHeight: 1, display: 'flex' }}
+                      >×</button>
                     </span>
                   )
                 })
@@ -4181,14 +4199,22 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                     onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
                     style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 3,
                       background: color + '18', color, border: `1px solid ${color}40`,
                       borderRadius: 4, fontSize: '0.8em', fontWeight: 500,
-                      padding: '0 5px', marginLeft: 4, cursor: 'pointer',
+                      padding: '0 4px 0 5px', marginLeft: 4, cursor: 'pointer',
                       textDecoration: closed ? 'line-through' : 'none',
                       opacity: closed ? 0.6 : 1,
                     }}
                   >
                     {cj.text || 'Contexto'}
+                    <button
+                      className="ctx-chip-remove"
+                      title="Quitar contexto del nodo"
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); unassignContext(mirrorOfId ?? node.id, cid) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color, opacity: 0.6, padding: 0, fontSize: '1em', lineHeight: 1, display: 'flex' }}
+                    >×</button>
                   </span>
                 )
               }).filter(Boolean)
