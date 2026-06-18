@@ -15,7 +15,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
-import { listContexts, contextColor, nodesInContext } from '../../utils/cajones'
+import { listContexts, contextColor, contextParent, nodesInContext } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -284,18 +284,29 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         </div>
       )}
       {(() => {
-        const cajones = listContexts({ onlySub: true }) // subcontextos abiertos = proyectos
-        if (cajones.length === 0) return null
+        const subs = listContexts({ onlySub: true }) // subcontextos abiertos
+        if (subs.length === 0) return null
         return (
           <div className="dc-group">
-            {gHeader('cajones', `📦 Proyectos abiertos · ${cajones.length}`)}
-            {!collapsedG.has('cajones') && cajones.map(c => {
+            {gHeader('cajones', `Contextos · ${subs.length}`)}
+            {!collapsedG.has('cajones') && subs.map(c => {
               const color = contextColor(c.id)
+              const parent = contextParent(c.id)
               const n = nodesInContext(c.id).length
               return (
                 <button key={c.id} className="dc-row dc-row--cajon" onClick={() => navigate(`/node/${c.id}`)}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 0' }}>
-                  <span style={{ color, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.text || 'Cajón'}</span>
+                  <span style={{ color, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.text || 'Contexto'}</span>
+                  {parent && (() => {
+                    const pColor = contextColor(parent.id)
+                    return (
+                      <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
+                        style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
+                        {parent.text}
+                      </span>
+                    )
+                  })()}
+                  <span style={{ flex: 1 }} />
                   {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{n}</span>}
                 </button>
               )

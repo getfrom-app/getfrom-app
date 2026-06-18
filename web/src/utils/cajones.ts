@@ -125,6 +125,8 @@ export function createContext(name: string, parentContextId?: string | null): No
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
+  // Los contextos RAÍZ (sin contexto padre) son la base: no se cierran.
+  if (!contextParent(nodeId)) return
   const e = ed(n)
   if (closed) e._closed = '1'
   else delete e._closed

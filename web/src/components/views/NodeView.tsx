@@ -2248,16 +2248,22 @@ export default function NodeView() {
                   )
                 })()}
                 <span style={{ flex: 1 }} />
-                <span style={{ fontSize: 12, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>
-                  {closed ? 'Cerrado' : 'Abierto'}
-                </span>
-                <button
-                  onClick={() => setContextClosed(node.id, !closed)}
-                  title={closed ? 'Reabrir contexto' : 'Cerrar contexto (terminado)'}
-                  style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}
-                >
-                  {closed ? 'Reabrir' : 'Cerrar'}
-                </button>
+                {/* Solo los SUBCONTEXTOS (proyectos) se abren/cierran. Los contextos
+                    raíz son la base: siempre activos, sin toggle. */}
+                {parent && (
+                  <>
+                    <span style={{ fontSize: 12, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>
+                      {closed ? 'Cerrado' : 'Abierto'}
+                    </span>
+                    <button
+                      onClick={() => setContextClosed(node.id, !closed)}
+                      title={closed ? 'Reabrir proyecto' : 'Cerrar proyecto (terminado)'}
+                      style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}
+                    >
+                      {closed ? 'Reabrir' : 'Cerrar'}
+                    </button>
+                  </>
+                )}
               </div>
               {assigned.length > 0 && (
                 <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
