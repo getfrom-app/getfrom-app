@@ -2213,76 +2213,8 @@ export default function NodeView() {
 
         </div>
 
-        {/* ── Banner de CONTEXTO: estado abierto/cerrado + contexto padre + lo que
-              tiene asignado. El propio body/hijos del contexto son su "nota". ── */}
-        {isCtxTreeNode(node.id) && !(node.text || '').startsWith('🧠') && !(() => { try { return JSON.parse(node.extraData || '{}')._perfilIA === '1' } catch { return false } })() && (() => {
-          const closed = isContextClosed(node)
-          const color = contextColor(node.id)
-          const parent = contextParent(node.id)
-          const assigned = nodesInContext(node.id)
-          return (
-            <div className="ctx-banner" style={{ margin: '0 0 14px', padding: '10px 14px', borderRadius: 10, border: `1px solid ${color}40`, background: color + '12' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 600, color }}>{isProject(node) ? 'Proyecto' : 'Contexto'}</span>
-                {/* Contexto padre: aplicar un contexto a un contexto lo reparenta
-                    (lo convierte en subcontexto del elegido). Badge vacío si no tiene. */}
-                {(() => {
-                  // Candidatos: contextos que no son ni este nodo ni descendientes suyos.
-                  const isDesc = (cand: string) => {
-                    let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand)
-                    let g = 0
-                    while (cur && g++ < 60) { if (cur.id === node.id) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null }
-                    return false
-                  }
-                  const candidates = listContextsForParent().filter(c => c.id !== node.id && !isDesc(c.id) && c.id !== parent?.id)
-                  return (
-                    <select
-                      value=""
-                      onChange={e => { if (e.target.value) reparentContext(node.id, e.target.value) }}
-                      title="Contexto padre"
-                      style={{ fontSize: 12, color, background: parent ? color + '18' : 'transparent', border: `1px dashed ${color}66`, borderRadius: 4, padding: '1px 4px', cursor: 'pointer' }}
-                    >
-                      <option value="">{parent ? `en ${parent.text} ▾` : '+ contexto padre'}</option>
-                      {candidates.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
-                    </select>
-                  )
-                })()}
-                <span style={{ flex: 1 }} />
-                {/* Solo los PROYECTOS se abren/cierran. Las áreas son la base. */}
-                {isProject(node) && (
-                  <>
-                    <span style={{ fontSize: 12, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>
-                      {closed ? 'Cerrado' : 'Abierto'}
-                    </span>
-                    <button
-                      onClick={() => setContextClosed(node.id, !closed)}
-                      title={closed ? 'Reabrir proyecto' : 'Cerrar proyecto (terminado)'}
-                      style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}
-                    >
-                      {closed ? 'Reabrir' : 'Cerrar'}
-                    </button>
-                  </>
-                )}
-              </div>
-              {assigned.length > 0 && (
-                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Contiene · {assigned.length}</div>
-                  {assigned.map(a => (
-                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
-                        {a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}
-                      </span>
-                      <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>
-                        {a.text || '(sin texto)'}
-                      </button>
-                      <button onClick={() => unassignContext(a.id, node.id)} title="Quitar del contexto" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })()}
+        {/* (El estado/padre/«Contiene» del contexto viven en la columna derecha —
+            ContextPropertiesPanel. El centro queda como lienzo limpio.) */}
 
         <div className="view-body">
           {/* ── Documento (texto rico, TipTap) — ocupa toda la view-body y reemplaza

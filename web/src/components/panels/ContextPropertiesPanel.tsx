@@ -4,10 +4,12 @@
  * la ventana central; aquí van sus propiedades (color, conocimiento) + ← Atrás.
  */
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { extractContextKnowledge } from '../../api/autoClassify'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
+import { isProject, isContextClosed, setContextClosed, contextParent, listContextsForParent, reparentContext, nodesInContext, unassignContext } from '../../utils/cajones'
 
 const COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#059669', '#ca8a04', '#dc2626', '#db2777', '#64748b']
 
@@ -19,6 +21,7 @@ interface Props {
 export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const s = useStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const node = s.getNode(nodeId)
   const [updating, setUpdating] = useState(false)
 
@@ -93,6 +96,60 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Estado abierto/cerrado — solo proyectos (las áreas son la base) */}
+        {isProject(node) && (() => {
+          const closed = isContextClosed(node)
+          return (
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Estado</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ flex: 1, fontSize: 13, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>{closed ? 'Cerrado' : 'Abierto'}</span>
+                <button onClick={() => setContextClosed(nodeId, !closed)}
+                  style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}>
+                  {closed ? 'Reabrir' : 'Cerrar'}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Contexto padre — aplicar un contexto a este contexto lo anida */}
+        {(() => {
+          const parent = contextParent(nodeId)
+          const isDesc = (cand: string) => { let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand); let g = 0; while (cur && g++ < 60) { if (cur.id === nodeId) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null } return false }
+          const candidates = listContextsForParent().filter(c => c.id !== nodeId && !isDesc(c.id) && c.id !== parent?.id)
+          return (
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Contexto padre</div>
+              <select value="" onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value) }}
+                style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
+                <option value="">{parent ? `en ${parent.text} — cambiar…` : '+ añadir contexto padre'}</option>
+                {candidates.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
+              </select>
+            </div>
+          )
+        })()}
+
+        {/* Contiene — nodos asignados a este contexto */}
+        {(() => {
+          const assigned = nodesInContext(nodeId)
+          if (assigned.length === 0) return null
+          return (
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Contiene · {assigned.length}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {assigned.map(a => (
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}</span>
+                    <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{a.text || '(sin texto)'}</button>
+                    <button onClick={() => unassignContext(a.id, nodeId)} title="Quitar del contexto" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Color */}
         <div>
           <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
