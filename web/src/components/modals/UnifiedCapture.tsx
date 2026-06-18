@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
-import { listCajones, assignCajon, isCajon as isCajonNode } from '../../utils/cajones'
+import { listCajones, assignCajon, isCajon as isCajonNode, createCajon, cajonColor } from '../../utils/cajones'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -920,6 +920,27 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       // 1. @ picker (ya manejado arriba)
       // 2. ctx suggestion → aceptar ghost text
       if (ctxSuggestion) { acceptCtx(); return }
+      // 2.5. Cajón vía #nombre al final → crear/encontrar el cajón con ESTE Enter; el
+      //      texto restante queda para la tarea (segundo Enter). Si el cajón existe,
+      //      el ghost-text (paso 2) ya lo habría capturado; aquí van los NUEVOS.
+      {
+        const cur = getCurrentText()
+        const m = cur.match(/(?:^|\s)#([^#@]+?)\s*$/)
+        if (m && m[1].trim()) {
+          const name = m[1].trim()
+          const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+          const existing = listCajones().find(c => norm(c.text || '') === norm(name))
+          const cid = existing ? existing.id : createCajon(name).id
+          setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
+          const cleaned = cur.replace(/(?:\s*)#[^#@]+?\s*$/, '').replace(/\s+$/, '')
+          skipNextInputRef.current = true
+          if (inputRef.current) inputRef.current.textContent = cleaned
+          setText(cleaned)
+          setCtxSuggestion(null); setAtPicker(null)
+          setJustAcceptedCtx(true)  // próximo Enter crea la tarea directamente
+          return
+        }
+      }
       // 2b. Acabamos de aceptar un contexto → el siguiente Enter crea directamente
       if (justAcceptedCtx) {
         setJustAcceptedCtx(false)
@@ -944,11 +965,22 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
   }
 
   // ── Ghost text ─────────────────────────────────────────────────────────────
+  // ¿Hay un `#nombre` NUEVO al final (no coincide con cajón existente)? → ghost "crear".
+  const newCajonName = (() => {
+    const m = text.match(/(?:^|\s)#([^#@]+?)\s*$/)
+    if (!m || !m[1].trim()) return null
+    const name = m[1].trim()
+    const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    if (listCajones().some(c => norm(c.text || '') === norm(name))) return null // existe → ghost normal
+    return name
+  })()
+
   const ghostLabel = (() => {
     if (ctxSuggestion) {
       const typed = ctxSuggestion.displayName.slice(0, ctxSuggestion.typedLen)
       return `${ctxSuggestion.cajonId ? '📦 ' : ''}${typed}${ctxSuggestion.ghost}`
     }
+    if (newCajonName) return `📦 Crear «${newCajonName}»`
     if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
     if (taskPrediction) return '☐ tarea'
@@ -956,7 +988,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     return null
   })()
 
-  const ghostAcceptKey = ctxSuggestion ? '⇥' : (forceType === 'bucle' || (taskPrediction && !datePrediction)) ? '↵' : '⇥'
+  const ghostAcceptKey = ctxSuggestion ? '⇥' : newCajonName ? '↵' : (forceType === 'bucle' || (taskPrediction && !datePrediction)) ? '↵' : '⇥'
 
   // ── Icon helper ────────────────────────────────────────────────────────────
   function itemIcon(item: PaletteItem): string {
@@ -1187,18 +1219,16 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             {pendingCajones.map(cid => {
               const cj = store.getNode(cid)
               if (!cj) return null
+              const color = cajonColor(cid)
               return (
                 <span key={cid} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 3,
-                  background: '#0ea5a4', color: 'white',
-                  borderRadius: 20, padding: '2px 6px 2px 5px',
-                  fontSize: 11, fontWeight: 500, flexShrink: 0,
+                  color, fontWeight: 600, fontSize: 12, flexShrink: 0,
                 }}>
-                  <span style={{ opacity: 0.85 }}>📦</span>
                   {cj.text}
                   <button
                     onMouseDown={e => { e.preventDefault(); setPendingCajones(prev => prev.filter(x => x !== cid)) }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'white', opacity: 0.7, padding: 0, fontSize: 11, lineHeight: 1 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color, opacity: 0.6, padding: 0, fontSize: 12, lineHeight: 1 }}
                   >×</button>
                 </span>
               )

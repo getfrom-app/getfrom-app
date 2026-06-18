@@ -4180,14 +4180,15 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                     onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
                     style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 3,
-                      background: color + '18', color, border: `1px solid ${color}40`,
-                      borderRadius: 4, fontSize: '0.8em', fontWeight: 500,
-                      padding: '0 5px', marginLeft: 4, cursor: 'pointer',
-                      opacity: closed ? 0.55 : 1,
+                      // Cajón = texto limpio coloreado, SIN fondo ni borde (a diferencia
+                      // del contexto, que sí lleva caja). Solo el color lo distingue.
+                      color, fontWeight: 600, fontSize: '0.85em',
+                      marginLeft: 5, cursor: 'pointer',
+                      textDecoration: closed ? 'line-through' : 'none',
+                      opacity: closed ? 0.6 : 1,
                     }}
                   >
-                    <span style={{ fontSize: '0.9em' }}>📦</span>{cj.text || 'Cajón'}
+                    {cj.text || 'Cajón'}
                   </span>
                 )
               }).filter(Boolean)
