@@ -563,6 +563,24 @@ Puedes asignar más de un contexto al mismo nodo. También funciona en la captur
 
 Los contextos son nodos raíz especiales con `_tagDefinition` internamente. No son carpetas del sistema: son nodos normales del árbol a los que Fromly asigna función de etiqueta.
 
+### Proyectos: contextos que se abren y se cierran
+
+Dentro de un contexto grande (un «área» como Media Sector) puedes crear **proyectos** — subcontextos pequeños que empiezan y terminan. Son contextos normales, solo que **se abren y se cierran**.
+
+**Crear y asignar con `#`.** Escribe `#nombre` en cualquier nodo o en la captura rápida:
+- Si no existe, Fromly lo crea. Si escribes `#nombre` solo (sin más texto), te lleva directo al nuevo contexto.
+- Mientras tecleas el nombre (aunque no pongas `#`), aparece como sugerencia (ghost text). Pulsa `Enter` o `Tab` para asignarlo.
+- Al asignar un proyecto a una tarea, la tarea no se mueve: sigue en tu agenda y, a la vez, «entra» en el proyecto.
+
+**La página de un proyecto.** El centro es un lienzo limpio para tus notas, logs, tablas, PDFs e imágenes. En la columna derecha:
+- **Estado**: botón **Cerrar / Reabrir** (solo en proyectos; las áreas raíz están siempre activas). Un proyecto cerrado desaparece de las sugerencias pero conserva todo.
+- **Contexto padre**: elige un contexto y este proyecto pasa a ser su subcontexto.
+- **Contiene**: todo lo que tiene asignado, con un clic para abrirlo y una `×` para quitarlo.
+
+**Chips de contexto.** En cualquier nodo, haz **clic** en un chip de contexto para abrirlo, o pulsa la **×** para quitarlo de ese nodo.
+
+**En la columna de hoy** aparece la sección **«Contextos»** con tus proyectos abiertos, cada uno con su contexto padre al lado y cuántas cosas contiene.
+
 ### Filtrar por contexto desde el sidebar
 
 Haz clic en cualquier contexto del sidebar. El árbol central se filtra mostrando todos los nodos con ese contexto asignado, y el panel derecho muestra el contenido del contexto.

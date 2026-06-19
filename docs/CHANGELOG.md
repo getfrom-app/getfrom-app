@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.438 · Mac v9.5.61 — 19 junio 2026 · Contextos y proyectos unificados
+
+Un solo concepto para organizar: el **contexto**. Las áreas grandes (Media Sector, La Isla…) son tus contextos de base; dentro de ellas creas **proyectos** (subcontextos) que **se abren y se cierran** cuando empiezan y terminan, sin perder nada.
+
+**Crear y asignar, rápido**
+- Escribe **`#nombre`** en cualquier nodo o en la captura rápida: si no existe, lo crea; si lo escribes solo, te lleva directo a él.
+- También aparece como sugerencia (ghost text) al teclear el nombre, aunque no pongas `#`. Enter o Tab lo asigna.
+- Asigna un contexto a una tarea sin moverla: la tarea sigue en tu agenda y, a la vez, «entra» en el proyecto.
+
+**La página de un contexto**
+- El centro es un lienzo limpio para tus notas, logs, tablas, PDFs e imágenes del proyecto.
+- En la columna derecha: **estado abierto/cerrado** (solo proyectos), **contexto padre** (elige uno y este pasa a ser su subcontexto) y **«Contiene»** con todo lo asignado.
+
+**Chips de contexto, unificados**
+- Clic en cualquier chip → **abre** ese contexto. La pequeña **×** → lo **quita** del nodo.
+
+**En la columna de hoy**
+- Nueva sección **«Contextos»**: tus proyectos abiertos, cada uno con su contexto padre al lado y cuántas cosas contiene.
+
+**Lienzo más limpio**
+- Las tareas en el lienzo se ven como un nodo normal (sin caja ni tiradores), conservando su casilla.
+
+---
+
 ## Web v9.6.424 · iPhone/iPad v2.8 (build 138) — 18 junio 2026 · Paridad total en iPhone y iPad
 
 Una tanda enorme que deja la app de iPhone y iPad a la altura de la web, y la versión **2.8 enviada a revisión**.
