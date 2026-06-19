@@ -3,7 +3,7 @@ import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelpe
 import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
 import { classifyNodeRoot } from '../../utils/homeHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
-import { listTemplates, applyTemplate } from '../../utils/tagsHelper'
+import { listTemplates, applyTemplate, findTagNodeBySlug } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -1908,6 +1908,29 @@ export default function NodeView() {
               className="node-title"
               contentEditable={!isLocked ? 'true' : 'false'}
               suppressContentEditableWarning
+              onMouseDownCapture={e => {
+                // Clic en un chip de @contexto del título: la X lo quita, el chip
+                // navega. Evita que el contentEditable se enfoque (mostraría texto raw).
+                const tgt = e.target as HTMLElement
+                const rm = tgt.classList.contains('ctx-chip-remove') ? tgt : (tgt.closest('.ctx-chip-remove') as HTMLElement | null)
+                if (rm && node) {
+                  e.preventDefault(); e.stopPropagation()
+                  const slug = rm.dataset.slug || rm.closest('.context-inline')?.getAttribute('data-slug') || ''
+                  if (slug) {
+                    const esc = slug.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+                    const newText = (node.text || '').replace(new RegExp('\\s*@' + esc + '\\b', 'gi'), '').trim()
+                    store.updateNode(node.id, { types: (node.types || []).filter(tt => tt !== slug), text: newText })
+                  }
+                  return
+                }
+                const chip = tgt.classList.contains('context-inline') ? tgt : (tgt.closest('.context-inline') as HTMLElement | null)
+                if (chip) {
+                  e.preventDefault(); e.stopPropagation()
+                  const slug = chip.getAttribute('data-slug') || ''
+                  const ctxNode = slug ? findTagNodeBySlug(slug) : null
+                  if (ctxNode) navigate(`/node/${ctxNode.id}`)
+                }
+              }}
               onFocus={() => {
                 setTitleEditing(true)
                 // Mostrar texto raw para editar (sin HTML de tags)
