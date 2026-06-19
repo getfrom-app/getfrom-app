@@ -131,22 +131,32 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Contiene — nodos asignados a este contexto */}
+        {/* Contiene — agrupado por tipo (Tareas / Eventos / Notas), con cabeceras
+            al estilo de la columna derecha del día. */}
         {(() => {
           const assigned = nodesInContext(nodeId)
           if (assigned.length === 0) return null
+          const eventos = assigned.filter(a => a.isEvent)
+          const tareas = assigned.filter(a => !a.isEvent && a.status != null)
+          const notas = assigned.filter(a => !a.isEvent && a.status == null)
+          const row = (a: typeof assigned[number]) => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{a.isEvent ? '◷' : a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}</span>
+              <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{a.text || '(sin texto)'}</button>
+              <button onClick={() => unassignContext(a.id, nodeId)} title="Quitar del contexto" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
+            </div>
+          )
+          const block = (label: string, items: typeof assigned, cls = '') => items.length === 0 ? null : (
+            <div className="dc-group">
+              <div className={`dc-group-label ${cls}`} style={{ marginBottom: 6 }}>{label} · {items.length}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{items.map(row)}</div>
+            </div>
+          )
           return (
-            <div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Contiene · {assigned.length}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {assigned.map(a => (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}</span>
-                    <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{a.text || '(sin texto)'}</button>
-                    <button onClick={() => unassignContext(a.id, nodeId)} title="Quitar del contexto" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
-                  </div>
-                ))}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {block('Tareas', tareas)}
+              {block('Eventos', eventos)}
+              {block('Notas', notas)}
             </div>
           )
         })()}
