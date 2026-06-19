@@ -82,7 +82,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                   onClick={e => { e.stopPropagation(); store.updateNode(a.id, { status: a.status === 'done' ? 'pending' : 'done' }) }}
                   title="Marcar hecha/pendiente">{a.status === 'done' ? '✓' : ''}</button>
               ) : (
-                <span className="dc-check" style={{ border: 'none', background: 'none', color: 'var(--text-tertiary)' }}>·</span>
+                <span className="dc-check" style={{ border: 'none', background: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-tertiary)', flexShrink: 0 }} />
+                </span>
               )}
               <span className="dc-text">{a.text || '(sin texto)'}</span>
               <span style={{ flex: 1 }} />
