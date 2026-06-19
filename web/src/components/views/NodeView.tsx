@@ -2182,7 +2182,7 @@ export default function NodeView() {
                 </svg>
               </button>
               {/* ── Convertir en contexto — no en nodos que ya son contexto ── */}
-              {!isCtxTreeNode(node.id) && !contextParent(node.id) && (
+              {!isCtxTreeNode(node.id) && (
                 <button
                   className="node-action-icon-btn"
                   onClick={convertToContext}
