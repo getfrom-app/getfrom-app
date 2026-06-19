@@ -343,7 +343,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         const c = store.getNode(ctxMenu.id)
         if (!c) return null
         const closed = isContextClosed(c)
-        const canClose = isProject(c) // solo los proyectos se cierran
+        const canClose = isProject(c) || !!contextParent(c.id) // subcontextos se cierran
         return (
           <>
             <div onClick={() => setCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setCtxMenu(null) }}

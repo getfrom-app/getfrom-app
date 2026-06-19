@@ -96,8 +96,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto/cerrado — solo proyectos (las áreas son la base) */}
-        {isProject(node) && (() => {
+        {/* Estado abierto/cerrado — subcontextos (proyectos). Las áreas raíz son la
+            base y no se cierran. Un subcontexto = tiene un contexto padre. */}
+        {(isProject(node) || contextParent(nodeId)) && (() => {
           const closed = isContextClosed(node)
           return (
             <div>

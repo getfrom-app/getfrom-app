@@ -130,11 +130,13 @@ export function createContext(name: string, parentContextId?: string | null): No
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  // Solo los PROYECTOS se cierran; las áreas son la base.
-  if (!isProject(n)) return
+  // Se cierran los SUBCONTEXTOS (proyectos): un contexto con contexto padre, o ya
+  // marcado como proyecto. Las áreas raíz son la base y no se cierran.
+  if (!isProject(n) && !contextParent(nodeId)) return
   const e = ed(n)
   if (closed) e._closed = '1'
   else delete e._closed
+  e._ctx = '1' // al cerrar/reabrir, queda marcado como proyecto de pleno derecho
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
