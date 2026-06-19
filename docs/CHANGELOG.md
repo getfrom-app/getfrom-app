@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.459 · Mac v9.5.62 — 19 junio 2026 · Contextos: panel completo y pulido
+
+Continuación del modelo de contextos, ahora con un panel lateral completo y muchos detalles.
+
+**La página de un contexto (columna derecha)**
+- **Estado abierto/cerrado** del proyecto en un botón compacto, **contexto padre** (elígelo y este pasa a ser subcontexto), y **«Contiene»** separado en bloques **Tareas / Eventos / Notas** con casillas reales.
+- **Subcontextos** del contexto, separados en **abiertos** y **cerrados**.
+- Menú de clic derecho en cada contexto de la columna de hoy: **cerrar/reabrir** o **eliminar**, con animación.
+
+**Desde cualquier nota o tarea**
+- **Convierte la nota en contexto** con un icono de la barra superior (se mueve a 🧠 Contexto).
+- **Favorito (★)** siempre visible en la barra superior.
+- Sus **contextos** aparecen en la columna derecha para navegar a ellos de un clic.
+- En una **tarea**, edita **fecha, prioridad y repetición** directamente en la columna derecha.
+
+**Detalles**
+- Los chips de contexto: **clic para abrir**, **× para quitar** (en el texto, el título y el lienzo).
+- El **color** de un contexto se hereda de su contexto padre (o el de Ajustes); sin selector por contexto.
+- Las **tareas en la columna de hoy** se ven a dos líneas (texto completo arriba, fecha y contexto debajo).
+- Cabeceras de todas las columnas derechas unificadas con el estilo de la columna de hoy.
+- El `@` de un email ya no crea contextos por error.
+
+---
+
 ## Web v9.6.438 · Mac v9.5.61 — 19 junio 2026 · Contextos y proyectos unificados
 
 Un solo concepto para organizar: el **contexto**. Las áreas grandes (Media Sector, La Isla…) son tus contextos de base; dentro de ellas creas **proyectos** (subcontextos) que **se abren y se cierran** cuando empiezan y terminan, sin perder nada.
