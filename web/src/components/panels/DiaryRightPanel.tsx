@@ -55,7 +55,7 @@ export default function DiaryRightPanel({ diaryDate: _diaryDate, rangeType: _ran
       </div>
 
       {/* Resultados del filtro — Outliner nativo con contexto completo */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 88 }}>
         {count === 0 ? (
           <div style={{
             padding: '24px 12px', textAlign: 'center',

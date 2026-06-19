@@ -30,7 +30,7 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
       if (id) window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
     }
     return (
-      <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onClick}>
+      <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px 88px' }} onClick={onClick}>
         <NoteColumn node={node} />
       </div>
     )
@@ -49,7 +49,7 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
   }
 
   return (
-    <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px' }} onClick={onPanelClick}>
+    <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px 88px' }} onClick={onPanelClick}>
       {/* La columna derecha persiste en pizarra Y en lista: eventos + atrasadas/hoy/
           bucles + capturas. Los NODOS del día NO van aquí (includeNodes=false):
           viven en el lienzo (pizarra) o inline en el centro (lista). */}
