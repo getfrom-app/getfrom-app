@@ -294,9 +294,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               const parent = contextParent(c.id)
               const n = nodesInContext(c.id).length
               return (
-                <button key={c.id} className="dc-row dc-row--cajon" onClick={() => navigate(`/node/${c.id}`)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '3px 0' }}>
-                  <span style={{ color, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.text || 'Contexto'}</span>
+                <div key={c.id} className="dc-row dc-row--cajon" onClick={() => navigate(`/node/${c.id}`)}>
+                  {/* Icono de contexto (en el sitio del checkbox), en su color */}
+                  <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/>
+                      <circle cx="5.2" cy="5.2" r="1"/>
+                    </svg>
+                  </span>
+                  <span className="dc-text">{c.text || 'Contexto'}</span>
                   {parent && (() => {
                     const pColor = contextColor(parent.id)
                     return (
@@ -308,7 +314,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                   })()}
                   <span style={{ flex: 1 }} />
                   {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{n}</span>}
-                </button>
+                </div>
               )
             })}
           </div>
