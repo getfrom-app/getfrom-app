@@ -28,20 +28,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px', height: 40, flexShrink: 0, borderBottom: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-secondary)', padding: '3px 6px', borderRadius: 4, flexShrink: 0 }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-        >
-          {t('ctxProps.back', '← Contextos')}
-        </button>
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {node.text}
-        </span>
-      </div>
-
+      {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Estado abierto/cerrado — subcontextos (proyectos). Las áreas raíz son la
             base y no se cierran. Un subcontexto = tiene un contexto padre. */}
