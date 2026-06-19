@@ -117,6 +117,40 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
+        {/* Subcontextos (proyectos hijos): abiertos y cerrados, separados. */}
+        {(() => {
+          const kids = store.children(nodeId).filter(c => !c.deletedAt && isProject(c))
+          if (kids.length === 0) return null
+          const abiertos = kids.filter(c => !isContextClosed(c))
+          const cerrados = kids.filter(c => isContextClosed(c))
+          const ctxRow = (c: ReturnType<typeof store.getNode>, closed: boolean) => c && (
+            <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}>
+              <span className="dc-check" style={{ border: 'none', background: 'none', color: contextColor(c.id) }}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
+                </svg>
+              </span>
+              <span className="dc-text" style={{ textDecoration: closed ? 'line-through' : 'none', opacity: closed ? 0.6 : 1 }}>{c.text || 'Contexto'}</span>
+            </div>
+          )
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {abiertos.length > 0 && (
+                <div className="dc-group">
+                  <div className="dc-group-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
+                </div>
+              )}
+              {cerrados.length > 0 && (
+                <div className="dc-group">
+                  <div className="dc-group-label" style={{ marginBottom: 6 }}>Cerrados · {cerrados.length}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cerrados.map(c => ctxRow(c, true))}</div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {/* (Selector de color retirado: el contexto hereda el color de su padre, o
             el color por defecto de Ajustes.) */}
 
