@@ -2049,7 +2049,7 @@ export default function NodeView() {
               document.body
             )}
             {/* Badge de contexto — inline junto al título, alineado con el texto */}
-            {!isContextNode && !node.isDiaryEntry && (() => {
+            {!isContextNode && !isCtxTreeNode(node.id) && !contextParent(node.id) && !node.isDiaryEntry && (() => {
               const tagsRoot = findContextRoot()
               if (!tagsRoot || store.children(tagsRoot.id).filter(n => !n.deletedAt).length === 0) return null
               if (nodeViewManualCtxId) {
