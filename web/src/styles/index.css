@@ -13173,6 +13173,29 @@ textarea:focus-visible,
   color: var(--text-tertiary);
   padding: 3px 8px;
 }
+/* Cabecera unificada de columnas derechas (contexto, agente, prompt, filtros…),
+   con el MISMO aire que la columna de hoy: mayúsculas + punto coloreado delante.
+   El color se hereda (currentColor); por defecto el acento, o se fija inline. */
+.rc-section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 3px 0;
+}
+.rc-section-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
 
 /* ── Lente de contexto (filtro por contexto) ── */
 .ctx-lens { position: relative; padding: 4px 8px 8px; }

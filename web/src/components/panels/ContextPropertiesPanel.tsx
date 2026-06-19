@@ -36,14 +36,14 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const closed = isContextClosed(node)
           return (
             <div>
-              <div className="dc-group-label" style={{ marginBottom: 6 }}>Estado</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ flex: 1, fontSize: 13, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>{closed ? 'Cerrado' : 'Abierto'}</span>
-                <button onClick={() => setContextClosed(nodeId, !closed)}
-                  style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${color}55`, background: closed ? color : 'transparent', color: closed ? '#fff' : color }}>
-                  {closed ? 'Reabrir' : 'Cerrar'}
-                </button>
-              </div>
+              <div className="rc-section-label" style={{ marginBottom: 6 }}>Estado</div>
+              <button onClick={() => setContextClosed(nodeId, !closed)}
+                title={closed ? 'Reabrir proyecto' : 'Cerrar proyecto'}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, cursor: 'pointer', font: 'inherit', border: `1px solid ${color}40`, background: color + '12' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: closed ? 'var(--text-tertiary)' : '#16a34a', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{closed ? 'Cerrado' : 'Abierto'}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color, opacity: 0.85 }}>· {closed ? 'Reabrir' : 'Cerrar'}</span>
+              </button>
             </div>
           )
         })()}
@@ -55,7 +55,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const candidates = listContextsForParent().filter(c => c.id !== nodeId && !isDesc(c.id) && c.id !== parent?.id)
           return (
             <div>
-              <div className="dc-group-label" style={{ marginBottom: 6 }}>Contexto padre</div>
+              <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto padre</div>
               <select value="" onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value) }}
                 style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
                 <option value="">{parent ? `en ${parent.text} — cambiar…` : '+ añadir contexto padre'}</option>
@@ -91,7 +91,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
           const block = (label: string, items: typeof assigned, cls = '') => items.length === 0 ? null : (
             <div className="dc-group">
-              <div className={`dc-group-label ${cls}`} style={{ marginBottom: 6 }}>{label} · {items.length}</div>
+              <div className={`rc-section-label ${cls}`} style={{ marginBottom: 6 }}>{label} · {items.length}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{items.map(row)}</div>
             </div>
           )
@@ -124,13 +124,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {abiertos.length > 0 && (
                 <div className="dc-group">
-                  <div className="dc-group-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
                 </div>
               )}
               {cerrados.length > 0 && (
                 <div className="dc-group">
-                  <div className="dc-group-label" style={{ marginBottom: 6 }}>Cerrados · {cerrados.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Cerrados · {cerrados.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cerrados.map(c => ctxRow(c, true))}</div>
                 </div>
               )}

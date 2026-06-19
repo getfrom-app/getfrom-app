@@ -161,7 +161,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Activar / pausar */}
         <div>
-          <div className="dc-group-label" style={{ marginBottom: 6 }}>
+          <div className="rc-section-label" style={{ marginBottom: 6 }}>
             {t('agents.stateTitle', 'Estado')}
           </div>
           <button
@@ -205,7 +205,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
 
         {/* Programación */}
         <div>
-          <div className="dc-group-label" style={{ marginBottom: 6 }}>
+          <div className="rc-section-label" style={{ marginBottom: 6 }}>
             {t('agents.scheduleTitle', 'Programación')}
           </div>
           <select

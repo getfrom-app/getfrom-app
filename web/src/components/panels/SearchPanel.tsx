@@ -288,7 +288,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
       {panels.length > 0 && (
-        <div className="rp-section-label">
+        <div className="rc-section-label">
           Filtros
         </div>
       )}
@@ -442,7 +442,7 @@ function FavoritesSection() {
 
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
-      <div className="rp-section-label">
+      <div className="rc-section-label">
         Favoritos
       </div>
       {favorites.slice(0, 15).map(n => {
