@@ -18,7 +18,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { findContextRoot } from './rootLookup'
-import { ensureTagDefinition, getNodeTagSlug } from './tagsHelper'
+import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper'
 
 const PROJECT_DEFAULT_COLOR = '#7c3aed'
 
@@ -223,11 +223,17 @@ export function unassignContext(nodeId: string, contextId: string): void {
 /** Nodos asignados a un contexto: por ID (_ctxRefs) O por slug clásico (@contexto
  *  en types[]). Para mostrar el contenido en la página del contexto. */
 export function nodesInContext(contextId: string): Node[] {
-  const slug = getNodeTagSlug(contextId)
+  // Acepta slug COMPLETO (media-sector/app…), slug HOJA (app…, como en las @menciones
+  // del texto) y el slug del texto — robusto ante reparentados.
+  const full = getNodeTagSlug(contextId)
+  const c = store.getNode(contextId)
+  const slugs = new Set<string>()
+  if (full) { slugs.add(full); const leaf = full.split('/').pop(); if (leaf) slugs.add(leaf) }
+  if (c) { const ts = textToTagSlug(c.text || ''); if (ts) slugs.add(ts) }
   return store.allActive().filter(n => {
     if (n.deletedAt || n.id === contextId) return false
     if (nodeCtxRefs(n).includes(contextId)) return true
-    if (slug && (n.types || []).includes(slug)) return true
+    if ((n.types || []).some(t => slugs.has(t))) return true
     return false
   })
 }

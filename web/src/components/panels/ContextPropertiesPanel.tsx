@@ -3,12 +3,10 @@
  * Patrón unificado con Prompts y Agentes: el contenido del contexto se abre en
  * la ventana central; aquí van sus propiedades (color, conocimiento) + ← Atrás.
  */
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { extractContextKnowledge } from '../../api/autoClassify'
-import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext } from '../../utils/cajones'
 
 
@@ -22,49 +20,11 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const node = s.getNode(nodeId)
-  const [updating, setUpdating] = useState(false)
 
   // Color heredado del contexto padre (o por defecto de Ajustes). Sin selector.
   const color = useMemo(() => contextColor(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node) return null
-
-  async function updateKnowledge() {
-    if (updating) return
-    setUpdating(true)
-    try {
-      const directChildren = store.children(nodeId).filter(n => !n.deletedAt)
-      const samples: string[] = []
-      for (const child of directChildren) {
-        if (child.text?.trim() && !(child.text || '').startsWith('🧠')) samples.push(child.text.trim())
-        if (samples.length >= 60) break
-        for (const gc of store.children(child.id).filter(n => !n.deletedAt)) {
-          if (gc.text?.trim()) samples.push(gc.text.trim())
-          if (samples.length >= 60) break
-        }
-      }
-      if (samples.length === 0) { setUpdating(false); return }
-      const knowledge = await extractContextKnowledge(node!.text || '', '', samples)
-      const KNOWLEDGE_NODE_TEXT = CONTEXT_KNOWLEDGE  // Fase 1: crea viejo; reconoce ambos
-      const existing = store.children(nodeId).find(n => !n.deletedAt && isContextKnowledge(n.text))
-      const kid = existing ? existing.id : store.createNode({ text: KNOWLEDGE_NODE_TEXT, parentId: nodeId, siblingOrder: -1000 }).id
-      const subnodes: Record<string, string> = {
-        'Palabras clave:': `Palabras clave: ${knowledge.keywords.join(', ')}`,
-        'Personas:':       `Personas: ${knowledge.people.length ? knowledge.people.join(', ') : '—'}`,
-        'Temas frecuentes:': `Temas frecuentes: ${knowledge.topics.join(', ')}`,
-      }
-      const existingKids = store.children(kid).filter(n => !n.deletedAt)
-      let order = 1000
-      for (const [prefix, text] of Object.entries(subnodes)) {
-        const ex = existingKids.find(n => (n.text || '').startsWith(prefix))
-        if (ex) store.updateNode(ex.id, { text })
-        else store.createNode({ text, parentId: kid, siblingOrder: order })
-        order += 1000
-      }
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('ctxProps.knowledgeUpdated', 'Conocimiento actualizado'), type: 'success' } }))
-    } catch { /* ignore */ }
-    setUpdating(false)
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -160,22 +120,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
         {/* (Selector de color retirado: el contexto hereda el color de su padre, o
             el color por defecto de Ajustes.) */}
 
-        {/* Lo que From sabe */}
-        <div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
-            {t('ctxProps.knowledgeTitle', 'Lo que From sabe')}
-          </div>
-          <button
-            onClick={updateKnowledge}
-            disabled={updating}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 11px', fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)', cursor: updating ? 'default' : 'pointer', fontFamily: 'inherit', opacity: updating ? 0.6 : 1 }}
-          >
-            {updating ? t('ctxProps.updating', 'Actualizando…') : `✦ ${t('ctxProps.updateKnowledge', 'Actualizar conocimiento')}`}
-          </button>
-          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.5, marginTop: 8 }}>
-            {t('ctxProps.knowledgeHint', 'Fromly resume las palabras clave, personas y temas de este contexto para entender mejor tus notas.')}
-          </div>
-        </div>
+        {/* (Conocimiento del contexto: Fromly lo actualiza automáticamente al
+            clasificar nodos; ya no hay botón manual.) */}
       </div>
     </div>
   )

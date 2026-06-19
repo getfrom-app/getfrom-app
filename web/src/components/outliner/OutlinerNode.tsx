@@ -1280,7 +1280,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Auto-sync bidireccional: types[] refleja los @contextos del texto.
     // Los #tags han sido eliminados de Fromly — solo @ para contextos.
     const BUILTIN_TYPES = new Set(['bucle', 'captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
-    const atTags = new Set([...(text.match(/@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1)))
+    // `(?<!\w)` → un @ pegado a una palabra (p. ej. en un email manuel@dominio) NO
+    // se interpreta como contexto. Mismo criterio que el render de InlineRenderer.
+    const atTags = new Set([...(text.match(/(?<!\w)@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.replace(/^@/, '')))
     const allContextTags = new Set([...atTags])
     const currentTypes = node.types || []
     const newTypes = [
