@@ -88,6 +88,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               )}
               <span className="dc-text">{a.text || '(sin texto)'}</span>
               <span style={{ flex: 1 }} />
+              {a.status != null && a.due && <span className="dc-due">{new Date(a.due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}</span>}
+              {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10 }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
               <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
             </div>
           )
