@@ -140,10 +140,19 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const tareas = assigned.filter(a => !a.isEvent && a.status != null)
           const notas = assigned.filter(a => !a.isEvent && a.status == null)
           const row = (a: typeof assigned[number]) => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ fontSize: 12, color: a.status === 'done' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{a.isEvent ? '◷' : a.status === 'done' ? '☑' : a.status != null ? '☐' : '·'}</span>
-              <button onClick={() => navigate(`/node/${a.id}`)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)', textDecoration: a.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{a.text || '(sin texto)'}</button>
-              <button onClick={() => unassignContext(a.id, nodeId)} title="Quitar del contexto" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '0 4px', fontSize: 13 }}>×</button>
+            <div key={a.id} className={`dc-row ${a.status === 'done' ? 'dc-row--done' : ''}`} onClick={() => navigate(`/node/${a.id}`)}>
+              {a.isEvent ? (
+                <span className="dc-check" style={{ border: 'none', background: 'none', color: 'var(--text-tertiary)' }}>◷</span>
+              ) : a.status != null ? (
+                <button className={`dc-check ${a.status === 'done' ? 'dc-check--done' : ''}`}
+                  onClick={e => { e.stopPropagation(); store.updateNode(a.id, { status: a.status === 'done' ? 'pending' : 'done' }) }}
+                  title="Marcar hecha/pendiente">{a.status === 'done' ? '✓' : ''}</button>
+              ) : (
+                <span className="dc-check" style={{ border: 'none', background: 'none', color: 'var(--text-tertiary)' }}>·</span>
+              )}
+              <span className="dc-text">{a.text || '(sin texto)'}</span>
+              <span style={{ flex: 1 }} />
+              <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
             </div>
           )
           const block = (label: string, items: typeof assigned, cls = '') => items.length === 0 ? null : (
