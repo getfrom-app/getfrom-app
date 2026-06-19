@@ -198,38 +198,46 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         title={t('daily.markDone')}
         aria-label={t('daily.markDone')}
       >{n.status === 'done' ? '✓' : ''}</button>
-      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
-      {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-      {opts.showDue && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
-        onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-      {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
-      <RowContextChip node={n} />
-      <span className="dc-actions">
-        {opts.inFocus ? (
-          <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
-        ) : n.status === 'done' ? (
-          null /* completada: sin triaje, solo des-completar con el checkbox */
-        ) : (
-          <>
-            <button className="dc-action dc-action--focus" onClick={e => onFocusClick(e, n)} title={t('daily.toFocus')}>🎯</button>
-            <span className="dc-postpone-wrap">
-              <button
-                className="dc-action"
-                onClick={e => { e.stopPropagation(); setPostponeMenuId(id => id === n.id ? null : n.id) }}
-                title={t('daily.postpone')}
-              >⏭</button>
-              {postponeMenuId === n.id && (
-                <span className="dc-postpone-menu" onClick={e => e.stopPropagation()}>
-                  <button onClick={e => onPostpone(e, n, 1)}>{t('daily.tomorrow')}</button>
-                  <button onClick={e => onPostpone(e, n, 7)}>{t('daily.nextWeek')}</button>
-                  <button onClick={e => onPostpone(e, n, null)}>{t('daily.noDate')}</button>
+      {/* Columna: línea 1 = texto (ancho completo) + acciones; línea 2 = meta. */}
+      <div className="dc-row-main">
+        <div className="dc-row-l1">
+          <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
+          <span className="dc-actions">
+            {opts.inFocus ? (
+              <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
+            ) : n.status === 'done' ? (
+              null /* completada: sin triaje, solo des-completar con el checkbox */
+            ) : (
+              <>
+                <button className="dc-action dc-action--focus" onClick={e => onFocusClick(e, n)} title={t('daily.toFocus')}>🎯</button>
+                <span className="dc-postpone-wrap">
+                  <button
+                    className="dc-action"
+                    onClick={e => { e.stopPropagation(); setPostponeMenuId(id => id === n.id ? null : n.id) }}
+                    title={t('daily.postpone')}
+                  >⏭</button>
+                  {postponeMenuId === n.id && (
+                    <span className="dc-postpone-menu" onClick={e => e.stopPropagation()}>
+                      <button onClick={e => onPostpone(e, n, 1)}>{t('daily.tomorrow')}</button>
+                      <button onClick={e => onPostpone(e, n, 7)}>{t('daily.nextWeek')}</button>
+                      <button onClick={e => onPostpone(e, n, null)}>{t('daily.noDate')}</button>
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-          </>
-        )}
-      </span>
-      {delBtn(n)}
+              </>
+            )}
+          </span>
+          {delBtn(n)}
+        </div>
+        {/* Línea 2 (meta). Se oculta sola con CSS `:empty` si no hay nada. */}
+        <div className="dc-row-l2">
+          {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
+          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
+            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
+          {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
+          <RowContextChip node={n} />
+        </div>
+      </div>
     </div>
   )
 
