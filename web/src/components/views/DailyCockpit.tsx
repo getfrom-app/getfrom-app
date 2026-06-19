@@ -4,7 +4,7 @@
 // Triaje matinal: 🎯 manda al foco, ⏭ pospone (mañana/+1 semana/sin fecha).
 // Las filas se arrastran al planificador (dataTransfer 'nodeId') para ponerles hora,
 // y al interactuar con el bloque la columna derecha cambia a planificador.
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
@@ -15,10 +15,16 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
-import { listActiveContexts, contextColor, contextParent, nodesInContext } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isProject } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
+
+const ctxMenuItem: CSSProperties = {
+  display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none',
+  cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)',
+  padding: '7px 10px', borderRadius: 6,
+}
 
 export default function DailyCockpit({ disablePlanner = false, bare = false }: { disablePlanner?: boolean; bare?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
@@ -26,6 +32,9 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   const [postponeMenuId, setPostponeMenuId] = useState<string | null>(null)
+  // Menú contextual de las filas de CONTEXTO + animación de salida.
+  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [ctxClosing, setCtxClosing] = useState<{ id: string; action: 'close' | 'delete' } | null>(null)
   // Modal de fecha+recurrencia al tocar el badge de fecha de una tarea
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   // Colapsado por bloque (cabecera clicable). Persistente.
@@ -293,8 +302,16 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               const color = contextColor(c.id)
               const parent = contextParent(c.id)
               const n = nodesInContext(c.id).length
+              const closing = ctxClosing?.id === c.id
               return (
-                <div key={c.id} className="dc-row dc-row--cajon" onClick={() => navigate(`/node/${c.id}`)}>
+                <div key={c.id} className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
+                  onClick={() => navigate(`/node/${c.id}`)}
+                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
+                  onAnimationEnd={closing ? () => {
+                    if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
+                    else trashNode(c.id)
+                    setCtxClosing(null)
+                  } : undefined}>
                   {/* Icono de contexto (en el sitio del checkbox), en su color */}
                   <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -318,6 +335,33 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               )
             })}
           </div>
+        )
+      })()}
+
+      {/* Menú contextual de una fila de contexto: abrir/cerrar · eliminar */}
+      {ctxMenu && (() => {
+        const c = store.getNode(ctxMenu.id)
+        if (!c) return null
+        const closed = isContextClosed(c)
+        const canClose = isProject(c) // solo los proyectos se cierran
+        return (
+          <>
+            <div onClick={() => setCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setCtxMenu(null) }}
+              style={{ position: 'fixed', inset: 0, zIndex: 1998 }} />
+            <div style={{ position: 'fixed', top: ctxMenu.y, left: ctxMenu.x, zIndex: 1999, minWidth: 170,
+              background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5, boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
+              {canClose && (
+                <button className="dc-ctxmenu-item" style={ctxMenuItem}
+                  onClick={() => { if (closed) { setContextClosed(ctxMenu.id, false); setCtxMenu(null) } else { setCtxClosing({ id: ctxMenu.id, action: 'close' }); setCtxMenu(null) } }}>
+                  {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
+                </button>
+              )}
+              <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}
+                onClick={() => { setCtxClosing({ id: ctxMenu.id, action: 'delete' }); setCtxMenu(null) }}>
+                🗑 Eliminar
+              </button>
+            </div>
+          </>
         )
       })()}
     </>
