@@ -65,13 +65,24 @@ export function contextParent(nodeId: string): Node | null {
   return null
 }
 
-/** Color del contexto: su `_tagColor`, o el heredado del padre, o lila por defecto. */
+/** Color por defecto = el acento del tema elegido por el usuario en Ajustes. */
+function defaultAccentHex(): string {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
+    if (v) return v
+  } catch { /* sin DOM */ }
+  return PROJECT_DEFAULT_COLOR
+}
+
+/** Color del contexto: lo HEREDA de su contexto padre (recursivo). Si es un área
+ *  raíz, usa su `_tagColor` propio si lo tiene, o el color por defecto de Ajustes.
+ *  (Ya no hay selector de color por contexto.) */
 export function contextColor(nodeId: string): string {
+  const p = contextParent(nodeId)
+  if (p) return contextColor(p.id)
   const own = ed(store.getNode(nodeId))._tagColor
   if (typeof own === 'string' && own) return own
-  const p = contextParent(nodeId)
-  if (p) { const c = ed(p)._tagColor; if (typeof c === 'string' && c) return c }
-  return PROJECT_DEFAULT_COLOR
+  return defaultAccentHex()
 }
 
 /** Marca de última actividad (para ordenar). Usa `_ctxUsedAt` o el updatedAt. */

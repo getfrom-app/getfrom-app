@@ -9,9 +9,8 @@ import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { extractContextKnowledge } from '../../api/autoClassify'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
-import { isProject, isContextClosed, setContextClosed, contextParent, listContextsForParent, reparentContext, nodesInContext, unassignContext } from '../../utils/cajones'
+import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext } from '../../utils/cajones'
 
-const COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#059669', '#ca8a04', '#dc2626', '#db2777', '#64748b']
 
 interface Props {
   nodeId: string
@@ -25,22 +24,10 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const node = s.getNode(nodeId)
   const [updating, setUpdating] = useState(false)
 
-  const color = useMemo(() => {
-    if (!node) return 'var(--accent)'
-    try { return JSON.parse(node.extraData || '{}')._tagColor || '#7c3aed' } catch { return '#7c3aed' }
-  }, [node?.id, node?.extraData]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Color heredado del contexto padre (o por defecto de Ajustes). Sin selector.
+  const color = useMemo(() => contextColor(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node) return null
-
-  function setColor(c: string) {
-    const n = store.getNode(nodeId)
-    if (!n) return
-    try {
-      const ed = JSON.parse(n.extraData || '{}')
-      ed._tagColor = c
-      store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-    } catch { /* ignore */ }
-  }
 
   async function updateKnowledge() {
     if (updating) return
@@ -170,22 +157,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Color */}
-        <div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
-            {t('ctxProps.colorTitle', 'Color')}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {COLORS.map(c => (
-              <button
-                key={c}
-                onClick={() => setColor(c)}
-                title={c}
-                style={{ width: 24, height: 24, borderRadius: '50%', background: c, cursor: 'pointer', border: color === c ? '2px solid var(--text-primary)' : '2px solid transparent', boxShadow: color === c ? '0 0 0 2px var(--bg-primary) inset' : 'none' }}
-              />
-            ))}
-          </div>
-        </div>
+        {/* (Selector de color retirado: el contexto hereda el color de su padre, o
+            el color por defecto de Ajustes.) */}
 
         {/* Lo que From sabe */}
         <div>
