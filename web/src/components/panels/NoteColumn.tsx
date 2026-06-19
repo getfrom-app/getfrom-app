@@ -8,23 +8,38 @@ import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { isMovedNode, nodeHasPin } from '../../utils/dayColumn'
 import { trashNode } from '../../utils/papeleraHelper'
-import { findTagNodeBySlug } from '../../utils/tagsHelper'
+import { getNodeTagSlug } from '../../utils/tagsHelper'
+import { findContextRoot } from '../../utils/rootLookup'
 import { nodeCtxRefs, contextColor, contextParent } from '../../utils/cajones'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import RowContextChip from './RowContextChip'
 
 const BUILTIN_TYPES = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota','proyecto'])
 
-/** Contextos a los que pertenece un nodo: por ID (_ctxRefs) y por slug @ en types[]. */
+/** Contextos a los que pertenece un nodo: por ID (_ctxRefs) y por slug @ en types[]
+ *  (acepta slug COMPLETO «media-sector/app…» y HOJA «app…», robusto a anidados). */
 function nodeContexts(node: Node): Node[] {
   const out: Node[] = []
   const seen = new Set<string>()
   for (const id of nodeCtxRefs(node)) {
     const c = store.getNode(id); if (c && !c.deletedAt && !seen.has(c.id)) { seen.add(c.id); out.push(c) }
   }
-  for (const slug of (node.types || [])) {
-    if (BUILTIN_TYPES.has(slug)) continue
-    const c = findTagNodeBySlug(slug); if (c && !c.deletedAt && !seen.has(c.id)) { seen.add(c.id); out.push(c) }
+  const types = new Set((node.types || []).filter(t => !BUILTIN_TYPES.has(t)))
+  if (types.size) {
+    const root = findContextRoot()
+    if (root) {
+      const walk = (parentId: string, guard = 0) => {
+        if (guard > 60) return
+        for (const c of store.children(parentId)) {
+          if (c.deletedAt) continue
+          const full = getNodeTagSlug(c.id)
+          const leaf = full ? full.split('/').pop() : null
+          if (((full && types.has(full)) || (leaf && types.has(leaf))) && !seen.has(c.id)) { seen.add(c.id); out.push(c) }
+          walk(c.id, guard + 1)
+        }
+      }
+      walk(root.id)
+    }
   }
   return out
 }

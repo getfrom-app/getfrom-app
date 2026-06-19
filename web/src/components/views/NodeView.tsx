@@ -471,10 +471,14 @@ export default function NodeView() {
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         }).replace(/^\w/, c => c.toUpperCase())
       }
+      // El chip de @contexto NO se muestra en el título: vive en la columna derecha
+      // (sección Contextos). Se quita de la VISTA (no del texto real; el email con @
+      // se conserva por el lookbehind). Solo en reposo, no al editar.
+      const forTitle = displayText.replace(/(?<!\w)@[\wÀ-ɏ/-]+/g, '').replace(/\s{2,}/g, ' ').trim()
       // Si el texto completo ES una URL, no auto-enlazar — se muestra como recurso
-      const rendered = isUrl(displayText.trim())
-        ? displayText
-        : renderInlineToHtml(displayText)
+      const rendered = isUrl(forTitle.trim())
+        ? forTitle
+        : renderInlineToHtml(forTitle)
       if (titleRef.current.innerHTML !== rendered) {
         titleRef.current.innerHTML = rendered
       }
