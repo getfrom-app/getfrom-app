@@ -120,7 +120,7 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
 
         {/* Activación automática */}
         <div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
+          <div className="dc-group-label" style={{ marginBottom: 6 }}>
             {t('prompts.activationTitle', 'Activar automáticamente')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -146,7 +146,7 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
 
         {/* Variables disponibles */}
         <div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+          <div className="dc-group-label" style={{ marginBottom: 4 }}>
             {t('prompts.variablesTitle', 'Variables disponibles')}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.45, marginBottom: 8 }}>

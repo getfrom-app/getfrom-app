@@ -49,7 +49,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const closed = isContextClosed(node)
           return (
             <div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Estado</div>
+              <div className="dc-group-label" style={{ marginBottom: 6 }}>Estado</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ flex: 1, fontSize: 13, color: closed ? 'var(--text-tertiary)' : '#16a34a', fontWeight: 500 }}>{closed ? 'Cerrado' : 'Abierto'}</span>
                 <button onClick={() => setContextClosed(nodeId, !closed)}
@@ -68,7 +68,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const candidates = listContextsForParent().filter(c => c.id !== nodeId && !isDesc(c.id) && c.id !== parent?.id)
           return (
             <div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Contexto padre</div>
+              <div className="dc-group-label" style={{ marginBottom: 6 }}>Contexto padre</div>
               <select value="" onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value) }}
                 style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
                 <option value="">{parent ? `en ${parent.text} — cambiar…` : '+ añadir contexto padre'}</option>
