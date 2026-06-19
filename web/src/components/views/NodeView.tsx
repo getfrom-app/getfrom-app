@@ -3,7 +3,7 @@ import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelpe
 import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
 import { classifyNodeRoot } from '../../utils/homeHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
-import { listTemplates, applyTemplate, findTagNodeBySlug } from '../../utils/tagsHelper'
+import { listTemplates, applyTemplate, findTagNodeBySlug, ensureTagDefinition } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -1189,6 +1189,21 @@ export default function NodeView() {
     } }))
   }
 
+  // Convertir esta nota/tarea en un CONTEXTO: mover bajo 🧠 Contexto y marcar _ctx.
+  function convertToContext() {
+    if (!node) return
+    const root = findContextRoot()
+    if (!root) return
+    const sibs = store.children(root.id).filter(n => !n.deletedAt)
+    const maxOrder = sibs.reduce((m, n) => Math.max(m, n.siblingOrder), 0)
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
+    ed._ctx = '1'
+    store.updateNode(node.id, { parentId: root.id, siblingOrder: maxOrder + 1000, status: null, extraData: JSON.stringify(ed) })
+    ensureTagDefinition(node.id)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
+  }
+
   async function handleShare() {
     if (!node) return
     if (!getToken()) {
@@ -2155,6 +2170,29 @@ export default function NodeView() {
 
               {/* Publicar / Bucle / ··· — no aplican en notas temporales (diaria/mes/año) */}
               {!(node.isDiaryEntry || temporalNodeType !== null) && (<>
+              {/* ── Favorito (★) — siempre visible ── */}
+              <button
+                className={`node-action-icon-btn ${node.isFavorite ? 'active' : ''}`}
+                onClick={toggleFavorite}
+                title={node.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                style={{ color: node.isFavorite ? '#f59e0b' : undefined }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/>
+                </svg>
+              </button>
+              {/* ── Convertir en contexto — no en nodos que ya son contexto ── */}
+              {!isCtxTreeNode(node.id) && !contextParent(node.id) && (
+                <button
+                  className="node-action-icon-btn"
+                  onClick={convertToContext}
+                  title="Convertir en contexto"
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
+                  </svg>
+                </button>
+              )}
               {/* ── Publicar (Globe) — igual que Mac ── */}
               <div style={{ position: 'relative' }}>
                 <button

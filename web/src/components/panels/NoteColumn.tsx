@@ -10,6 +10,7 @@ import { isMovedNode, nodeHasPin } from '../../utils/dayColumn'
 import { trashNode } from '../../utils/papeleraHelper'
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { nodeCtxRefs, contextColor, contextParent } from '../../utils/cajones'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import RowContextChip from './RowContextChip'
 
 const BUILTIN_TYPES = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota','proyecto'])
@@ -41,9 +42,61 @@ export default function NoteColumn({ node }: { node: Node }) {
   // Movidos = hijos marcados `_moved` y aún sin colocar en el lienzo.
   const moved = store.children(node.id).filter(c => isMovedNode(c) && !nodeHasPin(c))
   const contexts = nodeContexts(node)
+  const isTask = node.status !== null && node.status !== undefined && !node.isEvent
+
+  // Propiedades de tarea (fecha / prioridad / repetición) editables aquí mismo.
+  const dueDate = isoToLocalDate(node.due)
+  const dueTime = isoToLocalTime(node.due)
+  const setDue = (date: string, time: string) => { if (!date) store.updateNode(node.id, { due: null }); else store.updateNode(node.id, { due: makeDueISO(date, time) }) }
+  const parseRec = (r: string) => { const [unit, nStr] = r.split(':'); return { n: parseInt(nStr || '1') || 1, unit } }
+  const applyRec = (n: number, unit: string) => { const safe = Math.max(1, n); store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` }) }
+  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'mes.'], ['yearly', 'año']]
+  const qMon = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
+  const prioOpts: { v: Node['priority']; l: string; c: string }[] = [
+    { v: null, l: '–', c: '' }, { v: 'low', l: 'Baja', c: '#6b7280' }, { v: 'medium', l: 'Media', c: '#f59e0b' }, { v: 'high', l: 'Alta', c: '#ef4444' },
+  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Propiedades de tarea — fecha, prioridad, repetición (editable). */}
+      {isTask && (
+        <div className="dc-group">
+          <div className="rc-section-label" style={{ marginBottom: 6 }}>Fecha</div>
+          <div className="nqp-quick-row">
+            {[{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'Lunes', days: qMon }, { label: '+7d', days: 7 }].map(({ label, days }) => {
+              const d = new Date(); d.setDate(d.getDate() + days)
+              const iso = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
+              return <button key={label} className={`nqp-qbtn${dueDate === iso ? ' active' : ''}`} onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>{label}</button>
+            })}
+            {node.due && <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { due: null })}>✕</button>}
+          </div>
+          <div className="nqp-inputs-row" style={{ marginTop: 6 }}>
+            <input type="date" className="nqp-date-input" value={dueDate} onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
+            <input type="time" className="nqp-time-input" value={hasLocalTime(node.due) ? dueTime : ''} onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
+          </div>
+
+          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>Prioridad</div>
+          <div className="nqp-chips-row">
+            {prioOpts.map(opt => (
+              <button key={String(opt.v)} className={`nqp-chip${node.priority === opt.v ? ' active' : ''}`}
+                style={opt.c ? { color: opt.c, ...(node.priority === opt.v ? { borderColor: opt.c, background: opt.c + '20' } : {}) } : {}}
+                onClick={() => store.updateNode(node.id, { priority: opt.v })}>{opt.l}</button>
+            ))}
+          </div>
+
+          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>Repetición</div>
+          <div className="nqp-rec-row">
+            <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`} onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
+            <input type="number" className="nqp-rec-n" min={1} max={999} value={node.recurrence ? parseRec(node.recurrence).n : 1} disabled={!node.recurrence}
+              onChange={e => { const n = Math.max(1, parseInt(e.target.value) || 1); applyRec(n, node.recurrence ? parseRec(node.recurrence).unit : 'daily') }} />
+            {recUnits.map(([unit, label]) => (
+              <button key={unit} className={`nqp-chip${!!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+                onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}>{label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Contextos a los que pertenece la nota — clic para navegar. */}
       {contexts.length > 0 && (
         <div className="dc-group">
