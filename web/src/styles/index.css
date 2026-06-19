@@ -13176,8 +13176,8 @@ textarea:focus-visible,
 /* Cabecera unificada de columnas derechas (contexto, agente, prompt, filtros…),
    con el MISMO aire que la columna de hoy: mayúsculas + punto coloreado delante.
    El color se hereda (currentColor); por defecto el acento, o se fija inline. */
-/* Idéntica a .dc-group-label de la columna de hoy (10.5px / 700 / 0.06em) +
-   el mismo chevron ▾ delante. Color acento por defecto. */
+/* EXACTAMENTE igual que .dc-group-label de la columna de hoy: 10.5px / 700 /
+   0.06em, color gris (text-tertiary) + el mismo chevron ▾ que .dc-group-chevron. */
 .rc-section-label {
   display: flex;
   align-items: center;
@@ -13186,12 +13186,14 @@ textarea:focus-visible,
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--text-tertiary);
   padding: 3px 8px;
 }
 .rc-section-label::before {
   content: '▾';
   font-size: 9px;
+  width: 9px;
+  display: inline-block;
   line-height: 1;
   opacity: 0.7;
   flex-shrink: 0;
