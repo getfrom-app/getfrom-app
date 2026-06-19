@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.6.459 · Mac v9.5.62 — 19 junio 2026 · Contextos: panel completo y pulido
+## Web v9.6.460 · Mac v9.5.63 — 19 junio 2026 · Contextos: panel completo y pulido
 
 Continuación del modelo de contextos, ahora con un panel lateral completo y muchos detalles.
 
