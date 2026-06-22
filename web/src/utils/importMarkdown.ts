@@ -137,6 +137,7 @@ export async function importMarkdownFiles(files: ImportFile[]): Promise<{ notes:
   const valid = files.filter(f => /\.(md|markdown|txt)$/i.test(f.path) && f.content.trim())
   if (valid.length === 0) return { notes: 0, container: null }
 
+  store.beginBatch()  // toda la importación = UN solo paso de undo
   const date = new Date()
   const label = `📥 Importado ${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   const rootSibs = store.children(null).filter(n => !n.deletedAt)
@@ -171,5 +172,6 @@ export async function importMarkdownFiles(files: ImportFile[]): Promise<{ notes:
     store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: html, text: title })
     notes++
   }
+  store.endBatch()
   return { notes, container: container.id }
 }

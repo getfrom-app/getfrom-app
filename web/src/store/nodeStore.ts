@@ -1,7 +1,7 @@
 import { syncNodes, getToken, apiRequest } from '../api/client'
 import type { Node, Workspace } from '../types'
 import { generateId } from '../utils/id'
-import { opsClient } from './opsClient'
+import { opsClient, DATA_FIELDS } from './opsClient'
 import { structuralId, diaryId } from '../utils/deterministicId'
 import { userStore } from './userStore'
 
@@ -232,22 +232,55 @@ export class NodeStore {
     if (this.batchDepth === 0) this.snapshot()
   }
 
-  undo() {
-    if (this.historyIndex <= 0) return
-    this.historyIndex--
-    this.nodes = new Map(this.history[this.historyIndex].nodes)
+  /** Restaura el estado al snapshot `target`, pero EMITIENDO las operaciones
+   *  correspondientes (set/move/delete/restore/create) para que el cambio se
+   *  PROPAGUE al servidor en modo op-live (antes undo solo tocaba el estado local
+   *  → al recargar reaparecía lo deshecho). Mantiene el estado y el sync alineados. */
+  private restoreSnapshot(target: Map<string, Node>) {
+    const cur = this.nodes
+    const next = new Map<string, Node>()
+    // 1) Lo que hay en el snapshot destino: crear si falta, actualizar si difiere.
+    for (const [id, tnode] of target) {
+      next.set(id, tnode)
+      const c = cur.get(id)
+      if (!c) { this.dirtyIds.add(id); opsClient.onCreate(tnode); continue }
+      if (c === tnode) continue
+      const changes: Partial<Node> = {}
+      for (const k of DATA_FIELDS) {
+        const a = (c as unknown as Record<string, unknown>)[k]
+        const b = (tnode as unknown as Record<string, unknown>)[k]
+        if (JSON.stringify(a) !== JSON.stringify(b)) (changes as Record<string, unknown>)[k] = b
+      }
+      if ((c.parentId ?? null) !== (tnode.parentId ?? null)) changes.parentId = tnode.parentId ?? null
+      if ((c.siblingOrder ?? 0) !== (tnode.siblingOrder ?? 0)) changes.siblingOrder = tnode.siblingOrder
+      if ((c.deletedAt ?? null) !== (tnode.deletedAt ?? null)) changes.deletedAt = tnode.deletedAt ?? null
+      if (Object.keys(changes).length) { this.dirtyIds.add(id); opsClient.onUpdate(c, changes, tnode) }
+    }
+    // 2) Nodos creados DESPUÉS del snapshot (no están en target) → borrado lógico.
+    for (const [id, c] of cur) {
+      if (target.has(id)) continue
+      if (c.deletedAt) { next.set(id, c); continue }
+      const del = { ...c, deletedAt: new Date().toISOString() }
+      next.set(id, del)
+      this.dirtyIds.add(id)
+      opsClient.onUpdate(c, { deletedAt: del.deletedAt }, del)
+    }
+    this.nodes = next
     this.invalidateChildrenCache()
     this.notify()
     this.scheduleSyncDebounced()
   }
 
+  undo() {
+    if (this.historyIndex <= 0) return
+    this.historyIndex--
+    this.restoreSnapshot(this.history[this.historyIndex].nodes)
+  }
+
   redo() {
     if (this.historyIndex >= this.history.length - 1) return
     this.historyIndex++
-    this.nodes = new Map(this.history[this.historyIndex].nodes)
-    this.invalidateChildrenCache()
-    this.notify()
-    this.scheduleSyncDebounced()
+    this.restoreSnapshot(this.history[this.historyIndex].nodes)
   }
 
   get canUndo() { return this.historyIndex > 0 }

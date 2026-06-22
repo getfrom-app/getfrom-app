@@ -693,11 +693,20 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       // para que muchos no se solapen).
       const cols = Math.max(1, Math.ceil(Math.sqrt(mdFiles.length)))
       const GAP_X = 260, GAP_Y = 210
-      mdFiles.forEach(async (f, i) => {
-        const content = await f.text()
-        const n = createMarkdownNode(parentId, content, f.name)
-        if (n) writePin(store.getNode(n.id)!, { x: w.x + (i % cols) * GAP_X, y: w.y + Math.floor(i / cols) * GAP_Y })
-      })
+      if (mdFiles.length) {
+        // Todo el import = UN solo paso de undo (beginBatch/endBatch). Async → se
+        // batchea de forma manual leyendo todos los textos antes de crear.
+        void (async () => {
+          const contents = await Promise.all(mdFiles.map(f => f.text()))
+          store.beginBatch()
+          try {
+            contents.forEach((content, i) => {
+              const n = createMarkdownNode(parentId, content, mdFiles[i].name)
+              if (n) writePin(store.getNode(n.id)!, { x: w.x + (i % cols) * GAP_X, y: w.y + Math.floor(i / cols) * GAP_Y })
+            })
+          } finally { store.endBatch() }
+        })()
+      }
       if (otherFiles.length) void uploadAndPinFiles(otherFiles, w)
       return
     }
@@ -725,9 +734,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       if (!text) return
       if (/^https?:\/\/\S+$/i.test(text)) { e.preventDefault(); createResourceAt(world, { url: text, type: 'url', title: text }); return }
       // Texto/markdown pegado → nodo-documento anclado en el centro de la vista.
+      // Un solo paso de undo.
       e.preventDefault()
-      const n = createMarkdownNode(parentId, text)
-      if (n) writePin(store.getNode(n.id)!, world)
+      store.beginBatch()
+      try {
+        const n = createMarkdownNode(parentId, text)
+        if (n) writePin(store.getNode(n.id)!, world)
+      } finally { store.endBatch() }
     }
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)
