@@ -221,8 +221,57 @@ export function unassignContext(nodeId: string, contextId: string): void {
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
-/** Nodos asignados a un contexto: por ID (_ctxRefs) O por slug clásico (@contexto
- *  en types[]). Para mostrar el contenido en la página del contexto. */
+/** ¿El nodo está creado DENTRO de la nota de este contexto? = el contexto es un
+ *  ancestro y no hay otro contexto (proyecto) más cercano entre medias, ni vive
+ *  dentro del nodo de conocimiento. Así, una tarea escrita en la nota del contexto
+ *  pertenece a él sin necesidad de asignarle el contexto manualmente. */
+export function ownedByContext(n: Node, contextId: string): boolean {
+  let cur: Node | null | undefined = n.parentId ? store.getNode(n.parentId) : null
+  let guard = 0
+  while (cur && guard++ < 80) {
+    if (isContextKnowledge(cur.text)) return false   // dentro de "🧠 Lo que Fromly sabe"
+    if (cur.id === contextId) return true
+    if (isProject(cur)) return false                  // un subcontexto más cercano se lo queda
+    cur = cur.parentId ? store.getNode(cur.parentId) : null
+  }
+  return false
+}
+
+/** Contexto (nodo) al que pertenece un nodo, o null. Orden: _ctxRefs → creado
+ *  dentro de la nota del contexto (ownership) → @slug/texto en types[]. Ignora
+ *  contextos cerrados. Sirve para agrupar tareas bajo su contexto en la columna. */
+export function firstContextOf(n: Node): Node | null {
+  for (const id of nodeCtxRefs(n)) {
+    const c = store.getNode(id)
+    if (c && !c.deletedAt && !isContextClosed(c)) return c
+  }
+  // Ownership: subir hasta el primer contexto/proyecto.
+  let cur: Node | null | undefined = n.parentId ? store.getNode(n.parentId) : null
+  let guard = 0
+  while (cur && guard++ < 80) {
+    if (isContextKnowledge(cur.text)) break
+    if ((isProject(cur) || isArea(cur.id)) && !cur.text?.startsWith('🧠')) {
+      return isContextClosed(cur) ? null : cur
+    }
+    cur = cur.parentId ? store.getNode(cur.parentId) : null
+  }
+  // Por slug/texto en types[] (contextos @-mencionados): áreas + proyectos.
+  const types = (n.types || []).map(t => t.toLowerCase())
+  if (types.length) {
+    for (const c of listContextsForParent()) {
+      if (isContextClosed(c)) continue
+      const name = (c.text || '').trim().toLowerCase()
+      const ts = textToTagSlug(c.text || '')
+      if (types.includes(name) || (ts && types.includes(ts))) return c
+    }
+  }
+  return null
+}
+
+/** Nodos asignados a un contexto: por ID (_ctxRefs), por slug clásico (@contexto
+ *  en types[]) o creados DENTRO de la nota del contexto (ownership). Para mostrar
+ *  el contenido en la página del contexto. Excluye la memoria interna y los
+ *  subcontextos (que tienen su propia sección). */
 export function nodesInContext(contextId: string): Node[] {
   // Acepta slug COMPLETO (media-sector/app…), slug HOJA (app…, como en las @menciones
   // del texto) y el slug del texto — robusto ante reparentados.
@@ -233,8 +282,12 @@ export function nodesInContext(contextId: string): Node[] {
   if (c) { const ts = textToTagSlug(c.text || ''); if (ts) slugs.add(ts) }
   return store.allActive().filter(n => {
     if (n.deletedAt || n.id === contextId) return false
+    if (isContextKnowledge(n.text)) return false   // memoria interna, no contenido
+    if (isProject(n)) return false                  // subcontextos → su propia sección
     if (nodeCtxRefs(n).includes(contextId)) return true
     if ((n.types || []).some(t => slugs.has(t))) return true
+    // Tareas/eventos escritos en la nota del contexto (sin asignación explícita).
+    if ((n.status != null || n.isEvent) && ownedByContext(n, contextId)) return true
     return false
   })
 }

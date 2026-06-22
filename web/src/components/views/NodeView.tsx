@@ -1902,14 +1902,21 @@ export default function NodeView() {
                 )
               })()
             ) : null) || (() => {
-              // Nodos de contexto (hijo directo de 🧠 Contexto): no mostrar icono de tipo
-              if (isContextNode) return null
-              // Nodos especiales de Fromly (🧠 Lo que From sabe sobre ti, etc.): no mostrar #
+              // Nodos especiales de Fromly (🧠 Lo que Fromly sabe / Perfil): sin icono.
               if (node?.text?.startsWith('🧠')) return null
-              // Perfil IA: isContextNode lo excluye pero _perfilIA=1 fuerza isContextNode=false,
-              // así que hacemos el check explícito aquí también.
               try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return null } catch {}
-              // ¿Nodo de definición de tag? → mostrar # en color del tag
+              // CONTEXTOS (áreas raíz + subcontextos): '#' en el COLOR del contexto.
+              // Las áreas usan su color propio (_tagColor) o el acento de Ajustes;
+              // los subcontextos HEREDAN el color del contexto padre (contextColor).
+              if (node && isCtxTreeNode(node.id)) {
+                const ctxCol = contextColor(node.id)
+                return (
+                  <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
+                    <span style={{ fontSize: 26, fontWeight: 800, color: ctxCol, lineHeight: 1 }}>#</span>
+                  </div>
+                )
+              }
+              // ¿Nodo de definición de tag (no-contexto)? → # en color del tag
               try {
                 const ed = JSON.parse(node.extraData || '{}')
                 if (ed._tagDefinition) {

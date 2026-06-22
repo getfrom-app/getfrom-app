@@ -15,7 +15,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isProject } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isProject, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -75,6 +75,24 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       seguimiento: rawData.seguimiento.filter(n => passesLens(n, k)),
     }
   })()
+
+  // ── Tareas de hoy/atrasadas que pertenecen a un CONTEXTO ──────────────────
+  // Se muestran bajo su contexto (sección Contextos), NO en las listas planas de
+  // Atrasadas / Para hoy. Las que no tienen contexto siguen en sus listas.
+  const ctxTasks = new Map<string, { ctx: Node; overdue: Node[]; today: Node[] }>()
+  const bucketed = new Set<string>()
+  const bucket = (n: Node, kind: 'overdue' | 'today') => {
+    const c = firstContextOf(n)
+    if (!c) return
+    let e = ctxTasks.get(c.id)
+    if (!e) { e = { ctx: c, overdue: [], today: [] }; ctxTasks.set(c.id, e) }
+    e[kind].push(n)
+    bucketed.add(n.id)
+  }
+  for (const n of data.overdue) bucket(n, 'overdue')
+  for (const n of data.today) bucket(n, 'today')
+  const overdueFlat = data.overdue.filter(n => !bucketed.has(n.id))
+  const todayFlat = data.today.filter(n => !bucketed.has(n.id))
 
   // ── Animación FLIP: las filas se deslizan a su nueva posición al reordenar ──
   // (p.ej. al completar, la tarea baja al final de su grupo en vez de saltar).
@@ -282,16 +300,16 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('focus') && pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
         </div>
       )}
-      {data.overdue.length > 0 && (
+      {overdueFlat.length > 0 && (
         <div className="dc-group">
           {gHeader('overdue', t('daily.overdue'), 'dc-group-label--overdue')}
-          {!collapsedG.has('overdue') && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
+          {!collapsedG.has('overdue') && overdueFlat.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
-      {data.today.length > 0 && (
+      {todayFlat.length > 0 && (
         <div className="dc-group">
           {gHeader('today', t('daily.todayTasks'))}
-          {!collapsedG.has('today') && data.today.map(n => renderTaskRow(n, {}))}
+          {!collapsedG.has('today') && todayFlat.map(n => renderTaskRow(n, {}))}
         </div>
       )}
       {data.seguimiento.length > 0 && (
@@ -301,7 +319,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         </div>
       )}
       {(() => {
-        const subs = listActiveContexts() // contextos en uso (abiertos)
+        // Contextos en uso (abiertos) + cualquiera con tareas de hoy/atrasadas.
+        const subs = listActiveContexts()
+        const byId = new Map(subs.map(c => [c.id, c]))
+        for (const { ctx } of ctxTasks.values()) if (!byId.has(ctx.id)) { subs.push(ctx); byId.set(ctx.id, ctx) }
         if (subs.length === 0) return null
         return (
           <div className="dc-group">
@@ -311,34 +332,49 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               const parent = contextParent(c.id)
               const n = nodesInContext(c.id).length
               const closing = ctxClosing?.id === c.id
+              const due = ctxTasks.get(c.id)
               return (
-                <div key={c.id} className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
-                  onClick={() => navigate(`/node/${c.id}`)}
-                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
-                  onAnimationEnd={closing ? () => {
-                    if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
-                    else trashNode(c.id)
-                    setCtxClosing(null)
-                  } : undefined}>
-                  {/* Icono de contexto (en el sitio del checkbox), en su color */}
-                  <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/>
-                      <circle cx="5.2" cy="5.2" r="1"/>
-                    </svg>
-                  </span>
-                  <span className="dc-text">{c.text || 'Contexto'}</span>
-                  {parent && (() => {
-                    const pColor = contextColor(parent.id)
-                    return (
-                      <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
-                        style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
-                        {parent.text}
+                <div key={c.id}>
+                  <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
+                    onClick={() => navigate(`/node/${c.id}`)}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
+                    onAnimationEnd={closing ? () => {
+                      if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
+                      else trashNode(c.id)
+                      setCtxClosing(null)
+                    } : undefined}>
+                    {/* Icono de contexto (en el sitio del checkbox), en su color */}
+                    <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/>
+                        <circle cx="5.2" cy="5.2" r="1"/>
+                      </svg>
+                    </span>
+                    <span className="dc-text">{c.text || 'Contexto'}</span>
+                    {parent && (() => {
+                      const pColor = contextColor(parent.id)
+                      return (
+                        <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
+                          style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
+                          {parent.text}
+                        </span>
+                      )
+                    })()}
+                    <span style={{ flex: 1 }} />
+                    {due && (due.overdue.length + due.today.length) > 0 && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: due.overdue.length > 0 ? 'var(--danger,#e03131)' : color }}>
+                        {due.overdue.length + due.today.length}
                       </span>
-                    )
-                  })()}
-                  <span style={{ flex: 1 }} />
-                  {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{n}</span>}
+                    )}
+                    {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>{n}</span>}
+                  </div>
+                  {/* Tareas de hoy/atrasadas del contexto, indentadas bajo él. */}
+                  {due && (
+                    <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
+                      {due.overdue.map(t => renderTaskRow(t, { showDue: true }))}
+                      {due.today.map(t => renderTaskRow(t, {}))}
+                    </div>
+                  )}
                 </div>
               )
             })}
