@@ -20,6 +20,7 @@ import type { Node } from '../types'
 import { findContextRoot } from './rootLookup'
 import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
+import { isInPapelera } from './papeleraHelper'
 
 const PROJECT_DEFAULT_COLOR = '#7c3aed'
 
@@ -199,14 +200,14 @@ export function assignContext(nodeId: string, contextId: string): void {
 export function listActiveContexts(): Node[] {
   const ids = new Set<string>()
   for (const n of store.allActive()) {
-    if (n.deletedAt) continue
+    if (n.deletedAt || isInPapelera(n.id)) continue   // la Papelera no cuenta
     if (isProject(n) && !isContextClosed(n)) ids.add(n.id)
     for (const cid of nodeCtxRefs(n)) ids.add(cid)
   }
   const out: Node[] = []
   for (const id of ids) {
     const c = store.getNode(id)
-    if (c && !c.deletedAt && !isContextClosed(c)) out.push(c)
+    if (c && !c.deletedAt && !isContextClosed(c) && !isInPapelera(c.id)) out.push(c)
   }
   return out.sort((a, b) => activityTs(b) - activityTs(a))
 }
@@ -284,11 +285,14 @@ export function nodesInContext(contextId: string): Node[] {
     if (n.deletedAt || n.id === contextId) return false
     if (isContextKnowledge(n.text)) return false   // memoria interna, no contenido
     if (isProject(n)) return false                  // subcontextos → su propia sección
-    if (nodeCtxRefs(n).includes(contextId)) return true
-    if ((n.types || []).some(t => slugs.has(t))) return true
-    // Tareas/eventos escritos en la nota del contexto (sin asignación explícita).
-    if ((n.status != null || n.isEvent) && ownedByContext(n, contextId)) return true
-    return false
+    const member =
+      nodeCtxRefs(n).includes(contextId) ||
+      (n.types || []).some(t => slugs.has(t)) ||
+      // Tareas/eventos escritos en la nota del contexto (sin asignación explícita).
+      ((n.status != null || n.isEvent) && ownedByContext(n, contextId))
+    if (!member) return false
+    if (isInPapelera(n.id)) return false            // la Papelera nunca aparece
+    return true
   })
 }
 
