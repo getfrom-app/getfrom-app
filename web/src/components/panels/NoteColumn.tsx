@@ -57,6 +57,7 @@ const normCtx = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowe
  *  campo con ghost-text + Tab/Enter para asignar (o crear si no existe). */
 function ContextField({ node }: { node: Node }) {
   const s = useStore()
+  const navigate = useNavigate()
   const current = nodeContexts(node)[0] || null
   const [editing, setEditing] = useState(false)
   const [q, setQ] = useState('')
@@ -78,12 +79,13 @@ function ContextField({ node }: { node: Node }) {
   }
   const ghostSuffix = suggestion && isPrefix ? (suggestion.text || '').slice(q.length) : ''
 
-  // Chip del contexto actual (no en edición).
+  // Chip del contexto actual (no en edición): clic en el nombre NAVEGA al contexto;
+  // botón ✎ para CAMBIARLO; × para quitarlo.
   if (current && !editing) {
     const color = contextColor(current.id)
     const parent = contextParent(current.id)
     return (
-      <div className="dc-row" onClick={() => { setQ(''); setEditing(true) }} title="Clic para cambiar de contexto" style={{ cursor: 'pointer' }}>
+      <div className="dc-row" onClick={() => navigate(`/node/${current.id}`)} title="Ir al contexto" style={{ cursor: 'pointer' }}>
         <span className="dc-check" style={{ border: 'none', background: 'none', color }}>
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
@@ -92,6 +94,8 @@ function ContextField({ node }: { node: Node }) {
         <span className="dc-text">{current.text || 'Contexto'}</span>
         {parent && <span className="dc-parent">{parent.text}</span>}
         <span style={{ flex: 1 }} />
+        <button className="dc-del" title="Cambiar contexto" onClick={e => { e.stopPropagation(); setQ(''); setEditing(true) }}
+          style={{ fontSize: 12 }}>✎</button>
         <button className="dc-del" title="Quitar contexto" onClick={e => { e.stopPropagation(); setNodeContext(node.id, null) }}>×</button>
       </div>
     )
