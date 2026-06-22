@@ -195,6 +195,31 @@ export function assignContext(nodeId: string, contextId: string): void {
   try { touchContext(contextId, new Date().toISOString()) } catch { /* ignore */ }
 }
 
+/** Fija el ÚNICO contexto de un nodo (o lo quita con null). Reemplaza cualquier
+ *  asignación previa: `_ctxRefs = [ctxId]` y elimina de types[] los tokens que sean
+ *  contextos (@slug/texto). Un nodo = un contexto. */
+export function setNodeContext(nodeId: string, contextId: string | null): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  // Slugs/textos de TODOS los contextos → para limpiar los que hubiera en types[].
+  const ctxTokens = new Set<string>()
+  for (const c of listContextsForParent()) {
+    const full = getNodeTagSlug(c.id)
+    if (full) { ctxTokens.add(full); const leaf = full.split('/').pop(); if (leaf) ctxTokens.add(leaf) }
+    const ts = textToTagSlug(c.text || ''); if (ts) ctxTokens.add(ts)
+    if (c.text) ctxTokens.add(c.text.toLowerCase())
+  }
+  const types = (n.types || []).filter(t => !ctxTokens.has(t) && !ctxTokens.has(t.toLowerCase()))
+  const e = ed(n)
+  if (contextId) e._ctxRefs = [contextId]; else delete e._ctxRefs
+  store.updateNode(nodeId, { types, extraData: JSON.stringify(e) })
+  if (contextId) {
+    const c = store.getNode(contextId)
+    if (c && !isProject(c)) { const ce = ed(c); ce._ctx = '1'; store.updateNode(contextId, { extraData: JSON.stringify(ce) }) }
+    try { touchContext(contextId, new Date().toISOString()) } catch { /* ignore */ }
+  }
+}
+
 /** Contextos a mostrar en listados de "en uso": proyectos marcados (_ctx) +
  *  cualquier contexto referenciado por algún nodo (_ctxRefs). Solo ABIERTOS. */
 export function listActiveContexts(): Node[] {

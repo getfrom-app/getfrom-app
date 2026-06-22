@@ -45,7 +45,7 @@ import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, assignContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1217,7 +1217,7 @@ export default function NodeView() {
     store.updateNode(node.id, { text: cleanText })
     if (titleRef.current) titleRef.current.textContent = cleanText
     if (asParent) reparentContext(node.id, ctxId)
-    else assignContext(node.id, ctxId)
+    else setNodeContext(node.id, ctxId)  // un nodo = un contexto (reemplaza)
     setTitleCtxPicker(null)
     setTitleEditing(false)
     const cj = store.getNode(ctxId)

@@ -11,7 +11,7 @@ import { isMovedNode, nodeHasPin } from '../../utils/dayColumn'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
-import { nodeCtxRefs, contextColor, contextParent, assignContext, unassignContext, createContext, listContextsForParent, isContextClosed } from '../../utils/cajones'
+import { nodeCtxRefs, contextColor, contextParent, setNodeContext, createContext, listContextsForParent, isContextClosed } from '../../utils/cajones'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import RowContextChip from './RowContextChip'
 
@@ -53,32 +53,52 @@ const TrashIcon = (
 
 const normCtx = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-/** Campo «+ Añadir contexto»: escribe, ghost-text con la sugerencia, Tab/Enter
- *  asigna (o crea si no existe). Mismo gesto que el `#` del título/captura. */
-function AddContextField({ node }: { node: Node }) {
+/** Contexto ÚNICO del nodo. Si lo tiene: chip (clic = cambiar, × = quitar). Si no:
+ *  campo con ghost-text + Tab/Enter para asignar (o crear si no existe). */
+function ContextField({ node }: { node: Node }) {
   const s = useStore()
+  const current = nodeContexts(node)[0] || null
+  const [editing, setEditing] = useState(false)
   const [q, setQ] = useState('')
 
   const { suggestion, isPrefix } = useMemo(() => {
     const nq = normCtx(q.trim())
     if (!nq) return { suggestion: null as Node | null, isPrefix: false }
-    const assigned = new Set(nodeContexts(node).map(c => c.id))
-    const cands = listContextsForParent().filter(c => !isContextClosed(c) && !assigned.has(c.id) && c.id !== node.id)
+    const cands = listContextsForParent().filter(c => !isContextClosed(c) && c.id !== node.id && c.id !== current?.id)
     const pre = cands.find(c => normCtx(c.text || '').startsWith(nq))
     if (pre) return { suggestion: pre, isPrefix: true }
     return { suggestion: cands.find(c => normCtx(c.text || '').includes(nq)) || null, isPrefix: false }
-  }, [q, node, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q, node, current?.id, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const commit = () => {
     const text = q.trim()
-    if (suggestion) assignContext(node.id, suggestion.id)
-    else if (text) assignContext(node.id, createContext(text).id)
-    setQ('')
+    if (suggestion) setNodeContext(node.id, suggestion.id)
+    else if (text) setNodeContext(node.id, createContext(text).id)
+    setQ(''); setEditing(false)
   }
   const ghostSuffix = suggestion && isPrefix ? (suggestion.text || '').slice(q.length) : ''
 
+  // Chip del contexto actual (no en edición).
+  if (current && !editing) {
+    const color = contextColor(current.id)
+    const parent = contextParent(current.id)
+    return (
+      <div className="dc-row" onClick={() => { setQ(''); setEditing(true) }} title="Clic para cambiar de contexto" style={{ cursor: 'pointer' }}>
+        <span className="dc-check" style={{ border: 'none', background: 'none', color }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
+          </svg>
+        </span>
+        <span className="dc-text">{current.text || 'Contexto'}</span>
+        {parent && <span className="dc-parent">{parent.text}</span>}
+        <span style={{ flex: 1 }} />
+        <button className="dc-del" title="Quitar contexto" onClick={e => { e.stopPropagation(); setNodeContext(node.id, null) }}>×</button>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ marginTop: 6 }}>
+    <div>
       <div style={{ position: 'relative' }}>
         {ghostSuffix && (
           <div aria-hidden style={{ position: 'absolute', inset: 0, padding: '5px 9px', border: '1px solid transparent', boxSizing: 'border-box', fontSize: 13, lineHeight: '18px', fontFamily: 'inherit', color: 'transparent', pointerEvents: 'none', whiteSpace: 'pre', overflow: 'hidden' }}>
@@ -86,13 +106,15 @@ function AddContextField({ node }: { node: Node }) {
           </div>
         )}
         <input
+          autoFocus={editing}
           value={q}
           onChange={e => setQ(e.target.value)}
+          onBlur={() => { if (!q.trim()) setEditing(false) }}
           onKeyDown={e => {
             if ((e.key === 'Enter' || e.key === 'Tab') && q.trim()) { e.preventDefault(); commit() }
-            else if (e.key === 'Escape') { e.preventDefault(); setQ('') }
+            else if (e.key === 'Escape') { e.preventDefault(); setQ(''); setEditing(false) }
           }}
-          placeholder="+ Añadir contexto"
+          placeholder={current ? 'Cambiar contexto…' : '+ Añadir contexto'}
           style={{ position: 'relative', width: '100%', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 9px', fontSize: 13, lineHeight: '18px', fontFamily: 'inherit', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
         />
       </div>
@@ -111,7 +133,6 @@ export default function NoteColumn({ node }: { node: Node }) {
 
   // Movidos = hijos marcados `_moved` y aún sin colocar en el lienzo.
   const moved = store.children(node.id).filter(c => isMovedNode(c) && !nodeHasPin(c))
-  const contexts = nodeContexts(node)
   const isTask = node.status !== null && node.status !== undefined && !node.isEvent
 
   // Propiedades de tarea (fecha / prioridad / repetición) editables aquí mismo.
@@ -167,38 +188,11 @@ export default function NoteColumn({ node }: { node: Node }) {
         </div>
       )}
 
-      {/* Contextos a los que pertenece la nota — clic para navegar, × para quitar,
-          y campo «+ Añadir contexto» con ghost-text + Tab/Enter. */}
+      {/* Contexto ÚNICO del nodo: chip (clic = cambiar, × = quitar) o campo de
+          asignación con ghost-text + Tab/Enter. */}
       <div className="dc-group">
-        <div className="rc-section-label" style={{ marginBottom: 6 }}>Contextos</div>
-        {contexts.map(c => {
-          const color = contextColor(c.id)
-          const parent = contextParent(c.id)
-          return (
-            <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}>
-              <span className="dc-check" style={{ border: 'none', background: 'none', color }}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
-                </svg>
-              </span>
-              <span className="dc-text">{c.text || 'Contexto'}</span>
-              {parent && <span className="dc-parent">{parent.text}</span>}
-              <span style={{ flex: 1 }} />
-              <button className="dc-del" title="Quitar del contexto"
-                onClick={e => {
-                  e.stopPropagation()
-                  unassignContext(node.id, c.id)  // quita _ctxRefs
-                  // quita también la asignación por @slug/texto en types[]
-                  const full = getNodeTagSlug(c.id); const leaf = full ? full.split('/').pop() : null
-                  const name = (c.text || '').toLowerCase()
-                  const next = (node.types || []).filter(t => t.toLowerCase() !== name && t !== full && t !== leaf)
-                  if (next.length !== (node.types || []).length) store.updateNode(node.id, { types: next })
-                }}>×</button>
-            </div>
-          )
-        })}
-        <AddContextField node={node} />
+        <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto</div>
+        <ContextField node={node} />
       </div>
 
     <div className="dc-group">
