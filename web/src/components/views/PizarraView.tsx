@@ -467,7 +467,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const parent = store.getNode(parentId)
     const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
-    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !isCapturePin(n) && !isMovedNode(n) && !isContextKnowledge(n.text))
+    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !n.isEvent && !isCapturePin(n) && !isMovedNode(n) && !isContextKnowledge(n.text))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────

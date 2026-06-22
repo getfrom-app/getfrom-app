@@ -56,8 +56,11 @@ export interface DayColumnData {
 export function getDayColumnData(dayNode: Node): DayColumnData {
   const children = store.children(dayNode.id)
 
+  // Eventos = nodos-evento (locales o sincronizados con GCal). Van a la sección
+  // EVENTOS de la columna, NUNCA al lienzo (un evento creado por captura no debe
+  // quedar flotando en la pizarra).
   const eventNodes = children
-    .filter(c => getGcalEventId(c))
+    .filter(c => !c.deletedAt && (c.isEvent || getGcalEventId(c)))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
 
   // HOY → cockpit (atrasadas/hoy/bucles). Otros días → tareas con due ese día.
