@@ -465,9 +465,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     // En la diaria, todo lo que vive en la columna derecha (eventos, capturas y
     // tareas/bucles del cockpit) NO se pinta en el lienzo (evita duplicados).
     const parent = store.getNode(parentId)
-    const rightCol = parent?.isDiaryEntry ? getDayColumnData(parent).rightColumnIds : new Set<string>()
+    const isDiary = !!parent?.isDiaryEntry
+    const rightCol = isDiary ? getDayColumnData(parent!).rightColumnIds : new Set<string>()
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
-    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !n.isEvent && !isCapturePin(n) && !isMovedNode(n) && !isContextKnowledge(n.text))
+    // En la DIARIA, las TAREAS no van al lienzo: viven en la columna del día
+    // (cockpit / contextos). El lienzo del día es para notas y dibujo.
+    return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !rightCol.has(n.id) && !getGcalEventId(n) && !n.isEvent && !(isDiary && n.status != null) && !isCapturePin(n) && !isMovedNode(n) && !isContextKnowledge(n.text))
   }, [children, flowUnpositioned, parentId])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────

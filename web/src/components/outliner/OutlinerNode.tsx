@@ -3998,7 +3998,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                    no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
                    Siempre visible para que el usuario pueda asignar contexto manualmente. */}
             {/* Badge de contexto: no mostrar en nodos restringidos (dentro de contextos, perfil, papelera) */}
-            {!isContextNode && !isInsideRestrictedAncestor && manuallySetContextId ? (
+            {/* Si el nodo YA tiene un contexto por ID (_ctxRefs, vía #/captura/columna),
+                NO mostramos el badge/placeholder de contexto por types[] — sería una
+                segunda vía redundante. El contexto se ve en su chip (_ctxRefs) abajo. */}
+            {nodeCtxRefs(node).length > 0 ? null
+              : (!isContextNode && !isInsideRestrictedAncestor && manuallySetContextId) ? (
               <AutoContextBadge
                 node={node}
                 result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
