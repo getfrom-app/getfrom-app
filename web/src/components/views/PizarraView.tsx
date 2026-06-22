@@ -14,7 +14,7 @@
 //  - Culling: solo se montan las tarjetas visibles en el viewport (virtualiza
 //    el lienzo sin librería — un canvas necesita posicionamiento 2D libre).
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { uploadFile } from '../../api/client'
@@ -270,6 +270,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   const restoringCamRef = useRef(false)
   const camSaveTimer = useRef<number | null>(null)
   const [viewport, setViewport] = useState({ w: 1000, h: 700 })
+  // Altura REAL (en unidades de mundo) medida de cada tarjeta — para que el culling
+  // no descarte un documento alto cuando su ancla sale de pantalla pero su cuerpo
+  // sigue visible. heightsV fuerza recálculo del culling al cambiar una altura.
+  const cardHeights = useRef<Map<string, number>>(new Map())
+  const [heightsV, setHeightsV] = useState(0)
   // Refs espejo (para leer el valor actual dentro de animaciones/listeners sin stale).
   const camRef = useRef(cam); camRef.current = cam
   const viewportRef = useRef(viewport); viewportRef.current = viewport
@@ -1488,10 +1493,30 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   }, [screenToWorld])
 
   // ── Render ──────────────────────────────────────────────────────────────────
+  // Mide la altura real de las tarjetas montadas (en unidades de mundo) tras cada
+  // render. Si cambia, fuerza el recálculo del culling (heightsV).
+  useLayoutEffect(() => {
+    const cont = containerRef.current
+    if (!cont) return
+    let changed = false
+    cont.querySelectorAll<HTMLElement>('[data-card="1"]').forEach(el => {
+      const id = el.dataset.nodeId
+      if (!id) return
+      const h = el.offsetHeight   // altura de layout (sin el transform de escala)
+      if (h <= 0) return
+      const prev = cardHeights.current.get(id)
+      if (prev == null || Math.abs(prev - h) > 2) { cardHeights.current.set(id, h); changed = true }
+    })
+    if (changed) setHeightsV(v => v + 1)
+  })
+
   // Culling: una tarjeta es visible si su rect en pantalla intersecta el viewport
-  // (con margen). Solo montamos esas.
+  // (con margen). Solo montamos esas. La altura usa la medida real; si aún no se ha
+  // medido, los DOCUMENTOS usan un fallback grande (pueden ser muy altos) para no
+  // descartarlos antes de medirlos; el resto, la altura mínima.
   const margin = 200
   const visible = useMemo(() => {
+    void heightsV
     const out: { node: Node; pos: WorldPos }[] = []
     for (const n of children) {
       const base = layout.get(n.id)
@@ -1500,7 +1525,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       const sx = cam.x + pos.x * cam.scale
       const sy = cam.y + pos.y * cam.scale
       const w = CARD_W * cam.scale
-      if (sx + w < -margin || sx > viewport.w + margin || sy + CARD_MIN_H * cam.scale < -margin || sy > viewport.h + margin) continue
+      const measured = cardHeights.current.get(n.id)
+      const worldH = measured ?? (isDocNode(n) ? 4000 : CARD_MIN_H)
+      const screenH = worldH * cam.scale * readCardScale(n)
+      if (sx + w < -margin || sx > viewport.w + margin || sy + screenH < -margin || sy > viewport.h + margin) continue
       out.push({ node: n, pos })
     }
     // Si se está arrastrando un nodo del FLUJO (aún sin pin), renderizarlo flotando.
@@ -1509,7 +1537,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       if (dn) out.push({ node: dn, pos: dragPos.pos })
     }
     return out
-  }, [children, layout, dragPos, cam, viewport])
+  }, [children, layout, dragPos, cam, viewport, heightsV])
 
   // Herramientas que PINTAN sobre el fondo (no la flecha, que conecta tarjetas).
   // Con una activa, las tarjetas se vuelven transparentes al puntero para poder
