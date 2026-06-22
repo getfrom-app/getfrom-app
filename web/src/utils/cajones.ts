@@ -195,6 +195,33 @@ export function assignContext(nodeId: string, contextId: string): void {
   try { touchContext(contextId, new Date().toISOString()) } catch { /* ignore */ }
 }
 
+/** Renombra un contexto SIN perder sus asociaciones. Los nodos que lo referencian
+ *  por texto/slug en `types[]` (frágil ante renombrados) se migran a referencia por
+ *  ID (`_ctxRefs`, robusta) y se les quita el token viejo. Luego renombra el nodo y
+ *  recalcula su slug. Pasa `oldText` (el texto ANTES del cambio) para reconocer los
+ *  tokens viejos aunque el texto del nodo ya se haya actualizado en vivo. */
+export function renameContext(nodeId: string, oldText: string, newText: string): void {
+  const c = store.getNode(nodeId)
+  if (!c) return
+  const oldTokens = new Set<string>()
+  const oldDef = (ed(c)._tagDefinition as string) || ''   // slug viejo (aún sin recalcular)
+  if (oldDef) { oldTokens.add(oldDef.toLowerCase()); const leaf = oldDef.split('/').pop(); if (leaf) oldTokens.add(leaf.toLowerCase()) }
+  const ots = textToTagSlug(oldText); if (ots) oldTokens.add(ots.toLowerCase())
+  if (oldText) oldTokens.add(oldText.trim().toLowerCase())
+  // Migrar referencias por texto/slug → por ID.
+  for (const n of store.allActive()) {
+    if (n.deletedAt || n.id === nodeId) continue
+    const types = n.types || []
+    if (!types.some(t => oldTokens.has(t.toLowerCase()))) continue
+    const e = ed(n)
+    const refs = nodeCtxRefs(n)
+    if (!refs.includes(nodeId)) e._ctxRefs = [...refs, nodeId]
+    store.updateNode(n.id, { types: types.filter(t => !oldTokens.has(t.toLowerCase())), extraData: JSON.stringify(e) })
+  }
+  if ((c.text || '') !== newText) store.updateNode(nodeId, { text: newText })
+  ensureTagDefinition(nodeId)   // recalcula el slug nuevo
+}
+
 /** Fija el ÚNICO contexto de un nodo (o lo quita con null). Reemplaza cualquier
  *  asignación previa: `_ctxRefs = [ctxId]` y elimina de types[] los tokens que sean
  *  contextos (@slug/texto). Un nodo = un contexto. */

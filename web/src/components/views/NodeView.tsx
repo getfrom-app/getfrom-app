@@ -45,7 +45,7 @@ import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext, renameContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -131,6 +131,8 @@ export default function NodeView() {
   const bodyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  // Texto del título al ENFOCAR (para renombrar contextos sin perder asociaciones).
+  const titleOriginalRef = useRef<string>('')
 
   // File attachments state
   const [attachments, setAttachments] = useState<Attachment[]>([])
@@ -2038,6 +2040,7 @@ export default function NodeView() {
               }}
               onFocus={() => {
                 setTitleEditing(true)
+                titleOriginalRef.current = node?.text || ''
                 // Mostrar texto raw para editar (sin HTML de tags)
                 if (titleRef.current) {
                   const raw = node?.text || ''
@@ -2059,6 +2062,13 @@ export default function NodeView() {
                 // clic en una opción (onMouseDown) se procese antes del cierre.
                 setTimeout(() => setTitleCtxPicker(null), 150)
                 handleTitleInput(e)
+                // Renombrar un CONTEXTO: migra sus nodos a referencia por ID para que
+                // sigan asociados con el nombre nuevo (no se pierde el contexto).
+                if (node && isCtxTreeNode(node.id)) {
+                  const newText = (titleRef.current?.textContent || '').trim()
+                  const oldText = titleOriginalRef.current.trim()
+                  if (newText && newText !== oldText) renameContext(node.id, oldText, newText)
+                }
               })}
               onKeyDown={isLocked ? undefined : (e => {
                 // # context picker navigation (tiene prioridad)
