@@ -8,6 +8,18 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
+import { TaskPropsPopover } from './DiaryPanelComponents'
+
+/** Color del chip de fecha por estado: atrasada=rojo, hoy=ámbar, futura=azul. */
+function dueChipColor(dueISO: string): string {
+  const d = new Date(dueISO)
+  const now = new Date()
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  if (dd < t0) return '#e03131'   // atrasada
+  if (dd === t0) return '#f59e0b' // hoy
+  return '#3b82f6'                // futura
+}
 
 
 interface Props {
@@ -23,6 +35,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
 
   // Color heredado del contexto padre (o por defecto de Ajustes). Sin selector.
   const color = useMemo(() => contextColor(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Modal de fecha/recurrencia al tocar el chip de una tarea (sin navegar a ella).
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
 
   if (!node) return null
 
@@ -89,8 +103,14 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               )}
               <span className="dc-text">{a.text || '(sin texto)'}</span>
               <span style={{ flex: 1 }} />
-              {a.status != null && a.due && <span className="dc-due">{new Date(a.due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}</span>}
-              {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10 }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
+              {a.status != null && a.due && (
+                <span className="dc-due" style={{ color: dueChipColor(a.due), cursor: 'pointer' }}
+                  title="Fecha y recurrencia"
+                  onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>
+                  {new Date(a.due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
+                </span>
+              )}
+              {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title="Fecha y recurrencia" onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
               <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
             </div>
           )
@@ -152,6 +172,10 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             corregirla a mano. */}
         <KnowledgeBlock nodeId={nodeId} color={color} />
       </div>
+      {propsNodeId && (() => {
+        const pn = store.getNode(propsNodeId)
+        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
+      })()}
     </div>
   )
 }

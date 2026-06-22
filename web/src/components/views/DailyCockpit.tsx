@@ -160,6 +160,17 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     return d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric' })
   }
 
+  /** Color del chip de fecha: atrasada=rojo, hoy=ámbar, futura=azul. */
+  function dueColor(n: Node): string {
+    if (!n.due) return 'var(--text-tertiary)'
+    const d = new Date(n.due); const now = new Date()
+    const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+    if (dd < t0) return '#e03131'
+    if (dd === t0) return '#f59e0b'
+    return '#3b82f6'
+  }
+
   /** Hora de ejecución si el due la lleva (asignada p.ej. arrastrando al planner) */
   function timeLabel(n: Node): string | null {
     if (!n.due) return null
@@ -237,7 +248,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         {/* Línea 2 (meta). Se oculta sola con CSS `:empty` si no hay nada. */}
         <div className="dc-row-l2">
           {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
+          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title="Editar fecha y recurrencia"
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
           {!opts.inContext && parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
         </div>
