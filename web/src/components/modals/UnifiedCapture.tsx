@@ -812,6 +812,24 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
     }
 
+    // INTENCIÓN DE CREAR (no buscar): si se ha detectado una FECHA en el texto, es
+    // un evento/tarea nuevo. Mostrar SOLO la opción de crear (la primera), sin
+    // resultados de búsqueda que confundan ("el resto no debe salir con ese texto").
+    if (datePrediction) {
+      const clean = (datePrediction.cleanText || q).trim() || q
+      const eventLike = !!datePrediction.timeStr || forceType === 'event'
+      const kind = eventLike ? 'evento' : (taskPrediction || forceType === 'task') ? 'tarea' : ''
+      return [{
+        id: 'create-item',
+        label: kind ? `Crear ${kind}: ${clean}` : `Crear: ${clean}`,
+        sublabel: `${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`,
+        type: 'create',
+        taskStatus: null,
+        score: 100,
+        action: saveAndClose,
+      }]
+    }
+
     // Búsqueda estricta por texto
     const parsed = parseQuery(q)
     const searchTerm = parsed.cleanText || q
@@ -885,7 +903,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     })
 
     return results
-  }, [text, view, navigate, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [text, view, navigate, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast, datePrediction, taskPrediction, forceType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = buildItems()
 
