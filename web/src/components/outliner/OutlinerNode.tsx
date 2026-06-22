@@ -22,6 +22,7 @@ import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree, findTagNodeBySlug } from '../../utils/tagsHelper'
 import { listContexts, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
+import RowContextChip from '../panels/RowContextChip'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
@@ -4007,9 +4008,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                    no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
                    Siempre visible para que el usuario pueda asignar contexto manualmente. */}
             {/* Badge de contexto: no mostrar en nodos restringidos (dentro de contextos, perfil, papelera) */}
-            {/* (Badges de contexto por types[] ELIMINADOS — sistema único por _ctxRefs.
-                El contexto asignado (manual, por #, captura, columna o auto-clasificación)
-                se ve en su chip más abajo. La auto-clasificación ahora asigna por _ctxRefs.) */}
+            {/* Contexto: sistema único por _ctxRefs. Si el nodo NO tiene contexto y es
+                clasificable (ancla, fuera de contextos/perfil/papelera/diaria), mostrar
+                el chip «?» para asignarlo a mano. Si lo tiene, se ve en su chip abajo. */}
+            {!isContextNode && !isInsideRestrictedAncestor && !node.isDiaryEntry && isContextAnchor && nodeCtxRefs(node).length === 0 && (
+              <RowContextChip node={node} />
+            )}
 
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (

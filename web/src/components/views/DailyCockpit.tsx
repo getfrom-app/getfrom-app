@@ -342,12 +342,13 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                 </div>
               )
             })}
-            {/* «Sin contexto» — al final del bloque «Para hacer», antes de Seguimiento. */}
+            {/* «Sin contexto» — al final del bloque «Para hacer», antes de Seguimiento.
+                SIN inContext → muestra el chip «?» para asignar contexto. */}
             {open && hasSinCtx && (
               <div className="dc-group">
                 <div className="rc-section-label" style={{ margin: '2px 0 4px' }}>Sin contexto</div>
-                {overdueFlat.map(n => renderTaskRow(n, { showDue: true, inContext: true }))}
-                {todayFlat.map(n => renderTaskRow(n, { inContext: true }))}
+                {overdueFlat.map(n => renderTaskRow(n, { showDue: true }))}
+                {todayFlat.map(n => renderTaskRow(n, {}))}
               </div>
             )}
           </div>
