@@ -481,45 +481,34 @@ export function getSuggestion(partial: string): string | null {
 }
 
 /** Convierte RecurrenceConfig a string para node.recurrence (campo DB) */
+// Formato CANÓNICO de node.recurrence: `unit` o `unit:N` donde N = intervalo
+// («cada N»). El DÍA de la semana / del mes lo aporta la fecha (due) de la tarea,
+// no se guarda en la cadena. Es el mismo formato que usan TODOS los editores de la
+// UI, los badges y la conversión a RRULE de Google Calendar (fromRecToRRule).
 export function recurrenceToString(rec: RecurrenceConfig): string {
-  const n = rec.interval && rec.interval > 1 ? `:i${rec.interval}` : ''
+  const n = rec.interval && rec.interval > 1 ? `:${rec.interval}` : ''
   if (rec.type === 'daily') return `daily${n}`
-  if (rec.type === 'monthly') return rec.monthDay ? `monthly:${rec.monthDay}` : `monthly${n}`
-  if (rec.type === 'weekly' || rec.type === 'custom') {
-    if (rec.days?.length) return `weekly:${rec.days.join(',')}${n}`
-    return `weekly${n}`
-  }
-  return 'daily'
+  if (rec.type === 'monthly') return `monthly${n}`
+  // weekly / custom: «cada viernes» = weekly + due en viernes (el día lo da el due).
+  return `weekly${n}`
 }
 
-/** Convierte string de node.recurrence a RecurrenceConfig */
+/** Convierte string de node.recurrence (`unit` / `unit:N`, N = intervalo) a
+ *  RecurrenceConfig. El día concreto lo aporta la fecha de la tarea, no la cadena.
+ *  Tolera el formato viejo `:iN`. `yearly` se mapea a mensual×12 (el motor no tiene
+ *  tipo anual). */
 export function recurrenceFromString(str: string): RecurrenceConfig | null {
   if (!str) return null
   if (str.startsWith('{')) {
     try { return JSON.parse(str) as RecurrenceConfig } catch {}
   }
-  // Extraer intervalo si existe ":iN" al final
-  const intervalMatch = str.match(/:i(\d+)$/)
-  const interval = intervalMatch ? parseInt(intervalMatch[1]) : undefined
-  const base = intervalMatch ? str.slice(0, str.lastIndexOf(':i')) : str
-  const [type, param] = base.split(':')
-  const DAY_NAMES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-  if (type === 'daily') {
-    const n = interval ?? 1
-    return { type: 'daily', interval: n > 1 ? n : undefined, display: n === 1 ? 'diario' : `${n} días` }
-  }
-  if (type === 'monthly') {
-    const n = interval ?? 1
-    return { type: 'monthly', monthDay: param ? parseInt(param) : undefined, interval: n > 1 ? n : undefined, display: n === 1 ? 'mes' : `${n} meses` }
-  }
-  if (type === 'weekly') {
-    if (param) {
-      const days = param.split(',').map(Number)
-      const display = days.map(d => DAY_NAMES[d] ?? '?').join(' y ')
-      return { type: 'weekly', days, display }
-    }
-    const n = interval ?? 1
-    return { type: 'weekly', interval: n > 1 ? n : undefined, display: n === 1 ? 'semana' : `${n} semanas` }
-  }
-  return null
+  const m = str.match(/^(daily|weekly|monthly|yearly)(?::i?(\d+))?$/)
+  if (!m) return null
+  const type = m[1]
+  const n = m[2] ? parseInt(m[2]) || 1 : 1
+  const interval = n > 1 ? n : undefined
+  if (type === 'daily') return { type: 'daily', interval, display: n === 1 ? 'diario' : `${n} días` }
+  if (type === 'monthly') return { type: 'monthly', interval, display: n === 1 ? 'mes' : `${n} meses` }
+  if (type === 'yearly') return { type: 'monthly', interval: n * 12, display: n === 1 ? 'año' : `${n} años` }
+  return { type: 'weekly', interval, display: n === 1 ? 'semana' : `${n} semanas` }
 }
