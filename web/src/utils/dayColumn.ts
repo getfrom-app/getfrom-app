@@ -72,10 +72,11 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
     for (const t of dayTasks) cockpitIds.add(t.id)
   }
 
-  // Capturas = bandeja: marcadas `_capture`, sin colocar, NO eventos y NO ya
-  // mostradas como tarea en el cockpit (evita duplicado captura↔tarea).
+  // Capturas = bandeja de NOTAS sueltas: marcadas `_capture`, sin colocar, sin
+  // estado (una tarea/bucle vive en el cockpit, no aquí — al completarse no debe
+  // reaparecer en capturas) y NO eventos ni ya mostradas en el cockpit.
   const captureNodes = children.filter(c =>
-    isCaptureNode(c) && !nodeHasPin(c) && !getGcalEventId(c) && !cockpitIds.has(c.id)
+    isCaptureNode(c) && c.status == null && !c.isEvent && !nodeHasPin(c) && !getGcalEventId(c) && !cockpitIds.has(c.id)
   )
 
   // Áreas = vistas guardadas del lienzo (marcador `_area`).
