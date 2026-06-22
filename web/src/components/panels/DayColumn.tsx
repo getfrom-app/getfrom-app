@@ -19,8 +19,6 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
-import { passesLens, allContextKeys } from '../../utils/contextLens'
-import { useLensContextId } from '../../store/contextLensStore'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -102,15 +100,10 @@ export default function DayColumn({
   const raw = getDayColumnData(node)
   const { isToday, rightColumnIds } = raw
   const eventIds = rightColumnIds
-  // ── LENTE DE CONTEXTO: filtra cada bloque por el contexto activo (lo «sin
-  // contexto» siempre pasa). useLensContextId fuerza re-render al cambiar la lente.
-  const lensId = useLensContextId()
-  const ctxKeys = allContextKeys()
-  const lensFilter = <T extends Node>(arr: T[]): T[] => lensId ? arr.filter(n => passesLens(n, ctxKeys)) : arr
-  const eventNodes = lensFilter(raw.eventNodes)
-  const captureNodes = lensFilter(raw.captureNodes)
-  const dayTasks = lensFilter(raw.dayTasks)
-  const areaNodes = raw.areaNodes  // las áreas (vistas del lienzo) no se filtran por contexto
+  const eventNodes = raw.eventNodes
+  const captureNodes = raw.captureNodes
+  const dayTasks = raw.dayTasks
+  const areaNodes = raw.areaNodes
   // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
   const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
 

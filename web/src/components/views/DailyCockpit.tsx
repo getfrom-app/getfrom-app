@@ -9,8 +9,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
-import { passesLens, allContextKeys } from '../../utils/contextLens'
-import { useLensContextId } from '../../store/contextLensStore'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
@@ -60,21 +58,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   }
 
   // Recalculado en cada render — un pase O(n) sobre el store, barato (~6k nodos)
-  const rawData = collectDailyCockpit()
-  // LENTE DE CONTEXTO: filtra cada grupo por el contexto activo (lo «sin contexto»
-  // siempre pasa). useLensContextId fuerza re-render al cambiar la lente.
-  const lensId = useLensContextId()
-  const data = (() => {
-    if (!lensId) return rawData
-    const k = allContextKeys()
-    return {
-      ...rawData,
-      focus: rawData.focus.filter(n => passesLens(n, k)),
-      overdue: rawData.overdue.filter(n => passesLens(n, k)),
-      today: rawData.today.filter(n => passesLens(n, k)),
-      seguimiento: rawData.seguimiento.filter(n => passesLens(n, k)),
-    }
-  })()
+  const data = collectDailyCockpit()
 
   // ── Tareas de hoy/atrasadas que pertenecen a un CONTEXTO ──────────────────
   // Se muestran bajo su contexto (sección Contextos), NO en las listas planas de

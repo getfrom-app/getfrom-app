@@ -5,7 +5,6 @@
 import { store } from '../store/nodeStore'
 import { findContextRoot } from './rootLookup'
 import { textToTagSlug } from './tagsHelper'
-import { getLensContextId } from '../store/contextLensStore'
 import type { Node } from '../types'
 
 /** Contextos reales = hijos directos de 🧠 Contexto (excluye Perfil y borrados). */
@@ -38,18 +37,4 @@ export function nodeInContext(node: Node, ctx: Node): boolean {
 /** ¿El nodo tiene ALGÚN contexto asignado? */
 export function nodeHasAnyContext(node: Node, keys: Set<string>): boolean {
   return (node.types || []).some(t => keys.has(t.trim().toLowerCase()))
-}
-
-/**
- * ¿El nodo pasa la lente activa? Sin lente → siempre. Con lente → pasa si está en
- * ese contexto O si no tiene ningún contexto. `keys` se pasa para no recalcularlo
- * por fila (rendimiento); si se omite, se calcula.
- */
-export function passesLens(node: Node, keys?: Set<string>): boolean {
-  const id = getLensContextId()
-  if (!id) return true
-  const ctx = store.getNode(id)
-  if (!ctx || ctx.deletedAt) return true
-  if (nodeInContext(node, ctx)) return true
-  return !nodeHasAnyContext(node, keys ?? allContextKeys())
 }
