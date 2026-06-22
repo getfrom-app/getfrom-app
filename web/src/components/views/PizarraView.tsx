@@ -684,10 +684,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       // como archivo). El resto (imágenes, PDF, etc.) → subida + tarjeta.
       const mdFiles = files.filter(f => /\.(md|markdown|txt)$/i.test(f.name))
       const otherFiles = files.filter(f => !/\.(md|markdown|txt)$/i.test(f.name))
+      // Cada .md → su propio nodo-documento, colocados en REJILLA (no en cascada,
+      // para que muchos no se solapen).
+      const cols = Math.max(1, Math.ceil(Math.sqrt(mdFiles.length)))
+      const GAP_X = 260, GAP_Y = 210
       mdFiles.forEach(async (f, i) => {
         const content = await f.text()
         const n = createMarkdownNode(parentId, content, f.name)
-        if (n) writePin(store.getNode(n.id)!, { x: w.x + i * 28, y: w.y + i * 28 })
+        if (n) writePin(store.getNode(n.id)!, { x: w.x + (i % cols) * GAP_X, y: w.y + Math.floor(i / cols) * GAP_Y })
       })
       if (otherFiles.length) void uploadAndPinFiles(otherFiles, w)
       return
