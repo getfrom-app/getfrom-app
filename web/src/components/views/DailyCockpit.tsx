@@ -319,12 +319,9 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                       else trashNode(c.id)
                       setCtxClosing(null)
                     } : undefined}>
-                    <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/>
-                        <circle cx="5.2" cy="5.2" r="1"/>
-                      </svg>
-                    </span>
+                    {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
+                        que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
+                    <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
                     <span className="dc-text">{c.text || 'Contexto'}</span>
                     {parent && (() => {
                       const pColor = contextColor(parent.id)
