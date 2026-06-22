@@ -2016,7 +2016,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const showHandles = (hovered || selectedId === node.id || multiSel.has(node.id)) && !dragPos && !editing
         const ViewComp = elView === 'tabla' ? NodeTableView : elView === 'kanban' ? NodeKanbanView : elView === 'calendario' ? NodeCalendarView : null
         // LOD: con zoom bajo, píldora con el título (no se monta el contenido pesado).
-        const lod = cam.scale < LOD_SCALE && !editing
+        // LOD (píldora con solo el título al alejar) SOLO para vistas pesadas
+        // (tabla/kanban/calendario). El TEXTO y los DOCUMENTOS se ven siempre
+        // completos a cualquier zoom (es ligero y el usuario quiere leerlo).
+        const lod = cam.scale < LOD_SCALE && !editing && !!elView
         const lodTitle = (node.text || (isText ? 'Documento' : elView ? (elView[0].toUpperCase() + elView.slice(1)) : 'Sin título')).slice(0, 60)
         return (
           <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isClean ? ' pizarra-node--cleantext' : ''}${hasChrome ? ' pizarra-node--check' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
