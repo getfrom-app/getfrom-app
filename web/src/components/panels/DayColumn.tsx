@@ -139,6 +139,8 @@ export default function DayColumn({
             return (
               <div key={ev.id}>
                 <div className="dc-row dc-row--event" data-node-id={ev.id}
+                  draggable
+                  onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
                   <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>

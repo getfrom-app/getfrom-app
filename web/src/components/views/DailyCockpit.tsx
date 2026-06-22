@@ -318,6 +318,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               return (
                 <div key={c.id}>
                   <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
+                    draggable
+                    onDragStart={e => { e.dataTransfer.setData('nodeId', c.id); e.dataTransfer.effectAllowed = 'copy' }}
                     onClick={() => navigate(`/node/${c.id}`)}
                     onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
                     onAnimationEnd={closing ? () => {

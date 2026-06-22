@@ -156,6 +156,34 @@ function writePin(node: Node, pos: WorldPos) {
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
+// ── Referencias del lienzo (_refs) ────────────────────────────────────────────
+// Un nodo arrastrado desde la columna derecha que NO es hijo de este lienzo se
+// MUESTRA aquí como "espejo" sin moverlo: el lienzo guarda su id en `_refs` y el
+// nodo se posiciona por su propio pin (_pinX/_pinY). Quitarlo del lienzo solo
+// borra la referencia; el nodo sigue en su sitio (columna/agenda).
+function readRefs(parentId: string): string[] {
+  const p = store.getNode(parentId)
+  try { const v = JSON.parse(p?.extraData || '{}')._refs; return Array.isArray(v) ? v.filter((x: unknown): x is string => typeof x === 'string') : [] }
+  catch { return [] }
+}
+function addRef(parentId: string, id: string) {
+  const p = store.getNode(parentId); if (!p) return
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(p.extraData || '{}') } catch { /* */ }
+  const cur = Array.isArray(ed._refs) ? (ed._refs as string[]) : []
+  if (cur.includes(id)) return
+  ed._refs = [...cur, id]
+  store.updateNode(parentId, { extraData: JSON.stringify(ed) })
+}
+function removeRef(parentId: string, id: string) {
+  const p = store.getNode(parentId); if (!p) return
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(p.extraData || '{}') } catch { /* */ }
+  const next = (Array.isArray(ed._refs) ? (ed._refs as string[]) : []).filter(x => x !== id)
+  if (next.length) ed._refs = next; else delete ed._refs
+  store.updateNode(parentId, { extraData: JSON.stringify(ed) })
+}
+
 // ¿Es una captura aún en la bandeja (no colocada en el lienzo)?
 function isCapturePin(node: Node): boolean {
   try { return JSON.parse(node.extraData || '{}')._capture === '1' } catch { return false }
@@ -419,6 +447,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // array cambia de referencia y el layout recalcula (antes se memoizaba por
   // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
   const children = store.children(parentId)
+  // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
+  const refIds = readRefs(parentId)
+  const refsKey = refIds.join(',')
 
   // Cuerpo de la pizarra (trazos + conectores) parseado UNA vez por cambio de body,
   // no en cada render. Pan/zoom no tocan el body (salvo el guardado de cámara cada
@@ -716,9 +747,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       if (otherFiles.length) void uploadAndPinFiles(otherFiles, w)
       return
     }
-    const id = e.dataTransfer.getData('text/plain')
-    const internal = id && store.getNode(id) && store.children(parentId).some(c => c.id === id)
-    if (internal) { writePin(store.getNode(id)!, { x: w.x - 16, y: w.y - 12 }); return }
+    // Nodo arrastrado desde la columna derecha / árbol (varias claves posibles).
+    const id = (e.dataTransfer.getData('nodeId') || e.dataTransfer.getData('from/nodeId') || e.dataTransfer.getData('text/plain') || '').trim()
+    const dn = id ? store.getNode(id) : null
+    if (dn && id !== parentId) {
+      const isChild = store.children(parentId).some(c => c.id === id)
+      writePin(dn, { x: w.x - 16, y: w.y - 12 })
+      // Si no es hijo de este lienzo, se MUESTRA como referencia (no se mueve).
+      if (!isChild) addRef(parentId, id)
+      return
+    }
     const uri = (e.dataTransfer.getData('text/uri-list') || id || '').trim()
     if (/^https?:\/\/\S+$/i.test(uri)) createResourceAt(w, { url: uri, type: 'url', title: uri })
   }, [parentId, screenToWorld, uploadAndPinFiles, createResourceAt])
@@ -757,12 +795,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // nota (NoteColumn), de donde se puede arrastrar de vuelta o eliminar con su icono.
   const removeFromCanvas = useCallback((id: string) => {
     const node = store.getNode(id); if (!node) return
+    // Si es un ESPEJO (referencia, no hijo del lienzo): solo se quita la referencia;
+    // el nodo sigue en su sitio (columna/agenda).
+    if (readRefs(parentId).includes(id) && !store.children(parentId).some(c => c.id === id)) {
+      removeRef(parentId, id)
+      return
+    }
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch { /* corrupto */ }
     delete ed[PIN_X]; delete ed[PIN_Y]; delete ed[PIN_SCALE]
     ed._moved = '1'
     store.updateNode(id, { extraData: JSON.stringify(ed) })
-  }, [])
+  }, [parentId])
 
   // Duplicar un nodo (texto + cuerpo + tipo + pin desplazado para no solaparse).
   // No copia identidad de Google Calendar (sería un evento fantasma).
@@ -1550,13 +1594,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       if (sx + w < -margin || sx > viewport.w + margin || sy + screenH < -margin || sy > viewport.h + margin) continue
       out.push({ node: n, pos })
     }
+    // Nodos REFERENCIADOS (arrastrados desde la columna derecha): espejos colocados
+    // por su propio pin, sin moverlos de su sitio. No duplicar los que ya son hijos.
+    const childIds = new Set(children.map(c => c.id))
+    for (const id of refIds) {
+      if (childIds.has(id)) continue
+      const n = store.getNode(id)
+      if (!n || n.deletedAt) continue
+      const p = (dragPos && dragPos.id === id) ? dragPos.pos : (readPin(n) ?? { x: 0, y: 0 })
+      const sx = cam.x + p.x * cam.scale
+      const sy = cam.y + p.y * cam.scale
+      const w = CARD_W * cam.scale
+      const worldH = cardHeights.current.get(id) ?? (isDocNode(n) ? 4000 : CARD_MIN_H)
+      const screenH = worldH * cam.scale * readCardScale(n)
+      if (sx + w < -margin || sx > viewport.w + margin || sy + screenH < -margin || sy > viewport.h + margin) continue
+      out.push({ node: n, pos: p })
+    }
     // Si se está arrastrando un nodo del FLUJO (aún sin pin), renderizarlo flotando.
-    if (dragPos && !layout.has(dragPos.id)) {
+    if (dragPos && !layout.has(dragPos.id) && !out.some(o => o.node.id === dragPos.id)) {
       const dn = store.getNode(dragPos.id)
       if (dn) out.push({ node: dn, pos: dragPos.pos })
     }
     return out
-  }, [children, layout, dragPos, cam, viewport, heightsV])
+  }, [children, layout, dragPos, cam, viewport, heightsV, refsKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Herramientas que PINTAN sobre el fondo (no la flecha, que conecta tarjetas).
   // Con una activa, las tarjetas se vuelven transparentes al puntero para poder
