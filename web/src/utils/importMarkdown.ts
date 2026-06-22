@@ -112,6 +112,24 @@ function buildContent(parentId: string, lines: Line[]): void {
   }
 }
 
+/** Crea UN nodo-documento (`_doc`) bajo `parentId` con el markdown en el body
+ *  (convertido a HTML). Título = primer encabezado, o el nombre del archivo, o la
+ *  primera línea. Devuelve el nodo (o null si no hay contenido). Reutilizado al
+ *  soltar un .md o pegar texto en el lienzo. */
+export function createMarkdownNode(parentId: string | null, content: string, fileName?: string): ReturnType<typeof store.createNode> | null {
+  if (!content.trim()) return null
+  const lines = content.replace(/\r\n/g, '\n').split('\n').map(l => l.trim())
+  const firstH = lines.find(l => /^#{1,6}\s+/.test(l))
+  const fallback = fileName ? fileName.replace(/\.(md|markdown|txt)$/i, '') : ''
+  const firstLine = lines.find(Boolean) || 'Nota'
+  const title = (firstH ? firstH.replace(/^#{1,6}\s+/, '') : (fallback || firstLine.replace(/^#{1,6}\s+/, ''))).slice(0, 120) || 'Nota'
+  const sibs = (parentId ? store.children(parentId) : store.children(null)).filter(n => !n.deletedAt)
+  const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+  const note = store.createNode({ text: title, parentId, siblingOrder: maxOrder + 1000 })
+  store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(content), text: title })
+  return note
+}
+
 /** Importa los archivos. Devuelve cuántas notas se crearon. */
 export async function importMarkdownFiles(files: ImportFile[]): Promise<{ notes: number; container: string | null }> {
   const valid = files.filter(f => /\.(md|markdown|txt)$/i.test(f.path) && f.content.trim())

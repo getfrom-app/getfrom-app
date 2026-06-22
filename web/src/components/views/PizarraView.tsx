@@ -25,6 +25,7 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
+import { createMarkdownNode } from '../../utils/importMarkdown'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
@@ -678,7 +679,19 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const rect = containerRef.current!.getBoundingClientRect()
     const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     const files = Array.from(e.dataTransfer.files || [])
-    if (files.length) { void uploadAndPinFiles(files, w); return }
+    if (files.length) {
+      // .md/.txt → se vuelca su contenido en un nodo-documento anclado (no se sube
+      // como archivo). El resto (imágenes, PDF, etc.) → subida + tarjeta.
+      const mdFiles = files.filter(f => /\.(md|markdown|txt)$/i.test(f.name))
+      const otherFiles = files.filter(f => !/\.(md|markdown|txt)$/i.test(f.name))
+      mdFiles.forEach(async (f, i) => {
+        const content = await f.text()
+        const n = createMarkdownNode(parentId, content, f.name)
+        if (n) writePin(store.getNode(n.id)!, { x: w.x + i * 28, y: w.y + i * 28 })
+      })
+      if (otherFiles.length) void uploadAndPinFiles(otherFiles, w)
+      return
+    }
     const id = e.dataTransfer.getData('text/plain')
     const internal = id && store.getNode(id) && store.children(parentId).some(c => c.id === id)
     if (internal) { writePin(store.getNode(id)!, { x: w.x - 16, y: w.y - 12 }); return }
@@ -700,11 +713,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       const img = items.find(it => it.type.startsWith('image/'))
       if (img) { const f = img.getAsFile(); if (f) { e.preventDefault(); void uploadAndPinFiles([f], world) } return }
       const text = (e.clipboardData?.getData('text/plain') || '').trim()
-      if (/^https?:\/\/\S+$/i.test(text)) { e.preventDefault(); createResourceAt(world, { url: text, type: 'url', title: text }) }
+      if (!text) return
+      if (/^https?:\/\/\S+$/i.test(text)) { e.preventDefault(); createResourceAt(world, { url: text, type: 'url', title: text }); return }
+      // Texto/markdown pegado → nodo-documento anclado en el centro de la vista.
+      e.preventDefault()
+      const n = createMarkdownNode(parentId, text)
+      if (n) writePin(store.getNode(n.id)!, world)
     }
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)
-  }, [uploadAndPinFiles, createResourceAt])
+  }, [uploadAndPinFiles, createResourceAt, parentId])
 
   // Quitar de la pizarra (NO borra el nodo): elimina el pin y lo marca `_moved` para
   // que salga del lienzo y aparezca en la lista «Movidos» de la columna derecha de la
