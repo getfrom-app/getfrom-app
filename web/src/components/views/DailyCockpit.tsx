@@ -185,7 +185,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     </button>
   )
 
-  const renderTaskRow = (n: Node, opts: { showDue?: boolean; inFocus?: boolean }) => (
+  const renderTaskRow = (n: Node, opts: { showDue?: boolean; inFocus?: boolean; inContext?: boolean }) => (
     <div
       key={n.id}
       ref={registerRow(n.id)}
@@ -236,8 +236,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
           {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-          {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
-          <RowContextChip node={n} />
+          {!opts.inContext && parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
+          {!opts.inContext && <RowContextChip node={n} />}
         </div>
       </div>
     </div>
@@ -355,8 +355,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                   {/* Tareas de hoy/atrasadas del contexto, indentadas bajo él. */}
                   {due && (
                     <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
-                      {due.overdue.map(t => renderTaskRow(t, { showDue: true }))}
-                      {due.today.map(t => renderTaskRow(t, {}))}
+                      {due.overdue.map(t => renderTaskRow(t, { showDue: true, inContext: true }))}
+                      {due.today.map(t => renderTaskRow(t, { inContext: true }))}
                     </div>
                   )}
                 </div>
