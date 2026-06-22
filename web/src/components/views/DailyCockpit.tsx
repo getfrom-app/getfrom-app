@@ -284,34 +284,26 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('focus') && pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
         </div>
       )}
-      {overdueFlat.length > 0 && (
-        <div className="dc-group">
-          {gHeader('overdue', t('daily.overdue'), 'dc-group-label--overdue')}
-          {!collapsedG.has('overdue') && overdueFlat.map(n => renderTaskRow(n, { showDue: true }))}
-        </div>
-      )}
-      {todayFlat.length > 0 && (
-        <div className="dc-group">
-          {gHeader('today', t('daily.todayTasks'))}
-          {!collapsedG.has('today') && todayFlat.map(n => renderTaskRow(n, {}))}
-        </div>
-      )}
-      {data.seguimiento.length > 0 && (
-        <div className="dc-group">
-          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length}`, 'dc-group-label--followup')}
-          {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
-        </div>
-      )}
+      {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
+          bajo su contexto; las que no tienen contexto, bajo «Sin contexto». */}
       {(() => {
-        // Contextos en uso (abiertos) + cualquiera con tareas de hoy/atrasadas.
         const subs = listActiveContexts()
         const byId = new Map(subs.map(c => [c.id, c]))
         for (const { ctx } of ctxTasks.values()) if (!byId.has(ctx.id)) { subs.push(ctx); byId.set(ctx.id, ctx) }
-        if (subs.length === 0) return null
+        const hasSinCtx = overdueFlat.length + todayFlat.length > 0
+        if (!hasSinCtx && subs.length === 0) return null
+        const open = !collapsedG.has('porhacer')
         return (
           <div className="dc-group">
-            {gHeader('cajones', `Contextos · ${subs.length}`)}
-            {!collapsedG.has('cajones') && subs.map(c => {
+            {gHeader('porhacer', 'Para hacer')}
+            {open && hasSinCtx && (
+              <div className="dc-group">
+                <div className="rc-section-label" style={{ margin: '2px 0 4px' }}>Sin contexto</div>
+                {overdueFlat.map(n => renderTaskRow(n, { showDue: true, inContext: true }))}
+                {todayFlat.map(n => renderTaskRow(n, { inContext: true }))}
+              </div>
+            )}
+            {open && subs.map(c => {
               const color = contextColor(c.id)
               const parent = contextParent(c.id)
               const n = nodesInContext(c.id).length
@@ -327,7 +319,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                       else trashNode(c.id)
                       setCtxClosing(null)
                     } : undefined}>
-                    {/* Icono de contexto (en el sitio del checkbox), en su color */}
                     <span className="dc-check" style={{ cursor: 'pointer', color, border: 'none', background: 'none' }} aria-label="Contexto">
                       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/>
@@ -352,7 +343,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                     )}
                     {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>{n}</span>}
                   </div>
-                  {/* Tareas de hoy/atrasadas del contexto, indentadas bajo él. */}
                   {due && (
                     <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
                       {due.overdue.map(t => renderTaskRow(t, { showDue: true, inContext: true }))}
@@ -365,6 +355,13 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           </div>
         )
       })()}
+      {data.seguimiento.length > 0 && (
+        <div className="dc-group">
+          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length}`, 'dc-group-label--followup')}
+          {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
+        </div>
+      )}
+      {/* (El antiguo bloque CONTEXTOS se fusionó arriba en «Para hacer».) */}
 
       {/* Menú contextual de una fila de contexto: abrir/cerrar · eliminar */}
       {ctxMenu && (() => {
