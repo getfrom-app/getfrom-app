@@ -55,16 +55,23 @@ export interface DayColumnData {
 
 export function getDayColumnData(dayNode: Node): DayColumnData {
   const children = store.children(dayNode.id)
+  const isToday = store.todayDiary()?.id === dayNode.id
 
-  // Eventos = nodos-evento (locales o sincronizados con GCal). Van a la sección
-  // EVENTOS de la columna, NUNCA al lienzo (un evento creado por captura no debe
-  // quedar flotando en la pizarra).
+  // Eventos = nodos-evento (locales o sincronizados con GCal) cuya FECHA cae en
+  // este día. Van a la sección EVENTOS de la columna, NUNCA al lienzo. El filtro
+  // por fecha evita que un evento creado bajo el diario de hoy pero programado
+  // otro día (p.ej. por captura) aparezca en «Eventos de hoy».
+  const dayDate = isToday ? new Date() : (dayNode.diaryDate ? new Date(dayNode.diaryDate) : null)
+  const sameDay = (iso?: string | null): boolean => {
+    if (!iso || !dayDate) return false
+    const d = new Date(iso)
+    return d.getFullYear() === dayDate.getFullYear() && d.getMonth() === dayDate.getMonth() && d.getDate() === dayDate.getDate()
+  }
   const eventNodes = children
-    .filter(c => !c.deletedAt && (c.isEvent || getGcalEventId(c)))
+    .filter(c => !c.deletedAt && (c.isEvent || getGcalEventId(c)) && sameDay(c.due))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
 
   // HOY → cockpit (atrasadas/hoy/bucles). Otros días → tareas con due ese día.
-  const isToday = store.todayDiary()?.id === dayNode.id
   const cockpitIds = new Set<string>()
   let dayTasks: Node[] = []
   if (isToday) {
