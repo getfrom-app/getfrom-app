@@ -681,6 +681,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // columna derecha→se coloca; una URL externa→nodo-enlace anclado en el punto.
   const onCanvasDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()  // el lienzo gestiona el drop; no dejar que NodeView lo suba como adjunto
     const rect = containerRef.current!.getBoundingClientRect()
     const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
     const files = Array.from(e.dataTransfer.files || [])
