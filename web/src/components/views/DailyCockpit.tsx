@@ -296,13 +296,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         return (
           <div className="dc-group">
             {gHeader('porhacer', 'Para hacer')}
-            {open && hasSinCtx && (
-              <div className="dc-group">
-                <div className="rc-section-label" style={{ margin: '2px 0 4px' }}>Sin contexto</div>
-                {overdueFlat.map(n => renderTaskRow(n, { showDue: true, inContext: true }))}
-                {todayFlat.map(n => renderTaskRow(n, { inContext: true }))}
-              </div>
-            )}
             {open && subs.map(c => {
               const color = contextColor(c.id)
               const parent = contextParent(c.id)
@@ -349,6 +342,14 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                 </div>
               )
             })}
+            {/* «Sin contexto» — al final del bloque «Para hacer», antes de Seguimiento. */}
+            {open && hasSinCtx && (
+              <div className="dc-group">
+                <div className="rc-section-label" style={{ margin: '2px 0 4px' }}>Sin contexto</div>
+                {overdueFlat.map(n => renderTaskRow(n, { showDue: true, inContext: true }))}
+                {todayFlat.map(n => renderTaskRow(n, { inContext: true }))}
+              </div>
+            )}
           </div>
         )
       })()}
