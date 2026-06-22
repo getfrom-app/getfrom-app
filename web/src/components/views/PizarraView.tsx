@@ -2023,8 +2023,19 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
-            onPointerDown={(elView && !lod) ? undefined : (e) => onCardAreaPointerDown(e, node)}
-            onDoubleClick={isText ? (e) => { e.stopPropagation(); setSelectedId(node.id); setEditText(node.id) } : undefined}
+            onPointerDown={(elView && !lod) ? undefined : (
+              // DOCUMENTO: clic IZQUIERDO = editar directo (cursor + escribir), como
+              // un nodo normal — NO arrastra. Mover = arrastrar con botón DERECHO
+              // (handler global de tarjetas). El resto de tarjetas: arrastre normal.
+              (isText && !lod) ? (e: React.PointerEvent) => {
+                if (e.button !== 0) return
+                const t = e.target as HTMLElement
+                if (t.closest('button, a, input, textarea, select, [contenteditable="true"], .ProseMirror')) return
+                if (editing) return
+                e.stopPropagation()
+                setSelectedId(node.id); setEditText(node.id)
+              } : (e: React.PointerEvent) => onCardAreaPointerDown(e, node)
+            )}
             onContextMenu={(e) => nodeCtx(e, node.id)}
             style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
               // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre)
