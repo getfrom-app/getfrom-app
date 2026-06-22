@@ -204,6 +204,9 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       <div className="dc-row-main">
         <div className="dc-row-l1">
           <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
+          {/* Contexto: chip a la DERECHA del texto (mismo renglón). Si no tiene
+              contexto muestra «?» para asignarlo. Oculto cuando va bajo su contexto. */}
+          {!opts.inContext && <span style={{ marginLeft: 4, flexShrink: 0 }}><RowContextChip node={n} /></span>}
           <span className="dc-actions">
             {opts.inFocus ? (
               <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
@@ -237,7 +240,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer' }} title="Editar fecha y recurrencia"
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
           {!opts.inContext && parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
-          {!opts.inContext && <RowContextChip node={n} />}
         </div>
       </div>
     </div>
