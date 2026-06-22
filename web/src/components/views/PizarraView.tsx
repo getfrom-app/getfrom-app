@@ -1593,7 +1593,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const rect = containerRef.current!.getBoundingClientRect()
         setQuickMenu({ x: e.clientX, y: e.clientY, world: screenToWorld(e.clientX - rect.left, e.clientY - rect.top) })
       }}
-      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy' }}
       onDrop={onCanvasDrop}
       style={{
         position: 'relative',
@@ -2053,15 +2053,28 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
               // Colapsado → solo el título + chevron (el usuario despliega para leer).
               editing ? (
                 <DocEditor node={node} compact />
-              ) : node.isCollapsed ? (
-                <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}>
-                  {node.text || firstLineTitle(node.body) || 'Documento'}
-                </div>
               ) : (
-                <div className="pizarra-text"
-                  dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
-                  style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                />
+                // Gutter [chevron][dot] + cuerpo, alineados con la 1ª línea — como el
+                // bullet de la lista. chevron = colapsar/desplegar · dot = abrir página.
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5 }}>
+                  <button title={node.isCollapsed ? 'Desplegar' : 'Colapsar'}
+                    onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: !node.isCollapsed }) }}
+                    style={{ marginTop: node.isCollapsed ? 4 : 9, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 11, lineHeight: 1, padding: 0, flexShrink: 0, width: 12, textAlign: 'center' }}>
+                    {node.isCollapsed ? '▸' : '▾'}
+                  </button>
+                  <span title="Abrir en su página"
+                    onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
+                    style={{ marginTop: node.isCollapsed ? 6 : 11, width: 9, height: 9, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)', cursor: 'pointer', flexShrink: 0 }} />
+                  {node.isCollapsed ? (
+                    <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}>
+                      {node.text || firstLineTitle(node.body) || 'Documento'}
+                    </div>
+                  ) : (
+                    <div className="pizarra-text" style={{ flex: 1, minWidth: 0, fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
+                      dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                    />
+                  )}
+                </div>
               )
             ) : elView && ViewComp ? (
               // Elemento de VISTA (tabla/kanban/calendario): el MISMO nodo que se abre
@@ -2110,18 +2123,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
-            {/* CHEVRON de colapso del documento — a la IZQUIERDA del DOT (convención
-                de siempre). Solo en documentos. ▾ desplegado / ▸ colapsado. */}
-            {isText && !editing && (
-              <div title={node.isCollapsed ? 'Desplegar' : 'Colapsar'}
-                onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: !node.isCollapsed }) }}
-                style={{ position: 'absolute', left: -50, top: 6, height: 28, width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22, color: 'var(--text-tertiary,#999)', fontSize: 12, lineHeight: 1 }}>
-                {node.isCollapsed ? '▸' : '▾'}
-              </div>
-            )}
-            {/* DOT → abre el elemento en su página. SIEMPRE visible (como en la tabla),
-                clicable directo, alineado al centro de la 1ª línea (título). */}
-            {(isText || res) && (
+            {/* (Documento: chevron + DOT van INLINE en el cuerpo, alineados con la 1ª
+                línea como el bullet de la lista — ya no en el margen.) */}
+            {/* DOT del RECURSO (imagen/PDF/enlace/archivo) → abre en su página. */}
+            {res && (
               <div title="Abrir en su página"
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
