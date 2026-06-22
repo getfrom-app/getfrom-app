@@ -21,14 +21,12 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import RowContextChip from '../panels/RowContextChip'
-import { findContextRoot } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
 import OutlinerNode from '../outliner/OutlinerNode'
 import { useGlobalSelection, toggleNodeSelection } from '../outliner/Outliner'
-import AutoContextBadge from '../outliner/AutoContextBadge'
-import { scheduleClassify, cancelClassify, getCachedClassify, saveExample, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { TAGS_ROOT_NAME } from '../../utils/tagsHelper'
+import { scheduleClassify, cancelClassify, buildClassifyContexts, CONFIDENCE_THRESHOLD } from '../../api/autoClassify'
+import { assignContext, nodeCtxRefs } from '../../utils/cajones'
 
 /** Máximo de niveles de ancestro a mostrar en el breadcrumb */
 const MAX_BREADCRUMB_DEPTH = 4
@@ -60,156 +58,6 @@ export function getBreadcrumb(nodeId: string): string[] {
 export const DRAG_NODE_ID_KEY = 'from/nodeId'
 
 /**
- * ContextPlaceholderBadge — Badge `+ Contexto` visible siempre en "Sin clasificar"
- * cuando la IA aún no ha sugerido un contexto (o la confianza es baja).
- * Al hacer clic abre el dropdown de contextos para asignación manual inmediata.
- */
-export function ContextPlaceholderBadge({ node, onContextAssigned }: { node: FromNode; onContextAssigned: (nodeId: string) => void }) {
-  const { t } = useTranslation()
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })
-  const btnRef = useRef<HTMLButtonElement>(null)
-  const dropRef = useRef<HTMLDivElement>(null)
-
-  const tagsRoot = findContextRoot()
-  const contextNodes = tagsRoot ? store.children(tagsRoot.id).filter(n => !n.deletedAt) : []
-
-  useEffect(() => {
-    if (!showDropdown) return
-    function handleClickOutside(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as globalThis.Node) &&
-          btnRef.current && !btnRef.current.contains(e.target as globalThis.Node)) {
-        setShowDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showDropdown])
-
-  function openDropdown(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect()
-      setDropdownPos({
-        top: rect.bottom + 4,
-        left: Math.max(8, Math.min(rect.left, window.innerWidth - 220)),
-      })
-    }
-    setShowDropdown(v => !v)
-  }
-
-  function assignContext(contextNodeId: string) {
-    setShowDropdown(false)
-    if (node.text?.trim()) saveExample(node.text.trim(), contextNodeId)
-    const contextNode = contextNodes.find(n => n.id === contextNodeId)
-    const tagName = contextNode?.text || ''
-    if (tagName) {
-      const existingTypes = node.types || []
-      if (!existingTypes.includes(tagName)) {
-        store.updateNode(node.id, { types: [...existingTypes, tagName] })
-      }
-    }
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      ed._contextManuallySet = '1'
-      delete ed._autoContextId
-      delete ed._autoContextConfidence
-      store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-    } catch { /* ignore */ }
-    cancelClassify(node.id)
-    onContextAssigned(node.id)
-  }
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        className="auto-ctx-badge auto-ctx-badge--placeholder"
-        style={{
-          background: 'transparent',
-          color: 'var(--text-tertiary)',
-          border: '1px dashed var(--border)',
-          borderRadius: 4,
-          padding: '0 6px',
-          fontSize: '0.78em',
-          fontWeight: 500,
-          cursor: 'pointer',
-          lineHeight: '18px',
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          opacity: 0.7,
-          transition: 'opacity 0.2s',
-        }}
-        title={t('autoCtx.assignContext', 'Asignar contexto')}
-        onMouseDown={e => e.preventDefault()}
-        onClick={openDropdown}
-        tabIndex={-1}
-      >
-        + {t('autoCtx.assignContext', 'Contexto')}
-      </button>
-
-      {showDropdown && createPortal(
-        <div
-          className="auto-ctx-dropdown"
-          ref={dropRef}
-          style={{
-            position: 'fixed',
-            top: dropdownPos.top,
-            left: dropdownPos.left,
-            zIndex: 9999,
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-            minWidth: 200,
-            maxWidth: 280,
-            padding: '6px 0',
-          }}
-          onMouseDown={e => e.stopPropagation()}
-        >
-          <div style={{ padding: '4px 12px 6px', fontSize: 11, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-            {t('autoCtx.dropdownTitle', 'Asignar contexto')}
-          </div>
-          {contextNodes.map(ctx => {
-            let ctxColor = '#7c3aed'
-            try {
-              const ed = JSON.parse(ctx.extraData || '{}')
-              if (ed._tagColor) ctxColor = ed._tagColor
-            } catch { /* ignore */ }
-            return (
-              <button
-                key={ctx.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  width: '100%',
-                  padding: '6px 12px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  color: 'var(--text-primary)',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = ctxColor + '12')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => assignContext(ctx.id)}
-              >
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: ctxColor, flexShrink: 0 }} />
-                {ctx.text}
-              </button>
-            )
-          })}
-        </div>,
-        document.body,
-      )}
-    </>
-  )
-}
-
-/**
  * FilterResultItem — Muestra un nodo resultado de filtro como raíz flotante.
  * El breadcrumb es texto plano (sin OutlinerNode). El nodo resultado sí es OutlinerNode.
  * Exportado para que UnclassifiedList pueda reutilizarlo.
@@ -235,62 +83,16 @@ export function FilterResultItem({
   const selectedIds = useGlobalSelection()
   const breadcrumb = useMemo(() => getBreadcrumb(node.id), [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-clasificación en "Sin clasificar": scheduleClassify al montar y mostrar badge
-  const [autoCtxResult, setAutoCtxResult] = useState<ClassifyResult | null>(() => {
-    if (!enableAutoClassify) return null
-    // 1. Caché en memoria (más reciente)
-    const cached = getCachedClassify(node.id)
-    if (cached) return cached
-    // 2. Fallback: extraData persistido
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._autoContextId !== undefined) {
-        return {
-          contextId: ed._autoContextId || null,
-          confidence: typeof ed._autoContextConfidence === 'number' ? ed._autoContextConfidence : 0,
-        }
-      }
-    } catch { /* ignore */ }
-    return null
-  })
+  // Auto-clasificación en "Sin clasificar": al montar, clasifica y ASIGNA el
+  // contexto por _ctxRefs (sistema único) si hay confianza y el nodo no lo tiene.
   const classifyScheduledRef = useRef(false)
-
-  // ID del contexto asignado manualmente (cuando _contextManuallySet=1 en extraData).
-  // Se usa para mostrar AutoContextBadge en modo "confirmado" en la vista Sin clasificar.
-  const manuallySetContextId = useMemo<string | null>(() => {
-    if (!enableAutoClassify) return null
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._contextManuallySet !== '1') return null
-    } catch { return null }
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
-    if (userTypes.length === 0) return null
-    const tagsRoot = findContextRoot()
-    if (!tagsRoot) return null
-    const ctxNodes = store.children(tagsRoot.id).filter(n => !n.deletedAt)
-    for (const typeName of userTypes) {
-      const ctxNode = ctxNodes.find(n => n.text === typeName)
-      if (ctxNode) return ctxNode.id
-    }
-    return null
-  }, [node.types, node.extraData, enableAutoClassify]) // eslint-disable-line react-hooks/exhaustive-deps
-
   useEffect(() => {
     if (!enableAutoClassify) return
     if (classifyScheduledRef.current) return
     classifyScheduledRef.current = true
 
-    // No clasificar si ya tiene contexto manual o @mention
-    try {
-      const ed = JSON.parse(node.extraData || '{}')
-      if (ed._contextManuallySet === '1') return
-    } catch { /* ignore */ }
+    if (nodeCtxRefs(node).length > 0) return        // ya tiene contexto
     if (/@\w/.test(node.text || '')) return
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
-    const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
-    if (userTypes.length > 0) return
-
     const text = (node.text || '').trim()
     if (text.length < 4) return
 
@@ -299,18 +101,15 @@ export function FilterResultItem({
 
     scheduleClassify(node.id, text, contexts, (id, result) => {
       if (id !== node.id) return
-      setAutoCtxResult(result)
-      // Persistir en extraData para que sobreviva desmonte/remonte y recargas
       try {
-        const currentNode = store.getNode(node.id)
-        const ed = JSON.parse(currentNode?.extraData || node.extraData || '{}')
-        // No sobreescribir si ya se asignó manualmente entre medias
-        if (ed._contextManuallySet !== '1') {
-          ed._autoContextId = result.contextId ?? ''
-          ed._autoContextConfidence = result.confidence
-          store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-        }
+        const ed = JSON.parse(store.getNode(node.id)?.extraData || node.extraData || '{}')
+        ed._autoContextId = result.contextId ?? ''
+        ed._autoContextConfidence = result.confidence
+        store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
+      if (result.contextId && result.confidence >= CONFIDENCE_THRESHOLD && nodeCtxRefs(store.getNode(node.id)).length === 0) {
+        assignContext(node.id, result.contextId)
+      }
     })
 
     return () => { cancelClassify(node.id) }

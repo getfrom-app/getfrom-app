@@ -43,7 +43,6 @@ import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInline
 import EmojiPicker from '../EmojiPicker'
 import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
-import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
 import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext, renameContext } from '../../utils/cajones'
 
