@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
-import { listContexts, nodeInContext } from '../../utils/contextLens'
+import { listContextsForParent, isContextClosed, firstContextOf, setNodeContext } from '../../utils/cajones'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
   const navigate = useNavigate()
@@ -17,7 +17,8 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   if (!node || node.deletedAt) return null
   const isTask = node.status != null && node.status !== undefined
   const isEvent = !!node.isEvent
-  const contexts = listContexts()
+  const contexts = listContextsForParent().filter(c => !isContextClosed(c))
+  const current = firstContextOf(node)
 
   function convertTask() {
     if (isTask) {
@@ -28,18 +29,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
     }
     onClose()
   }
-  function toggleContext(ctx: ReturnType<typeof listContexts>[number]) {
-    const name = (ctx.text || '').trim()
-    if (!name) return
-    const types = node!.types || []
-    const has = nodeInContext(node!, ctx)
-    const next = has ? types.filter(t => t.toLowerCase() !== name.toLowerCase()) : [...types, name]
-    store.updateNode(nodeId, { types: next })
-    try {
-      const ed = JSON.parse(node!.extraData || '{}')
-      ed._contextManuallySet = '1'; delete ed._autoContextId; delete ed._autoContextConfidence
-      store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-    } catch { /* ignore */ }
+  function pickContext(ctx: ReturnType<typeof listContextsForParent>[number]) {
+    // Un nodo = un contexto: si ya es el actual lo quita; si no, lo reemplaza.
+    setNodeContext(nodeId, current?.id === ctx.id ? null : ctx.id)
   }
 
   return createPortal((
@@ -55,18 +47,23 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           </button>
         )}
         <button className="node-ctx-item" onClick={() => setCtxOpen(o => !o)}>
-          🏷 Añadir contexto <span style={{ float: 'right', opacity: 0.6 }}>{ctxOpen ? '▾' : '▸'}</span>
+          🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>{ctxOpen ? '▾' : '▸'}</span>
         </button>
         {ctxOpen && (contexts.length === 0
           ? <div className="node-ctx-label">Sin contextos creados</div>
           : contexts.map(c => {
-            const has = nodeInContext(node!, c)
+            const has = current?.id === c.id
             return (
-              <button key={c.id} className={`node-ctx-item node-ctx-item--type ${has ? 'active' : ''}`} onClick={() => toggleContext(c)}>
+              <button key={c.id} className={`node-ctx-item node-ctx-item--type ${has ? 'active' : ''}`} onClick={() => pickContext(c)}>
                 {has ? '● ' : '○ '}{c.text || 'Contexto'}
               </button>
             )
           }))}
+        {current && (
+          <button className="node-ctx-item" onClick={() => { setNodeContext(nodeId, null); onClose() }}>
+            ✕ Quitar contexto
+          </button>
+        )}
         <div className="node-ctx-sep" />
         <button className="node-ctx-item node-ctx-item--danger" onClick={() => { trashNode(nodeId); onClose() }}>🗑 Eliminar</button>
       </div>
