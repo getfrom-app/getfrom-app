@@ -1002,9 +1002,9 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
   const ghostLabel = (() => {
     if (ctxSuggestion) {
       const typed = ctxSuggestion.displayName.slice(0, ctxSuggestion.typedLen)
-      return `${ctxSuggestion.cajonId ? '📦 ' : ''}${typed}${ctxSuggestion.ghost}`
+      return `${ctxSuggestion.cajonId ? '# ' : ''}${typed}${ctxSuggestion.ghost}`
     }
-    if (newCajonName) return `📦 Crear «${newCajonName}»`
+    if (newCajonName) return `# Crear «${newCajonName}»`
     if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
     if (taskPrediction) return '☐ tarea'

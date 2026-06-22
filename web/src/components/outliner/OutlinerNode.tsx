@@ -4487,21 +4487,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             )
           })() : picker.type === '#' ? (
             <>
-              <div className="inline-picker-section-header">📦 Cajones</div>
+              <div className="inline-picker-section-header">Contextos</div>
               {picker.items.map((item, idx) => (
                 <button
                   key={item.id}
                   className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
                   onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
                 >
-                  <span className="inline-picker-icon">{item.cajonCreate ? '+' : '📦'}</span>
+                  <span className="inline-picker-icon">{item.cajonCreate ? '+' : '#'}</span>
                   <span className="inline-picker-content">
                     <span className="inline-picker-label">
-                      {item.cajonCreate ? `Crear cajón «${item.label}»` : item.label}
+                      {item.cajonCreate ? `Crear contexto «${item.label}»` : item.label}
                     </span>
-                    {item.contextLabel && (
-                      <span className="inline-picker-preview">en {item.contextLabel}</span>
-                    )}
                   </span>
                 </button>
               ))}
