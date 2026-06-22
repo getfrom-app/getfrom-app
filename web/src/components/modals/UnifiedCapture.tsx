@@ -352,9 +352,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
       for (const n of ctxNodes) {
         const normName = normalizeNFD(n.text)
-        const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-        // No sugerir contextos ya aceptados como chip
-        if (assignedCtx.some(c => c.slug === slug)) continue
+        // No sugerir contextos ya asignados (pendientes de aplicar al crear)
+        if (pendingCajones.includes(n.id)) continue
         // Incluir el nombre completo (normName.length, sin -1) y sin excluir tail===normName
         // para que "from" detecte "Fromly" igual que "fro"
         for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
@@ -497,53 +496,25 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
   function acceptCtx() {
     if (!ctxSuggestion || !inputRef.current) return
-    // Cajón (proyecto): se asignará al nodo al crearlo. Se quita lo tecleado del
-    // texto (no deja token) y se recuerda en pendingCajones.
-    if (ctxSuggestion.cajonId) {
-      const cid = ctxSuggestion.cajonId
-      setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
-      const t = getCurrentText()
-      const cleaned = t.slice(0, -ctxSuggestion.typedLen).replace(/#$/, '').replace(/\s+$/, '') + ' '
-      skipNextInputRef.current = true
-      inputRef.current.textContent = cleaned.trimStart() === '' ? '' : cleaned
-      const range = document.createRange()
-      const sel = window.getSelection()
-      const textNode = inputRef.current.firstChild
-      if (textNode) { range.setStart(textNode, (inputRef.current.textContent || '').length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
-      setText(inputRef.current.textContent || '')
-      setCtxSuggestion(null)
-      setAtPicker(null)
-      setJustAcceptedCtx(true)
-      return
-    }
-    // Añadir chip de contexto
-    const slug = ctxSuggestion.displayName.toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
-    setAssignedCtx(prev =>
-      prev.some(c => c.slug === slug) ? prev : [...prev, { name: ctxSuggestion!.displayName, slug }]
-    )
-    // Mantener el nombre del contexto en el texto con la capitalización correcta
-    // (ej. "from" → "Fromly") para que el nodo se cree con el título completo
+    // La palabra detectada hace referencia al CONTEXTO → se QUITA del texto y el
+    // contexto se asigna por id al crear el nodo (un nodo = un contexto). Igual para
+    // áreas y proyectos (antes las áreas dejaban el nombre como mención en el título).
+    const cid = ctxSuggestion.cajonId || ctxSuggestion.nodeId
+    setPendingCajones(prev => prev.includes(cid) ? prev : [...prev, cid])
     const t = getCurrentText()
-    const prefix = t.slice(0, -ctxSuggestion.typedLen)
-    const newText = prefix + ctxSuggestion.displayName + ' '
+    const cleaned = t.slice(0, -ctxSuggestion.typedLen).replace(/#$/, '').replace(/\s+$/, '') + ' '
     skipNextInputRef.current = true
-    inputRef.current.textContent = newText
+    inputRef.current.textContent = cleaned.trimStart() === '' ? '' : cleaned
     const range = document.createRange()
     const sel = window.getSelection()
     const textNode = inputRef.current.firstChild
-    if (textNode) {
-      range.setStart(textNode, newText.length); range.collapse(true)
-      sel?.removeAllRanges(); sel?.addRange(range)
-    }
+    if (textNode) { range.setStart(textNode, (inputRef.current.textContent || '').length); range.collapse(true); sel?.removeAllRanges(); sel?.addRange(range) }
+    const newText = inputRef.current.textContent || ''
     setText(newText)
     setCtxSuggestion(null)
     setAtPicker(null)
     setJustAcceptedCtx(true)
-    // Preservar el tipo ya detectado: añadir un contexto NO debe degradar la tarea a
-    // nota visualmente. Mantener el forceType bloqueado y recomputar la predicción de
-    // tarea por verbo sobre el texto nuevo (taskPrediction queda intacto si sigue válido).
+    // Preservar el tipo ya detectado: asignar contexto NO degrada la tarea a nota.
     setForceType(lockedForceTypeRef.current)
     if (!lockedForceTypeRef.current) {
       setTaskPrediction(newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText)))

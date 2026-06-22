@@ -301,18 +301,20 @@ export function firstContextOf(n: Node): Node | null {
 export function nodesInContext(contextId: string): Node[] {
   // Acepta slug COMPLETO (media-sector/app…), slug HOJA (app…, como en las @menciones
   // del texto) y el slug del texto — robusto ante reparentados.
+  // Tokens reconocidos (slug completo, hoja, slug del texto y el NOMBRE), todos en
+  // minúscula: los types[] pueden venir como slug «piloto» o como texto «Piloto».
   const full = getNodeTagSlug(contextId)
   const c = store.getNode(contextId)
   const slugs = new Set<string>()
-  if (full) { slugs.add(full); const leaf = full.split('/').pop(); if (leaf) slugs.add(leaf) }
-  if (c) { const ts = textToTagSlug(c.text || ''); if (ts) slugs.add(ts) }
+  if (full) { slugs.add(full.toLowerCase()); const leaf = full.split('/').pop(); if (leaf) slugs.add(leaf.toLowerCase()) }
+  if (c) { const ts = textToTagSlug(c.text || ''); if (ts) slugs.add(ts.toLowerCase()); if (c.text) slugs.add(c.text.trim().toLowerCase()) }
   return store.allActive().filter(n => {
     if (n.deletedAt || n.id === contextId) return false
     if (isContextKnowledge(n.text)) return false   // memoria interna, no contenido
     if (isProject(n)) return false                  // subcontextos → su propia sección
     const member =
       nodeCtxRefs(n).includes(contextId) ||
-      (n.types || []).some(t => slugs.has(t)) ||
+      (n.types || []).some(t => slugs.has(t.toLowerCase())) ||
       // Tareas/eventos escritos en la nota del contexto (sin asignación explícita).
       ((n.status != null || n.isEvent) && ownedByContext(n, contextId))
     if (!member) return false
