@@ -85,7 +85,17 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const assigned = nodesInContext(nodeId)
           if (assigned.length === 0) return null
           const eventos = assigned.filter(a => a.isEvent)
+          // Tareas ordenadas: atrasadas → hoy → futuras → sin fecha; completadas al final.
+          const now = new Date()
+          const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+          const dueRank = (a: typeof assigned[number]): number => {
+            if (a.status === 'done') return 4
+            if (!a.due) return 3
+            const d = new Date(a.due); const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+            return dd < t0 ? 0 : dd === t0 ? 1 : 2
+          }
           const tareas = assigned.filter(a => !a.isEvent && a.status != null)
+            .sort((a, b) => dueRank(a) - dueRank(b) || (a.due || '').localeCompare(b.due || ''))
           const notas = assigned.filter(a => !a.isEvent && a.status == null)
           const row = (a: typeof assigned[number]) => (
             <div key={a.id} className={`dc-row ${a.status === 'done' ? 'dc-row--done' : ''}`} onClick={() => navigate(`/node/${a.id}`)}
