@@ -3,11 +3,11 @@
  * Patrón unificado con Prompts y Agentes: el contenido del contexto se abre en
  * la ventana central; aquí van sus propiedades (color, conocimiento) + ← Atrás.
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext } from '../../utils/cajones'
+import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
 
 
 interface Props {
@@ -145,9 +145,51 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
         {/* (Selector de color retirado: el contexto hereda el color de su padre, o
             el color por defecto de Ajustes.) */}
 
-        {/* (Conocimiento del contexto: Fromly lo actualiza automáticamente al
-            clasificar nodos; ya no hay botón manual.) */}
+        {/* Lo que Fromly sabe — memoria del contexto, EDITABLE aquí (no es un nodo
+            del lienzo). Fromly la actualiza sola al clasificar; el usuario puede
+            corregirla a mano. */}
+        <KnowledgeBlock nodeId={nodeId} color={color} />
       </div>
+    </div>
+  )
+}
+
+/** Bloque editable «🧠 Lo que Fromly sabe» del contexto. */
+function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
+  const s = useStore()
+  const saved = useMemo(() => readContextKnowledge(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [text, setText] = useState(saved)
+  const [editing, setEditing] = useState(false)
+
+  // Refrescar desde el store cuando cambia el contexto o llega una actualización
+  // externa (extractor IA), salvo mientras el usuario está escribiendo.
+  useEffect(() => { if (!editing) setText(saved) }, [saved, editing])
+
+  const commit = () => {
+    setEditing(false)
+    if (text.trim() === saved.trim()) return
+    writeContextKnowledge(nodeId, text)
+  }
+
+  return (
+    <div>
+      <div className="rc-section-label" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span>🧠 Lo que Fromly sabe</span>
+      </div>
+      <textarea
+        value={text}
+        placeholder="Fromly aún no sabe nada de este contexto. Escribe aquí lo que quieras que recuerde…"
+        onFocus={() => setEditing(true)}
+        onChange={e => setText(e.target.value)}
+        onBlur={commit}
+        rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
+        style={{
+          width: '100%', resize: 'vertical', fontSize: 13, lineHeight: 1.5,
+          color: 'var(--text-primary)', background: 'var(--bg-secondary)',
+          border: `1px solid ${color}33`, borderRadius: 8, padding: '8px 10px',
+          fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+        }}
+      />
     </div>
   )
 }

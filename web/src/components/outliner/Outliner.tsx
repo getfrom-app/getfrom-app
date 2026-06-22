@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import NodeContextMenu from './NodeContextMenu'
 import { VirtualOutlinerList, isVirtualizedOutliner, VIRTUALIZE_THRESHOLD } from './VirtualOutlinerList'
 import { flattenVisibleTree } from './flattenTree'
+import { isContextKnowledge } from '../../utils/knowledgeNodes'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -327,7 +328,10 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     const all = s.children(parentId)
     // En WFHomeView (root), los diarios viven bajo 📅 Agenda — nunca en root
     // Excluir siempre nodos sistema (_system: true) del árbol visible
+    // El conocimiento del contexto ("🧠 Lo que Fromly sabe") es memoria interna:
+    // se edita en la columna derecha del contexto, nunca en el árbol/lienzo.
     let list = all.filter(n => { try { return !JSON.parse(n.extraData || '{}')._system } catch { return true } })
+    list = list.filter(n => !isContextKnowledge(n.text))
     list = excludeDiaryEntries ? list.filter(n => !n.isDiaryEntry) : list
     if (excludeIds && excludeIds.size > 0) list = list.filter(n => !excludeIds.has(n.id))
     // Con filtro activo: solo mostrar nodos que son match o ancestros de match.

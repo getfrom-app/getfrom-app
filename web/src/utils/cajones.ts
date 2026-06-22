@@ -19,6 +19,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { findContextRoot } from './rootLookup'
 import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper'
+import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
 
 const PROJECT_DEFAULT_COLOR = '#7c3aed'
 
@@ -236,4 +237,50 @@ export function nodesInContext(contextId: string): Node[] {
     if ((n.types || []).some(t => slugs.has(t))) return true
     return false
   })
+}
+
+// ── Conocimiento del contexto ("🧠 Lo que Fromly sabe") ───────────────────────
+// Memoria que Fromly acumula de cada contexto. NO se muestra como un nodo dentro
+// del lienzo del contexto: vive como un bloque editable en la columna derecha
+// (ContextPropertiesPanel). Internamente sigue siendo un nodo hijo + sublíneas,
+// porque así lo lee el chat (aiChatStore.enrichTag) y lo escribe el extractor IA.
+
+/** Nodo "🧠 Lo que Fromly sabe" de un contexto, o null si aún no existe. */
+export function contextKnowledgeNode(contextId: string): Node | null {
+  return store.children(contextId).find(n => !n.deletedAt && isContextKnowledge(n.text)) ?? null
+}
+
+/** Conocimiento del contexto como texto (una línea por sublínea hija). */
+export function readContextKnowledge(contextId: string): string {
+  const kn = contextKnowledgeNode(contextId)
+  if (!kn) return ''
+  return store.children(kn.id)
+    .filter(n => !n.deletedAt && (n.text || '').trim())
+    .map(n => (n.text || '').trim())
+    .join('\n')
+}
+
+/** Sobrescribe el conocimiento del contexto: una línea = un nodo hijo. Crea el
+ *  nodo "🧠 Lo que Fromly sabe" si hace falta; lo elimina si queda vacío. */
+export function writeContextKnowledge(contextId: string, text: string): void {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  let kn = contextKnowledgeNode(contextId)
+  if (lines.length === 0) {
+    if (kn) store.deleteNode(kn.id)
+    return
+  }
+  if (!kn) {
+    const sibs = store.children(contextId).filter(n => !n.deletedAt)
+    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+    kn = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000 })
+  }
+  // Reconciliar hijos con las líneas: actualizar, crear los que falten, borrar el resto.
+  const existing = store.children(kn.id).filter(n => !n.deletedAt)
+  let order = 1000
+  for (let i = 0; i < lines.length; i++) {
+    if (existing[i]) store.updateNode(existing[i].id, { text: lines[i] })
+    else store.createNode({ text: lines[i], parentId: kn.id, siblingOrder: order })
+    order += 1000
+  }
+  for (let i = lines.length; i < existing.length; i++) store.deleteNode(existing[i].id)
 }
