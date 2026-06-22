@@ -45,7 +45,7 @@ import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import AutoContextBadge, { ContextPlaceholderBadge } from '../outliner/AutoContextBadge'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, assignContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -351,6 +351,10 @@ export default function NodeView() {
   // "Mover a" picker en el título
   const [titleMovePicker, setTitleMovePicker] = useState<{ query: string; items: Array<{ id: string; label: string }>; activeIdx: number } | null>(null)
   const [titleMovePickerPos, setTitleMovePickerPos] = useState<{ top: number; left: number } | null>(null)
+  // "#" picker de contexto en el título: asigna contexto al nodo (o, si el nodo ES
+  // un contexto, le fija el contexto PADRE → sincroniza con la columna derecha).
+  const [titleCtxPicker, setTitleCtxPicker] = useState<{ query: string; items: Array<{ id: string; label: string; contextLabel?: string; create?: string }>; activeIdx: number } | null>(null)
+  const [titleCtxPickerPos, setTitleCtxPickerPos] = useState<{ top: number; left: number } | null>(null)
 
   // Record recent visit
   useEffect(() => {
@@ -1121,7 +1125,18 @@ export default function NodeView() {
         setTitleSlashQuery('')
       }
 
-      // #tag picker eliminado — los tags no existen en Fromly
+      // Detect '#' for context picker. El `#` debe ir al inicio o pegado a un
+      // espacio (no choca con encabezados markdown del título, que no aplican aquí).
+      const hashMatch = before.match(/(?:^|\s)#([^\s#]*)$/)
+      if (hashMatch && !slashMatch) {
+        const query = hashMatch[1]
+        const items = buildTitleCtxItems(query)
+        const cursorRect = range.getBoundingClientRect()
+        setTitleCtxPicker({ query, items, activeIdx: 0 })
+        setTitleCtxPickerPos({ top: cursorRect.bottom + 4, left: Math.max(8, Math.min(cursorRect.left, window.innerWidth - 240)) })
+      } else {
+        setTitleCtxPicker(null)
+      }
 
       // Detect "mover a" command
       const moveMatch = text.match(/(?:mover a|move to)\s*(.*)$/i)
@@ -1165,6 +1180,48 @@ export default function NodeView() {
     setTitleMovePicker(null)
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `→ Movido a "${item.label.slice(0, 30)}"`, type: 'success' } }))
     navigate('/')
+  }
+
+  // # — candidatos de contexto para el título. Si el nodo ES un contexto, ofrece
+  // contextos donde anidarlo (áreas + proyectos, sin sí mismo ni descendientes);
+  // si es un nodo normal, ofrece contextos a los que asignarlo.
+  function buildTitleCtxItems(query: string): Array<{ id: string; label: string; contextLabel?: string; create?: string }> {
+    const q = query.trim()
+    const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    const nq = norm(q)
+    const asParent = !!node && (isContextNode || isCtxTreeNode(node.id) || !!contextParent(node.id))
+    let pool = asParent ? listContextsForParent() : listContexts()
+    if (asParent && node) {
+      const isDesc = (cand: string) => { let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand); let g = 0; while (cur && g++ < 60) { if (cur.id === node.id) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null } return false }
+      pool = pool.filter(c => c.id !== node.id && !isDesc(c.id))
+    }
+    const matched = pool.filter(c => !nq || norm(c.text || '').includes(nq)).slice(0, 8)
+    const items: Array<{ id: string; label: string; contextLabel?: string; create?: string }> = matched.map(c => { const p = contextParent(c.id); return { id: c.id, label: c.text || 'Contexto', contextLabel: p?.text } })
+    const exact = matched.some(c => norm(c.text || '') === nq)
+    if (q.length > 0 && !exact) items.push({ id: '__create__', label: q, create: q })
+    return items
+  }
+
+  function applyTitleCtx(item: { id: string; label: string; create?: string }) {
+    if (!titleRef.current || !node) return
+    const rawText = titleRef.current.textContent || ''
+    const cleanText = rawText.replace(/(?:^|\s)#[^\s#]*$/, '').replace(/\s+$/, '')
+    const asParent = isContextNode || isCtxTreeNode(node.id) || !!contextParent(node.id)
+    let ctxId = item.id
+    if (item.create) {
+      // Nuevo contexto: si lo asignamos como PADRE de un contexto, lo creamos en la
+      // raíz; si lo asignamos a un nodo normal, bajo su contexto actual si lo tiene.
+      const created = createContext(item.create, asParent ? null : (contextParent(node.id)?.id ?? null))
+      ctxId = created.id
+    }
+    store.updateNode(node.id, { text: cleanText })
+    if (titleRef.current) titleRef.current.textContent = cleanText
+    if (asParent) reparentContext(node.id, ctxId)
+    else assignContext(node.id, ctxId)
+    setTitleCtxPicker(null)
+    setTitleEditing(false)
+    const cj = store.getNode(ctxId)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: asParent ? `Dentro de "${(cj?.text || '').slice(0, 30)}"` : `En contexto "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
   }
 
   // applyTitleTag eliminado — #tags no existen en Fromly
@@ -1921,7 +1978,19 @@ export default function NodeView() {
               )
             })()}
             {/* Wrapper título + indicador bucle — flex:1 para que ocupen el espacio izquierdo */}
-            <div className="node-title-wrap">
+            <div
+              className="node-title-wrap"
+              style={!isLocked ? { cursor: 'text' } : undefined}
+              onMouseDown={isLocked ? undefined : (e => {
+                // Clic en el HUECO a la derecha del título (no en el propio texto ni
+                // en un botón/badge): enfocar el título y poner el cursor al final.
+                if (e.target !== e.currentTarget) return
+                e.preventDefault()
+                const el = titleRef.current
+                if (!el) return
+                el.focus()  // onFocus ya coloca el cursor al final
+              })}
+            >
             <h1
               ref={titleRef}
               className="node-title"
@@ -1969,9 +2038,19 @@ export default function NodeView() {
               onBlur={isLocked ? undefined : (e => {
                 setTitleEditing(false)
                 setShowTitleSlash(false)
+                // Cerrar el picker de contexto con un pequeño retardo: permite que un
+                // clic en una opción (onMouseDown) se procese antes del cierre.
+                setTimeout(() => setTitleCtxPicker(null), 150)
                 handleTitleInput(e)
               })}
               onKeyDown={isLocked ? undefined : (e => {
+                // # context picker navigation (tiene prioridad)
+                if (titleCtxPicker && titleCtxPicker.items.length > 0) {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setTitleCtxPicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setTitleCtxPicker(p => p ? { ...p, activeIdx: Math.max(p.activeIdx - 1, 0) } : p); return }
+                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); applyTitleCtx(titleCtxPicker.items[titleCtxPicker.activeIdx]); return }
+                  if (e.key === 'Escape') { e.preventDefault(); setTitleCtxPicker(null); return }
+                }
                 // Move picker navigation
                 if (titleMovePicker) {
                   if (e.key === 'ArrowDown') { e.preventDefault(); setTitleMovePicker(p => p ? { ...p, activeIdx: Math.min(p.activeIdx + 1, p.items.length - 1) } : p); return }
@@ -2062,6 +2141,28 @@ export default function NodeView() {
                   >
                     <span className="inline-picker-icon">→</span>
                     <span className="inline-picker-content"><span className="inline-picker-label">{item.label}</span></span>
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
+            {/* "#" picker de contexto en el título */}
+            {titleCtxPicker && titleCtxPicker.items.length > 0 && titleCtxPickerPos && createPortal(
+              <div className="inline-picker" style={{ position: 'fixed', top: titleCtxPickerPos.top, left: titleCtxPickerPos.left, zIndex: 1000, minWidth: 220 }}>
+                <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>
+                  {(isContextNode || isCtxTreeNode(node.id) || contextParent(node.id)) ? '# Contexto padre' : '# Asignar contexto'}
+                </div>
+                {titleCtxPicker.items.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    className={`inline-picker-item ${idx === titleCtxPicker.activeIdx ? 'active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); applyTitleCtx(item) }}
+                  >
+                    <span className="inline-picker-icon">#</span>
+                    <span className="inline-picker-content">
+                      <span className="inline-picker-label">{item.create ? `Crear «${item.label}»` : item.label}</span>
+                      {item.contextLabel && <span className="inline-picker-context" style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-tertiary)' }}>en {item.contextLabel}</span>}
+                    </span>
                   </button>
                 ))}
               </div>,
