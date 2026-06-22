@@ -13540,3 +13540,77 @@ textarea:focus-visible,
   user-select: none;
   vertical-align: baseline;
 }
+
+/* ── Selector de contexto (RowContextChip): buscador + dots + grupos ─────────── */
+.ctx-pick {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  max-height: 60vh;
+  background: var(--bg-elevated, #fff);
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+.ctx-pick-search {
+  margin: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-secondary, #f5f5f7);
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 8px;
+  outline: none;
+}
+.ctx-pick-search:focus { border-color: var(--accent, #6c5ce7); }
+.ctx-pick-list { overflow-y: auto; min-height: 0; padding: 0 6px 6px; }
+.ctx-pick-group {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #999);
+  padding: 8px 8px 3px;
+}
+.ctx-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  text-align: left;
+}
+.ctx-pick-item.active { background: var(--bg-hover, #eee); }
+.ctx-pick-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c3aed;
+}
+.ctx-pick-dot--new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin: 0 -3px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--accent, #6c5ce7);
+  background: none;
+  border-radius: 0;
+}
+.ctx-pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-pick-create .ctx-pick-name { color: var(--accent, #6c5ce7); font-weight: 500; }
+.ctx-pick-check { flex-shrink: 0; color: var(--accent, #6c5ce7); font-size: 12px; }
+.ctx-pick-empty { padding: 10px 12px; font-size: 12px; color: var(--text-tertiary, #999); }
