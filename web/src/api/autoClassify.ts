@@ -37,6 +37,8 @@ export interface ContextInfo {
 }
 
 export interface ContextKnowledge {
+  /** Resumen breve que infiere de qué va el contexto (lo «inteligente» de Magic). */
+  summary?: string
   keywords: string[]
   people: string[]
   topics: string[]

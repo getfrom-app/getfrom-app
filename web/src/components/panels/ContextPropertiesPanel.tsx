@@ -184,7 +184,8 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
         onBlur={commit}
         rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
         style={{
-          width: '100%', resize: 'vertical', fontSize: 13, lineHeight: 1.5,
+          width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
+          fontSize: 13, lineHeight: 1.5,
           color: 'var(--text-primary)', background: 'var(--bg-secondary)',
           border: `1px solid ${color}33`, borderRadius: 8, padding: '8px 10px',
           fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',

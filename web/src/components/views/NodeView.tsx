@@ -1562,20 +1562,30 @@ export default function NodeView() {
       const pe = mergeCap(prevPe, knowledge.people, 40)
       const to = mergeCap(prevTo, knowledge.topics, 30)
 
-      const SUBNODE_TEXTS: Record<string, string> = {
-        keywords: `Palabras clave: ${kw.join(', ')}`,
-        people: `Personas: ${pe.length > 0 ? pe.join(', ') : '—'}`,
-        topics: `Temas frecuentes: ${to.join(', ')}`,
+      // Resumen (Magic infiere de qué va el contexto). Va el PRIMERO; se actualiza
+      // (no se duplica) y nunca se borra un resumen existente con uno vacío.
+      const summary = (knowledge.summary || '').trim()
+      if (summary) {
+        const existingSum = existingChildren.find(n => (n.text || '').startsWith('Resumen:'))
+        if (existingSum) store.updateNode(existingSum.id, { text: `Resumen: ${summary}` })
+        else store.createNode({ text: `Resumen: ${summary}`, parentId: knowledgeNodeId, siblingOrder: 0 })
       }
+      // Solo se escriben las sublíneas CON contenido real (sin andamios vacíos).
+      const SUBNODE: Array<{ prefix: string; items: string[] }> = [
+        { prefix: 'Palabras clave:', items: kw },
+        { prefix: 'Personas:', items: pe },
+        { prefix: 'Temas frecuentes:', items: to },
+      ]
       let order = 1000
-      for (const [key, text] of Object.entries(SUBNODE_TEXTS)) {
-        const prefix = key === 'keywords' ? 'Palabras clave:' : key === 'people' ? 'Personas:' : 'Temas frecuentes:'
+      for (const { prefix, items } of SUBNODE) {
         const existing = existingChildren.find(n => (n.text || '').startsWith(prefix))
-        if (existing) {
-          store.updateNode(existing.id, { text })
-        } else {
-          store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
+        if (items.length === 0) {
+          if (existing) store.deleteNode(existing.id)  // limpiar andamio vacío previo
+          continue
         }
+        const text = `${prefix} ${items.join(', ')}`
+        if (existing) store.updateNode(existing.id, { text })
+        else store.createNode({ text, parentId: knowledgeNodeId, siblingOrder: order })
         order += 1000
       }
       // Guardar timestamp en Map local (sin tocar extraData — evita re-renders)

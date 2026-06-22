@@ -445,6 +445,14 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const existingChildren = store.children(knowledgeNodeId).filter(n => !n.deletedAt)
       let maxOrder = existingChildren.length > 0 ? Math.max(...existingChildren.map(c => c.siblingOrder)) : 0
 
+      // Resumen (Magic infiere de qué va el contexto): el primero, se actualiza.
+      const summary = (knowledge.summary || '').trim()
+      if (summary) {
+        const existingSum = existingChildren.find(n => (n.text || '').startsWith('Resumen:'))
+        if (existingSum) store.updateNode(existingSum.id, { text: `Resumen: ${summary}` })
+        else store.createNode({ text: `Resumen: ${summary}`, parentId: knowledgeNodeId, siblingOrder: 0 })
+      }
+
       const PREFIXES: Array<{ prefix: string; key: keyof typeof knowledge }> = [
         { prefix: 'Palabras clave:', key: 'keywords' },
         { prefix: 'Personas:', key: 'people' },

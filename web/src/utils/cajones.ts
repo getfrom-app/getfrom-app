@@ -303,12 +303,23 @@ export function contextKnowledgeNode(contextId: string): Node | null {
   return store.children(contextId).find(n => !n.deletedAt && isContextKnowledge(n.text)) ?? null
 }
 
-/** Conocimiento del contexto como texto (una línea por sublínea hija). */
+/** ¿La línea es un andamio vacío («Palabras clave:», «Personas: —»…)? = una
+ *  etiqueta «Algo:» sin valor real detrás. No debe mostrarse. */
+function isEmptyKnowledgeLine(text: string): boolean {
+  const t = (text || '').trim()
+  if (!t) return true
+  const colon = t.indexOf(':')
+  const value = (colon >= 0 ? t.slice(colon + 1) : t).trim()
+  return value === '' || value === '—' || value === '-'
+}
+
+/** Conocimiento del contexto como texto (una línea por sublínea hija). Omite los
+ *  andamios vacíos: si no hay contenido real, devuelve cadena vacía. */
 export function readContextKnowledge(contextId: string): string {
   const kn = contextKnowledgeNode(contextId)
   if (!kn) return ''
   return store.children(kn.id)
-    .filter(n => !n.deletedAt && (n.text || '').trim())
+    .filter(n => !n.deletedAt && !isEmptyKnowledgeLine(n.text || ''))
     .map(n => (n.text || '').trim())
     .join('\n')
 }
