@@ -109,14 +109,15 @@ export function touchContext(nodeId: string, isoNow: string): void {
 export function listContexts(opts?: { includeClosed?: boolean; onlySub?: boolean }): Node[] {
   void opts?.onlySub
   return store.allActive()
-    .filter(n => !n.deletedAt && isProject(n) && (opts?.includeClosed || !isContextClosed(n)))
+    .filter(n => !n.deletedAt && isProject(n) && (opts?.includeClosed || !isContextClosed(n)) && !isInPapelera(n.id))
     .sort((a, b) => activityTs(b) - activityTs(a)) // última actividad primero
 }
 
-/** Contextos donde se puede anidar (como padre): ÁREAS + PROYECTOS abiertos. */
+/** Contextos donde se puede anidar (como padre): ÁREAS + PROYECTOS abiertos.
+ *  Nunca incluye nada que esté en la Papelera. */
 export function listContextsForParent(): Node[] {
   const root = findContextRoot()
-  const areas = root ? store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠')) : []
+  const areas = root ? store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠') && !isInPapelera(n.id)) : []
   const projects = listContexts()
   const seen = new Set<string>()
   const out: Node[] = []

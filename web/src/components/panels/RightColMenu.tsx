@@ -13,10 +13,12 @@ import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
   const navigate = useNavigate()
-  const [ctxOpen, setCtxOpen] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
+  const ctxBtnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: y, left: x })
-  // Reposiciona dentro del viewport (también al expandir el submenú de contexto).
+  // Flyout SEPARADO del selector de contexto (no inline, para no confundir).
+  const [ctxFlyout, setCtxFlyout] = useState<{ top: number; left: number } | null>(null)
+  // Reposiciona el menú dentro del viewport.
   useLayoutEffect(() => {
     const el = boxRef.current; if (!el) return
     const r = el.getBoundingClientRect()
@@ -24,7 +26,22 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
     if (y + r.height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - r.height - 8)
     if (x + r.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - r.width - 8)
     setPos(p => (p.top === top && p.left === left) ? p : { top, left })
-  }, [x, y, ctxOpen])
+  }, [x, y])
+
+  function toggleCtxFlyout() {
+    if (ctxFlyout) { setCtxFlyout(null); return }
+    const box = boxRef.current?.getBoundingClientRect()
+    const btn = ctxBtnRef.current?.getBoundingClientRect()
+    if (!box || !btn) return
+    const W = 244, H = 360
+    let left = box.left - W - 4
+    if (left < 8) left = box.right + 4
+    if (left + W > window.innerWidth - 8) left = Math.max(8, window.innerWidth - W - 8)
+    let top = btn.top
+    if (top + H > window.innerHeight - 8) top = Math.max(8, window.innerHeight - H - 8)
+    setCtxFlyout({ top, left })
+  }
+
   const node = store.getNode(nodeId)
   if (!node || node.deletedAt) return null
   const isTask = node.status != null && node.status !== undefined
@@ -53,14 +70,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
             {isTask ? '○ Quitar tarea' : '☑ Convertir en tarea'}
           </button>
         )}
-        <button className="node-ctx-item" onClick={() => setCtxOpen(o => !o)}>
-          🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>{ctxOpen ? '▾' : '▸'}</span>
+        <button ref={ctxBtnRef} className="node-ctx-item" onClick={toggleCtxFlyout}>
+          🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
         </button>
-        {ctxOpen && (
-          <div className="ctx-pick ctx-pick--inline">
-            <ContextPicker currentId={current?.id ?? null} onPick={id => { setNodeContext(nodeId, id); onClose() }} />
-          </div>
-        )}
         {current && (
           <button className="node-ctx-item" onClick={() => { setNodeContext(nodeId, null); onClose() }}>
             ✕ Quitar contexto
@@ -69,6 +81,12 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         <div className="node-ctx-sep" />
         <button className="node-ctx-item node-ctx-item--danger" onClick={() => { trashNode(nodeId); onClose() }}>🗑 Eliminar</button>
       </div>
+      {ctxFlyout && (
+        <div className="ctx-pick" style={{ position: 'fixed', top: ctxFlyout.top, left: ctxFlyout.left, zIndex: 3001 }}
+          onClick={e => e.stopPropagation()}>
+          <ContextPicker currentId={current?.id ?? null} onPick={id => { setNodeContext(nodeId, id); onClose() }} />
+        </div>
+      )}
     </>
   ), document.body)
 }
