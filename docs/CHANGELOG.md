@@ -4,6 +4,36 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.509 · Mac v9.5.65 — 22 junio 2026 · Contextos: un solo sistema + columna de hoy unificada
+
+Sesión larga de pulido del modelo de contextos, la columna de hoy y el lienzo.
+
+**Contextos — un único sistema**
+- Eliminado el sistema viejo (etiquetas en `types[]`, badges «+ Contexto»/✦): ahora hay **un solo contexto por nodo**, robusto a renombrados.
+- **La auto-clasificación de Magic asigna el contexto automáticamente** (cuando hay confianza) en ese sistema único; tú lo cambias o quitas cuando quieras.
+- El **`#` del título** asigna contexto al vuelo (Tab/Enter); en un contexto, fija su **contexto padre** (sincronizado con la columna derecha).
+- **Renombrar un contexto** ya no rompe sus nodos: siguen asociados.
+- Selector de contexto rediseñado (chip «?» y clic derecho): **buscador**, **dots de color**, **agrupado por contexto padre**, navegable con **flechas + Enter** y «Crear «…»». La Papelera nunca aparece.
+- «🧠 Lo que Fromly sabe» pasa a ser **memoria de solo lectura** (con lápiz para corregir); Magic se esfuerza por resumir el contexto desde el primer contenido.
+
+**Columna de hoy**
+- Bloque único **«Para hacer»**: atrasadas + hoy + contextos juntos, agrupados por su contexto (dot de color) y, al final, **«Sin contexto»**. Seguimiento debajo, colapsado.
+- Chip de fecha: **rojo (atrasada) · ámbar (hoy) · azul (futura)**, sin fondo, y **clicable** para abrir fecha/recurrencia sin salir.
+- Las tareas con contexto no repiten el chip; las sin contexto muestran «?» para asignarlo.
+
+**Lienzo**
+- Soltar o pegar **.md** crea un **nodo-documento colapsado** (título + chevron); varios a la vez se colocan en rejilla.
+- El lienzo de la diaria solo muestra lo creado/arrastrado ahí (las tareas y eventos viven en la columna).
+- Documentos: clic izquierdo edita, botón derecho mueve; texto siempre completo a cualquier zoom; arreglado el corte de documentos largos al desplazar.
+
+**Otros arreglos**
+- **Deshacer** real y por pasos lógicos (un import = un undo) que además se sincroniza.
+- Recurrencia: «cada viernes» se interpreta bien (era «cada 5 semanas»).
+- El capturador prioriza «Crear evento/tarea» cuando detecta fecha; los eventos no se quedan en el lienzo.
+- Quitada la lente de contexto global (innecesaria).
+
+---
+
 ## Web v9.6.462 · Mac v9.5.64 — 19 junio 2026 · Contextos: panel completo y pulido
 
 Continuación del modelo de contextos, ahora con un panel lateral completo y muchos detalles.

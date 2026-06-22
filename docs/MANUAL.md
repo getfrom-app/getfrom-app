@@ -551,9 +551,13 @@ Los contextos son etiquetas que agrupan nodos relacionados más allá de la jera
 
 ### Asignar un contexto a un nodo
 
-Escribe `@` en cualquier nodo. Se abre el picker con los contextos disponibles. Selecciona el que quieres asignar. El nodo queda etiquetado con un chip morado visible junto al texto.
+**Cada nodo tiene UN contexto.** Tienes varias formas de asignarlo, todas equivalentes:
+- **`#` en el título** de un nodo: escribe y aparece un selector; `Tab`/`Enter` lo asigna (o crea uno nuevo si no existe).
+- **Chip de contexto** en la columna derecha y en las filas de la columna de hoy: si el nodo no tiene contexto verás un **«?»**; al pulsarlo se abre el selector (con buscador, dots de color y agrupado por contexto padre). Si ya tiene, el chip muestra su nombre y al pulsarlo puedes cambiarlo o quitarlo.
+- **Clic derecho** sobre una fila → «Añadir/Cambiar contexto» (mismo selector) y «Quitar contexto».
+- En la **captura rápida** (Espacio): escribe el nombre del contexto y Fromly lo sugiere como ghost text; al aceptarlo, la palabra se quita del texto y queda asignado.
 
-Puedes asignar más de un contexto al mismo nodo. También funciona en la captura unificada (Espacio): escribe `@` y Fromly sugiere contextos como ghost text.
+Asignar un contexto a una tarea **no la mueve**: sigue en tu agenda y, a la vez, «entra» en ese contexto.
 
 ### Crear y gestionar contextos
 
@@ -579,7 +583,7 @@ Dentro de un contexto grande (un «área» como Media Sector) puedes crear **pro
 
 **Chips de contexto.** En cualquier nodo, haz **clic** en un chip de contexto para abrirlo, o pulsa la **×** para quitarlo de ese nodo.
 
-**En la columna de hoy** aparece la sección **«Contextos»** con tus proyectos abiertos, cada uno con su contexto padre al lado y cuántas cosas contiene.
+**En la columna de hoy** todo lo accionable vive en el bloque **«Para hacer»**: las tareas de hoy y atrasadas se agrupan **bajo su contexto** (cada uno con un dot de su color), y las que no tienen contexto van al final, bajo **«Sin contexto»**. El bloque **Seguimiento** (tareas sin fecha) queda debajo, colapsado.
 
 ### Filtrar por contexto desde el sidebar
 
@@ -597,13 +601,9 @@ Dentro del contexto **Perfil IA** puedes escribir información personal que la I
 
 ### Auto-clasificación con IA
 
-Fromly puede sugerir automáticamente el contexto más apropiado para cada nota o tarea.
+Fromly clasifica automáticamente el contexto más apropiado de cada nota o tarea y **se lo asigna** (cuando hay confianza suficiente) en el sistema único de contexto. No hay que confirmar ningún badge: aparece directamente en su chip, y tú lo cambias o lo quitas si no acierta.
 
-**Badge en tiempo real:** al crear o editar un nodo sin contexto asignado, aparece un badge pequeño `✦ NombreContexto` junto al texto. Haz clic para confirmar el contexto sugerido o seleccionar otro. Fromly aprende de tus correcciones.
-
-**Filtro "Sin clasificar":** en la lista de contextos aparece una entrada especial **"Sin clasificar"** con el número de nodos pendientes. Al hacer clic, el árbol se filtra para mostrar solo esos nodos.
-
-**Clasificar todos de golpe:** bajo el filtro "Sin clasificar" aparece el botón **"✦ Clasificar todos"**. Púlsalo para que Fromly analice en background todos los nodos históricos sin contexto. El progreso se muestra en una barra con "Clasificando… X/Y". Puedes cancelar en cualquier momento con el botón ✕.
+**Filtro "Sin clasificar":** en la lista de contextos aparece una entrada especial **"Sin clasificar"** con el número de nodos sin contexto. Al hacer clic, el árbol se filtra para mostrar solo esos nodos; cada uno trae el chip **«?»** para asignarle contexto a mano.
 
 La clasificación usa IA (Claude Haiku) sin consumir tokens de tu plan.
 
