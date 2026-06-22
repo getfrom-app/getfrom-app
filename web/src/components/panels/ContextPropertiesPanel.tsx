@@ -154,7 +154,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   )
 }
 
-/** Bloque editable «🧠 Lo que Fromly sabe» del contexto. */
+/** Bloque «🧠 Lo que Fromly sabe» del contexto. Memoria de SOLO LECTURA: muestra
+ *  lo que Fromly ha deducido de la nota del contexto. El usuario escribe en la
+ *  NOTA, no aquí. El lápiz (✎) permite corregir a mano si hace falta. */
 function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
   const s = useStore()
   const saved = useMemo(() => readContextKnowledge(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -162,8 +164,9 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
   const [editing, setEditing] = useState(false)
 
   // Refrescar desde el store cuando cambia el contexto o llega una actualización
-  // externa (extractor IA), salvo mientras el usuario está escribiendo.
+  // externa (extractor IA), salvo mientras el usuario está corrigiendo a mano.
   useEffect(() => { if (!editing) setText(saved) }, [saved, editing])
+  useEffect(() => { setEditing(false) }, [nodeId])
 
   const commit = () => {
     setEditing(false)
@@ -175,22 +178,38 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
     <div>
       <div className="rc-section-label" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
         <span>🧠 Lo que Fromly sabe</span>
+        <span style={{ flex: 1 }} />
+        {!editing && (
+          <button onClick={() => setEditing(true)} title="Corregir a mano"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 2, fontSize: 12, lineHeight: 1 }}>✎</button>
+        )}
       </div>
-      <textarea
-        value={text}
-        placeholder="Fromly aún no sabe nada de este contexto. Escribe aquí lo que quieras que recuerde…"
-        onFocus={() => setEditing(true)}
-        onChange={e => setText(e.target.value)}
-        onBlur={commit}
-        rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
-        style={{
-          width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
-          fontSize: 13, lineHeight: 1.5,
-          color: 'var(--text-primary)', background: 'var(--bg-secondary)',
-          border: `1px solid ${color}33`, borderRadius: 8, padding: '8px 10px',
-          fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-        }}
-      />
+      {editing ? (
+        <textarea
+          autoFocus
+          value={text}
+          placeholder="Una línea por dato. Fromly lo irá completando solo desde tu nota."
+          onChange={e => setText(e.target.value)}
+          onBlur={commit}
+          rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
+          style={{
+            width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
+            fontSize: 13, lineHeight: 1.5,
+            color: 'var(--text-primary)', background: 'var(--bg-secondary)',
+            border: `1px solid ${color}55`, borderRadius: 8, padding: '8px 10px',
+            fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+          }}
+        />
+      ) : saved.trim() ? (
+        <div onDoubleClick={() => setEditing(true)}
+          style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+          {saved}
+        </div>
+      ) : (
+        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+          Fromly aprenderá de lo que escribas en este contexto.
+        </div>
+      )}
     </div>
   )
 }
