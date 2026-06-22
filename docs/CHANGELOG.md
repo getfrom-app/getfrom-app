@@ -4,9 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.6.509 · Mac v9.5.65 — 22 junio 2026 · Contextos: un solo sistema + columna de hoy unificada
+## Web v9.6.511 · Mac v9.5.66 — 22 junio 2026 · Contextos: un solo sistema + columna de hoy unificada
 
 Sesión larga de pulido del modelo de contextos, la columna de hoy y el lienzo.
+
+**Arrastrar al lienzo y quitar tarea (cierre de sesión)**
+- Arrastra **cualquier elemento de la columna derecha** (tareas, contextos, eventos, capturas) **al lienzo**: se muestra ahí como referencia y **sigue en la columna** (quitarlo del lienzo no lo borra).
+- **«Quitar tarea»** directo en el menú «···» y el clic derecho de una tarea (la convierte en nodo normal), además del menú de cada fila.
 
 **Contextos — un único sistema**
 - Eliminado el sistema viejo (etiquetas en `types[]`, badges «+ Contexto»/✦): ahora hay **un solo contexto por nodo**, robusto a renombrados.
