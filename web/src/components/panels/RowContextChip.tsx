@@ -7,7 +7,7 @@ import { listContextsForParent, isContextClosed, firstContextOf, setNodeContext 
 import type { Node } from '../../types'
 
 export default function RowContextChip({ node }: { node: Node }) {
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{ x: number; y: number; up: boolean } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const contexts = listContextsForParent().filter(c => !isContextClosed(c))
@@ -38,7 +38,11 @@ export default function RowContextChip({ node }: { node: Node }) {
   const open = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault()
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    setMenu({ x: r.left, y: r.bottom + 3 })
+    // Si no cabe debajo (fila baja de la columna), abrir hacia ARRIBA.
+    const spaceBelow = window.innerHeight - r.bottom
+    const up = spaceBelow < 260
+    const x = Math.max(8, Math.min(r.left, window.innerWidth - 190))
+    setMenu(up ? { x, y: window.innerHeight - r.top + 3, up: true } : { x, y: r.bottom + 3, up: false })
   }
 
   return (
@@ -49,7 +53,7 @@ export default function RowContextChip({ node }: { node: Node }) {
         <span className="dc-ctx-chip dc-ctx-chip--empty" title="Asignar contexto" onClick={open}>?</span>
       )}
       {menu && createPortal((
-        <div ref={menuRef} className="node-ctx-menu" style={{ position: 'fixed', top: menu.y, left: menu.x, zIndex: 3000, maxHeight: '60vh', overflowY: 'auto', minWidth: 170 }}
+        <div ref={menuRef} className="node-ctx-menu" style={{ position: 'fixed', ...(menu.up ? { bottom: menu.y } : { top: menu.y }), left: menu.x, zIndex: 3000, maxHeight: '60vh', overflowY: 'auto', minWidth: 170 }}
           onClick={e => e.stopPropagation()}>
           <div className="node-ctx-label">Contexto</div>
           {contexts.map(c => {
