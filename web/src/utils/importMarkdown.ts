@@ -126,7 +126,9 @@ export function createMarkdownNode(parentId: string | null, content: string, fil
   const sibs = (parentId ? store.children(parentId) : store.children(null)).filter(n => !n.deletedAt)
   const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
   const note = store.createNode({ text: title, parentId, siblingOrder: maxOrder + 1000 })
-  store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(content), text: title })
+  // Colapsado por defecto: en el lienzo se ve como un nodo con título + chevron; el
+  // usuario despliega para leer el contenido.
+  store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(content), text: title, isCollapsed: true })
   return note
 }
 

@@ -2025,13 +2025,28 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             ) : isText ? (
               // Elemento-texto = el MISMO nodo que el documento. Editando → editor
               // TipTap completo (DocEditor compact); en reposo → body estático (ligero).
+              // Colapsado → solo el título + chevron (el usuario despliega para leer).
               editing ? (
                 <DocEditor node={node} compact />
+              ) : node.isCollapsed ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 20 }}>
+                  <button title="Desplegar"
+                    onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: false }) }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 14, lineHeight: 1, padding: 0, flexShrink: 0 }}>▸</button>
+                  <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    {node.text || firstLineTitle(node.body) || 'Documento'}
+                  </span>
+                </div>
               ) : (
-                <div className="pizarra-text"
-                  dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
-                  style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <button title="Colapsar"
+                    onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: true }) }}
+                    style={{ position: 'absolute', left: -18, top: 2, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 14, lineHeight: 1, padding: 0 }}>▾</button>
+                  <div className="pizarra-text"
+                    dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                    style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
+                  />
+                </div>
               )
             ) : elView && ViewComp ? (
               // Elemento de VISTA (tabla/kanban/calendario): el MISMO nodo que se abre
