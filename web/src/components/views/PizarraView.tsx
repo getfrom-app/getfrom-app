@@ -2043,24 +2043,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
               editing ? (
                 <DocEditor node={node} compact />
               ) : node.isCollapsed ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 20 }}>
-                  <button title="Desplegar"
-                    onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: false }) }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 14, lineHeight: 1, padding: 0, flexShrink: 0 }}>▸</button>
-                  <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', userSelect: 'none', WebkitUserSelect: 'none' }}>
-                    {node.text || firstLineTitle(node.body) || 'Documento'}
-                  </span>
+                <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}>
+                  {node.text || firstLineTitle(node.body) || 'Documento'}
                 </div>
               ) : (
-                <div style={{ position: 'relative' }}>
-                  <button title="Colapsar"
-                    onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: true }) }}
-                    style={{ position: 'absolute', left: -18, top: 2, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 14, lineHeight: 1, padding: 0 }}>▾</button>
-                  <div className="pizarra-text"
-                    dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
-                    style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                  />
-                </div>
+                <div className="pizarra-text"
+                  dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                  style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
+                />
               )
             ) : elView && ViewComp ? (
               // Elemento de VISTA (tabla/kanban/calendario): el MISMO nodo que se abre
@@ -2107,6 +2097,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                    la duplicidad de dos menús superpuestos. */
                 onContextMenuCapture={(e) => nodeCtx(e, node.id)}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+              </div>
+            )}
+            {/* CHEVRON de colapso del documento — a la IZQUIERDA del DOT (convención
+                de siempre). Solo en documentos. ▾ desplegado / ▸ colapsado. */}
+            {isText && !editing && (
+              <div title={node.isCollapsed ? 'Desplegar' : 'Colapsar'}
+                onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: !node.isCollapsed }) }}
+                style={{ position: 'absolute', left: -50, top: 6, height: 28, width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22, color: 'var(--text-tertiary,#999)', fontSize: 12, lineHeight: 1 }}>
+                {node.isCollapsed ? '▸' : '▾'}
               </div>
             )}
             {/* DOT → abre el elemento en su página. SIEMPRE visible (como en la tabla),
