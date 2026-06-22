@@ -8,7 +8,8 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
-import { listContextsForParent, isContextClosed, firstContextOf, setNodeContext } from '../../utils/cajones'
+import { firstContextOf, setNodeContext } from '../../utils/cajones'
+import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
   const navigate = useNavigate()
@@ -28,7 +29,6 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   if (!node || node.deletedAt) return null
   const isTask = node.status != null && node.status !== undefined
   const isEvent = !!node.isEvent
-  const contexts = listContextsForParent().filter(c => !isContextClosed(c))
   const current = firstContextOf(node)
 
   function convertTask() {
@@ -39,10 +39,6 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
       store.updateNode(nodeId, { status: 'pending', due: today.toISOString() })
     }
     onClose()
-  }
-  function pickContext(ctx: ReturnType<typeof listContextsForParent>[number]) {
-    // Un nodo = un contexto: si ya es el actual lo quita; si no, lo reemplaza.
-    setNodeContext(nodeId, current?.id === ctx.id ? null : ctx.id)
   }
 
   return createPortal((
@@ -60,16 +56,11 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         <button className="node-ctx-item" onClick={() => setCtxOpen(o => !o)}>
           🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>{ctxOpen ? '▾' : '▸'}</span>
         </button>
-        {ctxOpen && (contexts.length === 0
-          ? <div className="node-ctx-label">Sin contextos creados</div>
-          : contexts.map(c => {
-            const has = current?.id === c.id
-            return (
-              <button key={c.id} className={`node-ctx-item node-ctx-item--type ${has ? 'active' : ''}`} onClick={() => pickContext(c)}>
-                {has ? '● ' : '○ '}{c.text || 'Contexto'}
-              </button>
-            )
-          }))}
+        {ctxOpen && (
+          <div className="ctx-pick ctx-pick--inline">
+            <ContextPicker currentId={current?.id ?? null} onPick={id => { setNodeContext(nodeId, id); onClose() }} />
+          </div>
+        )}
         {current && (
           <button className="node-ctx-item" onClick={() => { setNodeContext(nodeId, null); onClose() }}>
             ✕ Quitar contexto

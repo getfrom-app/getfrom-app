@@ -13614,3 +13614,14 @@ textarea:focus-visible,
 .ctx-pick-create .ctx-pick-name { color: var(--accent, #6c5ce7); font-weight: 500; }
 .ctx-pick-check { flex-shrink: 0; color: var(--accent, #6c5ce7); font-size: 12px; }
 .ctx-pick-empty { padding: 10px 12px; font-size: 12px; color: var(--text-tertiary, #999); }
+
+/* ContextPicker embebido dentro del menú de clic derecho: sin caja propia. */
+.ctx-pick--inline {
+  width: auto;
+  max-height: 320px;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  background: none;
+}
+.ctx-pick--inline .ctx-pick-search { margin: 4px 6px 6px; }
