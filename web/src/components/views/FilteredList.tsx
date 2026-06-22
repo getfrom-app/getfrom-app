@@ -20,6 +20,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
+import RowContextChip from '../panels/RowContextChip'
 import { findContextRoot } from '../../utils/rootLookup'
 import { useTranslation } from 'react-i18next'
 import type { Node as FromNode } from '../../types'
@@ -359,41 +360,9 @@ export function FilterResultItem({
             </span>
           ))}
 
-          {/* Badge de auto-clasificación — siempre visible en vista "Sin clasificar":
-              · Confirmado (manuallySetContextId): contexto asignado manualmente → AutoContextBadge modo confirmado
-              · Con sugerencia IA si ya está disponible y confidence > 0.3 → AutoContextBadge normal
-              · Placeholder "+ Contexto" para asignación manual inmediata si no hay sugerencia */}
-          {enableAutoClassify && (
-            manuallySetContextId
-              ? (
-                <AutoContextBadge
-                  node={node}
-                  result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
-                  assignedContextId={manuallySetContextId}
-                  onContextAssigned={(id) => {
-                    if (id === node.id) setAutoCtxResult(null)
-                  }}
-                />
-              )
-              : autoCtxResult && autoCtxResult.confidence > 0.3
-                ? (
-                  <AutoContextBadge
-                    node={node}
-                    result={autoCtxResult}
-                    onContextAssigned={(id) => {
-                      if (id === node.id) setAutoCtxResult(null)
-                    }}
-                  />
-                )
-                : (
-                  <ContextPlaceholderBadge
-                    node={node}
-                    onContextAssigned={(id) => {
-                      if (id === node.id) setAutoCtxResult(null)
-                    }}
-                  />
-                )
-          )}
+          {/* Asignación de contexto (sistema único por _ctxRefs) — chip para
+              asignar/cambiar/quitar el contexto del nodo en la vista "Sin clasificar". */}
+          {enableAutoClassify && <RowContextChip node={node} />}
         </div>
       )}
 

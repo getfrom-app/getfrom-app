@@ -29,7 +29,7 @@ import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import AutoContextBadge, { ContextPlaceholderBadge } from './AutoContextBadge'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
-import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
+import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
 import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
@@ -687,8 +687,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // No clasificar si el nodo está dentro de una estructura restringida
     if (isInsideRestrictedAncestor) return
 
-    // No disparar para nodos con contexto manual
-    if (nodeHasManualContext) return
+    // No disparar si ya tiene contexto (manual viejo o por _ctxRefs nuevo)
+    if (nodeHasManualContext || nodeCtxRefs(node).length > 0) return
 
     // Texto mínimo
     const text = (node.text || '').trim()
@@ -726,6 +726,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ed._autoContextConfidence = result.confidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
+      // Auto-clasificación → SISTEMA NUEVO: asigna el contexto por _ctxRefs si hay
+      // confianza suficiente y el nodo aún no tiene contexto (no pisa la elección
+      // del usuario). El usuario puede cambiarlo/quitarlo con el chip.
+      if (result.contextId && result.confidence >= CONFIDENCE_THRESHOLD && nodeCtxRefs(store.getNode(node.id)).length === 0) {
+        assignContext(node.id, result.contextId)
+      }
     }, 3000, userProfileSamples.length > 0 ? userProfileSamples : undefined)
     return () => cancelClassify(node.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -744,8 +750,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       cancelClassify(node.id)
       return
     }
-    // No clasificar nodos especiales o ya clasificados manualmente
-    if (nodeHasManualContext) {
+    // No clasificar si ya tiene contexto (manual viejo o por _ctxRefs nuevo)
+    if (nodeHasManualContext || nodeCtxRefs(node).length > 0) {
       cancelClassify(node.id)
       setAutoCtxResult(null)
       return
@@ -792,6 +798,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         ed._autoContextConfidence = result.confidence
         store.updateNode(node.id, { extraData: JSON.stringify(ed) })
       } catch { /* ignore */ }
+      // Auto-clasificación → SISTEMA NUEVO (_ctxRefs), ver arriba.
+      if (result.contextId && result.confidence >= CONFIDENCE_THRESHOLD && nodeCtxRefs(store.getNode(node.id)).length === 0) {
+        assignContext(node.id, result.contextId)
+      }
     }, 800, userProfileEdit?.length ? userProfileEdit : undefined)
     // Si el nodo ya tiene un contexto asignado, re-programar actualización del conocimiento
     // con debounce largo (30 min) para capturar ediciones prolongadas a lo largo del tiempo.
@@ -3998,29 +4008,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                    no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
                    Siempre visible para que el usuario pueda asignar contexto manualmente. */}
             {/* Badge de contexto: no mostrar en nodos restringidos (dentro de contextos, perfil, papelera) */}
-            {/* Si el nodo YA tiene un contexto por ID (_ctxRefs, vía #/captura/columna),
-                NO mostramos el badge/placeholder de contexto por types[] — sería una
-                segunda vía redundante. El contexto se ve en su chip (_ctxRefs) abajo. */}
-            {nodeCtxRefs(node).length > 0 ? null
-              : (!isContextNode && !isInsideRestrictedAncestor && manuallySetContextId) ? (
-              <AutoContextBadge
-                node={node}
-                result={autoCtxResult ?? { contextId: manuallySetContextId, confidence: 1 }}
-                assignedContextId={manuallySetContextId}
-                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
-              />
-            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult !== null) ? (
-              <AutoContextBadge
-                node={node}
-                result={autoCtxResult}
-                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
-              />
-            ) : (!isContextNode && !isInsideRestrictedAncestor && !nodeHasManualContext && autoCtxResult === null && !node.isDiaryEntry && isContextAnchor) ? (
-              <ContextPlaceholderBadge
-                node={node}
-                onContextAssigned={id => { if (id === node.id) setAutoCtxResult(null) }}
-              />
-            ) : null}
+            {/* (Badges de contexto por types[] ELIMINADOS — sistema único por _ctxRefs.
+                El contexto asignado (manual, por #, captura, columna o auto-clasificación)
+                se ve en su chip más abajo. La auto-clasificación ahora asigna por _ctxRefs.) */}
 
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (

@@ -2195,39 +2195,8 @@ export default function NodeView() {
               </div>,
               document.body
             )}
-            {/* Badge de contexto — inline junto al título, alineado con el texto */}
-            {!isContextNode && !isCtxTreeNode(node.id) && !contextParent(node.id) && !node.isDiaryEntry && (() => {
-              const tagsRoot = findContextRoot()
-              if (!tagsRoot || store.children(tagsRoot.id).filter(n => !n.deletedAt).length === 0) return null
-              if (nodeViewManualCtxId) {
-                return (
-                  <AutoContextBadge
-                    node={node}
-                    result={{ contextId: nodeViewManualCtxId, confidence: 1 }}
-                    assignedContextId={nodeViewManualCtxId}
-                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
-                  />
-                )
-              }
-              if (!nodeViewHasManualCtx && nodeViewCtxResult !== null) {
-                return (
-                  <AutoContextBadge
-                    node={node}
-                    result={nodeViewCtxResult}
-                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
-                  />
-                )
-              }
-              if (!nodeViewHasManualCtx && nodeViewCtxResult === null && (node.text || '').trim().length >= 10) {
-                return (
-                  <ContextPlaceholderBadge
-                    node={node}
-                    onContextAssigned={id => { if (id === node.id) setNodeViewCtxResult(null) }}
-                  />
-                )
-              }
-              return null
-            })()}
+            {/* (Badge de contexto por types[] ELIMINADO — el contexto del nodo se
+                gestiona en la columna derecha (CONTEXTO) por _ctxRefs.) */}
             </div>{/* /node-title-wrap */}
 
             <div className="node-title-actions">
