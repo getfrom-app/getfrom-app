@@ -391,6 +391,13 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
 
       <div className="context-menu-separator" />
 
+      {/* Quitar tarea (directo) → la convierte en nodo normal. */}
+      {isTask && (
+        <button className="context-menu-item" onClick={run(toggleTask)}>
+          <span className="context-menu-icon">○</span> Quitar tarea
+        </button>
+      )}
+
       {/* Convertir en → inline expandible */}
       <div className="context-menu-section">
         <button
