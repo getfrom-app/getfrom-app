@@ -1245,8 +1245,9 @@ export default function MainLayout() {
           input de texto y voz; así no se solapan con los controles de la columna). */}
       {!showAIChat && (
         <>
-          {/* Botón REC/STOP — abre Magic y dicta ahí; mientras graba, detiene y envía */}
-          <RecFab onOpenMagic={() => openPanel('magic')} />
+          {/* Botón REC/STOP — abre la grabadora en la columna derecha y graba; al parar
+              ofrece «Crear nota» (nota del día + transcripción + Magic). */}
+          <RecFab onOpenRecorder={() => { setRightCollapsed(false); openPanel('recorder') }} />
           {/* Botón FAB */}
           <button
             className="quick-capture-fab"

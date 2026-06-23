@@ -135,6 +135,40 @@ export async function restructureVoiceNote(nodeId: string): Promise<void> {
   } catch { /* mantener lo anterior si falla */ }
 }
 
+/**
+ * Crea una nota a partir de una transcripción de voz y devuelve su id.
+ * Estructura (lo que pide el flujo nuevo de la grabadora):
+ *   📅 Diario de hoy
+ *     └── «Título contextual»  ← nota vacía, título generado por la IA
+ *           └── «…transcripción…»  ← UN solo nodo con la transcripción literal
+ * La IA solo se usa para el TÍTULO (y el contexto si es evidente). Si falla o no
+ * hay tokens, cae a un título por hora — la transcripción nunca se pierde.
+ */
+export async function createNoteFromTranscript(
+  transcript: string,
+  durationSec: number
+): Promise<{ parentId: string; title: string }> {
+  const today = getTodayDiaryUnderAgenda()
+  const now = new Date()
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+  let title = `Nota de voz ${timeStr}`
+  let context: string | null = null
+  try {
+    const a = await analyzeTranscript(transcript, durationSec)
+    if (a.title) title = a.title
+    context = a.context
+  } catch { /* sin IA → título por hora; la transcripción se conserva igual */ }
+
+  const types: string[] = context ? [context] : []
+  const parent = store.createNode({ text: title, parentId: today.id, types })
+  // Un único nodo hijo con la transcripción literal.
+  store.createNode({ text: transcript.trim() || '(sin audio detectado)', parentId: parent.id })
+
+  store.sync(true).catch(() => {})
+  return { parentId: parent.id, title }
+}
+
 /** Crea los nodos en el diario de hoy y devuelve el resultado */
 export async function processRecording(
   transcript: string,
