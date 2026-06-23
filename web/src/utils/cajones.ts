@@ -7,8 +7,9 @@
  *    `isMarkedContext`) o por ser hijo directo de la raíz (`isRootContext`).
  *    `isContextNode` = cualquiera de los dos. El resto de nodos del árbol son
  *    CONTENIDO interno, no contextos.
- *  - Estado: ABIERTO · ALGÚN DÍA (`_future`) · CERRADO (`_closed`). Los cerrados
- *    desaparecen de pickers y ghost-text pero conservan su contenido.
+ *  - Estado: ABIERTO · CERRADO (`_closed`). Los cerrados desaparecen de pickers y
+ *    ghost-text pero conservan su contenido. (Ya no existe «algún día»: lo que se
+ *    quiera hacer más adelante se crea como TAREA, no como contexto.)
  *
  * El contenido (tareas, notas) vive en la AGENDA y se le asigna el contexto por
  * referencia (`extraData._ctxRefs = [contextNodeId]`, por ID, robusto a renombrados
@@ -33,6 +34,10 @@ function ed(n: Node | null | undefined): Record<string, unknown> {
  *  createContext/convertToContext). Distingue un contexto real del CONTENIDO que
  *  cuelga dentro de un contexto (p. ej. guiones filtrados bajo un contexto raíz). */
 export function isMarkedContext(n: Node | null | undefined): boolean {
+  if (!n) return false
+  // Una TAREA (o evento) nunca es un contexto, aunque arrastre un `_ctx` residual
+  // (p. ej. una tarea creada a partir de un contexto). Lo que se agenda es tarea.
+  if (n.status != null || n.isEvent) return false
   return ed(n)._ctx === '1'
 }
 
@@ -54,32 +59,25 @@ export function isContextClosed(n: Node | null | undefined): boolean {
   return ed(n)._closed === '1'
 }
 
-/** ¿Contexto en estado «Algún día»? (`_future`). Va a la lista colapsada de Algún día. */
-export function isContextFuture(n: Node | null | undefined): boolean {
-  return ed(n)._future === '1' && ed(n)._closed !== '1'
-}
+export type ContextState = 'open' | 'closed'
 
-export type ContextState = 'open' | 'future' | 'closed'
-
-/** Estado de un contexto: abierto · algún día · cerrado. Los contextos RAÍZ no
- *  tienen estado (entidad superior) → siempre 'open', ignorando flags residuales. */
+/** Estado de un contexto: abierto · cerrado (ya no existe «algún día»). Los contextos
+ *  RAÍZ no tienen estado (entidad superior) → siempre 'open'. Lo que se quiera hacer
+ *  «más adelante» se crea como TAREA, no como contexto. */
 export function contextState(n: Node | null | undefined): ContextState {
   if (n && isRootContext(n.id)) return 'open'
-  if (isContextClosed(n)) return 'closed'
-  if (isContextFuture(n)) return 'future'
-  return 'open'
+  return isContextClosed(n) ? 'closed' : 'open'
 }
 
-/** Fija el estado del contexto (excluyentes). SOLO subcontextos (con contexto padre):
- *  los contextos RAÍZ son entidades superiores sin estado (no se abren/cierran). */
+/** Fija el estado del contexto (abierto/cerrado, excluyentes). SOLO subcontextos
+ *  (con contexto padre): los contextos RAÍZ no se abren/cierran. */
 export function setContextState(nodeId: string, state: ContextState): void {
   const n = store.getNode(nodeId)
   if (!n) return
   if (!contextParent(nodeId)) return
   const e = ed(n)
-  delete e._closed; delete e._future
+  delete e._closed; delete e._future // limpia el flag legacy «algún día»
   if (state === 'closed') e._closed = '1'
-  else if (state === 'future') e._future = '1'
   e._ctx = '1'
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
@@ -306,25 +304,31 @@ export function listActiveContexts(): Node[] {
   const ids = new Set<string>()
   for (const n of store.allActive()) {
     if (n.deletedAt || isInPapelera(n.id)) continue   // la Papelera no cuenta
-    if (isMarkedContext(n) && !isContextClosed(n) && !isContextFuture(n)) ids.add(n.id)
+    if (isMarkedContext(n) && !isContextClosed(n)) ids.add(n.id)
     for (const cid of nodeCtxRefs(n)) ids.add(cid)
   }
   const out: Node[] = []
   for (const id of ids) {
     const c = store.getNode(id)
-    if (c && !c.deletedAt && !isContextClosed(c) && !isContextFuture(c) && !isInPapelera(c.id)) out.push(c)
+    if (c && !c.deletedAt && !isContextClosed(c) && !isInPapelera(c.id)) out.push(c)
   }
   return out.sort((a, b) => activityTs(b) - activityTs(a))
 }
 
-/** Contextos en estado «Algún día» (para el bloque colapsado de la columna del día). */
-export function listFutureContexts(): Node[] {
-  const out: Node[] = []
-  for (const n of store.allActive()) {
-    if (n.deletedAt || isInPapelera(n.id)) continue
-    if (isMarkedContext(n) && isContextFuture(n)) out.push(n)
-  }
-  return out.sort((a, b) => activityTs(b) - activityTs(a))
+/** Convierte un contexto EN una tarea: le quita las marcas de contexto (`_ctx`,
+ *  `_future`, `_closed`), lo asigna por referencia al contexto al que pertenecía
+ *  (para que siga viéndose dentro de él) y le pone estado de tarea pendiente. No lo
+ *  mueve del árbol: deja de comportarse como contexto (no sale en listas ni abre el
+ *  panel de contexto). Inverso de `convertToContext`. */
+export function convertToTask(nodeId: string): boolean {
+  const node = store.getNode(nodeId)
+  if (!node) return false
+  const parentCtx = contextParent(nodeId) // el contexto bajo el que vivía
+  const e = ed(node) as Record<string, unknown>
+  delete e._ctx; delete e._future; delete e._closed
+  if (parentCtx && parentCtx.id !== nodeId) e._ctxRefs = [parentCtx.id]
+  store.updateNode(nodeId, { status: node.status ?? 'pending', extraData: JSON.stringify(e) })
+  return true
 }
 
 export function unassignContext(nodeId: string, contextId: string): void {

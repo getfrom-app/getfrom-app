@@ -57,11 +57,11 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 88px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto / algún día / cerrado — SOLO subcontextos (con contexto padre).
+        {/* Estado abierto / cerrado — SOLO subcontextos (con contexto padre).
             Los contextos RAÍZ son entidad superior: sin estado. */}
         {contextParent(nodeId) && (() => {
           const st = contextState(node)
-          const seg = (label: string, value: 'open' | 'future' | 'closed', dot: string) => (
+          const seg = (label: string, value: 'open' | 'closed', dot: string) => (
             <button key={value} onClick={() => setContextState(nodeId, value)} title={label}
               style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '6px 8px', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: st === value ? 600 : 500,
@@ -77,7 +77,6 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               <div className="rc-section-label" style={{ marginBottom: 6 }}>Estado</div>
               <div style={{ display: 'flex', borderRadius: 999, border: `1px solid ${color}40`, overflow: 'hidden', background: color + '0a' }}>
                 {seg('Abierto', 'open', '#16a34a')}
-                {seg('Algún día', 'future', '#f59e0b')}
                 {seg('Cerrado', 'closed', 'var(--text-tertiary)')}
               </div>
             </div>
@@ -204,7 +203,6 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const kids = store.children(nodeId).filter(c => !c.deletedAt && isMarkedContext(c))
           if (kids.length === 0) return null
           const abiertos = kids.filter(c => contextState(c) === 'open')
-          const algunDia = kids.filter(c => contextState(c) === 'future')
           const cerrados = kids.filter(c => contextState(c) === 'closed')
           const ctxRow = (c: ReturnType<typeof store.getNode>, closed: boolean) => c && (
             <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
@@ -220,12 +218,6 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                 <div className="dc-group">
                   <div className="rc-section-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
-                </div>
-              )}
-              {algunDia.length > 0 && (
-                <div className="dc-group">
-                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Algún día · {algunDia.length}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{algunDia.map(c => ctxRow(c, false))}</div>
                 </div>
               )}
               {cerrados.length > 0 && (

@@ -89,6 +89,10 @@ export function ensureHomeRootAndReparent(): void {
  */
 export function classifyNodeRoot(nodeId: string | null | undefined): 'agent' | 'prompt' | 'context' | 'template' | null {
   if (!nodeId) return null
+  // Una TAREA (o evento) nunca es un nodo de configuración, viva donde viva (aunque
+  // cuelgue bajo 🧠 Contexto): abre el panel normal, no el de contexto.
+  const self = store.getNode(nodeId)
+  if (self && (self.status != null || self.isEvent)) return null
   const agentesId = getAgentesNode()?.id
   const promptsId = getPromptsRoot()?.id
   const contextId = findContextRoot()?.id

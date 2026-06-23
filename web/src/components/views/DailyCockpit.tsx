@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -385,12 +385,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                 <button className="dc-ctxmenu-item" style={ctxMenuItem}
                   onClick={() => { if (closed) { setContextClosed(ctxMenu.id, false); setCtxMenu(null) } else { setCtxClosing({ id: ctxMenu.id, action: 'close' }); setCtxMenu(null) } }}>
                   {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
-                </button>
-              )}
-              {canClose && !closed && (
-                <button className="dc-ctxmenu-item" style={ctxMenuItem}
-                  onClick={() => { setContextState(ctxMenu.id, contextState(c) === 'future' ? 'open' : 'future'); setCtxMenu(null) }}>
-                  {contextState(c) === 'future' ? '↩ Sacar de Algún día' : '🕒 Pasar a Algún día'}
                 </button>
               )}
               <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}

@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
-import { firstContextOf, setNodeContext, convertToContext, isContextNode } from '../../utils/cajones'
+import { firstContextOf, setNodeContext, convertToContext, convertToTask, isContextNode } from '../../utils/cajones'
 import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
@@ -51,6 +51,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   function convertTask() {
     if (isTask) {
       store.updateNode(nodeId, { status: null })
+    } else if (isContextNode(nodeId)) {
+      // Un contexto → tarea: limpia marcas de contexto y lo asigna a su contexto padre.
+      convertToTask(nodeId)
     } else {
       const today = new Date(); today.setHours(23, 59, 59, 0)
       store.updateNode(nodeId, { status: 'pending', due: today.toISOString() })
