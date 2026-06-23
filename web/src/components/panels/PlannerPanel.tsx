@@ -607,10 +607,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     // GCal sin color propio (gris) → el mismo pastel de tareas (coherencia visual);
     // GCal con color propio → ese color en pastel; tareas → pastel base.
     const bg = b.kind === 'gcal' ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : taskPastel
+    // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
+    // multi-día o con duración errónea infle el scroll con espacio vacío).
+    const gridH = TOTAL_HOURS * hourH
+    const blockTop = Math.max(0, Math.min(topPx(b.start), gridH - slotH / 2))
+    const blockH = Math.max(slotH / 2, Math.min(heightPx(b.start.getTime(), b.end.getTime()), gridH - blockTop))
     return (
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}`}
-        style={{ top: topPx(b.start), height: heightPx(b.start.getTime(), b.end.getTime()),
+        style={{ top: blockTop, height: blockH,
           background: bg, left: 2, right: 2 }}
         draggable
         onDragStart={e => handleBlockDragStart(e, b)}
