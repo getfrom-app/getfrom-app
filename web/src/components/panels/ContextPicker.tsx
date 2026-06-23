@@ -8,16 +8,18 @@ import type { Node } from '../../types'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-export default function ContextPicker({ currentId, onPick, autoFocus = true }: {
+export default function ContextPicker({ currentId, onPick, autoFocus = true, exclude }: {
   currentId: string | null
   /** id del contexto elegido/creado, o null para QUITAR (al pulsar el actual). */
   onPick: (id: string | null) => void
   autoFocus?: boolean
+  /** opcional: oculta de la lista los contextos para los que devuelve true (p.ej. self/descendientes al reparentar). */
+  exclude?: (c: Node) => boolean
 }) {
   const [q, setQ] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const contexts = listContextsForParent().filter(c => !isContextClosed(c))
+  const contexts = listContextsForParent().filter(c => !isContextClosed(c) && !(exclude?.(c)))
 
   useEffect(() => { if (autoFocus) setTimeout(() => inputRef.current?.focus(), 20) }, [autoFocus])
 

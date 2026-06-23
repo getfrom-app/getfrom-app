@@ -4,11 +4,13 @@
  * la ventana central; aquí van sus propiedades (color, conocimiento) + ← Atrás.
  */
 import { useMemo, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, listContextsForParent, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
+import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
 import { TaskPropsPopover } from './DiaryPanelComponents'
+import ContextPicker from './ContextPicker'
 
 /** Color del chip de fecha por estado: atrasada=rojo, hoy=ámbar, futura=azul. */
 function dueChipColor(dueISO: string): string {
@@ -37,8 +39,16 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const color = useMemo(() => contextColor(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   // Modal de fecha/recurrencia al tocar el chip de una tarea (sin navegar a ella).
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
-  // El contexto padre se muestra navegable + «Cambiar»; al pulsar Cambiar aparece el selector.
-  const [changingParent, setChangingParent] = useState(false)
+  // El contexto padre se muestra navegable + «Cambiar»; al pulsar Cambiar se abre
+  // un popover con buscador + lista de contextos (ContextPicker) para elegir directo.
+  const [parentPicker, setParentPicker] = useState<{ x: number; y: number; up: boolean } | null>(null)
+  const openParentPicker = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const up = window.innerHeight - r.bottom < 320
+    const x = Math.max(8, Math.min(r.left, window.innerWidth - 250))
+    setParentPicker(up ? { x, y: window.innerHeight - r.top + 4, up: true } : { x, y: r.bottom + 4, up: false })
+  }
 
   if (!node) return null
 
@@ -64,38 +74,43 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Contexto padre — aplicar un contexto a este contexto lo anida */}
+        {/* Contexto padre — navegable (clic en el nombre) + «Cambiar» (abre el picker). */}
         {(() => {
           const parent = contextParent(nodeId)
           const isDesc = (cand: string) => { let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand); let g = 0; while (cur && g++ < 60) { if (cur.id === nodeId) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null } return false }
-          const candidates = listContextsForParent().filter(c => c.id !== nodeId && !isDesc(c.id) && c.id !== parent?.id)
           const pColor = parent ? contextColor(parent.id) : color
           return (
             <div>
               <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto padre</div>
-              {changingParent ? (
-                <select value="" autoFocus
-                  onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value); setChangingParent(false) }}
-                  onBlur={() => setChangingParent(false)}
-                  style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
-                  <option value="">{parent ? `Mover a otro contexto…` : '+ elegir contexto padre'}</option>
-                  {candidates.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
-                </select>
-              ) : parent ? (
+              {parent ? (
                 // Píldora navegable (clic en el nombre → ir al padre) + «Cambiar» al estilo de Estado.
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, border: `1px solid ${pColor}40`, background: pColor + '12' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }} />
                   <button onClick={() => navigate(`/node/${parent.id}`)} title={`Ir a ${parent.text}`}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{parent.text}</button>
-                  <button onClick={() => setChangingParent(true)} title="Cambiar contexto padre"
+                  <button onClick={openParentPicker} title="Cambiar contexto padre"
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, color: pColor, opacity: 0.85 }}>· Cambiar</button>
                 </span>
               ) : (
-                <button onClick={() => setChangingParent(true)} title="Añadir contexto padre"
+                <button onClick={openParentPicker} title="Añadir contexto padre"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color, border: `1px dashed ${color}55`, background: 'none' }}>
                   + Añadir contexto padre
                 </button>
               )}
+              {parentPicker && createPortal((
+                <>
+                  <div onClick={() => setParentPicker(null)} onContextMenu={e => { e.preventDefault(); setParentPicker(null) }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
+                  <div className="ctx-pick" onClick={e => e.stopPropagation()}
+                    style={{ position: 'fixed', ...(parentPicker.up ? { bottom: parentPicker.y } : { top: parentPicker.y }), left: parentPicker.x, zIndex: 3000 }}>
+                    <ContextPicker
+                      currentId={parent?.id ?? null}
+                      exclude={c => c.id === nodeId || isDesc(c.id)}
+                      onPick={id => { if (id && id !== parent?.id) reparentContext(nodeId, id); setParentPicker(null) }}
+                    />
+                  </div>
+                </>
+              ), document.body)}
             </div>
           )
         })()}
