@@ -37,6 +37,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const color = useMemo(() => contextColor(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   // Modal de fecha/recurrencia al tocar el chip de una tarea (sin navegar a ella).
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  // El contexto padre se muestra navegable + «Cambiar»; al pulsar Cambiar aparece el selector.
+  const [changingParent, setChangingParent] = useState(false)
 
   if (!node) return null
 
@@ -67,14 +69,33 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const parent = contextParent(nodeId)
           const isDesc = (cand: string) => { let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand); let g = 0; while (cur && g++ < 60) { if (cur.id === nodeId) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null } return false }
           const candidates = listContextsForParent().filter(c => c.id !== nodeId && !isDesc(c.id) && c.id !== parent?.id)
+          const pColor = parent ? contextColor(parent.id) : color
           return (
             <div>
               <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto padre</div>
-              <select value="" onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value) }}
-                style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
-                <option value="">{parent ? `en ${parent.text} — cambiar…` : '+ añadir contexto padre'}</option>
-                {candidates.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
-              </select>
+              {changingParent ? (
+                <select value="" autoFocus
+                  onChange={e => { if (e.target.value) reparentContext(nodeId, e.target.value); setChangingParent(false) }}
+                  onBlur={() => setChangingParent(false)}
+                  style={{ width: '100%', fontSize: 13, color, background: 'var(--bg-secondary)', border: `1px solid var(--border)`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>
+                  <option value="">{parent ? `Mover a otro contexto…` : '+ elegir contexto padre'}</option>
+                  {candidates.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
+                </select>
+              ) : parent ? (
+                // Píldora navegable (clic en el nombre → ir al padre) + «Cambiar» al estilo de Estado.
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, border: `1px solid ${pColor}40`, background: pColor + '12' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }} />
+                  <button onClick={() => navigate(`/node/${parent.id}`)} title={`Ir a ${parent.text}`}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{parent.text}</button>
+                  <button onClick={() => setChangingParent(true)} title="Cambiar contexto padre"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, color: pColor, opacity: 0.85 }}>· Cambiar</button>
+                </span>
+              ) : (
+                <button onClick={() => setChangingParent(true)} title="Añadir contexto padre"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color, border: `1px dashed ${color}55`, background: 'none' }}>
+                  + Añadir contexto padre
+                </button>
+              )}
             </div>
           )
         })()}
@@ -101,7 +122,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             <div key={a.id} className={`dc-row ${a.status === 'done' ? 'dc-row--done' : ''}`} onClick={() => navigate(`/node/${a.id}`)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}>
               {a.isEvent ? (
-                <span className="dc-check" style={{ border: 'none', background: 'none', color: 'var(--text-tertiary)' }}>◷</span>
+                <span className="dc-check" style={{ border: 'none', background: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.7" /></svg>
+                </span>
               ) : a.status != null ? (
                 <button className={`dc-check ${a.status === 'done' ? 'dc-check--done' : ''}`}
                   onClick={e => { e.stopPropagation(); store.updateNode(a.id, { status: a.status === 'done' ? 'pending' : 'done' }) }}
@@ -113,13 +136,19 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               )}
               <span className="dc-text">{a.text || '(sin texto)'}</span>
               <span style={{ flex: 1 }} />
-              {a.status != null && a.due && (
-                <span className="dc-due" style={{ color: dueChipColor(a.due), cursor: 'pointer' }}
-                  title="Fecha y recurrencia"
-                  onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>
-                  {new Date(a.due).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
-                </span>
-              )}
+              {(a.status != null || a.isEvent) && a.due && (() => {
+                const d = new Date(a.due)
+                const base = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })
+                const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
+                const label = a.isEvent && hasTime ? `${base} · ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : base
+                return (
+                  <span className="dc-due" style={{ color: dueChipColor(a.due), cursor: 'pointer' }}
+                    title="Fecha y recurrencia"
+                    onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>
+                    {label}
+                  </span>
+                )
+              })()}
               {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title="Fecha y recurrencia" onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
               <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
             </div>
