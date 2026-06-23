@@ -14,13 +14,16 @@ import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
-import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor } from '../../utils/gcalNodesSync'
+import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor, getGcalEventId } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
+import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
+import { gcalEventNodeId } from '../../utils/deterministicId'
+import { useUserStore } from '../../store/userStore'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
-import { TaskPropsPopover } from './DiaryPanelComponents'
+import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -70,6 +73,18 @@ export default function DayColumn({
 }) {
   useStore()
   const navigate = useNavigate()
+  const us = useUserStore()
+
+  // Eventos de Google del día: se traen de Google (NO se materializan como nodos).
+  // Se pintan en el bloque de eventos; clic → modal de edición + botón «Crear nodo».
+  const [gcalEvents, setGcalEvents] = useState<CalendarEvent[]>([])
+  const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
+  useEffect(() => {
+    if (!node.isDiaryEntry || !node.diaryDate || !us.googleConnected) { setGcalEvents([]); return }
+    let cancelled = false
+    getCalendarEvents(new Date(node.diaryDate)).then(evs => { if (!cancelled) setGcalEvents(evs) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [node.id, node.isDiaryEntry, node.diaryDate, us.googleConnected])
 
   // Colapsado por bloque (cabecera clicable). Persistente.
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
@@ -104,6 +119,9 @@ export default function DayColumn({
   const { isToday, rightColumnIds } = raw
   const eventIds = rightColumnIds
   const eventNodes = raw.eventNodes
+  // Eventos de Google que NO tienen un nodo local enlazado (esos ya salen como eventNodes).
+  const linkedGcalIds = new Set(eventNodes.map(n => getGcalEventId(n)).filter(Boolean))
+  const extraEvents = gcalEvents.filter(e => !linkedGcalIds.has(e.id))
   const captureNodes = raw.captureNodes
   const dayTasks = raw.dayTasks
   const areaNodes = raw.areaNodes
@@ -131,9 +149,22 @@ export default function DayColumn({
   return (
     <>
       {/* 1. Eventos de Google Calendar del día */}
-      {eventNodes.length > 0 && (
+      {(eventNodes.length > 0 || extraEvents.length > 0) && (
         <div className="dc-group">
           {header('eventos', isToday ? 'Eventos de hoy' : 'Eventos del día', 'dc-group-label--event')}
+          {!collapsed.has('eventos') && extraEvents.map(ev => {
+            const allDay = ev.allDay
+            const timeLabel = allDay ? 'Todo el día' : `${hhmm(ev.start)}–${hhmm(ev.end)}`
+            return (
+              <div key={ev.id} className="dc-row dc-row--event"
+                onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
+                title="Editar evento de Google Calendar">
+                <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
+                <span className="dc-text">{ev.title || 'Evento'}</span>
+                <span className="dc-ev-badge">{timeLabel}</span>
+              </div>
+            )
+          })}
           {!collapsed.has('eventos') && eventNodes.map(ev => {
             const color = getGcalColor(ev)
             const allDay = isAllDay(ev)
@@ -262,6 +293,24 @@ export default function DayColumn({
         const pn = store.getNode(propsNodeId)
         return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
       })()}
+
+      {/* Modal de edición del evento de Google (clic en una fila de evento) */}
+      {editingGcal && (
+        <GCalEventEditor event={editingGcal} modal onClose={() => setEditingGcal(null)}
+          linkedNodeId={store.allActive().find(n => n.gcalEventId === editingGcal.id)?.id}
+          onCreateNode={() => {
+            // Crear bajo demanda un nodo local vinculado al evento (no por defecto).
+            const ev = editingGcal
+            const newNode = store.createNode({ text: ev.title || 'Evento', parentId: node.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
+            store.updateNode(newNode.id, {
+              isEvent: true, due: ev.start, dueEnd: ev.end,
+              extraData: JSON.stringify({ _gcalEventId: ev.id, gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '', _gcalSynced: '1' }),
+            })
+            navigate(`/node/${newNode.id}`)
+          }}
+          onUpdated={ev => { setGcalEvents(p => p.map(x => x.id === ev.id ? ev : x)); setEditingGcal(null) }}
+          onDeleted={id => { setGcalEvents(p => p.filter(x => x.id !== id)); setEditingGcal(null) }} />
+      )}
     </>
   )
 }
