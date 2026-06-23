@@ -14,7 +14,8 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent } from '../../utils/cajones'
+import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -219,7 +220,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
           {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title="Editar fecha y recurrencia"
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-          {!opts.inContext && parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
+          {!opts.inContext && parentLabel(n) && parentLabel(n) !== firstContextOf(n)?.text && <span className="dc-parent">{parentLabel(n)}</span>}
         </div>
       </div>
     </div>
@@ -284,15 +285,12 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
           <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
           <span className="dc-text">{c.text || 'Contexto'}</span>
-          {parent && (() => {
-            const pColor = contextColor(parent.id)
-            return (
-              <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
-                style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
-                {parent.text}
-              </span>
-            )
-          })()}
+          {parent && (
+            <ContextChip context={parent} title="Ir al contexto padre"
+              removeTitle="Quitar del contexto padre"
+              onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
+              onRemove={() => clearContextParent(c.id)} />
+          )}
           <span style={{ flex: 1 }} />
           {due && (due.overdue.length + due.today.length) > 0 && (
             <span style={{ fontSize: 11, fontWeight: 600, color: due.overdue.length > 0 ? 'var(--danger,#e03131)' : color }}>

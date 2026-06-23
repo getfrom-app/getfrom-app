@@ -13312,6 +13312,26 @@ textarea:focus-visible,
   border: 1px solid transparent;
 }
 .dc-ctx-chip:hover { border-color: var(--accent, #6c5ce7); }
+
+/* Chip de contexto UNIFICADO (ContextChip): píldora redondeada con color del
+   contexto + «×» para quitarlo (visible al hover de la fila o del propio chip). */
+.ctx-chip {
+  display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
+  font-size: 10.5px; line-height: 1; border-radius: 999px; padding: 2px 4px 2px 7px;
+  white-space: nowrap; max-width: 130px;
+}
+.ctx-chip-name {
+  cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500;
+}
+.ctx-chip-x {
+  flex-shrink: 0; width: 14px; height: 14px; display: inline-flex; align-items: center;
+  justify-content: center; border: none; background: transparent; color: inherit;
+  cursor: pointer; border-radius: 50%; font-size: 13px; line-height: 1; padding: 0;
+  opacity: 0; transition: opacity .12s, background .12s;
+}
+.dc-row:hover .ctx-chip-x, .ctx-chip:hover .ctx-chip-x { opacity: 0.65; }
+.ctx-chip-x:hover { opacity: 1 !important; background: rgba(0,0,0,0.12); }
 .dc-ctx-chip--empty {
   background: transparent; color: var(--text-tertiary, #bbb);
   border: 1px dashed var(--border, #ddd); width: 16px; height: 16px; padding: 0;

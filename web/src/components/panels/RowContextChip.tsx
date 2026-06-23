@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { listContextsForParent, isContextClosed, firstContextOf, setNodeContext } from '../../utils/cajones'
 import ContextPicker from './ContextPicker'
+import ContextChip from './ContextChip'
 import type { Node } from '../../types'
 
 export default function RowContextChip({ node }: { node: Node }) {
@@ -40,7 +41,8 @@ export default function RowContextChip({ node }: { node: Node }) {
   return (
     <span className="dc-ctx-chip-wrap" ref={ref}>
       {current ? (
-        <span className="dc-ctx-chip" title="Cambiar contexto" onClick={open}>{current.text}</span>
+        <ContextChip context={current} title="Cambiar contexto" onClick={open}
+          onRemove={() => setNodeContext(node.id, null)} />
       ) : (
         <span className="dc-ctx-chip dc-ctx-chip--empty" title="Asignar contexto" onClick={open}>?</span>
       )}

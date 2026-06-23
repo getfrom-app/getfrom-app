@@ -222,6 +222,18 @@ export function reparentContext(nodeId: string, newParentContextId: string): voi
   ensureTagDefinition(nodeId) // recalcula el slug jerárquico
 }
 
+/** Quita el contexto padre de un subcontexto: lo sube a contexto RAÍZ (hijo directo
+ *  de 🧠 Contexto). El «×» del chip de contexto padre lo usa. */
+export function clearContextParent(nodeId: string): void {
+  const root = findContextRoot()
+  const n = store.getNode(nodeId)
+  if (!root || !n || n.parentId === root.id) return
+  const sibs = store.children(root.id).filter(x => !x.deletedAt)
+  const maxOrder = sibs.reduce((m, x) => Math.max(m, x.siblingOrder), 0)
+  store.updateNode(nodeId, { parentId: root.id, siblingOrder: maxOrder + 1000 })
+  ensureTagDefinition(nodeId)
+}
+
 // ── Asignación de contexto a tareas/notas (por ID) ───────────────────
 
 export function nodeCtxRefs(n: Node | null | undefined): string[] {
