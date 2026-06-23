@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
-import { firstContextOf, setNodeContext } from '../../utils/cajones'
+import { firstContextOf, setNodeContext, convertToContext, isContextNode } from '../../utils/cajones'
 import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
@@ -69,6 +69,14 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           <button className="node-ctx-item" onClick={convertTask}>
             {isTask ? '○ Quitar tarea' : '☑ Convertir en tarea'}
           </button>
+        )}
+        {!isEvent && !isContextNode(nodeId) && (
+          <button className="node-ctx-item" onClick={() => {
+            if (convertToContext(nodeId)) {
+              window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node!.text || '').slice(0, 30)}"`, type: 'success' } }))
+            }
+            onClose()
+          }}>🧠 Convertir en contexto</button>
         )}
         <button ref={ctxBtnRef} className="node-ctx-item" onClick={toggleCtxFlyout}>
           🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>›</span>

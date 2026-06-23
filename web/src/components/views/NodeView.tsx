@@ -3,7 +3,7 @@ import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelpe
 import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
 import { classifyNodeRoot } from '../../utils/homeHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
-import { listTemplates, applyTemplate, findTagNodeBySlug, ensureTagDefinition } from '../../utils/tagsHelper'
+import { listTemplates, applyTemplate, findTagNodeBySlug } from '../../utils/tagsHelper'
 import { useFilterStore } from '../../store/filterStore'
 import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
@@ -44,7 +44,7 @@ import EmojiPicker from '../EmojiPicker'
 import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext, renameContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext, renameContext, convertToContext as convertNodeToContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1254,16 +1254,9 @@ export default function NodeView() {
   // Convertir esta nota/tarea en un CONTEXTO: mover bajo 🧠 Contexto y marcar _ctx.
   function convertToContext() {
     if (!node) return
-    const root = findContextRoot()
-    if (!root) return
-    const sibs = store.children(root.id).filter(n => !n.deletedAt)
-    const maxOrder = sibs.reduce((m, n) => Math.max(m, n.siblingOrder), 0)
-    let ed: Record<string, unknown> = {}
-    try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
-    ed._ctx = '1'
-    store.updateNode(node.id, { parentId: root.id, siblingOrder: maxOrder + 1000, status: null, extraData: JSON.stringify(ed) })
-    ensureTagDefinition(node.id)
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
+    if (convertNodeToContext(node.id)) {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node.text || '').slice(0, 30)}"`, type: 'success' } }))
+    }
   }
 
   async function handleShare() {
