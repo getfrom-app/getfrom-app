@@ -172,11 +172,18 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   const fromGcalIds = new Set(
     store.allActive().map(n => n.gcalEventId).filter(Boolean)
   )
+  // Dedup adicional: una tarea local con el MISMO texto y la MISMA hora de inicio
+  // que un evento de Google es la misma cosa aunque no estén enlazadas por id
+  // (p.ej. recurrentes creadas a mano + en GCal). Gana la tarea local.
+  const localKeys = new Set(
+    blocks.map(b => `${(b.text || '').trim().toLowerCase()}|${b.start.getHours()}:${b.start.getMinutes()}`)
+  )
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
     if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque Fromly
     const start = new Date(ev.start)
     if (!sameDay(start, day)) continue
+    if (localKeys.has(`${(ev.title || '').trim().toLowerCase()}|${start.getHours()}:${start.getMinutes()}`)) continue // dup por texto+hora
     blocks.push({
       kind: 'gcal',
       id: ev.id,
