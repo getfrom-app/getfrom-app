@@ -125,6 +125,22 @@ interface Block {
   color: string
   nodeId?: string     // id del nodo original (para task)
   gcalEvent?: CalendarEvent
+  asTask?: boolean    // evento GCal que en realidad es una tarea recurrente del usuario → sin relleno
+}
+
+// Títulos de tareas locales con hora (cualquier día). Un evento de Google con uno
+// de estos títulos NO es un evento externo: es la misma tarea recurrente del
+// usuario, materializada como nodo solo en los días cercanos. Se pinta como tarea.
+function localTimedTaskTitles(): Set<string> {
+  const set = new Set<string>()
+  for (const n of store.allActive()) {
+    if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
+    let isTimeBlock = false
+    try { isTimeBlock = JSON.parse(n.extraData || '{}')._timeBlock === '1' } catch {}
+    if (!isTimeBlock && !hasTime(n.due)) continue
+    if (n.text) set.add(n.text.trim().toLowerCase())
+  }
+  return set
 }
 
 // ── Leer bloques con hora (timeline) ─────────────────────────────────────
@@ -178,6 +194,7 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   const localKeys = new Set(
     blocks.map(b => `${(b.text || '').trim().toLowerCase()}|${b.start.getHours()}:${b.start.getMinutes()}`)
   )
+  const taskTitles = localTimedTaskTitles()
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
     if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque Fromly
@@ -191,6 +208,9 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
       start, end: new Date(ev.end),
       color: ev.backgroundColor || '#4a90d9',
       gcalEvent: ev,
+      // Si su título coincide con una tarea recurrente del usuario, es esa tarea
+      // (no un evento externo) → se renderiza sin relleno, igual que las tareas.
+      asTask: taskTitles.has((ev.title || '').trim().toLowerCase()),
     })
   }
 
@@ -615,7 +635,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     // Solo los eventos de Google llevan relleno de color (gris propio → pastel base;
     // color propio → ese color en pastel). Las tareas NO son eventos: sin fondo,
     // solo borde fino + barra de acento a la izquierda para verlas y arrastrarlas.
-    const isGcal = b.kind === 'gcal'
+    // Relleno solo para eventos de Google REALES (externos). Una tarea recurrente
+    // que también está en GCal (asTask) se trata como tarea: sin relleno.
+    const isGcal = b.kind === 'gcal' && !b.asTask
     const bg = isGcal ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : 'transparent'
     // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
     // multi-día o con duración errónea infle el scroll con espacio vacío).
