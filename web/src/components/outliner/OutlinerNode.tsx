@@ -21,7 +21,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree, findTagNodeBySlug } from '../../utils/tagsHelper'
-import { listContexts, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
+import { listContextsForParent, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
 import RowContextChip from '../panels/RowContextChip'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
@@ -1193,7 +1193,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   function buildCajonPickerItems(query: string): PickerItem[] {
     const q = query.trim().toLowerCase()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    const ctxs = listContexts() // solo abiertos, ordenados por actividad
+    const ctxs = listContextsForParent() // ÁREAS + proyectos abiertos (incluye contextos raíz como «Inversión»)
       .filter(c => !q || norm(c.text || '').includes(norm(q)))
       .slice(0, 8)
     const items: PickerItem[] = ctxs.map(c => {
@@ -1517,7 +1517,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         // Contextos/proyectos ABIERTOS — mismo escaneo; al aceptar se ASIGNA (no @).
         // Los cerrados no aparecen como sugerencia.
         if (!found) {
-          for (const cj of listContexts()) {
+          for (const cj of listContextsForParent()) {
             const cjNorm = normStr(cj.text || '')
             if (!cjNorm) continue
             for (let len = Math.min(beforeCursor.length, cjNorm.length - 1); len >= 3; len--) {
@@ -4491,11 +4491,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   className={`inline-picker-item ${idx === picker.activeIdx ? 'active' : ''}`}
                   onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
                 >
-                  <span className="inline-picker-icon">{item.cajonCreate ? '+' : '#'}</span>
+                  <span className="inline-picker-icon">
+                    {item.cajonCreate
+                      ? '+'
+                      : <span style={{ width: 8, height: 8, borderRadius: '50%', background: contextColor(item.id), display: 'inline-block' }} />}
+                  </span>
                   <span className="inline-picker-content">
                     <span className="inline-picker-label">
                       {item.cajonCreate ? `Crear contexto «${item.label}»` : item.label}
                     </span>
+                    {!item.cajonCreate && item.contextLabel && (
+                      <span className="inline-picker-preview">{item.contextLabel}</span>
+                    )}
                   </span>
                 </button>
               ))}
