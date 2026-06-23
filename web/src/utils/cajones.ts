@@ -1,19 +1,19 @@
 /**
- * Contextos y proyectos (modelo unificado).
+ * Contextos (árbol bajo 🧠 Contexto).
  *
- * TODO es un CONTEXTO: un nodo bajo 🧠 Contexto.
- *  - Un "área" = contexto de nivel superior (Media Sector, La Isla…).
- *  - Un "proyecto" = SUBCONTEXTO (un contexto con un contexto padre, p. ej.
- *    «Locución Laco» dentro de «Media Sector»). Vive en el árbol de Contextos.
- *  - Cualquier contexto puede estar ABIERTO o CERRADO (`extraData._closed`). Los
- *    cerrados desaparecen de pickers y ghost-text, pero conservan su contenido.
+ * SOLO hay CONTEXTOS: nodos del árbol 🧠 Contexto. No existe ya el concepto de
+ * "área" ni "proyecto" (eran nombres antiguos). Lo único que distinguimos es:
+ *  - Cómo se identifica un contexto: por estar marcado (`extraData._ctx='1'`,
+ *    `isMarkedContext`) o por ser hijo directo de la raíz (`isRootContext`).
+ *    `isContextNode` = cualquiera de los dos. El resto de nodos del árbol son
+ *    CONTENIDO interno, no contextos.
+ *  - Estado: ABIERTO · ALGÚN DÍA (`_future`) · CERRADO (`_closed`). Los cerrados
+ *    desaparecen de pickers y ghost-text pero conservan su contenido.
  *
- * El contenido de un proyecto (tareas, notas) vive en la AGENDA y se le asigna el
- * contexto por referencia (`extraData._ctxRefs = [contextNodeId]`, por ID, robusto
- * a renombrados y a la jerarquía). El nodo NO se mueve. El propio contexto es un
- * nodo: su body/hijos/lienzo son su "nota".
- *
- * (Antes existían los "cajones" como concepto aparte — ya unificados aquí.)
+ * El contenido (tareas, notas) vive en la AGENDA y se le asigna el contexto por
+ * referencia (`extraData._ctxRefs = [contextNodeId]`, por ID, robusto a renombrados
+ * y a la jerarquía). El nodo NO se mueve. El propio contexto es un nodo: su
+ * body/hijos/lienzo son su "nota".
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
@@ -22,32 +22,32 @@ import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
 import { isInPapelera } from './papeleraHelper'
 
-const PROJECT_DEFAULT_COLOR = '#7c3aed'
+const CONTEXT_DEFAULT_COLOR = '#7c3aed'
 
 function ed(n: Node | null | undefined): Record<string, unknown> {
   if (!n) return {}
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
 
-/** ¿Es un PROYECTO (contexto creado/designado explícitamente)? Marcado `_ctx='1'`.
- *  Distingue un contexto real del CONTENIDO que cuelga dentro de un contexto
- *  (p. ej. los guiones diarios filtrados bajo un área). */
-export function isProject(n: Node | null | undefined): boolean {
+/** ¿Es un contexto MARCADO explícitamente? Lleva `extraData._ctx='1'` (lo ponen
+ *  createContext/convertToContext). Distingue un contexto real del CONTENIDO que
+ *  cuelga dentro de un contexto (p. ej. guiones filtrados bajo un contexto raíz). */
+export function isMarkedContext(n: Node | null | undefined): boolean {
   return ed(n)._ctx === '1'
 }
 
-/** ¿Es un ÁREA? = hijo DIRECTO de la raíz 🧠 Contexto (los contextos de base). */
-export function isArea(nodeId: string): boolean {
+/** ¿Es un contexto RAÍZ? = hijo DIRECTO de la raíz 🧠 Contexto (contextos de base). */
+export function isRootContext(nodeId: string): boolean {
   const root = findContextRoot()
   if (!root) return false
   const n = store.getNode(nodeId)
   return !!n && !n.deletedAt && n.parentId === root.id
 }
 
-/** ¿El nodo es un contexto REAL (área o proyecto)? NO el contenido interno. */
+/** ¿El nodo es un contexto REAL (marcado o raíz)? NO el contenido interno. */
 export function isContextNode(nodeId: string): boolean {
   const n = store.getNode(nodeId)
-  return isArea(nodeId) || isProject(n)
+  return isRootContext(nodeId) || isMarkedContext(n)
 }
 
 export function isContextClosed(n: Node | null | undefined): boolean {
@@ -68,11 +68,11 @@ export function contextState(n: Node | null | undefined): ContextState {
   return 'open'
 }
 
-/** Fija el estado del contexto (excluyentes). Solo subcontextos (proyectos). */
+/** Fija el estado del contexto (excluyentes). Solo contextos marcados o con padre. */
 export function setContextState(nodeId: string, state: ContextState): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  if (!isProject(n) && !contextParent(nodeId)) return
+  if (!isMarkedContext(n) && !contextParent(nodeId)) return
   const e = ed(n)
   delete e._closed; delete e._future
   if (state === 'closed') e._closed = '1'
@@ -100,11 +100,11 @@ function defaultAccentHex(): string {
     const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
     if (v) return v
   } catch { /* sin DOM */ }
-  return PROJECT_DEFAULT_COLOR
+  return CONTEXT_DEFAULT_COLOR
 }
 
-/** Color del contexto: lo HEREDA de su contexto padre (recursivo). Si es un área
- *  raíz, usa su `_tagColor` propio si lo tiene, o el color por defecto de Ajustes.
+/** Color del contexto: lo HEREDA de su contexto padre (recursivo). Si es raíz, usa
+ *  su `_tagColor` propio si lo tiene, o el color por defecto de Ajustes.
  *  (Ya no hay selector de color por contexto.) */
 export function contextColor(nodeId: string): string {
   const p = contextParent(nodeId)
@@ -130,29 +130,29 @@ export function touchContext(nodeId: string, isoNow: string): void {
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
-/** PROYECTOS (contextos creados, `_ctx='1'`). Por defecto solo los ABIERTOS.
- *  `onlySub` se mantiene por compatibilidad pero ya no cambia nada (todos los
- *  proyectos son contextos designados, no contenido). */
-export function listContexts(opts?: { includeClosed?: boolean; onlySub?: boolean }): Node[] {
+/** Contextos MARCADOS (`_ctx='1'`). Por defecto solo los ABIERTOS. OJO: NO incluye
+ *  los contextos raíz que no estén marcados — para "todos los contextos del árbol"
+ *  usa `listContextsForParent`. `onlySub` se mantiene por compatibilidad (no-op). */
+export function listMarkedContexts(opts?: { includeClosed?: boolean; onlySub?: boolean }): Node[] {
   void opts?.onlySub
   return store.allActive()
-    .filter(n => !n.deletedAt && isProject(n) && (opts?.includeClosed || !isContextClosed(n)) && !isInPapelera(n.id))
+    .filter(n => !n.deletedAt && isMarkedContext(n) && (opts?.includeClosed || !isContextClosed(n)) && !isInPapelera(n.id))
     .sort((a, b) => activityTs(b) - activityTs(a)) // última actividad primero
 }
 
-/** Contextos donde se puede anidar (como padre): ÁREAS + PROYECTOS abiertos.
- *  Nunca incluye nada que esté en la Papelera. */
+/** TODOS los contextos del árbol (raíz + marcados, abiertos). Es la lista buena
+ *  para pickers/asignar/anidar. Nunca incluye nada que esté en la Papelera. */
 export function listContextsForParent(): Node[] {
   const root = findContextRoot()
-  const areas = root ? store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠') && !isInPapelera(n.id)) : []
-  const projects = listContexts()
+  const roots = root ? store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠') && !isInPapelera(n.id)) : []
+  const marked = listMarkedContexts()
   const seen = new Set<string>()
   const out: Node[] = []
-  for (const n of [...areas, ...projects]) { if (!seen.has(n.id)) { seen.add(n.id); out.push(n) } }
+  for (const n of [...roots, ...marked]) { if (!seen.has(n.id)) { seen.add(n.id); out.push(n) } }
   return out
 }
 
-/** Crea un PROYECTO (contexto designado `_ctx='1'`) bajo el padre dado (o la raíz). */
+/** Crea un contexto (marcado `_ctx='1'`) bajo el padre dado (o la raíz). */
 export function createContext(name: string, parentContextId?: string | null): Node {
   const root = findContextRoot()
   const parentId = (parentContextId && store.getNode(parentContextId)) ? parentContextId : (root?.id ?? null)
@@ -192,14 +192,14 @@ export function convertToContext(nodeId: string): boolean {
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  // Se cierran los SUBCONTEXTOS (proyectos): un contexto con contexto padre, o ya
-  // marcado como proyecto. Las áreas raíz son la base y no se cierran.
-  if (!isProject(n) && !contextParent(nodeId)) return
+  // Solo cambian de estado los contextos MARCADOS o con contexto padre; ya
+  // marcado. Los contextos raíz son la base y no cambian de estado.
+  if (!isMarkedContext(n) && !contextParent(nodeId)) return
   const e = ed(n)
   delete e._future // cerrar/reabrir manda sobre el estado «algún día»
   if (closed) e._closed = '1'
   else delete e._closed
-  e._ctx = '1' // al cerrar/reabrir, queda marcado como proyecto de pleno derecho
+  e._ctx = '1' // al cerrar/reabrir, queda marcado como contexto de pleno derecho
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
@@ -221,7 +221,7 @@ export function reparentContext(nodeId: string, newParentContextId: string): voi
   ensureTagDefinition(nodeId) // recalcula el slug jerárquico
 }
 
-// ── Asignación de contexto/proyecto a tareas/notas (por ID) ───────────────────
+// ── Asignación de contexto a tareas/notas (por ID) ───────────────────
 
 export function nodeCtxRefs(n: Node | null | undefined): string[] {
   const v = ed(n)._ctxRefs
@@ -235,10 +235,10 @@ export function assignContext(nodeId: string, contextId: string): void {
   const cur = nodeCtxRefs(n)
   if (!cur.includes(contextId)) e._ctxRefs = [...cur, contextId]
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
-  // Marcar el contexto destino como proyecto (_ctx) si aún no lo está, para que
+  // Marcar el contexto destino como contexto (_ctx) si aún no lo está, para que
   // aparezca en los listados aunque se creara por una vía antigua.
   const c = store.getNode(contextId)
-  if (c && !isProject(c)) {
+  if (c && !isMarkedContext(c)) {
     const ce = ed(c); ce._ctx = '1'
     store.updateNode(contextId, { extraData: JSON.stringify(ce) })
   }
@@ -292,18 +292,18 @@ export function setNodeContext(nodeId: string, contextId: string | null): void {
   store.updateNode(nodeId, { types, extraData: JSON.stringify(e) })
   if (contextId) {
     const c = store.getNode(contextId)
-    if (c && !isProject(c)) { const ce = ed(c); ce._ctx = '1'; store.updateNode(contextId, { extraData: JSON.stringify(ce) }) }
+    if (c && !isMarkedContext(c)) { const ce = ed(c); ce._ctx = '1'; store.updateNode(contextId, { extraData: JSON.stringify(ce) }) }
     try { touchContext(contextId, new Date().toISOString()) } catch { /* ignore */ }
   }
 }
 
-/** Contextos a mostrar en listados de "en uso": proyectos marcados (_ctx) +
+/** Contextos a mostrar en listados de "en uso": contextos marcados (_ctx) +
  *  cualquier contexto referenciado por algún nodo (_ctxRefs). Solo ABIERTOS. */
 export function listActiveContexts(): Node[] {
   const ids = new Set<string>()
   for (const n of store.allActive()) {
     if (n.deletedAt || isInPapelera(n.id)) continue   // la Papelera no cuenta
-    if (isProject(n) && !isContextClosed(n) && !isContextFuture(n)) ids.add(n.id)
+    if (isMarkedContext(n) && !isContextClosed(n) && !isContextFuture(n)) ids.add(n.id)
     for (const cid of nodeCtxRefs(n)) ids.add(cid)
   }
   const out: Node[] = []
@@ -319,7 +319,7 @@ export function listFutureContexts(): Node[] {
   const out: Node[] = []
   for (const n of store.allActive()) {
     if (n.deletedAt || isInPapelera(n.id)) continue
-    if (isProject(n) && isContextFuture(n)) out.push(n)
+    if (isMarkedContext(n) && isContextFuture(n)) out.push(n)
   }
   return out.sort((a, b) => activityTs(b) - activityTs(a))
 }
@@ -335,7 +335,7 @@ export function unassignContext(nodeId: string, contextId: string): void {
 }
 
 /** ¿El nodo está creado DENTRO de la nota de este contexto? = el contexto es un
- *  ancestro y no hay otro contexto (proyecto) más cercano entre medias, ni vive
+ *  ancestro y no hay otro contexto marcado más cercano entre medias, ni vive
  *  dentro del nodo de conocimiento. Así, una tarea escrita en la nota del contexto
  *  pertenece a él sin necesidad de asignarle el contexto manualmente. */
 export function ownedByContext(n: Node, contextId: string): boolean {
@@ -344,7 +344,7 @@ export function ownedByContext(n: Node, contextId: string): boolean {
   while (cur && guard++ < 80) {
     if (isContextKnowledge(cur.text)) return false   // dentro de "🧠 Lo que Fromly sabe"
     if (cur.id === contextId) return true
-    if (isProject(cur)) return false                  // un subcontexto más cercano se lo queda
+    if (isMarkedContext(cur)) return false                  // un subcontexto más cercano se lo queda
     cur = cur.parentId ? store.getNode(cur.parentId) : null
   }
   return false
@@ -358,17 +358,17 @@ export function firstContextOf(n: Node): Node | null {
     const c = store.getNode(id)
     if (c && !c.deletedAt && !isContextClosed(c)) return c
   }
-  // Ownership: subir hasta el primer contexto/proyecto.
+  // Ownership: subir hasta el primer contexto.
   let cur: Node | null | undefined = n.parentId ? store.getNode(n.parentId) : null
   let guard = 0
   while (cur && guard++ < 80) {
     if (isContextKnowledge(cur.text)) break
-    if ((isProject(cur) || isArea(cur.id)) && !cur.text?.startsWith('🧠')) {
+    if ((isMarkedContext(cur) || isRootContext(cur.id)) && !cur.text?.startsWith('🧠')) {
       return isContextClosed(cur) ? null : cur
     }
     cur = cur.parentId ? store.getNode(cur.parentId) : null
   }
-  // Por slug/texto en types[] (contextos @-mencionados): áreas + proyectos.
+  // Por slug/texto en types[] (contextos @-mencionados): raíz + marcados.
   const types = (n.types || []).map(t => t.toLowerCase())
   if (types.length) {
     for (const c of listContextsForParent()) {
@@ -398,7 +398,7 @@ export function nodesInContext(contextId: string): Node[] {
   return store.allActive().filter(n => {
     if (n.deletedAt || n.id === contextId) return false
     if (isContextKnowledge(n.text)) return false   // memoria interna, no contenido
-    if (isProject(n)) return false                  // subcontextos → su propia sección
+    if (isMarkedContext(n)) return false                  // subcontextos → su propia sección
     const member =
       nodeCtxRefs(n).includes(contextId) ||
       (n.types || []).some(t => slugs.has(t.toLowerCase())) ||

@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
-import { listContexts, assignContext, createContext, contextColor } from '../../utils/cajones'
+import { listMarkedContexts, assignContext, createContext, contextColor } from '../../utils/cajones'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -330,7 +330,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (hashTok && hashTok[1].trim().length >= 1) {
       const tokNorm = normalizeNFD(hashTok[1].trim())
       let found: CtxSuggestion | null = null
-      for (const cj of listContexts()) {
+      for (const cj of listMarkedContexts()) {
         if (!cj.text || pendingCajones.includes(cj.id)) continue
         const nm = normalizeNFD(cj.text)
         if (nm.startsWith(tokNorm) && nm !== tokNorm) {
@@ -370,7 +370,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       }
       // Cajones ABIERTOS (proyectos) — mismo escaneo; al aceptar se asigna el cajón.
       if (!found) {
-        for (const cj of listContexts({ onlySub: true })) {
+        for (const cj of listMarkedContexts({ onlySub: true })) {
           if (!cj.text || pendingCajones.includes(cj.id)) continue
           const normName = normalizeNFD(cj.text)
           for (let len = Math.min(t.length, normName.length); len >= 3; len--) {
@@ -934,7 +934,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         if (m && m[1].trim()) {
           const name = m[1].trim()
           const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-          const existing = listContexts().find(c => norm(c.text || '') === norm(name))
+          const existing = listMarkedContexts().find(c => norm(c.text || '') === norm(name))
           const cid = existing ? existing.id : createContext(name).id
           const cleaned = cur.replace(/(?:\s*)#[^#@]+?\s*$/, '').replace(/\s+$/, '')
           // Sin texto previo → era SOLO crear el contexto: navegar a él y cerrar.
@@ -984,7 +984,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (!m || !m[1].trim()) return null
     const name = m[1].trim()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    if (listContexts().some(c => norm(c.text || '') === norm(name))) return null // existe → ghost normal
+    if (listMarkedContexts().some(c => norm(c.text || '') === norm(name))) return null // existe → ghost normal
     return name
   })()
 

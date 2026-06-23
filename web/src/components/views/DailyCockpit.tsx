@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, isProject, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, isMarkedContext, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -374,7 +374,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         const c = store.getNode(ctxMenu.id)
         if (!c) return null
         const closed = isContextClosed(c)
-        const canClose = isProject(c) || !!contextParent(c.id) // subcontextos se cierran
+        const canClose = isMarkedContext(c) || !!contextParent(c.id) // subcontextos se cierran
         return (
           <>
             <div onClick={() => setCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setCtxMenu(null) }}

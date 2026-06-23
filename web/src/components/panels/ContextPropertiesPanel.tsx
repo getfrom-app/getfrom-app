@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { isProject, contextState, setContextState, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
+import { isMarkedContext, contextState, setContextState, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import ContextPicker from './ContextPicker'
 import TaskHoverActions from './TaskHoverActions'
@@ -57,9 +57,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 88px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto / algún día / cerrado — subcontextos (proyectos). Las áreas
-            raíz son la base y no cambian de estado. */}
-        {(isProject(node) || contextParent(nodeId)) && (() => {
+        {/* Estado abierto / algún día / cerrado — contextos marcados o con padre.
+            Los contextos raíz son la base y no cambian de estado. */}
+        {(isMarkedContext(node) || contextParent(nodeId)) && (() => {
           const st = contextState(node)
           const seg = (label: string, value: 'open' | 'future' | 'closed', dot: string) => (
             <button key={value} onClick={() => setContextState(nodeId, value)} title={label}
@@ -199,9 +199,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Subcontextos (proyectos hijos): abiertos, algún día y cerrados, separados. */}
+        {/* Subcontextos (contextos hijos): abiertos, algún día y cerrados, separados. */}
         {(() => {
-          const kids = store.children(nodeId).filter(c => !c.deletedAt && isProject(c))
+          const kids = store.children(nodeId).filter(c => !c.deletedAt && isMarkedContext(c))
           if (kids.length === 0) return null
           const abiertos = kids.filter(c => contextState(c) === 'open')
           const algunDia = kids.filter(c => contextState(c) === 'future')

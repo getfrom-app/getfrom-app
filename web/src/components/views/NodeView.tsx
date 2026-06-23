@@ -44,7 +44,7 @@ import EmojiPicker from '../EmojiPicker'
 import SlashMenu from '../outliner/SlashMenu'
 import WhiteboardContainer from '../pdf/WhiteboardContainer'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractContextKnowledge, buildClassifyContexts, type ClassifyResult } from '../../api/autoClassify'
-import { isContextNode as isCtxTreeNode, isProject, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listContexts, createContext, setNodeContext, renameContext, convertToContext as convertNodeToContext } from '../../utils/cajones'
+import { isContextNode as isCtxTreeNode, isMarkedContext, isContextClosed, setContextClosed, contextColor, contextParent, nodesInContext, unassignContext, listContextsForParent, reparentContext, listMarkedContexts, createContext, setNodeContext, renameContext, convertToContext as convertNodeToContext } from '../../utils/cajones'
 
 function formatBytes(b: number): string {
   if (b < 1024) return b + ' B'
@@ -1184,14 +1184,14 @@ export default function NodeView() {
   }
 
   // # — candidatos de contexto para el título. Si el nodo ES un contexto, ofrece
-  // contextos donde anidarlo (áreas + proyectos, sin sí mismo ni descendientes);
+  // contextos donde anidarlo (todos los del árbol, sin sí mismo ni descendientes);
   // si es un nodo normal, ofrece contextos a los que asignarlo.
   function buildTitleCtxItems(query: string): Array<{ id: string; label: string; contextLabel?: string; create?: string }> {
     const q = query.trim()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     const nq = norm(q)
     const asParent = !!node && (isContextNode || isCtxTreeNode(node.id) || !!contextParent(node.id))
-    let pool = asParent ? listContextsForParent() : listContexts()
+    let pool = asParent ? listContextsForParent() : listMarkedContexts()
     if (asParent && node) {
       const isDesc = (cand: string) => { let cur: ReturnType<typeof store.getNode> | null = store.getNode(cand); let g = 0; while (cur && g++ < 60) { if (cur.id === node.id) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null } return false }
       pool = pool.filter(c => c.id !== node.id && !isDesc(c.id))
@@ -1909,8 +1909,8 @@ export default function NodeView() {
               // Nodos especiales de Fromly (🧠 Lo que Fromly sabe / Perfil): sin icono.
               if (node?.text?.startsWith('🧠')) return null
               try { if (JSON.parse(node.extraData || '{}')._perfilIA === '1') return null } catch {}
-              // CONTEXTOS (áreas raíz + subcontextos): '#' en el COLOR del contexto.
-              // Las áreas usan su color propio (_tagColor) o el acento de Ajustes;
+              // CONTEXTOS (raíz + marcados): «#» en el COLOR del contexto.
+              // Los contextos raíz usan su color propio (_tagColor) o el acento de Ajustes;
               // los subcontextos HEREDAN el color del contexto padre (contextColor).
               if (node && isCtxTreeNode(node.id)) {
                 const ctxCol = contextColor(node.id)
