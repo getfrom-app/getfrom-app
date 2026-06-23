@@ -80,13 +80,18 @@ function hslToHex(h: number, s: number, l: number): string {
   }
   return `#${f(0)}${f(8)}${f(4)}`
 }
-/** Versión PASTEL de un color (claro y poco saturado). Gris → azul suave. */
+/** ¿Color gris/desaturado? (los eventos GCal sin color propio vuelven grises). */
+function isGreyish(input: string): boolean {
+  const rgb = parseColor(input)
+  if (!rgb) return false
+  return rgbToHsl(rgb[0], rgb[1], rgb[2])[1] < 0.12
+}
+/** Versión PASTEL de un color (claro y poco saturado). */
 function pastelize(input: string): string {
   const rgb = parseColor(input)
   if (!rgb) return '#cdbdf2'
-  let [h, s] = rgbToHsl(rgb[0], rgb[1], rgb[2])
-  if (s < 0.12) { h = 0.58; s = 0.45 }              // gris/desaturado → azul suave
-  s = Math.min(0.62, Math.max(0.42, s))
+  const [h, s0] = rgbToHsl(rgb[0], rgb[1], rgb[2])
+  const s = Math.min(0.62, Math.max(0.42, s0))
   return hslToHex(h, s, 0.80)
 }
 
@@ -599,7 +604,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   // ── Render bloque ─────────────────────────────────────────────────────────
   function renderBlock(b: Block) {
-    const bg = b.kind === 'gcal' ? pastelize(b.color) : taskPastel
+    // GCal sin color propio (gris) → el mismo pastel de tareas (coherencia visual);
+    // GCal con color propio → ese color en pastel; tareas → pastel base.
+    const bg = b.kind === 'gcal' ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : taskPastel
     return (
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}`}
