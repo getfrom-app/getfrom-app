@@ -57,9 +57,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 88px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto / algún día / cerrado — contextos marcados o con padre.
-            Los contextos raíz son la base y no cambian de estado. */}
-        {(isMarkedContext(node) || contextParent(nodeId)) && (() => {
+        {/* Estado abierto / algún día / cerrado — SOLO subcontextos (con contexto padre).
+            Los contextos RAÍZ son entidad superior: sin estado. */}
+        {contextParent(nodeId) && (() => {
           const st = contextState(node)
           const seg = (label: string, value: 'open' | 'future' | 'closed', dot: string) => (
             <button key={value} onClick={() => setContextState(nodeId, value)} title={label}

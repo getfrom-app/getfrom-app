@@ -61,18 +61,21 @@ export function isContextFuture(n: Node | null | undefined): boolean {
 
 export type ContextState = 'open' | 'future' | 'closed'
 
-/** Estado de un contexto: abierto · algún día · cerrado. */
+/** Estado de un contexto: abierto · algún día · cerrado. Los contextos RAÍZ no
+ *  tienen estado (entidad superior) → siempre 'open', ignorando flags residuales. */
 export function contextState(n: Node | null | undefined): ContextState {
+  if (n && isRootContext(n.id)) return 'open'
   if (isContextClosed(n)) return 'closed'
   if (isContextFuture(n)) return 'future'
   return 'open'
 }
 
-/** Fija el estado del contexto (excluyentes). Solo contextos marcados o con padre. */
+/** Fija el estado del contexto (excluyentes). SOLO subcontextos (con contexto padre):
+ *  los contextos RAÍZ son entidades superiores sin estado (no se abren/cierran). */
 export function setContextState(nodeId: string, state: ContextState): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  if (!isMarkedContext(n) && !contextParent(nodeId)) return
+  if (!contextParent(nodeId)) return
   const e = ed(n)
   delete e._closed; delete e._future
   if (state === 'closed') e._closed = '1'
@@ -192,9 +195,9 @@ export function convertToContext(nodeId: string): boolean {
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
-  // Solo cambian de estado los contextos MARCADOS o con contexto padre; ya
-  // marcado. Los contextos raíz son la base y no cambian de estado.
-  if (!isMarkedContext(n) && !contextParent(nodeId)) return
+  // SOLO subcontextos (con contexto padre). Los contextos RAÍZ son entidades
+  // superiores: no se abren/cierran ni participan de la columna del día.
+  if (!contextParent(nodeId)) return
   const e = ed(n)
   delete e._future // cerrar/reabrir manda sobre el estado «algún día»
   if (closed) e._closed = '1'

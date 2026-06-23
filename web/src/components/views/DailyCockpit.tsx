@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, isMarkedContext, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -257,8 +257,11 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const phSeen = new Set<string>()
   for (const c of activeCtxs) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
   for (const { ctx } of ctxTasks.values()) if (!phSeen.has(ctx.id)) { porHacerCtxs.push(ctx); phSeen.add(ctx.id) }
-  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id))
-  const algunDiaCtxs = listFutureContexts()
+  // Seguimiento y Algún día = SOLO subcontextos (con contexto padre). Los contextos
+  // RAÍZ son entidad superior: nunca en la columna salvo que tengan tareas de hoy
+  // (entonces van a «Para hacer» vía ctxTasks/porHacerCtxs).
+  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id))
+  const algunDiaCtxs = listFutureContexts().filter(c => !!contextParent(c.id))
 
   // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
   // hay). Reutilizada en «Para hacer» y «Seguimiento».
@@ -374,7 +377,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         const c = store.getNode(ctxMenu.id)
         if (!c) return null
         const closed = isContextClosed(c)
-        const canClose = isMarkedContext(c) || !!contextParent(c.id) // subcontextos se cierran
+        const canClose = !!contextParent(c.id) // SOLO subcontextos cambian de estado (los raíz no)
         return (
           <>
             <div onClick={() => setCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setCtxMenu(null) }}
