@@ -199,11 +199,8 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const ctxRow = (c: ReturnType<typeof store.getNode>, closed: boolean) => c && (
             <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}>
-              <span className="dc-check" style={{ border: 'none', background: 'none', color: contextColor(c.id) }}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
-                </svg>
-              </span>
+              {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
+              <span className="dc-event-dot" style={{ background: contextColor(c.id) }} aria-label="Contexto" />
               <span className="dc-text" style={{ textDecoration: closed ? 'line-through' : 'none', opacity: closed ? 0.6 : 1 }}>{c.text || 'Contexto'}</span>
             </div>
           )
