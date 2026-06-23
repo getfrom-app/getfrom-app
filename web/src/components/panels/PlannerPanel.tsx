@@ -909,7 +909,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 return (
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}>
-                    {items.map(n => (
+                    {items.slice(0, 5).map(n => (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
                         style={{ background: taskPastel, color: 'rgba(45,38,70,.92)' }}
                         draggable
@@ -919,6 +919,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                         {n.text || 'Sin título'}
                       </div>
                     ))}
+                    {items.length > 5 && <div style={{ fontSize: 10, color: 'var(--text-tertiary)', padding: '0 4px' }}>+{items.length - 5}</div>}
                   </div>
                 )
               })}
