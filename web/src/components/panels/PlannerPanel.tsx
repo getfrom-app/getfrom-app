@@ -844,7 +844,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}>{date.getDate()}</div>
                 <div className="pp-month-items">
                   {items.map(it => (
-                    <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}>
+                    <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
+                      onClick={e => {
+                        e.stopPropagation() // no navegar al día: ir a la tarea
+                        const node = store.getNode(it.id)
+                        if (node) { navigate(`/node/${it.id}`); return }
+                        const ev = gcalEvents.find(x => x.id === it.id)
+                        if (ev) setEditingGcal(ev)
+                      }}
+                      onContextMenu={e => {
+                        if (!store.getNode(it.id)) return // evento GCal crudo: sin menú de fila
+                        e.preventDefault(); e.stopPropagation()
+                        window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY } }))
+                      }}
+                      title={it.text}>
                       {it.text}
                     </div>
                   ))}
