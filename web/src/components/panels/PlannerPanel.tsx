@@ -622,8 +622,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
         onClick={e => {
           e.stopPropagation()
           if (justResized.current || justDragged.current) return
-          if (b.kind === 'gcal' && b.gcalEvent) setEditingGcal(b.gcalEvent)
-          else if (b.nodeId) navigate(`/node/${b.nodeId}`)
+          // CONSISTENCIA: cualquier evento de Google abre el modal de edición. Para
+          // un evento crudo es directo; para una tarea materializada (con gcalEventId)
+          // buscamos su evento. Una tarea pura (sin GCal) abre su nodo.
+          if (b.kind === 'gcal' && b.gcalEvent) { setEditingGcal(b.gcalEvent); return }
+          if (b.nodeId) {
+            const node = store.getNode(b.nodeId)
+            const gid = node?.gcalEventId
+            const ev = gid ? gcalEvents.find(x => x.id === gid) : null
+            if (ev) { setEditingGcal(ev); return }
+            navigate(`/node/${b.nodeId}`)
+          }
         }}
         onContextMenu={e => { e.preventDefault(); setCtxMenu({x:e.clientX,y:e.clientY,b}) }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
@@ -1014,6 +1023,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
       {editingGcal && (
         <GCalEventEditor event={editingGcal} modal onClose={()=>setEditingGcal(null)}
+          linkedNodeId={store.allActive().find(n=>n.gcalEventId===editingGcal.id)?.id}
           onUpdated={ev=>{setGcalEvents(p=>p.map(x=>x.id===ev.id?ev:x));setEditingGcal(null)}}
           onDeleted={id=>{setGcalEvents(p=>p.filter(x=>x.id!==id));setEditingGcal(null)}} />
       )}

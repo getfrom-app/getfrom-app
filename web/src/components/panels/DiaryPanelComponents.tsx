@@ -373,9 +373,12 @@ export interface GCalEventEditorProps {
   onDeleted: (id: string) => void
   /** Si true, se renderiza como modal centrado con backdrop. */
   modal?: boolean
+  /** Si el evento tiene un nodo Fromly vinculado, su id → botón «Abrir nota». */
+  linkedNodeId?: string
 }
 
-export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }: GCalEventEditorProps) {
+export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, linkedNodeId }: GCalEventEditorProps) {
+  const gcalNavigate = useNavigate()
   const [title, setTitle] = useState(event.title)
   const [startDate, setStartDate] = useState(event.start ? event.start.slice(0, 10) : '')
   const [startTime, setStartTime] = useState(event.start && !event.allDay ? event.start.slice(11, 16) : '')
@@ -456,6 +459,12 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal }:
         )}
       </div>
       {msg && <div className={`gcal-editor-msg${msg.startsWith('✓') ? ' ok' : ''}`}>{msg}</div>}
+      {linkedNodeId && (
+        <button className="gcal-editor-opennote" onClick={() => { gcalNavigate(`/node/${linkedNodeId}`); onClose() }}
+          style={{ width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+          ↗ Abrir nota en Fromly
+        </button>
+      )}
       <div className="gcal-editor-actions">
         <button className="gcal-editor-delete" onClick={remove} disabled={saving} title="Eliminar de Google Calendar">🗑 Eliminar</button>
         <button className="gcal-editor-cancel" onClick={onClose}>Cancelar</button>
