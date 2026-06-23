@@ -605,9 +605,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   // ── Render bloque ─────────────────────────────────────────────────────────
   function renderBlock(b: Block) {
-    // GCal sin color propio (gris) → el mismo pastel de tareas (coherencia visual);
-    // GCal con color propio → ese color en pastel; tareas → pastel base.
-    const bg = b.kind === 'gcal' ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : taskPastel
+    // Solo los eventos de Google llevan relleno de color (gris propio → pastel base;
+    // color propio → ese color en pastel). Las tareas NO son eventos: sin fondo,
+    // solo borde fino + barra de acento a la izquierda para verlas y arrastrarlas.
+    const isGcal = b.kind === 'gcal'
+    const bg = isGcal ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : 'transparent'
     // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
     // multi-día o con duración errónea infle el scroll con espacio vacío).
     const gridH = TOTAL_HOURS * hourH
@@ -617,7 +619,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}`}
         style={{ top: blockTop, height: blockH,
-          background: bg, left: 2, right: 2 }}
+          background: bg, left: 2, right: 2,
+          ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }) }}
         draggable
         onDragStart={e => handleBlockDragStart(e, b)}
         onClick={e => {
@@ -917,7 +920,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}>
                     {items.slice(0, 5).map(n => (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
-                        style={{ background: taskPastel, color: 'rgba(45,38,70,.92)' }}
+                        style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={()=>navigate(`/node/${n.id}`)}
