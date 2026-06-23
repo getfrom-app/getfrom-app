@@ -141,18 +141,23 @@ export function createContext(name: string, parentContextId?: string | null): No
   return node
 }
 
-/** Convierte un nodo (tarea/nota) EN un contexto: lo mueve a la raíz 🧠 Contexto,
- *  lo marca `_ctx` y le quita el estado de tarea. Devuelve true si se hizo. */
+/** Convierte un nodo (tarea/nota) EN un contexto: lo marca `_ctx`, le quita el
+ *  estado de tarea y lo cuelga del contexto al que PERTENECÍA (subcontexto); si no
+ *  tenía contexto, queda como contexto raíz bajo 🧠 Contexto. Devuelve true si se hizo. */
 export function convertToContext(nodeId: string): boolean {
   const node = store.getNode(nodeId)
   const root = findContextRoot()
   if (!node || !root) return false
-  const sibs = store.children(root.id).filter(n => !n.deletedAt)
+  // Padre = el contexto al que pertenece la tarea (subcontexto); si no, la raíz.
+  const parentCtx = firstContextOf(node)
+  const parentId = parentCtx && parentCtx.id !== nodeId ? parentCtx.id : root.id
+  const sibs = store.children(parentId).filter(n => !n.deletedAt)
   const maxOrder = sibs.reduce((m, n) => Math.max(m, n.siblingOrder), 0)
   let ed: Record<string, unknown> = {}
   try { ed = JSON.parse(node.extraData || '{}') } catch { /* ignore */ }
   ed._ctx = '1'
-  store.updateNode(node.id, { parentId: root.id, siblingOrder: maxOrder + 1000, status: null, extraData: JSON.stringify(ed) })
+  delete ed._ctxRefs // ya no es un nodo ASIGNADO a un contexto, ahora ES un contexto (su sitio lo da el parentId)
+  store.updateNode(node.id, { parentId, siblingOrder: maxOrder + 1000, status: null, extraData: JSON.stringify(ed) })
   ensureTagDefinition(node.id)
   return true
 }
