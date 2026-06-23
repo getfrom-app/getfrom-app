@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.552 · Mac v9.5.69 — 24 junio 2026 · Contextos más simples y chips unificados
+
+**Contextos: solo abierto o cerrado**
+- Quitamos el estado «algún día» de los contextos: ahora un contexto está **abierto** o **cerrado**, y ya está. Lo que quieras hacer **más adelante** créalo como **tarea** (con o sin fecha), no como contexto.
+- Una **tarea ya no se comporta como contexto**: no aparece en las listas de contextos y, al abrirla, ves su vista normal (no la de contexto).
+
+**Chips de contexto unificados**
+- Todos los chips de contexto tienen ahora el **mismo estilo redondeado** con el **color del contexto** y una **«×» para quitarlo** (en la columna del día, en las filas y dentro del texto). Se acabaron los chips con formas distintas.
+- Sin duplicados: una tarea ya no muestra su contexto **dos veces**.
+
+**Mejoras internas (auditoría)**
+- Corregido un caso en el que un evento de Google podía aparecer **duplicado** en el planner al crearle un nodo.
+
 ## Web v9.6.549 · Mac v9.5.68 — 24 junio 2026 · Planner: vista Mes, eventos de Google y franja todo-el-día
 
 **Vista Mes del planner**
