@@ -66,8 +66,8 @@ const MONTHS_S = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','n
 const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 function dayLabel(d: Date) { return `${DAYS_S[d.getDay()]} ${d.getDate()} ${MONTHS_S[d.getMonth()]}` }
 
-// 'day' = solo el día actual (1 columna) · 'week' = multi-día (2–7 columnas) · 'year' = anual
-type ViewMode = 'day' | 'week' | 'year'
+// 'day' = solo hoy (1 col) · 'week' = multi-día · 'month' = rejilla mensual · 'year' = anual
+type ViewMode = 'day' | 'week' | 'month' | 'year'
 
 // Bloque con hora en el timeline
 interface Block {
@@ -160,6 +160,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const [centerDate,    setCenterDate]    = useState(today)
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
   const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
+  // Auto-fit: el día completo (HOUR_START–HOUR_END) cuadra en el alto del timeline,
+  // sin scroll. Se desactiva al hacer zoom manual (rueda/arrastre) y vuelve con «reset».
+  const [autoFit, setAutoFit] = useState(true)
+  const autoFitRef = useRef(true)
+  useEffect(() => { autoFitRef.current = autoFit }, [autoFit])
 
   const hourH    = slotH * 2
   const pxPerMin = slotH / 30
@@ -245,20 +250,26 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   useEffect(() => {
     function update() {
-      if (!timelineRef.current) return
-      const avail = timelineRef.current.clientWidth - AXIS_W - 2
+      const el = timelineRef.current
+      if (!el) return
+      const avail = el.clientWidth - AXIS_W - 2
       const cnt = viewMode === 'day' ? 1 : visibleDayCnt
       setColW(Math.max(60, Math.floor(avail / cnt)))
+      // Auto-fit del alto: que el día entero quepa sin scroll.
+      if (autoFitRef.current && (viewMode === 'day' || viewMode === 'week') && el.clientHeight > 0) {
+        setSlotH(Math.max(6, Math.floor(el.clientHeight / (TOTAL_HOURS * 2))))
+      }
     }
     update()
     const ro = new ResizeObserver(update)
     if (timelineRef.current) ro.observe(timelineRef.current)
     return () => ro.disconnect()
-  }, [visibleDayCnt, viewMode])
+  }, [visibleDayCnt, viewMode, autoFit])
 
   // ── Zoom Y (eje vertical) ────────────────────────────────────────────────
   function handleAxisDrag(e: React.MouseEvent) {
     e.preventDefault()
+    setAutoFit(false)
     const startY     = e.clientY
     const startSlotH = slotH
     const scrollEl   = scrollVRef.current
@@ -289,7 +300,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
   }
 
-  function resetZoom() { setSlotH(DEFAULT_SLOT_H); setVisibleDayCnt(DEFAULT_DAY_CNT) }
+  function resetZoom() {
+    setVisibleDayCnt(initialDays ?? DEFAULT_DAY_CNT)
+    setAutoFit(true)
+    const el = timelineRef.current
+    if (el && el.clientHeight > 0) setSlotH(Math.max(6, Math.floor(el.clientHeight / (TOTAL_HOURS * 2))))
+    else setSlotH(DEFAULT_SLOT_H)
+    if (scrollVRef.current) scrollVRef.current.scrollTop = 0
+  }
 
   // ── Días visibles ─────────────────────────────────────────────────────────
   const visibleDays = useMemo(() =>
@@ -314,8 +332,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   useLayoutEffect(() => {
     if (!scrollVRef.current) return
-    scrollVRef.current.scrollTop = Math.max(0, topPx(new Date()) - 100)
-  }, [viewMode])
+    // Con auto-fit el día entero cabe → sin scroll. Si hay zoom manual, centra en ahora.
+    scrollVRef.current.scrollTop = autoFit ? 0 : Math.max(0, topPx(new Date()) - 100)
+  }, [viewMode, autoFit])
 
   function centerNow() {
     if (!scrollHRef.current) return
@@ -641,13 +660,101 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     )
   }
 
+  // ── Vista MES (rejilla mensual) ────────────────────────────────────────────
+  function monthDayItems(date: Date): { id: string; text: string; color: string; done: boolean }[] {
+    const out: { id: string; text: string; color: string; done: boolean; t: number }[] = []
+    for (const n of store.allActive()) {
+      if (!n.due || n.deletedAt || n.status == null) continue
+      if (!sameDay(new Date(n.due), date)) continue
+      const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
+      out.push({ id: n.id, text: n.text || 'Sin título', color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
+    }
+    for (const ev of gcalEvents) {
+      if (ev.allDay || !sameDay(new Date(ev.start), date)) continue
+      out.push({ id: ev.id, text: ev.title || 'Evento', color: '#16a34a', done: false, t: new Date(ev.start).getTime() })
+    }
+    return out.sort((a, b) => a.t - b.t)
+  }
+
+  function handleMonthDrop(e: React.DragEvent, date: Date) {
+    e.preventDefault()
+    const nodeId = e.dataTransfer.getData('nodeId') || e.dataTransfer.getData('plannerTaskId') || e.dataTransfer.getData('text/plain')
+    if (!nodeId) return
+    const n = store.getNode(nodeId); if (!n) return
+    const had = !!n.due
+    store.updateNode(nodeId, { due: toMidnight(date), dueEnd: null, status: n.status ?? 'pending' })
+    if (had) bumpReschedule(nodeId)
+  }
+
+  // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
+  function getAllDayTasks(day: Date) {
+    return store.allActive().filter(n =>
+      n.due && !n.deletedAt && n.status != null && !n.isEvent && sameDay(new Date(n.due), day) && !hasTime(n.due))
+  }
+  function handleAllDayDrop(e: React.DragEvent, day: Date) {
+    e.preventDefault(); e.stopPropagation()
+    const nodeId = e.dataTransfer.getData('nodeId') || e.dataTransfer.getData('plannerTaskId') || e.dataTransfer.getData('text/plain')
+    if (!nodeId) return
+    const n = store.getNode(nodeId); if (!n) return
+    const had = !!n.due
+    store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
+    if (had) bumpReschedule(nodeId)
+  }
+
+  function renderMonth() {
+    const y = centerDate.getFullYear(), mo = centerDate.getMonth()
+    const first = new Date(y, mo, 1)
+    const firstDow = first.getDay() === 0 ? 6 : first.getDay() - 1 // lunes = 0
+    const total = daysInMonth(first)
+    const cells: (Date | null)[] = []
+    for (let i = 0; i < firstDow; i++) cells.push(null)
+    for (let d = 1; d <= total; d++) cells.push(new Date(y, mo, d))
+    while (cells.length % 7 !== 0) cells.push(null)
+    return (
+      <div className="pp-month">
+        <div className="pp-month-dow">
+          {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => <div key={d} className="pp-month-dow-cell">{d}</div>)}
+        </div>
+        <div className="pp-month-grid">
+          {cells.map((date, i) => {
+            if (!date) return <div key={`e-${i}`} className="pp-month-cell pp-month-cell--empty" />
+            const isTod = sameDay(date, today)
+            const items = monthDayItems(date)
+            return (
+              <div key={date.toISOString()} className={`pp-month-cell ${isTod ? 'pp-month-cell--today' : ''}`}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleMonthDrop(e, date)}
+                onClick={() => { const dn = ensureDayPath(date); navigate(`/node/${dn.id}`) }}
+                title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
+                <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}>{date.getDate()}</div>
+                <div className="pp-month-items">
+                  {items.slice(0, 4).map(it => (
+                    <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}>
+                      {it.text}
+                    </div>
+                  ))}
+                  {items.length > 4 && <div className="pp-month-more">+{items.length - 4}</div>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   // ── Nav ───────────────────────────────────────────────────────────────────
-  const navTitle = viewMode !== 'year'
-    ? centerDate.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
-    : `${centerDate.getFullYear()}`
+  const navTitle = viewMode === 'year'
+    ? `${centerDate.getFullYear()}`
+    : viewMode === 'month'
+      ? `${MONTHS_L[centerDate.getMonth()]} ${centerDate.getFullYear()}`
+      : centerDate.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
 
   function navDelta(d: number) {
-    setCenterDate(prev => viewMode !== 'year' ? addDays(prev, d) : new Date(prev.getFullYear() + d, prev.getMonth(), 1))
+    setCenterDate(prev =>
+      viewMode === 'year'  ? new Date(prev.getFullYear() + d, prev.getMonth(), 1)
+      : viewMode === 'month' ? new Date(prev.getFullYear(), prev.getMonth() + d, 1)
+      : addDays(prev, d))
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -657,9 +764,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       {/* Header */}
       <div className="pp-header">
         <div className="pp-view-tabs">
-          {(['day','week','year'] as ViewMode[]).map(m => (
+          {(['day','week','month','year'] as ViewMode[]).map(m => (
             <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?'Día':m==='week'?'Semana':'Año'}
+              {m==='day'?'Día':m==='week'?'Semana':m==='month'?'Mes':'Año'}
             </button>
           ))}
         </div>
@@ -690,8 +797,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
         if (el && !(el as any)._wheelBound) {
           (el as any)._wheelBound = true
           el.addEventListener('wheel', (ev: WheelEvent) => {
-            if (!ev.shiftKey || viewMode === 'year') return
+            if (!ev.shiftKey || viewMode === 'year' || viewMode === 'month') return
             ev.preventDefault()
+            setAutoFit(false)
             const dir = ev.deltaY > 0 ? 1 : -1
             setSlotH(prev => {
               const minSlot = Math.max(8, Math.floor(el.clientHeight / (TOTAL_HOURS * 2)))
@@ -703,7 +811,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
           }, { passive: false })
         }
       }}>
-        {viewMode === 'year' ? renderYear() : (
+        {viewMode === 'year' ? renderYear() : viewMode === 'month' ? renderMonth() : (
           <>
             {/* Cabeceras */}
             <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
@@ -715,6 +823,28 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                   {dayLabel(d)}
                 </div>
               ))}
+            </div>
+
+            {/* Franja «todo el día»: tareas con fecha pero sin hora. Arrastrables. */}
+            <div className="pp-allday">
+              <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>todo el día</div>
+              {visibleDays.map(d => {
+                const items = getAllDayTasks(d)
+                return (
+                  <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
+                    onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}>
+                    {items.map(n => (
+                      <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
+                        draggable
+                        onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
+                        onClick={()=>navigate(`/node/${n.id}`)}
+                        title={n.text}>
+                        {n.text || 'Sin título'}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
             </div>
 
             {/* Grid de horas */}

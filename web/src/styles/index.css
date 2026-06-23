@@ -12797,8 +12797,16 @@ textarea:focus-visible,
 .pp-slot--hr   { border-top: 1px solid var(--border); }
 .pp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }
 .pp-slot--qtr  { border-top: 1px dotted color-mix(in srgb, var(--border) 20%, transparent); }
-.pp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--red); z-index: 4; pointer-events: none; }
-.pp-now::before { content:''; position:absolute; left:-3px; top:-3px; width:8px; height:8px; background:var(--red); border-radius:50%; }
+/* Franja «todo el día» del planner. */
+.pp-allday { display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border); min-height: 22px; max-height: 88px; overflow-y: auto; background: var(--bg-primary); }
+.pp-allday-axis { display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 9px; color: var(--text-tertiary); background: var(--bg-primary); text-transform: uppercase; letter-spacing: 0.03em; }
+.pp-allday-col { border-left: 1px solid var(--border); padding: 2px 3px; display: flex; flex-direction: column; gap: 2px; }
+.pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 4px; padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+.pp-allday-chip:active { cursor: grabbing; }
+.pp-allday-chip--done { opacity: 0.5; text-decoration: line-through; }
+
+.pp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger, #e03131); z-index: 6; pointer-events: none; }
+.pp-now::before { content:''; position:absolute; left:-4px; top:-4px; width:10px; height:10px; background:var(--danger, #e03131); border-radius:50%; }
 .pp-block { position: absolute; border-radius: 4px; padding: 2px 4px; z-index: 3; overflow: hidden; opacity: .9; display: flex; flex-direction: column; gap: 1px; transition: opacity .1s, box-shadow .1s; }
 .pp-block:hover { opacity:1; box-shadow:0 2px 8px rgba(0,0,0,.2); z-index:5; }
 .pp-block--task,.pp-block--standalone { cursor: grab; }
@@ -12878,6 +12886,22 @@ textarea:focus-visible,
 /* ── Outliner dentro del panel de contexto — misma fuente que la lista ──── */
 .ctx-panel-outliner .node-text { font-size: 13px !important; line-height: 1.5 !important; }
 .ctx-panel-outliner .node-row  { min-height: 22px; }
+
+/* ── Vista MES (rejilla mensual) ────────────────────────────────────────── */
+.pp-month { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pp-month-dow { display: grid; grid-template-columns: repeat(7, 1fr); flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.pp-month-dow-cell { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+.pp-month-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; min-height: 0; }
+.pp-month-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 5px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: background 0.1s; }
+.pp-month-cell:hover { background: var(--accent-soft, rgba(108,92,231,0.06)); }
+.pp-month-cell--empty { background: var(--bg-secondary, #fafafa); cursor: default; }
+.pp-month-cell--empty:hover { background: var(--bg-secondary, #fafafa); }
+.pp-month-cell--today { background: rgba(108,92,231,0.05); }
+.pp-month-daynum { font-size: 12px; font-weight: 500; color: var(--text-secondary); align-self: flex-start; line-height: 1.4; padding: 1px 5px; border-radius: 999px; }
+.pp-month-daynum--today { background: var(--accent, #6c5ce7); color: #fff; font-weight: 700; }
+.pp-month-items { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.pp-month-chip { font-size: 10.5px; color: var(--text-primary); background: var(--bg-elevated, #fff); border-radius: 3px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+.pp-month-more { font-size: 10px; color: var(--text-tertiary); padding: 0 4px; }
 
 .pp-year-grid {
   display: grid;

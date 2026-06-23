@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -249,19 +249,16 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
   // ── Reparto de contextos ───────────────────────────────────────────────────
-  // «Para hacer» = contextos ABIERTOS con tareas de hoy/atrasadas. «Seguimiento» =
-  // contextos abiertos sin tareas de hoy. «Algún día» = contextos en estado futuro
-  // (listFutureContexts). Cualquier contexto con tareas que no esté en activos entra igual.
+  // «Para hacer» = contextos con tareas de hoy/atrasadas. «Seguimiento» = SOLO
+  // subcontextos abiertos sin tareas de hoy (los RAÍZ son entidad superior y nunca
+  // salen salvo que tengan tareas de hoy → «Para hacer»). Los contextos en estado
+  // «Algún día» viven en su árbol, no en la columna del día.
   const activeCtxs = listActiveContexts()
   const porHacerCtxs: Node[] = []
   const phSeen = new Set<string>()
   for (const c of activeCtxs) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
   for (const { ctx } of ctxTasks.values()) if (!phSeen.has(ctx.id)) { porHacerCtxs.push(ctx); phSeen.add(ctx.id) }
-  // Seguimiento y Algún día = SOLO subcontextos (con contexto padre). Los contextos
-  // RAÍZ son entidad superior: nunca en la columna salvo que tengan tareas de hoy
-  // (entonces van a «Para hacer» vía ctxTasks/porHacerCtxs).
   const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id))
-  const algunDiaCtxs = listFutureContexts().filter(c => !!contextParent(c.id))
 
   // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
   // hay). Reutilizada en «Para hacer» y «Seguimiento».
@@ -355,19 +352,19 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         )
       })()}
       {/* SEGUIMIENTO — solo contextos abiertos sin tareas de hoy (las tareas sin
-          fecha ya NO viven aquí: bajan a «Algún día»). */}
+          fecha ya NO viven aquí: bajan a «Por planificar»). */}
       {seguimientoCtxs.length > 0 && (
         <div className="dc-group">
           {gHeader('seguimiento', `${t('daily.followup')} · ${seguimientoCtxs.length}`, 'dc-group-label--followup')}
           {!collapsedG.has('seguimiento') && seguimientoCtxs.map(renderCtxRow)}
         </div>
       )}
-      {/* ALGÚN DÍA — colapsado por defecto. Tareas sin fecha (aparcadas) + contextos
-          en estado «algún día». Lo diferido que no debe molestar. */}
-      {(data.seguimiento.length > 0 || algunDiaCtxs.length > 0) && (
+      {/* POR PLANIFICAR — colapsado por defecto. Tareas SIN FECHA que hay que agendar
+          (filosofía Fromly: nada se queda sin un cuándo). Los contextos en estado
+          «Algún día» NO viven aquí: están en su árbol de contextos. */}
+      {data.seguimiento.length > 0 && (
         <div className="dc-group">
-          {gHeader('algundia', `Algún día · ${data.seguimiento.length + algunDiaCtxs.length}`)}
-          {!collapsedG.has('algundia') && algunDiaCtxs.map(renderCtxRow)}
+          {gHeader('algundia', `Por planificar · ${data.seguimiento.length}`)}
           {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
