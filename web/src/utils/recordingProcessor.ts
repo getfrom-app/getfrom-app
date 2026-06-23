@@ -161,7 +161,10 @@ export async function createNoteFromTranscript(
   } catch { /* sin IA → título por hora; la transcripción se conserva igual */ }
 
   const types: string[] = context ? [context] : []
-  const parent = store.createNode({ text: title, parentId: today.id, types })
+  // `_capture` → la nota aparece en la bandeja «Capturas» de la columna del día
+  // (si no, una nota suelta del día no se ve en lienzo ni columna, solo en buscar).
+  // El usuario puede arrastrarla al lienzo (eso le pone pin y la saca de Capturas).
+  const parent = store.createNode({ text: title, parentId: today.id, types, extraData: { _capture: '1' } })
   // Un único nodo hijo con la transcripción literal.
   store.createNode({ text: transcript.trim() || '(sin audio detectado)', parentId: parent.id })
 
