@@ -255,9 +255,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       const avail = el.clientWidth - AXIS_W - 2
       const cnt = viewMode === 'day' ? 1 : visibleDayCnt
       setColW(Math.max(60, Math.floor(avail / cnt)))
-      // Auto-fit del alto: que el día entero quepa sin scroll.
+      // Auto-fit del alto: que el día entero quepa sin scroll. Resta lo que ocupan
+      // la cabecera de días + la franja «todo el día» (viven dentro del scroll, así
+      // que el grid solo dispone de clientHeight − offset de la rejilla).
       if (autoFitRef.current && (viewMode === 'day' || viewMode === 'week') && el.clientHeight > 0) {
-        setSlotH(Math.max(6, Math.floor(el.clientHeight / (TOTAL_HOURS * 2))))
+        const gridEl = el.querySelector('.pp-grid') as HTMLElement | null
+        const offset = gridEl ? gridEl.offsetTop : 64
+        setSlotH(Math.max(6, Math.floor((el.clientHeight - offset - 2) / (TOTAL_HOURS * 2))))
       }
     }
     update()
@@ -304,8 +308,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     setVisibleDayCnt(initialDays ?? DEFAULT_DAY_CNT)
     setAutoFit(true)
     const el = timelineRef.current
-    if (el && el.clientHeight > 0) setSlotH(Math.max(6, Math.floor(el.clientHeight / (TOTAL_HOURS * 2))))
-    else setSlotH(DEFAULT_SLOT_H)
+    if (el && el.clientHeight > 0) {
+      const gridEl = el.querySelector('.pp-grid') as HTMLElement | null
+      const offset = gridEl ? gridEl.offsetTop : 64
+      setSlotH(Math.max(6, Math.floor((el.clientHeight - offset - 2) / (TOTAL_HOURS * 2))))
+    } else setSlotH(DEFAULT_SLOT_H)
     if (scrollVRef.current) scrollVRef.current.scrollTop = 0
   }
 
