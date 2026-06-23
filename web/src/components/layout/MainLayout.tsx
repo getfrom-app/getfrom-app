@@ -270,7 +270,7 @@ export default function MainLayout() {
 
   // Modo Planificar (/planner): el centro es el calendario y la columna derecha es
   // la cola «Por planificar» (atrasadas + sin fecha). Al salir, vuelve al filtro.
-  const isPlannerRoute = location.pathname.replace(/^\/app\/?/, '').replace(/\/$/, '') === 'planner'
+  const isPlannerRoute = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === 'planner'
   useEffect(() => {
     if (isPlannerRoute) { setRightCollapsed(false); setRightPanel('porplanificar') }
     else setRightPanel(p => (p === 'porplanificar' ? 'filter' : p))
