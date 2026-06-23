@@ -995,15 +995,19 @@ Los agentes se configuran en su panel de propiedades:
 
 El Planificador es la vista de calendario de Fromly. Pulsa `P` (sin ningún input activo) o el icono de planificador en la barra superior para abrirlo y cerrarlo. Ocupa el panel derecho.
 
-### Tres vistas: Día · Semana · Año
+### Cuatro vistas: Día · Semana · Mes · Año
 
 **Vista Día**: el día de hoy a pantalla completa (una sola columna). Timeline de horas con tus tareas y eventos con hora concreta; los bloques indican su hora de inicio y se pueden redimensionar para ajustar la duración.
 
-**Vista Semana**: varios días en columnas (entre 2 y 7; arrastra la cabecera para ver más o menos). El mismo timeline de horas por columna.
+**Vista Semana**: varios días en columnas (entre 2 y 7; arrastra la cabecera para ver más o menos). El mismo timeline de horas por columna. Arriba, una **franja «todo el día»** para las tareas con fecha pero sin hora: **haz clic** en el hueco de un día para escribir una tarea nueva ahí mismo y pulsa **Enter** (puedes encadenar varias seguidas).
+
+**Vista Mes**: la cuadrícula del mes. Cada día muestra **todas** sus tareas (las filas crecen de alto si hace falta). **Clic en una tarea** te lleva **a la tarea**; clic en un evento abre su editor.
 
 **Vista Año**: los 12 meses del año en una grid. Los días con tareas o eventos aparecen con un punto. Haz clic en cualquier día para abrir su vista Día.
 
-> El planificador solo muestra lo que tiene **hora**. Las tareas con fecha pero sin hora viven en la sección «Tu día» de la nota diaria, desde donde puedes arrastrarlas al timeline para darles hora.
+> En el timeline de horas solo aparece lo que tiene **hora**. Las tareas con fecha pero sin hora viven en la **franja «todo el día»** (arriba) y en la sección «Tu día» de la nota diaria.
+
+**Tareas vs eventos de un vistazo**: las **tareas** se muestran **sin fondo** (borde fino con un toque de color); los **eventos de Google** se muestran **con su color de fondo**.
 
 **Navegación**: botones ‹ › para avanzar o retroceder. Botón **Hoy** para volver al día actual.
 
@@ -1029,7 +1033,7 @@ Si tienes Google Calendar conectado, el planificador crea y actualiza eventos au
 - **Mover o redimensionar** el bloque → el evento de Google Calendar se actualiza al instante.
 - **Quitar la hora** (clic derecho → "Quitar hora") → el evento de Google Calendar se elimina.
 
-Los eventos de Google Calendar también se muestran en el planificador con su color original y pueden moverse y redimensionarse directamente desde Fromly.
+**Los eventos de Google viven solo en Google** (no se copian como notas en Fromly). Se muestran en el planificador y en la columna del día con su color original. Al hacer **clic** en uno se abre el **editor del evento de Google** (título, fechas, eliminar) con un botón **«➕ Crear nodo en Fromly»** — solo se crea una nota si lo pulsas.
 
 ### Clic derecho sobre un bloque
 

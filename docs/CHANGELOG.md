@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.549 · Mac v9.5.68 — 24 junio 2026 · Planner: vista Mes, eventos de Google y franja todo-el-día
+
+**Vista Mes del planner**
+- Cada día muestra **todas sus tareas** (ya no se cortan con «+2», «+3»…); las filas crecen de alto según lo que tengan, sin cambiar el ancho de las columnas.
+- **Clic en una tarea** del mes te lleva **a la tarea** (antes abría el día).
+
+**Tareas y eventos se distinguen de un vistazo**
+- Las **tareas** se muestran **sin fondo** (borde fino con un toque de color).
+- Los **eventos de Google** se muestran **con su color de fondo**.
+
+**Eventos de Google = solo en Google**
+- Los eventos de Google **ya no se copian como notas** en Fromly: viven solo en Google. Los que se habían copiado antes se han movido a la **Papelera** (reversibles).
+- **Clic en un evento** (en el planner o en la columna del día) abre el **editor del evento de Google** (título, fechas, eliminar) con un botón **«➕ Crear nodo en Fromly»** — no se crea ninguna nota salvo que lo pulses.
+
+**Columna del día**
+- Los **eventos de Google del día** vuelven a aparecer en el bloque **«Eventos de hoy»** (traídos de Google, no como notas).
+
+**Semana — franja «todo el día»**
+- Ahora puedes **crear tareas sin hora** directamente: **clic** en el hueco de un día → escribe → **Enter** (se encadenan varias).
+
 ## Web v9.6.518 · Mac v9.5.67 — 23 junio 2026 · Grabadora nueva, columna de hoy y contextos
 
 **Grabadora de voz — flujo nuevo**
