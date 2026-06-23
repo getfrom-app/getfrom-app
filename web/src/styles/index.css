@@ -12736,6 +12736,25 @@ textarea:focus-visible,
   border-left: 1px solid var(--border);
   position: relative; flex-shrink: 0; overflow: hidden;
 }
+/* Planner como vista CENTRAL (modo Planificar). */
+.plan-center { height: 100%; display: flex; min-height: 0; }
+.plan-center .pp-root { border-left: none; flex: 1; width: 100%; }
+
+/* Cola «Por planificar» (columna derecha del modo Planificar). */
+.pp-queue { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pp-queue-head { display: flex; align-items: baseline; gap: 8px; padding: 2px 14px 10px; flex-shrink: 0; }
+.pp-queue-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.pp-queue-count { font-size: 12px; font-weight: 600; color: #fff; background: var(--accent, #6c5ce7); border-radius: 999px; padding: 1px 8px; }
+.pp-queue-body { flex: 1; overflow-y: auto; padding: 0 8px 80px; }
+.pp-queue-section { margin-bottom: 14px; }
+.pp-queue-section .rc-section-label { padding: 0 6px; margin-bottom: 4px; }
+.pp-queue-empty { padding: 40px 16px; text-align: center; color: var(--text-tertiary); font-size: 13px; line-height: 1.5; }
+.pp-queue-row { cursor: grab; }
+.pp-queue-row:active { cursor: grabbing; }
+.pp-queue-grip { flex-shrink: 0; color: var(--text-tertiary, #bbb); font-size: 10px; letter-spacing: -2px; opacity: 0; transition: opacity 0.12s; align-self: center; }
+.pp-queue-row:hover .pp-queue-grip { opacity: 0.6; }
+.pp-reschedule-badge { font-size: 10.5px; font-weight: 600; color: #d97706; background: rgba(217,119,6,0.12); border-radius: 4px; padding: 0 5px; }
+
 .pp-resize-bar {
   position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
   cursor: ew-resize; z-index: 10;

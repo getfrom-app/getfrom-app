@@ -18,6 +18,7 @@ import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import AudioPanel from '../panels/AudioPanel'
 import DayPanel from '../panels/DayPanel'
+import PorPlanificarPanel from '../panels/PorPlanificarPanel'
 import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
 import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
@@ -50,7 +51,6 @@ const SearchView = lazy(() => import('../views/SearchView'))
 const AccountView = lazy(() => import('../views/AccountView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
-const CalendarPlanner = lazy(() => import('../views/CalendarPlanner'))
 import SearchPanel from '../panels/SearchPanel'
 import DocInspector from '../views/DocInspector'
 import { isDocNode } from '../../utils/docNode'
@@ -83,7 +83,6 @@ function prefetchLazyChunks() {
     () => import('../views/AccountView'),
     () => import('../views/SettingsView'),
     () => import('../views/ResourcesView'),
-    () => import('../views/CalendarPlanner'),
     () => import('../panels/PlannerPanel'),
     () => import('../aichat/MagicChat'),
     () => import('../modals/UnifiedCapture'),
@@ -157,6 +156,7 @@ export default function MainLayout() {
     | 'audio'
     | 'day'
     | 'doc'
+    | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
   // agentes se navegan por el árbol (su detalle se abre solo), y el planner tiene su
@@ -267,6 +267,15 @@ export default function MainLayout() {
     setRightPanel(p => (p === 'audio' ? 'filter' : p))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeIdFromRoute])
+
+  // Modo Planificar (/planner): el centro es el calendario y la columna derecha es
+  // la cola «Por planificar» (atrasadas + sin fecha). Al salir, vuelve al filtro.
+  const isPlannerRoute = location.pathname.replace(/^\/app\/?/, '').replace(/\/$/, '') === 'planner'
+  useEffect(() => {
+    if (isPlannerRoute) { setRightCollapsed(false); setRightPanel('porplanificar') }
+    else setRightPanel(p => (p === 'porplanificar' ? 'filter' : p))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlannerRoute])
 
   // Ciclar entre paneles con ← → (dirección = orden de iconos en la barra)
   function cyclePanel(dir: 'left' | 'right') {
@@ -1067,8 +1076,8 @@ export default function MainLayout() {
 
           onLogout={handleLogout}
           onOpenSettings={() => navigate('/settings')}
-          onTogglePlanner={() => togglePanel('planner')}
-          plannerOpen={rightPanel === 'planner'}
+          onTogglePlanner={() => { if (isPlannerRoute) navigate('/'); else navigate('/planner') }}
+          plannerOpen={isPlannerRoute}
           onToggleSearch={() => togglePanel('filter')}
           onToggleMagic={() => togglePanel('magic')}
           onToggleContextList={() => togglePanel('context-list')}
@@ -1101,7 +1110,7 @@ export default function MainLayout() {
           <Route path="inbox"    element={<Navigate to="/" replace />} />
           <Route path="trash"    element={<Navigate to="/" replace />} />
           {/* agents route eliminado — los agentes viven como nodos en 🤖 Agentes */}
-          <Route path="planner"   element={<CalendarPlanner />} />
+          <Route path="planner"   element={<div className="plan-center"><PlannerPanel initialView="week" initialDays={7} onClose={() => navigate('/')} /></div>} />
           <Route path="resources" element={<ResourcesView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
@@ -1190,6 +1199,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={currentNodeIdFromRoute} />
+          )}
+          {rightPanel === 'porplanificar' && (
+            <PorPlanificarPanel />
           )}
           {rightPanel === 'context' && detailNodeId && (
             <ContextPropertiesPanel nodeId={detailNodeId} onBack={() => backToList('context')} />

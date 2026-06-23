@@ -61,6 +61,29 @@ export function toggleTaskDone(n: Node): void {
   }
 }
 
+/** Nº de veces que una tarea se ha reagendado (movido de fecha). */
+export function rescheduleCount(n: Node): number {
+  try { const v = JSON.parse(n.extraData || '{}')._rescheduled; return typeof v === 'number' ? v : 0 } catch { return 0 }
+}
+
+/** Incrementa el contador de reagendados de una tarea (al moverla de fecha). */
+export function bumpReschedule(nodeId: string): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  let extra: Record<string, unknown> = {}
+  try { extra = JSON.parse(n.extraData || '{}') } catch { /* corrupto */ }
+  extra._rescheduled = (typeof extra._rescheduled === 'number' ? extra._rescheduled : 0) + 1
+  store.updateNode(nodeId, { extraData: JSON.stringify(extra) })
+}
+
+/** Programa una tarea en una fecha (días desde hoy) y cuenta el reagendado si ya tenía fecha. */
+export function scheduleTask(n: Node, days: number): void {
+  const hadDate = !!n.due
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + days)
+  store.updateNode(n.id, { due: d.toISOString() })
+  if (hadDate) bumpReschedule(n.id)
+}
+
 /** Pospone una tarea: días desde hoy (1 = mañana, 7 = +1 semana) o null = sin fecha. */
 export function postponeTask(n: Node, days: number | null): void {
   if (days === null) {

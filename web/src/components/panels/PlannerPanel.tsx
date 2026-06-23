@@ -17,6 +17,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { bumpReschedule } from '../../utils/dailyCockpit'
 import {
   getCalendarEventsRange,
   createCalendarEvent,
@@ -147,18 +148,18 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
 // PlannerPanel
 // ══════════════════════════════════════════════════════════════════════════
 
-interface Props { onClose: () => void }
+interface Props { onClose: () => void; initialView?: ViewMode; initialDays?: number }
 
-export default function PlannerPanel({ onClose }: Props) {
+export default function PlannerPanel({ onClose, initialView, initialDays }: Props) {
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
 
   const today = startOfDay(new Date())
-  const [viewMode,      setViewMode]      = useState<ViewMode>('day')
+  const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? 'day')
   const [centerDate,    setCenterDate]    = useState(today)
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
-  const [visibleDayCnt, setVisibleDayCnt] = useState(DEFAULT_DAY_CNT)
+  const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
 
   const hourH    = slotH * 2
   const pxPerMin = slotH / 30
@@ -367,6 +368,7 @@ export default function PlannerPanel({ onClose }: Props) {
     if (nodeId) {
       const node = store.getNode(nodeId)
       if (!node) return
+      const hadDate = !!node.due // ya tenía fecha → es un REAGENDADO (cuenta para el badge)
       const rawY = e.clientY - rect.top
       const rawStart = pxToTime(rawY, day)
       const clampedHour = Math.max(HOUR_START, Math.min(HOUR_END - 1, rawStart.getHours()))
@@ -383,6 +385,8 @@ export default function PlannerPanel({ onClose }: Props) {
         // Asegurar que tiene status para que aparezca como tarea
         status: node.status ?? 'pending',
       })
+
+      if (hadDate) bumpReschedule(nodeId)
 
       // GCal sync
       syncNodeToGcal(nodeId, start, end)
