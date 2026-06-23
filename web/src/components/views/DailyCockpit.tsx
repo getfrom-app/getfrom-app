@@ -279,6 +279,67 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
+  // ── Reparto de contextos activos ──────────────────────────────────────────
+  // «Para hacer» solo muestra contextos CON tareas para hoy/atrasadas. El resto
+  // de contextos activos baja a «Seguimiento». Cualquier contexto con tareas que
+  // no esté en la lista de activos (creado al vuelo desde una tarea) entra igual.
+  const porHacerCtxs: Node[] = []
+  const phSeen = new Set<string>()
+  for (const c of listActiveContexts()) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
+  for (const { ctx } of ctxTasks.values()) if (!phSeen.has(ctx.id)) { porHacerCtxs.push(ctx); phSeen.add(ctx.id) }
+  const seguimientoCtxs = listActiveContexts().filter(c => !ctxTasks.has(c.id))
+
+  // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
+  // hay). Reutilizada en «Para hacer» y «Seguimiento».
+  const renderCtxRow = (c: Node) => {
+    const color = contextColor(c.id)
+    const parent = contextParent(c.id)
+    const n = nodesInContext(c.id).length
+    const closing = ctxClosing?.id === c.id
+    const due = ctxTasks.get(c.id)
+    return (
+      <div key={c.id}>
+        <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
+          draggable
+          onDragStart={e => { e.dataTransfer.setData('nodeId', c.id); e.dataTransfer.effectAllowed = 'copy' }}
+          onClick={() => navigate(`/node/${c.id}`)}
+          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
+          onAnimationEnd={closing ? () => {
+            if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
+            else trashNode(c.id)
+            setCtxClosing(null)
+          } : undefined}>
+          {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
+              que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
+          <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
+          <span className="dc-text">{c.text || 'Contexto'}</span>
+          {parent && (() => {
+            const pColor = contextColor(parent.id)
+            return (
+              <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
+                style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
+                {parent.text}
+              </span>
+            )
+          })()}
+          <span style={{ flex: 1 }} />
+          {due && (due.overdue.length + due.today.length) > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: due.overdue.length > 0 ? 'var(--danger,#e03131)' : color }}>
+              {due.overdue.length + due.today.length}
+            </span>
+          )}
+          {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>{n}</span>}
+        </div>
+        {due && (
+          <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
+            {due.overdue.map(t => renderTaskRow(t, { showDue: true, inContext: true }))}
+            {due.today.map(t => renderTaskRow(t, { inContext: true }))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const gHeader = (k: string, label: string, cls = '') => (
     <button
       className={`dc-group-label dc-group-toggle ${cls}`}
@@ -300,63 +361,13 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
           bajo su contexto; las que no tienen contexto, bajo «Sin contexto». */}
       {(() => {
-        const subs = listActiveContexts()
-        const byId = new Map(subs.map(c => [c.id, c]))
-        for (const { ctx } of ctxTasks.values()) if (!byId.has(ctx.id)) { subs.push(ctx); byId.set(ctx.id, ctx) }
         const hasSinCtx = overdueFlat.length + todayFlat.length > 0
-        if (!hasSinCtx && subs.length === 0) return null
+        if (!hasSinCtx && porHacerCtxs.length === 0) return null
         const open = !collapsedG.has('porhacer')
         return (
           <div className="dc-group">
             {gHeader('porhacer', 'Para hacer')}
-            {open && subs.map(c => {
-              const color = contextColor(c.id)
-              const parent = contextParent(c.id)
-              const n = nodesInContext(c.id).length
-              const closing = ctxClosing?.id === c.id
-              const due = ctxTasks.get(c.id)
-              return (
-                <div key={c.id}>
-                  <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
-                    draggable
-                    onDragStart={e => { e.dataTransfer.setData('nodeId', c.id); e.dataTransfer.effectAllowed = 'copy' }}
-                    onClick={() => navigate(`/node/${c.id}`)}
-                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
-                    onAnimationEnd={closing ? () => {
-                      if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
-                      else trashNode(c.id)
-                      setCtxClosing(null)
-                    } : undefined}>
-                    {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
-                        que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
-                    <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
-                    <span className="dc-text">{c.text || 'Contexto'}</span>
-                    {parent && (() => {
-                      const pColor = contextColor(parent.id)
-                      return (
-                        <span onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
-                          style={{ background: pColor + '18', color: pColor, border: `1px solid ${pColor}40`, borderRadius: 4, fontSize: 11, fontWeight: 500, padding: '0 5px', cursor: 'pointer', flexShrink: 0 }}>
-                          {parent.text}
-                        </span>
-                      )
-                    })()}
-                    <span style={{ flex: 1 }} />
-                    {due && (due.overdue.length + due.today.length) > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 600, color: due.overdue.length > 0 ? 'var(--danger,#e03131)' : color }}>
-                        {due.overdue.length + due.today.length}
-                      </span>
-                    )}
-                    {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>{n}</span>}
-                  </div>
-                  {due && (
-                    <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
-                      {due.overdue.map(t => renderTaskRow(t, { showDue: true, inContext: true }))}
-                      {due.today.map(t => renderTaskRow(t, { inContext: true }))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            {open && porHacerCtxs.map(renderCtxRow)}
             {/* «Sin contexto» — al final del bloque «Para hacer», antes de Seguimiento.
                 SIN inContext → muestra el chip «?» para asignar contexto. */}
             {open && hasSinCtx && (
@@ -369,9 +380,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           </div>
         )
       })()}
-      {data.seguimiento.length > 0 && (
+      {(data.seguimiento.length > 0 || seguimientoCtxs.length > 0) && (
         <div className="dc-group">
-          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length}`, 'dc-group-label--followup')}
+          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length + seguimientoCtxs.length}`, 'dc-group-label--followup')}
+          {!collapsedG.has('seguimiento') && seguimientoCtxs.map(renderCtxRow)}
           {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
