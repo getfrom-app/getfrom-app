@@ -811,12 +811,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
                 <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}>{date.getDate()}</div>
                 <div className="pp-month-items">
-                  {items.slice(0, 4).map(it => (
+                  {items.map(it => (
                     <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}>
                       {it.text}
                     </div>
                   ))}
-                  {items.length > 4 && <div className="pp-month-more">+{items.length - 4}</div>}
                 </div>
               </div>
             )
