@@ -220,7 +220,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
           {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title="Editar fecha y recurrencia"
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-          {!opts.inContext && parentLabel(n) && parentLabel(n) !== firstContextOf(n)?.text && <span className="dc-parent">{parentLabel(n)}</span>}
+          {!opts.inContext && parentLabel(n) && n.parentId !== firstContextOf(n)?.id && <span className="dc-parent">{parentLabel(n)}</span>}
         </div>
       </div>
     </div>

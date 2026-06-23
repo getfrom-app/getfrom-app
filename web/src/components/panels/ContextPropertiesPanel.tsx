@@ -198,7 +198,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Subcontextos (contextos hijos): abiertos, algún día y cerrados, separados. */}
+        {/* Subcontextos (contextos hijos): abiertos y cerrados, separados. */}
         {(() => {
           const kids = store.children(nodeId).filter(c => !c.deletedAt && isMarkedContext(c))
           if (kids.length === 0) return null

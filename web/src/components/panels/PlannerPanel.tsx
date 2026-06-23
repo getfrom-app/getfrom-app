@@ -1090,7 +1090,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
             const node = store.createNode({ text: ev.title || 'Evento', parentId: dayNode.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
             store.updateNode(node.id, {
               isEvent: true, due: ev.start, dueEnd: ev.end,
-              extraData: JSON.stringify({ _gcalEventId: ev.id, gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '', _gcalSynced: '1' }),
+              gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)
+              extraData: JSON.stringify({ _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
             })
             navigate(`/node/${node.id}`)
           }}

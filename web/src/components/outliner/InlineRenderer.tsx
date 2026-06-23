@@ -87,7 +87,7 @@ function renderWithTags(text: string, key: number): React.ReactNode {
                 background: CONTEXT_COLOR + '18',
                 color: CONTEXT_COLOR,
                 border: `1px solid ${CONTEXT_COLOR}40`,
-                borderRadius: 4,
+                borderRadius: 999,
                 fontSize: '0.8em',
                 fontWeight: 500,
                 padding: '0 5px',
@@ -331,7 +331,7 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
         .replace(/-/g, ' ')
         .replace(/\b\w/g, (c: string) => c.toUpperCase())
       const sl = esc(slug.trim())
-      return `<span class="context-inline" data-slug="${sl}" style="display:inline-flex;align-items:center;gap:3px;background:${hex}18;color:${hex};border:1px solid ${hex}40;border-radius:4px;font-size:0.8em;font-weight:500;padding:0 4px 0 5px;cursor:pointer">${esc(part)}<button class="ctx-chip-remove" data-slug="${sl}" title="Quitar contexto" style="background:none;border:none;cursor:pointer;color:${hex};opacity:0.6;padding:0;font-size:1em;line-height:1;display:flex">×</button></span>`
+      return `<span class="context-inline" data-slug="${sl}" style="display:inline-flex;align-items:center;gap:3px;background:${hex}18;color:${hex};border:1px solid ${hex}40;border-radius:999px;font-size:0.8em;font-weight:500;padding:0 4px 0 5px;cursor:pointer">${esc(part)}<button class="ctx-chip-remove" data-slug="${sl}" title="Quitar contexto" style="background:none;border:none;cursor:pointer;color:${hex};opacity:0.6;padding:0;font-size:1em;line-height:1;display:flex">×</button></span>`
     })
 
   // Aplicar highlight de búsqueda insensible a tildes y mayúsculas
