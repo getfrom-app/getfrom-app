@@ -19,6 +19,8 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
+import TaskHoverActions from './TaskHoverActions'
+import { TaskPropsPopover } from './DiaryPanelComponents'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -89,6 +91,7 @@ export default function DayColumn({
 
   // Evento cuyo badge está en edición (popover hora/repetición).
   const [editEv, setEditEv] = useState<string | null>(null)
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   const patchEvent = (id: string, updates: Partial<Node>) => {
     store.updateNode(id, updates)
     const fresh = store.getNode(id)
@@ -198,7 +201,7 @@ export default function DayColumn({
               </span>
               {hhmm(t.due) !== '00:00' && t.due && <span className="dc-time">{hhmm(t.due)}</span>}
               <RowContextChip node={t} />
-              {delBtn(t)}
+              <TaskHoverActions node={t} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
             </div>
           ))}
         </div>
@@ -255,6 +258,10 @@ export default function DayColumn({
           ))}
         </div>
       )}
+      {propsNodeId && (() => {
+        const pn = store.getNode(propsNodeId)
+        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
+      })()}
     </>
   )
 }

@@ -8,11 +8,12 @@ import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { collectDailyCockpit, toggleFocusToday, postponeTask, toggleTaskDone } from '../../utils/dailyCockpit'
+import { collectDailyCockpit, toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
+import TaskHoverActions from '../panels/TaskHoverActions'
 import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isProject, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
@@ -29,7 +30,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
-  const [postponeMenuId, setPostponeMenuId] = useState<string | null>(null)
   // Menú contextual de las filas de CONTEXTO + animación de salida.
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const [ctxClosing, setCtxClosing] = useState<{ id: string; action: 'close' | 'delete' } | null>(null)
@@ -135,17 +135,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     store.updateNode(n.id, { status: 'done' })
   }
 
-  function onFocusClick(e: React.MouseEvent, n: Node) {
-    e.stopPropagation()
-    toggleFocusToday(n)
-    setPostponeMenuId(null)
-  }
-
-  function onPostpone(e: React.MouseEvent, n: Node, days: number | null) {
-    e.stopPropagation()
-    postponeTask(n, days)
-    setPostponeMenuId(null)
-  }
 
   function parentLabel(n: Node): string | null {
     if (!n.parentId) return null
@@ -218,32 +207,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {/* Contexto: chip a la DERECHA del texto (mismo renglón). Si no tiene
               contexto muestra «?» para asignarlo. Oculto cuando va bajo su contexto. */}
           {!opts.inContext && <span style={{ marginLeft: 4, flexShrink: 0 }}><RowContextChip node={n} /></span>}
-          <span className="dc-actions">
-            {opts.inFocus ? (
-              <button className="dc-action" onClick={e => onFocusClick(e, n)} title={t('daily.unfocus')}>✕</button>
-            ) : n.status === 'done' ? (
-              null /* completada: sin triaje, solo des-completar con el checkbox */
-            ) : (
-              <>
-                <button className="dc-action dc-action--focus" onClick={e => onFocusClick(e, n)} title={t('daily.toFocus')}>🎯</button>
-                <span className="dc-postpone-wrap">
-                  <button
-                    className="dc-action"
-                    onClick={e => { e.stopPropagation(); setPostponeMenuId(id => id === n.id ? null : n.id) }}
-                    title={t('daily.postpone')}
-                  >⏭</button>
-                  {postponeMenuId === n.id && (
-                    <span className="dc-postpone-menu" onClick={e => e.stopPropagation()}>
-                      <button onClick={e => onPostpone(e, n, 1)}>{t('daily.tomorrow')}</button>
-                      <button onClick={e => onPostpone(e, n, 7)}>{t('daily.nextWeek')}</button>
-                      <button onClick={e => onPostpone(e, n, null)}>{t('daily.noDate')}</button>
-                    </span>
-                  )}
-                </span>
-              </>
-            )}
-          </span>
-          {delBtn(n)}
+          <TaskHoverActions node={n} onOpenDate={nn => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
         </div>
         {/* Línea 2 (meta). Se oculta sola con CSS `:empty` si no hay nada. */}
         <div className="dc-row-l2">

@@ -13492,6 +13492,7 @@ textarea:focus-visible,
   line-height: 1;
 }
 .dc-action:hover { background: rgba(139,92,246,0.12); color: var(--text-primary); }
+.dc-action--del:hover { background: rgba(224,49,49,0.1); color: var(--danger, #e03131); }
 .dc-postpone-wrap { position: relative; display: inline-flex; }
 .dc-postpone-menu {
   position: absolute;

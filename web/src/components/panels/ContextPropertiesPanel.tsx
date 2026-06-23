@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import ContextPicker from './ContextPicker'
+import TaskHoverActions from './TaskHoverActions'
 
 /** Color del chip de fecha por estado: atrasada=rojo, hoy=ámbar, futura=azul. */
 function dueChipColor(dueISO: string): string {
@@ -165,7 +166,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                 )
               })()}
               {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title="Fecha y recurrencia" onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
-              <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
+              {a.status != null && !a.isEvent ? (
+                // Tarea: mismo set de hover que la columna del día (foco · fecha · borrar).
+                <TaskHoverActions node={a} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+              ) : (
+                // Evento/Nota: quitar del contexto.
+                <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
+              )}
             </div>
           )
           const block = (label: string, items: typeof assigned, cls = '') => items.length === 0 ? null : (
