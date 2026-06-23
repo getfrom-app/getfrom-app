@@ -400,7 +400,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   const [xf, setXf] = useState<XfVal | null>(null)
   const xfValRef = useRef<XfVal | null>(null)
   const setXfBoth = (v: XfVal) => { xfValRef.current = v; setXf(v) }
-  const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null) }, [])
+  const clearSelection = useCallback(() => { setMultiSel(new Set()); setSelStrokes(new Set()); setMenuPos(null); setHoverConn(null) }, [])
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<CanvasTool>('select')
@@ -738,7 +738,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           store.beginBatch()
           try {
             contents.forEach((content, i) => {
-              const n = createMarkdownNode(parentId, content, mdFiles[i].name)
+              const n = createMarkdownNode(parentId, content, mdFiles[i].name, false)
               if (n) writePin(store.getNode(n.id)!, { x: w.x + (i % cols) * GAP_X, y: w.y + Math.floor(i / cols) * GAP_Y })
             })
           } finally { store.endBatch() }
@@ -782,7 +782,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       e.preventDefault()
       store.beginBatch()
       try {
-        const n = createMarkdownNode(parentId, text)
+        const n = createMarkdownNode(parentId, text, undefined, false)
         if (n) writePin(store.getNode(n.id)!, world)
       } finally { store.endBatch() }
     }
@@ -2535,7 +2535,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           setCam(c => ({ ...c, x: viewport.w / 2 - wx * c.scale, y: viewport.h / 2 - wy * c.scale }))
         }
         return (
-          <div style={{ position: 'absolute', left: 12, bottom: 80, width: MW, height: MH, zIndex: 40,
+          <div style={{ position: 'absolute', left: 12, bottom: 80, width: MW, height: MH, zIndex: 40, boxSizing: 'content-box',
             background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', cursor: 'pointer', touchAction: 'none' }}
             onPointerDown={goTo} title="Mapa del lienzo · clic para ir">

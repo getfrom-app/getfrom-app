@@ -116,7 +116,7 @@ function buildContent(parentId: string, lines: Line[]): void {
  *  (convertido a HTML). Título = primer encabezado, o el nombre del archivo, o la
  *  primera línea. Devuelve el nodo (o null si no hay contenido). Reutilizado al
  *  soltar un .md o pegar texto en el lienzo. */
-export function createMarkdownNode(parentId: string | null, content: string, fileName?: string): ReturnType<typeof store.createNode> | null {
+export function createMarkdownNode(parentId: string | null, content: string, fileName?: string, collapsed = true): ReturnType<typeof store.createNode> | null {
   if (!content.trim()) return null
   const lines = content.replace(/\r\n/g, '\n').split('\n').map(l => l.trim())
   const firstH = lines.find(l => /^#{1,6}\s+/.test(l))
@@ -126,9 +126,9 @@ export function createMarkdownNode(parentId: string | null, content: string, fil
   const sibs = (parentId ? store.children(parentId) : store.children(null)).filter(n => !n.deletedAt)
   const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
   const note = store.createNode({ text: title, parentId, siblingOrder: maxOrder + 1000 })
-  // Colapsado por defecto: en el lienzo se ve como un nodo con título + chevron; el
-  // usuario despliega para leer el contenido.
-  store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(content), text: title, isCollapsed: true })
+  // Colapsado por defecto (importación en árbol). En el lienzo se pega desplegado
+  // (collapsed=false) para leer el contenido completo de inmediato.
+  store.updateNode(note.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(content), text: title, isCollapsed: collapsed })
   return note
 }
 
