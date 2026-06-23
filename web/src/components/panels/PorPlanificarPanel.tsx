@@ -36,6 +36,7 @@ export default function PorPlanificarPanel() {
         draggable
         onDragStart={e => { e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed = 'move' }}
         onClick={() => navigate(`/node/${n.id}`)}
+        onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
         title="Arrastra al calendario para programar"
       >
         <span className="pp-queue-grip" aria-hidden>⋮⋮</span>

@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { bumpReschedule } from '../../utils/dailyCockpit'
+import { isInPapelera } from '../../utils/papeleraHelper'
 import {
   getCalendarEventsRange,
   createCalendarEvent,
@@ -131,7 +132,7 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   const blocks: Block[] = []
 
   for (const n of store.allActive()) {
-    if (!n.due || n.deletedAt) continue
+    if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
     const start = new Date(n.due)
     if (!sameDay(start, day)) continue
 
@@ -634,7 +635,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
             navigate(`/node/${b.nodeId}`)
           }
         }}
-        onContextMenu={e => { e.preventDefault(); setCtxMenu({x:e.clientX,y:e.clientY,b}) }}
+        onContextMenu={e => {
+          e.preventDefault(); e.stopPropagation()
+          // Mismo menú que la columna del día para bloques con nodo (tarea/materializado);
+          // el evento crudo de GCal (sin nodo) mantiene su menú propio.
+          if (b.nodeId) window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: b.nodeId, x: e.clientX, y: e.clientY } }))
+          else setCtxMenu({x:e.clientX,y:e.clientY,b})
+        }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
         <div className="pp-block-time">{fmtHH(b.start)}</div>
@@ -716,7 +723,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                   const date  = new Date(year, monthIdx, d)
                   const isTod = sameDay(date, today)
                   const hasGcal = gcalEvents.some(ev => !ev.allDay && sameDay(new Date(ev.start), date))
-                  const hasTasks = [...store.allActive()].some(n => n.due && sameDay(new Date(n.due), date) && n.status !== null)
+                  const hasTasks = [...store.allActive()].some(n => n.due && !isInPapelera(n.id) && sameDay(new Date(n.due), date) && n.status !== null)
                   return (
                     <div key={d}
                       className={`pp-year-day ${isTod?'pp-year-day--today':''}`}
@@ -740,7 +747,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   function monthDayItems(date: Date): { id: string; text: string; color: string; done: boolean }[] {
     const out: { id: string; text: string; color: string; done: boolean; t: number }[] = []
     for (const n of store.allActive()) {
-      if (!n.due || n.deletedAt || n.status == null) continue
+      if (!n.due || n.deletedAt || isInPapelera(n.id) || n.status == null) continue
       if (!sameDay(new Date(n.due), date)) continue
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
       out.push({ id: n.id, text: n.text || 'Sin título', color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
@@ -765,7 +772,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
   function getAllDayTasks(day: Date) {
     return store.allActive().filter(n =>
-      n.due && !n.deletedAt && n.status != null && !n.isEvent && sameDay(new Date(n.due), day) && !hasTime(n.due))
+      n.due && !n.deletedAt && !isInPapelera(n.id) && n.status != null && !n.isEvent && sameDay(new Date(n.due), day) && !hasTime(n.due))
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {
     e.preventDefault(); e.stopPropagation()
@@ -915,6 +922,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={()=>navigate(`/node/${n.id}`)}
+                        onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
                         {n.text || 'Sin título'}
                       </div>
