@@ -884,6 +884,16 @@ Escribe en el campo y pulsa Enter para enviar.
 
 **Grabar con voz:** mantén `R` mientras hablas. Al soltar, transcribe y envía. El waveform animado muestra que está escuchando.
 
+#### Grabadora de voz (botón REC)
+
+El botón rojo **REC** (abajo a la derecha, junto al `+`) es para **dictar una nota larga**:
+
+1. Pulsa **REC**: se abre la **grabadora en la columna derecha** y empieza a grabar. Ves la **onda** y la **transcripción en vivo**.
+2. Pulsa **STOP** (o el ■ del panel) para parar. Verás la **transcripción completa** (puedes editarla) y un botón **«Crear nota»**.
+3. Al pulsar **«Crear nota»** se crea una **nota en tu diario de hoy** con un **título puesto por la IA** según lo que dijiste y, dentro, la **transcripción**. Se abre **Magic** para que sigas trabajando sobre ella (resumir, sacar tareas, etc.).
+
+La nota aparece en **«Capturas»** del día; arrástrala al lienzo cuando quieras colocarla.
+
 **Dónde crea Magic las cosas:**
 - Recordatorios y tareas genéricas → van al **diario de hoy**
 - Si estás en una nota de proyecto y pides añadir algo relacionado → va a **esa nota**

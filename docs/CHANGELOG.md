@@ -4,6 +4,28 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.518 · Mac v9.5.67 — 23 junio 2026 · Grabadora nueva, columna de hoy y contextos
+
+**Grabadora de voz — flujo nuevo**
+- El botón **REC** abre la **grabadora en la columna derecha** y empieza a grabar: ves la onda y la transcripción **en vivo**.
+- Al **parar**, ves la transcripción completa (editable) y un botón **«Crear nota»**.
+- **«Crear nota»** crea una **nota del día** con un **título puesto por la IA** (según el contenido) y, dentro, la **transcripción**; además abre **Magic** para trabajar sobre esa nota.
+- La nota queda visible en **«Capturas»** del día (puedes arrastrarla al lienzo para colocarla).
+
+**Columna de hoy**
+- **«Para hacer»** ahora solo muestra los contextos **con tareas de hoy o atrasadas**; el resto de contextos baja a **«Seguimiento»** (así «Para hacer» queda limpio con lo que toca hoy).
+
+**Contextos**
+- El **contexto padre** es **navegable** (clic en el nombre → vas a él) y tiene un **«Cambiar»** que abre directamente un **selector con buscador y lista** de contextos.
+- En un contexto, los **eventos** muestran su **fecha, hora y repetición**, y son **editables** igual que las tareas.
+
+**Lienzo**
+- **Clic fuera de una flecha** la **deselecciona**.
+- **Pegar o soltar un texto largo** ahora lo muestra **desplegado** (ya no colapsado); solo se colapsa si tú lo haces con el chevron.
+- El **mapa** (abajo a la izquierda) ya no aparece cortado por abajo.
+
+---
+
 ## Web v9.6.511 · Mac v9.5.66 — 22 junio 2026 · Contextos: un solo sistema + columna de hoy unificada
 
 Sesión larga de pulido del modelo de contextos, la columna de hoy y el lienzo.
