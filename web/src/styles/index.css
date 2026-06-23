@@ -12889,17 +12889,17 @@ textarea:focus-visible,
 
 /* ── Vista MES (rejilla mensual) ────────────────────────────────────────── */
 .pp-month { display: flex; flex-direction: column; }
-.pp-month-dow { display: grid; grid-template-columns: repeat(7, 1fr); flex-shrink: 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 3; background: var(--bg-primary); }
+.pp-month-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); flex-shrink: 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 3; background: var(--bg-primary); }
 .pp-month-dow-cell { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
-.pp-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(96px, auto); align-content: start; }
-.pp-month-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 5px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: background 0.1s; }
+.pp-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(96px, auto); align-content: start; }
+.pp-month-cell { min-width: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 5px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: background 0.1s; }
 .pp-month-cell:hover { background: var(--accent-soft, rgba(108,92,231,0.06)); }
 .pp-month-cell--empty { background: var(--bg-secondary, #fafafa); cursor: default; }
 .pp-month-cell--empty:hover { background: var(--bg-secondary, #fafafa); }
 .pp-month-cell--today { background: rgba(108,92,231,0.05); }
 .pp-month-daynum { font-size: 12px; font-weight: 500; color: var(--text-secondary); align-self: flex-start; line-height: 1.4; padding: 1px 5px; border-radius: 999px; }
 .pp-month-daynum--today { background: var(--accent, #6c5ce7); color: #fff; font-weight: 700; }
-.pp-month-items { display: flex; flex-direction: column; gap: 2px; }
+.pp-month-items { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .pp-month-chip { font-size: 10.5px; color: var(--text-primary); background: var(--bg-elevated, #fff); border-radius: 3px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
 .pp-month-more { font-size: 10px; color: var(--text-tertiary); padding: 0 4px; }
 
