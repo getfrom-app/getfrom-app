@@ -12798,7 +12798,7 @@ textarea:focus-visible,
 .pp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }
 .pp-slot--qtr  { border-top: 1px dotted color-mix(in srgb, var(--border) 20%, transparent); }
 /* Franja «todo el día» del planner. */
-.pp-allday { display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border); min-height: 22px; max-height: 88px; overflow-y: auto; background: var(--bg-primary); }
+.pp-allday { display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border); min-height: 22px; max-height: 88px; overflow-y: auto; background: var(--bg-primary); position: sticky; top: 27px; z-index: 9; }
 .pp-allday-axis { display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 9px; color: var(--text-tertiary); background: var(--bg-primary); text-transform: uppercase; letter-spacing: 0.03em; }
 .pp-allday-col { border-left: 1px solid var(--border); padding: 2px 3px; display: flex; flex-direction: column; gap: 2px; }
 .pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 4px; padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
