@@ -54,6 +54,33 @@ export function isContextClosed(n: Node | null | undefined): boolean {
   return ed(n)._closed === '1'
 }
 
+/** ¿Contexto en estado «Algún día»? (`_future`). Va a la lista colapsada de Algún día. */
+export function isContextFuture(n: Node | null | undefined): boolean {
+  return ed(n)._future === '1' && ed(n)._closed !== '1'
+}
+
+export type ContextState = 'open' | 'future' | 'closed'
+
+/** Estado de un contexto: abierto · algún día · cerrado. */
+export function contextState(n: Node | null | undefined): ContextState {
+  if (isContextClosed(n)) return 'closed'
+  if (isContextFuture(n)) return 'future'
+  return 'open'
+}
+
+/** Fija el estado del contexto (excluyentes). Solo subcontextos (proyectos). */
+export function setContextState(nodeId: string, state: ContextState): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  if (!isProject(n) && !contextParent(nodeId)) return
+  const e = ed(n)
+  delete e._closed; delete e._future
+  if (state === 'closed') e._closed = '1'
+  else if (state === 'future') e._future = '1'
+  e._ctx = '1'
+  store.updateNode(nodeId, { extraData: JSON.stringify(e) })
+}
+
 /** Contexto padre (no la raíz) más cercano hacia arriba. null si es de nivel superior. */
 export function contextParent(nodeId: string): Node | null {
   const root = findContextRoot()
@@ -169,6 +196,7 @@ export function setContextClosed(nodeId: string, closed: boolean): void {
   // marcado como proyecto. Las áreas raíz son la base y no se cierran.
   if (!isProject(n) && !contextParent(nodeId)) return
   const e = ed(n)
+  delete e._future // cerrar/reabrir manda sobre el estado «algún día»
   if (closed) e._closed = '1'
   else delete e._closed
   e._ctx = '1' // al cerrar/reabrir, queda marcado como proyecto de pleno derecho
@@ -275,13 +303,23 @@ export function listActiveContexts(): Node[] {
   const ids = new Set<string>()
   for (const n of store.allActive()) {
     if (n.deletedAt || isInPapelera(n.id)) continue   // la Papelera no cuenta
-    if (isProject(n) && !isContextClosed(n)) ids.add(n.id)
+    if (isProject(n) && !isContextClosed(n) && !isContextFuture(n)) ids.add(n.id)
     for (const cid of nodeCtxRefs(n)) ids.add(cid)
   }
   const out: Node[] = []
   for (const id of ids) {
     const c = store.getNode(id)
-    if (c && !c.deletedAt && !isContextClosed(c) && !isInPapelera(c.id)) out.push(c)
+    if (c && !c.deletedAt && !isContextClosed(c) && !isContextFuture(c) && !isInPapelera(c.id)) out.push(c)
+  }
+  return out.sort((a, b) => activityTs(b) - activityTs(a))
+}
+
+/** Contextos en estado «Algún día» (para el bloque colapsado de la columna del día). */
+export function listFutureContexts(): Node[] {
+  const out: Node[] = []
+  for (const n of store.allActive()) {
+    if (n.deletedAt || isInPapelera(n.id)) continue
+    if (isProject(n) && isContextFuture(n)) out.push(n)
   }
   return out.sort((a, b) => activityTs(b) - activityTs(a))
 }

@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { isProject, isContextClosed, setContextClosed, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
+import { isProject, contextState, setContextState, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import ContextPicker from './ContextPicker'
 import TaskHoverActions from './TaskHoverActions'
@@ -57,20 +57,29 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 88px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto/cerrado — subcontextos (proyectos). Las áreas raíz son la
-            base y no se cierran. Un subcontexto = tiene un contexto padre. */}
+        {/* Estado abierto / algún día / cerrado — subcontextos (proyectos). Las áreas
+            raíz son la base y no cambian de estado. */}
         {(isProject(node) || contextParent(nodeId)) && (() => {
-          const closed = isContextClosed(node)
+          const st = contextState(node)
+          const seg = (label: string, value: 'open' | 'future' | 'closed', dot: string) => (
+            <button key={value} onClick={() => setContextState(nodeId, value)} title={label}
+              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '6px 8px', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: st === value ? 600 : 500,
+                color: st === value ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                background: st === value ? color + '20' : 'transparent', border: 'none',
+                borderLeft: value !== 'open' ? `1px solid ${color}33` : 'none' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+              {label}
+            </button>
+          )
           return (
             <div>
               <div className="rc-section-label" style={{ marginBottom: 6 }}>Estado</div>
-              <button onClick={() => setContextClosed(nodeId, !closed)}
-                title={closed ? 'Reabrir proyecto' : 'Cerrar proyecto'}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, cursor: 'pointer', font: 'inherit', border: `1px solid ${color}40`, background: color + '12' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: closed ? 'var(--text-tertiary)' : '#16a34a', flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{closed ? 'Cerrado' : 'Abierto'}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color, opacity: 0.85 }}>· {closed ? 'Reabrir' : 'Cerrar'}</span>
-              </button>
+              <div style={{ display: 'flex', borderRadius: 999, border: `1px solid ${color}40`, overflow: 'hidden', background: color + '0a' }}>
+                {seg('Abierto', 'open', '#16a34a')}
+                {seg('Algún día', 'future', '#f59e0b')}
+                {seg('Cerrado', 'closed', 'var(--text-tertiary)')}
+              </div>
             </div>
           )
         })()}
@@ -190,12 +199,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
         })()}
 
-        {/* Subcontextos (proyectos hijos): abiertos y cerrados, separados. */}
+        {/* Subcontextos (proyectos hijos): abiertos, algún día y cerrados, separados. */}
         {(() => {
           const kids = store.children(nodeId).filter(c => !c.deletedAt && isProject(c))
           if (kids.length === 0) return null
-          const abiertos = kids.filter(c => !isContextClosed(c))
-          const cerrados = kids.filter(c => isContextClosed(c))
+          const abiertos = kids.filter(c => contextState(c) === 'open')
+          const algunDia = kids.filter(c => contextState(c) === 'future')
+          const cerrados = kids.filter(c => contextState(c) === 'closed')
           const ctxRow = (c: ReturnType<typeof store.getNode>, closed: boolean) => c && (
             <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}>
@@ -210,6 +220,12 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                 <div className="dc-group">
                   <div className="rc-section-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
+                </div>
+              )}
+              {algunDia.length > 0 && (
+                <div className="dc-group">
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Algún día · {algunDia.length}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{algunDia.map(c => ctxRow(c, false))}</div>
                 </div>
               )}
               {cerrados.length > 0 && (

@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isProject, firstContextOf } from '../../utils/cajones'
+import { listActiveContexts, listFutureContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, setContextState, contextState, isProject, firstContextOf } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
@@ -39,12 +39,17 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
     let set: Set<string>
     try { set = new Set(JSON.parse(localStorage.getItem('from_dc_groups_collapsed') || '[]')) } catch { set = new Set() }
-    // SEGUIMIENTO colapsado por defecto (una sola vez): suele tener muchas tareas
-    // sin fecha. Después se respeta la preferencia del usuario al desplegar/plegar.
+    // SEGUIMIENTO y ALGÚN DÍA colapsados por defecto (una sola vez): lo diferido no
+    // debe molestar. Después se respeta la preferencia del usuario al desplegar/plegar.
     if (localStorage.getItem('from_dc_seg_collapsed_init') !== '1') {
       set.add('seguimiento')
       localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
       localStorage.setItem('from_dc_seg_collapsed_init', '1')
+    }
+    if (localStorage.getItem('from_dc_algundia_collapsed_init') !== '1') {
+      set.add('algundia')
+      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
+      localStorage.setItem('from_dc_algundia_collapsed_init', '1')
     }
     return set
   })
@@ -243,15 +248,17 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
-  // ── Reparto de contextos activos ──────────────────────────────────────────
-  // «Para hacer» solo muestra contextos CON tareas para hoy/atrasadas. El resto
-  // de contextos activos baja a «Seguimiento». Cualquier contexto con tareas que
-  // no esté en la lista de activos (creado al vuelo desde una tarea) entra igual.
+  // ── Reparto de contextos ───────────────────────────────────────────────────
+  // «Para hacer» = contextos ABIERTOS con tareas de hoy/atrasadas. «Seguimiento» =
+  // contextos abiertos sin tareas de hoy. «Algún día» = contextos en estado futuro
+  // (listFutureContexts). Cualquier contexto con tareas que no esté en activos entra igual.
+  const activeCtxs = listActiveContexts()
   const porHacerCtxs: Node[] = []
   const phSeen = new Set<string>()
-  for (const c of listActiveContexts()) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
+  for (const c of activeCtxs) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
   for (const { ctx } of ctxTasks.values()) if (!phSeen.has(ctx.id)) { porHacerCtxs.push(ctx); phSeen.add(ctx.id) }
-  const seguimientoCtxs = listActiveContexts().filter(c => !ctxTasks.has(c.id))
+  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id))
+  const algunDiaCtxs = listFutureContexts()
 
   // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
   // hay). Reutilizada en «Para hacer» y «Seguimiento».
@@ -344,14 +351,23 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           </div>
         )
       })()}
-      {(data.seguimiento.length > 0 || seguimientoCtxs.length > 0) && (
+      {/* SEGUIMIENTO — solo contextos abiertos sin tareas de hoy (las tareas sin
+          fecha ya NO viven aquí: bajan a «Algún día»). */}
+      {seguimientoCtxs.length > 0 && (
         <div className="dc-group">
-          {gHeader('seguimiento', `${t('daily.followup')} · ${data.seguimiento.length + seguimientoCtxs.length}`, 'dc-group-label--followup')}
+          {gHeader('seguimiento', `${t('daily.followup')} · ${seguimientoCtxs.length}`, 'dc-group-label--followup')}
           {!collapsedG.has('seguimiento') && seguimientoCtxs.map(renderCtxRow)}
-          {!collapsedG.has('seguimiento') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
-      {/* (El antiguo bloque CONTEXTOS se fusionó arriba en «Para hacer».) */}
+      {/* ALGÚN DÍA — colapsado por defecto. Tareas sin fecha (aparcadas) + contextos
+          en estado «algún día». Lo diferido que no debe molestar. */}
+      {(data.seguimiento.length > 0 || algunDiaCtxs.length > 0) && (
+        <div className="dc-group">
+          {gHeader('algundia', `Algún día · ${data.seguimiento.length + algunDiaCtxs.length}`)}
+          {!collapsedG.has('algundia') && algunDiaCtxs.map(renderCtxRow)}
+          {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
+        </div>
+      )}
 
       {/* Menú contextual de una fila de contexto: abrir/cerrar · eliminar */}
       {ctxMenu && (() => {
@@ -369,6 +385,12 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                 <button className="dc-ctxmenu-item" style={ctxMenuItem}
                   onClick={() => { if (closed) { setContextClosed(ctxMenu.id, false); setCtxMenu(null) } else { setCtxClosing({ id: ctxMenu.id, action: 'close' }); setCtxMenu(null) } }}>
                   {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
+                </button>
+              )}
+              {canClose && !closed && (
+                <button className="dc-ctxmenu-item" style={ctxMenuItem}
+                  onClick={() => { setContextState(ctxMenu.id, contextState(c) === 'future' ? 'open' : 'future'); setCtxMenu(null) }}>
+                  {contextState(c) === 'future' ? '↩ Sacar de Algún día' : '🕒 Pasar a Algún día'}
                 </button>
               )}
               <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}
