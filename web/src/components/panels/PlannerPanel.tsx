@@ -228,6 +228,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
   const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string}|null>(null)
   const newBlockRef                   = useRef<HTMLInputElement>(null)
+  const [newAllDay, setNewAllDay]     = useState<{day:Date;text:string}|null>(null)
+  const newAllDayRef                  = useRef<HTMLInputElement>(null)
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
 
   // ── GCal ──────────────────────────────────────────────────────────────────
@@ -533,6 +535,23 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       syncNodeToGcal(newNode.id, start, end)
     }
     setNewBlock(null)
+  }
+
+  // ── Nueva tarea «todo el día» (fecha sin hora) ───────────────────────────
+  function commitNewAllDay(keepOpen = false) {
+    if (!newAllDay) return
+    const day = newAllDay.day
+    if (newAllDay.text.trim()) {
+      store.createNode({
+        text:     newAllDay.text.trim(),
+        parentId: ensureDayPath(day).id,
+        due:      toMidnight(day),   // medianoche = todo el día (sin hora)
+        isTask:   true,
+      })
+    }
+    // keepOpen: encadenar varias tareas el mismo día sin reabrir
+    if (keepOpen) setNewAllDay({ day, text: '' })
+    else setNewAllDay(null)
   }
 
   // ── Drag bloque en timeline ───────────────────────────────────────────────
@@ -931,21 +950,34 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
               <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>todo el día</div>
               {visibleDays.map(d => {
                 const items = getAllDayTasks(d)
+                const editing = !!newAllDay && sameDay(newAllDay.day, d)
                 return (
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
-                    onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}>
+                    onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
+                    title="Clic para añadir una tarea sin hora"
+                    onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
                     {items.slice(0, 5).map(n => (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
                         style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
-                        onClick={()=>navigate(`/node/${n.id}`)}
+                        onClick={e=>{ e.stopPropagation(); navigate(`/node/${n.id}`) }}
                         onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
                         {n.text || 'Sin título'}
                       </div>
                     ))}
                     {items.length > 5 && <div style={{ fontSize: 10, color: 'var(--text-tertiary)', padding: '0 4px' }}>+{items.length - 5}</div>}
+                    {editing ? (
+                      <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}
+                        placeholder="Nueva tarea…"
+                        onClick={e=>e.stopPropagation()}
+                        onChange={e=>setNewAllDay(s=>s?{...s,text:e.target.value}:s)}
+                        onKeyDown={e=>{ if (e.key==='Enter') commitNewAllDay(true); else if (e.key==='Escape') setNewAllDay(null) }}
+                        onBlur={()=>commitNewAllDay(false)} />
+                    ) : (
+                      <div className="pp-allday-add" aria-hidden>+</div>
+                    )}
                   </div>
                 )
               })}

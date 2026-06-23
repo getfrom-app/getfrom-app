@@ -12800,7 +12800,10 @@ textarea:focus-visible,
 /* Franja «todo el día» del planner. */
 .pp-allday { display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border); min-height: 22px; background: var(--bg-primary); }
 .pp-allday-axis { display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 9px; color: var(--text-tertiary); background: var(--bg-primary); text-transform: uppercase; letter-spacing: 0.03em; }
-.pp-allday-col { border-left: 1px solid var(--border); padding: 2px 3px; display: flex; flex-direction: column; gap: 2px; }
+.pp-allday-col { border-left: 1px solid var(--border); padding: 2px 3px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.pp-allday-add { font-size: 11px; line-height: 1; color: var(--text-tertiary); opacity: 0; text-align: center; padding: 1px 0; transition: opacity .1s; }
+.pp-allday-col:hover .pp-allday-add { opacity: .5; }
+.pp-allday-new { font-size: 11px; border: 1px solid var(--accent, #6c5ce7); border-radius: 4px; padding: 1px 5px; outline: none; background: var(--bg-primary); color: var(--text-primary); width: 100%; box-sizing: border-box; }
 .pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 4px; padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
 .pp-allday-chip:active { cursor: grabbing; }
 .pp-allday-chip--done { opacity: 0.5; text-decoration: line-through; }
