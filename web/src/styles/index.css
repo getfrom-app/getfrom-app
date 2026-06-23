@@ -12813,11 +12813,11 @@ textarea:focus-visible,
 .pp-block--task:active,.pp-block--standalone:active { cursor: grabbing; }
 .pp-block--gcal { cursor: grab; }  /* GCal también arrastrable */
 .pp-block--gcal:active { cursor: grabbing; }
-.pp-block-time { font-size: 8px; font-weight: 700; color: rgba(255,255,255,.85); line-height:1; }
-.pp-block-text { font-size: 10px; font-weight: 500; color:#fff; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
+.pp-block-time { font-size: 8px; font-weight: 700; color: rgba(45,38,70,.62); line-height:1; }
+.pp-block-text { font-size: 10px; font-weight: 600; color: rgba(45,38,70,.92); overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
 /* Resize handle más grande y visible — 10px en lugar de 5px */
-.pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(255,255,255,.08); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
-.pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:rgba(255,255,255,.4); border-radius:1px; }
+.pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(45,38,70,.04); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
+.pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:rgba(45,38,70,.22); border-radius:1px; }
 .pp-block-resize:hover { background:rgba(255,255,255,.25); }
 .pp-block-resize:hover::after { background:rgba(255,255,255,.8); }
 /* Feedback visual cuando se arrastra un nodo sobre una columna del planificador */

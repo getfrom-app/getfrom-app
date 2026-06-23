@@ -112,6 +112,33 @@ const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
   { value: 'pink',   label: 'Fucsia',  hex: '#ec4899' },
 ]
 
+function PlannerColorRow() {
+  const [color, setColor] = useState(() => localStorage.getItem('from_planner_color') || '')
+  const accentHex = (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()) || '#8b5cf6'
+  const current = color || accentHex
+  function apply(v: string) { setColor(v); localStorage.setItem('from_planner_color', v) }
+  function reset() { setColor(''); localStorage.removeItem('from_planner_color') }
+  return (
+    <div className="st-row">
+      <div className="st-row-info">
+        <div className="st-row-label">Color del planner</div>
+        <div className="st-row-hint">Color base de las tareas y eventos del planner (se muestra en pastel).</div>
+      </div>
+      <div className="st-row-action">
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <input type="color" value={current} onChange={e => apply(e.target.value)}
+            style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
+          {color && (
+            <button onClick={reset} style={{ fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Usar acento
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AparienciaViewPane() {
   const { accent, setAccent } = useTheme()
   return (
@@ -144,6 +171,7 @@ function AparienciaViewPane() {
             </div>
           </div>
         </div>
+        <PlannerColorRow />
       </div>
     </>
   )

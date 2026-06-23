@@ -50,6 +50,46 @@ function startOfDay(d: Date): Date { const r = new Date(d); r.setHours(0,0,0,0);
 function daysInMonth(d: Date): number { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() }
 function fmtHH(d: Date) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 
+// ── Pastel: hace cualquier color suave (menos saturado, más claro) ──────────
+function parseColor(input: string): [number, number, number] | null {
+  const s = (input || '').trim()
+  const hex = s.match(/^#?([0-9a-f]{6})$/i)
+  if (hex) { const n = parseInt(hex[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] }
+  const rgb = s.match(/rgba?\(([^)]+)\)/i)
+  if (rgb) { const p = rgb[1].split(',').map(x => parseFloat(x)); return [p[0], p[1], p[2]] }
+  return null
+}
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b)
+  let h = 0; const l = (mx + mn) / 2; let sat = 0
+  if (mx !== mn) {
+    const d = mx - mn
+    sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn)
+    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4
+    h /= 6
+  }
+  return [h, sat, l]
+}
+function hslToHex(h: number, s: number, l: number): string {
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12
+    const a = s * Math.min(l, 1 - l)
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))
+    return Math.round(255 * c).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+/** Versión PASTEL de un color (claro y poco saturado). Gris → azul suave. */
+function pastelize(input: string): string {
+  const rgb = parseColor(input)
+  if (!rgb) return '#cdbdf2'
+  let [h, s] = rgbToHsl(rgb[0], rgb[1], rgb[2])
+  if (s < 0.12) { h = 0.58; s = 0.45 }              // gris/desaturado → azul suave
+  s = Math.min(0.62, Math.max(0.42, s))
+  return hslToHex(h, s, 0.80)
+}
+
 /** Devuelve true si el ISO tiene hora local distinta de medianoche (= tiene hora asignada). */
 function hasTime(isoStr: string): boolean {
   const d = new Date(isoStr)
@@ -550,13 +590,21 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
   }
 
+  // Color base del planner: el de Ajustes (`from_planner_color`) o el acento del
+  // tema. Los bloques se pintan en su versión PASTEL (suave, poco saturada).
+  const plannerBase = (typeof document !== 'undefined'
+    ? (localStorage.getItem('from_planner_color') || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())
+    : '') || '#8b5cf6'
+  const taskPastel = pastelize(plannerBase)
+
   // ── Render bloque ─────────────────────────────────────────────────────────
   function renderBlock(b: Block) {
+    const bg = b.kind === 'gcal' ? pastelize(b.color) : taskPastel
     return (
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}`}
         style={{ top: topPx(b.start), height: heightPx(b.start.getTime(), b.end.getTime()),
-          background: b.color, left: 2, right: 2 }}
+          background: bg, left: 2, right: 2 }}
         draggable
         onDragStart={e => handleBlockDragStart(e, b)}
         onClick={e => {
@@ -842,6 +890,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}>
                     {items.map(n => (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
+                        style={{ background: taskPastel, color: 'rgba(45,38,70,.92)' }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={()=>navigate(`/node/${n.id}`)}
