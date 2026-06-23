@@ -3558,7 +3558,29 @@ body.outliner-drag-active {
   font-weight: 700;
   width: 14px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+/* Contenido de un item: etiqueta + (contexto padre debajo, atenuado). */
+.inline-picker-content { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.inline-picker-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inline-picker-preview { font-size: 10.5px; color: var(--text-tertiary); margin-top: 1px; }
+.inline-picker-item.active .inline-picker-preview { color: var(--text-accent); opacity: 0.75; }
+/* Pie con atajos del picker. */
+.inline-picker-footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px 3px; margin-top: 3px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px; color: var(--text-tertiary);
+}
+.inline-picker-footer kbd {
+  font-family: inherit; font-size: 10px;
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 4px; padding: 0 4px; color: var(--text-secondary);
+}
+/* Dot de color del contexto en el ghost-text. */
+.from-ghost-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; flex-shrink: 0; }
 
 /* ── Theme toggle ───────────────────────────────────────────────────────── */
 

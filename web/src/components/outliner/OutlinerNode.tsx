@@ -4341,7 +4341,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {/* Autocompletado de contexto */}
             {ctxCompletion && isEditing && !datePrediction && (
               <span className="from-ghost from-ghost--ctx">
-                {ctxCompletion.cajonId && <span className="from-ghost-text">📦 </span>}
+                {ctxCompletion.cajonId && <span className="from-ghost-dot" style={{ background: contextColor(ctxCompletion.cajonId) }} />}
                 <span className="from-ghost-text">{ctxCompletion.ghost}</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">⇥</span>
@@ -4506,6 +4506,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </span>
                 </button>
               ))}
+              <div className="inline-picker-footer">
+                <span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
+                <span><kbd>↵</kbd> asignar</span>
+                <span><kbd>esc</kbd> cerrar</span>
+              </div>
             </>
           ) : picker.items.map((item, idx) => (
             <button
