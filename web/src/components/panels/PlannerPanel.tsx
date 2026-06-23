@@ -19,6 +19,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { bumpReschedule } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { gcalEventNodeId } from '../../utils/deterministicId'
 import {
   getCalendarEventsRange,
   createCalendarEvent,
@@ -125,22 +126,6 @@ interface Block {
   color: string
   nodeId?: string     // id del nodo original (para task)
   gcalEvent?: CalendarEvent
-  asTask?: boolean    // evento GCal que en realidad es una tarea recurrente del usuario → sin relleno
-}
-
-// Títulos de tareas locales con hora (cualquier día). Un evento de Google con uno
-// de estos títulos NO es un evento externo: es la misma tarea recurrente del
-// usuario, materializada como nodo solo en los días cercanos. Se pinta como tarea.
-function localTimedTaskTitles(): Set<string> {
-  const set = new Set<string>()
-  for (const n of store.allActive()) {
-    if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
-    let isTimeBlock = false
-    try { isTimeBlock = JSON.parse(n.extraData || '{}')._timeBlock === '1' } catch {}
-    if (!isTimeBlock && !hasTime(n.due)) continue
-    if (n.text) set.add(n.text.trim().toLowerCase())
-  }
-  return set
 }
 
 // ── Leer bloques con hora (timeline) ─────────────────────────────────────
@@ -188,19 +173,11 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   const fromGcalIds = new Set(
     store.allActive().map(n => n.gcalEventId).filter(Boolean)
   )
-  // Dedup adicional: una tarea local con el MISMO texto y la MISMA hora de inicio
-  // que un evento de Google es la misma cosa aunque no estén enlazadas por id
-  // (p.ej. recurrentes creadas a mano + en GCal). Gana la tarea local.
-  const localKeys = new Set(
-    blocks.map(b => `${(b.text || '').trim().toLowerCase()}|${b.start.getHours()}:${b.start.getMinutes()}`)
-  )
-  const taskTitles = localTimedTaskTitles()
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
-    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya está como bloque Fromly
+    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya hay un nodo local enlazado a este evento
     const start = new Date(ev.start)
     if (!sameDay(start, day)) continue
-    if (localKeys.has(`${(ev.title || '').trim().toLowerCase()}|${start.getHours()}:${start.getMinutes()}`)) continue // dup por texto+hora
     blocks.push({
       kind: 'gcal',
       id: ev.id,
@@ -208,9 +185,6 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
       start, end: new Date(ev.end),
       color: ev.backgroundColor || '#4a90d9',
       gcalEvent: ev,
-      // Si su título coincide con una tarea recurrente del usuario, es esa tarea
-      // (no un evento externo) → se renderiza sin relleno, igual que las tareas.
-      asTask: taskTitles.has((ev.title || '').trim().toLowerCase()),
     })
   }
 
@@ -635,9 +609,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     // Solo los eventos de Google llevan relleno de color (gris propio → pastel base;
     // color propio → ese color en pastel). Las tareas NO son eventos: sin fondo,
     // solo borde fino + barra de acento a la izquierda para verlas y arrastrarlas.
-    // Relleno solo para eventos de Google REALES (externos). Una tarea recurrente
-    // que también está en GCal (asTask) se trata como tarea: sin relleno.
-    const isGcal = b.kind === 'gcal' && !b.asTask
+    // Relleno solo para eventos de Google (viven en Google, no son nodos). Las
+    // tareas (nodos locales) van sin relleno: borde fino + barra de acento.
+    const isGcal = b.kind === 'gcal'
     const bg = isGcal ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : 'transparent'
     // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
     // multi-día o con duración errónea infle el scroll con espacio vacío).
@@ -1077,6 +1051,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       {editingGcal && (
         <GCalEventEditor event={editingGcal} modal onClose={()=>setEditingGcal(null)}
           linkedNodeId={store.allActive().find(n=>n.gcalEventId===editingGcal.id)?.id}
+          onCreateNode={()=>{
+            // Crear bajo demanda un nodo local vinculado al evento (no se crea por defecto).
+            const ev = editingGcal
+            const dayNode = ensureDayPath(new Date(ev.start))
+            const node = store.createNode({ text: ev.title || 'Evento', parentId: dayNode.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
+            store.updateNode(node.id, {
+              isEvent: true, due: ev.start, dueEnd: ev.end,
+              extraData: JSON.stringify({ _gcalEventId: ev.id, gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '', _gcalSynced: '1' }),
+            })
+            navigate(`/node/${node.id}`)
+          }}
           onUpdated={ev=>{setGcalEvents(p=>p.map(x=>x.id===ev.id?ev:x));setEditingGcal(null)}}
           onDeleted={id=>{setGcalEvents(p=>p.filter(x=>x.id!==id));setEditingGcal(null)}} />
       )}

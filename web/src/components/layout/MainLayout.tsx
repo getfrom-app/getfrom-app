@@ -345,6 +345,18 @@ export default function MainLayout() {
     }
     localStorage.setItem('migrated-bucles-seguimiento', '1')
   }, [s.nodesVersion])
+
+  // Limpieza única: los eventos de Google ya no se materializan como nodos. Archiva
+  // en Papelera (reversible) los nodos que se crearon a partir de eventos de Google.
+  useEffect(() => {
+    if (localStorage.getItem('cleaned-gcal-materialized-v1') === '1') return
+    if (store.allActive().length === 0) return // nodos aún no cargados → reintenta
+    import('../../utils/gcalNodesSync').then(async ({ cleanupGcalMaterializedNodes }) => {
+      const n = await cleanupGcalMaterializedNodes()
+      localStorage.setItem('cleaned-gcal-materialized-v1', '1')
+      if (n > 0) window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${n} evento(s) de Google ya no son nodos locales (movidos a Papelera)`, type: 'info' } }))
+    })
+  }, [s.nodesVersion])
   const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Slide animation state

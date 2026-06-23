@@ -36,7 +36,6 @@ import NodeContextMenu from '../outliner/NodeContextMenu'
 import type { Node } from '../../types'
 import { isoToLocalTime, hasLocalTime } from '../../utils/dates'
 import { createCalendarEvent, updateCalendarEvent, fromRecToRRule, type CalendarEvent } from '../../api/googleCalendar'
-import { getGcalColor, syncGcalEventsToNodes } from '../../utils/gcalNodesSync'
 import { useUserStore } from '../../store/userStore'
 import { nodeMeta } from '../../store/nodeStore'
 import { uploadFile, getPresignedDownload, getFilesForNode, deleteFile, aiInlineStream, withTokenGuard, TokensError, publishNote, unpublishNote, getToken } from '../../api/client'
@@ -490,12 +489,12 @@ export default function NodeView() {
     }
   }, [node?.text, node?.diaryDate, node?.isDiaryEntry, titleEditing]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sincronizar eventos de Google Calendar como nodos hijos de la nota diaria
-  // (REACTIVADO): aparecen en la columna del día como nodos-evento.
+  // Los eventos de Google YA NO se materializan como nodos locales: viven solo en
+  // Google y se muestran como bloques en el planner (clic → modal de edición de GCal,
+  // con botón para crear nodo bajo demanda). Mantenemos el estado vacío.
   useEffect(() => {
     if (!node?.isDiaryEntry || !node.diaryDate) { setGcalEvents([]); return }
     setGcalEvents([])
-    if (us.googleConnected) { syncGcalEventsToNodes(node).catch(() => {}) }
   }, [node?.id, node?.isDiaryEntry, node?.diaryDate, us.googleConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detectar cuando un nodo GCal se mueve a otra nota → actualizar fecha en GCal

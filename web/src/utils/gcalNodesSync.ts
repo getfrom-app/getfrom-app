@@ -245,6 +245,25 @@ export async function deleteGcalEventForNode(node: Node): Promise<boolean> {
   return true
 }
 
+/**
+ * Limpieza única: los eventos de Google ya NO se materializan como nodos locales.
+ * Envía a la Papelera (reversible) todos los nodos que se crearon a partir de un
+ * evento de Google (llevan `_gcalEventId`). Idempotente: marca un flag para no
+ * repetirse y, una vez hecho, no encuentra ninguno. Devuelve cuántos archivó.
+ */
+export async function cleanupGcalMaterializedNodes(): Promise<number> {
+  const victims = store.allActive().filter(n => {
+    try { return !!JSON.parse(n.extraData || '{}')._gcalEventId } catch { return false }
+  })
+  if (victims.length === 0) return 0
+  const { trashNode } = await import('./papeleraHelper')
+  for (const n of victims) {
+    try { trashNode(n.id) }
+    catch { store.updateNode(n.id, { deletedAt: new Date().toISOString() }) }
+  }
+  return victims.length
+}
+
 /** Devuelve el _gcalEventId de un nodo, o null si no tiene */
 export function getGcalEventId(node: Node): string | null {
   try {
