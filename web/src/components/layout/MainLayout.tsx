@@ -1241,9 +1241,9 @@ export default function MainLayout() {
           />
         )}
       </Suspense>
-      {/* Flotantes REC/+ — ocultos cuando Magic está abierto (Magic ya tiene su propio
-          input de texto y voz; así no se solapan con los controles de la columna). */}
-      {!showAIChat && (
+      {/* Flotantes REC/+ — ocultos cuando Magic o la grabadora están abiertos (esos
+          paneles ya tienen sus propios controles; así no se solapan con la columna). */}
+      {!showAIChat && rightPanel !== 'recorder' && (
         <>
           {/* Botón REC/STOP — abre la grabadora en la columna derecha y graba; al parar
               ofrece «Crear nota» (nota del día + transcripción + Magic). */}
