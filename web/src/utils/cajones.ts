@@ -339,7 +339,8 @@ export function convertToTask(nodeId: string): boolean {
   const e = ed(node) as Record<string, unknown>
   delete e._ctx; delete e._future; delete e._closed
   if (parentCtx && parentCtx.id !== nodeId) e._ctxRefs = [parentCtx.id]
-  store.updateNode(nodeId, { status: node.status ?? 'pending', extraData: JSON.stringify(e) })
+  // Tarea SIN fecha (los contextos no tienen due; lo dejamos explícito por robustez).
+  store.updateNode(nodeId, { status: node.status ?? 'pending', due: null, dueEnd: null, extraData: JSON.stringify(e) })
   return true
 }
 

@@ -14,7 +14,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import RowContextChip from '../panels/RowContextChip'
 import TaskHoverActions from '../panels/TaskHoverActions'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
 
@@ -385,6 +385,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                   {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
                 </button>
               )}
+              <button className="dc-ctxmenu-item" style={ctxMenuItem}
+                onClick={() => { convertToTask(ctxMenu.id); setCtxMenu(null) }}>
+                ☑ Convertir en tarea
+              </button>
               <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}
                 onClick={() => { setCtxClosing({ id: ctxMenu.id, action: 'delete' }); setCtxMenu(null) }}>
                 🗑 Eliminar
