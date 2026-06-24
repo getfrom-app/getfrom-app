@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { store } from '../store/nodeStore'
-import { collectDailyCockpit, toggleFocusToday, postponeTask, isFocusedToday, todayFocusKey, toggleTaskDone } from '../utils/dailyCockpit'
+import { collectDailyCockpit, postponeTask, toggleTaskDone } from '../utils/dailyCockpit'
 
 function iso(daysFromToday: number): string {
   const d = new Date()
@@ -80,46 +80,6 @@ describe('dailyCockpit — sección «Tu día»', () => {
     // si getPapeleraNode la encuentra; si no, al menos verificamos deletedAt.
     store.updateNode(t.id, { deletedAt: new Date().toISOString() })
     expect(collectDailyCockpit().overdue.map(n => n.text)).not.toContain('Tirada')
-  })
-
-  it('🎯 foco: toggleFocusToday mete y saca; la tarea sale de atrasadas/hoy', () => {
-    const t = store.createNode({ text: 'Elegida', parentId: null, isTask: true, due: iso(-1) })
-    expect(collectDailyCockpit().overdue.map(n => n.text)).toEqual(['Elegida'])
-
-    toggleFocusToday(store.getNode(t.id)!)
-    let data = collectDailyCockpit()
-    expect(data.focus.map(n => n.text)).toEqual(['Elegida'])
-    expect(data.overdue).toHaveLength(0)
-    expect(isFocusedToday(store.getNode(t.id)!)).toBe(true)
-
-    toggleFocusToday(store.getNode(t.id)!)
-    data = collectDailyCockpit()
-    expect(data.focus).toHaveLength(0)
-    expect(data.overdue.map(n => n.text)).toEqual(['Elegida'])
-  })
-
-  it('🎯 foco de un día anterior caduca solo (no aparece hoy)', () => {
-    const t = store.createNode({ text: 'Foco de ayer', parentId: null, isTask: true, due: iso(0) })
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const key = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-    store.updateNode(t.id, { extraData: JSON.stringify({ _focusDate: key }) })
-
-    const data = collectDailyCockpit()
-    expect(data.focus).toHaveLength(0)
-    expect(data.today.map(n => n.text)).toEqual(['Foco de ayer'])
-    expect(todayFocusKey()).not.toBe(key)
-  })
-
-  it('🎯 foco conserva las completadas (tachadas), ordenadas al final', () => {
-    const a = store.createNode({ text: 'A hecha', parentId: null, isTask: true, due: iso(0) })
-    const b = store.createNode({ text: 'B pendiente', parentId: null, isTask: true, due: iso(0) })
-    toggleFocusToday(store.getNode(a.id)!)
-    toggleFocusToday(store.getNode(b.id)!)
-    store.updateNode(a.id, { status: 'done' })
-
-    const data = collectDailyCockpit()
-    expect(data.focus.map(n => n.text)).toEqual(['B pendiente', 'A hecha'])
   })
 
   it('⏭ postponeTask: mañana, +7 días y sin fecha', () => {

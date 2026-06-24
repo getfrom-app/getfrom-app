@@ -13599,6 +13599,8 @@ textarea:focus-visible,
 }
 .dc-action:hover { background: rgba(139,92,246,0.12); color: var(--text-primary); }
 .dc-action--del:hover { background: rgba(224,49,49,0.1); color: var(--danger, #e03131); }
+.dc-action--hoy { font-size: 11px; font-weight: 600; color: var(--accent, #6c5ce7); }
+.dc-action--hoy:hover { background: var(--accent-soft, rgba(108,92,231,0.12)); color: var(--accent, #6c5ce7); }
 .dc-postpone-wrap { position: relative; display: inline-flex; }
 .dc-postpone-menu {
   position: absolute;

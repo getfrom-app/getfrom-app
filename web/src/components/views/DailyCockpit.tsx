@@ -1,7 +1,6 @@
 // «Tu día» — sección calculada al inicio de la nota diaria de HOY.
-// Muestra el 🎯 Foco del día, tareas atrasadas, tareas de hoy y bucles abiertos
-// como referencias a los nodos reales (nunca copia/materializa nada).
-// Triaje matinal: 🎯 manda al foco, ⏭ pospone (mañana/+1 semana/sin fecha).
+// Muestra tareas atrasadas, tareas de hoy y seguimiento (sin fecha) como
+// referencias a los nodos reales (nunca copia/materializa nada).
 // Las filas se arrastran al planificador (dataTransfer 'nodeId') para ponerles hora,
 // y al interactuar con el bloque la columna derecha cambia a planificador.
 import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
@@ -114,7 +113,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     }
   }
 
-  const total = data.focus.length + data.overdue.length + data.today.length + data.seguimiento.length
+  const total = data.overdue.length + data.today.length + data.seguimiento.length
   if (total === 0) return null
 
   function openPlanner() {
@@ -191,7 +190,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     </button>
   )
 
-  const renderTaskRow = (n: Node, opts: { showDue?: boolean; inFocus?: boolean; inContext?: boolean }) => (
+  const renderTaskRow = (n: Node, opts: { showDue?: boolean; inContext?: boolean }) => (
     <div
       key={n.id}
       ref={registerRow(n.id)}
@@ -246,8 +245,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       {delBtn(n)}
     </div>
   )
-
-  const pendingFocus = data.focus.filter(n => n.status !== 'done').length
 
   // ── Reparto de contextos ───────────────────────────────────────────────────
   // «Para hacer» = contextos con tareas de hoy/atrasadas. «Seguimiento» = SOLO
@@ -320,13 +317,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   const groups = (
     <>
-      {data.focus.length > 0 && (
-        <div className="dc-group dc-group--focus">
-          {gHeader('focus', t('daily.focus'), 'dc-group-label--focus')}
-          {!collapsedG.has('focus') && data.focus.map(n => renderTaskRow(n, { inFocus: true }))}
-          {!collapsedG.has('focus') && pendingFocus > 3 && <div className="dc-focus-hint">{t('daily.focusHint')}</div>}
-        </div>
-      )}
       {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
           bajo su contexto; las que no tienen contexto, bajo «Sin contexto». */}
       {(() => {
@@ -402,7 +392,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   // Modal de fecha+recurrencia (al tocar el badge de fecha de una tarea).
   const propsNode = propsNodeId
-    ? [...data.focus, ...data.overdue, ...data.today, ...data.seguimiento].find(n => n.id === propsNodeId)
+    ? [...data.overdue, ...data.today, ...data.seguimiento].find(n => n.id === propsNodeId)
     : null
   const propsModal = propsNode
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
@@ -421,7 +411,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       <button className="dc-header" onClick={toggleCollapsed} aria-expanded={!collapsed}>
         <span className="dc-title">{t('daily.cockpitTitle')}</span>
         <span className="dc-counts">
-          {data.focus.length > 0 && <span className="dc-count dc-count--focus">🎯 {data.focus.length}</span>}
           {data.overdue.length > 0 && <span className="dc-count dc-count--overdue">{data.overdue.length} {t('daily.overdueShort')}</span>}
           {data.today.length > 0 && <span className="dc-count">{data.today.length} {t('daily.todayShort')}</span>}
           {data.seguimiento.length > 0 && <span className="dc-count dc-count--followup">{data.seguimiento.length} {t('daily.followupShort')}</span>}

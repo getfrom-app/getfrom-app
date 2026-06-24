@@ -6,7 +6,7 @@
 // ser `.dc-row`). Para tareas completadas solo se muestra borrar.
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
-import { isFocusedToday, toggleFocusToday } from '../../utils/dailyCockpit'
+import { scheduleTask } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 
 export default function TaskHoverActions({ node, onOpenDate }: {
@@ -16,13 +16,14 @@ export default function TaskHoverActions({ node, onOpenDate }: {
 }) {
   const { t } = useTranslation()
   const done = node.status === 'done'
-  const focused = isFocusedToday(node)
   return (
     <span className="dc-actions">
-      {!done && (
-        <button className="dc-action" title={focused ? t('daily.unfocus') : t('daily.toFocus')}
-          onClick={e => { e.stopPropagation(); toggleFocusToday(node) }}>
-          {focused ? '✕' : '🎯'}
+      {/* «Hoy» SOLO para tareas sin fecha (Por planificar): las programa para hoy.
+          Las tareas que ya tienen fecha no llevan este botón. */}
+      {!done && !node.due && (
+        <button className="dc-action dc-action--hoy" title="Programar para hoy"
+          onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
+          Hoy
         </button>
       )}
       {!done && (
