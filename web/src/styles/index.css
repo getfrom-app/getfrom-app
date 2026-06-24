@@ -13392,7 +13392,9 @@ textarea:focus-visible,
 .dc-row:has(.dc-row-main) { align-items: flex-start; }
 .dc-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dc-row-l1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.dc-row-l1 .dc-text { flex: 1; min-width: 0; }
+/* Texto de ancho NATURAL: el chip de contexto va justo detrás del texto (no al
+   extremo derecho). El texto solo se encoge/trunca si no cabe en la línea. */
+.dc-row-l1 .dc-text { flex: 0 1 auto; min-width: 0; }
 .dc-row-l2 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .dc-row-l2:empty { display: none; }
 /* Salida animada de una fila de contexto al cerrarla/eliminarla (no de golpe). */
