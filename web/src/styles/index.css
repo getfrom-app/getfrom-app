@@ -13378,6 +13378,7 @@ textarea:focus-visible,
 .dc-group-label--overdue { color: #dc2626; }
 .dc-group-label--bucle { color: #8b5cf6; }
 .dc-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -13566,16 +13567,26 @@ textarea:focus-visible,
   padding: 0 6px;
   border-radius: 5px;
 }
+/* Acciones de hover: FUERA del flujo (absolutas, flotando a la derecha) para que
+   NO reserven ancho → el texto de la tarea usa toda la línea hasta truncarse.
+   Aparecen como una mini-barra flotante al pasar el ratón. */
 .dc-actions {
-  flex-shrink: 0;
-  margin-left: auto;
+  position: absolute;
+  top: 3px;
+  right: 6px;
   display: flex;
-  gap: 2px;
+  gap: 1px;
   align-items: center;
   opacity: 0;
+  pointer-events: none;
+  background: var(--bg-elevated, #fff);
+  border: 1px solid var(--border, #e6e6e6);
+  border-radius: 7px;
+  padding: 1px 3px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.12);
   transition: opacity 0.12s;
 }
-.dc-row:hover .dc-actions { opacity: 1; }
+.dc-row:hover .dc-actions { opacity: 1; pointer-events: auto; }
 .dc-action {
   border: none;
   background: transparent;
