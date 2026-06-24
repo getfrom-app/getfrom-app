@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.557 · Mac v9.5.70 — 24 junio 2026 · Columna del día más limpia
+
+**Convertir un contexto en tarea**
+- **Clic derecho** sobre un contexto en la columna del día → **«Convertir en tarea»**: deja de ser contexto y pasa a ser una **tarea sin fecha** (a «Por planificar»).
+
+**Adiós «Foco de hoy»**
+- Quitamos el bloque **Foco de hoy**. En su lugar, las tareas **sin fecha** tienen un botón **«Hoy»** (al pasar el ratón) que las programa para hoy. Las tareas que ya tienen fecha no muestran ese botón.
+
+**Detalles visuales de la columna del día**
+- El texto de las tareas **aprovecha todo el ancho** antes de cortarse (las acciones de borrar/fecha ya no le roban espacio: aparecen flotando al pasar el ratón).
+- Los **chips de contexto** se colocan **justo detrás del texto** (no pegados al borde derecho), dejando libre el espacio sobrante.
+- La **«×»** para quitar el contexto aparece **flotando** al pasar el ratón, así el texto del chip queda siempre centrado.
+
 ## Web v9.6.552 · Mac v9.5.69 — 24 junio 2026 · Contextos más simples y chips unificados
 
 **Contextos: solo abierto o cerrado**
