@@ -635,22 +635,13 @@ Al abrir Fromly aterrizas directamente en la **nota del día de hoy** (no en la 
 
 ### «Tu día» — la foto de tu jornada
 
-Al inicio de la nota de hoy aparece el bloque **«Tu día»**, que reúne de un vistazo todo lo que requiere tu atención. Se puede colapsar y, si no hay nada, no se muestra. Tiene tres grupos:
+Al inicio de la nota de hoy aparece el bloque **«Tu día»**, que reúne de un vistazo todo lo que requiere tu atención. Se puede colapsar y, si no hay nada, no se muestra. Todo lo que ves son enlaces a tus notas reales: marcar una tarea ahí mismo actúa sobre el nodo original. Clic en el texto te lleva a la nota.
 
-- **🎯 Foco** — las 2-3 cosas que has decidido hacer hoy (ver abajo).
-- **Atrasadas** — tareas pendientes cuya fecha ya pasó (con su día en rojo).
-- **Para hoy** — tareas con fecha de hoy.
+- **Para hacer** — lo accionable, agrupado **bajo su contexto** (cada uno con un dot de su color). Aquí viven las atrasadas (con su día en rojo) y las de hoy; las que no tienen contexto van al final, bajo **«Sin contexto»**.
 - **Seguimiento** — tus tareas **sin fecha** (lo que tienes en curso); arranca colapsado con un contador.
+- **Por planificar** — tareas sin fecha que hay que agendar, colapsado por defecto.
 
-Todo lo que ves son enlaces a tus notas reales: marcar una tarea ahí mismo actúa sobre el nodo original. Clic en el texto te lleva a la nota.
-
-**El ritual matinal — Foco:** de entre todo lo que te toca hoy, elige unas pocas cosas que vas a hacer de verdad y mándalas al **Foco** (arriba del todo, destacado). El resto, despáchalo conscientemente:
-
-- Pasa el ratón sobre una tarea de Atrasadas/Hoy → aparecen dos acciones:
-  - **🎯 Al foco** — la sube al Foco.
-  - **⏭ Posponer** — *Mañana · +1 semana · Sin fecha*.
-- El Foco funciona mejor con 3 o menos (Fromly te lo recuerda si te pasas).
-- Cada mañana el Foco amanece vacío: el flag caduca solo al cambiar el día.
+**Despachar conscientemente:** pasa el ratón sobre una tarea → **⏭ Posponer** (*Mañana · +1 semana · Sin fecha*) o, si no tiene fecha, **Hoy** para programarla hoy.
 
 **Completar:** al marcar una tarea, el check se pone **verde**, queda tachada y baja con una animación al final de su grupo — sigue visible hasta mañana, no desaparece de golpe.
 
