@@ -23,6 +23,7 @@ import { gcalEventNodeId } from '../../utils/deterministicId'
 import { useUserStore } from '../../store/userStore'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
+import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
@@ -242,16 +243,20 @@ export default function DayColumn({
       {areaNodes.length > 0 && (
         <div className="dc-group">
           {header('areas', 'Áreas')}
-          {!collapsed.has('areas') && areaNodes.map(a => (
+          {!collapsed.has('areas') && areaNodes.map(a => {
+            const actx = firstContextOf(a)
+            return (
             <div key={a.id} className="dc-row" data-node-id={a.id}
               onClick={() => flyToArea(a.id)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}
               title="Ir a esta vista del lienzo" style={{ cursor: 'pointer' }}>
-              <span className="dc-event-dot" style={{ background: 'var(--accent,#6c5ce7)' }} />
+              <span className="dc-event-dot" style={{ background: actx ? contextColor(actx.id) : 'var(--accent,#6c5ce7)' }} />
               <span className="dc-text">{a.text ? renderInline(a.text) : 'Área'}</span>
+              <RowContextChip node={a} />
               {delBtn(a)}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
