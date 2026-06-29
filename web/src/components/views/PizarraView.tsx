@@ -483,7 +483,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // cacheado e invalida al cambiar un nodo, así que al persistir _pinX/_pinY el
   // array cambia de referencia y el layout recalcula (antes se memoizaba por
   // longitud → al mover una tarjeta no cambiaba la longitud → volvía a su sitio).
-  const children = store.children(parentId)
+  // Hijos del lienzo + los anidados dentro de ÁREAS (las cards de un área son sus
+  // hijas; el lienzo las pinta igual, por su pin). El área en sí se pinta como frame.
+  const directChildren = store.children(parentId)
+  const children = (() => {
+    const out = [...directChildren]
+    for (const n of directChildren) if (isArea(n)) out.push(...store.children(n.id).filter(c => !c.deletedAt))
+    return out
+  })()
   // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
   const refIds = readRefs(parentId)
   const refsKey = refIds.join(',')
@@ -1112,18 +1119,30 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const c = camRef.current, vp = viewportRef.current
     const x0 = (0 - c.x) / c.scale, y0 = (0 - c.y) / c.scale
     const w = vp.w / c.scale, h = vp.h / c.scale
-    store.createNode({
-      text: name.trim() || 'Área',
-      parentId,
-      extraData: {
-        [AREA]: '1',
-        [PIN_X]: String(Math.round(x0)),
-        [PIN_Y]: String(Math.round(y0)),
-        [AREA_W]: String(Math.round(w)),
-        [AREA_H]: String(Math.round(h)),
-        [PIN_SCALE]: String(Number(c.scale.toFixed(4))), // zoom de referencia para volar
-      },
-    })
+    store.beginBatch()
+    try {
+      const area = store.createNode({
+        text: name.trim() || 'Área',
+        parentId,
+        extraData: {
+          [AREA]: '1',
+          [PIN_X]: String(Math.round(x0)),
+          [PIN_Y]: String(Math.round(y0)),
+          [AREA_W]: String(Math.round(w)),
+          [AREA_H]: String(Math.round(h)),
+          [PIN_SCALE]: String(Number(c.scale.toFixed(4))), // zoom de referencia para volar
+        },
+      })
+      // Reparentar las CARDS cuyo pin cae dentro de la región como hijas del área.
+      // (No mueve nada visualmente: el pin es absoluto; solo cambia el padre en el árbol.)
+      for (const n of store.children(parentId)) {
+        if (n.id === area.id || isArea(n) || isHiddenPin(n)) continue
+        const p = readPin(n); if (!p) continue
+        if (p.x >= x0 && p.x <= x0 + w && p.y >= y0 && p.y <= y0 + h) {
+          store.updateNode(n.id, { parentId: area.id })
+        }
+      }
+    } finally { store.endBatch() }
   }, [parentId])
 
   // Borrar trazos cerca de (wx,wy) en mundo.
@@ -1847,7 +1866,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
 
       {/* ÁREAS — frames etiquetados (región rectangular) dibujados DETRÁS de las cards.
           Color del contexto; clic en la etiqueta vuela a la región. */}
-      {children.filter(isArea).map(a => {
+      {directChildren.filter(isArea).map(a => {
         const rect = readAreaRect(a); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale

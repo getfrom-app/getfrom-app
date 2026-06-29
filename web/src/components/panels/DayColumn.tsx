@@ -253,7 +253,13 @@ export default function DayColumn({
               <span className="dc-event-dot" style={{ background: actx ? contextColor(actx.id) : 'var(--accent,#6c5ce7)' }} />
               <span className="dc-text">{a.text ? renderInline(a.text) : 'Área'}</span>
               <RowContextChip node={a} />
-              {delBtn(a)}
+              <button className="dc-del" title="Eliminar área (las notas dentro vuelven a la nota)"
+                onClick={e => {
+                  e.stopPropagation()
+                  // Sacar las cards hijas de vuelta a la nota antes de borrar el área: no se pierden.
+                  for (const ch of store.children(a.id)) if (!ch.deletedAt) store.updateNode(ch.id, { parentId: a.parentId })
+                  trashNode(a.id)
+                }}>{TrashIcon}</button>
             </div>
             )
           })}
