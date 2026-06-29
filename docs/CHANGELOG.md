@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.563 · Mac v9.5.71 — 29 junio 2026 · Áreas del lienzo, como nodos de verdad
+
+Las **áreas** del lienzo (esas regiones que guardas con el botón de la barra para encontrar partes de la pizarra) pasan a comportarse como cualquier otro nodo:
+
+- **Son contenedores**: las tarjetas que quedan dentro de un área se vuelven **hijas** del área. Al crear el área sobre una zona con tarjetas, se recogen solas.
+- **Favorito ★ y renombrar**: marca un área como favorita o cámbiale el nombre con **doble clic** en la lista de Áreas.
+- **Agrupadas por contexto**: la lista de Áreas se ordena por **contexto** (con su color), así encuentras antes la que buscas.
+- **Mueve el área entera**: arrastra la **etiqueta** del marco y se mueve la región con **todas sus tarjetas** dentro. Un clic simple sigue volando a esa vista.
+- **Entrar y salir**: arrastra una tarjeta **dentro** de un área y pasa a pertenecerle; sácala y vuelve a la nota.
+- **Borrado seguro**: al eliminar un área, sus tarjetas **vuelven a la nota** (no se van a la papelera con ella).
+
 ## Web v9.6.557 · Mac v9.5.70 — 24 junio 2026 · Columna del día más limpia
 
 **Convertir un contexto en tarea**

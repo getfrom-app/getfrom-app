@@ -307,7 +307,12 @@ La Pizarra es un lienzo infinito de dibujo, escritura y organización dentro de 
 
 **Nodos y notas en el lienzo.** Arrastra cualquier nodo (tarea, nota, captura) al lienzo: se muestra como una tarjeta. Clic derecho abre el menú (duplicar, eliminar, favorito).
 
-**Guardar una vista (Áreas).** El botón de **marcador** de la barra guarda la posición y el zoom actuales como un acceso directo: aparece en el panel del día bajo **Áreas**; al pulsarlo, la cámara vuela a esa zona del lienzo.
+**Áreas (regiones del lienzo).** El botón de **marcador** de la barra guarda la zona visible como un **área**: una región con nombre que aparece como un **marco** en el lienzo y en el panel del día bajo **Áreas**. Un clic en su etiqueta vuela a esa zona. Las áreas se comportan como cualquier otro nodo:
+- **Son contenedores**: las tarjetas que quedan dentro del marco pasan a ser **hijas** del área (al crearla sobre una zona con tarjetas, se recogen solas).
+- **Favorito ★ y renombrar**: márcala como favorita o cámbiale el nombre con **doble clic** en la lista de Áreas. La lista se **agrupa por contexto** (con su color).
+- **Mover el área entera**: arrastra la **etiqueta** del marco y se mueve la región con **todas sus tarjetas** dentro.
+- **Entrar/salir**: arrastra una tarjeta **dentro** del marco y pasa a pertenecerle; sácala y vuelve a la nota.
+- **Borrado seguro**: al eliminar un área, sus tarjetas **vuelven a la nota** (no se borran con ella).
 
 Todo se guarda automáticamente.
 

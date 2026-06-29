@@ -285,6 +285,13 @@ A whiteboard is a freehand SVG drawing canvas inside a node.
 
 The whiteboard uses the same tools as the PDF viewer (pen, highlighter, text, eraser). Annotations are saved automatically.
 
+**Areas (canvas regions).** The **bookmark** button on the toolbar saves the visible region as an **area**: a named region shown as a **frame** on the canvas and listed in the day panel under **Areas**. Click its label to fly to that spot. Areas behave like any other node:
+- **They are containers**: cards inside the frame become **children** of the area (create one over a region with cards and they're collected automatically).
+- **Favorite ★ and rename**: star an area or rename it with a **double-click** in the Areas list. The list is **grouped by context** (with its color).
+- **Move the whole area**: drag the frame's **label** to move the region with **all its cards** inside.
+- **In/out**: drag a card **into** the frame and it belongs to the area; drag it out and it returns to the note.
+- **Safe delete**: deleting an area sends its cards **back to the note** (they're not trashed with it).
+
 ### AI Agent
 
 An agent is a special node that runs an AI task autonomously. You define what it should do (prompt), when it triggers (schedule) and what actions it can take (create nodes, search, read your tree).
