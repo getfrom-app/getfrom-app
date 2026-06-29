@@ -202,6 +202,16 @@ The event creation modal lets you:
 
 **Edit an event (iPhone and iPad).** In an event node's detail (or via «Turn into event» from its menu) you can adjust the **start and end time** and the **place**. If Google Calendar is connected, saving **creates or updates** it there, and «Delete event» removes it from Google Calendar too.
 
+### Follow-up task (task without a date)
+
+There's no separate type for "what you have in progress": it's simply a **task without a date**. A task with a date lands on its day; a task **without a date** is a **follow-up** and stays visible in the **«Follow-up»** section of the day panel until you mark it done or delete it. A normal checkbox, no type to decide.
+
+- **Create:** a task you don't give a date to. It's already a follow-up.
+- **Close:** mark it done (its checkbox). To put it back into follow-up, add or remove its date from its triage menu.
+- The day's «Follow-up» section starts **collapsed with a counter** (there are usually many undated tasks); expand it whenever you want.
+
+> Note: the old idea of «loops» was replaced by this. Your old loops turn into follow-up tasks on their own.
+
 ### Mirror ⬡
 
 A mirror is a synchronized reference to another node. It shows exactly the same content as the original. If you edit the mirror, you edit the original (and vice versa). If you edit the original, the mirror reflects the change immediately.
@@ -297,6 +307,33 @@ A prompt is a reusable text template for the AI. Create it once and use it whene
 **How to create a prompt:** slash menu → `/Prompt`.
 
 Useful for: "summarize this in 3 bullets", "extract the tasks", "translate to English", "improve the formal tone".
+
+### Log 🕐
+
+A log is a node with the **date and time in front of the text**, in a discreet chip (e.g. `Jun 10, 08:55`). It's for records: project progress, client follow-ups, a timestamped diary of facts.
+
+**How to create a log:**
+
+- Slash menu → `/Log`.
+- End the text with `-l` and press Enter.
+
+The date/time is stamped at the moment you create it and stays fixed in the chip (it isn't cleared when you edit the text).
+
+### Capture 🎬
+
+A **capture** is what you save when you **share a link or text to Fromly** from another app (see «Share to Fromly» below). It has its own icon and is **filterable**: the filter column has **«Captures»** to see them all. A capture of a video (TikTok, YouTube, Reel…) includes the clickable link, the author, a short description and the **transcription** of the audio under a «Transcription» heading.
+
+---
+
+## Share to Fromly (iPhone)
+
+When you watch a video on social media and want to keep **what it says, not the video**: tap **Share → Fromly**.
+
+- A **capture** is saved in today's diary with the link, the author, an automatic title and summary (in the video's language) and the full **transcription**.
+- It happens **in the background**: the note appears instantly and the transcription fills in on its own within seconds. You don't have to wait.
+- Works with **TikTok, YouTube, Instagram, X and many more**. If you share a regular link or text, it's saved as-is (without transcribing).
+- **The first time**, enable Fromly in the share sheet: swipe the app row to the end → **More / Edit** → enable **Fromly**.
+- Transcription uses your **AI tokens** (Pro, Lifetime or trial plan).
 
 ---
 
@@ -497,6 +534,24 @@ You can assign more than one context to the same node. It also works in unified 
 
 Contexts are special root nodes with `_tagDefinition` internally. They aren't system folders: they're normal tree nodes that Fromly assigns a tag function to.
 
+### Projects: contexts that open and close
+
+Inside a large context (an "area" like Media Sector) you can create **projects** — small subcontexts that start and finish. They're normal contexts, except they **open and close**.
+
+**Create and assign with `#`.** Type `#name` in any node or in quick capture:
+- If it doesn't exist, Fromly creates it. If you type `#name` alone (no other text), it takes you straight to the new context.
+- While you type the name (even without `#`), it appears as a suggestion (ghost text). Press `Enter` or `Tab` to assign it.
+- Assigning a project to a task doesn't move the task: it stays in your agenda and, at the same time, "enters" the project.
+
+**A project's page.** The center is a clean canvas for your notes, logs, tables, PDFs and images. In the right column:
+- **Status**: a **Close / Reopen** button (projects only; root areas are always active). A closed project disappears from suggestions but keeps everything.
+- **Parent context**: pick a context and this project becomes its subcontext.
+- **Contains**: everything assigned to it, with one click to open and an `×` to remove.
+
+**Context chips.** On any node, **click** a context chip to open it, or tap the **×** to remove it from that node.
+
+**In today's column** everything actionable lives in the **«To do»** block: today's and overdue tasks are grouped **under their context** (each with a dot in its color), and those without a context go at the end, under **«No context»**. The **Follow-up** block (undated tasks) sits below, collapsed.
+
 ### Filter by context from the sidebar
 
 Click any context in the sidebar. The central tree filters to show all nodes with that context assigned, and the right panel shows the context content.
@@ -544,6 +599,22 @@ Favorites are a quick bookmark for the nodes you use frequently.
 ---
 
 ## 11. The Agenda and the node system
+
+### The daily note is your command center
+
+When you open Fromly you land directly on **today's note** (not the root of the tree): it's the place you work from. If you navigate to another node and press **Escape**, you come back to today's note. The home button still takes you to the root of the tree whenever you want the structural view.
+
+### «Your day» — the snapshot of your day
+
+At the top of today's note appears the **«Your day»** block, which gathers at a glance everything that needs your attention. It can be collapsed and, if there's nothing, it isn't shown. Everything you see are links to your real notes: checking a task right there acts on the original node; clicking the text takes you to the note.
+
+- **To do** — your actionable items, grouped **under their context** (each with a dot in its color). Overdue tasks (their day in red) and today's tasks live here; the ones without a context go at the end under **«No context»**.
+- **Follow-up** — your **undated** tasks (what you have in progress); it starts collapsed with a counter.
+- **To plan** — undated tasks waiting for a date, collapsed by default.
+
+**Completing:** when you check a task, the check turns **green**, it gets struck through and slides with an animation to the end of its group — it stays visible until tomorrow, it doesn't vanish all at once.
+
+**Send to the planner:** drag any «Your day» row to the planner on the right to give it a time. The task stays in your list and gains a chip with the time.
 
 ### The Agenda — main view
 
@@ -876,14 +947,19 @@ Agents are configured in their properties panel:
 
 The Planner is Fromly's calendar view. Press `P` (with no active input) or the planner icon in the top bar to open and close it. It takes over the right panel.
 
-### Two views
+### Four views: Day · Week · Month · Year
 
-**Day view**: a 24-hour timeline with your tasks and events split into two zones:
+**Day view**: today, full screen (a single column). An hours timeline with your tasks and events that have a specific time; the blocks show their start time and can be resized to adjust the duration.
 
-- **"All day" strip** (top): shows the day's tasks that have a date but no assigned time, and Google Calendar all-day events. It's the starting point for planning: here you have everything left to place in time.
-- **Hours timeline** (bottom): shows tasks and events with a specific time. The blocks indicate their start time and can be resized to adjust the duration.
+**Week view**: several days in columns (between 2 and 7; drag the header to see more or fewer). The same hours timeline per column. At the top, an **"all day" strip** for tasks that have a date but no time: **click** the gap of a day to write a new task right there and press **Enter** (you can chain several in a row).
 
-**Year view**: the 12 months of the year in a responsive grid. Days with tasks or events appear with a dot. Click any day to navigate to that day's note in the Agenda.
+**Month view**: the month grid. Each day shows **all** of its tasks (rows grow taller if needed). **Clicking a task** takes you **to the task**; clicking an event opens its editor.
+
+**Year view**: the 12 months of the year in a grid. Days with tasks or events appear with a dot. Click any day to open its Day view.
+
+> Only items with a **time** appear in the hours timeline. Tasks with a date but no time live in the **"all day" strip** (top) and in the «Your day» section of the daily note.
+
+**Tasks vs events at a glance**: **tasks** are shown **without a fill** (a thin border with a touch of color); **Google events** are shown **with their background color**.
 
 **Navigation**: ‹ › buttons to go forward or back. **Today** button to return to the current day.
 
