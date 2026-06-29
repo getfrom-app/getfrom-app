@@ -90,7 +90,12 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           </button>
         )}
         <div className="node-ctx-sep" />
-        <button className="node-ctx-item node-ctx-item--danger" onClick={() => { trashNode(nodeId); onClose() }}>🗑 Eliminar</button>
+        <button className="node-ctx-item node-ctx-item--danger" onClick={() => {
+          // Si es un ÁREA (contenedor), sus hijos vuelven a la nota antes de borrar: no se pierden.
+          const isArea = JSON.parse(node.extraData || '{}')._area === '1'
+          if (isArea) for (const ch of store.children(nodeId)) if (!ch.deletedAt) store.updateNode(ch.id, { parentId: node.parentId })
+          trashNode(nodeId); onClose()
+        }}>🗑 Eliminar</button>
       </div>
       {ctxFlyout && (
         <div className="ctx-pick" style={{ position: 'fixed', top: ctxFlyout.top, left: ctxFlyout.left, zIndex: 3001 }}

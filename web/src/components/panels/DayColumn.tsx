@@ -108,6 +108,7 @@ export default function DayColumn({
   // Evento cuyo badge está en edición (popover hora/repetición).
   const [editEv, setEditEv] = useState<string | null>(null)
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  const [editArea, setEditArea] = useState<string | null>(null) // id del área en renombrado inline
   const patchEvent = (id: string, updates: Partial<Node>) => {
     store.updateNode(id, updates)
     const fresh = store.getNode(id)
@@ -239,32 +240,68 @@ export default function DayColumn({
         </div>
       )}
 
-      {/* Áreas — vistas guardadas del lienzo. Pulsa para volar a esa vista. */}
-      {areaNodes.length > 0 && (
-        <div className="dc-group">
-          {header('areas', 'Áreas')}
-          {!collapsed.has('areas') && areaNodes.map(a => {
-            const actx = firstContextOf(a)
-            return (
+      {/* Áreas — regiones del lienzo. Pulsa para volar; agrupadas por CONTEXTO. */}
+      {areaNodes.length > 0 && (() => {
+        // Agrupar por contexto (C): contextos con áreas + «Sin contexto» al final.
+        const byCtx = new Map<string, { ctx: Node | null; areas: Node[] }>()
+        for (const a of areaNodes) {
+          const cx = firstContextOf(a)
+          const key = cx?.id ?? '__none__'
+          if (!byCtx.has(key)) byCtx.set(key, { ctx: cx, areas: [] })
+          byCtx.get(key)!.areas.push(a)
+        }
+        const groups = [...byCtx.values()].sort((g1, g2) => (g1.ctx ? 0 : 1) - (g2.ctx ? 0 : 1))
+        const renderArea = (a: Node) => {
+          const actx = firstContextOf(a)
+          const dot = actx ? contextColor(actx.id) : 'var(--accent,#6c5ce7)'
+          const editing = editArea === a.id
+          return (
             <div key={a.id} className="dc-row" data-node-id={a.id}
-              onClick={() => flyToArea(a.id)}
+              onClick={() => { if (!editing) flyToArea(a.id) }}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}
-              title="Ir a esta vista del lienzo" style={{ cursor: 'pointer' }}>
-              <span className="dc-event-dot" style={{ background: actx ? contextColor(actx.id) : 'var(--accent,#6c5ce7)' }} />
-              <span className="dc-text">{a.text ? renderInline(a.text) : 'Área'}</span>
+              title="Ir a esta área del lienzo" style={{ cursor: 'pointer' }}>
+              <span className="dc-event-dot" style={{ background: dot }} />
+              {editing ? (
+                <input autoFocus defaultValue={a.text || ''} className="dc-text"
+                  style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', font: 'inherit', color: 'inherit' }}
+                  onClick={e => e.stopPropagation()}
+                  onBlur={e => { const v = e.target.value.trim(); if (v && v !== a.text) store.updateNode(a.id, { text: v }); setEditArea(null) }}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditArea(null) }} />
+              ) : (
+                <span className="dc-text" onDoubleClick={e => { e.stopPropagation(); setEditArea(a.id) }} title="Doble clic para renombrar">{a.text ? renderInline(a.text) : 'Área'}</span>
+              )}
               <RowContextChip node={a} />
+              <button className="dc-del" title={a.isFavorite ? 'Quitar de favoritos' : 'Marcar favorito'}
+                onClick={e => { e.stopPropagation(); store.updateNode(a.id, { isFavorite: !a.isFavorite }) }}
+                style={{ color: a.isFavorite ? '#f59e0b' : undefined }}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill={a.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M10 2.5l2.35 4.76 5.25.76-3.8 3.7.9 5.23L10 14.94l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>
+              </button>
               <button className="dc-del" title="Eliminar área (las notas dentro vuelven a la nota)"
                 onClick={e => {
                   e.stopPropagation()
-                  // Sacar las cards hijas de vuelta a la nota antes de borrar el área: no se pierden.
                   for (const ch of store.children(a.id)) if (!ch.deletedAt) store.updateNode(ch.id, { parentId: a.parentId })
                   trashNode(a.id)
                 }}>{TrashIcon}</button>
             </div>
-            )
-          })}
-        </div>
-      )}
+          )
+        }
+        return (
+          <div className="dc-group">
+            {header('areas', 'Áreas')}
+            {!collapsed.has('areas') && groups.map(g => (
+              <div key={g.ctx?.id ?? '__none__'}>
+                {byCtx.size > 1 && (
+                  <div className="rc-section-label" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '4px 0 2px' }}>
+                    {g.ctx && <span className="dc-event-dot" style={{ background: contextColor(g.ctx.id) }} />}
+                    {g.ctx ? g.ctx.text : 'Sin contexto'}
+                  </div>
+                )}
+                {g.areas.map(renderArea)}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* 5. Nodos del día (sin los eventos, que ya van arriba). En pizarra NO se
              monta aquí: los nodos viven en el lienzo (includeNodes=false). */}

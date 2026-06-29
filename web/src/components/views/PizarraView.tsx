@@ -474,6 +474,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // Drag de tarjeta (en curso): id + posición de mundo provisional + guías.
   const dragRef = useRef<{ id: string; startWorld: WorldPos; origin: WorldPos; moved: boolean } | null>(null)
   const [dragPos, setDragPos] = useState<{ id: string; pos: WorldPos } | null>(null)
+  // Arrastre del MARCO de un área desde su etiqueta → mueve la región + sus hijos.
+  const [areaDrag, setAreaDrag] = useState<{ id: string; dx: number; dy: number } | null>(null)
+  const areaDragRef = useRef<{ id: string; sx: number; sy: number; moved: boolean } | null>(null)
   const [guides, setGuides] = useState<{ vx?: number; hy?: number }>({})
 
   // Pan del lienzo (en curso).
@@ -680,7 +683,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       try { el.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       if (cur.moved) {
         const node = store.getNode(cur.id)
-        if (node) writePin(node, cur.last)
+        if (node) { writePin(node, cur.last); reparentByRegionRef.current(cur.id, cur.last) }
         setDragPos(null)
       } else {
         // Clic derecho limpio (sin mover) → menú contextual del nodo.
@@ -742,6 +745,22 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const scale = Number.isFinite(saved) && saved > 0 ? saved : Math.min(vp.w / rect.w, vp.h / rect.h) * 0.95
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
+
+  // Auto-reparentar una card según la REGIÓN donde cae su pin: si entra en un área →
+  // pasa a ser su hija; si sale de toda área → vuelve a la nota. Mantiene viva la
+  // jerarquía al arrastrar (las áreas viejas/marcadores no cuentan).
+  const reparentByRegion = useCallback((nodeId: string, pin: WorldPos) => {
+    const n = store.getNode(nodeId); if (!n || isArea(n)) return
+    let target: string | null = null
+    for (const a of store.children(parentId)) {
+      if (!isArea(a)) continue
+      const r = readAreaRect(a); if (!r) continue
+      if (pin.x >= r.x && pin.x <= r.x + r.w && pin.y >= r.y && pin.y <= r.y + r.h) { target = a.id; break }
+    }
+    const desired = target ?? parentId
+    if (n.parentId !== desired) store.updateNode(nodeId, { parentId: desired })
+  }, [parentId])
+  const reparentByRegionRef = useRef(reparentByRegion); reparentByRegionRef.current = reparentByRegion
 
   // ── Dibujo: persistir un trazo nuevo (ancho en MUNDO = grosor-pantalla/scale) ──
   const commitStroke = useCallback((worldPts: number[]) => {
@@ -1571,11 +1590,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         // CARDS de la selección: misma transformación sobre su pin (+ escala al escalar).
         for (const c of t.cards) {
           const n = store.getNode(c.id); if (!n) continue
-          if (cur.kind === 'move') {
-            writeCardSize(n, { pin: { x: c.px + cur.dx, y: c.py + cur.dy } })
-          } else {
-            writeCardSize(n, { pin: { x: cur.ax + (c.px - cur.ax) * cur.s, y: cur.ay + (c.py - cur.ay) * cur.s }, scale: Math.max(0.1, c.sc * cur.s) })
-          }
+          const np = cur.kind === 'move'
+            ? { x: c.px + cur.dx, y: c.py + cur.dy }
+            : { x: cur.ax + (c.px - cur.ax) * cur.s, y: cur.ay + (c.py - cur.ay) * cur.s }
+          writeCardSize(n, cur.kind === 'move' ? { pin: np } : { pin: np, scale: Math.max(0.1, c.sc * cur.s) })
+          reparentByRegion(c.id, np)
         }
       } else if (t.kind === 'move') {
         // Clic limpio (sin arrastrar) sobre un trazo → mini-menú duplicar/eliminar.
@@ -1626,7 +1645,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const dx = dp.pos.x - d.origin.x, dy = dp.pos.y - d.origin.y
         for (const m of grp.members) {
           const n = store.getNode(m.id)
-          if (n) writePin(n, { x: m.origin.x + dx, y: m.origin.y + dy })
+          if (n) { const np = { x: m.origin.x + dx, y: m.origin.y + dy }; writePin(n, np); reparentByRegion(m.id, np) }
         }
         if (grp.strokeIds.length) {
           const data = parsePizarra(store.getNode(parentId)?.body)
@@ -1638,7 +1657,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
         }
       } else if (d.moved && dp) {
-        if (node) writePin(node, dp.pos)
+        if (node) { writePin(node, dp.pos); reparentByRegion(node.id, dp.pos) }
       } else if (node) {
         // Clic limpio (sin arrastrar): el texto entra a EDITAR; el resto, seleccionar.
         // El mini-menú (duplicar/eliminar) vive SOLO en el clic derecho.
@@ -1873,12 +1892,31 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         const sw = rect.w * cam.scale, sh = rect.h * cam.scale
         // Culling: fuera del viewport → no montar.
         if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
+        const off = areaDrag?.id === a.id ? `translate(${areaDrag.dx}px, ${areaDrag.dy}px)` : undefined
         return (
-          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: `${col}0f` }}>
+          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: `${col}0f`, transform: off }}>
             <div
-              onClick={(e) => { e.stopPropagation(); flyToArea(a.id) }}
-              style={{ position: 'absolute', top: -13, left: 10, pointerEvents: 'auto', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: col, color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-              title="Ir a esta área"
+              onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); try { (e.target as HTMLElement).setPointerCapture(e.pointerId) } catch { /* noop */ }; areaDragRef.current = { id: a.id, sx: e.clientX, sy: e.clientY, moved: false } }}
+              onPointerMove={(e) => { const d = areaDragRef.current; if (!d || d.id !== a.id) return; const dx = e.clientX - d.sx, dy = e.clientY - d.sy; if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true; if (d.moved) setAreaDrag({ id: a.id, dx, dy }) }}
+              onPointerUp={(e) => {
+                const d = areaDragRef.current; areaDragRef.current = null; setAreaDrag(null)
+                if (!d || d.id !== a.id) return
+                if (!d.moved) { flyToArea(a.id); return }
+                const wdx = (e.clientX - d.sx) / cam.scale, wdy = (e.clientY - d.sy) / cam.scale
+                const node = store.getNode(a.id); if (!node) return
+                const r = readAreaRect(node)
+                store.beginBatch()
+                try {
+                  if (r) writePin(node, { x: r.x + wdx, y: r.y + wdy })
+                  for (const ch of store.children(a.id)) {
+                    if (ch.deletedAt) continue
+                    const p = readPin(ch); if (!p) continue
+                    writePin(ch, { x: p.x + wdx, y: p.y + wdy })
+                  }
+                } finally { store.endBatch() }
+              }}
+              style={{ position: 'absolute', top: -13, left: 10, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: col, color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', touchAction: 'none' }}
+              title="Arrastra para mover el área · clic para ir"
             >{a.text || 'Área'}</div>
           </div>
         )
