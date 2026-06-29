@@ -219,6 +219,14 @@ interface WBText { id: string; x: number; y: number; size: number; w: number; md
 interface WBConnector { id: string; a: string; b: string; c?: [number, number] }
 interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; connectors?: WBConnector[]; camX?: number; camY?: number; camScale?: number }
 
+// Portapapeles EN MEMORIA del lienzo: copiar/pegar la selección (trazos + cards)
+// entre pizarras de la misma sesión. Coords relativas al origen (min x,y) de la
+// selección. El texto plano se copia aparte al portapapeles del sistema (para pegar
+// en un editor de texto, donde solo interesa el texto).
+type PizClipCard = { text: string; body: string | null; types: string[]; dx: number; dy: number; sc: number; w: number }
+type PizClip = { strokes: WBStroke[]; cards: PizClipCard[]; text: string; ts: number }
+let pizarraClipboard: PizClip | null = null
+
 function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
   if (!body) return def
@@ -348,6 +356,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   // multiSel = nodos seleccionados; selStrokes = trazos (dibujos) seleccionados.
   const [multiSel, setMultiSel] = useState<Set<string>>(new Set())
   const [selStrokes, setSelStrokes] = useState<Set<string>>(new Set())
+  // Refs espejo (para handlers nativos con closure estable — useEffect deps []).
+  const multiSelRef = useRef(multiSel); multiSelRef.current = multiSel
+  const selStrokesRef = useRef(selStrokes); selStrokesRef.current = selStrokes
+  const parentIdRef = useRef(parentId); parentIdRef.current = parentId
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
   const marqueeRef = useRef<{ x0: number; y0: number } | null>(null)
 
@@ -391,6 +403,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     ids: string[]
     origin: Map<string, number[]>      // pts originales por id de trazo
     startWidth: Map<string, number>    // ancho original por id (para escalar)
+    cards: { id: string; px: number; py: number; sc: number }[]  // cards seleccionadas: pin + escala originales
     start: WorldPos
     anchor?: WorldPos                  // escalar: esquina opuesta (fija)
     corner?: WorldPos                  // escalar: esquina agarrada (original)
@@ -588,6 +601,28 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const onDown = (e: PointerEvent) => {
       suppressContextRef.current = false   // resetea de un right-click anterior
       if (e.button !== 2) return
+      // GRUPO: si hay una selección activa (cards y/o trazos), botón derecho + arrastrar
+      // mueve TODA la selección junta vía el xf (preview/commit los gestiona React).
+      if (toolRef.current === 'select' && (multiSelRef.current.size + selStrokesRef.current.size) > 0) {
+        const r0 = el.getBoundingClientRect()
+        const start = s2w(e.clientX - r0.left, e.clientY - r0.top)
+        const all = parsePizarra(store.getNode(parentIdRef.current)?.body).strokes
+        const ids = [...selStrokesRef.current]
+        const origin = new Map<string, number[]>()
+        const startWidth = new Map<string, number>()
+        for (const s of all) if (selStrokesRef.current.has(s.id)) { origin.set(s.id, [...s.pts]); startWidth.set(s.id, s.w) }
+        const cards: { id: string; px: number; py: number; sc: number }[] = []
+        for (const id of multiSelRef.current) {
+          const n = store.getNode(id); if (!n) continue
+          const p = layoutRef.current.get(id) ?? readPin(n); if (!p) continue
+          cards.push({ id, px: p.x, py: p.y, sc: readCardScale(n) })
+        }
+        xfRef.current = { kind: 'move', ids, origin, startWidth, cards, start, moved: false }
+        setXf({ kind: 'move', dx: 0, dy: 0 })
+        try { el.setPointerCapture(e.pointerId) } catch { /* noop */ }
+        suppressContextRef.current = true   // este right-click lo maneja el group-drag
+        return
+      }
       const card = (e.target as HTMLElement)?.closest?.('[data-card][data-node-id]') as HTMLElement | null
       if (!card || card.classList.contains('pizarra-node--el')) return
       const id = card.getAttribute('data-node-id'); if (!id) return
@@ -772,6 +807,31 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       const items = Array.from(e.clipboardData?.items || [])
       const c = camRef.current, vp = viewportRef.current
       const world = { x: (vp.w / 2 - c.x) / c.scale, y: (vp.h / 2 - c.y) / c.scale }
+      // PEGAR selección copiada del lienzo (trazos + cards) — solo si el portapapeles
+      // del sistema sigue siendo el nuestro (si copiaron otro texto, no la usamos).
+      const sysText = e.clipboardData?.getData('text/plain') ?? ''
+      if (pizarraClipboard && sysText === pizarraClipboard.text && (pizarraClipboard.cards.length + pizarraClipboard.strokes.length) > 0) {
+        e.preventDefault()
+        const clip = pizarraClipboard
+        store.beginBatch()
+        try {
+          for (const cd of clip.cards) {
+            const ed: Record<string, string> = {
+              [PIN_X]: String(Math.round(world.x + cd.dx)), [PIN_Y]: String(Math.round(world.y + cd.dy)),
+              [PIN_SCALE]: '1', _cardScale: String(cd.sc), _pinW: String(Math.round(cd.w)),
+            }
+            const node = store.createNode({ text: cd.text, parentId, siblingOrder: 0, types: cd.types, extraData: ed })
+            if (cd.body != null) store.updateNode(node.id, { body: cd.body })
+          }
+          if (clip.strokes.length) {
+            const data = parsePizarra(store.getNode(parentId)?.body)
+            const add = clip.strokes.map(s => ({ ...s, id: rid(), pts: s.pts.map((v, i) => i % 2 === 0 ? v + world.x : v + world.y) }))
+            data.strokes = [...data.strokes, ...add]
+            store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+          }
+        } finally { store.endBatch() }
+        return
+      }
       const img = items.find(it => it.type.startsWith('image/'))
       if (img) { const f = img.getAsFile(); if (f) { e.preventDefault(); void uploadAndPinFiles([f], world) } return }
       const text = (e.clipboardData?.getData('text/plain') || '').trim()
@@ -856,6 +916,36 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     clearSelection()
   }, [multiSel, selStrokes, parentId, duplicateNode, clearSelection])
 
+  // COPIAR la selección (trazos + cards) «tal cual». La guarda en el portapapeles en
+  // memoria del lienzo (para pegar en CUALQUIER pizarra) y, aparte, copia el TEXTO
+  // plano al portapapeles del sistema (para pegar en un editor de texto). Coords
+  // relativas al origen (min x,y) de la selección → se pega centrado donde toque.
+  const copySelection = useCallback(() => {
+    const data = parsePizarra(store.getNode(parentId)?.body)
+    const strokes = data.strokes.filter(s => selStrokes.has(s.id))
+    // Origen = mínimo (x,y) de todo lo seleccionado (trazos + cards).
+    let ox = Infinity, oy = Infinity
+    for (const s of strokes) for (let i = 0; i + 1 < s.pts.length; i += 2) { ox = Math.min(ox, s.pts[i]); oy = Math.min(oy, s.pts[i + 1]) }
+    const cardPins = new Map<string, WorldPos>()
+    for (const id of multiSel) { const n = store.getNode(id); if (!n) continue; const p = layout.get(id) ?? readPin(n); if (p) { cardPins.set(id, p); ox = Math.min(ox, p.x); oy = Math.min(oy, p.y) } }
+    if (!isFinite(ox)) { ox = 0; oy = 0 }
+    const cards: PizClipCard[] = []
+    const textParts: string[] = []
+    for (const id of multiSel) {
+      const n = store.getNode(id); if (!n) continue
+      const p = cardPins.get(id) ?? { x: ox, y: oy }
+      cards.push({ text: n.text || '', body: n.body ?? null, types: [...(n.types || [])], dx: p.x - ox, dy: p.y - oy, sc: readCardScale(n), w: readCardW(n) })
+      if (n.text) textParts.push(n.text)
+    }
+    const plain = textParts.join('\n')
+    pizarraClipboard = {
+      strokes: strokes.map(s => ({ ...s, id: rid(), g: undefined, pts: s.pts.map((v, i) => i % 2 === 0 ? v - ox : v - oy) })),
+      cards, text: plain, ts: Date.now(),
+    }
+    try { void navigator.clipboard.writeText(plain) } catch { /* sin permiso → solo portapapeles interno */ }
+    setMenuPos(null)
+  }, [parentId, selStrokes, multiSel, layout])
+
   // Retroceso / Suprimir: borra los elementos seleccionados del lienzo. No se
   // dispara mientras se edita texto o se escribe en un campo (deja borrar letras).
   useEffect(() => {
@@ -927,6 +1017,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   }, [multiSel, selStrokes, parentId, screenToWorld, clearSelection])
 
   // ── Interacción de TRAZOS (herramienta «seleccionar») ─────────────────────────
+  // Captura las cards seleccionadas (multiSel) con su pin + escala actuales, para
+  // transformarlas (mover/escalar) junto con los trazos en una sola operación.
+  const captureSelCards = useCallback((): { id: string; px: number; py: number; sc: number }[] => {
+    const out: { id: string; px: number; py: number; sc: number }[] = []
+    for (const id of multiSel) {
+      const n = store.getNode(id); if (!n) continue
+      const p = layout.get(id) ?? readPin(n); if (!p) continue
+      out.push({ id, px: p.x, py: p.y, sc: readCardScale(n) })
+    }
+    return out
+  }, [multiSel, layout])
+
   // Pointer down sobre un trazo → seleccionarlo (o conservar la multiselección si ya
   // estaba) e iniciar arrastre para MOVERLO.
   const onStrokePointerDown = useCallback((e: React.PointerEvent, sid: string) => {
@@ -942,10 +1044,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     for (const s of all) if (ids.includes(s.id)) { origin.set(s.id, [...s.pts]); startWidth.set(s.id, s.w) }
     const rect = containerRef.current!.getBoundingClientRect()
     const start = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    xfRef.current = { kind: 'move', ids, origin, startWidth, start, moved: false }
+    // Si la multiselección también tiene cards, moverlas junto a los trazos.
+    const cards = alreadySel ? captureSelCards() : []
+    xfRef.current = { kind: 'move', ids, origin, startWidth, cards, start, moved: false }
     containerRef.current!.setPointerCapture(e.pointerId)
     setXf({ kind: 'move', dx: 0, dy: 0 })
-  }, [parentId, selStrokes, screenToWorld])
+  }, [parentId, selStrokes, screenToWorld, captureSelCards])
 
   // Pointer down en una manija de esquina → ESCALAR (uniforme) respecto a la esquina
   // opuesta (anclada). `corner` y `anchor` en coords de mundo.
@@ -959,10 +1063,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     for (const s of all) if (selStrokes.has(s.id)) { origin.set(s.id, [...s.pts]); startWidth.set(s.id, s.w) }
     const rect = containerRef.current!.getBoundingClientRect()
     const start = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    xfRef.current = { kind: 'scale', ids, origin, startWidth, start, anchor, corner, moved: false }
+    xfRef.current = { kind: 'scale', ids, origin, startWidth, cards: captureSelCards(), start, anchor, corner, moved: false }
     containerRef.current!.setPointerCapture(e.pointerId)
     setXf({ kind: 'scale', ax: anchor.x, ay: anchor.y, s: 1 })
-  }, [parentId, selStrokes, screenToWorld])
+  }, [parentId, selStrokes, screenToWorld, captureSelCards])
 
   // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
   // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
@@ -1405,6 +1509,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           return { ...s, w: Math.max(0.2, w0 * cur.s), pts: orig.map((v, i) => i % 2 === 0 ? cur.ax + (v - cur.ax) * cur.s : cur.ay + (v - cur.ay) * cur.s) }
         })
         store.updateNode(parentId, { body: bodyWithPizarra(store.getNode(parentId)?.body, data) })
+        // CARDS de la selección: misma transformación sobre su pin (+ escala al escalar).
+        for (const c of t.cards) {
+          const n = store.getNode(c.id); if (!n) continue
+          if (cur.kind === 'move') {
+            writeCardSize(n, { pin: { x: c.px + cur.dx, y: c.py + cur.dy } })
+          } else {
+            writeCardSize(n, { pin: { x: cur.ax + (c.px - cur.ax) * cur.s, y: cur.ay + (c.py - cur.ay) * cur.s }, scale: Math.max(0.1, c.sc * cur.s) })
+          }
+        }
       } else if (t.kind === 'move') {
         // Clic limpio (sin arrastrar) sobre un trazo → mini-menú duplicar/eliminar.
         setMenuPos({ x: e.clientX, y: e.clientY })
@@ -1889,8 +2002,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       )}
 
       {/* Recuadro de selección de trazos + manijas de esquina (ampliar/reducir). */}
-      {tool === 'select' && selStrokes.size > 0 && (() => {
-        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+      {tool === 'select' && (selStrokes.size + multiSel.size) > 0 && !marquee && (() => {
+        const cont = containerRef.current?.getBoundingClientRect()
+        if (!cont) return null
+        const S = cam.scale
+        // BBox en pantalla (relativo al contenedor) uniendo TRAZOS y CARDS de la selección,
+        // para que la caja abarque todos los elementos, no solo el dibujo.
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
         for (const s of parsePizarra(store.getNode(parentId)?.body).strokes) {
           if (!selStrokes.has(s.id)) continue
           let pts = s.pts
@@ -1898,20 +2016,31 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             if (xf.kind === 'move') pts = s.pts.map((v, i) => i % 2 === 0 ? v + xf.dx : v + xf.dy)
             else pts = s.pts.map((v, i) => i % 2 === 0 ? xf.ax + (v - xf.ax) * xf.s : xf.ay + (v - xf.ay) * xf.s)
           }
-          for (let i = 0; i + 1 < pts.length; i += 2) { x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]); y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]) }
+          for (let i = 0; i + 1 < pts.length; i += 2) {
+            const sx = cam.x + pts[i] * S, sy = cam.y + pts[i + 1] * S
+            minX = Math.min(minX, sx); maxX = Math.max(maxX, sx); minY = Math.min(minY, sy); maxY = Math.max(maxY, sy)
+          }
         }
-        if (!isFinite(x0)) return null
-        const S = cam.scale
-        const sx0 = cam.x + x0 * S, sy0 = cam.y + y0 * S, sx1 = cam.x + x1 * S, sy1 = cam.y + y1 * S
+        // Cards: su rect de pantalla del DOM (ya refleja el preview del xf vía `p`).
+        for (const id of multiSel) {
+          const el = containerRef.current?.querySelector(`[data-card][data-node-id="${CSS.escape(id)}"]`) as HTMLElement | null
+          if (!el) continue
+          const r = el.getBoundingClientRect()
+          minX = Math.min(minX, r.left - cont.left); maxX = Math.max(maxX, r.right - cont.left)
+          minY = Math.min(minY, r.top - cont.top); maxY = Math.max(maxY, r.bottom - cont.top)
+        }
+        if (!isFinite(minX)) return null
+        // Esquinas en MUNDO (para el ancla del escalado) a partir del punto de pantalla.
+        const wTL = screenToWorld(minX, minY), wBR = screenToWorld(maxX, maxY)
         const corners = [
-          { wx: x0, wy: y0, ax: x1, ay: y1, sx: sx0, sy: sy0, cur: 'nwse-resize' },
-          { wx: x1, wy: y0, ax: x0, ay: y1, sx: sx1, sy: sy0, cur: 'nesw-resize' },
-          { wx: x0, wy: y1, ax: x1, ay: y0, sx: sx0, sy: sy1, cur: 'nesw-resize' },
-          { wx: x1, wy: y1, ax: x0, ay: y0, sx: sx1, sy: sy1, cur: 'nwse-resize' },
+          { sx: minX, sy: minY, wx: wTL.x, wy: wTL.y, ax: wBR.x, ay: wBR.y, cur: 'nwse-resize' },
+          { sx: maxX, sy: minY, wx: wBR.x, wy: wTL.y, ax: wTL.x, ay: wBR.y, cur: 'nesw-resize' },
+          { sx: minX, sy: maxY, wx: wTL.x, wy: wBR.y, ax: wBR.x, ay: wTL.y, cur: 'nesw-resize' },
+          { sx: maxX, sy: maxY, wx: wBR.x, wy: wBR.y, ax: wTL.x, ay: wTL.y, cur: 'nwse-resize' },
         ]
         return (
           <>
-            <div style={{ position: 'absolute', left: Math.min(sx0, sx1) - 4, top: Math.min(sy0, sy1) - 4, width: Math.abs(sx1 - sx0) + 8, height: Math.abs(sy1 - sy0) + 8, border: '1px dashed var(--accent,#6c5ce7)', borderRadius: 3, pointerEvents: 'none', zIndex: 6 }} />
+            <div style={{ position: 'absolute', left: minX - 4, top: minY - 4, width: (maxX - minX) + 8, height: (maxY - minY) + 8, border: '1px dashed var(--accent,#6c5ce7)', borderRadius: 3, pointerEvents: 'none', zIndex: 6 }} />
             {corners.map((c, i) => (
               <div key={i}
                 onPointerDown={(e) => onScaleHandlePointerDown(e, { x: c.wx, y: c.wy }, { x: c.ax, y: c.ay })}
@@ -1948,6 +2077,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           {(multiSel.size + selStrokes.size) > 1 && (
             <button style={miniItem} onClick={() => groupSelection()}>Agrupar</button>
           )}
+          <button style={miniItem} onClick={() => copySelection()}>Copiar</button>
           <button style={miniItem} onClick={() => duplicateSelection()}>Duplicar</button>
           <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>Eliminar</button>
         </div>
@@ -2051,11 +2181,19 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           const m = groupRef.current.members.find(mm => mm.id === node.id)
           if (m) p = { x: m.origin.x + groupDelta.x, y: m.origin.y + groupDelta.y }
         }
+        // Preview de la transformación de SELECCIÓN unificada (mover/escalar todo junto):
+        // si esta card está en la operación xf en curso, aplicar el delta a su pin/escala.
+        const xfCard = xf ? xfRef.current?.cards.find(c => c.id === node.id) : undefined
+        let xfScale = 1
+        if (xfCard && xf) {
+          if (xf.kind === 'move') p = { x: xfCard.px + xf.dx, y: xfCard.py + xf.dy }
+          else { p = { x: xf.ax + (xfCard.px - xf.ax) * xf.s, y: xf.ay + (xfCard.py - xf.ay) * xf.s }; xfScale = xf.s }
+        }
         // Tamaño: ancho (_pinW) y escala (_cardScale), con preview en vivo si se redimensiona.
         const live = nodeRz?.id === node.id ? nodeRz : null
         if (live) p = live.pin
         const cardW = live ? live.w : readCardW(node)
-        const cardScale = live ? live.scale : readCardScale(node)
+        const cardScale = (live ? live.scale : readCardScale(node)) * xfScale
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
