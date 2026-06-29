@@ -25,6 +25,7 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
+import { firstContextOf, contextColor } from '../../utils/cajones'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
@@ -92,6 +93,29 @@ function readPin(node: Node): WorldPos | null {
 // ¿Es un marcador de vista (no se pinta en el lienzo)?
 function isHiddenPin(node: Node): boolean {
   try { return JSON.parse(node.extraData || '{}')[PIN_HIDDEN] === '1' } catch { return false }
+}
+
+// ── ÁREAS: región rectangular del lienzo (contenedora). El área es un nodo
+// `_area='1'` con su rect en mundo (_pinX/_pinY = esquina sup-izq, _areaW/_areaH =
+// tamaño). Las cards dentro son sus hijas; el área es hija de la nota. Se dibuja como
+// un frame etiquetado y NO se pinta como tarjeta. ──────────────────────────────
+const AREA = '_area'
+const AREA_W = '_areaW'
+const AREA_H = '_areaH'
+function isArea(node: Node): boolean {
+  try { return JSON.parse(node.extraData || '{}')[AREA] === '1' } catch { return false }
+}
+function readAreaRect(node: Node): { x: number; y: number; w: number; h: number } | null {
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch { return null }
+  if (ed[AREA] !== '1') return null
+  const x = Number(ed[PIN_X]), y = Number(ed[PIN_Y])
+  const w = Number(ed[AREA_W]), h = Number(ed[AREA_H])
+  if ([x, y, w, h].every(v => Number.isFinite(v)) && w > 0 && h > 0) return { x, y, w, h }
+  // Compat: área «vieja» (punto + zoom) → rect aproximado del viewport de entonces.
+  const sc = Number(ed[PIN_SCALE]) || 1
+  if (Number.isFinite(x) && Number.isFinite(y)) return { x, y, w: 1280 / sc, h: 820 / sc }
+  return null
 }
 
 // Lee el zoom guardado del nodo (_pinScale). Default 1.
@@ -477,7 +501,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
-      if (isHiddenPin(n)) continue // marcador de vista → no se pinta en el lienzo
+      if (isHiddenPin(n) || isArea(n)) continue // marcador de vista / área (frame) → no es card
       const pin = readPin(n)
       if (pin) map.set(n.id, pin)
     }
@@ -699,6 +723,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     const pin = readPin(node); if (!pin) return
     flyTo(pin.x + CARD_W / 2, pin.y + CARD_MIN_H / 2, readPinScale(node))
   }, [flyTo])
+
+  // Volar a un ÁREA: centra su región y ajusta el zoom para encuadrarla (usa el zoom
+  // guardado si lo tiene; si no, encaja la región en el viewport).
+  const flyToArea = useCallback((id: string) => {
+    const a = store.getNode(id); if (!a) return
+    const rect = readAreaRect(a); if (!rect) { flyToNode(a); return }
+    const vp = viewportRef.current
+    let ed: Record<string, unknown> = {}; try { ed = JSON.parse(a.extraData || '{}') } catch { /* vacío */ }
+    const saved = Number(ed[PIN_SCALE])
+    const scale = Number.isFinite(saved) && saved > 0 ? saved : Math.min(vp.w / rect.w, vp.h / rect.h) * 0.95
+    flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
+  }, [flyTo, flyToNode])
 
   // ── Dibujo: persistir un trazo nuevo (ancho en MUNDO = grosor-pantalla/scale) ──
   const commitStroke = useCallback((worldPts: number[]) => {
@@ -1068,22 +1104,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
     setXf({ kind: 'scale', ax: anchor.x, ay: anchor.y, s: 1 })
   }, [parentId, selStrokes, screenToWorld, captureSelCards])
 
-  // Guardar la VISTA actual (centro del viewport + zoom) como un nodo nuevo.
-  // Aparece en el panel del día; al pulsar su dot, la cámara vuela a esta vista.
+  // Crear un ÁREA = la REGIÓN visible ahora mismo (el viewport en coords de mundo).
+  // Se dibuja como un frame etiquetado en el lienzo y aparece en «Áreas» de la columna;
+  // al pulsarla, la cámara vuela a esa región. Las cards dentro se reparentan como hijas
+  // (Fase 2). El área es hija de la nota.
   const saveViewAsNode = useCallback((name: string) => {
     const c = camRef.current, vp = viewportRef.current
-    const wx = (vp.w / 2 - c.x) / c.scale
-    const wy = (vp.h / 2 - c.y) / c.scale
-    // El pin se guarda restando medio CARD para que al volar quede centrado igual.
+    const x0 = (0 - c.x) / c.scale, y0 = (0 - c.y) / c.scale
+    const w = vp.w / c.scale, h = vp.h / c.scale
     store.createNode({
-      text: name.trim() || 'Vista',
+      text: name.trim() || 'Área',
       parentId,
       extraData: {
-        _area: '1', // vista guardada → bloque «Áreas» de la columna derecha
-        [PIN_X]: String(Math.round(wx - CARD_W / 2)),
-        [PIN_Y]: String(Math.round(wy - CARD_MIN_H / 2)),
-        [PIN_SCALE]: String(Number(c.scale.toFixed(4))),
-        [PIN_HIDDEN]: '1', // marcador: solo en la columna, no se pinta en el lienzo
+        [AREA]: '1',
+        [PIN_X]: String(Math.round(x0)),
+        [PIN_Y]: String(Math.round(y0)),
+        [AREA_W]: String(Math.round(w)),
+        [AREA_H]: String(Math.round(h)),
+        [PIN_SCALE]: String(Number(c.scale.toFixed(4))), // zoom de referencia para volar
       },
     })
   }, [parentId])
@@ -1106,11 +1144,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
       const id = (e as CustomEvent<{ nodeId?: string }>).detail?.nodeId
       if (!id) return
       const n = store.getNode(id)
-      if (n && store.children(parentId).some(c => c.id === id)) flyToNode(n)
+      if (!n) return
+      if (isArea(n)) { flyToArea(id); return }
+      if (store.children(parentId).some(c => c.id === id)) flyToNode(n)
     }
     window.addEventListener('from:pizarra-flyto', h)
     return () => window.removeEventListener('from:pizarra-flyto', h)
-  }, [flyToNode, parentId])
+  }, [flyToNode, flyToArea, parentId])
 
   // ── Zoom con la rueda, anclado al cursor ────────────────────────────────────
   // Listener NATIVO (no passive) para poder preventDefault: en modo pizarra la
@@ -1804,6 +1844,26 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} />
         </div>
       )}
+
+      {/* ÁREAS — frames etiquetados (región rectangular) dibujados DETRÁS de las cards.
+          Color del contexto; clic en la etiqueta vuela a la región. */}
+      {children.filter(isArea).map(a => {
+        const rect = readAreaRect(a); if (!rect) return null
+        const col = (() => { const cx = firstContextOf(a); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
+        const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
+        const sw = rect.w * cam.scale, sh = rect.h * cam.scale
+        // Culling: fuera del viewport → no montar.
+        if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
+        return (
+          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: `${col}0f` }}>
+            <div
+              onClick={(e) => { e.stopPropagation(); flyToArea(a.id) }}
+              style={{ position: 'absolute', top: -13, left: 10, pointerEvents: 'auto', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: col, color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+              title="Ir a esta área"
+            >{a.text || 'Área'}</div>
+          </div>
+        )
+      })}
 
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}
