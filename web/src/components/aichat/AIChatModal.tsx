@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { useAIChat, type ChatMessage, type PendingAction } from '../../store/aiChatStore'
 import { store } from '../../store/nodeStore'
 import ContextChips, { expandSpecialPrompt } from './ContextChips'
+import { aiLangBCP47 } from '../../utils/aiLang'
 
 /** Chips de seguimiento que aparecen debajo del último mensaje del assistant */
 function QuickReplyChips({ chips, onSelect, disabled }: {
@@ -104,7 +105,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rec: any = new (SR as any)()
-    rec.lang = (localStorage.getItem('from_ai_language') === 'en') ? 'en-US' : 'es-ES'
+    rec.lang = aiLangBCP47()
     rec.continuous = true
     rec.interimResults = true
 

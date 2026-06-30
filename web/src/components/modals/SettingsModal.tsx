@@ -15,6 +15,7 @@ import type { Node } from '../../types'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
+import { aiLangBCP47 } from '../../utils/aiLang'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -467,7 +468,7 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
 export function IAPane() {
   const { t } = useTranslation()
   const us = useUserStore()
-  const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'es')
+  const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'auto')
 
   // Las API keys propias son un extra de la licencia perpetua (lifetime).
   const isLifetime = us.user?.licenseStatus === 'active'
@@ -1236,7 +1237,7 @@ function VozPane() {
     const rec = new SR()
     rec.continuous = true
     rec.interimResults = true
-    rec.lang = localStorage.getItem('from_ai_language') === 'en' ? 'en-US' : 'es-ES'
+    rec.lang = aiLangBCP47()
     rec.onresult = (event: any) => {
       let text = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {

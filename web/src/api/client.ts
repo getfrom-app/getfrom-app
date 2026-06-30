@@ -1,3 +1,5 @@
+import { aiLangBase } from '../utils/aiLang'
+
 const BASE = import.meta.env.DEV
   ? '/api'
   : 'https://from-server-production.up.railway.app'
@@ -127,7 +129,7 @@ export async function logout() {
 // store=true → además guarda el audio en R2 y devuelve audioKey (para grabaciones largas).
 export interface TranscribeResult { text: string; audioKey: string | null; durationSec: number }
 export async function transcribeAudio(blob: Blob, store = false): Promise<TranscribeResult> {
-  const lang = localStorage.getItem('from_ai_language') === 'en' ? 'en' : 'es'
+  const lang = aiLangBase()
   const form = new FormData()
   form.append('audio', blob, 'audio.wav')
   const data = await apiRequest<{ text?: string; audioKey?: string | null; durationSec?: number }>(
