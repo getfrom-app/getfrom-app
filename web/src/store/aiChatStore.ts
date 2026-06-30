@@ -22,7 +22,7 @@ import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { resolvePrompt } from '../utils/promptsHelper'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
-import i18n from '../i18n/config'
+import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 
 export interface UndoBundle {
@@ -890,9 +890,11 @@ class AIChatStore {
     // ── Aprendizajes del usuario (sistema "Enseñar a Magic") ───────────────
     const learningsBlock = learningsStore.buildPromptBlock()
 
-    // Locale del usuario — determina el idioma de las respuestas del AI
-    const userLocale = localStorage.getItem('fromly-lang') ?? i18n.language ?? 'en'
-    const dateLocale = userLocale.startsWith('en') ? 'en-US' : 'es-ES'
+    // Locale del usuario — determina el idioma de las respuestas del AI.
+    // Respeta la elección explícita de idioma de IA; si es 'auto'/sin definir
+    // sigue el idioma de la interfaz. Nunca asume español.
+    const userLocale = aiLangBase()
+    const dateLocale = aiLangBCP47()
 
     // Fecha actual — crítico para interpretar "mañana", "hoy", fechas relativas
     const nowStr = new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
