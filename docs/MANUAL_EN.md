@@ -1178,9 +1178,9 @@ Your data isn't locked into Fromly. The export is complete, unrestricted and wor
 
 ### Language
 
-Fromly is available in Spanish and English. The language is detected automatically from your browser or operating system settings.
+Fromly is available in **12 languages**: Spanish, English, German, French, Italian, Portuguese, Greek, Dutch, Polish, Russian, Turkish and Swedish. The language is detected automatically from your browser or operating system settings (English if yours isn't available — it never assumes Spanish).
 
-To change it manually: **Settings → 🌐 Language** and choose between Español and English. The change applies immediately without reloading.
+To change it manually: **Settings → 🌐 Language** and choose your language. The change applies immediately without reloading. Tooltips, help texts and field placeholders are also translated, and the AI and voice follow the same interface language.
 
 ### Appearance
 

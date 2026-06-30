@@ -1211,9 +1211,9 @@ Tus datos no están atrapados en Fromly. La exportación es completa, sin restri
 
 ### Idioma
 
-Fromly está disponible en español e inglés. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo.
+Fromly está disponible en **12 idiomas**: español, inglés, alemán, francés, italiano, portugués, griego, neerlandés, polaco, ruso, turco y sueco. El idioma se detecta automáticamente a partir de la configuración de tu navegador o sistema operativo (inglés si el tuyo no está disponible — nunca asume español).
 
-Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige entre Español e English. El cambio se aplica de inmediato sin necesidad de recargar.
+Para cambiarlo manualmente: **Ajustes → 🌐 Idioma** y elige tu idioma. El cambio se aplica de inmediato sin necesidad de recargar. Los tooltips, los textos de ayuda y los marcadores de los campos también están traducidos, y la IA y la voz siguen el mismo idioma de la interfaz.
 
 ### Apariencia
 
