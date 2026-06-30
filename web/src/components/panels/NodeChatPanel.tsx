@@ -105,7 +105,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
     } catch {
       setMessages(prev => prev.map(m =>
         m.id === assistantId
-          ? { ...m, content: 'Error al generar respuesta. Inténtalo de nuevo.' }
+          ? { ...m, content: t('chat.generateError') }
           : m
       ))
     } finally {
@@ -160,13 +160,13 @@ export default function NodeChatPanel({ node, onClose }: Props) {
         {messages.length === 0 && (
           <div className="node-chat-empty">
             <div className="node-chat-empty-icon">✦</div>
-            <div className="node-chat-empty-text">Pregunta algo sobre esta nota o pide ayuda para editarla.</div>
+            <div className="node-chat-empty-text">{t('chat.emptyText')}</div>
             <div className="node-chat-suggestions">
               {[
-                'Resume esta nota en 3 puntos',
-                'Sugiere siguientes pasos',
-                'Mejora el estilo del texto',
-                '¿Qué falta en esta nota?',
+                t('chat.suggestSummarize'),
+                t('chat.suggestNextSteps'),
+                t('chat.suggestImproveStyle'),
+                t('chat.suggestWhatsMissing'),
               ].map(s => (
                 <button key={s} className="node-chat-suggestion" onClick={() => { setInput(s); inputRef.current?.focus() }}>
                   {s}
@@ -192,7 +192,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Pregunta algo... (Enter para enviar, Shift+Enter para nueva línea)"
+          placeholder={t('chat.inputPlaceholder')}
           rows={3}
           disabled={streaming}
         />
@@ -201,7 +201,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
           onClick={handleSend}
           disabled={!input.trim() || streaming}
         >
-          {streaming ? '◼ Stop' : `↑ ${t('ai.sendButton')}`}
+          {streaming ? `◼ ${t('chat.stop')}` : `↑ ${t('ai.sendButton')}`}
         </button>
       </div>
     </div>

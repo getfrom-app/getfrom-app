@@ -212,15 +212,15 @@ function naturalToFilter(q: string): string | null {
 
 // ── Quick chips ───────────────────────────────────────────────────────────────
 
-const QUICK_CHIPS: Array<{ label: string; dsl: string; icon?: string }> = [
-  { label: 'Pendientes', dsl: 'estado:pendiente', icon: '○' },
-  { label: 'Vencidas', dsl: 'fecha:vencida', icon: '⚠' },
-  { label: 'Esta semana', dsl: 'fecha:esta-semana', icon: '📅' },
-  { label: 'Favoritos', dsl: 'tipo:favorito', icon: '★' },
-  { label: 'Tareas', dsl: 'tipo:tarea', icon: '✓' },
-  { label: 'Bucles', dsl: 'tipo:bucle', icon: '↺' },
-  { label: 'Alta prioridad', dsl: 'prioridad:alta', icon: '▲' },
-  { label: 'Con contenido', dsl: 'tiene:cuerpo', icon: '📝' },
+const QUICK_CHIPS: Array<{ labelKey: string; dsl: string; icon?: string }> = [
+  { labelKey: 'search.quickPending', dsl: 'estado:pendiente', icon: '○' },
+  { labelKey: 'search.quickOverdue', dsl: 'fecha:vencida', icon: '⚠' },
+  { labelKey: 'search.quickThisWeek', dsl: 'fecha:esta-semana', icon: '📅' },
+  { labelKey: 'search.quickFavorites', dsl: 'tipo:favorito', icon: '★' },
+  { labelKey: 'search.quickTasks', dsl: 'tipo:tarea', icon: '✓' },
+  { labelKey: 'search.quickLoops', dsl: 'tipo:bucle', icon: '↺' },
+  { labelKey: 'search.quickHighPriority', dsl: 'prioridad:alta', icon: '▲' },
+  { labelKey: 'search.quickWithContent', dsl: 'tiene:cuerpo', icon: '📝' },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -230,10 +230,10 @@ function formatDue(due: string): string {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
-const PRIORITY_LABEL: Record<string, string> = {
-  high: 'Alta',
-  medium: 'Media',
-  low: 'Baja',
+const PRIORITY_LABEL_KEY: Record<string, string> = {
+  high: 'priority.high',
+  medium: 'priority.medium',
+  low: 'priority.low',
 }
 
 const PRIORITY_CLASS: Record<string, string> = {
@@ -399,7 +399,7 @@ export default function SearchView() {
   const noResults = hasQuery && results.length === 0
 
   return (
-    <div className="view search-view" role="main" aria-label="Vista de búsqueda">
+    <div className="view search-view" role="main" aria-label={t('search.ariaLabel')}>
       <div className="view-header">
         <div className="search-bar" style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 16 16" className="search-icon">
@@ -426,22 +426,22 @@ export default function SearchView() {
           )}
           {showHelp && (
             <div className="search-help-tooltip" onClick={() => setShowHelp(false)}>
-              <div className="search-help-title">Sintaxis de búsqueda</div>
+              <div className="search-help-title">{t('search.syntaxTitle')}</div>
               <div className="search-help-grid">
-                <code>estado:pendiente</code><span>Tareas pendientes</span>
-                <code>fecha:hoy</code><span>Con fecha hoy</span>
-                <code>fecha:vencida</code><span>Con fecha pasada</span>
-                <code>fecha:esta-semana</code><span>Esta semana</span>
-                <code>prioridad:alta</code><span>Prioridad alta</span>
-                <code>tipo:tarea</code><span>Solo tareas</span>
-                <code>tipo:evento</code><span>Solo eventos</span>
-                <code>tag:nombre</code><span>Por tag específico</span>
-                <code>tiene:cuerpo</code><span>Con descripción</span>
-                <code>area:nombre</code><span>Por área</span>
-                <code>#tag</code><span>Buscar por tag</span>
+                <code>estado:pendiente</code><span>{t('search.syntaxPending')}</span>
+                <code>fecha:hoy</code><span>{t('search.syntaxToday')}</span>
+                <code>fecha:vencida</code><span>{t('search.syntaxOverdue')}</span>
+                <code>fecha:esta-semana</code><span>{t('search.syntaxThisWeek')}</span>
+                <code>prioridad:alta</code><span>{t('search.syntaxHighPriority')}</span>
+                <code>tipo:tarea</code><span>{t('search.syntaxOnlyTasks')}</span>
+                <code>tipo:evento</code><span>{t('search.syntaxOnlyEvents')}</span>
+                <code>tag:nombre</code><span>{t('search.syntaxByTag')}</span>
+                <code>tiene:cuerpo</code><span>{t('search.syntaxWithBody')}</span>
+                <code>area:nombre</code><span>{t('search.syntaxByArea')}</span>
+                <code>#tag</code><span>{t('search.syntaxSearchTag')}</span>
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 8 }}>
-                También puedes escribir lenguaje natural: "tareas de hoy", "vencidas", etc.
+                {t('search.syntaxNaturalHint')}
               </div>
             </div>
           )}
@@ -450,14 +450,14 @@ export default function SearchView() {
         {/* Natural language hint */}
         {naturalHint && (
           <div className="search-natural-hint">
-            <span className="search-natural-hint-label">✨ Búsqueda inteligente:</span>
+            <span className="search-natural-hint-label">✨ {t('search.smartSearch')}</span>
             <code className="search-natural-hint-dsl">{naturalHint}</code>
             <button
               className="search-natural-hint-apply"
               onClick={() => handleQueryChange(naturalHint)}
-              title="Aplicar conversión"
+              title={t('search.applyConversion')}
             >
-              Aplicar
+              {t('search.apply')}
             </button>
           </div>
         )}
@@ -473,7 +473,7 @@ export default function SearchView() {
                 onClick={() => applyQuickChip(chip.dsl)}
               >
                 {chip.icon && <span style={{ marginRight: 3 }}>{chip.icon}</span>}
-                {chip.label}
+                {t(chip.labelKey)}
               </button>
             )
           })}
@@ -488,7 +488,7 @@ export default function SearchView() {
                 <button
                   className="search-filter-chip-remove"
                   onClick={() => removeFilter(f.raw)}
-                  aria-label={`Quitar filtro ${f.raw}`}
+                  aria-label={t('search.removeFilter', { filter: f.raw })}
                 >
                   ×
                 </button>
@@ -503,7 +503,7 @@ export default function SearchView() {
             onClick={handleMagicSearch}
             disabled={magicSearching || !hasQuery}
           >
-            {magicSearching ? '✨ Analizando...' : '✨ Búsqueda IA'}
+            {magicSearching ? '✨ ' + t('search.analyzing') : '✨ ' + t('search.aiSearch')}
           </button>
         )}
       </div>
@@ -511,7 +511,7 @@ export default function SearchView() {
       <div className="view-body">
         {magicSummary && (
           <div className="magic-search-summary">
-            <div className="magic-search-label">✨ Síntesis IA</div>
+            <div className="magic-search-label">✨ {t('search.aiSummary')}</div>
             <div className="magic-search-text">{magicSummary}</div>
           </div>
         )}
@@ -519,27 +519,27 @@ export default function SearchView() {
         {/* Result count + sort + group toggle */}
         {hasQuery && results.length > 0 && (
           <div className="search-result-count">
-            <span>{results.length === 60 ? '60+ resultados' : `${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}`}</span>
+            <span>{results.length === 60 ? t('search.resultsCountMax') : t('search.resultsCount', { count: results.length })}</span>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               <button
                 className={`search-group-btn${groupResults ? ' active' : ''}`}
                 onClick={() => setGroupResults(true)}
-                title="Agrupar por tipo"
+                title={t('search.groupByType')}
               >⊟</button>
               <button
                 className={`search-group-btn${!groupResults ? ' active' : ''}`}
                 onClick={() => setGroupResults(false)}
-                title="Lista plana"
+                title={t('search.flatList')}
               >≡</button>
               <select
                 className="search-sort-select"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as typeof sortBy)}
               >
-                <option value="relevance">Por relevancia</option>
-                <option value="updated">Más recientes</option>
-                <option value="due">Por fecha límite</option>
-                <option value="priority">Por prioridad</option>
+                <option value="relevance">{t('search.sortRelevance')}</option>
+                <option value="updated">{t('search.sortRecent')}</option>
+                <option value="due">{t('search.sortDue')}</option>
+                <option value="priority">{t('search.sortPriority')}</option>
               </select>
             </div>
           </div>
@@ -552,13 +552,13 @@ export default function SearchView() {
 
             {hasActiveFilters && (
               <button className="search-free-text-btn" onClick={searchFreeText}>
-                Buscar solo por texto libre
+                {t('search.freeTextOnly')}
               </button>
             )}
 
             {availableTags.length > 0 && (
               <div className="search-tag-suggestions">
-                <div className="search-tag-suggestions-label">Prueba buscando por tag:</div>
+                <div className="search-tag-suggestions-label">{t('search.tryTagSearch')}</div>
                 <div className="search-tag-suggestions-chips">
                   {availableTags.map(tag => (
                     <button
@@ -574,7 +574,7 @@ export default function SearchView() {
             )}
 
             <div className="search-vault-count">
-              {totalNodeCount} {totalNodeCount === 1 ? 'nota' : 'notas'} en tu vault
+              {t('search.vaultCount', { count: totalNodeCount })}
             </div>
           </div>
         )}
@@ -582,7 +582,7 @@ export default function SearchView() {
         {/* Search history — shown when input is empty */}
         {!hasQuery && history.length > 0 && (
           <div className="search-history">
-            <div className="search-history-label">Búsquedas recientes</div>
+            <div className="search-history-label">{t('search.recentSearches')}</div>
             {history.map(item => (
               <div
                 key={item}
@@ -597,7 +597,7 @@ export default function SearchView() {
                 <button
                   className="search-history-remove"
                   onClick={e => handleRemoveHistory(item, e)}
-                  aria-label={`Eliminar "${item}" del historial`}
+                  aria-label={t('search.removeFromHistory', { item })}
                 >
                   ×
                 </button>
@@ -623,7 +623,7 @@ export default function SearchView() {
                     ? highlight(node.text, parsed.text)
                     : node.text}
                 </span>
-                {node.isFavorite && <span className="result-badge favorite" title="Favorito">★</span>}
+                {node.isFavorite && <span className="result-badge favorite" title={t('search.badgeFavorite')}>★</span>}
               </div>
               {/* Body excerpt when match is in body but not in title */}
               {parsed.text && node.body && !node.text.toLowerCase().includes(parsed.text.toLowerCase()) && node.body.toLowerCase().includes(parsed.text.toLowerCase()) && (() => {
@@ -636,12 +636,12 @@ export default function SearchView() {
               <div className="search-result-meta">
                 {node.status !== null && (
                   <span className={`result-badge status-badge ${node.status}`}>
-                    {node.status === 'pending' ? '○ Pendiente' : '✓ Hecho'}
+                    {node.status === 'pending' ? '○ ' + t('status.pending') : '✓ ' + t('status.done')}
                   </span>
                 )}
                 {node.priority && (
                   <span className={`result-badge priority-badge ${PRIORITY_CLASS[node.priority]}`}>
-                    {PRIORITY_LABEL[node.priority]}
+                    {t(PRIORITY_LABEL_KEY[node.priority])}
                   </span>
                 )}
                 {node.due && (
@@ -650,10 +650,10 @@ export default function SearchView() {
                   </span>
                 )}
                 {node.isEvent && (
-                  <span className="result-badge event-badge">Evento</span>
+                  <span className="result-badge event-badge">{t('search.chipEvent')}</span>
                 )}
                 {node.types.includes('bucle') && (
-                  <span className="result-badge loop-badge">Bucle</span>
+                  <span className="result-badge loop-badge">{t('search.chipBucle')}</span>
                 )}
               </div>
             </div>
@@ -672,9 +672,9 @@ export default function SearchView() {
           const notes = results.filter(n => n.status === null && !n.isEvent)
 
           const groups: Array<{ label: string; icon: string; nodes: typeof results }> = []
-          if (tasks.length > 0) groups.push({ label: 'Tareas', icon: '✓', nodes: tasks })
-          if (events.length > 0) groups.push({ label: 'Eventos', icon: '📅', nodes: events })
-          if (notes.length > 0) groups.push({ label: 'Notas', icon: '📄', nodes: notes })
+          if (tasks.length > 0) groups.push({ label: t('sidebar.groupTasks'), icon: '✓', nodes: tasks })
+          if (events.length > 0) groups.push({ label: t('sidebar.groupEvents'), icon: '📅', nodes: events })
+          if (notes.length > 0) groups.push({ label: t('sidebar.groupNotes'), icon: '📄', nodes: notes })
 
           return groups.map(group => (
             <div key={group.label} className="search-result-group">

@@ -105,15 +105,15 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
     const safe = Math.max(1, n)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
-  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'mes.'], ['yearly', 'año']]
+  const recUnits: [string, string][] = [['daily', t('recUnit.days')], ['weekly', t('recUnit.weeks')], ['monthly', t('recUnit.months')], ['yearly', t('recUnit.years')]]
 
   const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
 
   const priorityOpts: { v: Node['priority']; l: string; c: string }[] = [
     { v: null,     l: '–',    c: '' },
-    { v: 'low',    l: 'Baja',  c: '#6b7280' },
-    { v: 'medium', l: 'Media', c: '#f59e0b' },
-    { v: 'high',   l: 'Alta',  c: '#ef4444' },
+    { v: 'low',    l: t('priority.low'),  c: '#6b7280' },
+    { v: 'medium', l: t('priority.medium'), c: '#f59e0b' },
+    { v: 'high',   l: t('priority.high'),  c: '#ef4444' },
   ]
 
   if (isBucle) return null
@@ -148,7 +148,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             }}
             title={t('panel.convertToContainer')}
           >
-            ↑ Ampliar
+            ↑ {t('tip.expand')}
           </button>
         )}
         <button
@@ -157,9 +157,9 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             e.stopPropagation()
             setMovePickerOpen(v => !v)
           }}
-          title="Mover esta tarea dentro de otra nota"
+          title={t('tip.moveTaskIntoNote')}
         >
-          → Mover a…
+          → {t('context.moveTo')}
         </button>
         <button
           className="tpp-open-note-btn"
@@ -172,9 +172,9 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             store.updateNode(node.id, { parentId: diary.id, siblingOrder: lastOrder + 1 })
             onClose()
           }}
-          title="Mover esta tarea a la nota diaria de hoy"
+          title={t('tip.moveTaskToToday')}
         >
-          📓 A hoy
+          📓 {t('tip.toToday')}
         </button>
       </div>
 
@@ -206,7 +206,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       <input
         type="text"
         className="tpp-natural-date-input"
-        placeholder='Lenguaje natural: "mañana", "lunes", "+3", "14:30", "27/05"…'
+        placeholder={t('ph.naturalDate')}
         onKeyDown={e => {
           if (e.key === 'Enter') {
             const iso = parseNaturalDate((e.target as HTMLInputElement).value)
@@ -219,10 +219,10 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       />
       <div className="nqp-quick-row">
         {[
-          { label: 'Hoy', days: 0 },
-          { label: 'Mañana', days: 1 },
-          { label: 'Lunes', days: qNextMondayDays },
-          { label: '+7d', days: 7 },
+          { label: t('common.today'), days: 0 },
+          { label: t('common.tomorrow'), days: 1 },
+          { label: t('date.monday'), days: qNextMondayDays },
+          { label: t('date.plus7d'), days: 7 },
         ].map(({ label, days }) => {
           const d = new Date(); d.setDate(d.getDate() + days)
           const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
@@ -243,7 +243,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
           onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
         {hasLocalTime(node.due) && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-            onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+            onClick={() => setDue(dueDate, '')} title={t('tip.removeTime')}>✕h</button>
         )}
       </div>
 
@@ -260,7 +260,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       </div>
 
       {/* Repetición */}
-      <div className="tpp-section-label">Repetición</div>
+      <div className="tpp-section-label">{t('prop.recurrence')}</div>
       <div className="nqp-rec-row">
         <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
           onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
@@ -286,10 +286,10 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       <div className="tpp-section-label">{t('search.filterStatus')}</div>
       <div className="nqp-chips-row">
         {([
-          { v: 'pending' as const, l: '○ Pendiente' },
-          { v: 'done'    as const, l: '✓ Hecha' },
-          { v: 'future'  as const, l: '◆ Futura' },
-          { v: null,               l: '– Sin estado' },
+          { v: 'pending' as const, l: `○ ${t('status.pending')}` },
+          { v: 'done'    as const, l: `✓ ${t('status.done')}` },
+          { v: 'future'  as const, l: `◆ ${t('status.future')}` },
+          { v: null,               l: `– ${t('status.none')}` },
         ] as { v: Node['status']; l: string }[]).map(opt => (
           <button key={String(opt.v)}
             className={`nqp-chip${node.status === opt.v ? ' active' : ''}`}
@@ -306,18 +306,18 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             try { return JSON.parse(node.extraData || '{}').color || null } catch { return null }
           })()
           const COLORS: { v: string | null; label: string }[] = [
-            { v: null,      label: 'Sin color' },
-            { v: '#a8c5ec', label: 'Azul' },
-            { v: '#b8a7e8', label: 'Morado' },
-            { v: '#f0a3a3', label: 'Rojo' },
-            { v: '#f5c197', label: 'Naranja' },
-            { v: '#f5c97a', label: 'Ámbar' },
-            { v: '#fbd75b', label: 'Amarillo' },
-            { v: '#9bd6a3', label: 'Verde' },
-            { v: '#8ed4dd', label: 'Cian' },
-            { v: '#dbadff', label: 'Lavanda' },
-            { v: '#f5b3d3', label: 'Rosa' },
-            { v: '#a3a8b3', label: 'Gris' },
+            { v: null,      label: t('prop.noColor') },
+            { v: '#a8c5ec', label: t('color.blue') },
+            { v: '#b8a7e8', label: t('color.purple') },
+            { v: '#f0a3a3', label: t('color.red') },
+            { v: '#f5c197', label: t('color.orange') },
+            { v: '#f5c97a', label: t('color.amber') },
+            { v: '#fbd75b', label: t('color.yellow') },
+            { v: '#9bd6a3', label: t('color.green') },
+            { v: '#8ed4dd', label: t('color.cyan') },
+            { v: '#dbadff', label: t('color.lavender') },
+            { v: '#f5b3d3', label: t('color.pink') },
+            { v: '#a3a8b3', label: t('color.gray') },
           ]
           function setColor(c: string | null) {
             let ed: Record<string, unknown> = {}
@@ -381,6 +381,7 @@ export interface GCalEventEditorProps {
 }
 
 export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, linkedNodeId, onCreateNode }: GCalEventEditorProps) {
+  const { t } = useTranslation()
   const gcalNavigate = useNavigate()
   const [title, setTitle] = useState(event.title)
   const [startDate, setStartDate] = useState(event.start ? event.start.slice(0, 10) : '')
@@ -415,19 +416,19 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
         title, start: new Date(start).toISOString(), end: new Date(end).toISOString()
       })
       onUpdated(updated)
-      setMsg('✓ Guardado en Google')
+      setMsg(`✓ ${t('gcal.savedToGoogle')}`)
       setTimeout(onClose, 800)
-    } catch { setMsg('Error al guardar en Google') }
+    } catch { setMsg(t('gcal.saveError')) }
     finally { setSaving(false) }
   }
 
   async function remove() {
-    if (!window.confirm(`¿Eliminar "${event.title}" de Google Calendar?`)) return
+    if (!window.confirm(t('gcal.deleteConfirm', { title: event.title }))) return
     setSaving(true); setMsg(null)
     try {
       await deleteCalendarEvent(event.id)
       onDeleted(event.id)
-    } catch { setMsg('Error al eliminar en Google') }
+    } catch { setMsg(t('gcal.deleteError')) }
     finally { setSaving(false) }
   }
 
@@ -437,47 +438,47 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      <div className="gcal-editor-title">📅 Editar evento Google Calendar</div>
+      <div className="gcal-editor-title">📅 {t('gcal.editTitle')}</div>
       <input className="gcal-editor-name" value={title} onChange={e => setTitle(e.target.value)}
-        placeholder="Título del evento"
+        placeholder={t('ph.eventTitle')}
         autoFocus
         onKeyDown={e => { if (e.key === 'Enter') save() }}
       />
       <div className="gcal-editor-row">
-        <span className="gcal-editor-label">Inicio</span>
+        <span className="gcal-editor-label">{t('gcal.start')}</span>
         <input type="date" className="nqp-date-input" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save() }} />
         <input type="time" className="nqp-time-input" value={startTime} onChange={e => setStartTime(e.target.value)} disabled={!startDate} placeholder="HH:MM" onKeyDown={e => { if (e.key === 'Enter') save() }} />
         {startTime && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-            onClick={() => setStartTime('')} title="Quitar hora">✕h</button>
+            onClick={() => setStartTime('')} title={t('tip.removeTime')}>✕h</button>
         )}
       </div>
       <div className="gcal-editor-row">
-        <span className="gcal-editor-label">Fin</span>
+        <span className="gcal-editor-label">{t('gcal.end')}</span>
         <input type="date" className="nqp-date-input" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save() }} />
         <input type="time" className="nqp-time-input" value={endTime} onChange={e => setEndTime(e.target.value)} disabled={!endDate} placeholder="HH:MM" onKeyDown={e => { if (e.key === 'Enter') save() }} />
         {endTime && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-            onClick={() => setEndTime('')} title="Quitar hora">✕h</button>
+            onClick={() => setEndTime('')} title={t('tip.removeTime')}>✕h</button>
         )}
       </div>
       {msg && <div className={`gcal-editor-msg${msg.startsWith('✓') ? ' ok' : ''}`}>{msg}</div>}
       {linkedNodeId ? (
         <button className="gcal-editor-opennote" onClick={() => { gcalNavigate(`/node/${linkedNodeId}`); onClose() }}
           style={{ width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-          ↗ Abrir nota en Fromly
+          ↗ {t('gcal.openNote')}
         </button>
       ) : onCreateNode ? (
         <button className="gcal-editor-opennote" onClick={() => { onCreateNode(); onClose() }}
           style={{ width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-          ➕ Crear nodo en Fromly
+          ➕ {t('gcal.createNode')}
         </button>
       ) : null}
       <div className="gcal-editor-actions">
-        <button className="gcal-editor-delete" onClick={remove} disabled={saving} title="Eliminar de Google Calendar">🗑 Eliminar</button>
-        <button className="gcal-editor-cancel" onClick={onClose}>Cancelar</button>
+        <button className="gcal-editor-delete" onClick={remove} disabled={saving} title={t('gcal.deleteFromGoogle')}>🗑 {t('common.delete')}</button>
+        <button className="gcal-editor-cancel" onClick={onClose}>{t('common.cancel')}</button>
         <button className="gcal-editor-save" onClick={save} disabled={saving || !title || !startDate}>
-          {saving ? '↻' : 'Guardar'}
+          {saving ? '↻' : t('common.save')}
         </button>
       </div>
     </div>
@@ -498,6 +499,7 @@ let _agendaDragId: string | null = null
 // ── MovePicker — buscador fuzzy para reparentar una tarea ────────────────────
 
 function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: () => void; onCancel: () => void }) {
+  const { t } = useTranslation()
   const s = useStore()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
@@ -565,7 +567,7 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
       <input
         ref={inputRef}
         className="tpp-move-input"
-        placeholder="Buscar nota destino..."
+        placeholder={t('ph.searchDestNote')}
         value={query}
         onChange={e => { setQuery(e.target.value); setActiveIdx(0) }}
         onKeyDown={e => {
@@ -576,7 +578,7 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
         }}
       />
       <div className="tpp-move-results">
-        {filtered.length === 0 && <div className="tpp-move-empty">Sin resultados</div>}
+        {filtered.length === 0 && <div className="tpp-move-empty">{t('search.noResults')}</div>}
         {filtered.map((n: Node, i: number) => (
           <button
             key={n.id}
@@ -585,7 +587,7 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
             onMouseEnter={() => setActiveIdx(i)}
           >
             <span className="tpp-move-item-icon">📄</span>
-            <span className="tpp-move-item-text">{n.text || 'Sin título'}</span>
+            <span className="tpp-move-item-text">{n.text || t('common.noTitle')}</span>
           </button>
         ))}
       </div>

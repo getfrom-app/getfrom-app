@@ -244,7 +244,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 
   function copyMarkdown() {
-    navigator.clipboard.writeText(fullMd()).then(() => toast('Markdown copiado')).catch(() => {})
+    navigator.clipboard.writeText(fullMd()).then(() => toast(t('context.toastMarkdownCopied'))).catch(() => {})
   }
   function copyRich() {
     const html = isDoc
@@ -254,7 +254,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
         'text/plain': new Blob([fullMd()], { type: 'text/plain' }),
-      })]).then(() => toast('Copiado con formato')).catch(() => navigator.clipboard.writeText(fullMd()))
+      })]).then(() => toast(t('context.toastCopiedFormatted'))).catch(() => navigator.clipboard.writeText(fullMd()))
     } catch { navigator.clipboard.writeText(fullMd()) }
   }
   function exportMarkdown() {
@@ -265,7 +265,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.md'
     a.click()
     URL.revokeObjectURL(url)
-    toast('Exportado a Markdown')
+    toast(t('context.toastExportedMarkdown'))
   }
   // Documento HTML autónomo (para exportar HTML y para el PDF limpio).
   function standaloneHtml(): string {
@@ -290,7 +290,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.html'
     a.click()
     URL.revokeObjectURL(url)
-    toast('Exportado a HTML')
+    toast(t('context.toastExportedHtml'))
   }
   function exportPdf() {
     // PDF limpio: ventana nueva con SOLO la nota → imprimir (sin el chrome de la app).
@@ -305,7 +305,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   function copyInternalLink() {
     const url = `${window.location.origin}/app/node/${node.id}`
     navigator.clipboard.writeText(url)
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Enlace interno copiado', type: 'success' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('context.toastInternalLinkCopied'), type: 'success' } }))
   }
 
   // Publicar / despublicar / enlace público viven en el icono 🌐 de la cabecera
@@ -314,40 +314,41 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   function applyTemplate(template: Node) {
     store.updateNode(node.id, { body: template.body || '' })
     window.dispatchEvent(new CustomEvent('from:toast', {
-      detail: { message: `Plantilla "${template.text}" aplicada`, type: 'success' }
+      detail: { message: t('context.toastTemplateApplied', { name: template.text }), type: 'success' }
     }))
   }
 
   function deleteNode() {
     // Raíces de sistema: no se pueden eliminar.
     if (!isMulti && isProtectedSystemRoot(node.id)) {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('context.toastSystemNodeNoDelete'), type: 'info' } }))
       onClose()
       return
     }
     if (isMulti) {
       // Bulk: mover todos a papelera
-      if (!confirm(`¿Mover ${effectiveIds.length} nodos a la Papelera?`)) return
+      if (!confirm(t('context.confirmMoveBulkTrash', { count: effectiveIds.length }))) return
       effectiveIds.forEach(id => trashNode(id))
       window.dispatchEvent(new CustomEvent('from:toast', {
-        detail: { message: `${effectiveIds.length} nodos movidos a Papelera`, type: 'info' }
+        detail: { message: t('context.toastMovedBulkTrash', { count: effectiveIds.length }), type: 'info' }
       }))
       onClose()
       return
     }
     const inPapelera = isInPapelera(node.id)
+    const nodeLabel = (node.text || t('context.nodeFallback')).slice(0, 30)
     if (inPapelera) {
       // Ya está en Papelera → eliminar permanentemente
-      if (!confirm(`¿Eliminar permanentemente "${(node.text || 'Nodo').slice(0, 30)}"? Esta acción no se puede deshacer.`)) return
+      if (!confirm(t('context.confirmDeletePermanent', { name: nodeLabel }))) return
       store.updateNode(node.id, { deletedAt: new Date().toISOString() })
       window.dispatchEvent(new CustomEvent('from:toast', {
-        detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado permanentemente`, type: 'info' }
+        detail: { message: t('context.toastDeletedPermanent', { name: nodeLabel }), type: 'info' }
       }))
     } else {
       // Mover a Papelera (jerarquía preservada)
       trashNode(node.id)
       window.dispatchEvent(new CustomEvent('from:toast', {
-        detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" movido a Papelera`, type: 'info' }
+        detail: { message: t('context.toastMovedTrash', { name: nodeLabel }), type: 'info' }
       }))
     }
   }
@@ -355,7 +356,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   function restoreNodeFromTrash() {
     restoreNode(node.id)
     window.dispatchEvent(new CustomEvent('from:toast', {
-      detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" restaurado`, type: 'success' }
+      detail: { message: t('context.toastRestored', { name: (node.text || t('context.nodeFallback')).slice(0, 30) }), type: 'success' }
     }))
   }
 
@@ -370,7 +371,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {/* Cabecera multi-nodo */}
       {isMulti && (
         <div style={{ padding: '6px 14px 4px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, opacity: 0.9 }}>
-          {effectiveIds.length} nodos seleccionados
+          {t('context.nodesSelected', { count: effectiveIds.length })}
         </div>
       )}
       {/* Duplicar + Mover */}
@@ -394,7 +395,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {/* Quitar tarea (directo) → la convierte en nodo normal. */}
       {isTask && (
         <button className="context-menu-item" onClick={run(toggleTask)}>
-          <span className="context-menu-icon">○</span> Quitar tarea
+          <span className="context-menu-icon">○</span> {t('context.removeTask')}
         </button>
       )}
 
@@ -411,11 +412,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <div className="context-menu-submenu-inline">
             <button className="context-menu-item context-menu-item--sub" onClick={run(toggleTask)}>
               <span className="context-menu-icon">{isTask ? '○' : '☑'}</span>
-              {isTask ? 'Quitar tarea' : 'Tarea'}
+              {isTask ? t('context.removeTask') : t('search.chipTask')}
             </button>
             <button className="context-menu-item context-menu-item--sub" onClick={run(toggleEvent)}>
               <span className="context-menu-icon">📅</span>
-              {isEvent ? 'Quitar evento' : 'Evento'}
+              {isEvent ? t('context.removeEvent') : t('search.chipEvent')}
             </button>
             {/* (Bucle eliminado del «Convertir en»: ahora seguimiento = tarea sin fecha.) */}
             <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
@@ -432,21 +433,21 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
             ))}
             <button className="context-menu-item context-menu-item--sub"
               onClick={run(() => setNodeBlock(node, currentBlock === 'bullet' ? null : 'bullet'))}>
-              <span className="context-menu-icon">•</span> Lista
+              <span className="context-menu-icon">•</span> {t('format.list')}
               {currentBlock === 'bullet' && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
             </button>
             <button className="context-menu-item context-menu-item--sub"
               onClick={run(() => setNodeBlock(node, null))}>
-              <span className="context-menu-icon">¶</span> Párrafo normal
+              <span className="context-menu-icon">¶</span> {t('format.paragraph')}
               {!currentBlock && <span style={{ marginLeft: 'auto', opacity: 0.5 }}>✓</span>}
             </button>
             <button className="context-menu-item context-menu-item--sub"
               onClick={run(() => {
-                const t = (node.text || '').trimEnd()
-                if (t === '---') return
+                const txt = (node.text || '').trimEnd()
+                if (txt === '---') return
                 store.updateNode(node.id, { text: '---' })
               })}>
-              <span className="context-menu-icon">—</span> Separador
+              <span className="context-menu-icon">—</span> {t('format.separator')}
             </button>
           </div>
         )}
@@ -502,7 +503,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   border: !currentColor ? '2px solid var(--text-primary)' : '2px solid var(--border)',
                   cursor: 'pointer', flexShrink: 0, fontSize: 10, lineHeight: 1,
                 }}
-                title="Sin color"
+                title={t('context.noColor')}
               >✕</button>
             </div>
           </div>
@@ -530,7 +531,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           className={`context-menu-item${showCopySub ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowCopySub(v => !v); setShowExportSub(false) }}
         >
-          <span className="context-menu-icon">⎘</span> Copiar
+          <span className="context-menu-icon">⎘</span> {t('common.copy')}
           <span className="context-menu-shortcut">{showCopySub ? '▾' : '›'}</span>
         </button>
         {showCopySub && (
@@ -539,7 +540,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">⌨</span> Markdown
             </button>
             <button className="context-menu-item context-menu-item--sub" onClick={run(copyRich)}>
-              <span className="context-menu-icon">¶</span> Texto rico
+              <span className="context-menu-icon">¶</span> {t('context.richText')}
             </button>
           </div>
         )}
@@ -548,7 +549,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           className={`context-menu-item${showExportSub ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowExportSub(v => !v); setShowCopySub(false) }}
         >
-          <span className="context-menu-icon">↧</span> Exportar
+          <span className="context-menu-icon">↧</span> {t('context.export')}
           <span className="context-menu-shortcut">{showExportSub ? '▾' : '›'}</span>
         </button>
         {showExportSub && (
@@ -565,7 +566,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </div>
         )}
         <button className="context-menu-item" onClick={run(copyInternalLink)}>
-          <span className="context-menu-icon">🔗</span> Copiar enlace interno
+          <span className="context-menu-icon">🔗</span> {t('context.copyInternalLink')}
         </button>
         {/* Publicar / despublicar / copiar enlace público viven en el icono 🌐 de la
             cabecera (NodeView), no duplicados aquí. */}
@@ -582,7 +583,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           onClose()
         }}>
           <span className="context-menu-icon">✂️</span>
-          {node.publicSlug ? `URL: /node/${node.publicSlug}` : 'Establecer URL corta'}
+          {node.publicSlug ? `URL: /node/${node.publicSlug}` : t('context.setShortUrl')}
         </button>
       </div>
 
@@ -600,8 +601,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <div className="context-menu-submenu-inline">
             {templates.length === 0 ? (
               <div style={{ padding: '6px 28px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-                Crea un nodo raíz llamado<br />
-                <strong>"Plantillas"</strong> con hijos dentro
+                {t('context.templatesHint')}
               </div>
             ) : templates.map(tmpl => (
               <button key={tmpl.id} className="context-menu-item context-menu-item--sub" onClick={run(() => applyTemplate(tmpl))}>
@@ -616,18 +616,18 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
       {selectedText.length >= 2 && selectedText.length <= 30 && (() => {
         const guess = guessWordType(selectedText)
         const isTask = guess.type === 'task'
-        const primaryLabel = isTask ? 'verbo de tarea' : 'palabra de evento'
+        const primaryLabel = isTask ? t('teachWord.taskVerb') : t('teachWord.eventWord')
         const primaryIcon = isTask ? '☐' : '📅'
         const primaryType: 'task' | 'event' = isTask ? 'task' : 'event'
         const altType: 'task' | 'event' = isTask ? 'event' : 'task'
-        const altLabel = isTask ? 'evento' : 'tarea'
+        const altLabel = isTask ? t('teachWord.eventLower') : t('teachWord.taskLower')
         const altIcon = isTask ? '📅' : '☐'
 
         const doAdd = (type: 'task' | 'event') => {
           const added = addPredictionWord(type, selectedText)
-          const typeLabel = type === 'task' ? 'tarea' : 'evento'
+          const typeLabel = type === 'task' ? t('teachWord.taskLower') : t('teachWord.eventLower')
           window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-            message: added ? `✦ "${selectedText}" → ${typeLabel}` : `"${selectedText}" ya está en la lista`,
+            message: added ? `✦ "${selectedText}" → ${typeLabel}` : t('teachWord.alreadyInList', { word: selectedText }),
             type: added ? 'success' : 'info'
           }}))
           onClose()
@@ -651,7 +651,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                 onClick={() => doAdd(altType)}
               >
                 <span className="context-menu-icon" style={{ opacity: 0.5 }}>{altIcon}</span>
-                <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>No, es {altLabel}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{t('teachWord.noItIs', { label: altLabel })}</span>
               </button>
             </div>
           </>
@@ -664,10 +664,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         <button
           className={`context-menu-item${showTeach ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowTeach(v => !v) }}
-          title="Corrige la interpretación de Magic para que aprenda"
+          title={t('teachMagic.menuTip')}
         >
           <span className="context-menu-icon">✦</span>
-          Enseñar a Magic
+          {t('teach.title')}
           <span className="context-menu-shortcut">{showTeach ? '▾' : '›'}</span>
         </button>
 
@@ -680,10 +680,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   const text = buildLearningText('not_task', node)
                   const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">✕</span> Esto no es una tarea
+                <span className="context-menu-icon">✕</span> {t('teachMagic.notTask')}
               </button>
             )}
             {isEvent && (
@@ -692,10 +692,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   const text = buildLearningText('not_event', node)
                   const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">✕</span> Esto no es un evento
+                <span className="context-menu-icon">✕</span> {t('teachMagic.notEvent')}
               </button>
             )}
             {!isTask && (
@@ -704,10 +704,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   const text = buildLearningText('should_be_task', node)
                   const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">○</span> Debería ser una tarea
+                <span className="context-menu-icon">○</span> {t('teachMagic.shouldBeTask')}
               </button>
             )}
             {!isEvent && (
@@ -716,10 +716,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   const text = buildLearningText('should_be_event', node)
                   const added = learningsStore.add({ text, category: 'type', nodeText: node.text || undefined, source: 'manual' })
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">📅</span> Debería ser un evento
+                <span className="context-menu-icon">📅</span> {t('teachMagic.shouldBeEvent')}
               </button>
             )}
             {(node.types || []).length > 0 && (
@@ -728,10 +728,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                   const text = buildLearningText('wrong_context', node)
                   const added = learningsStore.add({ text, category: 'context', nodeText: node.text || undefined, source: 'manual' })
                   window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                    message: added ? '✦ Magic ha aprendido' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                    message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">⚡</span> El contexto no es correcto
+                <span className="context-menu-icon">⚡</span> {t('teachMagic.wrongContext')}
               </button>
             )}
 
@@ -743,10 +743,10 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                 const text = buildLearningText('correct', node)
                 const added = learningsStore.add({ text, category: 'positive', nodeText: node.text || undefined, source: 'manual' })
                 window.dispatchEvent(new CustomEvent('from:toast', { detail: {
-                  message: added ? '✦ Magic lo recordará' : 'Ya lo sabía', type: added ? 'success' : 'info'
+                  message: added ? t('teachMagic.willRemember') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                 }}))
               })}>
-              <span className="context-menu-icon">✓</span> Esta interpretación es correcta
+              <span className="context-menu-icon">✓</span> {t('teachMagic.correctInterpretation')}
             </button>
 
             <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
@@ -756,7 +756,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               onClick={run(() => {
                 window.dispatchEvent(new CustomEvent('from:teach-magic', { detail: { nodeId: node.id } }))
               })}>
-              <span className="context-menu-icon">✎</span> Escribir o grabar corrección…
+              <span className="context-menu-icon">✎</span> {t('teachMagic.writeOrRecord')}
             </button>
           </div>
         )}
@@ -768,7 +768,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         {isInPapelera(node.id) ? (
           <>
             <button className="context-menu-item" onClick={run(restoreNodeFromTrash)}>
-              <span className="context-menu-icon">↩</span> Restaurar
+              <span className="context-menu-icon">↩</span> {t('context.restore')}
             </button>
             <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
               <span className="context-menu-icon">✕</span> {t('context.delete')}

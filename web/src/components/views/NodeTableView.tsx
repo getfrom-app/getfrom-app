@@ -12,9 +12,9 @@ type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
 
-const COL_TYPE_LABELS: Record<ColType, string> = {
-  text: 'Texto', number: 'Número', select: 'Select', multi_select: 'Multi-select',
-  date: 'Fecha', checkbox: 'Checkbox', url: 'URL', tag: 'Tag', task: 'Tarea', reminder: 'Recordatorio',
+const COL_TYPE_LABEL_KEYS: Record<ColType, string> = {
+  text: 'colType.text', number: 'colType.number', select: 'colType.select', multi_select: 'colType.multiSelect',
+  date: 'colType.date', checkbox: 'colType.checkbox', url: 'colType.url', tag: 'colType.tag', task: 'colType.task', reminder: 'colType.reminder',
 }
 
 const BUILTIN_COLS = [
@@ -69,11 +69,11 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
         ))}
         {query.trim() && !exact && (
           <button className="select-editor-item select-editor-item--create" onClick={() => onCreate(query.trim())}>
-            ＋ Crear "{query.trim()}"
+            ＋ {t('table.create', { label: query.trim() })}
           </button>
         )}
         {filtered.length === 0 && !query.trim() && (
-          <div className="select-editor-empty">Sin opciones todavía. Escribe para crear una.</div>
+          <div className="select-editor-empty">{t('table.noOptionsYet')}</div>
         )}
       </div>
     </div>
@@ -87,6 +87,7 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
   onClear: () => void
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const initialDate = existing?.due ? existing.due.slice(0, 10) : ''
   const initialTime = existing?.due ? (() => {
     const d = new Date(existing.due!)
@@ -126,19 +127,19 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
   }
 
   const recUnits: { key: 'daily' | 'weekly' | 'monthly' | 'yearly'; label: string }[] = [
-    { key: 'daily',   label: 'días' },
-    { key: 'weekly',  label: 'sem.' },
-    { key: 'monthly', label: 'mes.' },
-    { key: 'yearly',  label: 'años' },
+    { key: 'daily',   label: t('reminder.unitDays') },
+    { key: 'weekly',  label: t('reminder.unitWeeks') },
+    { key: 'monthly', label: t('reminder.unitMonths') },
+    { key: 'yearly',  label: t('reminder.unitYears') },
   ]
 
   return (
     <div className="reminder-editor" onMouseDown={e => e.stopPropagation()}>
       <div className="reminder-editor-title">⏰ {colName}</div>
 
-      <div className="reminder-editor-label">Fecha rápida</div>
+      <div className="reminder-editor-label">{t('reminder.quickDate')}</div>
       <div className="reminder-editor-quick">
-        {[['Hoy', 0], ['Mañana', 1], ['+7d', 7], ['+30d', 30]].map(([label, days]) => (
+        {[[t('common.today'), 0], [t('common.tomorrow'), 1], ['+7d', 7], ['+30d', 30]].map(([label, days]) => (
           <button key={String(label)} className="reminder-editor-chip" onClick={() => quickDate(days as number)}>
             {label}
           </button>
@@ -150,12 +151,12 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
         <input type="time" className="node-table-cell-editor" value={time} onChange={e => setTime(e.target.value)} disabled={!date} />
       </div>
 
-      <div className="reminder-editor-label">Repetir cada</div>
+      <div className="reminder-editor-label">{t('reminder.repeatEvery')}</div>
       <div className="reminder-editor-rec-row">
         <button
           className={`reminder-editor-chip ${!recUnit ? 'active' : ''}`}
           onClick={() => setRecUnit('')}
-        >No</button>
+        >{t('common.no')}</button>
         <input
           type="number"
           min={1}
@@ -179,9 +180,9 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
       </div>
 
       <div className="reminder-editor-actions">
-        {existing && <button className="reminder-editor-clear" onClick={onClear}>🗑 Borrar</button>}
-        <button className="reminder-editor-cancel" onClick={onClose}>Cancelar</button>
-        <button className="reminder-editor-save" onClick={commit} disabled={!date}>Guardar</button>
+        {existing && <button className="reminder-editor-clear" onClick={onClear}>🗑 {t('common.delete')}</button>}
+        <button className="reminder-editor-cancel" onClick={onClose}>{t('common.cancel')}</button>
+        <button className="reminder-editor-save" onClick={commit} disabled={!date}>{t('common.save')}</button>
       </div>
     </div>
   )
@@ -193,6 +194,7 @@ function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
   onToggle: (t: Node) => void
   onClose: () => void
 }) {
+  const { t: tr } = useTranslation()
   const [text, setText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -205,14 +207,14 @@ function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
               className={`task-list-editor-check ${t.status === 'done' ? 'done' : ''}`}
               onClick={() => onToggle(t)}
             >{t.status === 'done' ? '✓' : ''}</button>
-            <span className={`task-list-editor-text ${t.status === 'done' ? 'done' : ''}`}>{t.text || 'Sin título'}</span>
+            <span className={`task-list-editor-text ${t.status === 'done' ? 'done' : ''}`}>{t.text || tr('common.noTitle')}</span>
           </div>
         ))}
       </div>
       <input
         ref={inputRef}
         className="node-table-cell-editor"
-        placeholder="＋ Nueva tarea (Enter para añadir)"
+        placeholder={tr('table.newTaskPlaceholder')}
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={e => {
@@ -229,6 +231,7 @@ function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
 }
 
 function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: PropDef; parentId: string; onClose: () => void; onNav?: (dir: 'down' | 'right' | 'left') => void }) {
+  const { t } = useTranslation()
   const current = store.getPropValue(node.id, def.id)
   const [val, setVal] = useState<string>(current === undefined || current === null ? '' : String(current))
   const ref = useRef<HTMLInputElement | HTMLSelectElement>(null)
@@ -327,7 +330,7 @@ function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: 
         type="text"
         defaultValue={currentTags.join(' ')}
         list="all-tags-datalist"
-        placeholder="tag1 tag2..."
+        placeholder={t('table.tagsPlaceholder')}
         className="node-table-cell-editor"
         onBlur={e => {
           const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
@@ -394,11 +397,12 @@ function formatReminderDate(iso: string, recurrence: string | null | undefined):
 }
 
 function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () => void }) {
+  const { t: tr } = useTranslation()
   // Reminder: muestra próxima fecha del recordatorio asociado a esta columna
   if (def.type === 'reminder') {
     const reminderTask = findReminderTaskForCol(node.id, def.id)
     if (!reminderTask || !reminderTask.due) {
-      return <span className="node-table-empty-cell" onClick={onEdit}>＋ Recordatorio</span>
+      return <span className="node-table-empty-cell" onClick={onEdit}>＋ {tr('table.reminder')}</span>
     }
     const isDone = reminderTask.status === 'done'
     return (
@@ -419,12 +423,12 @@ function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () 
               {t.status === 'done' ? '✓' : '○'}
             </span>
             <span className={`node-table-tasks-text ${t.status === 'done' ? 'done' : ''}`}>
-              {(t.text || 'Sin título').slice(0, 28)}
+              {(t.text || tr('common.noTitle')).slice(0, 28)}
             </span>
           </div>
         ))}
-        {tasks.length > 3 && <span className="node-table-tasks-more">+{tasks.length - 3} más</span>}
-        {tasks.length === 0 && <span className="node-table-empty-cell">＋ Tarea</span>}
+        {tasks.length > 3 && <span className="node-table-tasks-more">+{tasks.length - 3} {tr('calendar.more')}</span>}
+        {tasks.length === 0 && <span className="node-table-empty-cell">＋ {tr('search.chipTask')}</span>}
       </div>
     )
   }
@@ -553,10 +557,10 @@ export default function NodeTableView({ parentId }: Props) {
     }
     return Array.from(groups.entries()).map(([key, rows]) => ({
       key,
-      label: getGroupLabel(key, groupBy, customCols),
+      label: getGroupLabel(key, groupBy, customCols, t),
       rows,
     }))
-  }, [sortedChildren, groupBy, customCols])
+  }, [sortedChildren, groupBy, customCols, t])
 
   function toggleSort(colId: string) {
     if (sortBy !== colId) { setSortBy(colId); setSortDir('asc'); return }
@@ -695,7 +699,7 @@ export default function NodeTableView({ parentId }: Props) {
                 key={col.id}
                 className="node-table-th node-table-th--custom"
                 style={{ position: 'relative' }}
-                title="Clic: ordenar · clic en el nombre: renombrar · clic derecho: opciones"
+                title={t('tip.tableColumnHeader')}
                 onClick={() => { if (editingColId !== col.id) toggleSort(col.id) }}
                 onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setColMenu({ id: col.id, x: e.clientX, y: e.clientY }) }}
               >
@@ -728,7 +732,7 @@ export default function NodeTableView({ parentId }: Props) {
               </th>
             ))}
             <th className="node-table-th node-table-th--add">
-              <button className="node-table-add-col" onClick={addColumnInstant} title="Añadir columna">＋</button>
+              <button className="node-table-add-col" onClick={addColumnInstant} title={t('tip.addColumn')}>＋</button>
             </th>
           </tr>
         </thead>
@@ -775,16 +779,16 @@ export default function NodeTableView({ parentId }: Props) {
                   {grandchildren > 0 && <span className="node-table-children-badge">{grandchildren}</span>}
                   <button
                     onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
-                    title="Abrir nota"
+                    title={t('context.openNote')}
                     style={{ position: 'absolute', right: 6, top: '50%', marginTop: -10, width: 20, height: 20, border: 'none', background: 'transparent', color: 'var(--text-tertiary,#bbb)', cursor: 'pointer', borderRadius: 4, fontSize: 13, lineHeight: 1 }}
                   >↗</button>
                 </td>
                 {hasStatus && (
                   <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__status' })} style={{ position: 'relative' }}>
                     {node.status === null ? <span className="node-table-empty-cell">—</span>
-                      : node.status === 'pending' ? <span className="node-table-status node-table-status--pending">○ Pendiente</span>
-                      : node.status === 'done' ? <span className="node-table-status node-table-status--done">✓ Hecho</span>
-                      : node.status === 'future' ? <span className="node-table-status">◆ Futuro</span>
+                      : node.status === 'pending' ? <span className="node-table-status node-table-status--pending">○ {t('status.pending')}</span>
+                      : node.status === 'done' ? <span className="node-table-status node-table-status--done">✓ {t('status.done')}</span>
+                      : node.status === 'future' ? <span className="node-table-status">◆ {t('status.future')}</span>
                       : <span className="node-table-status">{node.status}</span>}
                     {isBuiltinEditing('__status') && (
                       <div className="node-table-cell-overlay">
@@ -799,10 +803,10 @@ export default function NodeTableView({ parentId }: Props) {
                             setEditingCell(null)
                           }}
                         >
-                          <option value="">Sin estado</option>
-                          <option value="pending">Pendiente</option>
-                          <option value="future">Futuro</option>
-                          <option value="done">Hecho</option>
+                          <option value="">{t('kanban.noStatus')}</option>
+                          <option value="pending">{t('status.pending')}</option>
+                          <option value="future">{t('status.future')}</option>
+                          <option value="done">{t('status.done')}</option>
                         </select>
                       </div>
                     )}
@@ -832,9 +836,9 @@ export default function NodeTableView({ parentId }: Props) {
                 )}
                 {hasPriority && (
                   <td className="node-table-td" onClick={() => setEditingCell({ nodeId: node.id, colId: '__priority' })} style={{ position: 'relative' }}>
-                    {node.priority === 'high' ? <span className="node-table-priority high">↑ Alta</span>
-                      : node.priority === 'medium' ? <span className="node-table-priority medium">→ Media</span>
-                      : node.priority === 'low' ? <span className="node-table-priority low">↓ Baja</span>
+                    {node.priority === 'high' ? <span className="node-table-priority high">↑ {t('priority.high')}</span>
+                      : node.priority === 'medium' ? <span className="node-table-priority medium">→ {t('priority.medium')}</span>
+                      : node.priority === 'low' ? <span className="node-table-priority low">↓ {t('priority.low')}</span>
                       : <span className="node-table-empty-cell">—</span>}
                     {isBuiltinEditing('__priority') && (
                       <div className="node-table-cell-overlay">
@@ -849,10 +853,10 @@ export default function NodeTableView({ parentId }: Props) {
                             setEditingCell(null)
                           }}
                         >
-                          <option value="">Sin prioridad</option>
-                          <option value="low">Baja</option>
-                          <option value="medium">Media</option>
-                          <option value="high">Alta</option>
+                          <option value="">{t('priority.none')}</option>
+                          <option value="low">{t('priority.low')}</option>
+                          <option value="medium">{t('priority.medium')}</option>
+                          <option value="high">{t('priority.high')}</option>
                         </select>
                       </div>
                     )}
@@ -873,7 +877,7 @@ export default function NodeTableView({ parentId }: Props) {
                           autoFocus
                           className="node-table-cell-editor"
                           defaultValue={tags.join(' ')}
-                          placeholder="tag1 tag2 tag3"
+                          placeholder={t('table.tagsPlaceholder')}
                           onBlur={e => {
                             const newTags = e.target.value.split(/\s+/).map(t => t.replace(/^#/, '').trim()).filter(Boolean)
                             const currentTypes = node.types || []
@@ -930,7 +934,7 @@ export default function NodeTableView({ parentId }: Props) {
           <tr className="node-table-addrow" onClick={addRow}>
             <td className="node-table-td node-table-addrow-cell"
               colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
-              ＋ Añadir fila
+              ＋ {t('table.addRow')}
             </td>
           </tr>
         </tbody>
@@ -948,19 +952,19 @@ export default function NodeTableView({ parentId }: Props) {
               style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
             <div className="node-ctx-menu" style={{ position: 'fixed', top: colMenu.y, left: colMenu.x, zIndex: 3000 }}
               onClick={e => e.stopPropagation()}>
-              <button className="node-ctx-item" onClick={() => { setEditingColId(col.id); setColMenu(null) }}>✏️ Renombrar</button>
-              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('asc'); setColMenu(null) }}>▲ Ordenar ascendente</button>
-              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('desc'); setColMenu(null) }}>▼ Ordenar descendente</button>
+              <button className="node-ctx-item" onClick={() => { setEditingColId(col.id); setColMenu(null) }}>✏️ {t('table.rename')}</button>
+              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('asc'); setColMenu(null) }}>▲ {t('table.sortAsc')}</button>
+              <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('desc'); setColMenu(null) }}>▼ {t('table.sortDesc')}</button>
               <div className="node-ctx-sep" />
-              <div className="node-ctx-label">Tipo</div>
-              {(Object.entries(COL_TYPE_LABELS) as [ColType, string][]).map(([k, v]) => (
+              <div className="node-ctx-label">{t('table.type')}</div>
+              {(Object.entries(COL_TYPE_LABEL_KEYS) as [ColType, string][]).map(([k, v]) => (
                 <button key={k} className={`node-ctx-item node-ctx-item--type ${col.type === k ? 'active' : ''}`}
                   onClick={() => changeColType(col.id, k)}>
-                  {col.type === k ? '● ' : '○ '}{v}
+                  {col.type === k ? '● ' : '○ '}{t(v)}
                 </button>
               ))}
               <div className="node-ctx-sep" />
-              <button className="node-ctx-item node-ctx-item--danger" onClick={() => handleDeleteCol(col.id)}>🗑 Eliminar columna</button>
+              <button className="node-ctx-item node-ctx-item--danger" onClick={() => handleDeleteCol(col.id)}>🗑 {t('table.deleteColumn')}</button>
             </div>
           </>
         ), document.body)
@@ -973,10 +977,10 @@ export default function NodeTableView({ parentId }: Props) {
             style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
           <div className="node-ctx-menu" style={{ position: 'fixed', top: rowMenu.y, left: rowMenu.x, zIndex: 3000 }}
             onClick={e => e.stopPropagation()}>
-            <button className="node-ctx-item" onClick={() => { navigate(`/node/${rowMenu.id}`); setRowMenu(null) }}>↗ Abrir nota</button>
-            <button className="node-ctx-item" onClick={() => duplicateRow(rowMenu.id)}>⧉ Duplicar fila</button>
+            <button className="node-ctx-item" onClick={() => { navigate(`/node/${rowMenu.id}`); setRowMenu(null) }}>↗ {t('context.openNote')}</button>
+            <button className="node-ctx-item" onClick={() => duplicateRow(rowMenu.id)}>⧉ {t('table.duplicateRow')}</button>
             <div className="node-ctx-sep" />
-            <button className="node-ctx-item node-ctx-item--danger" onClick={() => deleteRow(rowMenu.id)}>🗑 Eliminar fila</button>
+            <button className="node-ctx-item node-ctx-item--danger" onClick={() => deleteRow(rowMenu.id)}>🗑 {t('table.deleteRow')}</button>
           </div>
         </>
       ), document.body)}
@@ -1014,18 +1018,18 @@ function getGroupKey(node: Node, colId: string, customCols: PropDef[]): string {
   return String(v)
 }
 
-function getGroupLabel(key: string, colId: string, customCols: PropDef[]): string {
-  if (key === '__null') return 'Sin valor'
+function getGroupLabel(key: string, colId: string, customCols: PropDef[], t: (k: string) => string): string {
+  if (key === '__null') return t('table.noValueLabel')
   if (colId === '__status') {
-    return key === 'pending' ? 'Pendiente'
-      : key === 'future' ? 'Futuro'
-      : key === 'done' ? 'Hecho'
+    return key === 'pending' ? t('status.pending')
+      : key === 'future' ? t('status.future')
+      : key === 'done' ? t('status.done')
       : key
   }
   if (colId === '__priority') {
-    return key === 'high' ? 'Alta'
-      : key === 'medium' ? 'Media'
-      : key === 'low' ? 'Baja'
+    return key === 'high' ? t('priority.high')
+      : key === 'medium' ? t('priority.medium')
+      : key === 'low' ? t('priority.low')
       : key
   }
   const col = customCols.find(c => c.id === colId)

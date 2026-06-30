@@ -79,27 +79,27 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
   const usedTags = s.allUsedTags()
 
   const statusOptions: { value: Node['status']; label: string }[] = [
-    { value: null, label: '○ Sin estado' },
-    { value: 'pending', label: '● Pendiente' },
-    { value: 'done', label: '✓ Hecho' },
+    { value: null, label: `○ ${t('status.none')}` },
+    { value: 'pending', label: `● ${t('status.pending')}` },
+    { value: 'done', label: `✓ ${t('status.done')}` },
   ]
 
   const priorityOptions: { value: Node['priority']; label: string; style?: React.CSSProperties }[] = [
-    { value: null, label: '— Ninguna' },
-    { value: 'low', label: '▽ Baja' },
-    { value: 'medium', label: '△ Media', style: { color: '#f59e0b' } },
-    { value: 'high', label: '▲ Alta', style: { color: '#ef4444' } },
+    { value: null, label: `— ${t('priority.none')}` },
+    { value: 'low', label: `▽ ${t('priority.low')}` },
+    { value: 'medium', label: `△ ${t('priority.medium')}`, style: { color: '#f59e0b' } },
+    { value: 'high', label: `▲ ${t('priority.high')}`, style: { color: '#ef4444' } },
   ]
 
   const recurrenceOptions = [
-    { value: '', label: 'Sin repetición' },
-    { value: 'daily', label: '🔁 Cada día' },
-    { value: 'daily:2', label: '🔁 Cada 2 días' },
-    { value: 'weekly', label: '🔁 Cada semana' },
-    { value: 'weekly:2', label: '🔁 Cada 2 semanas' },
-    { value: 'monthly', label: '🔁 Cada mes' },
-    { value: 'monthly:3', label: '🔁 Cada trimestre' },
-    { value: 'yearly', label: '🔁 Cada año' },
+    { value: '', label: t('rec.none') },
+    { value: 'daily', label: `🔁 ${t('rec.daily')}` },
+    { value: 'daily:2', label: `🔁 ${t('rec.every2Days')}` },
+    { value: 'weekly', label: `🔁 ${t('rec.weekly')}` },
+    { value: 'weekly:2', label: `🔁 ${t('rec.every2Weeks')}` },
+    { value: 'monthly', label: `🔁 ${t('rec.monthly')}` },
+    { value: 'monthly:3', label: `🔁 ${t('rec.quarterly')}` },
+    { value: 'yearly', label: `🔁 ${t('rec.yearly')}` },
   ]
 
   return (
@@ -116,23 +116,23 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         <button
           className={`prop-icon-btn ${node.isFavorite ? 'active' : ''}`}
           onClick={toggleFavorite}
-          title={node.isFavorite ? 'Quitar de favoritos' : 'Fijar'}
+          title={node.isFavorite ? t('context.removeFavorite') : t('tip.pin')}
         >
-          {node.isFavorite ? '★' : '☆'} Fijado
+          {node.isFavorite ? '★' : '☆'} {t('tip.pinned')}
         </button>
         <button
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={toggleEvent}
-          title={node.isEvent ? 'Quitar evento' : 'Marcar como evento'}
+          title={node.isEvent ? t('tip.removeEvent') : t('tip.markEvent')}
         >
           {t('panel.event')}
         </button>
         <button
           className={`prop-icon-btn ${isLocked ? 'active' : ''}`}
           onClick={toggleLocked}
-          title={isLocked ? 'Desbloquear nota' : 'Bloquear nota (solo lectura)'}
+          title={isLocked ? t('tip.unlockNote') : t('tip.lockNote')}
         >
-          {isLocked ? '🔒 Bloqueado' : '🔓 Bloquear'}
+          {isLocked ? `🔒 ${t('tip.locked')}` : `🔓 ${t('tip.lock')}`}
         </button>
       </div>
 
@@ -176,8 +176,8 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           {[
             { label: t('common.today'), days: 0 },
             { label: t('common.tomorrow'), days: 1 },
-            { label: 'Próx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8-d) % 7 || 7 })() },
-            { label: 'Próx. semana', days: 7 },
+            { label: t('date.nextMonday'), days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8-d) % 7 || 7 })() },
+            { label: t('date.nextWeek'), days: 7 },
           ].map(({ label, days }) => {
             const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
             const iso = d.toISOString().slice(0, 10)
@@ -214,7 +214,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
       {/* Fecha fin (solo si es evento) */}
       {(node.isEvent || node.dueEnd) && (
         <div className="prop-section">
-          <div className="prop-section-label">Fecha de fin</div>
+          <div className="prop-section-label">{t('prop.endDate')}</div>
           <div className="prop-datetime">
             <input
               type="date"
@@ -236,7 +236,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
       {/* Recurrencia */}
       {node.status !== null && (
         <div className="prop-section">
-          <div className="prop-section-label">Repetición</div>
+          <div className="prop-section-label">{t('prop.recurrence')}</div>
           <div className="prop-recurrence-chips">
             {recurrenceOptions.map(opt => (
               <button
@@ -281,7 +281,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
                   className={`prop-color-chip ${(nodeColor || null) === c ? 'active' : ''}`}
                   style={{ background: c || 'transparent', border: c ? 'none' : '1px solid var(--border)' }}
                   onClick={() => setColor(c)}
-                  title={c || 'Sin color'}
+                  title={c || t('prop.noColor')}
                 >
                   {!c && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>✕</span>}
                 </button>
@@ -293,7 +293,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
       {/* Área */}
       <div className="prop-section">
-        <div className="prop-section-label">Área</div>
+        <div className="prop-section-label">{t('prop.area')}</div>
         <div className="prop-tags">
           {nodeArea && (
             <span className="prop-tag-chip" style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--text-accent)' }}>
@@ -320,7 +320,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
                     setAreaInput('')
                   }
                 }}
-                placeholder="+ área"
+                placeholder={t('ph.addArea')}
                 list="prop-areas-datalist"
               />
               <datalist id="prop-areas-datalist">
@@ -333,7 +333,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
 
       {/* Tags */}
       <div className="prop-section">
-        <div className="prop-section-label">Tags</div>
+        <div className="prop-section-label">{t('settings.tabTags')}</div>
         <div className="prop-tags">
           {(node.types || []).map(t => (
             <span key={t} className="prop-tag-chip" style={{ background: s.tagColor(t) + '20', color: s.tagColor(t) }}>
@@ -347,7 +347,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
             value={newType}
             onChange={e => setNewType(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addType(newType) } }}
-            placeholder="+ tag"
+            placeholder={t('ph.addTag')}
             list="prop-tags-datalist"
           />
           <datalist id="prop-tags-datalist">
@@ -373,10 +373,10 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
         if (refs.length === 0 && mentionedNodes.length === 0) return null
         return (
           <div className="prop-section">
-            <div className="prop-section-label">Enlazadas</div>
+            <div className="prop-section-label">{t('prop.linked')}</div>
             {mentionedNodes.map(n => (
               <button key={n.id} className="prop-linked-btn" onClick={() => navigate(`/node/${n.id}`)}>
-                📄 {n.text || 'Sin título'}
+                📄 {n.text || t('common.noTitle')}
               </button>
             ))}
           </div>

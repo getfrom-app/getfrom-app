@@ -111,12 +111,12 @@ export default function WFTopBar({
 
       {/* ── Nav: back + forward ── */}
       <div className="wf-topbar-nav">
-        <button className="wf-topbar-btn" onClick={() => window.history.back()} title="Atrás (⌘[)">
+        <button className="wf-topbar-btn" onClick={() => window.history.back()} title={t('wftopbar.backButton')}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </button>
-        <button className="wf-topbar-btn" onClick={() => window.history.forward()} title="Adelante (⌘])">
+        <button className="wf-topbar-btn" onClick={() => window.history.forward()} title={t('wftopbar.forwardButton')}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -126,7 +126,7 @@ export default function WFTopBar({
       {/* ── Breadcrumb integrado con casa ── */}
       <div className="wf-topbar-breadcrumb">
         {/* Casa — siempre visible, lleva al raíz */}
-        <button className="wf-topbar-crumb-home" onClick={goHome} title="Inicio">
+        <button className="wf-topbar-crumb-home" onClick={goHome} title={t('common.home')}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
@@ -169,7 +169,7 @@ export default function WFTopBar({
       <button
         className={`wf-topbar-btn ${rightPanel === 'magic' ? 'active' : ''}`}
         onClick={onToggleMagic}
-        title="Magic Chat (M)"
+        title={t('tip.magicChat')}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
@@ -191,7 +191,7 @@ export default function WFTopBar({
       <button
         className={`wf-topbar-btn ${rightPanel === 'planner' ? 'active' : ''}`}
         onClick={onTogglePlanner}
-        title="Planificador (P)"
+        title={t('wftopbar.planner')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/>
@@ -235,7 +235,7 @@ export default function WFTopBar({
         <button
           className={`wf-topbar-btn ${menuOpen ? 'active' : ''}`}
           onClick={() => setMenuOpen(v => !v)}
-          title="Menú"
+          title={t('wftopbar.menu')}
         >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -245,7 +245,7 @@ export default function WFTopBar({
           <div className="wf-topbar-dropdown">
             {perfilNode && (
               <button className="wf-topbar-dropdown-item" onClick={() => { navigate(`/node/${perfilNode.id}`); setMenuOpen(false) }}>
-                <span>🧠</span> Perfil de IA
+                <span>🧠</span> {t('profile.panelLabel')}
               </button>
             )}
             {papeleraNode && (
@@ -254,11 +254,11 @@ export default function WFTopBar({
               </button>
             )}
             <button className="wf-topbar-dropdown-item" onClick={() => { onOpenSettings(); setMenuOpen(false) }}>
-              <span>⚙️</span> Ajustes
+              <span>⚙️</span> {t('wftopbar.menuSettings')}
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>
-              <span>↩</span> Cerrar sesión
+              <span>↩</span> {t('wftopbar.menuLogout')}
             </button>
           </div>
         )}

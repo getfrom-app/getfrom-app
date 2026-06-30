@@ -11,6 +11,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useRecordingStore } from '../../store/recordingStore'
 import { createNoteFromTranscript } from '../../utils/recordingProcessor'
 
@@ -24,6 +25,7 @@ type State   = 'idle' | 'recording' | 'review' | 'creating' | 'error'
 interface Props { onClose: () => void }
 
 export default function RecorderPanel({ onClose }: Props) {
+  const { t }      = useTranslation()
   const r          = useRecordingStore()
   const navigate   = useNavigate()
   const [micPerm, setMicPerm] = useState<MicPerm>('unknown')
@@ -73,7 +75,7 @@ export default function RecorderPanel({ onClose }: Props) {
 
   async function createNote() {
     const text = (txRef.current?.textContent || r.finalText || r.transcript).trim()
-    if (!text) { setState('error'); setErrMsg('Sin transcripción detectable.'); return }
+    if (!text) { setState('error'); setErrMsg(t('tip.noTranscript')); return }
     setState('creating')
     try {
       const { parentId } = await createNoteFromTranscript(text, r.elapsed)
@@ -84,7 +86,7 @@ export default function RecorderPanel({ onClose }: Props) {
         window.dispatchEvent(new CustomEvent('magic-chat:open-with-text', { detail: { text: '' } }))
       }, 60)
     } catch (e) {
-      setErrMsg(e instanceof Error ? e.message : 'Error creando la nota')
+      setErrMsg(e instanceof Error ? e.message : t('tip.errorCreatingNote'))
       setState('review')
     }
   }
@@ -143,7 +145,7 @@ export default function RecorderPanel({ onClose }: Props) {
             onClick={() => { userEdited.current = false; r.startRecording() }}
             disabled={!r.isSupported || micPerm === 'denied'}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2, flexShrink: 0 }}
-            title="Iniciar grabación"
+            title={t('tip.startRecording')}
           >
             <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="currentColor" /></svg>
           </button>
@@ -152,19 +154,19 @@ export default function RecorderPanel({ onClose }: Props) {
           <button
             onClick={() => r.stopRecording()}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2, flexShrink: 0 }}
-            title="Parar"
+            title={t('tip.stop')}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8" rx="1.5" /></svg>
           </button>
         )}
         {state === 'creating' && (
-          <span style={{ fontSize: 11, color: 'var(--accent)', flexShrink: 0, fontStyle: 'italic' }}>Creando nota…</span>
+          <span style={{ fontSize: 11, color: 'var(--accent)', flexShrink: 0, fontStyle: 'italic' }}>{t('tip.creatingNote')}</span>
         )}
         {state === 'review' && (
           <button onClick={reset}
             style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
-            title="Descartar y grabar de nuevo"
-          >↺ Nueva</button>
+            title={t('tip.discardAndRerecord')}
+          >↺ {t('tip.new')}</button>
         )}
       </div>
 
@@ -196,7 +198,7 @@ export default function RecorderPanel({ onClose }: Props) {
               border: 'none', background: 'var(--accent, #6c5ce7)', color: '#fff',
               fontSize: 13.5, fontWeight: 600,
             }}
-          >Crear nota</button>
+          >{t('tip.createNote')}</button>
           {errMsg && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--warning, #d97706)' }}>⚠️ {errMsg}</div>}
         </div>
       )}
@@ -204,12 +206,12 @@ export default function RecorderPanel({ onClose }: Props) {
       {/* Idle: avisos */}
       {state === 'idle' && micPerm === 'denied' && (
         <div style={{ padding: '0 12px', fontSize: 13, color: 'var(--warning)' }}>
-          Micrófono bloqueado en el navegador.
+          {t('tip.micBlocked')}
         </div>
       )}
       {state === 'idle' && !r.isSupported && (
         <div style={{ padding: '0 12px', fontSize: 13, color: 'var(--text-tertiary)' }}>
-          Tu navegador no soporta grabación de voz. Usa Chrome.
+          {t('tip.voiceUnsupported')}
         </div>
       )}
       {state === 'error' && (

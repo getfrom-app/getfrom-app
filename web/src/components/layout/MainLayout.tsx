@@ -1064,7 +1064,7 @@ export default function MainLayout() {
   if (loadError) {
     return (
       <div className="error-screen">
-        <p>Error al conectar: {loadError}</p>
+        <p>{t('app.connectError')}: {loadError}</p>
         <button onClick={() => window.location.reload()}>{t('app.retrying')}</button>
       </div>
     )
@@ -1133,13 +1133,13 @@ export default function MainLayout() {
               <div className="view-body">
                 <div className="view-empty" style={{ paddingTop: 40 }}>
                   <div style={{ fontSize: 48, marginBottom: 12 }}>🗺</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Página no encontrada</div>
-                  <div style={{ color: 'var(--text-tertiary)' }}>La ruta que buscas no existe.</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t('notFound.title')}</div>
+                  <div style={{ color: 'var(--text-tertiary)' }}>{t('notFound.subtitle')}</div>
                   <button
                     className="btn-primary"
                     style={{ marginTop: 20 }}
                     onClick={() => window.location.href = '/app/'}
-                  >Ir a inicio</button>
+                  >{t('notFound.goHome')}</button>
                 </div>
               </div>
             </div>
@@ -1151,7 +1151,7 @@ export default function MainLayout() {
       {/* ── Columna derecha — siempre visible ── */}
       {rightCollapsed && !activeDocEditor && (
         <button
-          title="Mostrar panel"
+          title={t('tip.showPanel')}
           onClick={() => setRightCollapsed(false)}
           style={{
             position: 'fixed', top: 64, right: 0, zIndex: 40,
@@ -1173,7 +1173,7 @@ export default function MainLayout() {
       }}>
         <div className="magic-panel-resize-bar" onMouseDown={handleRightPanelResizeDown} />
         <button
-          title="Ocultar panel"
+          title={t('tip.hidePanel')}
           onClick={() => setRightCollapsed(true)}
           style={{
             position: 'absolute', top: 8, right: 8, zIndex: 6,
@@ -1276,7 +1276,7 @@ export default function MainLayout() {
           <button
             className="quick-capture-fab"
             onClick={() => setShowUnifiedCapture(true)}
-            title="Nueva nota · buscar (Espacio)"
+            title={t('tip.newNoteSearch')}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -1305,13 +1305,13 @@ export default function MainLayout() {
             onMouseDown={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>✂️ URL corta</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>✂️ {t('slug.title')}</span>
               <button onClick={() => setSlugModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Establece una URL corta para este nodo. Estará disponible en:<br />
+              {t('slug.description')}<br />
               <code style={{ background: 'var(--bg-secondary)', borderRadius: 4, padding: '2px 6px', fontSize: 12, color: 'var(--accent)' }}>
-                {window.location.origin}/app/node/<strong>{slugInput || 'tu-slug'}</strong>
+                {window.location.origin}/app/node/<strong>{slugInput || t('slug.placeholderSlug')}</strong>
               </code>
             </p>
             <input
@@ -1319,7 +1319,7 @@ export default function MainLayout() {
               type="text"
               value={slugInput}
               onChange={e => setSlugInput(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
-              placeholder="mi-proyecto"
+              placeholder={t('slug.inputPlaceholder')}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
@@ -1340,11 +1340,11 @@ export default function MainLayout() {
               autoFocus
             />
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)' }}>
-              Solo letras minúsculas, números y guiones. Déjalo vacío para eliminar la URL corta.
+              {t('slug.hint')}
             </p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={() => setSlugModal(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -1361,7 +1361,7 @@ export default function MainLayout() {
                 }}
                 style={{ background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
               >
-                Guardar y copiar
+                {t('slug.saveAndCopy')}
               </button>
             </div>
           </div>
@@ -1370,8 +1370,8 @@ export default function MainLayout() {
       <button
         className="mobile-fab"
         onClick={() => setShowUnifiedCapture(true)}
-        title="Búsqueda rápida"
-        aria-label="Abrir búsqueda"
+        title={t('tip.quickSearch')}
+        aria-label={t('tip.openSearch')}
       >
         +
       </button>

@@ -74,10 +74,10 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
           return (
             <div>
-              <div className="rc-section-label" style={{ marginBottom: 6 }}>Estado</div>
+              <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.state')}</div>
               <div style={{ display: 'flex', borderRadius: 999, border: `1px solid ${color}40`, overflow: 'hidden', background: color + '0a' }}>
-                {seg('Abierto', 'open', '#16a34a')}
-                {seg('Cerrado', 'closed', 'var(--text-tertiary)')}
+                {seg(t('ctxPanel.open'), 'open', '#16a34a')}
+                {seg(t('ctxPanel.closed'), 'closed', 'var(--text-tertiary)')}
               </div>
             </div>
           )
@@ -90,20 +90,20 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const pColor = parent ? contextColor(parent.id) : color
           return (
             <div>
-              <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto padre</div>
+              <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.parentContext')}</div>
               {parent ? (
                 // Píldora navegable (clic en el nombre → ir al padre) + «Cambiar» al estilo de Estado.
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, border: `1px solid ${pColor}40`, background: pColor + '12' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }} />
-                  <button onClick={() => navigate(`/node/${parent.id}`)} title={`Ir a ${parent.text}`}
+                  <button onClick={() => navigate(`/node/${parent.id}`)} title={t('ctxPanel.goTo', { name: parent.text })}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{parent.text}</button>
-                  <button onClick={openParentPicker} title="Cambiar contexto padre"
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, color: pColor, opacity: 0.85 }}>· Cambiar</button>
+                  <button onClick={openParentPicker} title={t('ctxPanel.changeParent')}
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, color: pColor, opacity: 0.85 }}>· {t('common.change')}</button>
                 </span>
               ) : (
-                <button onClick={openParentPicker} title="Añadir contexto padre"
+                <button onClick={openParentPicker} title={t('ctxPanel.addParent')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color, border: `1px dashed ${color}55`, background: 'none' }}>
-                  + Añadir contexto padre
+                  + {t('ctxPanel.addParent')}
                 </button>
               )}
               {parentPicker && createPortal((
@@ -152,13 +152,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               ) : a.status != null ? (
                 <button className={`dc-check ${a.status === 'done' ? 'dc-check--done' : ''}`}
                   onClick={e => { e.stopPropagation(); store.updateNode(a.id, { status: a.status === 'done' ? 'pending' : 'done' }) }}
-                  title="Marcar hecha/pendiente">{a.status === 'done' ? '✓' : ''}</button>
+                  title={t('ctxPanel.toggleDone')}>{a.status === 'done' ? '✓' : ''}</button>
               ) : (
                 <span className="dc-check" style={{ border: 'none', background: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--text-tertiary)', flexShrink: 0 }} />
                 </span>
               )}
-              <span className="dc-text">{a.text || '(sin texto)'}</span>
+              <span className="dc-text">{a.text || t('ctxPanel.noText')}</span>
               <span style={{ flex: 1 }} />
               {(a.status != null || a.isEvent) && a.due && (() => {
                 const d = new Date(a.due)
@@ -167,19 +167,19 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                 const label = a.isEvent && hasTime ? `${base} · ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : base
                 return (
                   <span className="dc-due" style={{ color: dueChipColor(a.due), cursor: 'pointer' }}
-                    title="Fecha y recurrencia"
+                    title={t('ctxPanel.dateRecurrence')}
                     onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>
                     {label}
                   </span>
                 )
               })()}
-              {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: 'día', weekly: 'sem', monthly: 'mes', yearly: 'año' }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title="Fecha y recurrencia" onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
+              {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: t('ctxPanel.recDay'), weekly: t('ctxPanel.recWeek'), monthly: t('ctxPanel.recMonth'), yearly: t('ctxPanel.recYear') }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title={t('ctxPanel.dateRecurrence')} onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
               {a.status != null && !a.isEvent ? (
                 // Tarea: mismo set de hover que la columna del día (foco · fecha · borrar).
                 <TaskHoverActions node={a} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
               ) : (
                 // Evento/Nota: quitar del contexto.
-                <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title="Quitar del contexto">×</button>
+                <button className="dc-del" onClick={e => { e.stopPropagation(); unassignContext(a.id, nodeId) }} title={t('ctxPanel.removeFromContext')}>×</button>
               )}
             </div>
           )
@@ -191,9 +191,9 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           )
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {block('Tareas', tareas)}
-              {block('Eventos', eventos)}
-              {block('Notas', notas)}
+              {block(t('sidebar.groupTasks'), tareas)}
+              {block(t('sidebar.groupEvents'), eventos)}
+              {block(t('sidebar.groupNotes'), notas)}
             </div>
           )
         })()}
@@ -208,21 +208,21 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}>
               {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
-              <span className="dc-event-dot" style={{ background: contextColor(c.id) }} aria-label="Contexto" />
-              <span className="dc-text" style={{ textDecoration: closed ? 'line-through' : 'none', opacity: closed ? 0.6 : 1 }}>{c.text || 'Contexto'}</span>
+              <span className="dc-event-dot" style={{ background: contextColor(c.id) }} aria-label={t('ctxPanel.context')} />
+              <span className="dc-text" style={{ textDecoration: closed ? 'line-through' : 'none', opacity: closed ? 0.6 : 1 }}>{c.text || t('ctxPanel.context')}</span>
             </div>
           )
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {abiertos.length > 0 && (
                 <div className="dc-group">
-                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Subcontextos abiertos · {abiertos.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.subcontextsOpen')} · {abiertos.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
                 </div>
               )}
               {cerrados.length > 0 && (
                 <div className="dc-group">
-                  <div className="rc-section-label" style={{ marginBottom: 6 }}>Cerrados · {cerrados.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.closedPlural')} · {cerrados.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cerrados.map(c => ctxRow(c, true))}</div>
                 </div>
               )}
@@ -251,6 +251,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
  *  NOTA, no aquí. El lápiz (✎) permite corregir a mano si hace falta. */
 function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
   const s = useStore()
+  const { t } = useTranslation()
   const saved = useMemo(() => readContextKnowledge(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const [text, setText] = useState(saved)
   const [editing, setEditing] = useState(false)
@@ -269,10 +270,10 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
   return (
     <div>
       <div className="rc-section-label" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span>🧠 Lo que Fromly sabe</span>
+        <span>🧠 {t('ctxPanel.whatFromlyKnows')}</span>
         <span style={{ flex: 1 }} />
         {!editing && (
-          <button onClick={() => setEditing(true)} title="Corregir a mano"
+          <button onClick={() => setEditing(true)} title={t('ctxPanel.fixManually')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 2, fontSize: 12, lineHeight: 1 }}>✎</button>
         )}
       </div>
@@ -280,7 +281,7 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
         <textarea
           autoFocus
           value={text}
-          placeholder="Una línea por dato. Fromly lo irá completando solo desde tu nota."
+          placeholder={t('ctxPanel.knowledgePlaceholder')}
           onChange={e => setText(e.target.value)}
           onBlur={commit}
           rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
@@ -299,7 +300,7 @@ function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
         </div>
       ) : (
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-          Fromly aprenderá de lo que escribas en este contexto.
+          {t('ctxPanel.knowledgeEmpty')}
         </div>
       )}
     </div>

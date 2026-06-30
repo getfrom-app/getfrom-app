@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
@@ -36,12 +37,13 @@ const TrashIcon = (
 type OutlinerExtraProps = Omit<React.ComponentProps<typeof Outliner>, 'parentId' | 'excludeIds'>
 
 // ── Badge de evento: hora + repetición ────────────────────────────────────────
-const REC_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'No se repite' },
-  { value: 'daily:1', label: 'Cada día' },
-  { value: 'weekly:1', label: 'Cada semana' },
-  { value: 'monthly:1', label: 'Cada mes' },
-  { value: 'yearly:1', label: 'Cada año' },
+type TFn = (k: string) => string
+const recOptions = (t: TFn): { value: string; label: string }[] => [
+  { value: '', label: t('tip.recNone') },
+  { value: 'daily:1', label: t('tip.recDaily') },
+  { value: 'weekly:1', label: t('tip.recWeekly') },
+  { value: 'monthly:1', label: t('tip.recMonthly') },
+  { value: 'yearly:1', label: t('tip.recYearly') },
 ]
 function hhmm(iso?: string | null): string {
   if (!iso) return ''
@@ -57,10 +59,10 @@ function withTime(baseIso: string, hm: string): string {
 function isAllDay(n: Node): boolean {
   try { return JSON.parse(n.extraData || '{}')._gcalAllDay === '1' } catch { return false }
 }
-function recShort(rec?: string | null): string | null {
+function recShort(rec: string | null | undefined, t: TFn): string | null {
   if (!rec) return null
   const u = rec.split(':')[0]
-  return ({ daily: 'cada día', weekly: 'cada semana', monthly: 'cada mes', yearly: 'cada año' } as Record<string, string>)[u] || 'repite'
+  return ({ daily: t('tip.recDailyShort'), weekly: t('tip.recWeeklyShort'), monthly: t('tip.recMonthlyShort'), yearly: t('tip.recYearlyShort') } as Record<string, string>)[u] || t('tip.recShortGeneric')
 }
 
 export default function DayColumn({
@@ -75,6 +77,7 @@ export default function DayColumn({
   useStore()
   const navigate = useNavigate()
   const us = useUserStore()
+  const { t } = useTranslation()
 
   // Eventos de Google del día: se traen de Google (NO se materializan como nodos).
   // Se pintan en el bloque de eventos; clic → modal de edición + botón «Crear nodo».
@@ -136,7 +139,7 @@ export default function DayColumn({
     trashNode(n.id)
   }
   const delBtn = (n: Node) => (
-    <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); deleteRow(n) }}>{TrashIcon}</button>
+    <button className="dc-del" title={t('common.delete')} onClick={e => { e.stopPropagation(); deleteRow(n) }}>{TrashIcon}</button>
   )
 
   // Empujar a Google los títulos de eventos editados (debounce; anti-bucle dentro).
@@ -153,16 +156,16 @@ export default function DayColumn({
       {/* 1. Eventos de Google Calendar del día */}
       {(eventNodes.length > 0 || extraEvents.length > 0) && (
         <div className="dc-group">
-          {header('eventos', isToday ? 'Eventos de hoy' : 'Eventos del día', 'dc-group-label--event')}
+          {header('eventos', isToday ? t('tip.eventsToday') : t('tip.eventsDay'), 'dc-group-label--event')}
           {!collapsed.has('eventos') && extraEvents.map(ev => {
             const allDay = ev.allDay
-            const timeLabel = allDay ? 'Todo el día' : `${hhmm(ev.start)}–${hhmm(ev.end)}`
+            const timeLabel = allDay ? t('tip.allDay') : `${hhmm(ev.start)}–${hhmm(ev.end)}`
             return (
               <div key={ev.id} className="dc-row dc-row--event"
                 onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
-                title="Editar evento de Google Calendar">
+                title={t('tip.editGcalEvent')}>
                 <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
-                <span className="dc-text">{ev.title || 'Evento'}</span>
+                <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
                 <span className="dc-ev-badge">{timeLabel}</span>
               </div>
             )
@@ -170,8 +173,8 @@ export default function DayColumn({
           {!collapsed.has('eventos') && eventNodes.map(ev => {
             const color = getGcalColor(ev)
             const allDay = isAllDay(ev)
-            const rec = recShort(ev.recurrence)
-            const timeLabel = allDay ? 'Todo el día' : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
+            const rec = recShort(ev.recurrence, t)
+            const timeLabel = allDay ? t('tip.allDay') : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
             return (
               <div key={ev.id}>
                 <div className="dc-row dc-row--event" data-node-id={ev.id}
@@ -180,12 +183,12 @@ export default function DayColumn({
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
                   <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>
-                    {ev.text ? renderInline(ev.text) : 'Evento'}
+                    {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
                   </span>
                   <button
                     className="dc-ev-badge"
                     onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
-                    title="Editar hora y repetición"
+                    title={t('tip.editTimeAndRepeat')}
                   >
                     {timeLabel}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
                   </button>
@@ -193,18 +196,18 @@ export default function DayColumn({
                 </div>
                 {editEv === ev.id && !allDay && ev.due && (
                   <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
-                    <label>Inicio
+                    <label>{t('tip.start')}
                       <input type="time" defaultValue={hhmm(ev.due)}
                         onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
                     </label>
-                    <label>Fin
+                    <label>{t('tip.end')}
                       <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
                         onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
                     </label>
-                    <label>Repetición
+                    <label>{t('tip.repeat')}
                       <select defaultValue={ev.recurrence || ''}
                         onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
-                        {REC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {recOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </label>
                   </div>
@@ -221,20 +224,20 @@ export default function DayColumn({
       {/* Otros días → tareas con due en ESE día. */}
       {!isToday && dayTasks.length > 0 && (
         <div className="dc-group">
-          {header('tareas', 'Tareas del día')}
-          {!collapsed.has('tareas') && dayTasks.map(t => (
-            <div key={t.id} className={`dc-row ${t.status === 'done' ? 'dc-row--done' : ''}`} data-node-id={t.id}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: t.id, x: e.clientX, y: e.clientY } })) }}>
-              <button className={`dc-check ${t.status === 'done' ? 'dc-check--done' : ''}`}
-                onClick={e => { e.stopPropagation(); toggleTaskDone(t) }} title="Completar" aria-label="Completar">
-                {t.status === 'done' ? '✓' : ''}
+          {header('tareas', t('tip.dayTasks'))}
+          {!collapsed.has('tareas') && dayTasks.map(task => (
+            <div key={task.id} className={`dc-row ${task.status === 'done' ? 'dc-row--done' : ''}`} data-node-id={task.id}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
+              <button className={`dc-check ${task.status === 'done' ? 'dc-check--done' : ''}`}
+                onClick={e => { e.stopPropagation(); toggleTaskDone(task) }} title={t('daily.markDone')} aria-label={t('daily.markDone')}>
+                {task.status === 'done' ? '✓' : ''}
               </button>
-              <span className="dc-text" onClick={() => navigate(`/node/${t.id}`)} style={{ cursor: 'pointer' }}>
-                {t.text ? renderInline(t.text) : 'Tarea'}
+              <span className="dc-text" onClick={() => navigate(`/node/${task.id}`)} style={{ cursor: 'pointer' }}>
+                {task.text ? renderInline(task.text) : t('tip.task')}
               </span>
-              {hhmm(t.due) !== '00:00' && t.due && <span className="dc-time">{hhmm(t.due)}</span>}
-              <RowContextChip node={t} />
-              <TaskHoverActions node={t} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+              {hhmm(task.due) !== '00:00' && task.due && <span className="dc-time">{hhmm(task.due)}</span>}
+              <RowContextChip node={task} />
+              <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
             </div>
           ))}
         </div>
@@ -259,7 +262,7 @@ export default function DayColumn({
             <div key={a.id} className="dc-row" data-node-id={a.id}
               onClick={() => { if (!editing) flyToArea(a.id) }}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}
-              title="Ir a esta área del lienzo" style={{ cursor: 'pointer' }}>
+              title={t('tip.goToArea')} style={{ cursor: 'pointer' }}>
               <span className="dc-event-dot" style={{ background: dot }} />
               {editing ? (
                 <input autoFocus defaultValue={a.text || ''} className="dc-text"
@@ -268,15 +271,15 @@ export default function DayColumn({
                   onBlur={e => { const v = e.target.value.trim(); if (v && v !== a.text) store.updateNode(a.id, { text: v }); setEditArea(null) }}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditArea(null) }} />
               ) : (
-                <span className="dc-text" onDoubleClick={e => { e.stopPropagation(); setEditArea(a.id) }} title="Doble clic para renombrar">{a.text ? renderInline(a.text) : 'Área'}</span>
+                <span className="dc-text" onDoubleClick={e => { e.stopPropagation(); setEditArea(a.id) }} title={t('tip.doubleClickRename')}>{a.text ? renderInline(a.text) : t('tip.area')}</span>
               )}
               <RowContextChip node={a} />
-              <button className="dc-del" title={a.isFavorite ? 'Quitar de favoritos' : 'Marcar favorito'}
+              <button className="dc-del" title={a.isFavorite ? t('tip.unfavorite') : t('tip.favorite')}
                 onClick={e => { e.stopPropagation(); store.updateNode(a.id, { isFavorite: !a.isFavorite }) }}
                 style={{ color: a.isFavorite ? '#f59e0b' : undefined }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill={a.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M10 2.5l2.35 4.76 5.25.76-3.8 3.7.9 5.23L10 14.94l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>
               </button>
-              <button className="dc-del" title="Eliminar área (las notas dentro vuelven a la nota)"
+              <button className="dc-del" title={t('tip.deleteArea')}
                 onClick={e => {
                   e.stopPropagation()
                   for (const ch of store.children(a.id)) if (!ch.deletedAt) store.updateNode(ch.id, { parentId: a.parentId })
@@ -287,13 +290,13 @@ export default function DayColumn({
         }
         return (
           <div className="dc-group">
-            {header('areas', 'Áreas')}
+            {header('areas', t('tip.areas'))}
             {!collapsed.has('areas') && groups.map(g => (
               <div key={g.ctx?.id ?? '__none__'}>
                 {byCtx.size > 1 && (
                   <div className="rc-section-label" style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '4px 0 2px' }}>
                     {g.ctx && <span className="dc-event-dot" style={{ background: contextColor(g.ctx.id) }} />}
-                    {g.ctx ? g.ctx.text : 'Sin contexto'}
+                    {g.ctx ? g.ctx.text : t('tip.noContext')}
                   </div>
                 )}
                 {g.areas.map(renderArea)}
@@ -307,7 +310,7 @@ export default function DayColumn({
              monta aquí: los nodos viven en el lienzo (includeNodes=false). */}
       {includeNodes && (
         <div className="dc-group">
-          {header('nodos', 'Nodos')}
+          {header('nodos', t('tip.nodes'))}
           {!collapsed.has('nodos') && (
             <Outliner parentId={node.id} excludeIds={eventIds} {...outlinerProps} />
           )}
@@ -317,7 +320,7 @@ export default function DayColumn({
       {/* 6. Capturas — bandeja de entrada (fondo). Arrástralas al lienzo para colocarlas. */}
       {captureNodes.length > 0 && (
         <div className="dc-group">
-          {header('capturas', 'Capturas')}
+          {header('capturas', t('search.chipCaptura'))}
           {!collapsed.has('capturas') && captureNodes.map(c => (
             <div
               key={c.id}
@@ -327,10 +330,10 @@ export default function DayColumn({
               onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
               onClick={() => navigate(`/node/${c.id}`)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
-              title="Arrastra al lienzo para colocarla"
+              title={t('tip.dragToCanvas')}
             >
               <span className="dc-capture-grip">⠿</span>
-              <span className="dc-text">{c.text ? renderInline(c.text) : 'Captura'}</span>
+              <span className="dc-text">{c.text ? renderInline(c.text) : t('tip.capture')}</span>
               <RowContextChip node={c} />
               {delBtn(c)}
             </div>
@@ -349,7 +352,7 @@ export default function DayColumn({
           onCreateNode={() => {
             // Crear bajo demanda un nodo local vinculado al evento (no por defecto).
             const ev = editingGcal
-            const newNode = store.createNode({ text: ev.title || 'Evento', parentId: node.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
+            const newNode = store.createNode({ text: ev.title || t('search.chipEvent'), parentId: node.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
             store.updateNode(newNode.id, {
               isEvent: true, due: ev.start, dueEnd: ev.end,
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)

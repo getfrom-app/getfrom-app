@@ -8,6 +8,7 @@
  */
 import { useStore, store } from '../../store/nodeStore'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { collectDailyCockpit, scheduleTask, rescheduleCount, toggleTaskDone } from '../../utils/dailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
@@ -16,6 +17,7 @@ import type { Node } from '../../types'
 export default function PorPlanificarPanel() {
   useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const data = collectDailyCockpit()
   // Atrasadas (fecha pasada, pendientes) + sin fecha (seguimiento). Lo de hoy ya
   // está programado, así que NO entra en la cola.
@@ -37,24 +39,24 @@ export default function PorPlanificarPanel() {
         onDragStart={e => { e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed = 'move' }}
         onClick={() => navigate(`/node/${n.id}`)}
         onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
-        title="Arrastra al calendario para programar"
+        title={t('tip.dragToCalendar')}
       >
         <span className="pp-queue-grip" aria-hidden>⋮⋮</span>
-        <button className="dc-check" onClick={e => { e.stopPropagation(); toggleTaskDone(n) }} title="Hecha" />
+        <button className="dc-check" onClick={e => { e.stopPropagation(); toggleTaskDone(n) }} title={t('tip.done')} />
         <div className="dc-row-main">
           <div className="dc-row-l1">
-            <span className="dc-text">{n.text ? renderInline(n.text) : '(sin texto)'}</span>
+            <span className="dc-text">{n.text ? renderInline(n.text) : t('tip.noText')}</span>
             <span style={{ marginLeft: 4, flexShrink: 0 }}><RowContextChip node={n} /></span>
             <span className="dc-actions">
-              <button className="dc-action" title="Programar hoy" onClick={e => { e.stopPropagation(); scheduleTask(n, 0) }}>Hoy</button>
-              <button className="dc-action" title="Mañana" onClick={e => { e.stopPropagation(); scheduleTask(n, 1) }}>+1</button>
-              <button className="dc-action" title="En 7 días" onClick={e => { e.stopPropagation(); scheduleTask(n, 7) }}>+7</button>
+              <button className="dc-action" title={t('tip.scheduleToday')} onClick={e => { e.stopPropagation(); scheduleTask(n, 0) }}>{t('common.today')}</button>
+              <button className="dc-action" title={t('common.tomorrow')} onClick={e => { e.stopPropagation(); scheduleTask(n, 1) }}>+1</button>
+              <button className="dc-action" title={t('tip.inSevenDays')} onClick={e => { e.stopPropagation(); scheduleTask(n, 7) }}>+7</button>
             </span>
           </div>
           <div className="dc-row-l2">
             {n.due && <span className="dc-due" style={{ color: '#e03131' }}>{dueLabel(n)}</span>}
             {rc > 0 && (
-              <span className="pp-reschedule-badge" title={`Reagendada ${rc} ${rc === 1 ? 'vez' : 'veces'} — ¿es real?`}>
+              <span className="pp-reschedule-badge" title={t('tip.rescheduledCount', { count: rc })}>
                 ↻ {rc}
               </span>
             )}
@@ -69,25 +71,25 @@ export default function PorPlanificarPanel() {
   return (
     <div className="pp-queue">
       <div className="pp-queue-head">
-        <span className="pp-queue-title">Por planificar</span>
+        <span className="pp-queue-title">{t('tip.toPlan')}</span>
         <span className="pp-queue-count">{total}</span>
       </div>
       {total === 0 ? (
         <div className="pp-queue-empty">
           <div style={{ fontSize: 30, marginBottom: 8 }}>✓</div>
-          Todo programado. Nada pendiente de fecha.
+          {t('tip.allScheduled')}
         </div>
       ) : (
         <div className="pp-queue-body">
           {overdue.length > 0 && (
             <div className="pp-queue-section">
-              <div className="rc-section-label" style={{ color: '#e03131' }}>Atrasadas · {overdue.length}</div>
+              <div className="rc-section-label" style={{ color: '#e03131' }}>{t('daily.overdue')} · {overdue.length}</div>
               {overdue.map(row)}
             </div>
           )}
           {sinFecha.length > 0 && (
             <div className="pp-queue-section">
-              <div className="rc-section-label">Sin fecha · {sinFecha.length}</div>
+              <div className="rc-section-label">{t('daily.noDate')} · {sinFecha.length}</div>
               {sinFecha.map(row)}
             </div>
           )}

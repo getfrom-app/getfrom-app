@@ -56,7 +56,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
     // Sin transcripción: reset directo
     if (!transcript) {
       setProcessState('error')
-      setProcessError('No se detectó audio transcribible. Comprueba que el micrófono esté activo.')
+      setProcessError(t('rec.noAudio'))
       return
     }
 
@@ -74,7 +74,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
         setProcessState('idle')
         r.resetRecording()
       } else {
-        setProcessError(e instanceof Error ? e.message : 'Error al procesar con IA')
+        setProcessError(e instanceof Error ? e.message : t('rec.aiError'))
         setProcessState('error')
       }
     }
@@ -119,9 +119,9 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
       <div className="rec-bar" style={{ gap: 8 }}>
         <span className="rec-bar-processing-dot" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>Analizando con IA…</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>{t('rec.analyzing')}</div>
           <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 1 }}>
-            Creando resumen y tareas
+            {t('rec.creatingSummary')}
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
           <span style={{ fontSize: 14 }}>⚠️</span>
           <div style={{ flex: 1, fontSize: 11, color: 'var(--warning)', lineHeight: 1.3 }}>{processError}</div>
-          <button className="rec-bar-icon-btn" onClick={handleReset} title="Reintentar">↺</button>
+          <button className="rec-bar-icon-btn" onClick={handleReset} title={t('recording.retry')}>↺</button>
         </div>
         {/* Botón de copia manual como fallback */}
         {r.finalText && (
@@ -144,7 +144,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
             style={{ width: '100%', fontSize: 11 }}
             onClick={() => navigator.clipboard.writeText(r.finalText).catch(() => {})}
           >
-            Copiar transcripción
+            {t('rec.copyTranscript')}
           </button>
         )}
       </div>
@@ -158,16 +158,16 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
         <div className="rec-bar" style={{ borderTop: 'none', gap: 8 }}>
           <span style={{ fontSize: 14 }}>✅</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--success)' }}>Guardado en el diario</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--success)' }}>{t('rec.savedToDiary')}</div>
             <div style={{
               fontSize: 10, color: 'var(--text-tertiary)', marginTop: 1,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               🎙 {result.title}
-              {result.hasTasks ? ' · con tareas' : ''}
+              {result.hasTasks ? ` · ${t('rec.withTasks')}` : ''}
             </div>
           </div>
-          <button className="rec-bar-icon-btn" onClick={handleReset} title="Nueva grabación">↺</button>
+          <button className="rec-bar-icon-btn" onClick={handleReset} title={t('rec.newRecording')}>↺</button>
         </div>
         <div style={{ padding: '0 8px 8px', display: 'flex', gap: 4 }}>
           <button
@@ -177,13 +177,13 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
               if (node) navigate(`/node/${node.parentId ?? result.parentId}`)
             }}
           >
-            Ir al nodo
+            {t('rec.goToNode')}
           </button>
           <button
             className="rec-bar-ai-btn rec-bar-ai-btn--secondary"
             onClick={handleReset}
           >
-            Nueva
+            {t('rec.new')}
           </button>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
           <button
             className="rec-bar-icon-btn rec-bar-icon-btn--stop"
             onClick={() => r.stopRecording()}
-            title="Parar y procesar con IA"
+            title={t('rec.stopAndProcess')}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
               <rect x="2" y="2" width="8" height="8" rx="1.5" />
@@ -239,7 +239,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
         }}>
           {r.transcript
             ? <span>{r.transcript}</span>
-            : <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Escuchando…</span>
+            : <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>{t('rec.listening')}</span>
           }
         </div>
       </div>
@@ -250,14 +250,14 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
   return (
     <div className="rec-bar rec-bar--idle">
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Grabadora</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>{t('voice.recordingTitle')}</div>
       </div>
 
       <button
         className="rec-bar-icon-btn rec-bar-icon-btn--record"
         onClick={() => r.startRecording()}
         disabled={!r.isSupported}
-        title={r.isSupported ? 'Iniciar grabación' : 'Reconocimiento de voz no soportado'}
+        title={r.isSupported ? t('rec.startRecording') : t('rec.voiceUnsupported')}
       >
         <svg width="13" height="13" viewBox="0 0 14 14">
           <circle cx="7" cy="7" r="5" fill="currentColor" />

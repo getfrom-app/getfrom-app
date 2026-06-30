@@ -4,18 +4,20 @@
 // activo a la vez; si no hay ninguno, no pinta nada.
 
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useActiveDocEditor, getDocImageInsert } from '../../utils/docEditorStore'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#868e96']
 
 export default function DocInspector() {
+  const { t } = useTranslation()
   const editor = useActiveDocEditor()
   const fileRef = useRef<HTMLInputElement | null>(null)
   if (!editor) return null
 
   const setLink = () => {
     const prev = editor.getAttributes('link').href || ''
-    const url = window.prompt('URL del enlace:', prev)
+    const url = window.prompt(t('tip.linkUrl'), prev)
     if (url === null) return
     if (url === '') editor.chain().focus().unsetLink().run()
     else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
@@ -42,52 +44,52 @@ export default function DocInspector() {
       background: 'var(--bg-elevated,#fafafa)', padding: '14px 16px 40px', overflowY: 'auto',
       display: 'flex', flexDirection: 'column',
     }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text,#333)', marginBottom: 2 }}>Formato</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text,#333)', marginBottom: 2 }}>{t('tip.format')}</div>
 
-      <Label>Estilo de párrafo</Label>
+      <Label>{t('tip.paragraphStyle')}</Label>
       <div style={grid}>
-        <Cell title="Texto normal" on={editor.isActive('paragraph')} act={() => editor.chain().focus().setParagraph().run()} wide>Cuerpo</Cell>
-        <Cell title="Título 1" on={editor.isActive('heading', { level: 1 })} act={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>H1</Cell>
-        <Cell title="Título 2" on={editor.isActive('heading', { level: 2 })} act={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</Cell>
-        <Cell title="Título 3" on={editor.isActive('heading', { level: 3 })} act={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</Cell>
+        <Cell title={t('tip.normalText')} on={editor.isActive('paragraph')} act={() => editor.chain().focus().setParagraph().run()} wide>{t('tip.body')}</Cell>
+        <Cell title={t('format.heading1')} on={editor.isActive('heading', { level: 1 })} act={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>H1</Cell>
+        <Cell title={t('format.heading2')} on={editor.isActive('heading', { level: 2 })} act={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</Cell>
+        <Cell title={t('format.heading3')} on={editor.isActive('heading', { level: 3 })} act={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>H3</Cell>
       </div>
 
-      <Label>Fuente</Label>
+      <Label>{t('tip.font')}</Label>
       <div style={grid}>
-        <Cell title="Negrita" on={editor.isActive('bold')} act={() => editor.chain().focus().toggleBold().run()}><b>B</b></Cell>
-        <Cell title="Cursiva" on={editor.isActive('italic')} act={() => editor.chain().focus().toggleItalic().run()}><i>I</i></Cell>
-        <Cell title="Subrayado" on={editor.isActive('underline')} act={() => editor.chain().focus().toggleUnderline().run()}><u>U</u></Cell>
-        <Cell title="Tachado" on={editor.isActive('strike')} act={() => editor.chain().focus().toggleStrike().run()}><s>S</s></Cell>
+        <Cell title={t('tip.bold')} on={editor.isActive('bold')} act={() => editor.chain().focus().toggleBold().run()}><b>B</b></Cell>
+        <Cell title={t('tip.italic')} on={editor.isActive('italic')} act={() => editor.chain().focus().toggleItalic().run()}><i>I</i></Cell>
+        <Cell title={t('tip.underline')} on={editor.isActive('underline')} act={() => editor.chain().focus().toggleUnderline().run()}><u>U</u></Cell>
+        <Cell title={t('format.strikethrough')} on={editor.isActive('strike')} act={() => editor.chain().focus().toggleStrike().run()}><s>S</s></Cell>
       </div>
 
-      <Label>Color de texto</Label>
+      <Label>{t('tip.textColor')}</Label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '2px' }}>
         {COLORS.map(c => (
-          <button key={c} title="Color" onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run() }}
+          <button key={c} title={t('tip.color')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run() }}
             style={{ width: 24, height: 24, borderRadius: '50%', background: c, border: '2px solid var(--bg-elevated,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)', cursor: 'pointer' }} />
         ))}
-        <button title="Sin color" onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run() }}
+        <button title={t('tip.noColor')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run() }}
           style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg,#fff)', border: '1px dashed var(--text-tertiary,#bbb)', cursor: 'pointer', fontSize: 11, color: 'var(--text-tertiary,#999)' }}>✕</button>
       </div>
 
-      <Label>Listas y bloques</Label>
+      <Label>{t('tip.listsAndBlocks')}</Label>
       <div style={grid}>
-        <Cell title="Lista de viñetas" on={editor.isActive('bulletList')} act={() => editor.chain().focus().toggleBulletList().run()}>•</Cell>
-        <Cell title="Lista numerada" on={editor.isActive('orderedList')} act={() => editor.chain().focus().toggleOrderedList().run()}>1.</Cell>
-        <Cell title="Cita" on={editor.isActive('blockquote')} act={() => editor.chain().focus().toggleBlockquote().run()}>❝</Cell>
-        <Cell title="Código" on={editor.isActive('codeBlock')} act={() => editor.chain().focus().toggleCodeBlock().run()}>{'</>'}</Cell>
+        <Cell title={t('tip.bulletList')} on={editor.isActive('bulletList')} act={() => editor.chain().focus().toggleBulletList().run()}>•</Cell>
+        <Cell title={t('tip.orderedList')} on={editor.isActive('orderedList')} act={() => editor.chain().focus().toggleOrderedList().run()}>1.</Cell>
+        <Cell title={t('format.quote')} on={editor.isActive('blockquote')} act={() => editor.chain().focus().toggleBlockquote().run()}>❝</Cell>
+        <Cell title={t('tip.codeBlock')} on={editor.isActive('codeBlock')} act={() => editor.chain().focus().toggleCodeBlock().run()}>{'</>'}</Cell>
       </div>
 
-      <Label>Insertar</Label>
+      <Label>{t('tip.insert')}</Label>
       <div style={grid}>
-        <Cell title="Enlace" on={editor.isActive('link')} act={setLink} wide>🔗 Enlace</Cell>
-        <Cell title="Imagen" act={() => fileRef.current?.click()} wide>🖼 Imagen</Cell>
+        <Cell title={t('format.link')} on={editor.isActive('link')} act={setLink} wide>🔗 {t('format.link')}</Cell>
+        <Cell title={t('tip.image')} act={() => fileRef.current?.click()} wide>🖼 {t('tip.image')}</Cell>
       </div>
 
-      <Label>Edición</Label>
+      <Label>{t('tip.editing')}</Label>
       <div style={grid}>
-        <Cell title="Deshacer" act={() => editor.chain().focus().undo().run()} wide>↶ Deshacer</Cell>
-        <Cell title="Rehacer" act={() => editor.chain().focus().redo().run()} wide>↷ Rehacer</Cell>
+        <Cell title={t('tip.undo')} act={() => editor.chain().focus().undo().run()} wide>↶ {t('tip.undo')}</Cell>
+        <Cell title={t('tip.redo')} act={() => editor.chain().focus().redo().run()} wide>↷ {t('tip.redo')}</Cell>
       </div>
 
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}

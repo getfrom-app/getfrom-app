@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { store, nodeMeta } from '../../store/nodeStore'
@@ -286,6 +287,7 @@ function getAllDescendants(nodeId: string): string[] {
 }
 
 export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty, flat }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   // Cada nodo calcula su propio estado de multi-selección desde el estado global,
   // en lugar de heredar el boolean del padre. Esto permite seleccionar nodos
@@ -1144,8 +1146,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
     d.setHours(0, 0, 0, 0)
-    if (d.getTime() === today.getTime()) return { label: 'hoy', overdue: false }
-    if (d.getTime() === tomorrow.getTime()) return { label: 'mañana', overdue: false }
+    if (d.getTime() === today.getTime()) return { label: t('date.today'), overdue: false }
+    if (d.getTime() === tomorrow.getTime()) return { label: t('date.tomorrow'), overdue: false }
     const overdue = d < today
     const sameYear = d.getFullYear() === today.getFullYear()
     const sameMonth = sameYear && d.getMonth() === today.getMonth()
@@ -1171,8 +1173,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1)
     const tomorrow = ensureDayPath(tomorrowDate)
     const quickItems: PickerItem[] = [
-      { id: today.id, label: 'Hoy', group: 'note' as const },
-      { id: tomorrow.id, label: 'Mañana', group: 'note' as const },
+      { id: today.id, label: t('date.todayCap'), group: 'note' as const },
+      { id: tomorrow.id, label: t('date.tomorrowCap'), group: 'note' as const },
     ].filter(item => !q || item.label.toLowerCase().includes(q) ||
       normalizeNFD(item.label).includes(normalizeNFD(q)))
     const nodeItems = store.allActive()
@@ -3335,7 +3337,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             draggable
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            title="Arrastra para mover · Click para seleccionar/deseleccionar"
+            title={t('tip.dragHandle')}
             onMouseDown={e => e.stopPropagation()}
             onClick={e => {
               e.stopPropagation()
@@ -3345,7 +3347,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const menuX = Math.max(window.innerWidth * 0.55, rect.right + 8)
               openSelectionMenu({ x: menuX, y: rect.top })
             }}
-            aria-label="Seleccionar nodo"
+            aria-label={t('aria.selectNode')}
           >⋮⋮</span>
         )}
 
@@ -3358,7 +3360,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const rect = e.currentTarget.getBoundingClientRect()
               setContextMenu({ x: rect.left, y: rect.bottom })
             }}
-            title="Más opciones"
+            title={t('tip.moreOptions')}
             tabIndex={-1}
             aria-hidden={!hovered}
           >
@@ -3384,9 +3386,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               }
             }}
             tabIndex={-1}
-            aria-label={isCollapsed ? 'Expandir nodo' : 'Colapsar nodo'}
+            aria-label={isCollapsed ? t('aria.expandNode') : t('aria.collapseNode')}
             aria-expanded={!isCollapsed}
-            title={isCollapsed ? 'Expandir (click) · Alt+click: expandir todo' : 'Colapsar (click) · Alt+click: colapsar todo'}
+            title={isCollapsed ? t('tip.expandNode') : t('tip.collapseNode')}
             style={{ position: 'relative' }}
           >
             <svg
@@ -3408,12 +3410,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {effectiveNode.isEvent ? (
               // Evento: nav-dot + icono calendario (igual para espejos, el muted viene del CSS del row)
               <>
-                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Abrir evento'} />
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? t('tip.mirrorViewOriginal') : t('tip.openEvent')} />
                 <button
                   className="bullet-btn bullet-btn--event"
                   onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
-                  title="Evento"
+                  title={t('tip.event')}
                 >
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1" y="2" width="14" height="13" rx="2"/>
@@ -3424,13 +3426,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             ) : isCaptura ? (
               // Captura: nav-dot + icono claqueta (azul) → navega a la nota.
               <>
-                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title="Zoom in →" />
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={t('tip.zoomIn2')} />
                 <button
                   className="bullet-btn bullet-btn--captura"
                   onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
-                  aria-label="Captura"
-                  title="Captura"
+                  aria-label={t('aria.capture')}
+                  title={t('tip.capture')}
                 >
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#0ea5e9" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1.5" y="4.5" width="13" height="9" rx="1.5"/>
@@ -3441,13 +3443,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             ) : isBucle ? (
               // Bucle: nav-dot + icono de bucle. Abierto = arco violeta; cerrado = círculo gris.
               <>
-                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? t('tip.mirrorViewOriginal') : t('tip.zoomIn2')} />
                 <button
                   className={`bullet-btn bullet-btn--bucle ${isBucleClosed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
                   onClick={toggleBucle}
                   tabIndex={-1}
-                  aria-label="Abrir/cerrar bucle"
-                  title={isBucleClosed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
+                  aria-label={t('aria.toggleLoop')}
+                  title={isBucleClosed ? t('tip.loopClosed') : t('tip.loopOpen')}
                 >
                   {isBucleClosed ? (
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -3464,13 +3466,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             ) : effectiveNode.status !== null ? (
               // Tarea: nav-dot + checkbox (igual para espejos, el muted viene del CSS del row)
               <>
-                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
+                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? t('tip.mirrorViewOriginal') : t('tip.zoomIn2')} />
                 <button
                   className={`bullet-btn task ${taskCheckClass}`}
                   onClick={toggleCheckbox}
                   tabIndex={-1}
-                  aria-label="Toggle tarea"
-                  title="Marcar hecha/pendiente"
+                  aria-label={t('aria.toggleTask')}
+                  title={t('tip.toggleTaskDone')}
                 >
                   {effectiveNode.status === 'done' ? (
                     <svg width="14" height="14" viewBox="0 0 14 14">
@@ -3490,7 +3492,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                 tabIndex={-1}
-                title="Abrir nota"
+                title={t('tip.openNote')}
               >
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 13H13a2 2 0 0 0 0-4h-1M6 3H3a2 2 0 0 0 0 4h1M8 8h0"/>
@@ -3504,7 +3506,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                   onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }}
                   tabIndex={-1}
-                  title="Abrir recurso"
+                  title={t('tip.openResource')}
                 />
                 <button
                   className="bullet-btn task task-sq--resource"
@@ -3516,7 +3518,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     store.updateNode(node.id, { extraData: JSON.stringify(ed) })
                   }}
                   tabIndex={-1}
-                  title="Marcar recurso como procesado"
+                  title={t('tip.markResourceProcessed')}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14">
                     <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
@@ -3529,7 +3531,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={() => navigate(`/node/${node.id}`)}
                 tabIndex={-1}
-                title="Clic para abrir pizarra"
+                title={t('tip.openWhiteboard')}
               >
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#3182ce', letterSpacing: '-0.5px' }}>WB</span>
               </button>
@@ -3539,8 +3541,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={() => navigate(`/node/${node.id}`)}
                 tabIndex={-1}
-                aria-label="Abrir PDF"
-                title="Clic para abrir PDF"
+                aria-label={t('aria.openPdf')}
+                title={t('tip.openPdf')}
               >
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#e53e3e', letterSpacing: '-0.5px' }}>PDF</span>
               </button>
@@ -3550,8 +3552,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={() => navigate(`/node/${node.id}`)}
                 tabIndex={-1}
-                aria-label="Abrir imagen"
-                title="Clic para abrir imagen"
+                aria-label={t('aria.openImage')}
+                title={t('tip.openImage')}
               >
                 <span style={{ fontSize: 12 }}>🖼</span>
               </button>
@@ -3561,7 +3563,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={() => navigate(`/node/${node.id}`)}
                 tabIndex={-1}
-                title="Clic para abrir archivo"
+                title={t('tip.openFile')}
               >
                 <span style={{ fontSize: 12 }}>📎</span>
               </button>
@@ -3571,8 +3573,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className="bullet-btn nota-btn"
                 onClick={() => navigate(`/node/${node.id}`)}
                 tabIndex={-1}
-                aria-label="Abrir nota"
-                title="Clic para abrir esta nota"
+                aria-label={t('aria.openNote')}
+                title={t('tip.openThisNote')}
               >
                 <span style={{ fontSize: 12 }}>📄</span>
               </button>
@@ -3582,11 +3584,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`}
                 onClick={e => { e.stopPropagation(); navigate(`/node/${node.id}`) }}
                 tabIndex={-1}
-                title="Zoom in →"
+                title={t('tip.zoomIn2')}
               />
             ) : (
               // Texto normal: dot navegador (igual para espejos)
-              <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? 'Espejo → ver original' : 'Zoom in →'} />
+              <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? t('tip.mirrorViewOriginal') : t('tip.zoomIn2')} />
             )}
           </span>
         )}
@@ -3802,8 +3804,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 }
               }
             }}
-            data-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : "Escribe algo..."}
-            data-first-placeholder={isFirstEmpty ? "Escribe '/' para comandos" : undefined}
+            data-placeholder={isFirstEmpty ? t('ph.slashForCommands') : t('ph.typeSomething')}
+            data-first-placeholder={isFirstEmpty ? t('ph.slashForCommands') : undefined}
             onPaste={e => {
               // Siempre obtener text/plain limpio — sanitizar artefactos HTML que Chrome
               // puede incluir en text/plain al copiar un enlace (ej: url" target="_blank" rel=...)
@@ -3959,7 +3961,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {node.priority && (
               <span
                 className={`node-priority-dot ${node.priority}`}
-                title={`Prioridad ${node.priority === 'high' ? 'alta' : node.priority === 'medium' ? 'media' : 'baja'} (click para cambiar)`}
+                title={t('tip.priority', { level: node.priority === 'high' ? t('priority.high') : node.priority === 'medium' ? t('priority.medium') : t('priority.low') })}
                 onClick={e => {
                   e.stopPropagation()
                   const cycle: Record<string, 'medium' | 'low' | null> = { high: 'medium', medium: 'low', low: null }
@@ -3992,8 +3994,8 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   <button
                     className="node-badge-remove"
                     onClick={removeRecurrence}
-                    title="Quitar recurrencia"
-                    aria-label="Quitar recurrencia"
+                    title={t('tip.removeRecurrence')}
+                    aria-label={t('aria.removeRecurrence')}
                   >×</button>
                 </span>
               )
@@ -4030,7 +4032,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     setShowEventProp(v => !v)
                   }}
                   tabIndex={-1}
-                  title="Fecha, lugar y propiedades del evento"
+                  title={t('tip.eventProperties')}
                 >
                   {evtBadgeLabel ? `📅 ${evtBadgeLabel}` : 'sin fecha'}
                 </button>
@@ -4047,7 +4049,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   >
                     {/* Fechas rápidas */}
                     <div className="nqp-quick-row">
-                      {[{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'Lunes', days: qNextMondayDays }].map(({ label, days }) => {
+                      {[{ label: t('date.todayCap'), days: 0 }, { label: t('date.tomorrowCap'), days: 1 }, { label: t('date.monday'), days: qNextMondayDays }].map(({ label, days }) => {
                         const d = new Date(); d.setDate(d.getDate() + days)
                         const iso = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-')
                         return (
@@ -4060,7 +4062,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       )}
                     </div>
                     {/* Inicio */}
-                    <div className="nqp-label">Inicio</div>
+                    <div className="nqp-label">{t('event.start')}</div>
                     <div className="nqp-inputs-row">
                       <input type="date" className="nqp-date-input" value={evtDueDate}
                         onChange={e => setEvtDueField(e.target.value, hasLocalTime(node.due) ? evtDueTime : '')} />
@@ -4070,11 +4072,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         placeholder="HH:MM" />
                       {hasLocalTime(node.due) && (
                         <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-                          onClick={() => setEvtDueField(evtDueDate, '')} title="Quitar hora">✕h</button>
+                          onClick={() => setEvtDueField(evtDueDate, '')} title={t('tip.removeTime')}>✕h</button>
                       )}
                     </div>
                     {/* Fin */}
-                    <div className="nqp-label">Fin</div>
+                    <div className="nqp-label">{t('event.end')}</div>
                     <div className="nqp-inputs-row">
                       <input type="date" className="nqp-date-input" value={evtEndDate}
                         onChange={e => setEvtEndField(e.target.value, hasLocalTime(node.dueEnd) ? evtEndTime : '')} disabled={!evtDueDate} />
@@ -4084,17 +4086,17 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                         placeholder="HH:MM" />
                       {hasLocalTime(node.dueEnd) && (
                         <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-                          onClick={() => setEvtEndField(evtEndDate, '')} title="Quitar hora">✕h</button>
+                          onClick={() => setEvtEndField(evtEndDate, '')} title={t('tip.removeTime')}>✕h</button>
                       )}
                     </div>
                     {/* Lugar */}
-                    <div className="nqp-label">Lugar</div>
+                    <div className="nqp-label">{t('event.location')}</div>
                     <input type="text" className="nqp-date-input" style={{ width: '100%' }}
-                      value={evtLocationStored} placeholder="Añadir lugar..."
+                      value={evtLocationStored} placeholder={t('ph.addLocation')}
                       onChange={e => setEvtLocationField(e.target.value)} />
 
                     {/* Recurrencia del evento */}
-                    <div className="nqp-label">Repetición</div>
+                    <div className="nqp-label">{t('event.repeat')}</div>
                     <div className="nqp-rec-row">
                       <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
                         onClick={() => { store.updateNode(node.id, { recurrence: null }); scheduleGCalSync() }}>–</button>
@@ -4109,7 +4111,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                           scheduleGCalSync()
                         }}
                       />
-                      {([['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']] as [string, string][]).map(([unit, label]) => (
+                      {([['daily', t('rec.days')], ['weekly', t('rec.weeks')], ['monthly', t('rec.months')], ['yearly', t('rec.years')]] as [string, string][]).map(([unit, label]) => (
                         <button key={unit}
                           className={`nqp-chip${!!node.recurrence && node.recurrence.split(':')[0] === unit ? ' active' : ''}`}
                           onClick={() => {
@@ -4123,7 +4125,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
                     {gcalEventId_evt && (
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center', opacity: 0.7 }}>
-                        ↑ Cambios sincronizados con Google Calendar
+                        {t('event.gcalSynced')}
                       </div>
                     )}
                   </div>
@@ -4185,7 +4187,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       {ctxNode.text}
                       <button
                         className="ctx-chip-remove"
-                        title="Quitar contexto del nodo"
+                        title={t('tip.removeContext')}
                         onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                         onClick={e => {
                           e.preventDefault(); e.stopPropagation()
@@ -4219,7 +4221,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   <span
                     key={`ctxref-${cid}`}
                     className="context-inline"
-                    title={closed ? 'Contexto cerrado — clic para abrirlo' : (parent ? `${parent.text} › ${cj.text}` : 'Abrir contexto')}
+                    title={closed ? t('tip.contextClosed') : (parent ? `${parent.text} › ${cj.text}` : t('tip.openContext'))}
                     onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                     onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
                     style={{
@@ -4234,7 +4236,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     {cj.text || 'Contexto'}
                     <button
                       className="ctx-chip-remove"
-                      title="Quitar contexto del nodo"
+                      title={t('tip.removeContext')}
                       onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                       onClick={e => { e.preventDefault(); e.stopPropagation(); unassignContext(mirrorOfId ?? node.id, cid) }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color, opacity: 0.6, padding: 0, fontSize: '1em', lineHeight: 1, display: 'flex' }}
@@ -4249,7 +4251,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <span className="node-due-badge-wrap">
                 <span
                   className={`node-due-badge${taskDueBadge.overdue ? ' node-due-badge--overdue' : ''}`}
-                  title="Editar fecha y recurrencia"
+                  title={t('tip.editDateRecurrence')}
                   style={{ cursor: 'pointer' }}
                   onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
                   onClick={e => { e.preventDefault(); e.stopPropagation(); setTaskPropsOpen(true) }}
@@ -4259,7 +4261,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <span className="node-date-actions">
                   <button
                     className="node-date-action-btn"
-                    title="Mover a mañana"
+                    title={t('tip.moveToTomorrow')}
                     onMouseDown={e => {
                       e.preventDefault(); e.stopPropagation()
                       const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
@@ -4268,7 +4270,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   >→ mañana</button>
                   <button
                     className="node-date-action-btn node-date-action-btn--remove"
-                    title="Quitar fecha"
+                    title={t('tip.removeDate')}
                     onMouseDown={e => {
                       e.preventDefault(); e.stopPropagation()
                       store.updateNode(node.id, { due: null })
@@ -4285,7 +4287,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               if (node.recurrence) {
                 const rec = recurrenceFromString(node.recurrence)
                 if (rec) return (
-                  <span className="node-recurrence-badge" title="Editar fecha y recurrencia"
+                  <span className="node-recurrence-badge" title={t('tip.editDateRecurrence')}
                     style={{ cursor: 'pointer' }} onMouseDown={e => { e.preventDefault(); e.stopPropagation() }} onClick={openProps}>
                     ↻ {rec.display}
                   </span>
@@ -4296,7 +4298,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 const rec = JSON.parse(node.extraData || '{}')._recurrence as RecurrenceConfig | undefined
                 if (!rec) return null
                 return (
-                  <span className="node-recurrence-badge" title="Editar fecha y recurrencia"
+                  <span className="node-recurrence-badge" title={t('tip.editDateRecurrence')}
                     style={{ cursor: 'pointer' }} onMouseDown={e => { e.preventDefault(); e.stopPropagation() }} onClick={openProps}>
                     ↻ {rec.display}
                   </span>

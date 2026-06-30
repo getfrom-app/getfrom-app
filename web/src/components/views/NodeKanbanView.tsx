@@ -59,27 +59,27 @@ export default function NodeKanbanView({ parentId }: Props) {
     if (groupBy === '__status') {
       return [
         { key: '__null', label: t('kanban.noStatus') },
-        { key: 'pending', label: 'Pendiente', color: '#fcd34d' },
-        { key: 'future',  label: 'Futuro',    color: '#93c5fd' },
-        { key: 'done',    label: 'Hecho',     color: '#86efac' },
+        { key: 'pending', label: t('status.pending'), color: '#fcd34d' },
+        { key: 'future',  label: t('status.future'),  color: '#93c5fd' },
+        { key: 'done',    label: t('status.done'),    color: '#86efac' },
       ]
     }
     if (groupBy === '__priority') {
       return [
-        { key: '__null', label: 'Sin prioridad' },
-        { key: 'low',    label: '↓ Baja',  color: '#86efac' },
-        { key: 'medium', label: '→ Media', color: '#fcd34d' },
-        { key: 'high',   label: '↑ Alta',  color: '#fda4af' },
+        { key: '__null', label: t('priority.none') },
+        { key: 'low',    label: '↓ ' + t('priority.low'),    color: '#86efac' },
+        { key: 'medium', label: '→ ' + t('priority.medium'), color: '#fcd34d' },
+        { key: 'high',   label: '↑ ' + t('priority.high'),   color: '#fda4af' },
       ]
     }
     // Group by built-in due date OR custom date col → buckets temporales
     const col = customCols.find(c => c.id === groupBy)
     if (groupBy === '__due' || col?.type === 'date') {
       return [
-        { key: 'overdue',  label: 'Vencidas',    color: '#fda4af' },
-        { key: 'today',    label: t('common.today'),         color: '#fcd34d' },
-        { key: 'thisweek', label: 'Esta semana', color: '#86efac' },
-        { key: 'later',    label: 'Más adelante', color: '#93c5fd' },
+        { key: 'overdue',  label: t('kanban.bucketOverdue'),  color: '#fda4af' },
+        { key: 'today',    label: t('common.today'),          color: '#fcd34d' },
+        { key: 'thisweek', label: t('kanban.bucketThisWeek'), color: '#86efac' },
+        { key: 'later',    label: t('kanban.bucketLater'),    color: '#93c5fd' },
         { key: '__null',   label: t('panel.noDate') },
       ]
     }
@@ -152,7 +152,7 @@ export default function NodeKanbanView({ parentId }: Props) {
   }
 
   function handleAddNewGroupProperty() {
-    const name = prompt('Nombre de la nueva agrupación (ej. "Fase", "Cliente", "Área"):')
+    const name = prompt(t('kanban.promptNewGroup'))
     if (!name || !name.trim()) return
     const id = store.addPropColumn(parentId, name.trim(), 'select')
     setGroupBy(id)
@@ -160,10 +160,10 @@ export default function NodeKanbanView({ parentId }: Props) {
 
   function handleAddColumnOption() {
     if (groupBy === '__status' || groupBy === '__priority') {
-      alert('Para añadir columnas, primero crea una nueva agrupación custom (ej. "Fase").')
+      alert(t('kanban.alertNeedCustomGroup'))
       return
     }
-    const label = prompt('Nombre de la nueva columna:')
+    const label = prompt(t('kanban.promptNewColumn'))
     if (!label || !label.trim()) return
     const schema = store.getPropSchema(parentId)
     const colDef = schema.find(c => c.id === groupBy)
@@ -175,7 +175,7 @@ export default function NodeKanbanView({ parentId }: Props) {
 
   function handleRenameColumn(key: string, currentLabel: string) {
     if (groupBy === '__status' || groupBy === '__priority') return
-    const newLabel = prompt('Nuevo nombre:', currentLabel)
+    const newLabel = prompt(t('kanban.promptRename'), currentLabel)
     if (!newLabel || !newLabel.trim()) return
     const schema = store.getPropSchema(parentId)
     const colDef = schema.find(c => c.id === groupBy)
@@ -186,7 +186,7 @@ export default function NodeKanbanView({ parentId }: Props) {
 
   function handleDeleteColumn(key: string) {
     if (groupBy === '__status' || groupBy === '__priority') return
-    if (!confirm('¿Eliminar esta columna? Los nodos en ella quedarán sin valor.')) return
+    if (!confirm(t('kanban.confirmDeleteColumn'))) return
     const schema = store.getPropSchema(parentId)
     const colDef = schema.find(c => c.id === groupBy)
     if (!colDef) return
@@ -212,16 +212,16 @@ export default function NodeKanbanView({ parentId }: Props) {
           <option value="__priority">{t('kanban.byPriority')}</option>
           <option value="__due">{t('kanban.byDate')}</option>
           {dateCols.length > 0 && (
-            <optgroup label="Fechas custom">
+            <optgroup label={t('kanban.customDates')}>
               {dateCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </optgroup>
           )}
           {selectCols.length > 0 && (
-            <optgroup label="Select custom">
+            <optgroup label={t('kanban.customSelect')}>
               {selectCols.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </optgroup>
           )}
-          <option value="__new__">＋ Nueva agrupación…</option>
+          <option value="__new__">＋ {t('kanban.newGroup')}</option>
         </select>
       </div>
 
@@ -243,11 +243,11 @@ export default function NodeKanbanView({ parentId }: Props) {
                 style={col.color ? { borderTop: `3px solid ${col.color}` } : {}}
                 onContextMenu={isCustom ? e => {
                   e.preventDefault()
-                  const action = prompt('Escribe: r para renombrar, d para eliminar', '')
+                  const action = prompt(t('kanban.promptColumnAction'), '')
                   if (action === 'r') handleRenameColumn(col.key, col.label)
                   if (action === 'd') handleDeleteColumn(col.key)
                 } : undefined}
-                title={isCustom ? 'Clic derecho para renombrar/eliminar' : undefined}
+                title={isCustom ? t('tip.rightClickColumn') : undefined}
               >
                 <span className="node-kanban-col-label">{col.label}</span>
                 <span className="node-kanban-col-count">{cards.length}</span>
@@ -280,7 +280,7 @@ export default function NodeKanbanView({ parentId }: Props) {
                       className="node-kanban-card-input"
                       value={newCardText}
                       onChange={e => setNewCardText(e.target.value)}
-                      placeholder={t('kanban.title')}
+                      placeholder={t('kanban.taskPlaceholder')}
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleAddCard(col.key)
                         if (e.key === 'Escape') { setNewCardCol(null); setNewCardText('') }
@@ -303,8 +303,8 @@ export default function NodeKanbanView({ parentId }: Props) {
           const canAdd = col?.type === 'select'
           if (!canAdd) return null
           return (
-            <button className="node-kanban-add-col" onClick={handleAddColumnOption} title="Añadir columna">
-              ＋ Columna
+            <button className="node-kanban-add-col" onClick={handleAddColumnOption} title={t('tip.addColumn')}>
+              ＋ {t('kanban.column')}
             </button>
           )
         })()}

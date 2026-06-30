@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 
@@ -27,6 +28,7 @@ interface CalendarEntry {
 export default function NodeCalendarView({ parentId }: Props) {
   useStore()  // suscripción
   const navigate = useNavigate()
+  const { t: tt } = useTranslation()
   const [viewDate, setViewDate] = useState(new Date())
   const [mode, setMode] = useState<'month' | 'week' | 'timeline'>('month')
 
@@ -46,7 +48,7 @@ export default function NodeCalendarView({ parentId }: Props) {
   const entries: CalendarEntry[] = useMemo(() => {
     const out: CalendarEntry[] = []
     for (const n of allChildren) {
-      if (n.due) out.push({ node: n, date: new Date(n.due), source: 'due', sourceLabel: 'Fecha' })
+      if (n.due) out.push({ node: n, date: new Date(n.due), source: 'due', sourceLabel: tt('tip.date') })
       for (const col of dateCols) {
         const v = store.getPropValue(n.id, col.id)
         if (v) out.push({ node: n, date: new Date(String(v)), source: col.id, sourceLabel: col.name })
@@ -54,7 +56,7 @@ export default function NodeCalendarView({ parentId }: Props) {
       // Tareas hijas (grandchildren) con due
       const tasks = store.children(n.id).filter(t => !t.deletedAt && t.status !== null && t.due)
       for (const t of tasks) {
-        out.push({ node: t, date: new Date(t.due!), source: 'task-of-' + n.id, sourceLabel: n.text || 'Sin título' })
+        out.push({ node: t, date: new Date(t.due!), source: 'task-of-' + n.id, sourceLabel: n.text || tt('common.noTitle') })
       }
     }
     return out
@@ -152,13 +154,13 @@ export default function NodeCalendarView({ parentId }: Props) {
     <div className="node-calendar">
       <div className="node-calendar-nav">
         {mode !== 'timeline' && <button className="node-calendar-nav-btn" onClick={() => step(-1)}>‹</button>}
-        <span className="node-calendar-month">{mode === 'week' ? weekLabel : mode === 'timeline' ? 'Cronología' : monthName}</span>
+        <span className="node-calendar-month">{mode === 'week' ? weekLabel : mode === 'timeline' ? tt('tip.chronology') : monthName}</span>
         {mode !== 'timeline' && <button className="node-calendar-nav-btn" onClick={() => step(1)}>›</button>}
-        <button className="node-calendar-nav-btn" onClick={() => setViewDate(new Date())} style={{ marginLeft: 8 }}>Hoy</button>
+        <button className="node-calendar-nav-btn" onClick={() => setViewDate(new Date())} style={{ marginLeft: 8 }}>{tt('common.today')}</button>
         <span style={{ flex: 1 }} />
-        {modeBtn('month', 'Mes')}
-        {modeBtn('week', 'Semana')}
-        {modeBtn('timeline', 'Timeline')}
+        {modeBtn('month', tt('timeline.monthMode'))}
+        {modeBtn('week', tt('timeline.weekMode'))}
+        {modeBtn('timeline', tt('tip.timeline'))}
       </div>
 
       {/* ── SEMANA ── */}
@@ -175,8 +177,8 @@ export default function NodeCalendarView({ parentId }: Props) {
                   <button key={`${entry.node.id}-${entry.source}-${idx}`}
                     className={`node-calendar-event ${entry.node.status === 'done' ? 'done' : ''}`}
                     onClick={() => navigate(`/node/${entry.node.id}`)}
-                    title={entry.node.text || 'Sin título'}>
-                    {entry.node.text?.slice(0, 24) || 'Sin título'}
+                    title={entry.node.text || tt('common.noTitle')}>
+                    {entry.node.text?.slice(0, 24) || tt('common.noTitle')}
                   </button>
                 ))}
                 {isQuick ? (
@@ -184,9 +186,9 @@ export default function NodeCalendarView({ parentId }: Props) {
                     onChange={e => setDateQuick({ key, text: e.target.value })}
                     onBlur={() => { quickCreateOnDate(d, dateQuick!.text); setDateQuick(null) }}
                     onKeyDown={e => { if (e.key === 'Enter') { quickCreateOnDate(d, dateQuick!.text); setDateQuick(null) } if (e.key === 'Escape') setDateQuick(null) }}
-                    placeholder="+ Nuevo..." />
+                    placeholder={tt('ph.newEllipsis')} />
                 ) : (
-                  <button className="node-calendar-quick-add" onClick={() => setDateQuick({ key, text: '' })} title="Añadir">＋</button>
+                  <button className="node-calendar-quick-add" onClick={() => setDateQuick({ key, text: '' })} title={tt('common.add')}>＋</button>
                 )}
               </div>
             )
@@ -197,7 +199,7 @@ export default function NodeCalendarView({ parentId }: Props) {
       {/* ── TIMELINE ── */}
       {mode === 'timeline' && (
         <div className="node-calendar-timeline">
-          {timelineGroups.length === 0 && <div className="node-calendar-empty">Sin fechas todavía.</div>}
+          {timelineGroups.length === 0 && <div className="node-calendar-empty">{tt('tip.noDatesYet')}</div>}
           {timelineGroups.map(g => (
             <div key={g.key} className="node-calendar-tl-group">
               <div className={`node-calendar-tl-date ${isSameDay(g.date, new Date()) ? 'today' : ''}`}>
@@ -208,9 +210,9 @@ export default function NodeCalendarView({ parentId }: Props) {
                   <button key={`${entry.node.id}-${entry.source}-${idx}`}
                     className={`node-calendar-event ${entry.node.status === 'done' ? 'done' : ''}`}
                     onClick={() => navigate(`/node/${entry.node.id}`)}
-                    title={entry.node.text || 'Sin título'}>
+                    title={entry.node.text || tt('common.noTitle')}>
                     {entry.source !== 'due' && <span className="node-calendar-event-source">{entry.sourceLabel}: </span>}
-                    {entry.node.text?.slice(0, 40) || 'Sin título'}
+                    {entry.node.text?.slice(0, 40) || tt('common.noTitle')}
                   </button>
                 ))}
               </div>
@@ -221,7 +223,7 @@ export default function NodeCalendarView({ parentId }: Props) {
 
       {mode === 'month' && (
       <div className="node-calendar-grid">
-        {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => (
+        {[tt('tip.dowMon'),tt('tip.dowTue'),tt('tip.dowWed'),tt('tip.dowThu'),tt('tip.dowFri'),tt('tip.dowSat'),tt('tip.dowSun')].map(d => (
           <div key={d} className="node-calendar-dow">{d}</div>
         ))}
         {days.map((day, i) => {
@@ -241,10 +243,10 @@ export default function NodeCalendarView({ parentId }: Props) {
                   key={`${entry.node.id}-${entry.source}-${idx}`}
                   className={`node-calendar-event ${entry.node.status === 'done' ? 'done' : ''}`}
                   onClick={e => { e.stopPropagation(); navigate(`/node/${entry.node.id}`) }}
-                  title={`${entry.node.text || 'Sin título'}${entry.source !== 'due' ? ` — ${entry.sourceLabel}` : ''}`}
+                  title={`${entry.node.text || tt('common.noTitle')}${entry.source !== 'due' ? ` — ${entry.sourceLabel}` : ''}`}
                 >
                   {entry.source !== 'due' && <span className="node-calendar-event-source">{entry.sourceLabel}: </span>}
-                  {entry.node.text?.slice(0, 20) || 'Sin título'}
+                  {entry.node.text?.slice(0, 20) || tt('common.noTitle')}
                 </button>
               ))}
               {isQuick ? (
@@ -259,10 +261,10 @@ export default function NodeCalendarView({ parentId }: Props) {
                     if (e.key === 'Escape') setQuickCreate(null)
                   }}
                   onClick={e => e.stopPropagation()}
-                  placeholder="+ Nuevo..."
+                  placeholder={tt('ph.newEllipsis')}
                 />
               ) : (
-                <button className="node-calendar-quick-add" onClick={e => { e.stopPropagation(); handleCellClick(day) }} title="Añadir">＋</button>
+                <button className="node-calendar-quick-add" onClick={e => { e.stopPropagation(); handleCellClick(day) }} title={tt('common.add')}>＋</button>
               )}
             </div>
           )
@@ -271,7 +273,7 @@ export default function NodeCalendarView({ parentId }: Props) {
       )}
       {undatedNodes.length > 0 && (
         <div className="node-calendar-undated">
-          <div className="node-calendar-undated-label">Sin fecha <span className="node-calendar-undated-count">{undatedNodes.length}</span></div>
+          <div className="node-calendar-undated-label">{tt('daily.noDate')} <span className="node-calendar-undated-count">{undatedNodes.length}</span></div>
           <div className="node-calendar-undated-list">
             {undatedNodes.map(n => (
               <button
@@ -279,7 +281,7 @@ export default function NodeCalendarView({ parentId }: Props) {
                 className="node-calendar-undated-item"
                 onClick={() => navigate(`/node/${n.id}`)}
               >
-                {n.text || 'Sin título'}
+                {n.text || tt('common.noTitle')}
               </button>
             ))}
           </div>

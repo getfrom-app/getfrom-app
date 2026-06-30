@@ -15,6 +15,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { bumpReschedule } from '../../utils/dailyCockpit'
@@ -201,6 +202,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
+  const { t }    = useTranslation()
 
   const today = startOfDay(new Date())
   const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? 'day')
@@ -241,7 +243,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       .then(evs => { setGcalEvents(evs); setGcalError('') })
       .catch(e => {
         console.error('[PlannerPanel] GCal error:', e)
-        setGcalError('Error cargando Google Calendar')
+        setGcalError(t('tip.gcalLoadError'))
         const msg = e instanceof Error ? e.message : ''
         if (msg.includes('token') || msg.includes('401') || msg.includes('refresh')) {
           us.markGoogleDisconnected()
@@ -670,7 +672,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
         <div className="pp-block-time">{fmtHH(b.start)}</div>
-        <div className="pp-block-text">{b.text || 'Sin título'}</div>
+        <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
         <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />
       </div>
     )
@@ -709,7 +711,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 ref={newBlockRef}
                 className="pp-new-block-input"
                 value={newBlock.text}
-                placeholder="Nombre…"
+                placeholder={t('ph.nameEllipsis')}
                 onChange={e => setNewBlock(b => b ? {...b, text: e.target.value} : null)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') { e.preventDefault(); commitNewBlock() }
@@ -775,11 +777,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
       if (!n.due || n.deletedAt || isInPapelera(n.id) || n.status == null) continue
       if (!sameDay(new Date(n.due), date)) continue
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
-      out.push({ id: n.id, text: n.text || 'Sin título', color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
+      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
     }
     for (const ev of gcalEvents) {
       if (ev.allDay || !sameDay(new Date(ev.start), date)) continue
-      out.push({ id: ev.id, text: ev.title || 'Evento', color: '#16a34a', done: false, t: new Date(ev.start).getTime() })
+      out.push({ id: ev.id, text: ev.title || t('search.chipEvent'), color: '#16a34a', done: false, t: new Date(ev.start).getTime() })
     }
     return out.sort((a, b) => a.t - b.t)
   }
@@ -821,7 +823,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
     return (
       <div className="pp-month">
         <div className="pp-month-dow">
-          {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => <div key={d} className="pp-month-dow-cell">{d}</div>)}
+          {[t('tip.dowMon'),t('tip.dowTue'),t('tip.dowWed'),t('tip.dowThu'),t('tip.dowFri'),t('tip.dowSat'),t('tip.dowSun')].map(d => <div key={d} className="pp-month-dow-cell">{d}</div>)}
         </div>
         <div className="pp-month-grid">
           {cells.map((date, i) => {
@@ -886,16 +888,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
         <div className="pp-view-tabs">
           {(['day','week','month','year'] as ViewMode[]).map(m => (
             <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?'Día':m==='week'?'Semana':m==='month'?'Mes':'Año'}
+              {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
             </button>
           ))}
         </div>
         <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
         <span className="pp-nav-title">{navTitle}</span>
         <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
-        <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>Hoy</button>
+        <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>{t('common.today')}</button>
         <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
-          title={`Restablecer zoom — ahora: ${visibleDayCnt} días`}>
+          title={t('tip.resetZoom', { count: visibleDayCnt })}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
             <path d="M3 3v5h5"/>
@@ -905,7 +907,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
       {gcalError && (
         <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--warning)', background: 'rgba(239,68,68,0.06)', flexShrink: 0 }}>
-          ⚠️ {gcalError} — <button onClick={() => navigate('/settings?tab=google')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>Reconectar</button>
+          ⚠️ {gcalError} — <button onClick={() => navigate('/settings?tab=google')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>{t('tip.reconnect')}</button>
         </div>
       )}
 
@@ -935,7 +937,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
           <>
             {/* Cabeceras */}
             <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
-              title="Arrastra izq/der para ver más/menos días (2–7)">
+              title={t('tip.dragDaysHint')}>
               <div style={{width: AXIS_W, flexShrink:0, position:'sticky', left:0, background:'var(--bg-primary)', zIndex:10}} />
               {visibleDays.map(d => (
                 <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
@@ -947,14 +949,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
             {/* Franja «todo el día»: tareas con fecha pero sin hora. Arrastrables. */}
             <div className="pp-allday">
-              <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>todo el día</div>
+              <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>{t('tip.allDayLower')}</div>
               {visibleDays.map(d => {
                 const items = getAllDayTasks(d)
                 const editing = !!newAllDay && sameDay(newAllDay.day, d)
                 return (
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
-                    title="Clic para añadir una tarea sin hora"
+                    title={t('tip.clickAddUntimed')}
                     onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
                     {items.slice(0, 5).map(n => (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
@@ -964,13 +966,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                         onClick={e=>{ e.stopPropagation(); navigate(`/node/${n.id}`) }}
                         onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
-                        {n.text || 'Sin título'}
+                        {n.text || t('common.noTitle')}
                       </div>
                     ))}
                     {items.length > 5 && <div style={{ fontSize: 10, color: 'var(--text-tertiary)', padding: '0 4px' }}>+{items.length - 5}</div>}
                     {editing ? (
                       <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}
-                        placeholder="Nueva tarea…"
+                        placeholder={t('ph.newTaskEllipsis')}
                         onClick={e=>e.stopPropagation()}
                         onChange={e=>setNewAllDay(s=>s?{...s,text:e.target.value}:s)}
                         onKeyDown={e=>{ if (e.key==='Enter') commitNewAllDay(true); else if (e.key==='Escape') setNewAllDay(null) }}
@@ -986,7 +988,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
             {/* Grid de horas */}
             <div className="pp-grid">
               <div className="pp-axis" style={{width:AXIS_W, height: TOTAL_HOURS*hourH}}
-                onMouseDown={handleAxisDrag} title="Arrastra arriba/abajo para hacer zoom">
+                onMouseDown={handleAxisDrag} title={t('tip.dragZoom')}>
                 {Array.from({length:TOTAL_HOURS+1},(_,i) => (
                   <div key={i} className="pp-axis-label" style={{top: i*hourH-8}}>
                     {String(HOUR_START+i).padStart(2,'0')}:00
@@ -1011,11 +1013,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 const d = ensureDayPath(ctxMenu.b.start)
                 store.createNode({text:ctxMenu.b.text, parentId:d.id})
                 setCtxMenu(null)
-              }}>📄 Crear nodo</button>
+              }}>📄 {t('tip.createNode')}</button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
               <button onClick={()=>{ navigate(`/node/${ctxMenu.b.nodeId!}`); setCtxMenu(null) }}>
-                → Ir al nodo
+                → {t('tip.goToNode')}
               </button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
@@ -1026,18 +1028,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 removeNodeFromGcal(nodeId)
                 setCtxMenu(null)
               }}>
-                ⊘ Quitar hora
+                ⊘ {t('tip.removeTime')}
               </button>
             )}
             {/* Color picker */}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
               <div style={{padding:'6px 8px 2px', borderTop:'1px solid var(--border)', marginTop:4}}>
-                <div style={{fontSize:10,color:'var(--text-secondary)',marginBottom:5,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>Color</div>
+                <div style={{fontSize:10,color:'var(--text-secondary)',marginBottom:5,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>{t('tip.color')}</div>
                 <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
                   {[
-                    {c:'#3b82f6',n:'Azul'},{c:'#10b981',n:'Verde'},{c:'#f59e0b',n:'Naranja'},
-                    {c:'#ef4444',n:'Rojo'},{c:'#8b5cf6',n:'Morado'},{c:'#ec4899',n:'Rosa'},
-                    {c:'#06b6d4',n:'Cian'},{c:'#64748b',n:'Gris'}
+                    {c:'#3b82f6',n:t('tip.colorBlue')},{c:'#10b981',n:t('tip.colorGreen')},{c:'#f59e0b',n:t('tip.colorOrange')},
+                    {c:'#ef4444',n:t('tip.colorRed')},{c:'#8b5cf6',n:t('tip.colorPurple')},{c:'#ec4899',n:t('tip.colorPink')},
+                    {c:'#06b6d4',n:t('tip.colorCyan')},{c:'#64748b',n:t('tip.colorGrey')}
                   ].map(({c,n})=>(
                     <div key={c} title={n}
                       style={{width:20,height:20,borderRadius:'50%',background:c,cursor:'pointer',
@@ -1054,7 +1056,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 removeNodeFromGcal(ctxMenu.b.nodeId!)
                 setCtxMenu(null)
               }}>
-                Quitar del planificador
+                {t('tip.removeFromPlanner')}
               </button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
@@ -1064,7 +1066,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 store.deleteNode(nodeId)
                 setCtxMenu(null)
               }}>
-                Eliminar evento
+                {t('tip.deleteEvent')}
               </button>
             )}
             {ctxMenu.b.kind === 'gcal' && (
@@ -1073,7 +1075,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                 setGcalEvents(p => p.filter(x => x.id !== ctxMenu.b.id))
                 setCtxMenu(null)
               }}>
-                Eliminar evento
+                {t('tip.deleteEvent')}
               </button>
             )}
           </div>
@@ -1087,7 +1089,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
             // Crear bajo demanda un nodo local vinculado al evento (no se crea por defecto).
             const ev = editingGcal
             const dayNode = ensureDayPath(new Date(ev.start))
-            const node = store.createNode({ text: ev.title || 'Evento', parentId: dayNode.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
+            const node = store.createNode({ text: ev.title || t('search.chipEvent'), parentId: dayNode.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
             store.updateNode(node.id, {
               isEvent: true, due: ev.start, dueEnd: ev.end,
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)

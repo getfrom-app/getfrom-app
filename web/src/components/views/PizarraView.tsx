@@ -15,6 +15,7 @@
 //    el lienzo sin librería — un canvas necesita posicionamiento 2D libre).
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { uploadFile } from '../../api/client'
@@ -316,6 +317,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
 }
 
 export default function PizarraView({ parentId, flowUnpositioned, pdfBackground }: Props) {
+  const { t } = useTranslation()
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -1916,8 +1918,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 } finally { store.endBatch() }
               }}
               style={{ position: 'absolute', top: -13, left: 10, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: col, color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', touchAction: 'none' }}
-              title="Arrastra para mover el área · clic para ir"
-            >{a.text || 'Área'}</div>
+              title={t('tip.dragAreaMove')}
+            >{a.text || t('pizarra.area')}</div>
           </div>
         )
       })}
@@ -2245,12 +2247,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 borderRadius: 999, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
               }}>
                 {quickTools.map(k => (
-                  <button key={k} style={isDisabled(k) ? quickBtnDisabled : (isActive(k) ? quickBtnActive : quickBtn)} disabled={isDisabled(k)} title={QUICK_LABEL[k]} onClick={() => runQuick(k)}>
+                  <button key={k} style={isDisabled(k) ? quickBtnDisabled : (isActive(k) ? quickBtnActive : quickBtn)} disabled={isDisabled(k)} title={t(QUICK_LABEL[k])} onClick={() => runQuick(k)}>
                     {QUICK_ICON[k]}
                   </button>
                 ))}
                 <div style={{ width: 1, height: 22, background: 'var(--border,#e2e2e2)', margin: '0 2px' }} />
-                <button style={quickCfg ? quickBtnActive : quickBtn} title="Configurar accesos" onClick={() => setQuickCfg(c => !c)}>
+                <button style={quickCfg ? quickBtnActive : quickBtn} title={t('tip.configureShortcuts')} onClick={() => setQuickCfg(c => !c)}>
                   <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10" cy="10" r="2.4"/><path d="M10 1.6v2M10 16.4v2M3.6 10h-2M18.4 10h-2M5.2 5.2 3.8 3.8M16.2 16.2l-1.4-1.4M14.8 5.2l1.4-1.4M3.8 16.2l1.4-1.4"/></svg>
                 </button>
               </div>
@@ -2260,7 +2262,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                   background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
                   borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.18)',
                 }} onPointerDown={(e) => e.stopPropagation()}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary,#888)', padding: '4px 8px 6px' }}>Accesos del menú rápido</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary,#888)', padding: '4px 8px 6px' }}>{t('pizarra.quickMenuShortcuts')}</div>
                   {QUICK_ALL.map(k => {
                     const on = quickTools.includes(k)
                     return (
@@ -2271,7 +2273,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                       }}>
                         <span style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${on ? 'var(--accent,#6c5ce7)' : 'var(--border,#ccc)'}`, background: on ? 'var(--accent,#6c5ce7)' : 'transparent', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, flexShrink: 0 }}>{on ? '✓' : ''}</span>
                         <span style={{ width: 20, display: 'inline-flex', justifyContent: 'center', color: 'var(--accent,#6c5ce7)' }}>{QUICK_ICON[k]}</span>
-                        {QUICK_LABEL[k]}
+                        {t(QUICK_LABEL[k])}
                       </button>
                     )
                   })}
@@ -2380,21 +2382,21 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 // Gutter [chevron][dot] + cuerpo, alineados con la 1ª línea — como el
                 // bullet de la lista. chevron = colapsar/desplegar · dot = abrir página.
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5 }}>
-                  <button title={node.isCollapsed ? 'Desplegar' : 'Colapsar'}
+                  <button title={node.isCollapsed ? t('tip.expand') : t('tip.collapse')}
                     onPointerDown={(e) => { e.stopPropagation(); store.updateNode(node.id, { isCollapsed: !node.isCollapsed }) }}
                     style={{ marginTop: node.isCollapsed ? 4 : 9, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 11, lineHeight: 1, padding: 0, flexShrink: 0, width: 12, textAlign: 'center' }}>
                     {node.isCollapsed ? '▸' : '▾'}
                   </button>
-                  <span title="Abrir en su página"
+                  <span title={t('tip.openOwnPage')}
                     onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                     style={{ marginTop: node.isCollapsed ? 6 : 11, width: 9, height: 9, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)', cursor: 'pointer', flexShrink: 0 }} />
                   {node.isCollapsed ? (
                     <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}>
-                      {node.text || firstLineTitle(node.body) || 'Documento'}
+                      {node.text || firstLineTitle(node.body) || t('pizarra.document')}
                     </div>
                   ) : (
                     <div className="pizarra-text" style={{ flex: 1, minWidth: 0, fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                      dangerouslySetInnerHTML={{ __html: node.body || '<span style="opacity:.4">Texto…</span>' }}
+                      dangerouslySetInnerHTML={{ __html: node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>` }}
                     />
                   )}
                 </div>
@@ -2405,10 +2407,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
               <div className="pizarra-el">
                 <div className="pizarra-el-head" onPointerDown={(e) => onCardPointerDown(e, node)} style={{ cursor: 'grab' }}>
                   {/* DOT a la izquierda → abre el elemento en su propia página. */}
-                  <span className="pizarra-el-dot" title="Abrir en su página"
+                  <span className="pizarra-el-dot" title={t('tip.openOwnPage')}
                     onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                     style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--text-secondary,#888)', opacity: 0.85, cursor: 'pointer', flexShrink: 0 }} />
-                  <span className="pizarra-el-title">{node.text || 'Vista'}</span>
+                  <span className="pizarra-el-title">{node.text || t('pizarra.view')}</span>
                 </div>
                 <div className="pizarra-el-body">
                   <ViewComp parentId={node.id} />
@@ -2433,7 +2435,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
                     <span style={{ fontSize: 24, lineHeight: 1 }}>📎</span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{node.text || 'Archivo'}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{node.text || t('pizarra.file')}</span>
                   </div>
                 )}
               </div>
@@ -2450,7 +2452,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 línea como el bullet de la lista — ya no en el margen.) */}
             {/* DOT del RECURSO (imagen/PDF/enlace/archivo) → abre en su página. */}
             {res && (
-              <div title="Abrir en su página"
+              <div title={t('tip.openOwnPage')}
                 onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
@@ -2462,7 +2464,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 (marcado, como una nota). Al crear/editar NO aparece: solo el cursor.
                 Clic = ENTRAR en el nodo (su propia página), igual que el bullet de un nodo. */}
             {isPlainText && (hovered || plainHasKids) && !dragPos && (
-              <div title="Abrir nodo" onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
+              <div title={t('tip.openNode')} onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
@@ -2470,29 +2472,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             {/* Tirador de ancho MÍNIMO (cuadradito): SOLO en hover. El hueco entre el texto
                 y el tirador (padding derecho) es zona de arrastre del nodo. */}
             {isPlainText && hovered && !dragPos && (
-              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+              <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
             {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
-              <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+              <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
             {showHandles && !isText && !isClean && ((elView || res) ? (
               // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
               <>
-                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                   style={{ position: 'absolute', right: -5, top: '50%', width: 7, height: 28, marginTop: -14, background: 'var(--text-tertiary,#bbb)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.9, touchAction: 'none' }} />
-                <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
+                <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             ) : (
               <>
                 {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
-                <div title="Ancho" onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
                   style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
                 {/* Manija de ESCALA — esquina inferior derecha (escala uniforme desde arriba-izquierda). */}
-                <div title="Escalar" onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
+                <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             ))}
@@ -2558,7 +2560,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
       }}>
         {/* Ir a hoy */}
-        <button style={toolBtn} title="Ir a hoy"
+        <button style={toolBtn} title={t('tip.goToToday')}
           onClick={() => {
             const day = ensureDayPath(new Date())
             navigate(`/node/${day.id}`)
@@ -2568,29 +2570,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
         </button>
         {/* Guardar esta vista (posición+zoom) como nodo */}
-        <button style={toolBtn} title="Guardar esta vista como nodo" onClick={() => { setSaveName(''); setSaveModal(true) }}>
+        <button style={toolBtn} title={t('tip.saveViewAsNode')} onClick={() => { setSaveName(''); setSaveModal(true) }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>
         </button>
         <div style={vSep} />
         {/* Seleccionar / mover */}
-        <button style={tool === 'select' ? toolBtnActive : toolBtn} title="Seleccionar / mover (V)" onClick={() => setTool('select')}>
+        <button style={tool === 'select' ? toolBtnActive : toolBtn} title={t('tip.toolSelect')} onClick={() => setTool('select')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
         </button>
         {/* Lápiz — dibujar */}
-        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title="Lápiz — fino (B)" onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
+        <button style={tool === 'pen' ? toolBtnActive : toolBtn} title={t('tip.toolPen')} onClick={() => setTool(t => t === 'pen' ? 'select' : 'pen')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
         {/* Rotulador — grueso */}
-        <button style={tool === 'marker' ? toolBtnActive : toolBtn} title="Rotulador — grueso (M)" onClick={() => setTool(t => t === 'marker' ? 'select' : 'marker')}>
+        <button style={tool === 'marker' ? toolBtnActive : toolBtn} title={t('tip.toolMarker')} onClick={() => setTool(t => t === 'marker' ? 'select' : 'marker')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
         </button>
         {/* Subrayador — translúcido */}
-        <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title="Subrayador (H)" onClick={() => setTool(t => t === 'highlighter' ? 'select' : 'highlighter')}>
+        <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title={t('tip.toolHighlighter')} onClick={() => setTool(t => t === 'highlighter' ? 'select' : 'highlighter')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
         </button>
         {/* Color de tinta */}
         <div style={{ position: 'relative' }}>
-          <button style={toolBtn} title="Color" onClick={() => setPaletteOpen(o => !o)}>
+          <button style={toolBtn} title={t('tip.color')} onClick={() => setPaletteOpen(o => !o)}>
             <span style={{ width: 16, height: 16, borderRadius: '50%', background: penColor, border: '1.5px solid rgba(0,0,0,0.15)', display: 'inline-block' }} />
           </button>
           {paletteOpen && (
@@ -2606,7 +2608,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                 {/* Grosor de la pluma (paridad iPad: 6 niveles) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle,#eee)' }}>
                   {[1.5, 2.5, 4, 7, 12, 20].map(wv => (
-                    <button key={wv} title={`Grosor ${wv}`} onClick={() => { setPenWidth(wv); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
+                    <button key={wv} title={t('tip.thickness', { n: wv })} onClick={() => { setPenWidth(wv); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
                       style={{ width: 26, height: 26, borderRadius: 7, border: penWidth === wv ? '2px solid var(--accent,#6c5ce7)' : '1px solid var(--border,#e2e2e2)', background: 'transparent', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ width: Math.min(18, wv + 2), height: Math.min(18, wv + 2), borderRadius: '50%', background: penColor }} />
                     </button>
@@ -2617,55 +2619,55 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           )}
         </div>
         {/* Borrador */}
-        <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title="Borrador (E)" onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
+        <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title={t('tip.toolEraser')} onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={tool === 'text' ? toolBtnActive : toolBtn} title="Texto — cada línea un nodo; Magic detecta fechas y tareas (T)" onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
+        <button style={tool === 'text' ? toolBtnActive : toolBtn} title={t('tip.toolText')} onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
         </button>
         {/* Documento — texto largo con título (TipTap, un solo dot) */}
-        <button style={tool === 'doc' ? toolBtnActive : toolBtn} title="Documento — texto largo con título" onClick={() => setTool(t => t === 'doc' ? 'select' : 'doc')}>
+        <button style={tool === 'doc' ? toolBtnActive : toolBtn} title={t('tip.toolDoc')} onClick={() => setTool(t => t === 'doc' ? 'select' : 'doc')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M5 3h7l3 3v11H5z"/><path d="M12 3v3h3"/><path d="M7.5 11h5M7.5 13.5h5"/></svg>
         </button>
         <div style={vSep} />
         {/* Elementos: Tabla / Kanban / Calendario (nodos hijos del lienzo) */}
-        <button style={toolBtn} title="Tabla" onClick={() => createViewElement('tabla')}>
+        <button style={toolBtn} title={t('tip.toolTable')} onClick={() => createViewElement('tabla')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8h14M3 12h14M9 4v12"/></svg>
         </button>
-        <button style={toolBtn} title="Kanban" onClick={() => createViewElement('kanban')}>
+        <button style={toolBtn} title={t('tip.toolKanban')} onClick={() => createViewElement('kanban')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="4" height="12" rx="1"/><rect x="8.5" y="4" width="4" height="8" rx="1"/><rect x="14" y="4" width="3" height="10" rx="1"/></svg>
         </button>
-        <button style={toolBtn} title="Calendario" onClick={() => createViewElement('calendario')}>
+        <button style={toolBtn} title={t('tip.toolCalendar')} onClick={() => createViewElement('calendario')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 3v3M13 3v3"/></svg>
         </button>
         <div style={vSep} />
         {/* Formas */}
-        <button style={tool === 'line' ? toolBtnActive : toolBtn} title="Línea (L)" onClick={() => setTool(t => t === 'line' ? 'select' : 'line')}>
+        <button style={tool === 'line' ? toolBtnActive : toolBtn} title={t('tip.toolLine')} onClick={() => setTool(t => t === 'line' ? 'select' : 'line')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 16L16 4"/></svg>
         </button>
-        <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title="Flecha (A)" onClick={() => setTool(t => t === 'arrow' ? 'select' : 'arrow')}>
+        <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title={t('tip.toolArrow')} onClick={() => setTool(t => t === 'arrow' ? 'select' : 'arrow')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16L16 4M9 4h7v7"/></svg>
         </button>
-        <button style={tool === 'rect' ? toolBtnActive : toolBtn} title="Rectángulo (R)" onClick={() => setTool(t => t === 'rect' ? 'select' : 'rect')}>
+        <button style={tool === 'rect' ? toolBtnActive : toolBtn} title={t('tip.toolRect')} onClick={() => setTool(t => t === 'rect' ? 'select' : 'rect')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3.5" y="5" width="13" height="10" rx="1"/></svg>
         </button>
-        <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title="Elipse (O)" onClick={() => setTool(t => t === 'ellipse' ? 'select' : 'ellipse')}>
+        <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title={t('tip.toolEllipse')} onClick={() => setTool(t => t === 'ellipse' ? 'select' : 'ellipse')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="10" rx="7" ry="5.5"/></svg>
         </button>
         <div style={vSep} />
-        <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title="Deshacer"
+        <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title={t('tip.undo')}
           onClick={() => store.undo()}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
         </button>
-        <button style={store.canRedo ? toolBtn : toolBtnDisabled} disabled={!store.canRedo} title="Rehacer"
+        <button style={store.canRedo ? toolBtn : toolBtnDisabled} disabled={!store.canRedo} title={t('tip.redo')}
           onClick={() => store.redo()}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>
         </button>
         <div style={vSep} />
-        <button style={toolBtn} title="Alejar" onClick={() => zoomAtCenter(1 / 1.2)}>−</button>
+        <button style={toolBtn} title={t('tip.zoomOut')} onClick={() => zoomAtCenter(1 / 1.2)}>−</button>
         <span style={{ minWidth: 42, textAlign: 'center', fontSize: 12, color: 'var(--text-secondary, #888)' }}>{Math.round(cam.scale * 100)}%</span>
-        <button style={toolBtn} title="Acercar" onClick={() => zoomAtCenter(1.2)}>+</button>
-        <button style={toolBtn} title="Centrar"
+        <button style={toolBtn} title={t('tip.zoomIn')} onClick={() => zoomAtCenter(1.2)}>+</button>
+        <button style={toolBtn} title={t('tip.center')}
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
 
@@ -2752,13 +2754,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onPointerDown={(e) => e.stopPropagation()}
             style={{ background: 'var(--bg-elevated,#fff)', borderRadius: 14, padding: 20, width: 360, boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: 'var(--text,#222)' }}>Guardar esta vista como nodo</div>
-            <input autoFocus value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Nombre del nodo…"
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: 'var(--text,#222)' }}>{t('pizarra.saveViewTitle')}</div>
+            <input autoFocus value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder={t('ph.nodeName')}
               onKeyDown={(e) => { if (e.key === 'Enter') { saveViewAsNode(saveName); setSaveModal(false) } if (e.key === 'Escape') setSaveModal(false) }}
               style={{ width: '100%', boxSizing: 'border-box', padding: '9px 11px', borderRadius: 9, border: '1px solid var(--border,#d8d8d8)', fontSize: 14, outline: 'none', background: 'var(--bg,#fff)', color: 'var(--text,#222)' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-              <button onClick={() => setSaveModal(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border,#ddd)', background: 'transparent', cursor: 'pointer', color: 'var(--text,#333)' }}>Cancelar</button>
-              <button onClick={() => { saveViewAsNode(saveName); setSaveModal(false) }} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--accent,#6c5ce7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>Guardar</button>
+              <button onClick={() => setSaveModal(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border,#ddd)', background: 'transparent', cursor: 'pointer', color: 'var(--text,#333)' }}>{t('common.cancel')}</button>
+              <button onClick={() => { saveViewAsNode(saveName); setSaveModal(false) }} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--accent,#6c5ce7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>{t('common.save')}</button>
             </div>
           </div>
         </div>
@@ -2793,7 +2795,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           <div style={{ position: 'absolute', left: 12, bottom: 80, width: MW, height: MH, zIndex: 40, boxSizing: 'content-box',
             background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', cursor: 'pointer', touchAction: 'none' }}
-            onPointerDown={goTo} title="Mapa del lienzo · clic para ir">
+            onPointerDown={goTo} title={t('tip.canvasMap')}>
             <svg width={MW} height={MH} style={{ display: 'block' }}>
               {miniRects.map((r, i) => { const a = m(r.x, r.y); return <rect key={i} x={a.x} y={a.y} width={Math.max(1.5, r.w * s)} height={Math.max(1.5, r.h * s)} rx={1} fill="var(--text-tertiary,#bbb)" opacity={0.5} /> })}
               <rect x={vp0.x} y={vp0.y} width={Math.max(4, vp1.x - vp0.x)} height={Math.max(4, vp1.y - vp0.y)}
@@ -2823,8 +2825,8 @@ const vSep: React.CSSProperties = {
 // Catálogo de herramientas del menú rápido (configurable).
 const QUICK_ALL = ['text', 'pen', 'eraser', 'select', 'undo', 'redo', 'today', 'saveView'] as const
 const QUICK_LABEL: Record<string, string> = {
-  text: 'Texto', node: 'Texto', pen: 'Lápiz', eraser: 'Borrador', select: 'Seleccionar / mover',
-  undo: 'Deshacer', redo: 'Rehacer', today: 'Ir a hoy', saveView: 'Guardar vista',
+  text: 'pizarra.toolText', node: 'pizarra.toolText', pen: 'pizarra.toolPen', eraser: 'pizarra.toolEraser', select: 'pizarra.toolSelect',
+  undo: 'tip.undo', redo: 'tip.redo', today: 'tip.goToToday', saveView: 'pizarra.toolSaveView',
 }
 const QUICK_ICON: Record<string, React.ReactNode> = {
   text: <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>,

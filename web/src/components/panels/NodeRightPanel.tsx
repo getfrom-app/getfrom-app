@@ -278,7 +278,7 @@ export default function NodeRightPanel({ node }: Props) {
             <button className="node-right-tasks-add" onClick={() => {
               setTaskInputVisible(true)
               setTimeout(() => taskInputRef.current?.focus(), 50)
-            }} title="Nueva tarea">＋</button>
+            }} title={t('topbar.newTask')}>＋</button>
           </div>
           {associatedTasks.map(task => {
             const isOverdue = task.due ? new Date(task.due) < new Date(new Date().setHours(0,0,0,0)) : false
@@ -438,7 +438,7 @@ export default function NodeRightPanel({ node }: Props) {
         <div className="prop-section prop-section--event">
           <div className="prop-section-label">
             Fecha
-            {gcalEventId && <span className="prop-gcal-badge" title="Sincronizado con Google Calendar">GCal ✓</span>}
+            {gcalEventId && <span className="prop-gcal-badge" title={t('tip.syncedGoogle')}>GCal ✓</span>}
           </div>
           <div className="prop-event-row">
             <span className="prop-event-field-label">Inicio</span>
@@ -473,7 +473,7 @@ export default function NodeRightPanel({ node }: Props) {
           <div className="prop-event-row">
             <span className="prop-event-field-label">Lugar</span>
             <input type="text" className="prop-event-location" value={evtLocation_stored}
-              placeholder="Añadir lugar..."
+              placeholder={t('ph.addLocation')}
               onChange={e => {
                 let ed: Record<string, unknown> = {}
                 try { ed = JSON.parse(node.extraData || '{}') } catch {}
@@ -496,7 +496,7 @@ export default function NodeRightPanel({ node }: Props) {
           </div>
           {gcalEventId && <div className="prop-event-synced-hint">↑ Cambios sincronizados automáticamente con Google Calendar</div>}
           <button className="prop-event-delete-btn"
-            title="Eliminar evento (y de Google Calendar si está sincronizado)"
+            title={t('tip.deleteEventGcal')}
             onClick={async () => {
               if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
               if (gcalEventId) { try { await deleteCalendarEvent(gcalEventId) } catch { /* silencioso */ } }
@@ -556,7 +556,7 @@ export default function NodeRightPanel({ node }: Props) {
           <div className="prop-section">
             <div className="prop-section-label prop-section-label--row">
               {t('panel.properties')}
-              <button className="prop-add-btn" title="Añadir propiedad"
+              <button className="prop-add-btn" title={t('tip.addProperty')}
                 onClick={() => {
                   const name = prompt('Nombre de la propiedad:')
                   if (!name || !name.trim()) return
@@ -661,7 +661,7 @@ export default function NodeRightPanel({ node }: Props) {
           <div className="evt-modal-field">
             <label className="evt-modal-label">Lugar <span className="evt-modal-opt">(opcional)</span></label>
             <input type="text" className="evt-modal-input" value={evtLocation}
-              onChange={e => setEvtLocation(e.target.value)} placeholder="Añadir lugar..." />
+              onChange={e => setEvtLocation(e.target.value)} placeholder={t('ph.addLocation')} />
           </div>
 
           {evtMsg && <div className={`evt-popup-msg${evtMsg.startsWith('✓') ? ' ok' : ''}`}>{evtMsg}</div>}

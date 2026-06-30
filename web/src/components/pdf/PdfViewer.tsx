@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { uploadFile, fetchFileContent } from '../../api/client'
 
@@ -32,6 +33,7 @@ const COLORS    = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','
 const PEN_SIZES = [2, 4, 6, 10]
 
 export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, onAnnotationsChange }: Props) {
+  const { t: tr }    = useTranslation()
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
   const pdfDocRef    = useRef<any>(null)
@@ -330,7 +332,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           {(['pen','highlight','text','eraser'] as Tool[]).map(t=>(
             <button key={t} className={`pdf-tb-btn${tool===t?' pdf-tb-btn--active':''}`}
               onClick={()=>setTool(t)}
-              title={t==='pen'?'Bolígrafo':t==='highlight'?'Resaltador':t==='text'?'Texto':'Borrador'}>
+              title={t==='pen'?tr('tip.pen'):t==='highlight'?tr('tip.highlighter'):t==='text'?tr('tip.text'):tr('tip.eraser')}>
               {t==='pen'?'✏️':t==='highlight'?'🖍':t==='text'?'T':'⌫'}
             </button>
           ))}
@@ -358,24 +360,24 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         </div>
         <div style={{flex:1}}/>
         {annotations.length>0 && (
-          <button className="pdf-tb-btn" onClick={handleUndo} title="Deshacer última anotación">↩</button>
+          <button className="pdf-tb-btn" onClick={handleUndo} title={tr('tip.undoLastAnnotation')}>↩</button>
         )}
         {annotations.length>0 && (
-          <button className="pdf-tb-btn" title="Restaurar — quitar todo el marcaje (el PDF vuelve a estar limpio)"
-            onClick={() => { if (confirm('¿Quitar todo el marcaje del PDF? El PDF vuelve a estar limpio.')) onAnnotationsChange([]) }}>
-            ⟲ Restaurar
+          <button className="pdf-tb-btn" title={tr('tip.restoreClean')}
+            onClick={() => { if (confirm(tr('tip.confirmRestoreClean'))) onAnnotationsChange([]) }}>
+            ⟲ {tr('tip.restore')}
           </button>
         )}
         {/* Indicador de guardado automático */}
-        {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>Guardando…</span>}
-        {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ Guardado</span>}
+        {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>{tr('common.saving')}</span>}
+        {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ {tr('tip.saved')}</span>}
         {/* Acciones del archivo */}
         <div className="pdf-tb-group" style={{borderLeft:'1px solid var(--border)',paddingLeft:8,marginLeft:4,borderRight:'none'}}>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title="Abrir en nueva pestaña" style={{textDecoration:'none'}}>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title={tr('tip.openInNewTab')} style={{textDecoration:'none'}}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
-            Abrir
+            {tr('tip.open')}
           </a>
-          <a href={url} download={filename} className="node-resource-pdf-open" title="Descargar" style={{textDecoration:'none'}}>
+          <a href={url} download={filename} className="node-resource-pdf-open" title={tr('tip.download')} style={{textDecoration:'none'}}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
           </a>
         </div>
@@ -390,7 +392,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: '#404040', borderRadius: 0,
           }}>
-            <div className="pdf-viewer-loading"><div className="footer-spinner"/> Cargando PDF…</div>
+            <div className="pdf-viewer-loading"><div className="footer-spinner"/> {tr('tip.loadingPdf')}</div>
           </div>
         )}
         {Array.from({length:numPages},(_,i)=>{
@@ -420,10 +422,10 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
                     if(e.key==='Escape'){setTextInput(null);setTextValue('')}
                   }}
                   onBlur={confirmText}
-                  placeholder="Escribe…"
+                  placeholder={tr('ph.writeEllipsis')}
                 />
               )}
-              <div className="pdf-page-num">Pág. {page} / {numPages}</div>
+              <div className="pdf-page-num">{tr('tip.pageLabel', { page, total: numPages })}</div>
             </div>
           )
         })}

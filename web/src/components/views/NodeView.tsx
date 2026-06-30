@@ -9,6 +9,7 @@ import { useStore, store } from '../../store/nodeStore'
 import { applyWFFilter, isSmartQuery } from '../../utils/wfFilter'
 import { normalizeSynonyms } from '../../utils/filterInterpreter'
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Cooldown para extractContextKnowledge — almacena timestamps por nodeId
 // sin causar re-renders (no usa extraData del nodo).
@@ -67,6 +68,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 
 export default function NodeView() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const s = useStore()
@@ -944,18 +946,18 @@ export default function NodeView() {
   if (!node || node.deletedAt) {
     // Si el store aún no ha cargado, mostrar loading en lugar del error
     if (!store.isLoaded) {
-      return <div className="view-loading">Cargando…</div>
+      return <div className="view-loading">{t('common.loadingEllipsis')}</div>
     }
     return (
       <div className="view-empty" style={{ flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 32 }}>🔍</div>
-        <div>Nodo no encontrado</div>
+        <div>{t('node.notFound')}</div>
         <button
           className="btn-primary"
           style={{ marginTop: 8, fontSize: 13, padding: '6px 16px' }}
           onClick={() => navigate('/')}
         >
-          Volver al inicio
+          {t('node.backToHome')}
         </button>
       </div>
     )
@@ -1264,7 +1266,7 @@ export default function NodeView() {
       const url = `https://fromly.app/app/node/${node.id}`
       navigator.clipboard.writeText(url).then(() => {
         setShareCopied(true); setTimeout(() => setShareCopied(false), 2000)
-      }).catch(() => { prompt('Copia este enlace:', url) })
+      }).catch(() => { prompt(t('node.copyThisLink'), url) })
       return
     }
     setIsPublishing(true)
@@ -1433,7 +1435,7 @@ export default function NodeView() {
 
   function handleImportMarkdown() {
     // body desactivado — importar como nodos hijos
-    const md = prompt('Pega el texto markdown a importar:')
+    const md = prompt(t('node.pasteMarkdown'))
     if (md === null) return
     const lines = md.trim().split('\n').map(l => l.trim()).filter(Boolean)
     const siblings = store.children(node!.id)
@@ -1453,22 +1455,22 @@ export default function NodeView() {
   function handleCopyLink() {
     const url = `${window.location.origin}/app/node/${node!.id}`
     navigator.clipboard.writeText(url).then(() => {
-      setQuickActionMsg('Enlace copiado')
+      setQuickActionMsg(t('node.linkCopiedToast'))
       setTimeout(() => setQuickActionMsg(null), 2000)
     }).catch(() => {
-      prompt('Copia este enlace:', url)
+      prompt(t('node.copyThisLink'), url)
     })
   }
 
   function handleMoveToDiary() {
     const todayDiary = store.todayDiary()
     if (!todayDiary) {
-      setQuickActionMsg('No hay diario hoy')
+      setQuickActionMsg(t('node.noDiaryToday'))
       setTimeout(() => setQuickActionMsg(null), 2000)
       return
     }
     if (node!.isDiaryEntry) {
-      setQuickActionMsg('Ya es una entrada de diario')
+      setQuickActionMsg(t('node.alreadyDiaryEntry'))
       setTimeout(() => setQuickActionMsg(null), 2000)
       return
     }
@@ -1479,7 +1481,7 @@ export default function NodeView() {
       parentId: todayDiary.id,
       siblingOrder: maxOrder + 1000,
     })
-    setQuickActionMsg('Añadido al diario de hoy')
+    setQuickActionMsg(t('node.addedToTodayDiary'))
     setTimeout(() => setQuickActionMsg(null), 2000)
   }
 
@@ -1684,7 +1686,7 @@ export default function NodeView() {
               <line x1="12" y1="18" x2="12" y2="12"/>
               <line x1="9" y1="15" x2="15" y2="15"/>
             </svg>
-            <span>Soltar para añadir como nodo</span>
+            <span>{t('node.dropToAdd')}</span>
           </div>
         </div>
       )}
@@ -1699,19 +1701,19 @@ export default function NodeView() {
               ref={inDocSearchRef}
               type="text"
               className="in-doc-search-input"
-              placeholder={isPapeleraNode ? 'Buscar en la papelera...' : 'Buscar en esta nota...'}
+              placeholder={isPapeleraNode ? t('ph.searchTrash') : t('ph.searchInNote')}
               value={inDocSearch}
               onChange={e => setInDocSearch(e.target.value)}
               onKeyDown={e => { if (e.key === 'Escape') { setShowInDocSearch(false); setInDocSearch('') } }}
             />
-            {inDocSearch && <span className="in-doc-search-hint">⌘⇧F para cerrar</span>}
+            {inDocSearch && <span className="in-doc-search-hint">{t('node.searchCloseHint')}</span>}
             <button className="in-doc-search-close" onClick={() => { setShowInDocSearch(false); setInDocSearch('') }}>×</button>
           </div>
         )}
         {node.publicSlug && (
           <div className="node-published-bar">
             <span className="node-published-icon">👁</span>
-            <span className="node-published-label">Pública:</span>
+            <span className="node-published-label">{t('node.publicLabel')}</span>
             <a
               href={`https://fromly.app/p/${node.publicSlug}`}
               target="_blank"
@@ -1723,23 +1725,23 @@ export default function NodeView() {
             <button
               className="node-published-copy"
               onClick={() => navigator.clipboard.writeText(`https://fromly.app/p/${node.publicSlug!}`)}
-              title="Copiar enlace"
+              title={t('tip.copyLink')}
             >
               📋
             </button>
             <button
               className="node-published-copy"
               onClick={() => window.open(`https://fromly.app/p/${node.publicSlug!}`, '_blank')}
-              title="Abrir en nueva pestaña"
+              title={t('tip.openNewTab')}
             >
               ↗
             </button>
             <button
               className="node-published-unpublish"
               onClick={handleUnpublish}
-              title="Despublicar nota"
+              title={t('tip.unpublishNote')}
             >
-              Despublicar
+              {t('node.unpublish')}
             </button>
           </div>
         )}
@@ -1770,7 +1772,7 @@ export default function NodeView() {
                       className="breadcrumb-item"
                       onClick={() => navigate(`/node/${c.id}`)}
                     >
-                      {c.text || 'Sin título'}
+                      {c.text || t('node.untitled')}
                     </button>
                   </span>
                 ))}
@@ -1789,10 +1791,10 @@ export default function NodeView() {
                 const d = new Date(node.updatedAt)
                 const now = new Date()
                 const diff = Math.round((now.getTime() - d.getTime()) / 60000)
-                if (diff < 1) return 'Ahora mismo'
-                if (diff < 60) return `Hace ${diff} min`
-                if (diff < 1440) return `Hace ${Math.round(diff / 60)}h`
-                if (diff < 10080) return `Hace ${Math.round(diff / 1440)} días`
+                if (diff < 1) return t('time.justNow')
+                if (diff < 60) return t('time.minAgo', { n: diff })
+                if (diff < 1440) return t('time.hoursAgo', { n: Math.round(diff / 60) })
+                if (diff < 10080) return t('time.daysAgo', { n: Math.round(diff / 1440) })
                 return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
               })()}
             </span>
@@ -1802,7 +1804,7 @@ export default function NodeView() {
           {(nodeArea || isLocked) && (
             <div className="node-header-badges">
               {nodeArea && <span className="node-badge node-badge--area">📁 {nodeArea}</span>}
-              {isLocked && <span className="node-badge node-badge--locked">🔒 Solo lectura</span>}
+              {isLocked && <span className="node-badge node-badge--locked">🔒 {t('node.readOnly')}</span>}
             </div>
           )}
 
@@ -1827,7 +1829,7 @@ export default function NodeView() {
                   <button
                     className={`bullet-btn bullet-btn--bucle ${closed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
                     onClick={() => store.updateNode(node!.id, { status: closed ? null : 'done' })}
-                    title={closed ? 'Bucle cerrado — clic para reabrir' : 'Bucle abierto — clic para cerrar'}
+                    title={closed ? t('tip.loopClosed') : t('tip.loopOpen')}
                     style={{ flexShrink: 0, marginRight: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}
                   >
                     {closed ? (
@@ -1861,7 +1863,7 @@ export default function NodeView() {
                         ed2._resourceStatus = 'done'
                         store.updateNode(node.id, { extraData: JSON.stringify(ed2) })
                       }}
-                      title="Marcar recurso como procesado"
+                      title={t('tip.markResourceProcessed')}
                       style={{ flexShrink: 0, marginRight: 8, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <svg width="20" height="20" viewBox="0 0 14 14">
@@ -1888,7 +1890,7 @@ export default function NodeView() {
                   <button
                     className={`bullet-btn task ${sqClass}`}
                     onClick={() => store.updateNode(node!.id, { status: node.status === 'done' ? 'pending' : 'done' })}
-                    title={node.status === 'done' ? 'Completada — clic para reabrir' : 'Marcar como hecha'}
+                    title={node.status === 'done' ? t('tip.taskDoneReopen') : t('tip.markDone')}
                     style={{ flexShrink: 0, marginRight: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}
                   >
                     {node.status === 'done' ? (
@@ -1941,7 +1943,7 @@ export default function NodeView() {
                   <button
                     className="node-icon-btn"
                     onClick={() => setShowEmojiPicker(v => !v)}
-                    title="Cambiar icono"
+                    title={t('tip.changeIcon')}
                   >
                     {/* Mostrar badge de tipo de archivo, icono custom, o 📄 por defecto */}
                     {(() => {
@@ -2150,7 +2152,7 @@ export default function NodeView() {
             {/* "Mover a" picker en el título */}
             {titleMovePicker && titleMovePickerPos && createPortal(
               <div className="inline-picker" style={{ position: 'fixed', top: titleMovePickerPos.top, left: titleMovePickerPos.left, zIndex: 1000 }}>
-                <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>→ Mover a...</div>
+                <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>{t('node.moveTo')}</div>
                 {titleMovePicker.items.map((item, idx) => (
                   <button
                     key={item.id}
@@ -2168,7 +2170,7 @@ export default function NodeView() {
             {titleCtxPicker && titleCtxPicker.items.length > 0 && titleCtxPickerPos && createPortal(
               <div className="inline-picker" style={{ position: 'fixed', top: titleCtxPickerPos.top, left: titleCtxPickerPos.left, zIndex: 1000, minWidth: 220 }}>
                 <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>
-                  {(isContextNode || isCtxTreeNode(node.id) || contextParent(node.id)) ? '# Contexto padre' : '# Asignar contexto'}
+                  {(isContextNode || isCtxTreeNode(node.id) || contextParent(node.id)) ? t('node.parentContext') : t('node.assignContext')}
                 </div>
                 {titleCtxPicker.items.map((item, idx) => (
                   <button
@@ -2178,8 +2180,8 @@ export default function NodeView() {
                   >
                     <span className="inline-picker-icon">#</span>
                     <span className="inline-picker-content">
-                      <span className="inline-picker-label">{item.create ? `Crear «${item.label}»` : item.label}</span>
-                      {item.contextLabel && <span className="inline-picker-context" style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-tertiary)' }}>en {item.contextLabel}</span>}
+                      <span className="inline-picker-label">{item.create ? t('node.createNamed', { name: item.label }) : item.label}</span>
+                      {item.contextLabel && <span className="inline-picker-context" style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-tertiary)' }}>{t('node.inContext', { context: item.contextLabel })}</span>}
                     </span>
                   </button>
                 ))}
@@ -2207,8 +2209,8 @@ export default function NodeView() {
                 // Solo Lienzo + Lista. Tabla/Kanban/Calendario se insertan como
                 // ELEMENTOS del lienzo (/tabla, /kanban, /calendario), no como modo de nodo.
                 const modes = [
-                  { id: 'pizarra', title: 'Lienzo', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none"/><rect x="8" y="5" width="4.5" height="3" rx="0.6"/></svg> },
-                  { id: 'lista', title: 'Lista', svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
+                  { id: 'pizarra', title: t('view.canvas'), svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none"/><rect x="8" y="5" width="4.5" height="3" rx="0.6"/></svg> },
+                  { id: 'lista', title: t('view.list'), svg: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg> },
                 ]
                 return (
                   <>
@@ -2239,18 +2241,18 @@ export default function NodeView() {
                   <button
                     className={`node-action-icon-btn ${showTemplateMenu ? 'active' : ''}`}
                     onClick={() => setShowTemplateMenu(v => !v)}
-                    title="Aplicar plantilla"
+                    title={t('tip.applyTemplate')}
                   >📋</button>
                   {showTemplateMenu && (
                     <div className="node-share-menu">
                       {(() => {
                         const tpls = listTemplates()
-                        if (tpls.length === 0) return <button disabled>No tienes plantillas</button>
+                        if (tpls.length === 0) return <button disabled>{t('node.noTemplates')}</button>
                         return tpls.map(tpl => (
                           <button key={tpl.id} onClick={() => {
                             applyTemplate(tpl.id, node.id)
                             setShowTemplateMenu(false)
-                            setQuickActionMsg('Plantilla aplicada')
+                            setQuickActionMsg(t('node.templateApplied'))
                             setTimeout(() => setQuickActionMsg(null), 2000)
                           }}>📋 {tpl.text}</button>
                         ))
@@ -2266,7 +2268,7 @@ export default function NodeView() {
               <button
                 className={`node-action-icon-btn ${node.isFavorite ? 'active' : ''}`}
                 onClick={toggleFavorite}
-                title={node.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')}
                 style={{ color: node.isFavorite ? '#f59e0b' : undefined }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2278,7 +2280,7 @@ export default function NodeView() {
                 <button
                   className="node-action-icon-btn"
                   onClick={convertToContext}
-                  title="Convertir en contexto"
+                  title={t('tip.convertToContext')}
                 >
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M2 7.4V3a1 1 0 0 1 1-1h4.4a1 1 0 0 1 .7.3l6 6a1 1 0 0 1 0 1.4l-4.4 4.4a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1-.3-.7z"/><circle cx="5.2" cy="5.2" r="1"/>
@@ -2290,7 +2292,7 @@ export default function NodeView() {
                 <button
                   className={`node-action-icon-btn ${node.publicSlug || shareUrl ? 'active' : ''}`}
                   onClick={() => (node.publicSlug || shareUrl) ? handleShare() : setShowShareMenu(v => !v)}
-                  title={(node.publicSlug || shareUrl) ? 'Publicada — copiar enlace' : 'Publicar nota'}
+                  title={(node.publicSlug || shareUrl) ? t('tip.publishedCopyLink') : t('tip.publishNote')}
                   style={{ color: (node.publicSlug || shareUrl) ? '#22c55e' : undefined }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -2298,11 +2300,11 @@ export default function NodeView() {
                     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                   </svg>
                 </button>
-                {shareCopied && <span className="node-share-tooltip">¡Enlace copiado!</span>}
+                {shareCopied && <span className="node-share-tooltip">{t('node.linkCopied')}</span>}
                 {showShareMenu && (
                   <div className="node-share-menu">
-                    <button onClick={() => { handleShare(); setShowShareMenu(false) }}>🌐 Publicar y copiar enlace</button>
-                    <button onClick={() => { handleCopyLink(); setShowShareMenu(false) }}>🔗 Copiar enlace interno</button>
+                    <button onClick={() => { handleShare(); setShowShareMenu(false) }}>🌐 {t('node.publishAndCopy')}</button>
+                    <button onClick={() => { handleCopyLink(); setShowShareMenu(false) }}>🔗 {t('node.copyInternalLink')}</button>
                   </div>
                 )}
               </div>
@@ -2320,7 +2322,7 @@ export default function NodeView() {
                     const rect = e.currentTarget.getBoundingClientRect()
                     setTitleContextMenu({ x: rect.left, y: rect.bottom + 4 })
                   }}
-                  title="Más opciones"
+                  title={t('tip.moreOptions')}
                 >
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                     <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
@@ -2336,7 +2338,7 @@ export default function NodeView() {
           {focusMode && (
             <div className="focus-word-counter">
               <span className={`focus-word-count ${wordGoal && wordCount >= wordGoal ? 'focus-word-count--goal-met' : ''}`}>
-                {wordCount} palabras
+                {t('node.wordsCount', { n: wordCount })}
               </span>
               {wordGoal ? (
                 <>
@@ -2348,10 +2350,10 @@ export default function NodeView() {
                 </>
               ) : (
                 <button className="focus-goal-btn" onClick={() => {
-                  const g = parseInt(prompt('Meta de palabras (ej: 500):', '') || '0')
+                  const g = parseInt(prompt(t('node.wordGoalPrompt'), '') || '0')
                   if (g > 0) setWordGoal(g)
                 }}>
-                  + Meta
+                  {t('node.addGoal')}
                 </button>
               )}
             </div>
@@ -2361,7 +2363,7 @@ export default function NodeView() {
 
           {/* Locked badge */}
           {isLocked && (
-            <div className="node-locked-badge">🔒 Nota bloqueada — solo lectura</div>
+            <div className="node-locked-badge">🔒 {t('node.noteLocked')}</div>
           )}
 
         </div>
@@ -2377,7 +2379,7 @@ export default function NodeView() {
             <div style={{ position: 'relative' }}>
               <button
                 className={`node-action-icon-btn ${titleContextMenu ? 'active' : ''}`}
-                title="Más opciones"
+                title={t('tip.moreOptions')}
                 onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setTitleContextMenu({ x: r.right - 220, y: r.bottom + 4 }) }}
                 style={{ position: 'absolute', top: 4, right: 12, zIndex: 30 }}
               >
@@ -2441,44 +2443,44 @@ export default function NodeView() {
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyBodyFormat('**') }}
-                    title="Negrita"
+                    title={t('tip.bold')}
                   ><strong>B</strong></button>
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyBodyFormat('*') }}
-                    title="Cursiva"
+                    title={t('tip.italic')}
                   ><em>I</em></button>
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyBodyFormat('`') }}
-                    title="Código"
+                    title={t('tip.code')}
                   >&lt;&gt;</button>
                   <span className="node-body-toolbar-sep" />
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('- ') }}
-                    title="Lista con viñeta"
+                    title={t('tip.bulletList')}
                   >•</button>
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('1. ') }}
-                    title="Lista numerada"
+                    title={t('tip.numberedList')}
                   >1.</button>
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('> ') }}
-                    title="Cita"
+                    title={t('tip.quote')}
                   >&gt;</button>
                   <span className="node-body-toolbar-sep" />
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('# ') }}
-                    title="Encabezado H1"
+                    title={t('tip.heading1')}
                   >H1</button>
                   <button
                     className="node-body-toolbar-btn"
                     onMouseDown={e => { e.preventDefault(); applyLinePrefix('## ') }}
-                    title="Encabezado H2"
+                    title={t('tip.heading2')}
                   >H2</button>
                   <button
                     className="node-body-toolbar-btn"
@@ -2491,7 +2493,7 @@ export default function NodeView() {
                       ta.setRangeText(insertion, pos, pos, 'end')
                       handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
                     }}
-                    title="Línea divisoria"
+                    title={t('tip.divider')}
                   >---</button>
                   <button
                     className="node-body-toolbar-btn"
@@ -2504,11 +2506,11 @@ export default function NodeView() {
                       ta.setRangeText('- [ ] ', lineStart, lineStart, 'end')
                       handleBodyChange({ target: ta } as React.ChangeEvent<HTMLTextAreaElement>)
                     }}
-                    title="Checkbox"
+                    title={t('tip.checkbox')}
                   >[ ]</button>
                   <button
                     className="node-body-toolbar-btn"
-                    title="Insertar tabla"
+                    title={t('tip.insertTable')}
                     onMouseDown={e => {
                       e.preventDefault()
                       const tableTemplate = '\n| Columna 1 | Columna 2 | Columna 3 |\n|-----------|-----------|----------|\n| Dato      | Dato      | Dato      |\n| Dato      | Dato      | Dato      |\n'
@@ -2521,10 +2523,10 @@ export default function NodeView() {
                   >⊞</button>
                   <button
                     className="node-body-toolbar-btn"
-                    title="Importar markdown"
+                    title={t('tip.importMarkdown')}
                     onMouseDown={e => { e.preventDefault(); handleImportMarkdown() }}
                   >📥</button>
-                  <button className="node-body-toolbar-btn" title="Bloque de código (```)"
+                  <button className="node-body-toolbar-btn" title={t('tip.codeBlock')}
                     onMouseDown={e => {
                       e.preventDefault()
                       const ta = textareaRef.current
@@ -2547,24 +2549,24 @@ export default function NodeView() {
                   onChange={handleBodyChange}
                   onBlur={handleBodyBlur}
                   onKeyDown={handleBodyKeyDown}
-                  placeholder={isAiStreaming ? '✨ IA generando...' : 'Añade una descripción o notas... (IA en el outliner: Espacio al inicio)'}
+                  placeholder={isAiStreaming ? t('node.aiGenerating') : t('ph.bodyDescription')}
                   rows={Math.max(4, bodyValue.split('\n').length + 1)}
                 />
                 {isAiStreaming && (
-                  <span className="ai-streaming-hint">✨ IA generando...</span>
+                  <span className="ai-streaming-hint">{t('node.aiGenerating')}</span>
                 )}
                 {isLoggedIn && !isAiStreaming && (
                   <button
                     className="ai-inline-trigger-btn"
                     onClick={triggerAiInline}
-                    title="Completar con IA"
+                    title={t('tip.completeWithAi')}
                     tabIndex={-1}
                   >
                     ✨
                   </button>
                 )}
                 <span className="node-body-wordcount">
-                  {bodyValue.trim() ? `${bodyValue.trim().split(/\s+/).length} palabras · ${bodyValue.length} chars` : ''}
+                  {bodyValue.trim() ? t('node.wordsChars', { words: bodyValue.trim().split(/\s+/).length, chars: bodyValue.length }) : ''}
                 </span>
               </>
             ) : (
@@ -2713,13 +2715,13 @@ export default function NodeView() {
                 <>
                   {(attachments.length > 0 || uploading) && (
                     <div className="node-attachments-header">
-                      <span>📎 Archivos adjuntos</span>
+                      <span>📎 {t('node.attachments')}</span>
                       <button
                         className="node-attachments-upload-btn"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
                       >
-                        {uploading ? 'Subiendo...' : '+ Adjuntar'}
+                        {uploading ? t('node.uploading') : t('node.attach')}
                       </button>
                     </div>
                   )}
@@ -2747,8 +2749,8 @@ export default function NodeView() {
                       <button
                         className="attachment-delete-btn"
                         onClick={() => handleDeleteAttachment(att.key)}
-                        title="Eliminar"
-                        aria-label="Eliminar adjunto"
+                        title={t('common.delete')}
+                        aria-label={t('node.deleteAttachment')}
                       >
                         ×
                       </button>
@@ -2761,7 +2763,7 @@ export default function NodeView() {
 
           {headings.length >= 3 && (
             <div className="node-toc">
-              <div className="node-toc-title">Tabla de contenidos</div>
+              <div className="node-toc-title">{t('node.tableOfContents')}</div>
               {headings.map(h => {
                 const type = detectBlockType(h.text)
                 const text = h.text.replace(/^#{1,3}\s/, '')

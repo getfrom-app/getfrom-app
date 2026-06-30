@@ -69,7 +69,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
   useEffect(() => { inputRef.current?.focus() }, [])
 
   function handleCreate() {
-    const text = title.trim() || selectedTemplate.text || 'Sin título'
+    const text = title.trim() || selectedTemplate.text || t('common.noTitle')
     const node = store.createNode({
       text: text + (selectedTemplate.text && !title ? new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : ''),
       parentId: parentId !== undefined ? parentId : null,
@@ -126,7 +126,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         <div className="modal-field">
           <textarea
             className="modal-description"
-            placeholder="Descripción (opcional)"
+            placeholder={t('ph.descriptionOptional')}
             value={description}
             rows={2}
             onChange={e => setDescription(e.target.value)}
@@ -135,7 +135,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         </div>
 
         <div className="note-templates">
-          <div className="note-templates-label">Plantilla</div>
+          <div className="note-templates-label">{t('modal.template')}</div>
           <div className="note-templates-grid">
             {allTemplates.map(t => (
               <button

@@ -105,7 +105,7 @@ function EventPopup({ node, anchorEl, onClose, onOpen }: EventPopupProps) {
               onClose()
             }}
           >
-            {node.status === 'done' ? '↩ Reabrir' : '✓ Hecho'}
+            {node.status === 'done' ? '↩ ' + t('calendar.reopen') : '✓ ' + t('status.done')}
           </button>
         )}
       </div>
@@ -225,6 +225,7 @@ interface NodeChipProps {
 }
 
 function NodeChip({ node, onClick, compact }: NodeChipProps) {
+  const { t } = useTranslation()
   const isDone = node.status === 'done'
   const isTask = node.status !== null
 
@@ -232,14 +233,14 @@ function NodeChip({ node, onClick, compact }: NodeChipProps) {
     <button
       className={`calendar-node-chip ${isDone ? 'calendar-node-chip--done' : ''} ${compact ? 'calendar-node-chip--compact' : ''}`}
       onClick={onClick}
-      title={node.text || 'Sin título'}
+      title={node.text || t('common.noTitle')}
     >
       {isTask && (
         <span className="calendar-node-status">
           {isDone ? '✓' : '○'}
         </span>
       )}
-      <span className="calendar-node-text">{node.text || 'Sin título'}</span>
+      <span className="calendar-node-text">{node.text || t('common.noTitle')}</span>
     </button>
   )
 }
@@ -396,6 +397,7 @@ interface WeekViewProps {
 }
 
 function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit, dayCount = 7, showDayNames = true, onNavigate, onGoToToday, onNodeClick, onCreateEvent, onDrop, onGCalUpdated, onGCalDeleted }: WeekViewProps) {
+  const { t } = useTranslation()
   const days = Array.from({ length: dayCount }, (_, i) => addDays(weekStart, i))
   const colWidthExpr = `calc((100% - var(--gutter-width)) / ${dayCount})`
   // Franja horaria visible (reactiva a cambios desde Ajustes)
@@ -528,10 +530,10 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary" onClick={() => onNavigate(-navUnit)}>← Anterior</button>
-        <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <button className="btn-secondary" onClick={() => onNavigate(-navUnit)}>← {t('calendar.prev')}</button>
+        <button className="btn-secondary" onClick={onGoToToday}>{t('common.today')}</button>
         <span className="calendar-week-label">{weekLabel}</span>
-        <button className="btn-secondary" onClick={() => onNavigate(navUnit)}>Siguiente →</button>
+        <button className="btn-secondary" onClick={() => onNavigate(navUnit)}>{t('calendar.next')} →</button>
       </div>
 
       <div className="calendar-week-body" style={{ ['--day-col-width' as string]: colWidthExpr }}>
@@ -553,7 +555,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
 
         {/* ── Sección "Todo el día" ── */}
         <div className="calendar-allday-row">
-          <div className="calendar-timeline-gutter calendar-allday-label">Todo el día</div>
+          <div className="calendar-timeline-gutter calendar-allday-label">{t('calendar.allDay')}</div>
           {days.map((day, i) => {
             const allDayNodes = getAllDayNodes(day)
             const gcalAllDay = getGoogleAllDay(day)
@@ -620,10 +622,10 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                       e.stopPropagation()
                       setTaskPopover({ node, el: e.currentTarget as HTMLElement })
                     }}
-                    title={node.text || 'Sin título'}
+                    title={node.text || t('common.noTitle')}
                   >
                     {icon && <span style={{ marginRight: 4 }}>{icon}</span>}
-                    {node.text || 'Sin título'}
+                    {node.text || t('common.noTitle')}
                   </button>
                   )
                 })}
@@ -633,7 +635,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                     type="button"
                     className="calendar-event-chip calendar-event-chip--gcal"
                     style={{ ['--tl-color' as never]: gcalEventColor(ev), cursor: 'pointer' }}
-                    title={`${ev.title} · Click para editar en Google`}
+                    title={`${ev.title} · ${t('calendar.clickEditGoogle')}`}
                     onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                   >
                     {ev.title}
@@ -647,7 +649,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                   />
                 )}
                 {hoveredAllDay === i && !allDayQuickCreate && allDayNodes.length === 0 && gcalAllDay.length === 0 && (
-                  <span className="calendar-allday-add-hint">+ Añadir</span>
+                  <span className="calendar-allday-add-hint">+ {t('common.add')}</span>
                 )}
               </div>
             )
@@ -736,7 +738,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         }}
                       >
                         {isHovered && !isCreating && (
-                          <span className="calendar-cell-add-hint">+ Añadir</span>
+                          <span className="calendar-cell-add-hint">+ {t('common.add')}</span>
                         )}
                         {isCreating && quickCreate && (
                           <QuickEventCreate
@@ -794,17 +796,17 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           setQuickCreate(null)
                           setTaskPopover({ node, el: e.currentTarget as HTMLElement })
                         }}
-                        title={node.text || 'Sin título'}
+                        title={node.text || t('common.noTitle')}
                       >
                         <span className="calendar-event-time">{timeLabel}{crossDay ? ' ↦' : ''}</span>
                         <span className="calendar-event-text">
                           {nodeIcon(node) && <span style={{ marginRight: 4 }}>{nodeIcon(node)}</span>}
-                          {node.text || 'Sin título'}
+                          {node.text || t('common.noTitle')}
                         </span>
                         <span
                           className="calendar-event-resize"
                           onMouseDown={e => startResize(e, node.id, 'from', startMs, endMs)}
-                          title="Arrastra para cambiar duración"
+                          title={t('calendar.dragResize')}
                         />
                       </button>
                     )
@@ -843,7 +845,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                           ['--tl-color' as never]: gcalEventColor(ev),
                           cursor: 'pointer',
                         }}
-                        title={`${ev.title} · Click para editar en Google`}
+                        title={`${ev.title} · ${t('calendar.clickEditGoogle')}`}
                         onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                       >
                         <span className="calendar-event-time">{timeLabel}{crossDay ? ' ↦' : ''}</span>
@@ -851,7 +853,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
                         <span
                           className="calendar-event-resize"
                           onMouseDown={e => startResize(e, ev.id, 'gcal', startMs, endMs)}
-                          title="Arrastra para cambiar duración"
+                          title={t('calendar.dragResize')}
                         />
                       </button>
                     )
@@ -895,9 +897,9 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
 
       {/* Leyenda */}
       <div className="calendar-legend">
-        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#f59e0b' }}></span>Evento</span>
-        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#ef4444' }}></span>Alta prioridad</span>
-        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#8b5cf6' }}></span>Tarea</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#f59e0b' }}></span>{t('calendar.legendEvent')}</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#ef4444' }}></span>{t('calendar.legendHighPriority')}</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#8b5cf6' }}></span>{t('calendar.legendTask')}</span>
       </div>
     </>
   )
@@ -920,6 +922,7 @@ interface MonthViewProps {
 }
 
 function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGoToToday, onNodeClick, onDayClick, onDrop, onGCalUpdated, onGCalDeleted }: MonthViewProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [gcalEditing, setGcalEditing] = useState<CalendarEvent | null>(null)
   const nodesWithDue = allNodes.filter(n =>
@@ -953,10 +956,10 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
   return (
     <div className="calendar-month-container">
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← Anterior</button>
-        <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← {t('calendar.prev')}</button>
+        <button className="btn-secondary" onClick={onGoToToday}>{t('common.today')}</button>
         <span className="calendar-week-label" style={{ textTransform: 'capitalize' }}>{monthLabel}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>{t('calendar.next')} →</button>
       </div>
 
       {/* Day of week header row */}
@@ -1002,7 +1005,7 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
                       const diff = Math.round((day.getTime() - today2.getTime()) / 86400000)
                       navigate(`/?offset=${diff}`)
                     }}
-                    title={`Entrada de diario · ${childCount} bullets`}
+                    title={t('calendar.diaryEntryTip', { count: childCount })}
                   >
                     📓{childCount > 0 && <span className="calendar-diary-count">{childCount}</span>}
                   </button>
@@ -1017,10 +1020,10 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
                     type="button"
                     className="calendar-month-node calendar-month-node--gcal"
                     style={{ background: c + '30', color: c, borderLeft: `2px solid ${c}`, cursor: 'pointer' }}
-                    title={`Google Calendar · ${ev.title} · Click para editar`}
+                    title={`Google Calendar · ${ev.title} · ${t('calendar.clickEdit')}`}
                     onClick={e => { e.stopPropagation(); setGcalEditing(ev) }}
                   >
-                    🗓 {ev.title || 'Sin título'}
+                    🗓 {ev.title || t('common.noTitle')}
                   </button>
                   )
                 })}
@@ -1034,11 +1037,11 @@ function MonthView({ monthStart, today, allNodes, googleEvents, onNavigate, onGo
                     {node.status !== null && (
                       <span>{node.status === 'done' ? '✓' : '○'} </span>
                     )}
-                    {node.text || 'Sin título'}
+                    {node.text || t('common.noTitle')}
                   </button>
                 ))}
                 {overflow && (
-                  <span className="calendar-month-overflow">+{dayNodes.length + gcalDay.length - 3} más</span>
+                  <span className="calendar-month-overflow">+{dayNodes.length + gcalDay.length - 3} {t('calendar.more')}</span>
                 )}
               </div>
             </div>
@@ -1082,6 +1085,7 @@ function getActivityLevel(count: number): string {
 }
 
 function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick, onDayClick }: YearViewProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const diaryEntries = allNodes.filter(n => n.isDiaryEntry && n.diaryDate && !n.deletedAt)
 
@@ -1124,10 +1128,10 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
   return (
     <>
       <div className="calendar-week-nav">
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← Anterior</button>
-        <button className="btn-secondary" onClick={onGoToToday}>Hoy</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(-1)}>← {t('calendar.prev')}</button>
+        <button className="btn-secondary" onClick={onGoToToday}>{t('common.today')}</button>
         <span className="calendar-week-label">{year}</span>
-        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>Siguiente →</button>
+        <button className="btn-secondary calendar-nav-btn" onClick={() => onNavigate(1)}>{t('calendar.next')} →</button>
       </div>
 
       <div className="calendar-year-scroll">
@@ -1181,7 +1185,7 @@ function YearView({ year, today, allNodes, onNavigate, onGoToToday, onMonthClick
                           activityClass,
                         ].filter(Boolean).join(' ')}
                         onClick={inMonth ? e => handleDayClick(day, e) : undefined}
-                        title={inMonth ? `${day.getDate()} ${MONTH_NAMES_SHORT[mi]}${activityCount > 0 ? ` · ${activityCount} elementos` : ''}` : undefined}
+                        title={inMonth ? `${day.getDate()} ${MONTH_NAMES_SHORT[mi]}${activityCount > 0 ? ` · ${activityCount} ${t('calendar.items')}` : ''}` : undefined}
                       >
                         {inMonth ? day.getDate() : ''}
                       </div>
@@ -1297,7 +1301,7 @@ export default function CalendarView() {
   function handleCreateEvent(date: Date) {
     const diary = store.todayDiary()
     const node = store.createNode({
-      text: 'Nueva tarea',
+      text: t('topbar.newTask'),
       parentId: diary?.id || null,
     })
     // Crear como TAREA por defecto en el calendario.
@@ -1330,11 +1334,11 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="view calendar-view calendar-view--with-panel" role="main" aria-label="Vista de calendario">
+    <div className="view calendar-view calendar-view--with-panel" role="main" aria-label={t('calendar.ariaLabel')}>
       <div className="calendar-main-area">
         <div className="calendar-top-bar">
           <div className="calendar-header-row">
-            <h1 className="view-title" style={{ margin: 0 }}>Calendario</h1>
+            <h1 className="view-title" style={{ margin: 0 }}>{t('topbar.viewCalendar')}</h1>
             <div className="calendar-view-tabs">
               {(['day', 'week', 'month', 'year'] as ViewType[]).map(v => (
                 <button
@@ -1342,7 +1346,7 @@ export default function CalendarView() {
                   className={`calendar-view-tab ${view === v ? 'calendar-view-tab--active' : ''}`}
                   onClick={() => setView(v)}
                 >
-                  {v === 'day' ? t('timeline.dayMode') : v === 'week' ? t('timeline.weekMode') : v === 'month' ? t('timeline.monthMode') : 'Año'}
+                  {v === 'day' ? t('timeline.dayMode') : v === 'week' ? t('timeline.weekMode') : v === 'month' ? t('timeline.monthMode') : t('timeline.yearMode')}
                 </button>
               ))}
             </div>
@@ -1422,7 +1426,7 @@ export default function CalendarView() {
         <button
           className="right-panel-toggle"
           onClick={() => setPanelCollapsed(v => !v)}
-          title={panelCollapsed ? 'Expandir panel' : 'Colapsar panel'}
+          title={panelCollapsed ? t('calendar.expandPanel') : t('calendar.collapsePanel')}
         >
           {panelCollapsed ? '›' : '‹'}
         </button>
