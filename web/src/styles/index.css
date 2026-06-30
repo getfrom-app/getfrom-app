@@ -13034,6 +13034,7 @@ textarea:focus-visible,
 /* ── Language selector ──────────────────────────────────────────────────── */
 .language-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 4px 0;
 }

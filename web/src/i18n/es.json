@@ -744,6 +744,7 @@
   "node.notePlaceholder": "Nombre de la nota…",
   "node.titlePlaceholder": "Título...",
   "node.searchPlaceholder": "Buscar en esta nota...",
+  "node.searchTrash": "Buscar en papelera...",
   "calendar.createBtn": "Crear",
   "calendar.cancelBtn": "Cancelar",
   "calendar.newTaskPlaceholder": "Nombre de la tarea…",

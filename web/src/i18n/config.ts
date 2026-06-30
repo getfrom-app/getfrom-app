@@ -4,6 +4,42 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import es from './es.json'
 import en from './en.json'
+import de from './de.json'
+import fr from './fr.json'
+import it from './it.json'
+import pt from './pt.json'
+import el from './el.json'
+import nl from './nl.json'
+import pl from './pl.json'
+import ru from './ru.json'
+import tr from './tr.json'
+import sv from './sv.json'
+
+// Idiomas soportados por la interfaz. El selector de Ajustes los lista todos.
+export const SUPPORTED_LANGUAGES = [
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+  { code: 'el', label: 'Ελληνικά', flag: '🇬🇷' },
+  { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
+  { code: 'pl', label: 'Polski', flag: '🇵🇱' },
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
+  { code: 'sv', label: 'Svenska', flag: '🇸🇪' },
+]
+
+const SUPPORTED_CODES = SUPPORTED_LANGUAGES.map(l => l.code)
+
+// Normaliza cualquier idioma a uno soportado: 'es-MX'→'es', 'pt-BR'→'pt',
+// 'el-GR'→'el'. Si el idioma no está traducido (p.ej. 'zh', 'ja') → inglés.
+export function normalizeLang(lng?: string): string {
+  if (!lng) return 'en'
+  const base = lng.toLowerCase().split('-')[0]
+  return SUPPORTED_CODES.includes(base) ? base : 'en'
+}
 
 i18n
   .use(LanguageDetector)
@@ -12,28 +48,33 @@ i18n
     resources: {
       es: { translation: es },
       en: { translation: en },
+      de: { translation: de },
+      fr: { translation: fr },
+      it: { translation: it },
+      pt: { translation: pt },
+      el: { translation: el },
+      nl: { translation: nl },
+      pl: { translation: pl },
+      ru: { translation: ru },
+      tr: { translation: tr },
+      sv: { translation: sv },
     },
-    // Cualquier idioma no-español → inglés. 'es' → español.
+    // Cualquier idioma no soportado → inglés (nunca español por defecto).
     fallbackLng: 'en',
-    supportedLngs: ['es', 'en'],
+    supportedLngs: SUPPORTED_CODES,
 
     // Detección: 1) elección explícita en localStorage, 2) idioma del navegador.
     // NO cacheamos la detección automática: solo se persiste cuando el usuario
-    // elige idioma a mano (setLanguage). Así una build vieja no deja a un usuario
-    // griego/alemán clavado en un idioma que nunca eligió.
-    // Clave nueva ('fromly-lang') para invalidar de una vez los caches malos que
-    // builds antiguas escribieron en 'from-lang' (p.ej. español por defecto).
+    // elige idioma a mano (setLanguage). Así una build vieja no deja a nadie
+    // clavado en un idioma que nunca eligió. Clave 'fromly-lang' (la vieja
+    // 'from-lang' queda invalidada a propósito).
     detection: {
       order: ['localStorage', 'navigator'],
       caches: [],
       lookupLocalStorage: 'fromly-lang',
-      // Normalizar lo que detecte el navegador: solo español explícito → 'es';
-      // cualquier otra cosa (griego, alemán, francés…) → 'en'.
-      convertDetectedLanguage: (lng: string) =>
-        lng?.toLowerCase().startsWith('es') ? 'es' : 'en',
+      convertDetectedLanguage: normalizeLang,
     },
 
-    // 'es-MX', 'es-AR' etc. → 'es'
     load: 'languageOnly',
 
     interpolation: {
@@ -44,9 +85,8 @@ i18n
 export default i18n
 
 // Cambia el idioma y lo persiste como elección EXPLÍCITA del usuario.
-// (El detector ya no auto-cachea, así que aquí escribimos la clave a mano.)
 export function setLanguage(lang: string) {
-  const normalized = lang?.toLowerCase().startsWith('es') ? 'es' : 'en'
+  const normalized = normalizeLang(lang)
   try {
     localStorage.setItem('fromly-lang', normalized)
   } catch {
@@ -54,8 +94,3 @@ export function setLanguage(lang: string) {
   }
   i18n.changeLanguage(normalized)
 }
-
-export const SUPPORTED_LANGUAGES = [
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-]
