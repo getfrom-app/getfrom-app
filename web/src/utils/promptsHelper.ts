@@ -267,7 +267,9 @@ function currentContextName(currentNodeId?: string): string {
  */
 export function substituteVariables(text: string, ctx: VariableContext = {}): string {
   if (!text.includes('{{')) return text
-  const locale = (typeof localStorage !== 'undefined' && localStorage.getItem('from-lang')?.startsWith('en')) ? 'en-US' : 'es-ES'
+  const lang = (typeof localStorage !== 'undefined' && localStorage.getItem('fromly-lang'))
+    || (typeof navigator !== 'undefined' && navigator.language) || 'en'
+  const locale = lang.toLowerCase().startsWith('es') ? 'es-ES' : 'en-US'
   const fecha = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const values: Record<string, string> = {
     '{{fecha}}':           fecha,

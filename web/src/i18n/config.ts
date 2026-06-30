@@ -17,15 +17,23 @@ i18n
     fallbackLng: 'en',
     supportedLngs: ['es', 'en'],
 
-    // Detección: 1) localStorage, 2) navegador, 3) fallback (en)
+    // Detección: 1) elección explícita en localStorage, 2) idioma del navegador.
+    // NO cacheamos la detección automática: solo se persiste cuando el usuario
+    // elige idioma a mano (setLanguage). Así una build vieja no deja a un usuario
+    // griego/alemán clavado en un idioma que nunca eligió.
+    // Clave nueva ('fromly-lang') para invalidar de una vez los caches malos que
+    // builds antiguas escribieron en 'from-lang' (p.ej. español por defecto).
     detection: {
       order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-      lookupLocalStorage: 'from-lang',
+      caches: [],
+      lookupLocalStorage: 'fromly-lang',
+      // Normalizar lo que detecte el navegador: solo español explícito → 'es';
+      // cualquier otra cosa (griego, alemán, francés…) → 'en'.
+      convertDetectedLanguage: (lng: string) =>
+        lng?.toLowerCase().startsWith('es') ? 'es' : 'en',
     },
 
-    // Normalizar: si el navegador dice 'fr', 'de', 'zh', etc. → usar 'en'
-    // Si dice 'es-MX', 'es-AR' etc. → 'es'
+    // 'es-MX', 'es-AR' etc. → 'es'
     load: 'languageOnly',
 
     interpolation: {
@@ -35,9 +43,16 @@ i18n
 
 export default i18n
 
-// Cambia el idioma y lo persiste
+// Cambia el idioma y lo persiste como elección EXPLÍCITA del usuario.
+// (El detector ya no auto-cachea, así que aquí escribimos la clave a mano.)
 export function setLanguage(lang: string) {
-  i18n.changeLanguage(lang)
+  const normalized = lang?.toLowerCase().startsWith('es') ? 'es' : 'en'
+  try {
+    localStorage.setItem('fromly-lang', normalized)
+  } catch {
+    // localStorage no disponible (modo privado, etc.) — no es fatal.
+  }
+  i18n.changeLanguage(normalized)
 }
 
 export const SUPPORTED_LANGUAGES = [
