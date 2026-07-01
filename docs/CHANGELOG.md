@@ -4,12 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.6.568 · Mac v9.5.75 — 30 junio 2026 · Fromly en 12 idiomas
+## Web v9.6.569 · Mac v9.5.76 — 30 junio 2026 · Fromly en 12 idiomas
 
 Fromly ahora habla **12 idiomas** y arranca automáticamente en el idioma de tu dispositivo (inglés si no está disponible) — nunca asume español.
 
 - **12 idiomas**: español, inglés, alemán, francés, italiano, portugués, **griego**, neerlandés, polaco, ruso, turco y sueco. Cámbialo cuando quieras en **Ajustes › Idioma**.
-- **Hasta el último detalle**: además de toda la interfaz, ahora también están traducidos los **tooltips**, los textos de ayuda y los **marcadores de los campos** (antes algunos quedaban en español).
+- **Hasta el último detalle**: además de toda la interfaz, ahora también están traducidos los **tooltips**, los textos de ayuda y los **marcadores de los campos** — incluidos ~40 que aún quedaban en español (botones de eliminar/renombrar, «quitar hora», buscadores, etc.). Ya no queda ninguno codificado en español.
 - **La IA y la voz también siguen tu idioma**: el asistente Magic responde y la transcripción de voz funcionan en tu idioma, en vez de asumir español.
 - **Bandeja del panel más limpia** (admin): botones rápidos de eliminar y marcar spam sin abrir el correo, los reportes diarios ya no entran en la bandeja, y las respuestas verifican el envío real antes de marcarse como enviadas.
 - **iPhone y iPad**: la app con los 12 idiomas está en revisión de App Store (llega en unos días).

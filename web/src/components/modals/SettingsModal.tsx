@@ -592,6 +592,7 @@ const APPLE_SHORTCUT_ICLOUD = 'https://www.icloud.com/shortcuts/d77a969efecf414b
 const isTauriDesktop = import.meta.env.VITE_TAURI === 'true'
 
 export function CapturaRapidaPane() {
+  const { t } = useTranslation()
   const [token, setToken] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -649,7 +650,7 @@ export function CapturaRapidaPane() {
             <button className="btn-secondary" onClick={() => copy(token, 'token')} style={{ flexShrink: 0, fontSize: 12 }}>
               {copied === 'token' ? '✓ Copiado' : 'Copiar'}
             </button>
-            <button onClick={handleGenerate} disabled={generating} title="Generar uno nuevo (invalida el anterior)" style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: '0 4px', border: 'none' }}>
+            <button onClick={handleGenerate} disabled={generating} title={t('settingsModal.generateNew')} style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: '0 4px', border: 'none' }}>
               {generating ? '…' : 'Regenerar'}
             </button>
           </div>

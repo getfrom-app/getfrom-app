@@ -222,6 +222,7 @@ export default function SearchPanel({ filterText, onFilter, onClose, onSelectCon
 
 // ── Lista de paneles guardados ────────────────────────────────────────────────
 function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => void; activeQuery: string }) {
+  const { t } = useTranslation()
   const s = useStore()
   const [savingPanel, setSavingPanel] = useState(false)
   const [panelName, setPanelName] = useState('')
@@ -339,7 +340,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
             {!isRenaming && (isHovered || isActive) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                 <button
-                  title="Renombrar"
+                  title={t('common.rename')}
                   onClick={e => startRename(p, e)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -355,7 +356,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
                   </svg>
                 </button>
                 <button
-                  title="Eliminar"
+                  title={t('common.delete')}
                   onClick={e => deletePanel(p.id, e)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -393,7 +394,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
               if (e.key === 'Escape') { setSavingPanel(false); setPanelName('') }
             }}
             onBlur={() => { if (panelName.trim()) confirmSave(); else { setSavingPanel(false); setPanelName('') } }}
-            placeholder="Nombre del filtro…"
+            placeholder={t('searchPanel.filterNamePlaceholder')}
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
           />
         </div>
@@ -405,6 +406,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
 // ── Sección de Favoritos ─────────────────────────────────────────────────────
 
 function FavoritesSection() {
+  const { t } = useTranslation()
   const s = useStore()
   const navigate = useNavigate()
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -489,7 +491,7 @@ function FavoritesSection() {
             {!isRenaming && isHovered && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                 <button
-                  title="Renombrar"
+                  title={t('common.rename')}
                   onClick={e => startRename(n, e)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -505,7 +507,7 @@ function FavoritesSection() {
                   </svg>
                 </button>
                 <button
-                  title="Quitar de favoritos"
+                  title={t('common.removeFavorite')}
                   onClick={e => unfavorite(n.id, e)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',

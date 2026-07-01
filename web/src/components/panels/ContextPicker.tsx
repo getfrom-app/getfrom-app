@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { listContextsForParent, isContextClosed, createContext, contextColor, contextParent } from '../../utils/cajones'
 import type { Node } from '../../types'
+import { useTranslation } from 'react-i18next'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
@@ -16,6 +17,7 @@ export default function ContextPicker({ currentId, onPick, autoFocus = true, exc
   /** opcional: oculta de la lista los contextos para los que devuelve true (p.ej. self/descendientes al reparentar). */
   exclude?: (c: Node) => boolean
 }) {
+  const { t } = useTranslation()
   const [q, setQ] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -61,7 +63,7 @@ export default function ContextPicker({ currentId, onPick, autoFocus = true, exc
           else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)) }
           else if (e.key === 'Enter') { e.preventDefault(); confirmActive() }
         }}
-        placeholder="Buscar o crear contexto…"
+        placeholder={t('contextPicker.searchOrCreate')}
       />
       <div className="ctx-pick-list">
         {groups.map(([parentName, items]) => (

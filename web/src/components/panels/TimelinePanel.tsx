@@ -405,7 +405,7 @@ export default function TimelinePanel({ diaryNode, onClose }: Props) {
             onClick={() => setMode('week')}
           >{t('timeline.weekMode')}</button>
         </div>
-        <button className="tl-close" onClick={onClose} title="Cerrar timeline">×</button>
+        <button className="tl-close" onClick={onClose} title={t('timelinePanel.close')}>×</button>
       </div>
 
       {/* Tareas sin hora — arrastrar al grid */}

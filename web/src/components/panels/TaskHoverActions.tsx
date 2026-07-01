@@ -21,7 +21,7 @@ export default function TaskHoverActions({ node, onOpenDate }: {
       {/* «Hoy» SOLO para tareas sin fecha (Por planificar): las programa para hoy.
           Las tareas que ya tienen fecha no llevan este botón. */}
       {!done && !node.due && (
-        <button className="dc-action dc-action--hoy" title="Programar para hoy"
+        <button className="dc-action dc-action--hoy" title={t('taskHover.scheduleToday')}
           onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
           Hoy
         </button>
@@ -34,7 +34,7 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           </svg>
         </button>
       )}
-      <button className="dc-action dc-action--del" title="Eliminar"
+      <button className="dc-action dc-action--del" title={t('common.delete')}
         onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
         <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />

@@ -249,7 +249,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
           {!isRenaming && (isHovered || isActive) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
               <button
-                title="Renombrar"
+                title={t('common.rename')}
                 onClick={e => startRename(nodeId, node.text || '', e)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 12, padding: '2px 4px', borderRadius: 3, lineHeight: 1, display: 'flex', alignItems: 'center' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
@@ -260,7 +260,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
                 </svg>
               </button>
               <button
-                title="Eliminar"
+                title={t('common.delete')}
                 onClick={e => deleteCtx(nodeId, e)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 14, padding: '2px 4px', borderRadius: 3, lineHeight: 1 }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-error, #e53e3e)')}
@@ -404,7 +404,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               if (e.key === 'Escape') { setAddingCtx(false); setNewCtxName('') }
             }}
             onBlur={() => { if (newCtxName.trim()) createCtx(); else { setAddingCtx(false); setNewCtxName('') } }}
-            placeholder="Nombre del contexto…"
+            placeholder={t('contextListPanel.namePlaceholder')}
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
           />
         </div>

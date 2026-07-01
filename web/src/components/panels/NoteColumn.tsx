@@ -14,6 +14,7 @@ import { findContextRoot } from '../../utils/rootLookup'
 import { nodeCtxRefs, contextColor, contextParent, setNodeContext, createContext, listContextsForParent, isContextClosed } from '../../utils/cajones'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import RowContextChip from './RowContextChip'
+import { useTranslation } from 'react-i18next'
 
 const BUILTIN_TYPES = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota','proyecto'])
 
@@ -56,6 +57,7 @@ const normCtx = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowe
 /** Contexto ÚNICO del nodo. Si lo tiene: chip (clic = cambiar, × = quitar). Si no:
  *  campo con ghost-text + Tab/Enter para asignar (o crear si no existe). */
 function ContextField({ node }: { node: Node }) {
+  const { t } = useTranslation()
   const s = useStore()
   const navigate = useNavigate()
   const current = nodeContexts(node)[0] || null
@@ -85,13 +87,13 @@ function ContextField({ node }: { node: Node }) {
     const color = contextColor(current.id)
     const parent = contextParent(current.id)
     return (
-      <div className="dc-row" onClick={() => navigate(`/node/${current.id}`)} title="Ir al contexto" style={{ cursor: 'pointer' }}>
+      <div className="dc-row" onClick={() => navigate(`/node/${current.id}`)} title={t('noteColumn.goContext')} style={{ cursor: 'pointer' }}>
         {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
-        <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
+        <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
         <span className="dc-text">{current.text || 'Contexto'}</span>
         {parent && <span className="dc-parent">{parent.text}</span>}
         <span style={{ flex: 1 }} />
-        <button className="dc-del" title="Cambiar contexto" onClick={e => { e.stopPropagation(); setQ(''); setEditing(true) }}
+        <button className="dc-del" title={t('noteColumn.changeContext')} onClick={e => { e.stopPropagation(); setQ(''); setEditing(true) }}
           style={{ fontSize: 12 }}>✎</button>
         <button className="dc-del" title="Quitar contexto" onClick={e => { e.stopPropagation(); setNodeContext(node.id, null) }}>×</button>
       </div>
@@ -129,6 +131,7 @@ function ContextField({ node }: { node: Node }) {
 }
 
 export default function NoteColumn({ node }: { node: Node }) {
+  const { t } = useTranslation()
   useStore()
   const navigate = useNavigate()
 
@@ -211,12 +214,12 @@ export default function NoteColumn({ node }: { node: Node }) {
           onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
           onClick={() => navigate(`/node/${c.id}`)}
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
-          title="Arrastra al lienzo para colocarlo"
+          title={t('noteColumn.dragToCanvas')}
         >
           <span className="dc-capture-grip">⠿</span>
           <span className="dc-text">{c.text ? renderInline(c.text) : 'Nodo'}</span>
           <RowContextChip node={c} />
-          <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); trashNode(c.id) }}>{TrashIcon}</button>
+          <button className="dc-del" title={t('common.delete')} onClick={e => { e.stopPropagation(); trashNode(c.id) }}>{TrashIcon}</button>
         </div>
       ))}
     </div>

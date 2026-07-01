@@ -185,7 +185,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   }
 
   const delBtn = (n: Node) => (
-    <button className="dc-del" title="Eliminar" onClick={e => { e.stopPropagation(); trashNode(n.id) }}>
+    <button className="dc-del" title={t('common.delete')} onClick={e => { e.stopPropagation(); trashNode(n.id) }}>
       <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" /></svg>
     </button>
   )
@@ -217,7 +217,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         {/* Línea 2 (meta). Se oculta sola con CSS `:empty` si no hay nada. */}
         <div className="dc-row-l2">
           {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title="Editar fecha y recurrencia"
+          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title={t('dailyCockpit.editDateRecurrence')}
             onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
           {!opts.inContext && parentLabel(n) && n.parentId !== firstContextOf(n)?.id && <span className="dc-parent">{parentLabel(n)}</span>}
         </div>
@@ -280,10 +280,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           } : undefined}>
           {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
               que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
-          <span className="dc-event-dot" style={{ background: color }} aria-label="Contexto" />
+          <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
           <span className="dc-text">{c.text || 'Contexto'}</span>
           {parent && (
-            <ContextChip context={parent} title="Ir al contexto padre"
+            <ContextChip context={parent} title={t('dailyCockpit.goParentContext')}
               removeTitle="Quitar del contexto padre"
               onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
               onRemove={() => clearContextParent(c.id)} />

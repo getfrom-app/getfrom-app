@@ -1,5 +1,6 @@
 import React from 'react'
 import { store } from '../../store/nodeStore'
+import i18n from '../../i18n/config'
 
 /** Normaliza para búsqueda: sin tildes, sin mayúsculas */
 function norm(s: string): string {
@@ -331,7 +332,7 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
         .replace(/-/g, ' ')
         .replace(/\b\w/g, (c: string) => c.toUpperCase())
       const sl = esc(slug.trim())
-      return `<span class="context-inline" data-slug="${sl}" style="display:inline-flex;align-items:center;gap:3px;background:${hex}18;color:${hex};border:1px solid ${hex}40;border-radius:999px;font-size:0.8em;font-weight:500;padding:0 4px 0 5px;cursor:pointer">${esc(part)}<button class="ctx-chip-remove" data-slug="${sl}" title="Quitar contexto" style="background:none;border:none;cursor:pointer;color:${hex};opacity:0.6;padding:0;font-size:1em;line-height:1;display:flex">×</button></span>`
+      return `<span class="context-inline" data-slug="${sl}" style="display:inline-flex;align-items:center;gap:3px;background:${hex}18;color:${hex};border:1px solid ${hex}40;border-radius:999px;font-size:0.8em;font-weight:500;padding:0 4px 0 5px;cursor:pointer">${esc(part)}<button class="ctx-chip-remove" data-slug="${sl}" title="${i18n.t('common.removeContext')}" style="background:none;border:none;cursor:pointer;color:${hex};opacity:0.6;padding:0;font-size:1em;line-height:1;display:flex">×</button></span>`
     })
 
   // Aplicar highlight de búsqueda insensible a tildes y mayúsculas

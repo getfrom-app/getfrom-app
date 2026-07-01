@@ -7,8 +7,10 @@ import { listContextsForParent, isContextClosed, firstContextOf, setNodeContext 
 import ContextPicker from './ContextPicker'
 import ContextChip from './ContextChip'
 import type { Node } from '../../types'
+import { useTranslation } from 'react-i18next'
 
 export default function RowContextChip({ node }: { node: Node }) {
+  const { t } = useTranslation()
   const [menu, setMenu] = useState<{ x: number; y: number; up: boolean } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -41,10 +43,10 @@ export default function RowContextChip({ node }: { node: Node }) {
   return (
     <span className="dc-ctx-chip-wrap" ref={ref}>
       {current ? (
-        <ContextChip context={current} title="Cambiar contexto" onClick={open}
+        <ContextChip context={current} title={t('noteColumn.changeContext')} onClick={open}
           onRemove={() => setNodeContext(node.id, null)} />
       ) : (
-        <span className="dc-ctx-chip dc-ctx-chip--empty" title="Asignar contexto" onClick={open}>?</span>
+        <span className="dc-ctx-chip dc-ctx-chip--empty" title={t('rowContextChip.assign')} onClick={open}>?</span>
       )}
       {menu && createPortal((
         <div ref={menuRef} className="ctx-pick" style={{ position: 'fixed', ...(menu.up ? { bottom: menu.y } : { top: menu.y }), left: menu.x, zIndex: 3000 }}

@@ -21,6 +21,7 @@ import { findHomeRoot } from '../../utils/homeHelper'
 import { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import UnclassifiedList from './UnclassifiedList'
 import FilteredList from './FilteredList'
+import { useTranslation } from 'react-i18next'
 const FILTER_VIEW_KEY = 'from_wf_filter_view'
 
 interface Props {
@@ -148,6 +149,7 @@ function buildContextFilter(contextNodeId: string, includeUncontextualized = fal
 }
 
 export default function WFHomeView({ filterText, contextFilterId }: Props) {
+  const { t } = useTranslation()
   const s = useStore()
 
   // ── Loading gate ──────────────────────────────────────────────────────────
@@ -326,7 +328,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
         <Outliner
           parentId={homeRootId}
           autoFocusEmpty={false}
-          placeholder="Escribe algo… o pulsa Enter para crear un nodo"
+          placeholder={t('wfHome.inputPlaceholder')}
         />
       )}
 

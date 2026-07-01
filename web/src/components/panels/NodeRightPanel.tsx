@@ -419,7 +419,7 @@ export default function NodeRightPanel({ node }: Props) {
             <input type="time" className="prop-time-input" value={hasLocalTime(node.due) ? dueTime : ''}
               onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
             {hasLocalTime(node.due) && dueDate && (
-              <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+              <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title={t('common.removeTime')}>✕h</button>
             )}
           </div>
           {/* Fecha fin (standalone para tareas/recursos) */}
@@ -449,19 +449,19 @@ export default function NodeRightPanel({ node }: Props) {
                 <>
                   <input type="time" className="prop-time-input" value={dueTime}
                     onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} />
-                  <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+                  <button className="prop-quick-date-btn" onClick={() => setDue(dueDate, '')} title={t('common.removeTime')}>✕h</button>
                 </>
               ) : (
                 <button className="prop-quick-date-btn" onClick={() => {
                   const now = new Date(); const h = now.getHours(); const m = Math.ceil(now.getMinutes() / 15) * 15
                   setDue(dueDate, `${String(h).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`)
-                }} title="Añadir hora" disabled={!dueDate}>+ hora</button>
+                }} title={t('nodeRightPanel.addTime')} disabled={!dueDate}>{t('nodeRightPanel.addTimeBtn')}</button>
               )}
             </div>
           </div>
           {hasLocalTime(node.due) && (
             <div className="prop-event-row">
-              <span className="prop-event-field-label">Fin</span>
+              <span className="prop-event-field-label">{t('nodeRightPanel.endLabel')}</span>
               <div className="prop-datetime">
                 <input type="date" className="prop-date-input" value={dueEndDate}
                   onChange={e => setDueEnd(e.target.value, dueEndTime)} />
@@ -618,7 +618,7 @@ export default function NodeRightPanel({ node }: Props) {
               <input type="time" className="evt-modal-input evt-modal-input--time" value={evtTime}
                 onChange={e => setEvtTime(e.target.value)} disabled={!evtDate} placeholder="HH:MM" />
               {evtTime && (
-                <button className="evt-modal-clear" onClick={() => setEvtTime('')} title="Quitar hora">✕</button>
+                <button className="evt-modal-clear" onClick={() => setEvtTime('')} title={t('common.removeTime')}>✕</button>
               )}
             </div>
           </div>

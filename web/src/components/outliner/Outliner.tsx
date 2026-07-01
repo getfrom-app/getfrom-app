@@ -8,6 +8,7 @@ import NodeContextMenu from './NodeContextMenu'
 import { VirtualOutlinerList, isVirtualizedOutliner, VIRTUALIZE_THRESHOLD } from './VirtualOutlinerList'
 import { flattenVisibleTree } from './flattenTree'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
+import { useTranslation } from 'react-i18next'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -301,6 +302,7 @@ function getDayNumber(node: Node): number {
 }
 
 export default function Outliner({ parentId, autoFocusEmpty, placeholder, className, filterText, filterMatchIds, filterAncestorIds, temporalSort, compact, excludeDiaryEntries, disableLocalFilter, excludeIds }: Props) {
+  const { t } = useTranslation()
   const s = useStore()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selectedIds = useGlobalSelection()
@@ -867,7 +869,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             ref={localFilterRef}
             className="outliner-filter-input"
             type="text"
-            placeholder="Filtrar notas..."
+            placeholder={t('outliner.filterNotes')}
             value={localFilterText}
             onChange={e => setLocalFilterText(e.target.value)}
             onKeyDown={e => {
@@ -880,7 +882,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
           <button
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 14, padding: '0 4px' }}
             onClick={() => { setLocalFilterOpen(false); setLocalFilterText('') }}
-            title="Cerrar filtro (Escape)"
+            title={t('outliner.closeFilter')}
           >
             ×
           </button>

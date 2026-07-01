@@ -31,6 +31,7 @@ import { getCalendarEventsRange, type CalendarEvent } from '../../api/googleCale
 import { GCalEventEditor } from '../panels/DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 import Outliner from '../outliner/Outliner'
+import { useTranslation } from 'react-i18next'
 
 // ── Geometría ──────────────────────────────────────────────────────────────
 const HOUR_START  = 6
@@ -163,6 +164,7 @@ function getTimeBlocks(day: Date, gcalEvents: CalendarEvent[]): TimeBlock[] {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function CalendarPlanner() {
+  const { t } = useTranslation()
   const s          = useStore()
   const us         = useUserStore()
   const navigate   = useNavigate()
@@ -446,7 +448,7 @@ export default function CalendarPlanner() {
                 ref={newBlockRef}
                 className="pp-new-block-input"
                 value={newBlock.text}
-                placeholder="Nombre…"
+                placeholder={t('common.nameEllipsis')}
                 onChange={e => setNewBlock(b => b ? {...b, text: e.target.value} : null)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') { e.preventDefault(); commitNewBlock() }
@@ -583,7 +585,7 @@ export default function CalendarPlanner() {
 
       {/* ── Header ── */}
       <div className="cp-header">
-        <button className="cp-back-btn" onClick={() => navigate(-1)} title="Volver">
+        <button className="cp-back-btn" onClick={() => navigate(-1)} title={t('common.back')}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 16L6 10l6-6"/>
           </svg>

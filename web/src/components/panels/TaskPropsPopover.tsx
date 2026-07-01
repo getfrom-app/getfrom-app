@@ -97,7 +97,7 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
           onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
         {hasLocalTime(node.due) && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
-            onClick={() => setDue(dueDate, '')} title="Quitar hora">✕h</button>
+            onClick={() => setDue(dueDate, '')} title={t('common.removeTime')}>✕h</button>
         )}
       </div>
 

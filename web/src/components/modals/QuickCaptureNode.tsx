@@ -18,6 +18,7 @@ import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import type { DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { useToast } from '../Toast'
+import { useTranslation } from 'react-i18next'
 
 function normalize(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -51,6 +52,7 @@ function detectForceType(t: string): { forceType: ForceType; cleanText: string }
 }
 
 export default function QuickCaptureNode({ onClose }: Props) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLDivElement>(null)
   const [text, setText] = useState('')
   const [datePrediction, setDatePrediction] = useState<DateExtraction | null>(null)
@@ -453,7 +455,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
-            data-placeholder="Escribe un nodo, tarea o idea..."
+            data-placeholder={t('quickCapture.placeholder')}
             style={{
               flex: 1,
               border: 'none',

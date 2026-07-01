@@ -199,7 +199,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
                     cursor: 'pointer', opacity: 0.5,
                     flexShrink: 0,
                   }}
-                  title="Eliminar prompt"
+                  title={t('tagNodes.deletePrompt')}
                 >✕</button>
               </div>
             ))}

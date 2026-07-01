@@ -292,7 +292,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
           />
           <button
             onClick={toggleVoice}
-            title="Grabar voz (⌥-Espacio)"
+            title={t('aiChat.recordVoice')}
             style={{
               background: 'none',
               border: 'none',

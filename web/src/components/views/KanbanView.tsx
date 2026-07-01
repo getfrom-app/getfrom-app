@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { useTranslation } from 'react-i18next'
 
 // ── Priority badge ───────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ function KanbanColumn({
   onDrop: (id: string, newStatus: Node['status']) => void
   onCreateTask: (status: Node['status'], text: string) => void
 }) {
+  const { t } = useTranslation()
   const [colDragOver, setColDragOver] = useState(false)
   const [adding, setAdding] = useState(false)
   const [newText, setNewText] = useState('')
@@ -172,7 +174,7 @@ function KanbanColumn({
               if (e.key === 'Escape') { setAdding(false); setNewText('') }
             }}
             autoFocus
-            placeholder="Nombre de la tarea..."
+            placeholder={t('kanban.taskNamePlaceholder')}
           />
         )}
       </div>
@@ -301,6 +303,7 @@ function KanbanTable({ tasks }: { tasks: Node[] }) {
 // ── KanbanView (main) ────────────────────────────────────────────────────────
 
 export default function KanbanView() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const s = useStore()
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all')
@@ -353,7 +356,7 @@ export default function KanbanView() {
   const totalDone = allTasks.filter(t => t.status === 'done').length
 
   return (
-    <div className="view kanban-view" role="main" aria-label="Vista Kanban">
+    <div className="view kanban-view" role="main" aria-label={t('kanban.viewKanban')}>
       <div className="view-header">
         <h1 className="view-title">Kanban</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -376,14 +379,14 @@ export default function KanbanView() {
             <button
               className={`kanban-view-mode-btn ${viewMode === 'board' ? 'active' : ''}`}
               onClick={() => setViewMode('board')}
-              title="Vista Kanban"
+              title={t('kanban.viewKanban')}
             >
               Kanban
             </button>
             <button
               className={`kanban-view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
               onClick={() => setViewMode('table')}
-              title="Vista Tabla"
+              title={t('kanban.viewTable')}
             >
               Tabla
             </button>
@@ -396,7 +399,7 @@ export default function KanbanView() {
         <input
           className="kanban-search"
           type="text"
-          placeholder="Buscar tarea..."
+          placeholder={t('kanban.searchTask')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
         />

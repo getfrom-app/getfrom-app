@@ -220,7 +220,7 @@ export default function ResourcesView() {
                             ✓ {linkedCount}
                           </span>
                         )}
-                        <button className="resource-card-add-task" title="Crear tarea asociada"
+                        <button className="resource-card-add-task" title={t('resourcesView.createLinkedTask')}
                           onClick={e => { e.stopPropagation(); createLinkedTask(node) }}>
                           ＋ Tarea
                         </button>
@@ -294,7 +294,7 @@ export default function ResourcesView() {
           <div className="resources-sidebar-label">Tags</div>
           <input
             className="resources-tag-search"
-            placeholder="Buscar tag..."
+            placeholder={t('resourcesView.searchTag')}
             value={tagSearch}
             onChange={e => setTagSearch(e.target.value)}
           />

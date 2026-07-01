@@ -187,6 +187,7 @@ function CuentaViewPane() {
 // ── BackupsPane ───────────────────────────────────────────────────────────────
 
 function BackupsPane() {
+  const { t } = useTranslation()
   const [snapshots, setSnapshots] = useState<import('../../api/backups').BackupSnapshot[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -291,7 +292,7 @@ function BackupsPane() {
                 className="btn-secondary btn-sm"
                 disabled={busyId === s.id}
                 onClick={() => handleRestore(s.id, s.createdAt)}
-                title="Restaurar este snapshot"
+                title={t('settingsView.restoreSnapshot')}
               >
                 ↺ Restaurar
               </button>
@@ -299,7 +300,7 @@ function BackupsPane() {
                 className="btn-secondary btn-sm"
                 disabled={busyId === s.id}
                 onClick={() => handleDelete(s.id)}
-                title="Borrar snapshot"
+                title={t('settingsView.deleteSnapshot')}
                 style={{ opacity: 0.6 }}
               >
                 🗑

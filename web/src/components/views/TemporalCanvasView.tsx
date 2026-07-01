@@ -15,6 +15,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { findRootByKey } from '../../utils/rootLookup'
 import { takeTemporalFocus, type TemporalLevel } from '../../utils/pizarraNav'
+import { useTranslation } from 'react-i18next'
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 const MONTHS_LONG = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -30,6 +31,7 @@ type Snapshot = { level: TemporalLevel; year: number; month: number }
 interface Props { focusLevel?: TemporalLevel; focusYear?: number; focusMonth?: number }
 
 export default function TemporalCanvasView({ focusLevel, focusYear, focusMonth }: Props = {}) {
+  const { t } = useTranslation()
   useStore()
   const navigate = useNavigate()
   const now = new Date()
@@ -119,7 +121,7 @@ export default function TemporalCanvasView({ focusLevel, focusYear, focusMonth }
   const renderLevel = (lvl: TemporalLevel, yr: number, mo: number) => (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        {lvl !== 'roots' && <button onClick={zoomOut} title="Subir un nivel" style={hdrBtn}>‹</button>}
+        {lvl !== 'roots' && <button onClick={zoomOut} title={t('temporalCanvas.levelUp')} style={hdrBtn}>‹</button>}
         <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text, #222)' }}>
           {lvl === 'roots' && 'From'}
           {lvl === 'years' && 'Años'}
@@ -237,11 +239,11 @@ export default function TemporalCanvasView({ focusLevel, focusYear, focusMonth }
         background: 'var(--bg-elevated, #fff)', border: '1px solid var(--border, #e2e2e2)',
         borderRadius: 16, boxShadow: '0 6px 22px rgba(0,0,0,0.12)',
       }}>
-        <button style={tbtn} title="Ir a hoy" onClick={goToday}>
+        <button style={tbtn} title={t('common.goToday')} onClick={goToday}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
         </button>
         <div style={{ width: 1, height: 22, background: 'var(--border, #e2e2e2)', margin: '0 3px' }} />
-        <button style={level === 'roots' ? tbtnOff : tbtn} disabled={level === 'roots'} title="Alejar (subir nivel)" onClick={zoomOut}>−</button>
+        <button style={level === 'roots' ? tbtnOff : tbtn} disabled={level === 'roots'} title={t('temporalCanvas.zoomOut')} onClick={zoomOut}>−</button>
         <span style={{ minWidth: 64, textAlign: 'center', fontSize: 12, color: 'var(--text-secondary, #888)' }}>
           {level === 'roots' ? 'From' : level === 'years' ? 'Años' : level === 'months' ? 'Meses' : 'Días'}
         </span>

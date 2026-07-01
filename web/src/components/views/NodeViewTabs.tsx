@@ -140,7 +140,7 @@ export default function NodeViewTabs({ parentId, activeViewId, onSelect }: Props
             )}
           </div>
         ))}
-        <button className="node-view-tab node-view-tab--add" onClick={() => setNewOpen(true)} title="Nueva vista">＋</button>
+        <button className="node-view-tab node-view-tab--add" onClick={() => setNewOpen(true)} title={t('nodeViewTabs.newView')}>＋</button>
       </div>
 
       {newOpen && (

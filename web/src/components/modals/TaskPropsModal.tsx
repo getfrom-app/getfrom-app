@@ -5,11 +5,13 @@
 
 import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
+import { useTranslation } from 'react-i18next'
 
 const REC_UNITS: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']]
 const PRIORITIES: [string, string][] = [['high', 'Alta'], ['medium', 'Media'], ['low', 'Baja']]
 
 export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+  const { t } = useTranslation()
   useStore() // re-render al cambiar el nodo
   const node = store.getNode(nodeId)
   if (!node) return null
@@ -69,7 +71,7 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
           <input type="date" style={input} value={dateStr} onChange={e => setDateTime(e.target.value, timeStr)} />
           <input type="time" style={{ ...input, opacity: dateStr ? 1 : 0.5 }} value={timeStr} disabled={!dateStr}
             onChange={e => setDateTime(dateStr, e.target.value)} placeholder="HH:MM" />
-          {node.due && <button style={{ ...chip(false), color: 'var(--danger,#e03131)' }} title="Quitar fecha" onClick={() => store.updateNode(nodeId, { due: null })}>✕</button>}
+          {node.due && <button style={{ ...chip(false), color: 'var(--danger,#e03131)' }} title={t('common.removeDate')} onClick={() => store.updateNode(nodeId, { due: null })}>✕</button>}
         </div>
 
         {/* Recurrencia */}

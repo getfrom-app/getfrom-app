@@ -11,6 +11,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { store } from '../../store/nodeStore'
+import { useTranslation } from 'react-i18next'
 
 // ── Re-export de tipos para reutilización ─────────────────────────────────
 export interface PathAnnotation {
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export default function WhiteboardViewer({ nodeId, annotations, onAnnotationsChange }: Props) {
+  const { t } = useTranslation()
   const svgRef       = useRef<SVGSVGElement>(null)
   const drawingRef   = useRef<PathAnnotation | null>(null)
   const isDrawingRef = useRef(false)
@@ -255,7 +257,7 @@ export default function WhiteboardViewer({ nodeId, annotations, onAnnotationsCha
               if (e.key === 'Escape') { setTextInput(null); setTextValue('') }
             }}
             onBlur={confirmText}
-            placeholder="Escribe…"
+            placeholder={t('common.writeEllipsis')}
           />
         )}
       </div>
