@@ -708,14 +708,15 @@ export default function MainLayout() {
         } else {
           setTimeout(prefetchLazyChunks, 4000)
         }
-        // Daily-first: la nota diaria de hoy es la vista por defecto al abrir.
-        // Solo si se entró por la raíz — los deep links (/node/x, /settings…) se respetan.
-        // (navigate se usa solo aquí dentro del .then, igual que en el catch — no re-ejecuta el effect.)
+        // Canvas-first: el lienzo infinito es la vista por defecto al abrir. Solo si
+        // se entró por la raíz — los deep links (/node/x, /settings…) se respetan.
+        // La estructura temporal (Agenda→Año→Mes→Diario) queda INTERNA: alimenta la
+        // columna del día (hoy) y el mini-calendario, pero ya no es la cara principal.
         const path = window.location.pathname.replace(/\/+$/, '')
         if (path === '' || path === '/app') {
           try {
-            const diary = getTodayDiaryUnderAgenda()
-            if (diary) navigate(`/node/${diary.id}`, { replace: true })
+            const root = ensureCanvasRoot()
+            navigate(`/node/${root.id}`, { replace: true })
           } catch { /* si falla, se queda en la raíz — no bloquear el arranque */ }
         }
       })
