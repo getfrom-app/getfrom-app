@@ -2490,8 +2490,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             )}
             onContextMenu={(e) => nodeCtx(e, node.id)}
             style={{ position: 'absolute', left: sx, top: sy, width: slot ? CONTENT_W : (cleanAutoW ? 'max-content' : cardW), transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
-              // Hueco EXACTO del layout anidado: alto medido + recorte → sin solapes.
-              ...(slot ? { height: slot.h, overflow: 'hidden', boxSizing: 'border-box' as const, paddingLeft: 18, paddingRight: 12 }
+              // Layout anidado: ancho fijo (el texto envuelve dentro y se ve ENTERO, sin
+              // recorte); el alto lo reserva el layout (margen superior) → no se solapa.
+              ...(slot ? { boxSizing: 'border-box' as const, paddingLeft: 18, paddingRight: 12 }
                 // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre).
                 : isPlainText ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
             {lod ? (
