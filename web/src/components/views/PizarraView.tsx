@@ -1922,8 +1922,22 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
         // Texto → nodo-outliner (cada línea un nodo, Magic detecta tareas).
         // Documento → nodo `_doc` (TipTap, título + un solo dot).
-        if (toolRef.current === 'text') createNodeAt(world)
-        else if (toolRef.current === 'doc') createTextAt(world)
+        if (toolRef.current === 'text') { createNodeAt(world); return }
+        if (toolRef.current === 'doc') { createTextAt(world); return }
+        // LIENZO: clic en zona VACÍA dentro de un área (contexto) → abre su columna
+        // derecha. Se elige el área MÁS INTERNA que contiene el punto (para nidos).
+        if (globalCanvas) {
+          let best: { id: string; area: number } | null = null
+          for (const a of children) {
+            if (!zoneIds.has(a.id)) continue
+            const r = readAreaRect(a); if (!r) continue
+            if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
+              const areaSize = r.w * r.h
+              if (!best || areaSize < best.area) best = { id: a.id, area: areaSize }
+            }
+          }
+          if (best) setSelectedId(best.id)
+        }
       }}
       onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
@@ -1981,7 +1995,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
         const off = areaDrag?.id === a.id ? `translate(${areaDrag.dx}px, ${areaDrag.dy}px)` : undefined
         return (
-          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: `${col}0f`, transform: off }}>
+          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: 'transparent', transform: off }}>
             <div
               onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); try { (e.target as HTMLElement).setPointerCapture(e.pointerId) } catch { /* noop */ }; areaDragRef.current = { id: a.id, sx: e.clientX, sy: e.clientY, moved: false } }}
               onPointerMove={(e) => { const d = areaDragRef.current; if (!d || d.id !== a.id) return; const dx = e.clientX - d.sx, dy = e.clientY - d.sy; if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true; if (d.moved) setAreaDrag({ id: a.id, dx, dy }) }}
