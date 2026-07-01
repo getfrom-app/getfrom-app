@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.570 · Mac v9.5.77 — 1 julio 2026 · Traducción completa, hasta el último rincón
+
+Rematamos la internacionalización: **todos los textos de la interfaz** están ahora en tu idioma, no solo los tooltips.
+
+- **Todo traducido**: menús, botones, mensajes, avisos, el **tutorial de bienvenida**, los **atajos de teclado**, el planner, la pizarra, el kanban, la importación (Obsidian/Notion/…) y la conexión con Claude. Antes muchos de estos textos seguían en español para todos los idiomas.
+- **12 idiomas** (español, inglés, alemán, francés, italiano, portugués, griego, neerlandés, polaco, ruso, turco y sueco), con **más de 500 textos nuevos** traducidos. Cámbialo en **Ajustes › Idioma**.
+- Sin cambios visibles si usas Fromly en español: todo sigue igual.
+
 ## Web v9.6.569 · Mac v9.5.76 — 30 junio 2026 · Fromly en 12 idiomas
 
 Fromly ahora habla **12 idiomas** y arranca automáticamente en el idioma de tu dispositivo (inglés si no está disponible) — nunca asume español.
