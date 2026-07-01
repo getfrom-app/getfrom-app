@@ -51,9 +51,11 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
 
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px 88px' }} onClick={onPanelClick}>
-      {/* Mini-calendario: saltar a otro día/mes/año. Abre la diaria de ese día y
-          la columna de abajo se pinta con la info de siempre de ese día. */}
-      <MiniCalendar activeDate={node.diaryDate ? new Date(node.diaryDate) : null} />
+      {/* Botón compacto de calendario (arriba-derecha) para saltar a otro día.
+          Al elegir un día, abre su diaria y la columna de abajo se pinta igual. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+        <MiniCalendar activeDate={node.diaryDate ? new Date(node.diaryDate) : null} />
+      </div>
       {/* La columna derecha persiste en pizarra Y en lista: eventos + atrasadas/hoy/
           bucles + capturas. Los NODOS del día NO van aquí (includeNodes=false):
           viven en el lienzo (pizarra) o inline en el centro (lista). */}

@@ -1951,5 +1951,7 @@
   "globalCanvas.fitAll": "Tout ajuster",
   "dayAgg.today": "Aujourd'hui",
   "dayAgg.empty": "Rien ce jour",
-  "globalCanvas.openDay": "Jour"
+  "globalCanvas.openDay": "Jour",
+  "miniCal.goToDay": "Aller à un jour",
+  "miniCal.today": "Aujourd'hui"
 }

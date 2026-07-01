@@ -1951,5 +1951,7 @@
   "globalCanvas.fitAll": "Alles passend maken",
   "dayAgg.today": "Vandaag",
   "dayAgg.empty": "Niets op deze dag",
-  "globalCanvas.openDay": "Dag"
+  "globalCanvas.openDay": "Dag",
+  "miniCal.goToDay": "Naar een dag",
+  "miniCal.today": "Vandaag"
 }
