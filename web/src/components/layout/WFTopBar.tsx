@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { ensureCanvasRoot } from '../../utils/canvasRoot'
+import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
@@ -63,6 +63,8 @@ export default function WFTopBar({
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isNodeView = path.startsWith('/node/')
   const nodeId = isNodeView ? path.split('/node/')[1] : null
+  // En el LIENZO no hay breadcrumb: la app ES el lienzo, sin cromo encima.
+  const onCanvas = isCanvasRoot(nodeId ? s.getNode(nodeId) : null)
 
   const { ancestors, current } = useMemo(() => {
     if (!nodeId) return { ancestors: [], current: null }
@@ -123,8 +125,8 @@ export default function WFTopBar({
         </button>
       </div>
 
-      {/* ── Breadcrumb integrado con casa ── */}
-      <div className="wf-topbar-breadcrumb">
+      {/* ── Breadcrumb integrado con casa (oculto en el lienzo) ── */}
+      <div className="wf-topbar-breadcrumb" style={onCanvas ? { display: 'none' } : undefined}>
         {/* Casa — siempre visible, lleva al raíz */}
         <button className="wf-topbar-crumb-home" onClick={goHome} title={t('common.home')}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">

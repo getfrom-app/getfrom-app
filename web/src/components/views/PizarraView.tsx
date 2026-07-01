@@ -74,7 +74,17 @@ const CARD_MIN_H = 44
 const FLOW_X = 60
 const FLOW_Y = 40
 // Zoom.
-const MIN_SCALE = 0.04
+const MIN_SCALE = 0.002 // zoom out MUY profundo (ver todo el plano)
+
+// Rejilla de puntos ADAPTATIVA: el paso en pantalla se mantiene ~18-90px sea cual
+// sea el zoom, así el fondo es SIEMPRE blanco con puntos (nunca gris por bunching).
+function dotGrid(camX: number, camY: number, scale: number): { backgroundSize: string; backgroundPosition: string } {
+  let d = 24 * scale
+  if (!(d > 0)) d = 24
+  while (d < 18) d *= 5
+  while (d > 90) d /= 5
+  return { backgroundSize: `${d}px ${d}px`, backgroundPosition: `${camX % d}px ${camY % d}px` }
+}
 const MAX_SCALE = 50   // zoom profundo (antes 6 = 600%, escaso)
 // Umbrales de "buceo" (dive): al cruzarlos con la rueda se navega de lienzo.
 const DIVE_OUT_SCALE = 0.32   // alejar → subir al padre / mes (antes 0.08 = demasiado)
@@ -1911,8 +1921,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         overflow: 'hidden',
         background: 'var(--bg, #fff)',
         backgroundImage: 'radial-gradient(circle, var(--border-subtle, #e3e3e3) 1px, transparent 1px)',
-        backgroundSize: `${24 * cam.scale}px ${24 * cam.scale}px`,
-        backgroundPosition: `${cam.x}px ${cam.y}px`,
+        ...dotGrid(cam.x, cam.y, cam.scale), // paso adaptativo: fondo siempre blanco con puntos
         touchAction: 'none',
         cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' || isShapeTool(tool) ? 'crosshair' : tool === 'text' || tool === 'doc' ? 'text' : 'default'),
         borderRadius: 8,
@@ -1937,7 +1946,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
       {/* ÁREAS — frames etiquetados (región rectangular) dibujados DETRÁS de las cards.
           Color del contexto; clic en la etiqueta vuela a la región. */}
-      {children.filter(n => zoneIds.has(n.id)).map(a => {
+      {/* En el LIENZO GLOBAL las zonas (contextos/subcontextos) son invisibles: no
+          rectángulo ni etiqueta. Son solo regiones a las que la cámara vuela. */}
+      {!globalCanvas && children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (autoLayout ? autoLayout.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
