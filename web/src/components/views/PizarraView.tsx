@@ -26,8 +26,9 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
-import { firstContextOf, contextColor } from '../../utils/cajones'
+import { firstContextOf, contextColor, isMarkedContext } from '../../utils/cajones'
 import { createMarkdownNode } from '../../utils/importMarkdown'
+import { computeCanvasLayout } from '../../utils/canvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
@@ -537,15 +538,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // demás fluyen como en la LISTA (columna ancho-completo, apilados naturalmente,
   // sin solaparse). Al arrastrar uno del flujo, gana posición y pasa a flotar; al
   // volver a Lista, todos vuelven a su orden.
+  // Auto-layout NO destructivo del plano único (solo en memoria; el pin propio manda).
+  const autoLayout = useMemo(
+    () => globalCanvas ? computeCanvasLayout(parentId) : null,
+    [globalCanvas, parentId, nodesVersion],
+  )
+  // Zonas = marcos (no tarjetas): áreas guardadas + (en global) contextos con contenido.
+  const zoneIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const n of children) {
+      if (isArea(n)) set.add(n.id)
+      else if (globalCanvas && isMarkedContext(n) && (autoLayout?.get(n.id)?.zone || readAreaRect(n))) set.add(n.id)
+    }
+    return set
+  }, [children, globalCanvas, autoLayout])
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
-      if (isHiddenPin(n) || isArea(n)) continue // marcador de vista / área (frame) → no es card
-      const pin = readPin(n)
-      if (pin) map.set(n.id, pin)
+      if (isHiddenPin(n) || zoneIds.has(n.id)) continue // marcador de vista / zona (frame) → no es card
+      const pin = readPin(n) ?? (autoLayout ? autoLayout.get(n.id) ?? null : null)
+      if (pin) map.set(n.id, { x: pin.x, y: pin.y })
     }
     return map
-  }, [children])
+  }, [children, autoLayout, zoneIds])
 
   // ── Minimapa: rectángulos (en MUNDO) de todo el contenido del lienzo, para
   // dibujar la «vista de pájaro» abajo a la izquierda. Se recalcula solo cuando
@@ -1918,9 +1933,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
       {/* ÁREAS — frames etiquetados (región rectangular) dibujados DETRÁS de las cards.
           Color del contexto; clic en la etiqueta vuela a la región. */}
-      {directChildren.filter(isArea).map(a => {
-        const rect = readAreaRect(a); if (!rect) return null
-        const col = (() => { const cx = firstContextOf(a); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
+      {children.filter(n => zoneIds.has(n.id)).map(a => {
+        const rect = readAreaRect(a) ?? (autoLayout ? autoLayout.get(a.id) ?? null : null); if (!rect) return null
+        const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
         const sw = rect.w * cam.scale, sh = rect.h * cam.scale
         // Culling: fuera del viewport → no montar.

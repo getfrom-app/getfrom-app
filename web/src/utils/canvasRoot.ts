@@ -1,38 +1,31 @@
-// Nodo-lienzo raíz único (singleton) = el lienzo infinito de la app.
-// Es un nodo normal en modo pizarra: NodeView le da el lienzo (PizarraView) con
-// toda su barra (escribir/dibujar/tareas/guardar-vista) + la columna derecha,
-// reutilizando TODO. Su cámara se persiste en su body (ya lo hace PizarraView) →
-// abre donde lo dejaste. El contenido que creas son sus hijos; las zonas que
-// guardas con «guardar vista» serán subcontextos hijos de él.
+// El lienzo único = tu árbol de CONTENIDO real (la raíz 🧠 Contexto). No es un
+// nodo nuevo vacío: es donde ya viven tus contextos/subcontextos. Se renderiza en
+// modo pizarra (globalCanvas) como UN plano; los nodos sin posición se auto-colocan
+// (utils/canvasLayout), sin tocar datos. No se navega: es la superficie fija.
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { parseExtraData } from './papeleraHelper'
-import { structuralId } from './deterministicId'
+import { findContextRoot } from './rootLookup'
 
-export const CANVAS_ROOT_NAME = '🌍 Lienzo'
-
-/** Devuelve (creándolo si hace falta) el nodo-lienzo raíz, en modo pizarra. */
+/** Devuelve (asegurando modo pizarra) la raíz del lienzo = raíz 🧠 Contexto. */
 export function ensureCanvasRoot(): Node {
-  const existing = [...store.nodes.values()].find(n => !n.deletedAt && n.text === CANVAS_ROOT_NAME)
-  if (existing) {
-    // Asegurar que abre en pizarra
-    const ed = parseExtraData(existing.extraData)
-    if (ed.viewBlock !== 'pizarra') {
-      ed.viewBlock = 'pizarra'
-      store.updateNode(existing.id, { extraData: JSON.stringify(ed) })
-    }
-    return existing
+  const root = findContextRoot()
+  if (!root) {
+    // Fallback defensivo: si aún no cargó la raíz de contexto, no crear nada raro;
+    // devolver un placeholder mínimo (el caller navega y reintenta al cargar).
+    return store.allActive()[0] ?? ({ id: '', text: '', extraData: null } as unknown as Node)
   }
-  const node = store.createNode({
-    text: CANVAS_ROOT_NAME,
-    parentId: null,
-    predefinedId: structuralId('canvas') ?? undefined, // id determinista → no duplica
-  })
-  store.updateNode(node.id, { extraData: JSON.stringify({ viewBlock: 'pizarra' }) })
-  return store.getNode(node.id) ?? node
+  const ed = parseExtraData(root.extraData)
+  if (ed.viewBlock !== 'pizarra') {
+    ed.viewBlock = 'pizarra'
+    store.updateNode(root.id, { extraData: JSON.stringify(ed) })
+  }
+  return root
 }
 
-/** ¿Es este nodo la raíz-lienzo? (para que abra pizarra aunque esté vacío). */
+/** ¿Es este nodo la raíz del lienzo (raíz de contexto)? */
 export function isCanvasRoot(node: Node | null | undefined): boolean {
-  return !!node && !node.deletedAt && node.text === CANVAS_ROOT_NAME
+  if (!node || node.deletedAt) return false
+  const root = findContextRoot()
+  return !!root && root.id === node.id
 }
