@@ -642,8 +642,9 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
     // ── Vista CONTEXTOS ────────────────────────────────────────────────────
     if (view === 'contextos') {
-      if (!contextoRoot) return []
-      const ctxAll = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text)
+      // TODOS los contextos (incluidos los creados como área en el lienzo), no solo
+      // los hijos directos de la raíz 🧠 Contexto.
+      const ctxAll = listMarkedContexts({ includeClosed: true }).filter(n => n.text)
       const filtered = q ? ctxAll.filter(n => normalizeText(n.text).includes(qNorm)) : ctxAll
       if (filtered.length === 0) return [{
         id: 'no-ctx',
@@ -702,8 +703,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           id: 'cat-contextos',
           label: 'Contextos',
           sublabel: (() => {
-            if (!contextoRoot) return 'Sin contextos'
-            const c = store.children(contextoRoot.id).filter(n => !n.deletedAt).length
+            const c = listMarkedContexts({ includeClosed: true }).length
             return c > 0 ? `${c} contextos` : 'Sin contextos'
           })(),
           type: 'wf-action' as const,
@@ -756,9 +756,12 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       return [{ id: 'cat-bucles', label: 'Bucles abiertos', sublabel: 'Ver todos los bucles', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('bucles'); setText(''); if (inputRef.current) inputRef.current.textContent = ''; setActiveIdx(0) } }]
     }
 
-    // Búsqueda por nombre de contexto
-    if (contextoRoot) {
-      const ctxNodes = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text && normalizeText(n.text).includes(qNormStr))
+    // Búsqueda por nombre de contexto — TODOS los contextos (`_ctx='1'`), vivan donde
+    // vivan: bajo la raíz 🧠 Contexto O creados como ÁREA en el lienzo (que no cuelgan
+    // de esa raíz). Enter → abre su columna derecha y vuela el lienzo a su posición.
+    {
+      const ctxNodes = listMarkedContexts({ includeClosed: true })
+        .filter(n => n.text && normalizeText(n.text).includes(qNormStr))
       if (ctxNodes.length > 0) {
         return ctxNodes.map(n => ({
           id: `ctx-${n.id}`, label: n.text || '', sublabel: 'Abrir contexto',

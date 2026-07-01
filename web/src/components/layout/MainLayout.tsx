@@ -226,7 +226,16 @@ export default function MainLayout() {
       }
       return
     }
-    // Patrón unificado: abrir el contenido en la ventana central + propiedades a la derecha
+    // En el LIENZO: NO navegar a /node (no se sale del lienzo). Abrir la columna del
+    // contexto y volar el plano a su área → lo hace onOpenDetail (que además dispara
+    // el vuelo si el contexto tiene cuerpo físico).
+    const normPath = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '')
+    if (normPath === '') {
+      setContextNodeId(null)
+      window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId } }))
+      return
+    }
+    // Fuera del lienzo: patrón unificado — contenido en el centro + propiedades a la derecha.
     openDetail('context', nodeId)
   }
 
