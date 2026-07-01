@@ -523,8 +523,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // de un contexto (si el usuario lo movió) manda sobre la caja calculada.
   const nested = useMemo<NestedLayout | null>(() => {
     if (!globalCanvas) return null
-    try { return computeNestedLayout(findContextRoot()?.id ?? parentId) }
-    catch { return null } // ante cualquier fallo, el lienzo se pinta sin layout (no rompe)
+    try {
+      const vp = viewportRef.current
+      const aspect = vp && vp.h > 0 ? vp.w / vp.h : 1.6 // cajas con forma de PANTALLA
+      return computeNestedLayout(findContextRoot()?.id ?? parentId, aspect)
+    } catch { return null } // ante cualquier fallo, el lienzo se pinta sin layout (no rompe)
   }, [globalCanvas, parentId, nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const nestedRef = useRef<NestedLayout | null>(null)
   useEffect(() => { nestedRef.current = nested }, [nested])
