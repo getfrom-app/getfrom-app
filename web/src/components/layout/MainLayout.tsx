@@ -132,6 +132,7 @@ import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '..
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { isCanvasRoot } from '../../utils/canvasRoot'
+import { ensureDiaryForDate } from '../../utils/diaryNav'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -185,6 +186,9 @@ export default function MainLayout() {
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   // detailNodeId: nodo cuyas propiedades se muestran en los paneles context/prompt/agent.
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null)
+  // Día activo de la columna del día EN EL LIENZO (mini-calendario / «hoy»). null = hoy.
+  // Cambiarlo NO navega: el lienzo es único y no se mueve; solo cambia la columna.
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null)
   const pendingContextRef = useRef<string | null>(null)  // contexto a aplicar tras navegación
   // Guard para evitar race condition entre efecto "aplicar pending" y efecto "limpiar al navegar":
   // cuando el efecto de pending consume el ref y setea contextNodeId, este flag evita que el
@@ -343,10 +347,15 @@ export default function MainLayout() {
   // superponerse). Igual que en la vista de documento; sin overlay flotante.
   const activeDocEditor = useHasActiveDocEditor()
   const showDocInspector = rightPanel === 'doc' || activeDocEditor
-  // Nodo de la columna del día: el seleccionado (nota/tarea) o, en el lienzo sin
-  // selección, HOY (cockpit) en vez de la columna del propio nodo-lienzo.
+  // Nodo de la columna del día: el seleccionado (nota/tarea) o, EN EL LIENZO, el día
+  // activo (mini-calendario / «hoy») por METADATO — sin navegar. `ensureDiaryForDate`
+  // solo asegura el nodo-día interno que alimenta la columna; el lienzo no se mueve.
   const _onCanvasRoot = isCanvasRoot(currentNodeIdFromRoute ? store.getNode(currentNodeIdFromRoute) : null)
-  const dayPanelNodeId = detailNodeId ?? (_onCanvasRoot ? (store.todayDiary()?.id ?? currentNodeIdFromRoute) : currentNodeIdFromRoute)
+  const dayPanelNodeId = useMemo(() => {
+    if (detailNodeId) return detailNodeId
+    if (_onCanvasRoot) return ensureDiaryForDate(selectedDay ?? new Date()).id
+    return currentNodeIdFromRoute
+  }, [detailNodeId, _onCanvasRoot, selectedDay, currentNodeIdFromRoute, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Migración única: BUCLES → tareas de seguimiento (tarea SIN fecha). Idempotente
   // y acotada (solo nodos con el tipo 'bucle'): quita el tipo y fija status (abierto
@@ -599,8 +608,17 @@ export default function MainLayout() {
       setRightPanel(kind ?? 'day')
     }
     function onCloseDetail() { setDetailNodeId(null); setRightPanel('day') }
+    // Mini-calendario / «hoy»: cambia el DÍA de la columna, SIN navegar (lienzo único).
+    function onSetDay(e: Event) {
+      const iso = (e as CustomEvent).detail?.date
+      setSelectedDay(iso ? new Date(iso) : null)
+      setDetailNodeId(null)
+      setRightCollapsed(false)
+      setRightPanel('day')
+    }
     window.addEventListener('from:open-detail', onOpenDetail as EventListener)
     window.addEventListener('from:close-detail', onCloseDetail)
+    window.addEventListener('from:set-day', onSetDay as EventListener)
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
     window.addEventListener('from:open-node', onOpenNode)
@@ -610,6 +628,7 @@ export default function MainLayout() {
     return () => {
       window.removeEventListener('from:open-detail', onOpenDetail as EventListener)
       window.removeEventListener('from:close-detail', onCloseDetail)
+      window.removeEventListener('from:set-day', onSetDay as EventListener)
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
       window.removeEventListener('from:open-node', onOpenNode)

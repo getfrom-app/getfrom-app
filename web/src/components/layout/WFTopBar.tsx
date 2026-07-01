@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { ensureDayPath } from '../../utils/agendaHelper'
+import { ensureCanvasRoot } from '../../utils/canvasRoot'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
@@ -203,16 +203,14 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* Día (Hoy) */}
+      {/* Día (Hoy) — en el lienzo cambia la columna derecha a HOY, SIN navegar
+          (lienzo único). Si estás fuera del lienzo, vuelve a él primero. */}
       <button
         className="wf-topbar-btn"
         title={t('topbar.goToToday')}
         onClick={() => {
-          const dayNode = ensureDayPath(new Date())
-          navigate(`/node/${dayNode.id}`)
-          // Mostrar la columna «Tu día». Si ya estabas en hoy (navigate es no-op),
-          // el evento igualmente cambia el panel derecho a «Día».
-          window.dispatchEvent(new CustomEvent('from:open-day-panel'))
+          if (!location.pathname.includes(`/node/${ensureCanvasRoot().id}`)) navigate('/')
+          window.dispatchEvent(new CustomEvent('from:set-day')) // sin date = hoy
         }}
       >
         <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">

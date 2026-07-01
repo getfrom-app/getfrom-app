@@ -3,17 +3,14 @@
 // columna del día se pinta con la info de siempre. NO cambia esa columna ni la
 // ocupa: es solo un botón que se despliega.
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
 import { daysWithContent, sameDay } from '../../utils/aggregationHelper'
-import { ensureDiaryForDate } from '../../utils/diaryNav'
 
 const WD = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 export default function MiniCalendar({ activeDate }: { activeDate?: Date | null }) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   void s.nodesVersion
 
@@ -45,9 +42,9 @@ export default function MiniCalendar({ activeDate }: { activeDate?: Date | null 
   const isActive = (d: number) => !!activeDate && sameDay(activeDate, dateOf(d))
   const isToday = (d: number) => sameDay(today, dateOf(d))
   const openDay = (d: number) => {
-    const diary = ensureDiaryForDate(dateOf(d))
     setOpen(false)
-    navigate(`/node/${diary.id}`)
+    // No navega: cambia el DÍA de la columna derecha en el lienzo (lienzo único).
+    window.dispatchEvent(new CustomEvent('from:set-day', { detail: { date: dateOf(d).toISOString() } }))
   }
 
   const monthLabel = month.toLocaleDateString(
