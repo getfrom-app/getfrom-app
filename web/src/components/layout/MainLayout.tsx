@@ -49,11 +49,11 @@ function DiaryRedirect() {
 function CanvasHome() {
   const navigate = useNavigate()
   const s = useStore()
-  void s.nodesVersion
   useEffect(() => {
+    if (!store.isLoaded) return // esperar a que el árbol cargue (evita crear/navegar en vacío)
     const root = ensureCanvasRoot()
-    navigate(`/node/${root.id}`, { replace: true })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (root?.id) navigate(`/node/${root.id}`, { replace: true }) // nunca a /node/ vacío
+  }, [s.nodesVersion]) // reintenta al cargar el store
   return <div className="view-loading" />
 }
 // Eliminadas en v9.1: TasksView, ChatView, KanbanView, TagView, FilesView, InboxView, TrashView
@@ -735,7 +735,7 @@ export default function MainLayout() {
         if (path === '' || path === '/app') {
           try {
             const root = ensureCanvasRoot()
-            navigate(`/node/${root.id}`, { replace: true })
+            if (root?.id) navigate(`/node/${root.id}`, { replace: true }) // nunca a /node/ vacío
           } catch { /* si falla, se queda en la raíz — no bloquear el arranque */ }
         }
       })

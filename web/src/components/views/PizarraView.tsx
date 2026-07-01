@@ -542,10 +542,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // sin solaparse). Al arrastrar uno del flujo, gana posición y pasa a flotar; al
   // volver a Lista, todos vuelven a su orden.
   // Auto-layout NO destructivo del plano único (solo en memoria; el pin propio manda).
-  const autoLayout = useMemo(
-    () => globalCanvas ? computeCanvasLayout(findContextRoot()?.id ?? parentId) : null,
-    [globalCanvas, parentId, nodesVersion],
-  )
+  const autoLayout = useMemo(() => {
+    if (!globalCanvas) return null
+    try { return computeCanvasLayout(findContextRoot()?.id ?? parentId) }
+    catch { return null } // ante cualquier fallo, el lienzo se pinta sin auto-layout (no rompe)
+  }, [globalCanvas, parentId, nodesVersion])
   // Zonas = marcos (no tarjetas): áreas guardadas + (en global) contextos con contenido.
   const zoneIds = useMemo(() => {
     const set = new Set<string>()
