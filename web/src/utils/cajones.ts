@@ -90,7 +90,10 @@ export function contextParent(nodeId: string): Node | null {
   cur = cur?.parentId ? store.getNode(cur.parentId) : null
   let guard = 0
   while (cur && cur.id !== root.id && guard++ < 60) {
-    return cur // primer ancestro que no es la raíz = contexto padre
+    // El padre solo cuenta si es OTRO contexto (`_ctx='1'`). Si el nodo cuelga del
+    // lienzo global ('🌍 Lienzo') o de cualquier otro contenedor que NO es contexto,
+    // entonces NO tiene contexto padre → «Ninguno» (nunca mostrar «Lienzo»).
+    return isMarkedContext(cur) ? cur : null
   }
   return null
 }

@@ -253,63 +253,46 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   )
 }
 
-/** Bloque «🧠 Lo que Fromly sabe» del contexto. Memoria de SOLO LECTURA: muestra
- *  lo que Fromly ha deducido de la nota del contexto. El usuario escribe en la
- *  NOTA, no aquí. El lápiz (✎) permite corregir a mano si hace falta. */
+/** Bloque «🧠 Lo que Fromly sabe» del contexto. Memoria EDITABLE directamente: el
+ *  usuario escribe aquí mismo (sin botón de lápiz) y Magic lo lee. El extractor IA
+ *  también puede rellenarlo; los cambios externos se reflejan cuando el campo no está
+ *  enfocado (para no pisar lo que el usuario escribe). */
 function KnowledgeBlock({ nodeId, color }: { nodeId: string; color: string }) {
   const s = useStore()
   const { t } = useTranslation()
   const saved = useMemo(() => readContextKnowledge(nodeId), [nodeId, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const [text, setText] = useState(saved)
-  const [editing, setEditing] = useState(false)
+  const [focused, setFocused] = useState(false)
 
-  // Refrescar desde el store cuando cambia el contexto o llega una actualización
-  // externa (extractor IA), salvo mientras el usuario está corrigiendo a mano.
-  useEffect(() => { if (!editing) setText(saved) }, [saved, editing])
-  useEffect(() => { setEditing(false) }, [nodeId])
+  // Refrescar desde el store al cambiar de contexto o si llega una actualización
+  // externa (extractor IA), salvo mientras el usuario está escribiendo (enfocado).
+  useEffect(() => { if (!focused) setText(saved) }, [saved, focused])
+  useEffect(() => { setFocused(false); setText(saved) }, [nodeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const commit = () => {
-    setEditing(false)
+    setFocused(false)
     if (text.trim() === saved.trim()) return
     writeContextKnowledge(nodeId, text)
   }
 
   return (
     <div>
-      <div className="rc-section-label" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span>🧠 {t('ctxPanel.whatFromlyKnows')}</span>
-        <span style={{ flex: 1 }} />
-        {!editing && (
-          <button onClick={() => setEditing(true)} title={t('ctxPanel.fixManually')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 2, fontSize: 12, lineHeight: 1 }}>✎</button>
-        )}
-      </div>
-      {editing ? (
-        <textarea
-          autoFocus
-          value={text}
-          placeholder={t('ctxPanel.knowledgePlaceholder')}
-          onChange={e => setText(e.target.value)}
-          onBlur={commit}
-          rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
-          style={{
-            width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
-            fontSize: 13, lineHeight: 1.5,
-            color: 'var(--text-primary)', background: 'var(--bg-secondary)',
-            border: `1px solid ${color}55`, borderRadius: 8, padding: '8px 10px',
-            fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-          }}
-        />
-      ) : saved.trim() ? (
-        <div onDoubleClick={() => setEditing(true)}
-          style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-          {saved}
-        </div>
-      ) : (
-        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-          {t('ctxPanel.knowledgeEmpty')}
-        </div>
-      )}
+      <div className="rc-section-label" style={{ marginBottom: 6 }}>🧠 {t('ctxPanel.whatFromlyKnows')}</div>
+      <textarea
+        value={text}
+        placeholder={t('ctxPanel.knowledgePlaceholder')}
+        onFocus={() => setFocused(true)}
+        onChange={e => setText(e.target.value)}
+        onBlur={commit}
+        rows={Math.max(3, Math.min(14, text.split('\n').length + 1))}
+        style={{
+          width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
+          fontSize: 13, lineHeight: 1.5,
+          color: 'var(--text-primary)', background: 'var(--bg-secondary)',
+          border: `1px solid ${color}55`, borderRadius: 8, padding: '8px 10px',
+          fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+        }}
+      />
     </div>
   )
 }
