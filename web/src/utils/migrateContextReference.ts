@@ -51,6 +51,38 @@ function ensureKnowledgeNode(contextId: string): Node {
   return store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000 })
 }
 
+const REVERT_FLAG = 'from-revert-ctx-ref-v1'
+
+/**
+ * REVIERTE la migración: devuelve las secciones de referencia que se movieron dentro de
+ * «🧠 Lo que Fromly sabe» a ser hijas DIRECTAS del contexto otra vez. Se identifican por
+ * tener HIJOS propios (las líneas de conocimiento auto-generadas son hojas y se quedan).
+ * No destructivo (reparent). Una sola vez (flag).
+ */
+export function revertContextReferenceOnce(): { moved: number } | null {
+  try { if (localStorage.getItem(REVERT_FLAG) === '1') return null } catch { /* noop */ }
+  let moved = 0
+  store.beginBatch()
+  try {
+    for (const kn of store.allActive()) {
+      if (kn.deletedAt || !isContextKnowledge(kn.text)) continue
+      const ctxId = kn.parentId
+      if (!ctxId) continue
+      // Orden: colocar lo devuelto ANTES del nodo de conocimiento en el contexto.
+      let order = (kn.siblingOrder ?? 1000) - 1
+      for (const child of store.children(kn.id).filter(c => !c.deletedAt)) {
+        const hasKids = store.children(child.id).some(k => !k.deletedAt)
+        if (!hasKids) continue // línea de conocimiento hoja → se queda
+        store.updateNode(child.id, { parentId: ctxId, siblingOrder: order })
+        order -= 1
+        moved++
+      }
+    }
+  } finally { store.endBatch() }
+  try { localStorage.setItem(REVERT_FLAG, '1') } catch { /* noop */ }
+  return { moved }
+}
+
 /**
  * Ejecuta la migración una sola vez. Devuelve un resumen { contexts, moved } de lo que
  * hizo (o null si ya se ejecutó). Seguro de llamar en cada arranque: el flag lo bloquea.

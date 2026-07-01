@@ -2015,7 +2015,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
         const off = areaDrag?.id === a.id ? `translate(${areaDrag.dx}px, ${areaDrag.dy}px)` : undefined
         return (
-          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: `2px solid ${col}`, borderRadius: 10, background: 'transparent', transform: off }}>
+          <div key={a.id} data-area-id={a.id} style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 2, pointerEvents: 'none', border: '1px solid var(--border, #c9c9cf)', borderRadius: 4, background: 'transparent', transform: off }}>
             <div
               onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); try { (e.target as HTMLElement).setPointerCapture(e.pointerId) } catch { /* noop */ }; areaDragRef.current = { id: a.id, sx: e.clientX, sy: e.clientY, moved: false } }}
               onPointerMove={(e) => { const d = areaDragRef.current; if (!d || d.id !== a.id) return; const dx = e.clientX - d.sx, dy = e.clientY - d.sy; if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true; if (d.moved) setAreaDrag({ id: a.id, dx, dy }) }}
@@ -2038,9 +2038,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                   }
                 } finally { store.endBatch() }
               }}
-              style={{ position: 'absolute', top: -13, left: 10, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: col, color: '#fff', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', touchAction: 'none' }}
+              style={{ position: 'absolute', top: -10, left: 12, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 9px', borderRadius: 3, background: 'var(--bg-elevated, #fff)', color: 'var(--text-secondary, #52525b)', fontSize: 11, fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', border: '1px solid var(--border, #e0e0e4)', touchAction: 'none' }}
               title={t('tip.dragAreaMove')}
-            >{a.text || t('pizarra.area')}</div>
+            ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}</div>
           </div>
         )
       })}

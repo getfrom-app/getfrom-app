@@ -30,7 +30,7 @@ import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
 import { ensureCanvasRoot } from '../../utils/canvasRoot'
-import { migrateContextReferenceOnce } from '../../utils/migrateContextReference'
+import { revertContextReferenceOnce } from '../../utils/migrateContextReference'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
@@ -759,12 +759,13 @@ export default function MainLayout() {
         // (CanvasApp), sin navegar a ningún nodo. No hace falta redirect. Solo
         // asegurar que el nodo-lienzo raíz existe (contenedor interno de cámara/trazos).
         try { ensureCanvasRoot() } catch { /* no bloquear el arranque */ }
-        // Migración única (no destructiva): mueve la info de referencia de cada
-        // contexto dentro de su «🧠 Lo que Fromly sabe». Reparent → reversible.
+        // REVERSIÓN (no destructiva): devuelve las secciones de referencia que se
+        // movieron dentro de «Lo que Fromly sabe» a ser contenido del contexto. El
+        // usuario cura «Lo que Fromly sabe» a mano. Reparent → reversible.
         try {
-          const r = migrateContextReferenceOnce()
-          if (r && r.moved > 0) console.info(`[from] migración contexto→conocimiento: ${r.moved} nodos en ${r.contexts} contextos`)
-        } catch (e) { console.warn('[from] migración contexto→conocimiento falló:', e) }
+          const r = revertContextReferenceOnce()
+          if (r && r.moved > 0) console.info(`[from] reversión conocimiento→contexto: ${r.moved} nodos`)
+        } catch (e) { console.warn('[from] reversión conocimiento→contexto falló:', e) }
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)

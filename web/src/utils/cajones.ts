@@ -90,10 +90,11 @@ export function contextParent(nodeId: string): Node | null {
   cur = cur?.parentId ? store.getNode(cur.parentId) : null
   let guard = 0
   while (cur && cur.id !== root.id && guard++ < 60) {
-    // El padre solo cuenta si es OTRO contexto (`_ctx='1'`). Si el nodo cuelga del
-    // lienzo global ('🌍 Lienzo') o de cualquier otro contenedor que NO es contexto,
-    // entonces NO tiene contexto padre → «Ninguno» (nunca mostrar «Lienzo»).
-    return isMarkedContext(cur) ? cur : null
+    // El padre cuenta si es un CONTEXTO real: marcado (`_ctx='1'`) O contexto RAÍZ
+    // (hijo directo de 🧠 Contexto, como «Media Sector»). Si el nodo cuelga del lienzo
+    // ('🌍 Lienzo') o de otro contenedor que NO es contexto → sin padre («Ninguno»).
+    if (isMarkedContext(cur) || cur.parentId === root.id) return cur
+    return null
   }
   return null
 }
@@ -222,7 +223,20 @@ export function reparentContext(nodeId: string, newParentContextId: string): voi
   const sibs = store.children(newParentContextId).filter(x => !x.deletedAt)
   const maxOrder = sibs.reduce((m, x) => Math.max(m, x.siblingOrder), 0)
   store.updateNode(nodeId, { parentId: newParentContextId, siblingOrder: maxOrder + 1000 })
+  clearAreaPosition(nodeId) // suelta la posición fija → se re-anida DENTRO del nuevo padre
   ensureTagDefinition(nodeId) // recalcula el slug jerárquico
+}
+
+/** Quita la posición física fija de un contexto (`_area` + pin) para que el layout
+ *  anidado lo recoloque automáticamente según su sitio en el árbol. */
+export function clearAreaPosition(nodeId: string): void {
+  const n = store.getNode(nodeId); if (!n) return
+  const e = ed(n)
+  let changed = false
+  for (const k of ['_area', '_areaW', '_areaH', '_pinX', '_pinY', '_pinScale']) {
+    if (k in e) { delete e[k]; changed = true }
+  }
+  if (changed) store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
 /** Quita el contexto padre de un subcontexto: lo sube a contexto RAÍZ (hijo directo
@@ -234,6 +248,7 @@ export function clearContextParent(nodeId: string): void {
   const sibs = store.children(root.id).filter(x => !x.deletedAt)
   const maxOrder = sibs.reduce((m, x) => Math.max(m, x.siblingOrder), 0)
   store.updateNode(nodeId, { parentId: root.id, siblingOrder: maxOrder + 1000 })
+  clearAreaPosition(nodeId) // suelta la posición fija → vuelve a colocarse como raíz
   ensureTagDefinition(nodeId)
 }
 
