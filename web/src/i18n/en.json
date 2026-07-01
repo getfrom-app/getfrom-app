@@ -1277,6 +1277,7 @@
   "pizarra.file": "File",
   "pizarra.area": "Area",
   "pizarra.saveViewTitle": "Save this view as a node",
+  "pizarra.saveViewHint": "Type to find an existing context or create a new one.",
   "tip.copyLink": "Copy link",
   "tip.openNewTab": "Open in new tab",
   "tip.unpublishNote": "Unpublish note",

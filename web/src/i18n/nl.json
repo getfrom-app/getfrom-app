@@ -1277,6 +1277,7 @@
   "pizarra.file": "Bestand",
   "pizarra.area": "Gebied",
   "pizarra.saveViewTitle": "Deze weergave als node opslaan",
+  "pizarra.saveViewHint": "Typ om een bestaande context te vinden of een nieuwe te maken.",
   "tip.copyLink": "Link kopiëren",
   "tip.openNewTab": "Openen in nieuw tabblad",
   "tip.unpublishNote": "Publicatie van notitie ongedaan maken",

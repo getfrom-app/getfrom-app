@@ -1277,6 +1277,7 @@
   "pizarra.file": "Dosya",
   "pizarra.area": "Alan",
   "pizarra.saveViewTitle": "Bu görünümü düğüm olarak kaydet",
+  "pizarra.saveViewHint": "Mevcut bir bağlam bulmak veya yeni bir tane oluşturmak için yaz.",
   "tip.copyLink": "Bağlantıyı kopyala",
   "tip.openNewTab": "Yeni sekmede aç",
   "tip.unpublishNote": "Notu yayından kaldır",

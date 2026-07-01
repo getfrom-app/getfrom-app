@@ -1277,6 +1277,7 @@
   "pizarra.file": "Plik",
   "pizarra.area": "Obszar",
   "pizarra.saveViewTitle": "Zapisz ten widok jako węzeł",
+  "pizarra.saveViewHint": "Wpisz, aby znaleźć istniejący kontekst lub utworzyć nowy.",
   "tip.copyLink": "Kopiuj link",
   "tip.openNewTab": "Otwórz w nowej karcie",
   "tip.unpublishNote": "Cofnij publikację notatki",

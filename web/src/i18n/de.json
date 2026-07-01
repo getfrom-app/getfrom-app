@@ -1277,6 +1277,7 @@
   "pizarra.file": "Datei",
   "pizarra.area": "Bereich",
   "pizarra.saveViewTitle": "Diese Ansicht als Knoten speichern",
+  "pizarra.saveViewHint": "Tippe, um einen bestehenden Kontext zu finden oder einen neuen zu erstellen.",
   "tip.copyLink": "Link kopieren",
   "tip.openNewTab": "In neuem Tab öffnen",
   "tip.unpublishNote": "Veröffentlichung der Notiz aufheben",

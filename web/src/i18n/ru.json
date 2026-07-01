@@ -1277,6 +1277,7 @@
   "pizarra.file": "Файл",
   "pizarra.area": "Область",
   "pizarra.saveViewTitle": "Сохранить этот вид как узел",
+  "pizarra.saveViewHint": "Введите, чтобы найти существующий контекст или создать новый.",
   "tip.copyLink": "Копировать ссылку",
   "tip.openNewTab": "Открыть в новой вкладке",
   "tip.unpublishNote": "Снять заметку с публикации",

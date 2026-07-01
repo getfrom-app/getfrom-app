@@ -1277,6 +1277,7 @@
   "pizarra.file": "Fichier",
   "pizarra.area": "Zone",
   "pizarra.saveViewTitle": "Enregistrer cette vue comme nœud",
+  "pizarra.saveViewHint": "Écris pour trouver un contexte existant ou en créer un nouveau.",
   "tip.copyLink": "Copier le lien",
   "tip.openNewTab": "Ouvrir dans un nouvel onglet",
   "tip.unpublishNote": "Dépublier la note",

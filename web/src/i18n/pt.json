@@ -1277,6 +1277,7 @@
   "pizarra.file": "Ficheiro",
   "pizarra.area": "Área",
   "pizarra.saveViewTitle": "Guardar esta vista como nó",
+  "pizarra.saveViewHint": "Escreve para encontrar um contexto existente ou criar um novo.",
   "tip.copyLink": "Copiar ligação",
   "tip.openNewTab": "Abrir em novo separador",
   "tip.unpublishNote": "Despublicar nota",

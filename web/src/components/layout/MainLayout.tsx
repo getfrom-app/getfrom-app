@@ -621,6 +621,9 @@ export default function MainLayout() {
       const kind = classifyNodeRoot(id) ?? (isMarkedContext(n) ? 'context' as const : null)
       // Nota / tarea / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
       setRightPanel(kind ?? 'day')
+      // Contexto con cuerpo físico (área): además de su columna, el lienzo vuela a su
+      // posición. Si no tiene área, PizarraView ignora el evento (no hay dónde volar).
+      if (kind === 'context') window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
     }
     function onCloseDetail() { setDetailNodeId(null); setRightPanel('day') }
     // Mini-calendario / «hoy»: cambia el DÍA de la columna, SIN navegar (lienzo único).

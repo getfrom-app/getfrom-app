@@ -33,6 +33,7 @@ import { computeCanvasLayout } from '../../utils/canvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
+import ContextPicker from '../panels/ContextPicker'
 import PdfCanvasPreview from './PdfCanvasPreview'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -492,7 +493,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Modal "guardar esta vista (posición+zoom) como nodo".
   const [saveModal, setSaveModal] = useState(false)
-  const [saveName, setSaveName] = useState('')
 
   // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
@@ -1188,41 +1188,41 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     setXf({ kind: 'scale', ax: anchor.x, ay: anchor.y, s: 1 })
   }, [parentId, selStrokes, screenToWorld, captureSelCards])
 
-  // Crear un ÁREA = la REGIÓN visible ahora mismo (el viewport en coords de mundo).
-  // Se dibuja como un frame etiquetado en el lienzo y aparece en «Áreas» de la columna;
-  // al pulsarla, la cámara vuela a esa región. Las cards dentro se reparentan como hijas
-  // (Fase 2). El área es hija de la nota.
-  const saveViewAsNode = useCallback((name: string) => {
+  // Dar CUERPO FÍSICO (un ÁREA = la región visible ahora mismo) a un CONTEXTO. El
+  // contexto puede ser existente (elegido en el buscador) o recién creado — mismo dato.
+  // Contexto y área son la MISMA entidad: aquí solo le añadimos `_area` + pin/tamaño al
+  // nodo del contexto. Las cards dentro de la región se reparentan como hijas (contención
+  // física). Al pulsar el contexto (aquí o desde cualquier columna) la cámara vuela aquí.
+  const attachAreaToContext = useCallback((contextId: string) => {
+    const ctx = store.getNode(contextId); if (!ctx) return
     const c = camRef.current, vp = viewportRef.current
     const x0 = (0 - c.x) / c.scale, y0 = (0 - c.y) / c.scale
     const w = vp.w / c.scale, h = vp.h / c.scale
     store.beginBatch()
     try {
-      const area = store.createNode({
-        text: name.trim() || 'Área',
-        parentId,
-        extraData: {
-          [AREA]: '1',
-          '_ctx': '1', // la zona ES un subcontexto: gana columna derecha de contexto
-                       // (estado, contexto padre, tareas, notas, «lo que Fromly sabe»)
-                       // y su contenido son sus hijos. `_area` mantiene el marco visual.
-          [PIN_X]: String(Math.round(x0)),
-          [PIN_Y]: String(Math.round(y0)),
-          [AREA_W]: String(Math.round(w)),
-          [AREA_H]: String(Math.round(h)),
-          [PIN_SCALE]: String(Number(c.scale.toFixed(4))), // zoom de referencia para volar
-        },
-      })
-      // Reparentar las CARDS cuyo pin cae dentro de la región como hijas del área.
+      let ed: Record<string, unknown> = {}
+      try { ed = JSON.parse(ctx.extraData || '{}') } catch { /* corrupto → vacío */ }
+      ed[AREA] = '1'
+      ed['_ctx'] = '1' // asegura que es contexto (gana su columna derecha)
+      ed[PIN_X] = String(Math.round(x0))
+      ed[PIN_Y] = String(Math.round(y0))
+      ed[AREA_W] = String(Math.round(w))
+      ed[AREA_H] = String(Math.round(h))
+      ed[PIN_SCALE] = String(Number(c.scale.toFixed(4))) // zoom de referencia para volar
+      store.updateNode(contextId, { extraData: JSON.stringify(ed) })
+      // Reparentar las CARDS cuyo pin cae dentro de la región como hijas del contexto.
       // (No mueve nada visualmente: el pin es absoluto; solo cambia el padre en el árbol.)
       for (const n of store.children(parentId)) {
-        if (n.id === area.id || isArea(n) || isHiddenPin(n)) continue
+        if (n.id === contextId || isArea(n) || isHiddenPin(n)) continue
         const p = readPin(n); if (!p) continue
         if (p.x >= x0 && p.x <= x0 + w && p.y >= y0 && p.y <= y0 + h) {
-          store.updateNode(n.id, { parentId: area.id })
+          store.updateNode(n.id, { parentId: contextId })
         }
       }
     } finally { store.endBatch() }
+    // Feedback: selecciona el contexto (abre su columna) y vuela a la región recién creada.
+    setSelectedId(contextId)
+    window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextId } }))
   }, [parentId])
 
   // Borrar trazos cerca de (wx,wy) en mundo.
@@ -2318,7 +2318,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             case 'undo': store.undo(); break
             case 'redo': store.redo(); break
             case 'today': { const day = ensureDayPath(new Date()); navigate(`/node/${day.id}`); setCam({ x: 60, y: 60, scale: 1 }); window.dispatchEvent(new CustomEvent('from:open-day-panel')); break }
-            case 'saveView': setSaveName(''); setSaveModal(true); break
+            case 'saveView': setSaveModal(true); break
           }
           setQuickMenu(null)
         }
@@ -2675,7 +2675,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
         </button>
         {/* Guardar esta vista (posición+zoom) como nodo */}
-        <button style={toolBtn} title={t('tip.saveViewAsNode')} onClick={() => { setSaveName(''); setSaveModal(true) }}>
+        <button style={toolBtn} title={t('tip.saveViewAsNode')} onClick={() => setSaveModal(true)}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>
         </button>
         <div style={vSep} />
@@ -2859,13 +2859,19 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onPointerDown={(e) => e.stopPropagation()}
             style={{ background: 'var(--bg-elevated,#fff)', borderRadius: 14, padding: 20, width: 360, boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: 'var(--text,#222)' }}>{t('pizarra.saveViewTitle')}</div>
-            <input autoFocus value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder={t('ph.nodeName')}
-              onKeyDown={(e) => { if (e.key === 'Enter') { saveViewAsNode(saveName); setSaveModal(false) } if (e.key === 'Escape') setSaveModal(false) }}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 11px', borderRadius: 9, border: '1px solid var(--border,#d8d8d8)', fontSize: 14, outline: 'none', background: 'var(--bg,#fff)', color: 'var(--text,#222)' }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: 'var(--text,#222)' }}>{t('pizarra.saveViewTitle')}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-tertiary,#999)', marginBottom: 10 }}>{t('pizarra.saveViewHint')}</div>
+            {/* Buscador predictivo: si el nombre coincide con un contexto EXISTENTE, esta
+                vista se convierte en su cuerpo físico (área). Si no, «Crear «x»» hace un
+                contexto nuevo. En ambos casos onPick devuelve el id → attachAreaToContext. */}
+            <div className="ctx-pick" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <ContextPicker currentId={null} onPick={(id) => {
+                if (id) attachAreaToContext(id)
+                setSaveModal(false)
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
               <button onClick={() => setSaveModal(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border,#ddd)', background: 'transparent', cursor: 'pointer', color: 'var(--text,#333)' }}>{t('common.cancel')}</button>
-              <button onClick={() => { saveViewAsNode(saveName); setSaveModal(false) }} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: 'var(--accent,#6c5ce7)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>{t('common.save')}</button>
             </div>
           </div>
         </div>
