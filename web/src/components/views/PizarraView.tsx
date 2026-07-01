@@ -1889,6 +1889,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
+      /* LIENZO ÚNICO: nunca se entra a un nodo. Intercepto (a nivel de TODO el lienzo,
+         antes que cualquier rama de tarjeta) el dot «abrir página» y los chips de
+         contexto → solo SELECCIONAN el nodo (abre su columna derecha). Nada navega. */
+      onClickCapture={globalCanvas ? (e) => {
+        const tgt = e.target as HTMLElement
+        if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, .node-context-chip')) {
+          const card = tgt.closest('[data-node-id]') as HTMLElement | null
+          const id = card?.getAttribute('data-node-id')
+          e.preventDefault(); e.stopPropagation()
+          if (id) setSelectedId(id)
+        }
+      } : undefined}
       onClick={(e) => {
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         const rect = containerRef.current!.getBoundingClientRect()
