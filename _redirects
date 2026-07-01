@@ -1,5 +1,0 @@
-# Fallback SPA para la app (React Router, basename /app). Sin esto, abrir/recargar
-# una ruta profunda (/app/canvas, /app/node/:id, /app/settings…) devuelve 404,
-# porque no existe como fichero. Cloudflare Pages sirve primero los assets
-# estáticos (/app/assets/*) y solo aplica esta regla a rutas inexistentes.
-/app/*    /app/index.html    200
