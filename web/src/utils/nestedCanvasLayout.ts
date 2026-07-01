@@ -19,15 +19,36 @@ export interface NestedLayout {
   contentIds: Set<string>       // nodos que son contenido (tarjeta flat)
 }
 
-const CONTENT_W = 600  // ancho de la tarjeta de contenido
+export const CONTENT_W = 600  // ancho de la tarjeta de contenido
 const INDENT = 26      // indentación del esquema por nivel de profundidad
-const LINE_H = 23      // alto de una línea de texto (estimación de wrap)
-const ROW_PAD = 16     // aire vertical por fila
-const CHARS_PER_LINE = CONTENT_W / 7.6 // estimación de caracteres por línea a ~15px
-const HEADER = 40      // espacio para la etiqueta del área
-const PAD = 30         // margen interior de la caja
-const BLOCK_GAP = 26   // separación entre bloques apilados dentro de la caja
-const TOP_GAP = 160    // separación entre cajas de contexto de nivel superior
+const LINE_H = 25      // alto de una línea de texto renderizada (generoso)
+const ROW_PAD = 22     // aire vertical por fila (arriba+abajo)
+const TEXT_W = CONTENT_W - 72 // ancho útil (deja hueco al bullet/checkbox → sobreestima líneas)
+const TEXT_FONT = '15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+const HEADER = 44      // espacio para la etiqueta del área
+const PAD = 32         // margen interior de la caja
+const BLOCK_GAP = 30   // separación entre bloques apilados dentro de la caja
+const TOP_GAP = 220    // separación entre cajas de contexto de nivel superior
+
+// Medición REAL del wrap con un canvas 2D (no DOM): word-wrap greedy → nº de líneas.
+let _measureCtx: CanvasRenderingContext2D | null = null
+function countLines(text: string, widthPx: number): number {
+  if (!_measureCtx) {
+    try { _measureCtx = document.createElement('canvas').getContext('2d') } catch { _measureCtx = null }
+  }
+  const t = (text || '').trim()
+  if (!t) return 1
+  if (!_measureCtx) return Math.max(1, Math.ceil(t.length / 58)) // fallback sin canvas
+  _measureCtx.font = TEXT_FONT
+  let line = ''
+  let lines = 1
+  for (const word of t.split(/\s+/)) {
+    const test = line ? line + ' ' + word : word
+    if (_measureCtx.measureText(test).width > widthPx && line) { lines++; line = word }
+    else line = test
+  }
+  return lines
+}
 
 function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
@@ -49,11 +70,10 @@ function contentChildren(id: string): Node[] {
   return store.children(id).filter(isContent)
 }
 
-/** Alto estimado de una fila según su texto (wrap al ancho de la tarjeta). */
-function rowHeight(text: string | null | undefined): number {
-  const len = (text || '').trim().length || 1
-  const lines = Math.max(1, Math.ceil(len / CHARS_PER_LINE))
-  return lines * LINE_H + ROW_PAD
+/** Alto EXACTO reservado para una fila según su texto (medido con canvas). La tarjeta
+ *  se renderiza con `overflow:hidden` a esta altura → nunca desborda ni solapa. */
+export function rowHeight(text: string | null | undefined): number {
+  return countLines(text || '', TEXT_W) * LINE_H + ROW_PAD
 }
 
 interface Meta {

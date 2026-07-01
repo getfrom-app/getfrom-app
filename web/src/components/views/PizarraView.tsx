@@ -29,7 +29,7 @@ import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { firstContextOf, contextColor, isMarkedContext } from '../../utils/cajones'
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
-import { computeNestedLayout, type NestedLayout } from '../../utils/nestedCanvasLayout'
+import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/nestedCanvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
@@ -2434,6 +2434,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         if (live) p = live.pin
         const cardW = live ? live.w : readCardW(node)
         const cardScale = (live ? live.scale : readCardScale(node)) * xfScale
+        // LIENZO ANIDADO: el contenido ocupa EXACTAMENTE su hueco calculado (ancho fijo
+        // + alto medido, `overflow:hidden`) → nunca desborda su contexto ni se solapa.
+        const slot = (globalCanvas && !readPin(node)) ? nested?.items.get(node.id) ?? null : null
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
@@ -2483,10 +2486,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               } : (e: React.PointerEvent) => onCardAreaPointerDown(e, node)
             )}
             onContextMenu={(e) => nodeCtx(e, node.id)}
-            style={{ position: 'absolute', left: sx, top: sy, width: cleanAutoW ? 'max-content' : cardW, transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
-              // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre)
-              // DENTRO del border-box → al mover el ratón al dot/handle no se pierde el hover.
-              ...(isPlainText ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
+            style={{ position: 'absolute', left: sx, top: sy, width: slot ? CONTENT_W : (cleanAutoW ? 'max-content' : cardW), transform: `scale(${cam.scale * cardScale})`, transformOrigin: '0 0', zIndex: editing ? 20 : (dragPos?.id === node.id || live) ? 10 : (hovered ? 4 : 1), cursor: editing ? 'text' : 'grab', pointerEvents: inkActive ? 'none' : undefined,
+              // Hueco EXACTO del layout anidado: alto medido + recorte → sin solapes.
+              ...(slot ? { height: slot.h, overflow: 'hidden', boxSizing: 'border-box' as const, paddingLeft: 18, paddingRight: 12 }
+                // Texto limpio: gutter izq (dot) + espacio dcho (handle + zona de arrastre).
+                : isPlainText ? { boxSizing: 'content-box' as const, paddingLeft: 22, paddingRight: 30 } : {}) }}>
             {lod ? (
               // Píldora LOD (zoom bajo): solo el título, barato de renderizar.
               <div className="pizarra-lod" style={{ fontSize: 26, fontWeight: 600, lineHeight: 1.25, color: 'var(--text,#222)', padding: '10px 14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
