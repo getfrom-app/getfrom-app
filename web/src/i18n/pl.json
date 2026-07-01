@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Nieskończone płótno",
   "globalCanvas.emptyHint": "Jedna płaszczyzna na wszystko. Umieść swoje obszary i przemieszczaj się między nimi kamerą. Odwracalne: usunięcie z płótna niczego nie kasuje.",
   "globalCanvas.placeAreas": "Umieść moje obszary na płótnie",
-  "globalCanvas.fitAll": "Dopasuj wszystko"
+  "globalCanvas.fitAll": "Dopasuj wszystko",
+  "dayAgg.today": "Dziś",
+  "dayAgg.empty": "Nic tego dnia",
+  "globalCanvas.openDay": "Dzień"
 }

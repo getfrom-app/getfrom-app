@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Het oneindige canvas",
   "globalCanvas.emptyHint": "Eén vlak voor alles. Plaats je gebieden en beweeg ertussen met de camera. Omkeerbaar: verwijderen van het canvas wist niets.",
   "globalCanvas.placeAreas": "Mijn gebieden op het canvas plaatsen",
-  "globalCanvas.fitAll": "Alles passend maken"
+  "globalCanvas.fitAll": "Alles passend maken",
+  "dayAgg.today": "Vandaag",
+  "dayAgg.empty": "Niets op deze dag",
+  "globalCanvas.openDay": "Dag"
 }

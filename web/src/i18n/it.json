@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "La tela infinita",
   "globalCanvas.emptyHint": "Un unico piano per tutto. Posiziona le tue aree e spostati tra loro con la telecamera. È reversibile: rimuovere dalla tela non elimina nulla.",
   "globalCanvas.placeAreas": "Posiziona le mie aree sulla tela",
-  "globalCanvas.fitAll": "Adatta tutto"
+  "globalCanvas.fitAll": "Adatta tutto",
+  "dayAgg.today": "Oggi",
+  "dayAgg.empty": "Niente questo giorno",
+  "globalCanvas.openDay": "Giorno"
 }

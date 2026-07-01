@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Die unendliche Leinwand",
   "globalCanvas.emptyHint": "Eine einzige Ebene für alles. Platziere deine Bereiche und bewege dich mit der Kamera zwischen ihnen. Umkehrbar: Entfernen von der Leinwand löscht nichts.",
   "globalCanvas.placeAreas": "Meine Bereiche auf der Leinwand platzieren",
-  "globalCanvas.fitAll": "Alles einpassen"
+  "globalCanvas.fitAll": "Alles einpassen",
+  "dayAgg.today": "Heute",
+  "dayAgg.empty": "Nichts an diesem Tag",
+  "globalCanvas.openDay": "Tag"
 }

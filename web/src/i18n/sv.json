@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Den oändliga arbetsytan",
   "globalCanvas.emptyHint": "Ett enda plan för allt. Placera dina områden och rör dig mellan dem med kameran. Reversibelt: att ta bort från arbetsytan raderar ingenting.",
   "globalCanvas.placeAreas": "Placera mina områden på arbetsytan",
-  "globalCanvas.fitAll": "Anpassa alla"
+  "globalCanvas.fitAll": "Anpassa alla",
+  "dayAgg.today": "Idag",
+  "dayAgg.empty": "Inget denna dag",
+  "globalCanvas.openDay": "Dag"
 }

@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Ο άπειρος καμβάς",
   "globalCanvas.emptyHint": "Ένα ενιαίο επίπεδο για τα πάντα. Τοποθετήστε τις περιοχές σας και μετακινηθείτε ανάμεσά τους με την κάμερα. Είναι αναστρέψιμο: η αφαίρεση από τον καμβά δεν διαγράφει τίποτα.",
   "globalCanvas.placeAreas": "Τοποθέτηση των περιοχών μου στον καμβά",
-  "globalCanvas.fitAll": "Προσαρμογή όλων"
+  "globalCanvas.fitAll": "Προσαρμογή όλων",
+  "dayAgg.today": "Σήμερα",
+  "dayAgg.empty": "Τίποτα αυτή την ημέρα",
+  "globalCanvas.openDay": "Ημέρα"
 }

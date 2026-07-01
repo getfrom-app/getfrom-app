@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "O quadro infinito",
   "globalCanvas.emptyHint": "Um único plano para tudo. Coloca as tuas áreas e move-te entre elas com a câmara. É reversível: remover do quadro não apaga nada.",
   "globalCanvas.placeAreas": "Colocar as minhas áreas no quadro",
-  "globalCanvas.fitAll": "Ajustar tudo"
+  "globalCanvas.fitAll": "Ajustar tudo",
+  "dayAgg.today": "Hoje",
+  "dayAgg.empty": "Nada neste dia",
+  "globalCanvas.openDay": "Dia"
 }

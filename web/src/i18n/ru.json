@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Бесконечный холст",
   "globalCanvas.emptyHint": "Единая плоскость для всего. Размещайте области и перемещайтесь между ними камерой. Обратимо: удаление с холста ничего не стирает.",
   "globalCanvas.placeAreas": "Разместить мои области на холсте",
-  "globalCanvas.fitAll": "Вместить всё"
+  "globalCanvas.fitAll": "Вместить всё",
+  "dayAgg.today": "Сегодня",
+  "dayAgg.empty": "Ничего в этот день",
+  "globalCanvas.openDay": "День"
 }

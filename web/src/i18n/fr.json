@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "Le canevas infini",
   "globalCanvas.emptyHint": "Un seul plan pour tout. Placez vos zones et déplacez-vous entre elles avec la caméra. C'est réversible : retirer du canevas ne supprime rien.",
   "globalCanvas.placeAreas": "Placer mes zones sur le canevas",
-  "globalCanvas.fitAll": "Tout ajuster"
+  "globalCanvas.fitAll": "Tout ajuster",
+  "dayAgg.today": "Aujourd'hui",
+  "dayAgg.empty": "Rien ce jour",
+  "globalCanvas.openDay": "Jour"
 }

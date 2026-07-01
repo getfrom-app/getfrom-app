@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "The infinite canvas",
   "globalCanvas.emptyHint": "A single plane for everything. Place your areas and move between them with the camera. It's reversible: removing from the canvas deletes nothing.",
   "globalCanvas.placeAreas": "Place my areas on the canvas",
-  "globalCanvas.fitAll": "Fit all"
+  "globalCanvas.fitAll": "Fit all",
+  "dayAgg.today": "Today",
+  "dayAgg.empty": "Nothing on this day",
+  "globalCanvas.openDay": "Day"
 }

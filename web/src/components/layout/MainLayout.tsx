@@ -29,6 +29,7 @@ import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
 import GlobalCanvasView from '../views/GlobalCanvasView'
+import DayAggregationPanel from '../panels/DayAggregationPanel'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
@@ -156,6 +157,7 @@ export default function MainLayout() {
     | 'settings'
     | 'audio'
     | 'day'
+    | 'aggregation'
     | 'doc'
     | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
@@ -567,12 +569,14 @@ export default function MainLayout() {
     // y pide revertir (a filtro) al salir de ese modo.
     function onOpenDay() { setRightPanel('day') }
     function onCloseDay() { setRightPanel(p => p === 'day' ? 'filter' : p) }
+    function onOpenDayAgg() { setRightCollapsed(false); setRightPanel('aggregation') }
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
     window.addEventListener('from:open-node', onOpenNode)
     window.addEventListener('from:open-planner', onOpenPlanner)
     window.addEventListener('from:open-day-panel', onOpenDay)
     window.addEventListener('from:close-day-panel', onCloseDay)
+    window.addEventListener('from:open-day-agg', onOpenDayAgg)
     return () => {
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
@@ -580,6 +584,7 @@ export default function MainLayout() {
       window.removeEventListener('from:open-planner', onOpenPlanner)
       window.removeEventListener('from:open-day-panel', onOpenDay)
       window.removeEventListener('from:close-day-panel', onCloseDay)
+      window.removeEventListener('from:open-day-agg', onOpenDayAgg)
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1213,6 +1218,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={currentNodeIdFromRoute} />
+          )}
+          {rightPanel === 'aggregation' && (
+            <DayAggregationPanel />
           )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />

@@ -1948,5 +1948,8 @@
   "globalCanvas.emptyTitle": "El lienzo infinito",
   "globalCanvas.emptyHint": "Un único plano para todo. Coloca tus áreas y muévete entre ellas con la cámara. Es reversible: quitar del lienzo no borra nada.",
   "globalCanvas.placeAreas": "Colocar mis áreas en el lienzo",
-  "globalCanvas.fitAll": "Reencuadrar"
+  "globalCanvas.fitAll": "Reencuadrar",
+  "dayAgg.today": "Hoy",
+  "dayAgg.empty": "Nada este día",
+  "globalCanvas.openDay": "Día"
 }
