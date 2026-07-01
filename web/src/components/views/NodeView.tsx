@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTodayDiaryUnderAgenda, ensureDayPath } from '../../utils/agendaHelper'
 import { findContextRoot, isProtectedSystemRoot, findRootByKey } from '../../utils/rootLookup'
+import { isCanvasRoot } from '../../utils/canvasRoot'
 import { classifyNodeRoot } from '../../utils/homeHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from '../../utils/knowledgeNodes'
 import { listTemplates, applyTemplate, findTagNodeBySlug } from '../../utils/tagsHelper'
@@ -307,8 +308,8 @@ export default function NodeView() {
     // Arreglo seguro: una NOTA normal en modo pizarra pero SIN hijos que colocar
     // se vería como lienzo en blanco (p. ej. una tarjeta capturada del lienzo de
     // un día cuyos elementos quedaron bajo el día). En ese caso, abrir en lista.
-    // La diaria y la Agenda sí pueden abrir un lienzo vacío (se dibuja encima).
-    if (kind === 'pizarra' && !node.isDiaryEntry
+    // La diaria, la Agenda y la raíz-lienzo sí pueden abrir un lienzo vacío.
+    if (kind === 'pizarra' && !node.isDiaryEntry && !isCanvasRoot(node)
         && findRootByKey('agenda')?.id !== node.id
         && store.children(node.id).length === 0) {
       kind = 'list'

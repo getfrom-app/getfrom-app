@@ -28,7 +28,6 @@ import { findContextRoot } from '../../utils/rootLookup'
 import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
-import GlobalCanvasView from '../views/GlobalCanvasView'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
@@ -1127,7 +1126,6 @@ export default function MainLayout() {
           <Route path="resources" element={<ResourcesView />} />
           <Route path="account" element={<AccountView />} />
           <Route path="node/:id" element={<NodeView />} />
-          <Route path="canvas" element={<GlobalCanvasView />} />
           <Route path="settings" element={<SettingsView />} />
           <Route path="*" element={
             <div className="view">

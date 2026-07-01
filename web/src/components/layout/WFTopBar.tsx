@@ -3,6 +3,7 @@
  * 🏠 › Padre › Nodo actual   ···
  */
 import { useNavigate, useLocation } from 'react-router-dom'
+import { ensureCanvasRoot } from '../../utils/canvasRoot'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
@@ -206,7 +207,7 @@ export default function WFTopBar({
       {/* Lienzo infinito */}
       <button
         className="wf-topbar-btn"
-        onClick={() => navigate('/canvas')}
+        onClick={() => navigate(`/node/${ensureCanvasRoot().id}`)}
         title={t('wftopbar.canvas', 'Lienzo')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

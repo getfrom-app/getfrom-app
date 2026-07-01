@@ -1147,6 +1147,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         parentId,
         extraData: {
           [AREA]: '1',
+          '_ctx': '1', // la zona ES un subcontexto: gana columna derecha de contexto
+                       // (estado, contexto padre, tareas, notas, «lo que Fromly sabe»)
+                       // y su contenido son sus hijos. `_area` mantiene el marco visual.
           [PIN_X]: String(Math.round(x0)),
           [PIN_Y]: String(Math.round(y0)),
           [AREA_W]: String(Math.round(w)),
