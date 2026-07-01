@@ -4,8 +4,8 @@
 // Eliminar. Se monta una sola vez en MainLayout y se abre por evento global
 // `from:open-rowmenu` con { nodeId, x, y }.
 import { useState, useRef, useLayoutEffect } from 'react'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
@@ -13,7 +13,6 @@ import { firstContextOf, setNodeContext, convertToContext, convertToTask, isCont
 import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const boxRef = useRef<HTMLDivElement>(null)
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
@@ -69,7 +68,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
       <div ref={boxRef} className="node-ctx-menu" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 3000, maxHeight: '70vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}>
-        <button className="node-ctx-item" onClick={() => { navigate(`/node/${nodeId}`); onClose() }}>{t('rightColMenu.open')}</button>
+        <button className="node-ctx-item" onClick={() => { openNodeDetail(nodeId); onClose() }}>{t('rightColMenu.open')}</button>
         {!isEvent && (
           <button className="node-ctx-item" onClick={convertTask}>
             {isTask ? t('rightColMenu.removeTask') : t('rightColMenu.convertToTask')}

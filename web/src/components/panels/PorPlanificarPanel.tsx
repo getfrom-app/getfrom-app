@@ -7,7 +7,7 @@
  * botones rápidos (Hoy · +1 · +7). Cada reagendado se cuenta (anti-treadmill).
  */
 import { useStore, store } from '../../store/nodeStore'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { collectDailyCockpit, scheduleTask, rescheduleCount, toggleTaskDone } from '../../utils/dailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
@@ -16,7 +16,6 @@ import type { Node } from '../../types'
 
 export default function PorPlanificarPanel() {
   useStore()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const data = collectDailyCockpit()
   // Atrasadas (fecha pasada, pendientes) + sin fecha (seguimiento). Lo de hoy ya
@@ -37,7 +36,7 @@ export default function PorPlanificarPanel() {
         className="dc-row pp-queue-row"
         draggable
         onDragStart={e => { e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed = 'move' }}
-        onClick={() => navigate(`/node/${n.id}`)}
+        onClick={() => openNodeDetail(n.id)}
         onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
         title={t('tip.dragToCalendar')}
       >

@@ -1108,8 +1108,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // modificadores, editando texto, ni con el foco en un campo. Pulsar la misma letra
   // vuelve a Seleccionar (toggle), igual que clicar su botón.
   const TOOL_KEYS: Record<string, CanvasTool> = {
+    // 't'/'d' (texto/documento) retirados: el texto se crea con DOBLE CLIC.
     v: 'select', b: 'pen', m: 'marker', h: 'highlighter', e: 'eraser',
-    t: 'text', a: 'arrow', l: 'line', r: 'rect', o: 'ellipse',
+    a: 'arrow', l: 'line', r: 'rect', o: 'ellipse',
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1956,6 +1957,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       } : undefined}
       onClick={(e) => {
         if ((e.target as HTMLElement).dataset.bg !== '1') return
+        if (e.detail >= 2) return // 2º clic de un doble-clic → lo gestiona onDoubleClick (crear texto)
         const rect = containerRef.current!.getBoundingClientRect()
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
         // LIENZO: clic SIMPLE en zona vacía dentro de un área (contexto) → abre su
