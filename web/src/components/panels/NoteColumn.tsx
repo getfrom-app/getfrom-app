@@ -3,7 +3,7 @@
 // lienzo. Se arrastran al lienzo para colocarlos (al fijarlos, salen de aquí).
 
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
@@ -59,7 +59,6 @@ const normCtx = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowe
 function ContextField({ node }: { node: Node }) {
   const { t } = useTranslation()
   const s = useStore()
-  const navigate = useNavigate()
   const current = nodeContexts(node)[0] || null
   const [editing, setEditing] = useState(false)
   const [q, setQ] = useState('')
@@ -87,7 +86,7 @@ function ContextField({ node }: { node: Node }) {
     const color = contextColor(current.id)
     const parent = contextParent(current.id)
     return (
-      <div className="dc-row" onClick={() => navigate(`/node/${current.id}`)} title={t('noteColumn.goContext')} style={{ cursor: 'pointer' }}>
+      <div className="dc-row" onClick={() => openNodeDetail(current.id)} title={t('noteColumn.goContext')} style={{ cursor: 'pointer' }}>
         {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
         <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
         <span className="dc-text">{current.text || t('common.context')}</span>
@@ -133,7 +132,6 @@ function ContextField({ node }: { node: Node }) {
 export default function NoteColumn({ node }: { node: Node }) {
   const { t } = useTranslation()
   useStore()
-  const navigate = useNavigate()
 
   // Movidos = hijos marcados `_moved` y aún sin colocar en el lienzo.
   const moved = store.children(node.id).filter(c => isMovedNode(c) && !nodeHasPin(c))
@@ -212,7 +210,7 @@ export default function NoteColumn({ node }: { node: Node }) {
           data-node-id={c.id}
           draggable
           onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
-          onClick={() => navigate(`/node/${c.id}`)}
+          onClick={() => openNodeDetail(c.id)}
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
           title={t('noteColumn.dragToCanvas')}
         >

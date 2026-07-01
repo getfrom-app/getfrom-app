@@ -5,7 +5,7 @@
  */
 import { useMemo, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { isMarkedContext, contextState, setContextState, contextParent, contextColor, reparentContext, nodesInContext, unassignContext, readContextKnowledge, writeContextKnowledge } from '../../utils/cajones'
@@ -33,7 +33,6 @@ interface Props {
 export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
   const s = useStore()
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const node = s.getNode(nodeId)
 
   // Color heredado del contexto padre (o por defecto de Ajustes). Sin selector.
@@ -95,7 +94,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                 // Píldora navegable (clic en el nombre → ir al padre) + «Cambiar» al estilo de Estado.
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 11px 5px 9px', borderRadius: 999, border: `1px solid ${pColor}40`, background: pColor + '12' }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }} />
-                  <button onClick={() => navigate(`/node/${parent.id}`)} title={t('ctxPanel.goTo', { name: parent.text })}
+                  <button onClick={() => openNodeDetail(parent.id)} title={t('ctxPanel.goTo', { name: parent.text })}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{parent.text}</button>
                   <button onClick={openParentPicker} title={t('ctxPanel.changeParent')}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, color: pColor, opacity: 0.85 }}>· {t('common.change')}</button>
@@ -150,7 +149,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             .sort((a, b) => dueRank(a) - dueRank(b) || (a.due || '').localeCompare(b.due || ''))
           const notas = assigned.filter(a => !a.isEvent && a.status == null)
           const row = (a: typeof assigned[number]) => (
-            <div key={a.id} className={`dc-row ${a.status === 'done' ? 'dc-row--done' : ''}`} onClick={() => navigate(`/node/${a.id}`)}
+            <div key={a.id} className={`dc-row ${a.status === 'done' ? 'dc-row--done' : ''}`} onClick={() => openNodeDetail(a.id)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: a.id, x: e.clientX, y: e.clientY } })) }}>
               {a.isEvent ? (
                 <span className="dc-check" style={{ border: 'none', background: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>
@@ -212,7 +211,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
           const abiertos = kids.filter(c => contextState(c) === 'open')
           const cerrados = kids.filter(c => contextState(c) === 'closed')
           const ctxRow = (c: ReturnType<typeof store.getNode>, closed: boolean) => c && (
-            <div key={c.id} className="dc-row" onClick={() => navigate(`/node/${c.id}`)}
+            <div key={c.id} className="dc-row" onClick={() => openNodeDetail(c.id)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}>
               {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
               <span className="dc-event-dot" style={{ background: contextColor(c.id) }} aria-label={t('ctxPanel.context')} />

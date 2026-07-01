@@ -1308,20 +1308,20 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Crear un nodo colocado en coordenadas de mundo y seleccionarlo (el
   // OutlinerNode embebido se enfoca al estar seleccionado → listo para escribir).
-  const createNodeAt = useCallback((world: WorldPos) => {
+  const createNodeAt = useCallback((world: WorldPos, parentOverride?: string) => {
     // El nodo guarda el ZOOM actual del lienzo (_pinScale) → al pulsarlo después,
-    // la cámara vuela a su posición con ese zoom (estilo iPad).
+    // la cámara vuela a su posición con ese zoom (estilo iPad). Si se pasa
+    // `parentOverride`, el texto NACE dentro de ese contexto (pertenece a él).
     const node = store.createNode({
       text: '',
-      parentId,
+      parentId: parentOverride || parentId,
       extraData: {
         [PIN_X]: String(Math.round(world.x)),
         [PIN_Y]: String(Math.round(world.y)),
         [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
       },
     })
-    // Tras crear, pasar a 'select' (como el Documento): el nodo queda enfocado
-    // (cursor parpadeando) listo para escribir; el hover mostrará dot/tirador.
+    // Tras crear, el nodo queda enfocado (cursor parpadeando) listo para escribir.
     setTool('select')
     setSelectedId(node.id)
   }, [parentId])
@@ -1523,8 +1523,23 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).dataset.bg !== '1') return
     const rect = containerRef.current!.getBoundingClientRect()
-    createNodeAt(screenToWorld(e.clientX - rect.left, e.clientY - rect.top))
-  }, [createNodeAt, screenToWorld])
+    const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
+    // El texto nace DENTRO del contexto más interno donde cae (así pertenece a él);
+    // si cae fuera de todo contexto, cuelga del lienzo.
+    let parent: string | undefined
+    if (globalCanvas) {
+      let bestArea = Infinity
+      for (const a of children) {
+        if (!zoneIds.has(a.id)) continue
+        const r = readAreaRect(a) ?? nestedRef.current?.boxes.get(a.id) ?? null; if (!r) continue
+        if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
+          const sz = r.w * r.h
+          if (sz < bestArea) { bestArea = sz; parent = a.id }
+        }
+      }
+    }
+    createNodeAt(world, parent)
+  }, [createNodeAt, screenToWorld, globalCanvas, children, zoneIds])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     // Conectando con la flecha: seguir el cursor para previsualizar la línea.
@@ -1943,17 +1958,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         const rect = containerRef.current!.getBoundingClientRect()
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-        // Texto → nodo-outliner (cada línea un nodo, Magic detecta tareas).
-        // Documento → nodo `_doc` (TipTap, título + un solo dot).
-        if (toolRef.current === 'text') { createNodeAt(world); return }
-        if (toolRef.current === 'doc') { createTextAt(world); return }
-        // LIENZO: clic en zona VACÍA dentro de un área (contexto) → abre su columna
-        // derecha. Se elige el área MÁS INTERNA que contiene el punto (para nidos).
+        // LIENZO: clic SIMPLE en zona vacía dentro de un área (contexto) → abre su
+        // columna derecha (el área MÁS INTERNA que contiene el punto). Para ESCRIBIR
+        // texto libre se usa el DOBLE CLIC (onBackgroundDoubleClick).
         if (globalCanvas) {
           let best: { id: string; area: number } | null = null
           for (const a of children) {
             if (!zoneIds.has(a.id)) continue
-            const r = readAreaRect(a); if (!r) continue
+            const r = readAreaRect(a) ?? nested?.boxes.get(a.id) ?? null; if (!r) continue
             if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
               const areaSize = r.w * r.h
               if (!best || areaSize < best.area) best = { id: a.id, area: areaSize }
@@ -2788,13 +2800,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title={t('tip.toolEraser')} onClick={() => setTool(t => t === 'eraser' ? 'select' : 'eraser')}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
         </button>
-        <button style={tool === 'text' ? toolBtnActive : toolBtn} title={t('tip.toolText')} onClick={() => setTool(t => t === 'text' ? 'select' : 'text')}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 6V5h12v1M10 5v10M7.5 15h5"/></svg>
-        </button>
-        {/* Documento — texto largo con título (TipTap, un solo dot) */}
-        <button style={tool === 'doc' ? toolBtnActive : toolBtn} title={t('tip.toolDoc')} onClick={() => setTool(t => t === 'doc' ? 'select' : 'doc')}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M5 3h7l3 3v11H5z"/><path d="M12 3v3h3"/><path d="M7.5 11h5M7.5 13.5h5"/></svg>
-        </button>
+        {/* Texto/Documento eliminados: en el lienzo se escribe con DOBLE CLIC en cualquier
+            parte (crea texto libre; slash → tarea/etc.; Magic detecta tarea y fecha). */}
         <div style={vSep} />
         {/* Elementos: Tabla / Kanban / Calendario (nodos hijos del lienzo) */}
         <button style={toolBtn} title={t('tip.toolTable')} onClick={() => createViewElement('tabla')}>

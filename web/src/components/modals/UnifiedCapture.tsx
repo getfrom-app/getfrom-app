@@ -13,7 +13,8 @@ import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
 import { listMarkedContexts, listContextsForParent, assignContext, createContext, contextColor } from '../../utils/cajones'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
 import { normalizeText } from '../../utils/normalize'
@@ -196,8 +197,6 @@ interface Props {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, embedded }: Props) {
-  const routerNavigate = useNavigate()
-  const navigate = onNavigate ?? routerNavigate
   const location = useLocation()
   const { t } = useTranslation()
   const { showToast } = useToast()
@@ -636,7 +635,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         type: 'wf-action' as const,
         taskStatus: null as null,
         score: q ? scoreMatch(n.text || '', q) : 100,
-        action: () => { navigate(`/node/${n.id}`); onClose() },
+        action: () => { openNodeDetail(n.id); onClose() },
       }))
     }
 
@@ -675,7 +674,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           type: 'wf-action' as const,
           taskStatus: null,
           score: 200,
-          action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() },
+          action: () => { const n = getTodayDiaryUnderAgenda(); openNodeDetail(n.id); onClose() },
         },
         {
           id: 'quick-tomorrow',
@@ -687,7 +686,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           action: () => {
             const d = new Date(); d.setDate(d.getDate()+1)
             import('../../utils/agendaHelper').then(({ ensureDayPath }) => {
-              const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose()
+              const n = ensureDayPath(d); openNodeDetail(n.id); onClose()
             })
           },
         },
@@ -734,12 +733,12 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // texto extra: "mañana comprar pan" NO debe ir al atajo, sino a crear la tarea.
     if (qNormStr.length >= 2 && ['hoy', 'today'].some(kw => kw.startsWith(qNormStr))) {
       const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-      return [{ id: 'quick-today', label: t('cmdpalette.todayNote'), sublabel: todayLabel, type: 'wf-action', taskStatus: null, score: 300, action: () => { const n = getTodayDiaryUnderAgenda(); navigate(`/node/${n.id}`); onClose() } }]
+      return [{ id: 'quick-today', label: t('cmdpalette.todayNote'), sublabel: todayLabel, type: 'wf-action', taskStatus: null, score: 300, action: () => { const n = getTodayDiaryUnderAgenda(); openNodeDetail(n.id); onClose() } }]
     }
     if (qNormStr.length >= 2 && ['mañana', 'manana', 'tomorrow'].some(kw => kw.startsWith(qNormStr))) {
       const d = new Date(); d.setDate(d.getDate() + 1)
       const label = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-      return [{ id: 'quick-tomorrow', label: t('cmdpalette.tomorrowNote'), sublabel: label, type: 'wf-action', taskStatus: null, score: 300, action: () => { import('../../utils/agendaHelper').then(({ ensureDayPath }) => { const n = ensureDayPath(d); navigate(`/node/${n.id}`); onClose() }) } }]
+      return [{ id: 'quick-tomorrow', label: t('cmdpalette.tomorrowNote'), sublabel: label, type: 'wf-action', taskStatus: null, score: 300, action: () => { import('../../utils/agendaHelper').then(({ ensureDayPath }) => { const n = ensureDayPath(d); openNodeDetail(n.id); onClose() }) } }]
     }
 
     // "filtros" → vista filtros
@@ -778,12 +777,12 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       const tagQuery = q.slice(1).toLowerCase()
       const allTags = store.allUsedTags()
       if (!tagQuery) {
-        return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { navigate(`/node/${nodes[0].id}`); onClose(); return }; navigate(`/tag/${tag}`); onClose() } }))
+        return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { openNodeDetail(nodes[0].id); onClose(); return }; window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: '#' + tag } })); onClose() } }))
       }
       const matchingTags = allTags.filter(tg => tg.toLowerCase().includes(tagQuery))
-      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { navigate(`/tag/${tag}`); onClose() } }))
+      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: '#' + tag } })); onClose() } }))
       const exactTag = matchingTags.find(tg => tg.toLowerCase() === tagQuery)
-      const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || 'Sin título', sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: (n.status as 'pending' | 'done' | null) ?? null, score: 50, action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() } })) : []
+      const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || 'Sin título', sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: (n.status as 'pending' | 'done' | null) ?? null, score: 50, action: () => { recordRecentNode(n.id); openNodeDetail(n.id); onClose() } })) : []
       return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
     }
 
@@ -849,7 +848,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         type: 'note' as const,
         taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
         score: isBucleNode ? sc + 30 : sc,  // bucles flotan arriba
-        action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() },
+        action: () => { recordRecentNode(n.id); openNodeDetail(n.id); onClose() },
       })
     }
     results.sort((a, b) => b.score - a.score)
@@ -878,7 +877,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     })
 
     return results
-  }, [text, view, navigate, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast, datePrediction, taskPrediction, forceType]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [text, view, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast, datePrediction, taskPrediction, forceType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = buildItems()
 
@@ -951,7 +950,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           const cleaned = cur.replace(/(?:\s*)#[^#@]+?\s*$/, '').replace(/\s+$/, '')
           // Sin texto previo → era SOLO crear el contexto: navegar a él y cerrar.
           if (!cleaned.trim()) {
-            navigate(`/node/${cid}`)
+            openNodeDetail(cid)
             onClose()
             return
           }

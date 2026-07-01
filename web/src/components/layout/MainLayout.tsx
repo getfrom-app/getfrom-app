@@ -139,6 +139,7 @@ import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '..
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { isMarkedContext } from '../../utils/cajones'
+import { TaskPropsBody } from '../modals/TaskPropsModal'
 import { isCanvasRoot } from '../../utils/canvasRoot'
 import { ensureDiaryForDate } from '../../utils/diaryNav'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -179,6 +180,7 @@ export default function MainLayout() {
     | 'settings'
     | 'audio'
     | 'day'
+    | 'task'
     | 'doc'
     | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
@@ -625,11 +627,13 @@ export default function MainLayout() {
       setRightCollapsed(false)
       setDetailNodeId(id)
       if (isDocNode(n)) { setRightPanel('doc'); return }
+      // TAREA/evento → columna de TAREA (fecha, repetición, prioridad), en el lienzo.
+      if (n.status != null || n.isEvent) { setRightPanel('task'); return }
       // Contexto/prompt/agente/plantilla por ubicación en el árbol; ADEMÁS, cualquier
       // nodo marcado como contexto (`_ctx='1'`, p.ej. un ÁREA del lienzo) abre su
       // columna de contexto aunque no cuelgue de la raíz 🧠 Contexto.
       const kind = classifyNodeRoot(id) ?? (isMarkedContext(n) ? 'context' as const : null)
-      // Nota / tarea / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
+      // Nota / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
       setRightPanel(kind ?? 'day')
       // Contexto con cuerpo físico (área): además de su columna, el lienzo vuela a su
       // posición. Si no tiene área, PizarraView ignora el evento (no hay dónde volar).
@@ -1303,6 +1307,12 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={dayPanelNodeId} />
+          )}
+          {rightPanel === 'task' && detailNodeId && (
+            <div style={{ height: '100%', overflowY: 'auto', padding: '16px 16px 88px' }}>
+              <div className="rc-section-label" style={{ marginBottom: 10 }}>⚙ {t('taskPropsModal.title')}</div>
+              <TaskPropsBody nodeId={detailNodeId} />
+            </div>
           )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />

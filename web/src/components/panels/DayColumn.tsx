@@ -8,7 +8,7 @@
 // Cada cabecera de bloque colapsa su contenido (clic). Persistente.
 
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -75,7 +75,6 @@ export default function DayColumn({
   includeNodes?: boolean
 }) {
   useStore()
-  const navigate = useNavigate()
   const us = useUserStore()
   const { t } = useTranslation()
 
@@ -182,7 +181,7 @@ export default function DayColumn({
                   onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-                  <span className="dc-text" onClick={() => navigate(`/node/${ev.id}`)} style={{ cursor: 'pointer' }}>
+                  <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
                     {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
                   </span>
                   <button
@@ -232,7 +231,7 @@ export default function DayColumn({
                 onClick={e => { e.stopPropagation(); toggleTaskDone(task) }} title={t('daily.markDone')} aria-label={t('daily.markDone')}>
                 {task.status === 'done' ? '✓' : ''}
               </button>
-              <span className="dc-text" onClick={() => navigate(`/node/${task.id}`)} style={{ cursor: 'pointer' }}>
+              <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
                 {task.text ? renderInline(task.text) : t('tip.task')}
               </span>
               {hhmm(task.due) !== '00:00' && task.due && <span className="dc-time">{hhmm(task.due)}</span>}
@@ -328,7 +327,7 @@ export default function DayColumn({
               data-node-id={c.id}
               draggable
               onDragStart={e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'copy' }}
-              onClick={() => navigate(`/node/${c.id}`)}
+              onClick={() => openNodeDetail(c.id)}
               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: c.id, x: e.clientX, y: e.clientY } })) }}
               title={t('tip.dragToCanvas')}
             >
@@ -358,7 +357,7 @@ export default function DayColumn({
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)
               extraData: JSON.stringify({ _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
             })
-            navigate(`/node/${newNode.id}`)
+            openNodeDetail(newNode.id)
           }}
           onUpdated={ev => { setGcalEvents(p => p.map(x => x.id === ev.id ? ev : x)); setEditingGcal(null) }}
           onDeleted={id => { setGcalEvents(p => p.filter(x => x.id !== id)); setEditingGcal(null) }} />

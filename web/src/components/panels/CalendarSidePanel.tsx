@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { TaskPropsPopover } from './DiaryRightPanel'
 import PendingTaskRow from '../shared/PendingTaskRow'
 
@@ -307,7 +308,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
     : view === 'month' ? 'meses siguientes'
     : 'años siguientes'
 
-  const navigate = (id: string) => { window.location.href = `/app/node/${id}` }
+  const navigate = (id: string) => openNodeDetail(id) // abre en el lienzo, sin recargar
 
   const hasAnything = containers.length > 0 || overdue.length > 0 || unscheduled.length > 0 || future.length > 0 || resources.length > 0
 

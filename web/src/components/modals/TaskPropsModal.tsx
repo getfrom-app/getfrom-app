@@ -10,7 +10,10 @@ import { useTranslation } from 'react-i18next'
 const REC_UNITS: [string, string][] = [['daily', 'taskPropsModal.recDays'], ['weekly', 'taskPropsModal.recWeeks'], ['monthly', 'taskPropsModal.recMonths'], ['yearly', 'taskPropsModal.recYears']]
 const PRIORITIES: [string, string][] = [['high', 'priority.high'], ['medium', 'priority.medium'], ['low', 'priority.low']]
 
-export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+/** Cuerpo reutilizable de las propiedades de tarea (fecha / hora / recurrencia /
+ *  prioridad). Lo usan el MODAL (`TaskPropsModal`) y la COLUMNA DERECHA de tarea en el
+ *  lienzo (panel 'task'), sin duplicar lógica. */
+export function TaskPropsBody({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation()
   useStore() // re-render al cambiar el nodo
   const node = store.getNode(nodeId)
@@ -54,10 +57,8 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
   const label: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary,#999)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '14px 0 6px' }
   const input: React.CSSProperties = { padding: '6px 9px', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg-primary,#fff)', color: 'var(--text-primary)', font: 'inherit' }
 
-  return createPortal(
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal--small" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 380 }}>
-        <h3 className="modal-title" style={{ marginBottom: 2 }}>⚙ {t('taskPropsModal.title')}</h3>
+  return (
+    <>
         <div style={{ fontSize: 13, color: 'var(--text-secondary,#666)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.text || t('taskPropsModal.taskFallback')}</div>
 
         {/* Fecha rápida */}
@@ -95,6 +96,20 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
           ))}
         </div>
 
+    </>
+  )
+}
+
+/** Modal global de propiedades de tarea (lo abre MainLayout con `from:open-task-props`
+ *  cuando el nodo NO está montado como fila de outliner). Envuelve `TaskPropsBody`. */
+export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+  const { t } = useTranslation()
+  if (!store.getNode(nodeId)) return null
+  return createPortal(
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal modal--small" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 380 }}>
+        <h3 className="modal-title" style={{ marginBottom: 2 }}>⚙ {t('taskPropsModal.title')}</h3>
+        <TaskPropsBody nodeId={nodeId} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
           <button className="btn-primary" onClick={onClose}>{t('taskPropsModal.done')}</button>
         </div>
