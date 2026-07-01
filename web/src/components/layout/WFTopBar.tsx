@@ -3,7 +3,6 @@
  * 🏠 › Padre › Nodo actual   ···
  */
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ensureCanvasRoot } from '../../utils/canvasRoot'
 import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
@@ -201,18 +200,6 @@ export default function WFTopBar({
           <rect x="7" y="10" width="12" height="4" rx="1" fill="currentColor" stroke="none"/>
           <line x1="3" y1="18" x2="21" y2="18"/>
           <rect x="3" y="16" width="6" height="4" rx="1" fill="currentColor" stroke="none"/>
-        </svg>
-      </button>
-
-      {/* Lienzo infinito */}
-      <button
-        className="wf-topbar-btn"
-        onClick={() => navigate(`/node/${ensureCanvasRoot().id}`)}
-        title={t('wftopbar.canvas', 'Lienzo')}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M3 9h18M9 3v18"/>
         </svg>
       </button>
 

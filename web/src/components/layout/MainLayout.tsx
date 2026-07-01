@@ -28,6 +28,7 @@ import { findContextRoot } from '../../utils/rootLookup'
 import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
+import { ensureCanvasRoot } from '../../utils/canvasRoot'
 import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
@@ -41,6 +42,19 @@ function DiaryRedirect() {
     if (diary) navigate(`/node/${diary.id}`, { replace: true })
   }, [diary?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   return <div className="view-loading">{t('app.loadingDiary')}</div>
+}
+
+// Home = el lienzo infinito. Al abrir la app aterrizas en el nodo-lienzo raíz
+// (en modo pizarra), siempre presente. No hay que pulsar ningún botón.
+function CanvasHome() {
+  const navigate = useNavigate()
+  const s = useStore()
+  void s.nodesVersion
+  useEffect(() => {
+    const root = ensureCanvasRoot()
+    navigate(`/node/${root.id}`, { replace: true })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className="view-loading" />
 }
 // Eliminadas en v9.1: TasksView, ChatView, KanbanView, TagView, FilesView, InboxView, TrashView
 // (reemplazadas por nodos del árbol o eliminadas sin sustituto)
@@ -1107,7 +1121,13 @@ export default function MainLayout() {
         {/* Mobile header eliminado — sidebar eliminado */}
         <Suspense fallback={<div className="view-loading">{t('common.loading')}</div>}>
         <Routes>
-          <Route index element={<WFHomeView filterText={filterText} contextFilterId={contextNodeId} />} />
+          {/* Home = lienzo infinito (siempre presente). Con filtro activo (⌘F /
+              «Sin clasificar»), sigue mostrando el home filtrable para no romper la búsqueda. */}
+          <Route index element={
+            (filterText || contextNodeId)
+              ? <WFHomeView filterText={filterText} contextFilterId={contextNodeId} />
+              : <CanvasHome />
+          } />
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />
           {/* SearchView: resultados de filtros y atajos (⌘F, shortcuts) — MANTENER */}
