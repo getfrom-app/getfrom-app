@@ -321,7 +321,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
 
 export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, globalCanvas }: Props) {
   const { t } = useTranslation()
-  useStore() // re-render ante cambios del store
+  const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   // Cámara: se PERSISTE en el body (camX/Y/Scale, el mismo campo que el iPad) para
@@ -503,11 +503,26 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // Hijos del lienzo + los anidados dentro de ÁREAS (las cards de un área son sus
   // hijas; el lienzo las pinta igual, por su pin). El área en sí se pinta como frame.
   const directChildren = store.children(parentId)
-  const children = (() => {
+  // LIENZO GLOBAL: un solo plano = TODO el subárbol posicionado (recursivo). Las
+  // zonas (contextos/áreas) son marcos que contienen a sus hijos, en el MISMO
+  // plano (pins absolutos). Fuera de global: hijos directos + un nivel de áreas.
+  const children = useMemo(() => {
+    if (globalCanvas) {
+      const out: Node[] = []
+      const seen = new Set<string>()
+      const walk = (id: string) => {
+        for (const c of store.children(id)) {
+          if (c.deletedAt || seen.has(c.id)) continue
+          seen.add(c.id); out.push(c); walk(c.id)
+        }
+      }
+      walk(parentId)
+      return out
+    }
     const out = [...directChildren]
     for (const n of directChildren) if (isArea(n)) out.push(...store.children(n.id).filter(c => !c.deletedAt))
     return out
-  })()
+  }, [parentId, globalCanvas, nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
   const refIds = readRefs(parentId)
   const refsKey = refIds.join(',')
@@ -553,6 +568,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // (orden natural, sin solaparse). Los eventos GCal NO van al lienzo (viven en la
   // columna derecha). Al arrastrar uno del flujo gana pin y pasa a flotar.
   const flowNodes = useMemo(() => {
+    if (globalCanvas) return [] as Node[] // en el plano único solo aparece lo COLOCADO
     if (!flowUnpositioned) return [] as Node[]
     // En la diaria, todo lo que vive en la columna derecha (eventos, capturas y
     // tareas/bucles del cockpit) NO se pinta en el lienzo (evita duplicados).
@@ -565,7 +581,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     if (isDiary) return [] as Node[]
     // _moved → bloque «Movidos» de la nota (no en el lienzo hasta colocarlo).
     return children.filter(n => !isHiddenPin(n) && !isDocNode(n) && !canvasViewKind(n) && !readPin(n) && !getGcalEventId(n) && !n.isEvent && !isCapturePin(n) && !isMovedNode(n) && !isContextKnowledge(n.text))
-  }, [children, flowUnpositioned, parentId])
+  }, [children, flowUnpositioned, parentId, globalCanvas])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
   // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
