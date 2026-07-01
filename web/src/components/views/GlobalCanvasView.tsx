@@ -267,9 +267,6 @@ export default function GlobalCanvasView() {
         <button className="gc-btn" onClick={fitAll} style={{ ...gcBtn, width: 'auto', padding: '0 12px' }} title={t('globalCanvas.fitAll', 'Reencuadrar')}>
           {t('globalCanvas.fitAll', 'Reencuadrar')}
         </button>
-        <button className="gc-btn" onClick={() => window.dispatchEvent(new CustomEvent('from:open-day-agg'))} style={{ ...gcBtn, width: 'auto', padding: '0 12px' }} title={t('globalCanvas.openDay', 'Día')}>
-          {t('globalCanvas.openDay', 'Día')}
-        </button>
         <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 4 }}>
           {Math.round(cam.scale * 100)}%
         </span>
