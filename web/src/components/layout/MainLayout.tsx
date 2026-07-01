@@ -1182,6 +1182,7 @@ export default function MainLayout() {
           onToggleAgentList={() => togglePanel('agent-list')}
           onToggleRecorder={() => togglePanel('recorder')}
           rightPanel={rightPanel}
+          detailNodeId={detailNodeId}
         />
       </div>
 

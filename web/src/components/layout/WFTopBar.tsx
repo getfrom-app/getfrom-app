@@ -26,6 +26,7 @@ interface Props {
   onToggleAgentList?: () => void
   onToggleRecorder?: () => void
   rightPanel?: string | null
+  detailNodeId?: string | null // nodo seleccionado en el lienzo → fuente del breadcrumb
 }
 
 export default function WFTopBar({
@@ -42,6 +43,7 @@ export default function WFTopBar({
   onToggleAgentList,
   onToggleRecorder,
   rightPanel,
+  detailNodeId,
 }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -63,14 +65,16 @@ export default function WFTopBar({
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isNodeView = path.startsWith('/node/')
   const nodeId = isNodeView ? path.split('/node/')[1] : null
-  // En el LIENZO (index /app) no hay breadcrumb: la app ES el lienzo, sin cromo encima.
+  // En el LIENZO (index /app) la fuente del breadcrumb es el NODO SELECCIONADO (columna
+  // derecha abierta): muestra su jerarquía de contextos padre › … › nodo, clicable.
   const onCanvas = path === '/' || isCanvasRoot(nodeId ? s.getNode(nodeId) : null)
+  const crumbSourceId = onCanvas ? (detailNodeId ?? null) : nodeId
 
   const { ancestors, current } = useMemo(() => {
-    if (!nodeId) return { ancestors: [], current: null }
+    if (!crumbSourceId) return { ancestors: [], current: null }
     // Build path walking UP from current node
     const fullPath: Array<{ label: string; id: string }> = []
-    let cur = s.getNode(nodeId)
+    let cur = s.getNode(crumbSourceId)
     const visited = new Set<string>()
     while (cur && !visited.has(cur.id)) {
       visited.add(cur.id)
@@ -78,16 +82,15 @@ export default function WFTopBar({
       if (!cur.parentId) break
       cur = s.getNode(cur.parentId) ?? undefined
     }
-    // fullPath = [root, ..., parent, current]
-    // Ocultar la raíz 🏠 From del breadcrumb (es el home, representado por el icono 🏠).
-    // Agenda sí se muestra ahora (es una raíz visible más).
-    const HIDDEN = new Set(['🏠 From'])
+    // fullPath = [root, ..., parent, current]. Ocultar raíces estructurales (home,
+    // 🧠 Contexto / 🏷 Tags, lienzo): el breadcrumb empieza en el contexto raíz real.
+    const HIDDEN = new Set(['🏠 From', '🧠 Contexto', '🏷 Tags', '🌍 Lienzo'])
     const visible = fullPath.filter(n => !HIDDEN.has(n.label))
     const current = visible[visible.length - 1] ?? null
     const ancestors = visible.slice(0, -1)
     return { ancestors, current }
     // s.nodesVersion → recalcular cuando cambie el TEXTO de un nodo (ej.: título auto)
-  }, [nodeId, s, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [crumbSourceId, s, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Truncate long labels for display
   const truncate = (label: string, max = 22) =>
@@ -127,22 +130,22 @@ export default function WFTopBar({
 
       {/* ── Breadcrumb integrado con casa. En el LIENZO se oculta pero el div queda
              como hueco flex:1 → los botones de acción siguen a la DERECHA. ── */}
-      <div className="wf-topbar-breadcrumb" style={onCanvas ? { flex: 1 } : undefined}>
-        {!onCanvas && (<>
-        {/* Casa — siempre visible, lleva al raíz */}
-        <button className="wf-topbar-crumb-home" onClick={goHome} title={t('common.home')}>
+      <div className="wf-topbar-breadcrumb" style={onCanvas && !current ? { flex: 1 } : undefined}>
+        {(!onCanvas || current) && (<>
+        {/* Casa — en el lienzo deselecciona (vuelve a la columna del día); fuera, va al raíz */}
+        <button className="wf-topbar-crumb-home" onClick={onCanvas ? () => window.dispatchEvent(new CustomEvent('from:close-detail')) : goHome} title={t('common.home')}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
           </svg>
         </button>
 
-        {/* Ancestros clickables */}
+        {/* Ancestros clickables. En el lienzo → abre su columna + vuela (no navega). */}
         {ancestors.map(a => (
           <span key={a.id} className="wf-topbar-crumb-segment">
             <span className="wf-topbar-crumb-sep">›</span>
             <button
               className="wf-topbar-crumb-btn"
-              onClick={() => navigate(`/node/${a.id}`)}
+              onClick={() => { if (onCanvas) window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } })); else navigate(`/node/${a.id}`) }}
               title={a.label}
             >
               {truncate(a.label)}
