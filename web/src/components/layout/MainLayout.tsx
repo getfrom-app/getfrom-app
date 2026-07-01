@@ -249,6 +249,9 @@ export default function MainLayout() {
     setContextNodeId(null)            // limpiar el filtro "Sin clasificar" si estaba activo
     setDetailNodeId(nodeId)
     setRightPanel(kind)
+    // Prompts/agentes son CONFIGURACIÓN (no contenido del lienzo): abren su editor
+    // completo (contenido + propiedades). Los CONTEXTOS van por handleSelectContext,
+    // que en el lienzo abre su columna en el sitio sin navegar.
     navigate(`/node/${nodeId}`)
   }
   function backToList(kind: 'context' | 'prompt' | 'agent' | 'template') {
