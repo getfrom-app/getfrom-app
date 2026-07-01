@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { store } from '../../store/nodeStore'
 import { findContextRoot } from '../../utils/rootLookup'
-import { listMarkedContexts, assignContext, createContext, contextColor } from '../../utils/cajones'
+import { listMarkedContexts, listContextsForParent, assignContext, createContext, contextColor } from '../../utils/cajones'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
@@ -642,9 +642,10 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
     // ── Vista CONTEXTOS ────────────────────────────────────────────────────
     if (view === 'contextos') {
-      // TODOS los contextos (incluidos los creados como área en el lienzo), no solo
-      // los hijos directos de la raíz 🧠 Contexto.
-      const ctxAll = listMarkedContexts({ includeClosed: true }).filter(n => n.text)
+      // TODOS los contextos del árbol: RAÍZ (hijos de 🧠 Contexto, sin `_ctx`) +
+      // MARCADOS (`_ctx='1'`, incluidas las áreas del lienzo). listMarkedContexts NO
+      // trae los raíz → hay que usar listContextsForParent.
+      const ctxAll = listContextsForParent().filter(n => n.text)
       const filtered = q ? ctxAll.filter(n => normalizeText(n.text).includes(qNorm)) : ctxAll
       if (filtered.length === 0) return [{
         id: 'no-ctx',
@@ -703,7 +704,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           id: 'cat-contextos',
           label: 'Contextos',
           sublabel: (() => {
-            const c = listMarkedContexts({ includeClosed: true }).length
+            const c = listContextsForParent().length
             return c > 0 ? `${c} contextos` : 'Sin contextos'
           })(),
           type: 'wf-action' as const,
@@ -760,7 +761,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // vivan: bajo la raíz 🧠 Contexto O creados como ÁREA en el lienzo (que no cuelgan
     // de esa raíz). Enter → abre su columna derecha y vuela el lienzo a su posición.
     {
-      const ctxNodes = listMarkedContexts({ includeClosed: true })
+      const ctxNodes = listContextsForParent()
         .filter(n => n.text && normalizeText(n.text).includes(qNormStr))
       if (ctxNodes.length > 0) {
         return ctxNodes.map(n => ({

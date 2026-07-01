@@ -10,10 +10,12 @@
 // su propio «🧠 Lo que Fromly sabe»), el propio nodo de conocimiento, capturas y logs.
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { listMarkedContexts, isMarkedContext } from './cajones'
+import { listContextsForParent, isMarkedContext } from './cajones'
 import { isContextKnowledge, CONTEXT_KNOWLEDGE } from './knowledgeNodes'
 
-const FLAG = 'from-migrate-ctx-ref-v1'
+// v2: la v1 usaba listMarkedContexts (solo `_ctx='1'`) → se saltaba los contextos
+// RAÍZ (Media Sector, La Isla, Personal…). v2 usa listContextsForParent (raíz + marcados).
+const FLAG = 'from-migrate-ctx-ref-v2'
 
 function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
@@ -62,7 +64,7 @@ export function migrateContextReferenceOnce(): { contexts: number; moved: number
   let touchedContexts = 0
   store.beginBatch()
   try {
-    for (const ctx of listMarkedContexts({ includeClosed: true })) {
+    for (const ctx of listContextsForParent()) {
       // Candidatos: hijos DIRECTOS que son info de referencia.
       const refs = store.children(ctx.id).filter(isReferenceContent)
       if (refs.length === 0) continue
