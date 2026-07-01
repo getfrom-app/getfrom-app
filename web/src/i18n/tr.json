@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Bu günde bir şey yok",
   "globalCanvas.openDay": "Gün",
   "miniCal.goToDay": "Bir güne git",
-  "miniCal.today": "Bugün"
+  "miniCal.today": "Bugün",
+  "wftopbar.canvas": "Tuval"
 }

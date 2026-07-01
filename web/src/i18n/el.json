@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Τίποτα αυτή την ημέρα",
   "globalCanvas.openDay": "Ημέρα",
   "miniCal.goToDay": "Μετάβαση σε ημέρα",
-  "miniCal.today": "Σήμερα"
+  "miniCal.today": "Σήμερα",
+  "wftopbar.canvas": "Καμβάς"
 }

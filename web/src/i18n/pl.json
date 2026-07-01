@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Nic tego dnia",
   "globalCanvas.openDay": "Dzień",
   "miniCal.goToDay": "Przejdź do dnia",
-  "miniCal.today": "Dziś"
+  "miniCal.today": "Dziś",
+  "wftopbar.canvas": "Płótno"
 }

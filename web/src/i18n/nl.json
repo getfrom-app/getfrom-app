@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Niets op deze dag",
   "globalCanvas.openDay": "Dag",
   "miniCal.goToDay": "Naar een dag",
-  "miniCal.today": "Vandaag"
+  "miniCal.today": "Vandaag",
+  "wftopbar.canvas": "Canvas"
 }

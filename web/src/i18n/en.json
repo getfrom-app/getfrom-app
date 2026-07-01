@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Nothing on this day",
   "globalCanvas.openDay": "Day",
   "miniCal.goToDay": "Go to a day",
-  "miniCal.today": "Today"
+  "miniCal.today": "Today",
+  "wftopbar.canvas": "Canvas"
 }

@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Ничего в этот день",
   "globalCanvas.openDay": "День",
   "miniCal.goToDay": "Перейти к дню",
-  "miniCal.today": "Сегодня"
+  "miniCal.today": "Сегодня",
+  "wftopbar.canvas": "Холст"
 }

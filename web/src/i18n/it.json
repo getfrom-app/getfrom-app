@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Niente questo giorno",
   "globalCanvas.openDay": "Giorno",
   "miniCal.goToDay": "Vai a un giorno",
-  "miniCal.today": "Oggi"
+  "miniCal.today": "Oggi",
+  "wftopbar.canvas": "Tela"
 }

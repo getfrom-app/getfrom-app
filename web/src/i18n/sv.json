@@ -1953,5 +1953,6 @@
   "dayAgg.empty": "Inget denna dag",
   "globalCanvas.openDay": "Dag",
   "miniCal.goToDay": "Gå till en dag",
-  "miniCal.today": "Idag"
+  "miniCal.today": "Idag",
+  "wftopbar.canvas": "Arbetsyta"
 }
