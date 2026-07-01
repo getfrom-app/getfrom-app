@@ -2501,7 +2501,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => nodeCtx(e, node.id)}>
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
+                /* LIENZO ÚNICO: nunca se entra a un nodo. El dot (abrir página) y los
+                   chips de contexto NO navegan → solo SELECCIONAN (abre su columna derecha). */
+                onClickCapture={(e) => {
+                  if (!globalCanvas) return
+                  const tgt = e.target as HTMLElement
+                  if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, a')) {
+                    e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
+                  }
+                }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             )}
@@ -2599,7 +2608,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 /* Capturar el clic derecho ANTES de que llegue al node-row de OutlinerNode
                    (que abriría su propio menú) → solo se abre el menú del lienzo. Evita
                    la duplicidad de dos menús superpuestos. */
-                onContextMenuCapture={(e) => nodeCtx(e, node.id)}>
+                onContextMenuCapture={(e) => nodeCtx(e, node.id)}
+                /* LIENZO ÚNICO: nunca se entra a un nodo. El dot (abrir página) y los
+                   chips de contexto NO navegan → solo SELECCIONAN (abre su columna derecha). */
+                onClickCapture={(e) => {
+                  if (!globalCanvas) return
+                  const tgt = e.target as HTMLElement
+                  if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, a')) {
+                    e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
+                  }
+                }}>
                 <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
               </div>
             </div>
