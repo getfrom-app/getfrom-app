@@ -9,6 +9,8 @@
  * y no se permite cambiar el modificador — solo la tecla base.
  */
 
+import i18n from '../i18n/config'
+
 const STORAGE_KEY = 'from_wf_hotkeys'
 
 export interface HotkeyDef {
@@ -70,6 +72,103 @@ export const DEFAULT_HOTKEYS: HotkeyDef[] = [
   { id: 'code',             category: 'Formato',      label: 'Código',                   description: 'Aplicar / quitar formato de código',               defaultKey: 'e',          modifiers: ['meta'], configurable: false },
 ]
 
+// ── i18n (traducción en tiempo de acceso, no en carga de módulo) ──────────────
+// Las claves siguen la convención hotkeys.<camelCaseId> y hotkeys.cat<Categoria>.
+// El texto español de DEFAULT_HOTKEYS actúa como fallback si falta la traducción.
+
+const HOTKEY_LABEL_KEYS: Record<string, string> = {
+  'quick-capture':   'hotkeys.quickCapture',
+  'go-today':        'hotkeys.goToday',
+  'new-today':       'hotkeys.newToday',
+  'toggle-filter':   'hotkeys.toggleFilter',
+  'search-in-note':  'hotkeys.searchInNote',
+  'toggle-magic':    'hotkeys.toggleMagic',
+  'toggle-planner':  'hotkeys.togglePlanner',
+  'toggle-contexts': 'hotkeys.toggleContexts',
+  'toggle-recorder': 'hotkeys.toggleRecorder',
+  'command-palette': 'hotkeys.commandPalette',
+  'show-shortcuts':  'hotkeys.showShortcuts',
+  'settings':        'hotkeys.settings',
+  'go-back':         'hotkeys.goBack',
+  'go-forward':      'hotkeys.goForward',
+  'escape-up':       'hotkeys.escapeUp',
+  'new-sibling':     'hotkeys.newSibling',
+  'zoom-in':         'hotkeys.zoomIn',
+  'indent':          'hotkeys.indent',
+  'outdent':         'hotkeys.outdent',
+  'toggle-task':     'hotkeys.toggleTask',
+  'slash-menu':      'hotkeys.slashMenu',
+  'context-picker':  'hotkeys.contextPicker',
+  'collapse-all':    'hotkeys.collapseAll',
+  'undo':            'hotkeys.undo',
+  'redo':            'hotkeys.redo',
+  'delete-selected': 'hotkeys.deleteSelected',
+  'clear-selection': 'hotkeys.clearSelection',
+  'bold':            'hotkeys.bold',
+  'italic':          'hotkeys.italic',
+  'code':            'hotkeys.code',
+}
+
+const HOTKEY_DESC_KEYS: Record<string, string> = {
+  'quick-capture':   'hotkeys.quickCaptureDesc',
+  'go-today':        'hotkeys.goTodayDesc',
+  'new-today':       'hotkeys.newTodayDesc',
+  'toggle-filter':   'hotkeys.toggleFilterDesc',
+  'search-in-note':  'hotkeys.searchInNoteDesc',
+  'toggle-magic':    'hotkeys.toggleMagicDesc',
+  'toggle-planner':  'hotkeys.togglePlannerDesc',
+  'toggle-contexts': 'hotkeys.toggleContextsDesc',
+  'toggle-recorder': 'hotkeys.toggleRecorderDesc',
+  'command-palette': 'hotkeys.commandPaletteDesc',
+  'show-shortcuts':  'hotkeys.showShortcutsDesc',
+  'settings':        'hotkeys.settingsDesc',
+  'go-back':         'hotkeys.goBackDesc',
+  'go-forward':      'hotkeys.goForwardDesc',
+  'escape-up':       'hotkeys.escapeUpDesc',
+  'new-sibling':     'hotkeys.newSiblingDesc',
+  'zoom-in':         'hotkeys.zoomInDesc',
+  'indent':          'hotkeys.indentDesc',
+  'outdent':         'hotkeys.outdentDesc',
+  'toggle-task':     'hotkeys.toggleTaskDesc',
+  'slash-menu':      'hotkeys.slashMenuDesc',
+  'context-picker':  'hotkeys.contextPickerDesc',
+  'collapse-all':    'hotkeys.collapseAllDesc',
+  'undo':            'hotkeys.undoDesc',
+  'redo':            'hotkeys.redoDesc',
+  'delete-selected': 'hotkeys.deleteSelectedDesc',
+  'clear-selection': 'hotkeys.clearSelectionDesc',
+  'bold':            'hotkeys.boldDesc',
+  'italic':          'hotkeys.italicDesc',
+  'code':            'hotkeys.codeDesc',
+}
+
+const HOTKEY_CATEGORY_KEYS: Record<string, string> = {
+  'Captura':    'hotkeys.catCapture',
+  'Paneles':    'hotkeys.catPanels',
+  'Navegación': 'hotkeys.catNav',
+  'Outliner':   'hotkeys.catOutliner',
+  'Selección':  'hotkeys.catSelection',
+  'Formato':    'hotkeys.catFormat',
+}
+
+/** Etiqueta traducida de un hotkey (fallback: español de DEFAULT_HOTKEYS) */
+export function getHotkeyLabel(def: HotkeyDef): string {
+  const key = HOTKEY_LABEL_KEYS[def.id]
+  return key ? i18n.t(key, { defaultValue: def.label }) : def.label
+}
+
+/** Descripción traducida de un hotkey (fallback: español) */
+export function getHotkeyDescription(def: HotkeyDef): string {
+  const key = HOTKEY_DESC_KEYS[def.id]
+  return key ? i18n.t(key, { defaultValue: def.description }) : def.description
+}
+
+/** Categoría traducida de un hotkey (fallback: español) */
+export function getHotkeyCategory(category: string): string {
+  const key = HOTKEY_CATEGORY_KEYS[category]
+  return key ? i18n.t(key, { defaultValue: category }) : category
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function loadCustomKeys(): Record<string, string> {
@@ -112,6 +211,9 @@ export function getAllHotkeys(): (HotkeyDef & { currentKey: string; isCustom: bo
   const custom = loadCustomKeys()
   return DEFAULT_HOTKEYS.map(def => ({
     ...def,
+    label: getHotkeyLabel(def),
+    description: getHotkeyDescription(def),
+    category: getHotkeyCategory(def.category),
     currentKey: custom[def.id] ?? def.defaultKey,
     isCustom: !!custom[def.id],
   }))

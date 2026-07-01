@@ -3,11 +3,13 @@
 // pantalla sube (con debounce). Las herramientas del lienzo marcan por encima
 // (strokes en el body, autoguardados); el dot abre el editor completo.
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfDoc = any
 
 export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url: string; width: number; scale?: number; title?: string }) {
+  const { t } = useTranslation()
   const docRef = useRef<PdfDoc | null>(null)
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const renderedTargetRef = useRef(0)
@@ -73,7 +75,7 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px' }}>
         <span style={{ fontSize: 30, lineHeight: 1 }}>📄</span>
-        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{title || 'Documento PDF'}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{title || t('pdf.document')}</span>
       </div>
     )
   }
@@ -84,7 +86,7 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
           style={{ display: 'block', width: '100%', height: 'auto', borderBottom: idx < pages - 1 ? '1px solid #eaeaea' : undefined }} />
       ))}
       {state === 'loading' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary,#aaa)', fontSize: 13 }}>📄 Cargando PDF…</div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary,#aaa)', fontSize: 13 }}>{t('pdf.loadingPdf')}</div>
       )}
     </div>
   )

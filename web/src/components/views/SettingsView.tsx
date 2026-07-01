@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/config'
 import {
   CuentaPane,
   AparienciaPane,
@@ -30,6 +31,7 @@ import { isContextKnowledge } from '../../utils/knowledgeNodes'
 // (no hay botón). "Ver y editar" lleva a lo que Fromly ha escrito por su cuenta.
 
 function MagicPane() {
+  const { t } = useTranslation()
   const s = useStore()
   const navigate = useNavigate()
   const ls = useLearningsStore()
@@ -53,39 +55,39 @@ function MagicPane() {
     for (const ctx of s.children(root.id)) {
       if (ctx.deletedAt || (ctx.text || '').startsWith('🧠')) continue
       const kn = s.children(ctx.id).find(n => !n.deletedAt && isContextKnowledge(n.text))
-      if (kn) out.push({ name: ctx.text || 'Contexto', id: kn.id })
+      if (kn) out.push({ name: ctx.text || t('settingsView.context'), id: kn.id })
     }
     return out
   })()
 
   return (
     <div className="st-pane">
-      <div className="st-section-title">Lo que Fromly sabe de ti</div>
+      <div className="st-section-title">{t('settingsView.magicTitle')}</div>
       <div className="st-row">
         <div className="st-row-info">
-          <div className="st-row-label">Conocimiento de Fromly</div>
+          <div className="st-row-label">{t('settingsView.magicKnowledgeLabel')}</div>
           <div className="st-row-hint">
-            Fromly aprende datos duraderos sobre ti (personas, objetivos, situación) de tus notas y conversaciones, y los guarda aquí por su cuenta. También aprende de lo que le enseñas (botón derecho → Enseñar a Magic).
-            {total > 0 ? ` Ha aprendido ${total} ${total === 1 ? 'dato' : 'datos'}.` : ' Aún no ha aprendido datos nuevos.'}
-            {' '}Ábrelo para revisarlo y editarlo en bullets, como cualquier nota. La limpieza es automática.
+            {t('settingsView.magicKnowledgeHint')}
+            {total > 0 ? ' ' + t(total === 1 ? 'settingsView.magicLearnedOne' : 'settingsView.magicLearnedMany', { n: total }) : ' ' + t('settingsView.magicNothingLearned')}
+            {' '}{t('settingsView.magicOpenHint')}
           </div>
         </div>
         <div className="st-row-action">
-          <button className="btn-primary btn-sm" onClick={openLearned}>Ver y editar</button>
+          <button className="btn-primary btn-sm" onClick={openLearned}>{t('settingsView.viewAndEdit')}</button>
         </div>
       </div>
 
       {contextKnowledge.length > 0 && (
         <>
-          <div className="st-section-title" style={{ marginTop: 24 }}>Lo que Fromly sabe por contexto</div>
+          <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.magicContextTitle')}</div>
           <div className="st-row-hint" style={{ marginBottom: 4 }}>
-            Para cada contexto, Fromly mantiene un resumen (palabras clave, personas, temas) que se actualiza solo al usarlo.
+            {t('settingsView.magicContextHint')}
           </div>
           {contextKnowledge.map(c => (
             <div className="st-row" key={c.id}>
               <div className="st-row-info"><div className="st-row-label">{c.name}</div></div>
               <div className="st-row-action">
-                <button className="btn-secondary btn-sm" onClick={() => navigate(`/node/${c.id}`)}>Ver</button>
+                <button className="btn-secondary btn-sm" onClick={() => navigate(`/node/${c.id}`)}>{t('settingsView.view')}</button>
               </div>
             </div>
           ))}
@@ -98,21 +100,22 @@ function MagicPane() {
 // ── AparienciaViewPane (con selector de color de acento) ──────────────────────
 
 const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
-  { value: 'purple', label: 'Morado',  hex: '#8b5cf6' },
-  { value: 'indigo', label: 'Índigo',  hex: '#6366f1' },
-  { value: 'blue',   label: 'Azul',    hex: '#3b82f6' },
-  { value: 'cyan',   label: 'Cian',    hex: '#06b6d4' },
-  { value: 'teal',   label: 'Teal',    hex: '#14b8a6' },
-  { value: 'green',  label: 'Verde',   hex: '#22c55e' },
-  { value: 'lime',   label: 'Lima',    hex: '#84cc16' },
-  { value: 'amber',  label: 'Ámbar',   hex: '#f59e0b' },
-  { value: 'orange', label: 'Naranja', hex: '#f97316' },
-  { value: 'red',    label: 'Rojo',    hex: '#ef4444' },
-  { value: 'rose',   label: 'Rosa',    hex: '#f43f5e' },
-  { value: 'pink',   label: 'Fucsia',  hex: '#ec4899' },
+  { value: 'purple', label: 'settingsView.colorPurple', hex: '#8b5cf6' },
+  { value: 'indigo', label: 'settingsView.colorIndigo', hex: '#6366f1' },
+  { value: 'blue',   label: 'settingsView.colorBlue',   hex: '#3b82f6' },
+  { value: 'cyan',   label: 'settingsView.colorCyan',   hex: '#06b6d4' },
+  { value: 'teal',   label: 'settingsView.colorTeal',   hex: '#14b8a6' },
+  { value: 'green',  label: 'settingsView.colorGreen',  hex: '#22c55e' },
+  { value: 'lime',   label: 'settingsView.colorLime',   hex: '#84cc16' },
+  { value: 'amber',  label: 'settingsView.colorAmber',  hex: '#f59e0b' },
+  { value: 'orange', label: 'settingsView.colorOrange', hex: '#f97316' },
+  { value: 'red',    label: 'settingsView.colorRed',    hex: '#ef4444' },
+  { value: 'rose',   label: 'settingsView.colorRose',   hex: '#f43f5e' },
+  { value: 'pink',   label: 'settingsView.colorPink',   hex: '#ec4899' },
 ]
 
 function PlannerColorRow() {
+  const { t } = useTranslation()
   const [color, setColor] = useState(() => localStorage.getItem('from_planner_color') || '')
   const accentHex = (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()) || '#8b5cf6'
   const current = color || accentHex
@@ -121,8 +124,8 @@ function PlannerColorRow() {
   return (
     <div className="st-row">
       <div className="st-row-info">
-        <div className="st-row-label">Color del planner</div>
-        <div className="st-row-hint">Color base de las tareas y eventos del planner (se muestra en pastel).</div>
+        <div className="st-row-label">{t('settingsView.plannerColorLabel')}</div>
+        <div className="st-row-hint">{t('settingsView.plannerColorHint')}</div>
       </div>
       <div className="st-row-action">
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -130,7 +133,7 @@ function PlannerColorRow() {
             style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
           {color && (
             <button onClick={reset} style={{ fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              Usar acento
+              {t('settingsView.useAccent')}
             </button>
           )}
         </div>
@@ -140,23 +143,24 @@ function PlannerColorRow() {
 }
 
 function AparienciaViewPane() {
+  const { t } = useTranslation()
   const { accent, setAccent } = useTheme()
   return (
     <>
       <AparienciaPane />
       <div className="st-pane" style={{ paddingTop: 0 }}>
-        <div className="st-section-title">Color de acento</div>
+        <div className="st-section-title">{t('settingsView.accentColor')}</div>
         <div className="st-row">
           <div className="st-row-info">
-            <div className="st-row-label">Color principal</div>
-            <div className="st-row-hint">Color que se usa en botones, selecciones y elementos activos.</div>
+            <div className="st-row-label">{t('settingsView.mainColor')}</div>
+            <div className="st-row-hint">{t('settingsView.mainColorHint')}</div>
           </div>
           <div className="st-row-action">
             <div style={{ display: 'flex', gap: 8 }}>
               {ACCENT_COLORS.map(c => (
                 <button
                   key={c.value}
-                  title={c.label}
+                  title={t(c.label)}
                   onClick={() => setAccent(c.value)}
                   style={{
                     width: 24, height: 24, borderRadius: '50%',
@@ -215,7 +219,7 @@ function BackupsPane() {
     try {
       const { createBackup } = await import('../../api/backups')
       const r = await createBackup('web')
-      setInfo(`Snapshot creado (${r.nodeCount} nodos)`)
+      setInfo(t('settingsView.snapshotCreated', { n: r.nodeCount }))
       await refresh()
     } catch (e: any) {
       setError(String(e?.message || e))
@@ -226,12 +230,12 @@ function BackupsPane() {
   }
 
   async function handleRestore(id: string, createdAt: string) {
-    if (!confirm(`¿Restaurar el vault al snapshot del ${new Date(createdAt).toLocaleString('es-ES')}?\n\nSe creará un snapshot de seguridad del estado actual antes de restaurar, así puedes deshacerlo.`)) return
+    if (!confirm(t('settingsView.confirmRestore', { date: new Date(createdAt).toLocaleString('es-ES') }))) return
     setBusyId(id); setError(null); setInfo(null)
     try {
       const { restoreBackup } = await import('../../api/backups')
       const r = await restoreBackup(id)
-      setInfo(`Restaurado (${r.restoredCount} nodos). Recarga la página.`)
+      setInfo(t('settingsView.restored', { n: r.restoredCount }))
       await refresh()
     } catch (e: any) {
       setError(String(e?.message || e))
@@ -241,7 +245,7 @@ function BackupsPane() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('¿Borrar este snapshot?')) return
+    if (!confirm(t('settingsView.confirmDeleteSnapshot'))) return
     setBusyId(id); setError(null)
     try {
       const { deleteBackup } = await import('../../api/backups')
@@ -256,22 +260,21 @@ function BackupsPane() {
 
   return (
     <>
-      <div className="st-section-title">Snapshots</div>
+      <div className="st-section-title">{t('settingsView.snapshots')}</div>
       <p style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>
-        Cada 2h se guarda una copia completa de tu vault. Mantenemos los últimos 12 snapshots.
-        Mac y web comparten los mismos snapshots — puedes restaurar desde cualquier dispositivo.
+        {t('settingsView.snapshotsIntro')}
       </p>
       <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 16 }}>
         <button className="btn-primary btn-sm" onClick={handleCreate} disabled={creating}>
-          {creating ? 'Creando...' : '📸 Crear snapshot ahora'}
+          {creating ? t('settingsView.creating') : t('settingsView.createSnapshotNow')}
         </button>
       </div>
       {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 8 }}>⚠️ {error}</div>}
       {info && <div style={{ color: '#22c55e', fontSize: 13, marginBottom: 8 }}>✓ {info}</div>}
       {loading ? (
-        <div style={{ opacity: 0.6, fontSize: 13 }}>Cargando…</div>
+        <div style={{ opacity: 0.6, fontSize: 13 }}>{t('common.loading')}</div>
       ) : snapshots.length === 0 ? (
-        <div style={{ opacity: 0.6, fontSize: 13 }}>Aún no hay snapshots. Crea uno con el botón de arriba o espera al cron automático.</div>
+        <div style={{ opacity: 0.6, fontSize: 13 }}>{t('settingsView.noSnapshots')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {snapshots.map(s => (
@@ -286,7 +289,7 @@ function BackupsPane() {
                     {formatAge(s.createdAt)} · {s.source}
                   </span>
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>{s.nodeCount} nodos</div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>{t('settingsView.nodesCount', { n: s.nodeCount })}</div>
               </div>
               <button
                 className="btn-secondary btn-sm"
@@ -294,7 +297,7 @@ function BackupsPane() {
                 onClick={() => handleRestore(s.id, s.createdAt)}
                 title={t('settingsView.restoreSnapshot')}
               >
-                ↺ Restaurar
+                {t('settingsView.restore')}
               </button>
               <button
                 className="btn-secondary btn-sm"
@@ -315,12 +318,12 @@ function BackupsPane() {
 
 function formatAge(iso: string): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (m < 1) return 'Hace un momento'
-  if (m < 60) return `Hace ${m}min`
+  if (m < 1) return i18n.t('settingsView.ageJustNow')
+  if (m < 60) return i18n.t('settingsView.ageMinutes', { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `Hace ${h}h`
+  if (h < 24) return i18n.t('settingsView.ageHours', { n: h })
   const d = Math.floor(h / 24)
-  return `Hace ${d}d`
+  return i18n.t('settingsView.ageDays', { n: d })
 }
 
 // ── View ──────────────────────────────────────────────────────────────────────

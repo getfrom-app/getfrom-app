@@ -6,6 +6,7 @@
 import { useState, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
 import { firstContextOf, setNodeContext, convertToContext, convertToTask, isContextNode } from '../../utils/cajones'
@@ -13,6 +14,7 @@ import ContextPicker from './ContextPicker'
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const boxRef = useRef<HTMLDivElement>(null)
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: y, left: x })
@@ -67,10 +69,10 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
       <div ref={boxRef} className="node-ctx-menu" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 3000, maxHeight: '70vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}>
-        <button className="node-ctx-item" onClick={() => { navigate(`/node/${nodeId}`); onClose() }}>↗ Abrir</button>
+        <button className="node-ctx-item" onClick={() => { navigate(`/node/${nodeId}`); onClose() }}>{t('rightColMenu.open')}</button>
         {!isEvent && (
           <button className="node-ctx-item" onClick={convertTask}>
-            {isTask ? '○ Quitar tarea' : '☑ Convertir en tarea'}
+            {isTask ? t('rightColMenu.removeTask') : t('rightColMenu.convertToTask')}
           </button>
         )}
         {!isEvent && !isContextNode(nodeId) && (
@@ -79,14 +81,14 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
               window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node!.text || '').slice(0, 30)}"`, type: 'success' } }))
             }
             onClose()
-          }}>🧠 Convertir en contexto</button>
+          }}>{t('rightColMenu.convertToContext')}</button>
         )}
         <button ref={ctxBtnRef} className="node-ctx-item" onClick={toggleCtxFlyout}>
-          🏷 {current ? 'Cambiar contexto' : 'Añadir contexto'} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
+          {current ? t('rightColMenu.changeContext') : t('rightColMenu.addContext')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
         </button>
         {current && (
           <button className="node-ctx-item" onClick={() => { setNodeContext(nodeId, null); onClose() }}>
-            ✕ Quitar contexto
+            {t('rightColMenu.removeContext')}
           </button>
         )}
         <div className="node-ctx-sep" />
@@ -95,7 +97,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           const isArea = JSON.parse(node.extraData || '{}')._area === '1'
           if (isArea) for (const ch of store.children(nodeId)) if (!ch.deletedAt) store.updateNode(ch.id, { parentId: node.parentId })
           trashNode(nodeId); onClose()
-        }}>🗑 Eliminar</button>
+        }}>{t('rightColMenu.delete')}</button>
       </div>
       {ctxFlyout && (
         <div className="ctx-pick" style={{ position: 'fixed', top: ctxFlyout.top, left: ctxFlyout.left, zIndex: 3001 }}

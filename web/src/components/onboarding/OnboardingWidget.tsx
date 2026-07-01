@@ -381,11 +381,12 @@ function AccentLine() {
 // ── Step 0 — Welcome ───────────────────────────────────────────────────────
 
 function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#8b5cf6', lineHeight: 1.3 }}>
-          ✦ Te prometo que será UN MINUTO.
+          {t('onboarding.step0Promise')}
         </div>
         <CloseBtn onClose={onClose} />
       </div>
@@ -393,14 +394,14 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
       <div style={{ padding: '16px 20px 20px' }}>
         <div style={{ fontSize: 28, marginBottom: 10 }}>{tryAgain ? '↩️' : '✏️'}</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>
-          {tryAgain ? 'Inténtalo de nuevo' : 'Tu nota de hoy'}
+          {tryAgain ? t('onboarding.step0TryAgainTitle') : t('onboarding.step0Title')}
         </div>
 
         {/* Subtítulo — distinto según estado */}
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           {tryAgain
-            ? <>Ese nodo se quedó a medias. Escríbelo completo en un bullet nuevo y pulsa <strong>Enter</strong>.</>
-            : 'Esta es tu nota de hoy, donde trabajarás a diario. Pulsa y escribe:'}
+            ? <>{t('onboarding.step0TryAgainTextBefore')} <strong>Enter</strong>.</>
+            : t('onboarding.step0Text')}
         </div>
 
         <div style={{
@@ -408,7 +409,7 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
           padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6',
           marginBottom: 12, letterSpacing: 0.1,
         }}>
-          Empezar a utilizar Fromly
+          {t('onboarding.step0Example')}
         </div>
 
         {/* Hint solo en el estado inicial */}
@@ -420,7 +421,7 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
           }}>
             <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
             <span style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-              Fíjate en lo que aparece al lado del nodo mientras escribes. Pulsa <strong>Enter</strong> para confirmar.
+              {t('onboarding.step0HintBefore')} <strong>Enter</strong> {t('onboarding.step0HintAfter')}
             </span>
           </div>
         )}
@@ -430,7 +431,7 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
-          <span style={{ marginLeft: 4 }}>{tryAgain ? 'Esperando el nuevo intento…' : 'Esperando que lo escribas…'}</span>
+          <span style={{ marginLeft: 4 }}>{tryAgain ? t('onboarding.step0WaitingRetry') : t('onboarding.step0WaitingWrite')}</span>
         </div>
         <ProgressDots active={0} />
       </div>
@@ -441,6 +442,7 @@ function Step0({ tryAgain, onClose }: { tryAgain: boolean; onClose: () => void }
 // ── Step 1 — Tasks ─────────────────────────────────────────────────────────
 
 function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -450,16 +452,16 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          ¡Ya tienes tu primera tarea!
+          {t('onboarding.step1Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Cuanto más me uses, mejores propuestas haré. También puedes convertir cualquier nota en tarea con <strong>⌘+Enter</strong>:
+          {t('onboarding.step1TextBefore')} <strong>⌘+Enter</strong>:
         </div>
         <div style={{ fontSize: 12, color: '#666', lineHeight: 1.6, marginBottom: 8,
           background: '#f9f9f9', borderRadius: 8, padding: '8px 10px' }}>
-          Una vez → ☐ pendiente<br />
-          Otra vez → ✓ hecha<br />
-          Otra vez → vuelve a nota
+          {t('onboarding.step1CycleOnce')}<br />
+          {t('onboarding.step1CycleTwice')}<br />
+          {t('onboarding.step1CycleThrice')}
         </div>
         {/* Keyboard hint */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, alignItems: 'center' }}>
@@ -467,7 +469,7 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
           <span style={{ color: '#999', fontSize: 12 }}>+</span>
           <kbd style={kbdStyle}>↵</kbd>
         </div>
-        <PrimaryBtn label="Entendido →" onClick={onNext} />
+        <PrimaryBtn label={t('onboarding.step1Understood')} onClick={onNext} />
         <ProgressDots active={1} />
       </div>
     </>
@@ -477,6 +479,7 @@ function Step1({ onNext, onClose }: { onNext: () => void; onClose: () => void })
 // ── Step 2 — Filter ────────────────────────────────────────────────────────
 
 function Step2({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -486,16 +489,16 @@ function Step2({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Encuentra cualquier cosa
+          {t('onboarding.step2Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
-          Pulsa <strong>⌘+F</strong> y escribe <code style={codeStyle}>utilizar</code>. Verás cómo Fromly filtra los nodos al instante.
+          {t('onboarding.step2TextBefore')} <strong>⌘+F</strong> {t('onboarding.step2TextMiddle')} <code style={codeStyle}>utilizar</code>. {t('onboarding.step2TextAfter')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 20, color: '#aaa', fontSize: 12 }}>
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
           <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
-          <span style={{ marginLeft: 4 }}>Esperando que uses el filtro…</span>
+          <span style={{ marginLeft: 4 }}>{t('onboarding.step2Waiting')}</span>
         </div>
         <ProgressDots active={2} />
       </div>
@@ -506,6 +509,7 @@ function Step2({ onClose }: { onClose: () => void }) {
 // ── Step 3 — Navigate into node ────────────────────────────────────────────
 
 function Step3({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -515,16 +519,16 @@ function Step3({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Entra dentro de un nodo
+          {t('onboarding.step3Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Pulsa el <strong>punto (●)</strong> que aparece a la izquierda del nodo «Empezar a utilizar Fromly». Puedes crear niveles infinitos.
+          {t('onboarding.step3TextBefore')} <strong>{t('onboarding.step3Dot')}</strong> {t('onboarding.step3TextAfter')}
         </div>
         <div style={{
           background: 'rgba(139,92,246,0.07)', borderRadius: 8, padding: '10px 14px',
           fontSize: 12, color: '#7c3aed', marginBottom: 20, lineHeight: 1.5,
         }}>
-          ✦ El punto aparece al pasar el ratón por encima del nodo.
+          {t('onboarding.step3Hint')}
         </div>
         <ProgressDots active={3} />
       </div>
@@ -535,6 +539,7 @@ function Step3({ onClose }: { onClose: () => void }) {
 // ── Step 4 — Presentar Magic (se abre solo) ─────────────────────────────────
 
 function Step4Magic({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -544,12 +549,12 @@ function Step4Magic({ onNext, onClose }: { onNext: () => void; onClose: () => vo
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Este es Magic, tu asistente
+          {t('onboarding.step4Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>
-          Lo acabo de abrir a la derecha. Magic conoce tus notas y puede crear, organizar y completar cosas por ti. Lo abres cuando quieras con el icono <strong>✦</strong> de arriba.
+          {t('onboarding.step4TextBefore')} <strong>✦</strong> {t('onboarding.step4TextAfter')}
         </div>
-        <PrimaryBtn label="Vamos a probarlo →" onClick={onNext} />
+        <PrimaryBtn label={t('onboarding.step4Try')} onClick={onNext} />
       </div>
     </>
   )
@@ -558,6 +563,7 @@ function Step4Magic({ onNext, onClose }: { onNext: () => void; onClose: () => vo
 // ── Step 5 — Magic prefill ─────────────────────────────────────────────────
 
 function Step5({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
@@ -567,20 +573,20 @@ function Step5({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          Pídeme lo que quieras
+          {t('onboarding.step5Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
-          Ya te he preparado algo. Solo pulsa <strong>enviar</strong> y veré qué hago.
+          {t('onboarding.step5TextBefore')} <strong>{t('onboarding.step5Send')}</strong> {t('onboarding.step5TextAfter')}
         </div>
         <div style={{
           background: 'rgba(139,92,246,0.07)', borderRadius: 8,
           padding: '10px 14px', fontSize: 12, color: '#555',
           fontStyle: 'italic', marginBottom: 16, lineHeight: 1.5,
         }}>
-          Añade 3 tareas hijas a este nodo: Explorar el outliner, Probar el filtro y Configurar mi perfil en Fromly
+          {t('onboarding.step5PromptPreview')}
         </div>
         <div style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
-          Esperando que confirmes las acciones…
+          {t('onboarding.step5Waiting')}
         </div>
       </div>
     </>
@@ -590,15 +596,16 @@ function Step5({ onClose }: { onClose: () => void }) {
 // ── Step 6 — Done ──────────────────────────────────────────────────────────
 
 function Step6({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   return (
     <div style={{ padding: '24px 20px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
         <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-          ¡Ya dominas Fromly!
+          {t('onboarding.step6Title')}
         </div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>
-          Acabas de crear tu primer contenido con IA. Hay mucho más por descubrir.
+          {t('onboarding.step6Text')}
         </div>
       </div>
 
@@ -609,7 +616,7 @@ function Step6({ onClose }: { onClose: () => void }) {
           rel="noopener noreferrer"
           style={linkBtnStyle}
         >
-          📖 Lee el blog
+          {t('onboarding.step6Blog')}
         </a>
         <a
           href="https://fromly.app/docs/"
@@ -617,7 +624,7 @@ function Step6({ onClose }: { onClose: () => void }) {
           rel="noopener noreferrer"
           style={linkBtnStyle}
         >
-          📚 Ver el manual
+          {t('onboarding.step6Manual')}
         </a>
       </div>
 
@@ -632,7 +639,7 @@ function Step6({ onClose }: { onClose: () => void }) {
         onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
       >
-        ¡Vamos a ello! 🚀
+        {t('onboarding.step6Cta')}
       </button>
     </div>
   )

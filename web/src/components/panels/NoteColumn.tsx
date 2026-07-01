@@ -90,12 +90,12 @@ function ContextField({ node }: { node: Node }) {
       <div className="dc-row" onClick={() => navigate(`/node/${current.id}`)} title={t('noteColumn.goContext')} style={{ cursor: 'pointer' }}>
         {/* DOT con el color del contexto (heredado del padre), como en la columna diaria. */}
         <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
-        <span className="dc-text">{current.text || 'Contexto'}</span>
+        <span className="dc-text">{current.text || t('common.context')}</span>
         {parent && <span className="dc-parent">{parent.text}</span>}
         <span style={{ flex: 1 }} />
         <button className="dc-del" title={t('noteColumn.changeContext')} onClick={e => { e.stopPropagation(); setQ(''); setEditing(true) }}
           style={{ fontSize: 12 }}>✎</button>
-        <button className="dc-del" title="Quitar contexto" onClick={e => { e.stopPropagation(); setNodeContext(node.id, null) }}>×</button>
+        <button className="dc-del" title={t('noteColumn.removeContext')} onClick={e => { e.stopPropagation(); setNodeContext(node.id, null) }}>×</button>
       </div>
     )
   }
@@ -117,13 +117,13 @@ function ContextField({ node }: { node: Node }) {
             if ((e.key === 'Enter' || e.key === 'Tab') && q.trim()) { e.preventDefault(); commit() }
             else if (e.key === 'Escape') { e.preventDefault(); setQ(''); setEditing(false) }
           }}
-          placeholder={current ? 'Cambiar contexto…' : '+ Añadir contexto'}
+          placeholder={current ? t('noteColumn.changeContextPh') : t('noteColumn.addContextPh')}
           style={{ position: 'relative', width: '100%', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 9px', fontSize: 13, lineHeight: '18px', fontFamily: 'inherit', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
         />
       </div>
       {q.trim() && (
         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3 }}>
-          {suggestion ? `↵/⇥ Asignar «${suggestion.text}»` : `↵/⇥ Crear «${q.trim()}»`}
+          {suggestion ? `↵/⇥ ${t('noteColumn.assign')} «${suggestion.text}»` : `↵/⇥ ${t('noteColumn.create')} «${q.trim()}»`}
         </div>
       )}
     </div>
@@ -145,10 +145,10 @@ export default function NoteColumn({ node }: { node: Node }) {
   const setDue = (date: string, time: string) => { if (!date) store.updateNode(node.id, { due: null }); else store.updateNode(node.id, { due: makeDueISO(date, time) }) }
   const parseRec = (r: string) => { const [unit, nStr] = r.split(':'); return { n: parseInt(nStr || '1') || 1, unit } }
   const applyRec = (n: number, unit: string) => { const safe = Math.max(1, n); store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` }) }
-  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'mes.'], ['yearly', 'año']]
+  const recUnits: [string, string][] = [['daily', t('nodeRightPanel.unitDays')], ['weekly', t('nodeRightPanel.unitWeeksShort')], ['monthly', t('taskProps.unitMonthsShort')], ['yearly', t('taskProps.unitYearShort')]]
   const qMon = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
   const prioOpts: { v: Node['priority']; l: string; c: string }[] = [
-    { v: null, l: '–', c: '' }, { v: 'low', l: 'Baja', c: '#6b7280' }, { v: 'medium', l: 'Media', c: '#f59e0b' }, { v: 'high', l: 'Alta', c: '#ef4444' },
+    { v: null, l: '–', c: '' }, { v: 'low', l: t('nodeRightPanel.prioLow'), c: '#6b7280' }, { v: 'medium', l: t('nodeRightPanel.prioMedium'), c: '#f59e0b' }, { v: 'high', l: t('nodeRightPanel.prioHigh'), c: '#ef4444' },
   ]
 
   return (
@@ -156,9 +156,9 @@ export default function NoteColumn({ node }: { node: Node }) {
       {/* Propiedades de tarea — fecha, prioridad, repetición (editable). */}
       {isTask && (
         <div className="dc-group">
-          <div className="rc-section-label" style={{ marginBottom: 6 }}>Fecha</div>
+          <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('common.date')}</div>
           <div className="nqp-quick-row">
-            {[{ label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 }, { label: 'Lunes', days: qMon }, { label: '+7d', days: 7 }].map(({ label, days }) => {
+            {[{ label: t('common.today'), days: 0 }, { label: t('nodeRightPanel.tomorrow'), days: 1 }, { label: t('taskProps.monday'), days: qMon }, { label: '+7d', days: 7 }].map(({ label, days }) => {
               const d = new Date(); d.setDate(d.getDate() + days)
               const iso = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
               return <button key={label} className={`nqp-qbtn${dueDate === iso ? ' active' : ''}`} onClick={() => setDue(iso, hasLocalTime(node.due) ? dueTime : '')}>{label}</button>
@@ -170,7 +170,7 @@ export default function NoteColumn({ node }: { node: Node }) {
             <input type="time" className="nqp-time-input" value={hasLocalTime(node.due) ? dueTime : ''} onChange={e => setDue(dueDate, e.target.value)} disabled={!dueDate} placeholder="HH:MM" />
           </div>
 
-          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>Prioridad</div>
+          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>{t('kanban.byPriority')}</div>
           <div className="nqp-chips-row">
             {prioOpts.map(opt => (
               <button key={String(opt.v)} className={`nqp-chip${node.priority === opt.v ? ' active' : ''}`}
@@ -179,7 +179,7 @@ export default function NoteColumn({ node }: { node: Node }) {
             ))}
           </div>
 
-          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>Repetición</div>
+          <div className="rc-section-label" style={{ marginTop: 12, marginBottom: 6 }}>{t('common.repeat')}</div>
           <div className="nqp-rec-row">
             <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`} onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
             <input type="number" className="nqp-rec-n" min={1} max={999} value={node.recurrence ? parseRec(node.recurrence).n : 1} disabled={!node.recurrence}
@@ -195,15 +195,15 @@ export default function NoteColumn({ node }: { node: Node }) {
       {/* Contexto ÚNICO del nodo: chip (clic = cambiar, × = quitar) o campo de
           asignación con ghost-text + Tab/Enter. */}
       <div className="dc-group">
-        <div className="rc-section-label" style={{ marginBottom: 6 }}>Contexto</div>
+        <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('common.context')}</div>
         <ContextField node={node} />
       </div>
 
     <div className="dc-group">
-      <div className="rc-section-label" style={{ marginBottom: 6 }}>Movidos</div>
+      <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('noteColumn.moved')}</div>
       {moved.length === 0 ? (
         <div style={{ padding: '4px 10px 8px', fontSize: 12, color: 'var(--text-tertiary, #aaa)' }}>
-          Mueve nodos a esta nota y aparecerán aquí.
+          {t('noteColumn.movedEmpty')}
         </div>
       ) : moved.map(c => (
         <div
@@ -217,7 +217,7 @@ export default function NoteColumn({ node }: { node: Node }) {
           title={t('noteColumn.dragToCanvas')}
         >
           <span className="dc-capture-grip">⠿</span>
-          <span className="dc-text">{c.text ? renderInline(c.text) : 'Nodo'}</span>
+          <span className="dc-text">{c.text ? renderInline(c.text) : t('noteColumn.nodeFallback')}</span>
           <RowContextChip node={c} />
           <button className="dc-del" title={t('common.delete')} onClick={e => { e.stopPropagation(); trashNode(c.id) }}>{TrashIcon}</button>
         </div>

@@ -163,9 +163,9 @@ export default function NodeRightPanel({ node }: Props) {
       ed2.gcalEventId = result.id
       if (evtLocation.trim()) ed2.location = evtLocation.trim()
       store.updateNode(node.id, { extraData: JSON.stringify(ed2) })
-      setEvtMsg('✓ Sincronizado con Google Calendar')
+      setEvtMsg('✓ ' + t('nodeRightPanel.syncedGcal'))
     } catch {
-      setEvtMsg('Guardado (sin Google Calendar)')
+      setEvtMsg(t('nodeRightPanel.savedNoGcal'))
     } finally { setEvtSyncing(false) }
     setTimeout(() => setShowEventPopup(false), evtMsg ? 1200 : 0)
   }
@@ -201,19 +201,19 @@ export default function NodeRightPanel({ node }: Props) {
   const tagNodes = s.tagDefinitions().filter(td => tags.includes(s.tagName(td) || ''))
 
   const statusOptions: { value: Node['status']; label: string }[] = [
-    { value: null, label: '○ Sin estado' },
-    { value: 'pending', label: '● Pendiente' },
-    { value: 'future', label: '◆ Futuro' },
-    { value: 'done', label: '✓ Hecho' },
+    { value: null, label: `○ ${t('nodeRightPanel.statusNone')}` },
+    { value: 'pending', label: `● ${t('nodeRightPanel.statusPending')}` },
+    { value: 'future', label: `◆ ${t('nodeRightPanel.statusFuture')}` },
+    { value: 'done', label: `✓ ${t('nodeRightPanel.statusDone')}` },
   ]
   const priorityOptions: { value: Node['priority']; label: string; style?: React.CSSProperties }[] = [
-    { value: null, label: '— Ninguna' },
-    { value: 'low', label: '▽ Baja' },
-    { value: 'medium', label: '△ Media', style: { color: '#f59e0b' } },
-    { value: 'high', label: '▲ Alta', style: { color: '#ef4444' } },
+    { value: null, label: `— ${t('nodeRightPanel.prioNone')}` },
+    { value: 'low', label: `▽ ${t('nodeRightPanel.prioLow')}` },
+    { value: 'medium', label: `△ ${t('nodeRightPanel.prioMedium')}`, style: { color: '#f59e0b' } },
+    { value: 'high', label: `▲ ${t('nodeRightPanel.prioHigh')}`, style: { color: '#ef4444' } },
   ]
   // Helpers para repetición flexible (x días, x semanas, etc.)
-  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']]
+  const recUnits: [string, string][] = [['daily', t('nodeRightPanel.unitDays')], ['weekly', t('nodeRightPanel.unitWeeksShort')], ['monthly', t('nodeRightPanel.unitMonths')], ['yearly', t('nodeRightPanel.unitYears')]]
   function parseRec(r: string | null | undefined) {
     if (!r) return { n: 1, unit: 'daily' }
     const [unit, nStr] = r.split(':')
@@ -345,19 +345,19 @@ export default function NodeRightPanel({ node }: Props) {
               store.updateNode(node.id, { status: 'pending', due: node.due ?? new Date(new Date().setHours(0,0,0,0)).toISOString() })
             }
           }}
-          title={isResource ? 'Es un recurso' : node.isEvent ? 'Es un evento' : isTask ? 'Quitar tarea' : 'Convertir en tarea'}
+          title={isResource ? t('nodeRightPanel.isResource') : node.isEvent ? t('nodeRightPanel.isEvent') : isTask ? t('nodeRightPanel.removeTask') : t('nodeRightPanel.makeTask')}
           style={isResource || node.isEvent ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
         >{t('panel.taskToggle')}</button>
         <button
           ref={eventBtnRef}
           className={`prop-icon-btn ${node.isEvent ? 'active event' : ''}`}
           onClick={openEventPopup}
-          title={node.isEvent ? 'Quitar evento' : 'Convertir en evento'}
+          title={node.isEvent ? t('nodeRightPanel.removeEvent') : t('nodeRightPanel.makeEvent')}
         >{t('panel.event')}</button>
         <button
           className={`prop-icon-btn ${isResource ? 'active resource' : ''}`}
           onClick={toggleResource}
-          title={isResource ? 'Quitar recurso' : 'Marcar como recurso'}
+          title={isResource ? t('nodeRightPanel.removeResource') : t('nodeRightPanel.makeResource')}
         >🔗 {t('panel.resources')}</button>
       </div>
 
@@ -376,7 +376,7 @@ export default function NodeRightPanel({ node }: Props) {
           {isResource ? (
             // Recursos: estado propio (resourceStatus)
             <div className="prop-pills">
-              {([['pending','● Pendiente'],['future','◆ Futuro'],['done','✓ Hecho']] as [string,string][]).map(([val, label]) => (
+              {([['pending',`● ${t('nodeRightPanel.statusPending')}`],['future',`◆ ${t('nodeRightPanel.statusFuture')}`],['done',`✓ ${t('nodeRightPanel.statusDone')}`]] as [string,string][]).map(([val, label]) => (
                 <button key={val} className={`prop-pill ${resourceStatus === val ? 'active' : ''}`}
                   onClick={() => setResourceStatus(val)}>{label}</button>
               ))}
@@ -396,13 +396,13 @@ export default function NodeRightPanel({ node }: Props) {
       {/* ── 2. FECHA (tareas y recursos; eventos tienen su sección propia) ── */}
       {showProps && !node.isEvent && node.status !== 'future' && node.status !== 'done' && (
         <div className="prop-section">
-          <div className="prop-section-label">Fecha</div>
+          <div className="prop-section-label">{t('common.date')}</div>
           <div className="prop-quick-dates">
             {[
-              { label: 'Hoy', days: 0 },
-              { label: 'Mañana', days: 1 },
-              { label: 'Prx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
-              { label: 'Prx. semana', days: 7 },
+              { label: t('common.today'), days: 0 },
+              { label: t('nodeRightPanel.tomorrow'), days: 1 },
+              { label: t('nodeRightPanel.nextMondayShort'), days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
+              { label: t('nodeRightPanel.nextWeekShort'), days: 7 },
             ].map(({ label, days }) => {
               const d = new Date(); d.setDate(d.getDate() + days); d.setHours(9, 0, 0, 0)
               const iso = d.toISOString().slice(0, 10)
@@ -425,7 +425,7 @@ export default function NodeRightPanel({ node }: Props) {
           {/* Fecha fin (standalone para tareas/recursos) */}
           {node.dueEnd && (
             <div className="prop-datetime" style={{ marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginRight: 4 }}>Fin</span>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginRight: 4 }}>{t('nodeRightPanel.endLabel')}</span>
               <input type="date" className="prop-date-input" value={dueEndDate} onChange={e => setDueEnd(e.target.value, dueEndTime)} />
               <input type="time" className="prop-time-input" value={dueEndTime} onChange={e => setDueEnd(dueEndDate, e.target.value)} disabled={!dueEndDate} />
             </div>
@@ -437,11 +437,11 @@ export default function NodeRightPanel({ node }: Props) {
       {node.isEvent && (
         <div className="prop-section prop-section--event">
           <div className="prop-section-label">
-            Fecha
+            {t('common.date')}
             {gcalEventId && <span className="prop-gcal-badge" title={t('tip.syncedGoogle')}>GCal ✓</span>}
           </div>
           <div className="prop-event-row">
-            <span className="prop-event-field-label">Inicio</span>
+            <span className="prop-event-field-label">{t('common.start')}</span>
             <div className="prop-datetime">
               <input type="date" className="prop-date-input" value={dueDate}
                 onChange={e => setDue(e.target.value, hasLocalTime(node.due) ? dueTime : '')} />
@@ -471,7 +471,7 @@ export default function NodeRightPanel({ node }: Props) {
             </div>
           )}
           <div className="prop-event-row">
-            <span className="prop-event-field-label">Lugar</span>
+            <span className="prop-event-field-label">{t('nodeRightPanel.place')}</span>
             <input type="text" className="prop-event-location" value={evtLocation_stored}
               placeholder={t('ph.addLocation')}
               onChange={e => {
@@ -488,31 +488,31 @@ export default function NodeRightPanel({ node }: Props) {
                     end: node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString(),
                     location: evtLocation_stored || undefined,
                   })
-                  setEvtMsg('✓ Actualizado en Google Calendar')
+                  setEvtMsg('✓ ' + t('nodeRightPanel.updatedGcal'))
                   setTimeout(() => setEvtMsg(null), 2500)
                 } catch { /* silencioso */ }
               }}
             />
           </div>
-          {gcalEventId && <div className="prop-event-synced-hint">↑ Cambios sincronizados automáticamente con Google Calendar</div>}
+          {gcalEventId && <div className="prop-event-synced-hint">{t('nodeRightPanel.syncedHint')}</div>}
           <button className="prop-event-delete-btn"
             title={t('tip.deleteEventGcal')}
             onClick={async () => {
-              if (!window.confirm('¿Eliminar este evento?' + (gcalEventId ? '\nTambién se borrará de Google Calendar.' : ''))) return
+              if (!window.confirm(t('nodeRightPanel.confirmDeleteEvent') + (gcalEventId ? '\n' + t('nodeRightPanel.confirmDeleteEventGcal') : ''))) return
               if (gcalEventId) { try { await deleteCalendarEvent(gcalEventId) } catch { /* silencioso */ } }
               store.updateNode(node.id, { isEvent: false, due: null, dueEnd: null })
               let ed: Record<string, unknown> = {}
               try { ed = JSON.parse(node.extraData || '{}') } catch {}
               delete ed.gcalEventId; delete ed.location
               store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-            }}>🗑 Eliminar evento</button>
+            }}>{t('nodeRightPanel.deleteEvent')}</button>
         </div>
       )}
 
       {/* ── 3. REPETICIÓN (tareas, eventos, recursos) ─────────────────────── */}
       {showProps && (
         <div className="prop-section">
-          <div className="prop-section-label">Repetición</div>
+          <div className="prop-section-label">{t('common.repeat')}</div>
           <div className="prop-rec-row">
             <button className={`prop-pill${!node.recurrence ? ' active' : ''}`}
               onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
@@ -558,16 +558,16 @@ export default function NodeRightPanel({ node }: Props) {
               {t('panel.properties')}
               <button className="prop-add-btn" title={t('tip.addProperty')}
                 onClick={() => {
-                  const name = prompt('Nombre de la propiedad:')
+                  const name = prompt(t('nodeRightPanel.promptPropName'))
                   if (!name || !name.trim()) return
-                  const typeStr = prompt('Tipo (text / number / select / date / checkbox / url / tag):', 'text')
+                  const typeStr = prompt(t('nodeRightPanel.promptPropType'), 'text')
                   const validTypes = ['text','number','select','multi_select','date','checkbox','url','tag']
                   const type = validTypes.includes(typeStr || '') ? (typeStr as string) : 'text'
                   store.addPropColumn(propParentId, name.trim(), type)
                 }}>＋</button>
             </div>
             {schema.length === 0 ? (
-              <div className="prop-empty-hint">Sin propiedades. Crea la primera con ＋ — aparecerá también en la tabla del padre.</div>
+              <div className="prop-empty-hint">{t('nodeRightPanel.propsEmpty')}</div>
             ) : (
               <div className="prop-custom-list">
                 {schema.map(col => <PropertyRow key={col.id} node={node} col={col} />)}
@@ -587,17 +587,17 @@ export default function NodeRightPanel({ node }: Props) {
       >
         <div ref={eventPopupRef} className="evt-modal" onMouseDown={e => e.stopPropagation()}>
           <div className="evt-modal-header">
-            <span className="evt-modal-title">📅 Nuevo evento</span>
+            <span className="evt-modal-title">{t('nodeRightPanel.newEvent')}</span>
             <button className="evt-modal-close" onClick={() => setShowEventPopup(false)}>✕</button>
           </div>
 
           {/* Fecha (obligatoria) */}
           <div className="evt-modal-field">
-            <label className="evt-modal-label">Fecha *</label>
+            <label className="evt-modal-label">{t('common.date')} *</label>
             <div className="evt-modal-quick-dates">
               {[
-                { label: 'Hoy', days: 0 }, { label: 'Mañana', days: 1 },
-                { label: 'Próx. lunes', days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
+                { label: t('common.today'), days: 0 }, { label: t('nodeRightPanel.tomorrow'), days: 1 },
+                { label: t('nodeRightPanel.nextMonday'), days: (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })() },
               ].map(({ label, days }) => {
                 const d = new Date(); d.setDate(d.getDate() + days)
                 const iso = d.toISOString().slice(0, 10)
@@ -613,7 +613,7 @@ export default function NodeRightPanel({ node }: Props) {
 
           {/* Hora inicio (opcional) */}
           <div className="evt-modal-field">
-            <label className="evt-modal-label">Hora inicio <span className="evt-modal-opt">(opcional)</span></label>
+            <label className="evt-modal-label">{t('nodeRightPanel.startTime')} <span className="evt-modal-opt">{t('nodeRightPanel.optional')}</span></label>
             <div className="evt-modal-row">
               <input type="time" className="evt-modal-input evt-modal-input--time" value={evtTime}
                 onChange={e => setEvtTime(e.target.value)} disabled={!evtDate} placeholder="HH:MM" />
@@ -626,7 +626,7 @@ export default function NodeRightPanel({ node }: Props) {
           {/* Hora fin — solo si hay hora de inicio */}
           {evtTime && (
             <div className="evt-modal-field">
-              <label className="evt-modal-label">Hora fin <span className="evt-modal-opt">(opcional)</span></label>
+              <label className="evt-modal-label">{t('nodeRightPanel.endTime')} <span className="evt-modal-opt">{t('nodeRightPanel.optional')}</span></label>
               <input type="time" className="evt-modal-input evt-modal-input--time" value={evtEndTime}
                 onChange={e => setEvtEndTime(e.target.value)} disabled={!evtTime} placeholder="HH:MM" />
             </div>
@@ -634,7 +634,7 @@ export default function NodeRightPanel({ node }: Props) {
 
           {/* Repetición */}
           <div className="evt-modal-field">
-            <label className="evt-modal-label">Repetición <span className="evt-modal-opt">(opcional)</span></label>
+            <label className="evt-modal-label">{t('common.repeat')} <span className="evt-modal-opt">{t('nodeRightPanel.optional')}</span></label>
             <div className="prop-rec-row" style={{ flexWrap: 'wrap', gap: 6 }}>
               <button className={`prop-pill${!evtRec ? ' active' : ''}`}
                 onClick={() => setEvtRec(null)}>–</button>
@@ -659,7 +659,7 @@ export default function NodeRightPanel({ node }: Props) {
 
           {/* Lugar (opcional) */}
           <div className="evt-modal-field">
-            <label className="evt-modal-label">Lugar <span className="evt-modal-opt">(opcional)</span></label>
+            <label className="evt-modal-label">{t('nodeRightPanel.place')} <span className="evt-modal-opt">{t('nodeRightPanel.optional')}</span></label>
             <input type="text" className="evt-modal-input" value={evtLocation}
               onChange={e => setEvtLocation(e.target.value)} placeholder={t('ph.addLocation')} />
           </div>
@@ -672,7 +672,7 @@ export default function NodeRightPanel({ node }: Props) {
               {evtSyncing ? `↻ ${t('common.saving')}` : t('panel.event')}
             </button>
           </div>
-          {!evtDate && <div className="evt-popup-hint">La fecha es obligatoria para crear el evento</div>}
+          {!evtDate && <div className="evt-popup-hint">{t('nodeRightPanel.dateRequired')}</div>}
         </div>
       </div>,
       document.body

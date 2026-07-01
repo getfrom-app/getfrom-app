@@ -4,6 +4,7 @@
  * Al ser un componente propio, sus hooks no interfieren con los de NodeView.
  */
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import type { Annotation } from './PdfViewer'
 
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function PdfContainer({ url, nodeId, filename, resourceKey }: Props) {
+  const { t } = useTranslation()
   const [annotations, setAnnotations] = useState<Annotation[]>(() =>
     cache.get(nodeId) || []
   )
@@ -53,7 +55,7 @@ export default function PdfContainer({ url, nodeId, filename, resourceKey }: Pro
     <Suspense fallback={
       <div style={{ background: '#404040', minHeight: 200, display: 'flex',
         alignItems: 'center', justifyContent: 'center', color: '#ccc', fontSize: 13 }}>
-        <span>Cargando visor PDF…</span>
+        <span>{t('pdf.loadingViewer')}</span>
       </div>
     }>
       <PdfViewer

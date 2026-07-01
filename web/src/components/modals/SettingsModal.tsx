@@ -104,7 +104,7 @@ export function CuentaPane() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault(); setPasswordError(''); setPasswordSuccess('')
-    if (newPassword !== confirmPassword) { setPasswordError('Las contraseñas no coinciden'); return }
+    if (newPassword !== confirmPassword) { setPasswordError(t('auth.errorPasswordsNoMatch')); return }
     setPasswordLoading(true)
     try {
       await updateMe({ currentPassword, newPassword })
@@ -540,19 +540,20 @@ AL TERMINAR ("fin"):
 - Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
 
 export function ClaudeMcpPane() {
+  const { t } = useTranslation()
   const steps = [
-    'Abre Claude (claude.ai, iPhone, Android o Desktop)',
-    'Ve a Ajustes → Conectores',
-    'Busca "Fromly" y pulsa Conectar',
-    'Inicia sesión con tu cuenta de Fromly',
-    'Listo — Claude puede guardar notas y tareas en tu vault desde cualquier dispositivo',
+    t('mcp.step1'),
+    t('mcp.step2'),
+    t('mcp.step3'),
+    t('mcp.step4'),
+    t('mcp.step5'),
   ]
 
   return (
     <div className="st-pane">
-      <SectionTitle>Fromly para Claude — ya disponible en el directorio</SectionTitle>
+      <SectionTitle>{t('mcp.directoryTitle')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 16 }}>
-        Fromly está en el directorio oficial de conectores de Claude. No necesitas instalar nada ni copiar tokens.
+        {t('mcp.directoryHint')}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
@@ -570,15 +571,15 @@ export function ClaudeMcpPane() {
 
       <div style={{ marginTop: 8 }}>
         <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
-          Ver documentación completa →
+          {t('mcp.docsButton')}
         </a>
       </div>
 
       {/* Claude Code (CLI) — opción avanzada */}
       <div style={{ marginTop: 28, padding: '12px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Para Claude Code (CLI)</div>
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{t('mcp.cliTitle')}</div>
         <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          Añade Fromly a <code style={{ fontSize: 11 }}>~/.claude.json</code> con tipo <code style={{ fontSize: 11 }}>http</code> y URL <code style={{ fontSize: 11 }}>https://from-server-production.up.railway.app/mcp</code>. El token lo encuentras en Ajustes → Accesorios.
+          {t('mcp.cliHint')}
         </div>
       </div>
     </div>
@@ -639,80 +640,80 @@ export function CapturaRapidaPane() {
   return (
     <div className="st-pane">
       {/* Token de API — uno para todo (Raycast, Chrome, Claude Code) */}
-      <SectionTitle>Token de API</SectionTitle>
+      <SectionTitle>{t('settingsModal.apiTokenTitle')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Una sola clave para conectar Fromly con Raycast, Chrome y Claude Code. No la compartas.
+        {t('settingsModal.apiTokenHint')}
       </div>
       {loaded ? (
         token ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <code style={codeBox}>{'•'.repeat(40)}</code>
             <button className="btn-secondary" onClick={() => copy(token, 'token')} style={{ flexShrink: 0, fontSize: 12 }}>
-              {copied === 'token' ? '✓ Copiado' : 'Copiar'}
+              {copied === 'token' ? t('common.copied') : t('common.copy')}
             </button>
             <button onClick={handleGenerate} disabled={generating} title={t('settingsModal.generateNew')} style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: '0 4px', border: 'none' }}>
-              {generating ? '…' : 'Regenerar'}
+              {generating ? '…' : t('common.regenerate')}
             </button>
           </div>
         ) : (
           <button className="btn-primary" onClick={handleGenerate} disabled={generating}>
-            {generating ? 'Generando...' : 'Generar token de API'}
+            {generating ? t('common.generating') : t('settingsModal.generateApiToken')}
           </button>
         )
-      ) : <div className="st-row-hint">Cargando...</div>}
+      ) : <div className="st-row-hint">{t('common.loading')}</div>}
 
       {/* Barra de menús — solo en Mac */}
       {isTauriDesktop && (
         <>
-          <SectionTitle>Barra de menús</SectionTitle>
+          <SectionTitle>{t('settingsModal.menuBarTitle')}</SectionTitle>
           <div className="st-row-hint" style={{ marginBottom: 10 }}>
-            Fromly vive en la barra de menús del Mac: clic en el icono (o <strong style={{ color: 'var(--text)' }}>Captura rápida</strong>) abre una ventana flotante para crear algo al vuelo. Cerrar la ventana principal no cierra Fromly.
+            {t('settingsModal.menuBarHintPre')} <strong style={{ color: 'var(--text)' }}>{t('settingsModal.quickCapture')}</strong>{t('settingsModal.menuBarHintPost')}
           </div>
-          <Row label="Mostrar icono en la barra de menús" hint="También puedes ocultarlo desde el propio icono (clic derecho → Ocultar).">
+          <Row label={t('settingsModal.showTrayIcon')} hint={t('settingsModal.showTrayIconHint')}>
             <input type="checkbox" checked={trayVisible} onChange={e => toggleTray(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
           </Row>
 
-          <SectionTitle>Backup en iCloud</SectionTitle>
-          <Row label="Copia automática a iCloud Drive" hint="Cada ~2h, una copia de tu vault en iCloud Drive (carpeta «From Backups»), además del backup del servidor.">
+          <SectionTitle>{t('settingsModal.icloudBackupTitle')}</SectionTitle>
+          <Row label={t('settingsModal.icloudAutoCopy')} hint={t('settingsModal.icloudAutoCopyHint')}>
             <input type="checkbox" checked={icloud} onChange={e => toggleICloud(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
           </Row>
         </>
       )}
 
       {/* Atajo de Apple */}
-      <SectionTitle>Atajo de Apple</SectionTitle>
+      <SectionTitle>{t('settingsModal.appleShortcutTitle')}</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Te pide el texto y lo guarda en tu nota de hoy. Luego asígnale una tecla global desde Atajos → Ajustes del atajo.
+        {t('settingsModal.appleShortcutHint')}
       </div>
       <a href={APPLE_SHORTCUT_ICLOUD} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        ↓ Instalar atajo de Apple
+        ↓ {t('settingsModal.installAppleShortcut')}
       </a>
 
       {/* Raycast */}
       <SectionTitle>Raycast</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Crea, busca y abre tu nota de hoy desde Raycast. Al instalarla, pega tu token (arriba) en sus preferencias.
+        {t('settingsModal.raycastHint')}
       </div>
       <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        Instalar en Raycast →
+        {t('settingsModal.installRaycast')} →
       </a>
 
       {/* Chrome */}
       <SectionTitle>Chrome</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Guarda la página actual en tu nota de hoy y envía texto seleccionado como nodo. Pega tu token en sus opciones.
+        {t('settingsModal.chromeHint')}
       </div>
       <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        Instalar en Chrome →
+        {t('settingsModal.installChrome')} →
       </a>
 
       {/* Claude (MCP) */}
       <SectionTitle>Claude</SectionTitle>
       <div className="st-row-hint" style={{ marginBottom: 10 }}>
-        Fromly está en el <strong style={{ color: 'var(--text)' }}>directorio oficial de conectores de Claude</strong>: abre Claude → Conectores → busca Fromly y conecta con un clic. Sin tokens ni configuración. Funciona en Claude Desktop, Claude.ai y Claude Code.
+        {t('settingsModal.claudeHintPre')} <strong style={{ color: 'var(--text)' }}>{t('settingsModal.claudeHintBold')}</strong>{t('settingsModal.claudeHintPost')}
       </div>
       <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        Conectar en Claude →
+        {t('settingsModal.connectClaude')} →
       </a>
     </div>
   )
@@ -954,7 +955,7 @@ export function ExportarPane() {
   return (
     <div className="st-pane">
       <SectionTitle>{t('export.sectionTitle')}</SectionTitle>
-      <Row label={t('export.serverBackupLabel')} hint="Descarga una copia completa de tu vault (todo está en el servidor)." />
+      <Row label={t('export.serverBackupLabel')} hint={t('export.serverBackupHint')} />
       {error && <div className="auth-error" style={{ marginTop: 8 }}>{error}</div>}
       <div className="st-actions">
         <button className="btn-secondary" onClick={() => handleExport('json')} disabled={loading}>
@@ -970,35 +971,20 @@ export function ExportarPane() {
 
 type ImportSource = 'obsidian' | 'notion' | 'apple' | 'markdown' | 'from'
 
-const IMPORT_SOURCES: { id: ImportSource; icon: string; name: string; desc: string }[] = [
-  { id: 'obsidian', icon: '🪨', name: 'Obsidian',        desc: 'Tu carpeta de notas .md' },
-  { id: 'notion',   icon: '⬛', name: 'Notion',          desc: 'Exportación Markdown' },
-  { id: 'apple',    icon: '🍎', name: 'Apple Notes',     desc: 'Vía Markdown / texto' },
-  { id: 'markdown', icon: '📝', name: 'Markdown / texto', desc: 'Archivos .md o .txt' },
-  { id: 'from',     icon: '📦', name: 'Fromly (JSON)',      desc: 'Copia de seguridad de Fromly' },
+const IMPORT_SOURCES: { id: ImportSource; icon: string; nameKey: string; descKey: string }[] = [
+  { id: 'obsidian', icon: '🪨', nameKey: 'import.sourceObsidianName',  descKey: 'import.sourceObsidianDesc' },
+  { id: 'notion',   icon: '⬛', nameKey: 'import.sourceNotionName',    descKey: 'import.sourceNotionDesc' },
+  { id: 'apple',    icon: '🍎', nameKey: 'import.sourceAppleName',     descKey: 'import.sourceAppleDesc' },
+  { id: 'markdown', icon: '📝', nameKey: 'import.sourceMarkdownName',  descKey: 'import.sourceMarkdownDesc' },
+  { id: 'from',     icon: '📦', nameKey: 'import.sourceFromName',      descKey: 'import.sourceFromDesc' },
 ]
 
 const IMPORT_STEPS: Record<ImportSource, string[]> = {
-  obsidian: [
-    'En tu ordenador, localiza la carpeta del vault de Obsidian.',
-    'Pulsa «Subir carpeta» y selecciónala. Se respeta la estructura de subcarpetas.',
-  ],
-  notion: [
-    'En Notion: ··· (arriba a la derecha) → Export → formato «Markdown & CSV», con «Include subpages».',
-    'Descarga y descomprime el .zip.',
-    'Pulsa «Subir carpeta» y elige la carpeta descomprimida.',
-  ],
-  apple: [
-    'Apple Notes no exporta a Markdown directamente.',
-    'Pásalas a archivos .txt/.md (con un Atajo de Apple «Exportar notas», o copiando el texto).',
-    'Pulsa «Subir archivos» y selecciónalos.',
-  ],
-  markdown: [
-    'Selecciona uno o varios archivos .md o .txt (o una carpeta entera).',
-  ],
-  from: [
-    'Selecciona el archivo .json exportado desde Fromly (Ajustes → Exportar).',
-  ],
+  obsidian: ['import.stepObsidian1', 'import.stepObsidian2'],
+  notion:   ['import.stepNotion1', 'import.stepNotion2', 'import.stepNotion3'],
+  apple:    ['import.stepApple1', 'import.stepApple2', 'import.stepApple3'],
+  markdown: ['import.stepMarkdown1'],
+  from:     ['import.stepFrom1'],
 }
 
 export function ImportarPane() {
@@ -1046,8 +1032,8 @@ export function ImportarPane() {
       })))
       const { importMarkdownFiles } = await import('../../utils/importMarkdown')
       const r = await importMarkdownFiles(files)
-      if (r.notes === 0) setError('No se encontraron archivos .md / .txt válidos.')
-      else setResult(`Importadas ${r.notes} ${r.notes === 1 ? 'nota' : 'notas'}. Las tienes en «📥 Importado…» (en tu árbol).`)
+      if (r.notes === 0) setError(t('import.noValidFiles'))
+      else setResult(t('import.importedNotes', { count: r.notes }))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('import.importError'))
     } finally { setImporting(false); e.target.value = '' }
@@ -1057,7 +1043,7 @@ export function ImportarPane() {
   if (!source) {
     return (
       <div className="st-pane">
-        <SectionTitle>Importar desde…</SectionTitle>
+        <SectionTitle>{t('import.importFrom')}</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
           {IMPORT_SOURCES.map(s => (
             <button
@@ -1069,8 +1055,8 @@ export function ImportarPane() {
             >
               <span style={{ fontSize: 20, flexShrink: 0 }}>{s.icon}</span>
               <span style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)' }}>{s.desc}</span>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{t(s.nameKey)}</span>
+                <span style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)' }}>{t(s.descKey)}</span>
               </span>
               <span style={{ color: 'var(--text-tertiary)' }}>→</span>
             </button>
@@ -1088,25 +1074,25 @@ export function ImportarPane() {
   return (
     <div className="st-pane">
       <button onClick={() => { setSource(null); setResult(null); setError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-secondary)', padding: '2px 0 8px' }}>
-        ← Todas las fuentes
+        ← {t('import.allSources')}
       </button>
-      <SectionTitle>{meta.icon} {meta.name}</SectionTitle>
+      <SectionTitle>{meta.icon} {t(meta.nameKey)}</SectionTitle>
 
       <ol style={{ margin: '4px 0 14px', paddingLeft: 18, lineHeight: 1.7, color: 'var(--text-secondary)', fontSize: 13 }}>
-        {IMPORT_STEPS[source].map((step, i) => <li key={i}>{step}</li>)}
+        {IMPORT_STEPS[source].map((step, i) => <li key={i}>{t(step)}</li>)}
       </ol>
 
       <div className="st-actions">
         {isJson ? (
           <label className="btn-primary" style={{ cursor: 'pointer' }}>
-            {importing ? t('common.importing') : 'Subir archivo .json'}
+            {importing ? t('common.importing') : t('import.uploadJsonFile')}
             <input type="file" accept=".json" onChange={handleJson} style={{ display: 'none' }} disabled={importing} />
           </label>
         ) : (
           <>
             {isFolderSource && (
               <label className="btn-primary" style={{ cursor: 'pointer' }}>
-                {importing ? t('common.importing') : 'Subir carpeta'}
+                {importing ? t('common.importing') : t('import.uploadFolder')}
                 <input
                   type="file"
                   multiple
@@ -1118,7 +1104,7 @@ export function ImportarPane() {
               </label>
             )}
             <label className={isFolderSource ? 'btn-secondary' : 'btn-primary'} style={{ cursor: 'pointer' }}>
-              {importing ? t('common.importing') : 'Subir archivos'}
+              {importing ? t('common.importing') : t('import.uploadFiles')}
               <input type="file" multiple accept=".md,.markdown,.txt" onChange={handleMarkdown} style={{ display: 'none' }} disabled={importing} />
             </label>
           </>
@@ -1129,7 +1115,7 @@ export function ImportarPane() {
       {error && <div className="auth-error" style={{ marginTop: 10 }}>{error}</div>}
 
       <div className="st-row-hint" style={{ marginTop: 14, fontSize: 11.5 }}>
-        Lo importado se crea en un nodo «📥 Importado [fecha]» en tu árbol, para que lo revises y reorganices con calma. No toca tus notas actuales.
+        {t('import.footerHint')}
       </div>
     </div>
   )
@@ -1181,7 +1167,7 @@ function EstadisticasPane() {
   return (
     <div className="st-pane">
       <SectionTitle>{t('stats.sectionTitle')}</SectionTitle>
-      <Row label={t('stats.notesAndTasksLabel')}><span className="st-value">{total} nodos activos</span></Row>
+      <Row label={t('stats.notesAndTasksLabel')}><span className="st-value">{t('stats.activeNodesCount', { count: total })}</span></Row>
       <Row label={t('stats.pendingTasksLabel')}><span className="st-value">{pending}</span></Row>
       <Row label={t('stats.completedTasksLabel')}><span className="st-value">{done}</span></Row>
       <Row label={t('stats.eventsLabel')}><span className="st-value">{events}</span></Row>
@@ -1200,7 +1186,7 @@ function TagsPane() {
   return (
     <div className="st-pane">
       <SectionTitle>{t('tags.sectionTitle')}</SectionTitle>
-      <Row label={`${tags.length} tags`} hint={t('tags.hint')} />
+      <Row label={t('tags.tagsCount', { count: tags.length })} hint={t('tags.hint')} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
         {tags.map((tag: string) => (
           <span key={tag} style={{ padding: '4px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12 }}>#{tag}</span>
@@ -1292,7 +1278,7 @@ function AgentesPane() {
   return (
     <div className="st-pane">
       <SectionTitle>{t('agents.sectionTitle')}</SectionTitle>
-      <Row label={`${agents.length} agentes definidos`} hint={t('agents.hint')} />
+      <Row label={t('agents.definedCount', { count: agents.length })} hint={t('agents.hint')} />
       <div style={{ marginTop: 12 }}>
         {agents.map(a => (
           <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
@@ -1352,7 +1338,7 @@ function PromptsPane() {
   return (
     <div className="st-pane">
       <SectionTitle>{t('prompts.sectionTitle')}</SectionTitle>
-      <Row label={`${prompts.length} prompts`} hint={t('prompts.hint')} />
+      <Row label={t('prompts.promptsCount', { count: prompts.length })} hint={t('prompts.hint')} />
       <div style={{ marginTop: 10 }}>
         <input className="st-input" placeholder={t('prompts.namePlaceholder')} value={newName} onChange={e => setNewName(e.target.value)} style={{ width: '100%', marginBottom: 6 }} />
         <textarea className="st-input" placeholder={t('prompts.contentPlaceholder')} value={newBody} onChange={e => setNewBody(e.target.value)} rows={4} style={{ width: '100%' }} />

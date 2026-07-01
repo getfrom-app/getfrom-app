@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getToken, apiRequest } from '../../api/client'
 import AuthPage from './AuthPage'
 
@@ -8,6 +9,7 @@ interface CodeResponse {
 }
 
 export default function ClaudeConnectPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -37,7 +39,7 @@ export default function ClaudeConnectPage() {
           textAlign: 'center',
           fontSize: '14px',
         }}>
-          Inicia sesión en Fromly para conectar con Claude
+          {t('claudeConnect.loginBanner')}
         </div>
         <AuthPage />
       </div>
@@ -67,7 +69,7 @@ export default function ClaudeConnectPage() {
       setDone(true)
       window.location.href = callbackUrl.toString()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al autorizar')
+      setError(err instanceof Error ? err.message : t('claudeConnect.authorizeError'))
     } finally {
       setLoading(false)
     }
@@ -89,10 +91,10 @@ export default function ClaudeConnectPage() {
       <div style={containerStyle}>
         <div style={cardStyle}>
           <Logo />
-          <h2 style={titleStyle}>Solicitud inválida</h2>
-          <p style={subtitleStyle}>Faltan parámetros requeridos para completar la autorización.</p>
+          <h2 style={titleStyle}>{t('claudeConnect.invalidRequestTitle')}</h2>
+          <p style={subtitleStyle}>{t('claudeConnect.invalidRequestText')}</p>
           <button onClick={() => navigate('/')} style={secondaryButtonStyle}>
-            Volver al inicio
+            {t('claudeConnect.backHome')}
           </button>
         </div>
       </div>
@@ -104,8 +106,8 @@ export default function ClaudeConnectPage() {
       <div style={containerStyle}>
         <div style={cardStyle}>
           <Logo />
-          <h2 style={titleStyle}>Autorizado</h2>
-          <p style={subtitleStyle}>Redirigiendo a Claude...</p>
+          <h2 style={titleStyle}>{t('claudeConnect.authorizedTitle')}</h2>
+          <p style={subtitleStyle}>{t('claudeConnect.redirecting')}</p>
         </div>
       </div>
     )
@@ -115,17 +117,17 @@ export default function ClaudeConnectPage() {
     <div style={containerStyle}>
       <div style={cardStyle}>
         <Logo />
-        <h2 style={titleStyle}>Conectar Fromly con Claude</h2>
+        <h2 style={titleStyle}>{t('claudeConnect.connectTitle')}</h2>
         <p style={subtitleStyle}>
-          Claude quiere acceder a tu vault de Fromly para guardar notas, tareas y contextos de tus conversaciones.
+          {t('claudeConnect.connectSubtitle')}
         </p>
 
         <div style={permissionsBox}>
-          <p style={permissionsTitle}>Claude podrá:</p>
+          <p style={permissionsTitle}>{t('claudeConnect.permissionsTitle')}</p>
           <ul style={permissionsList}>
-            <li>Leer y crear notas y tareas en tu vault</li>
-            <li>Acceder al diario del día y a los contextos de tus áreas</li>
-            <li>Guardar resúmenes y transcripciones de conversaciones</li>
+            <li>{t('claudeConnect.permissionRead')}</li>
+            <li>{t('claudeConnect.permissionDiary')}</li>
+            <li>{t('claudeConnect.permissionSummaries')}</li>
           </ul>
         </div>
 
@@ -141,19 +143,19 @@ export default function ClaudeConnectPage() {
             disabled={loading}
             style={secondaryButtonStyle}
           >
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleAuthorize}
             disabled={loading}
             style={primaryButtonStyle}
           >
-            {loading ? 'Autorizando...' : 'Autorizar'}
+            {loading ? t('claudeConnect.authorizing') : t('claudeConnect.authorize')}
           </button>
         </div>
 
         <p style={footerNote}>
-          Puedes revocar este acceso en cualquier momento desde los ajustes de Fromly.
+          {t('claudeConnect.revokeNote')}
         </p>
       </div>
     </div>

@@ -698,7 +698,7 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
         <span style={{ color: '#f97316' }}>✋</span>
         <span>{t('ai.confirmBeforeCreate')}</span>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>{actions.length} {actions.length === 1 ? 'elemento' : 'elementos'}</span>
+        <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.7 }}>{actions.length} {actions.length === 1 ? t('magicChat.itemSingular') : t('magicChat.itemPlural')}</span>
       </div>
       <div style={{ height: 1, background: 'var(--border)', opacity: 0.4 }} />
       {actions.map(a => (
@@ -728,6 +728,7 @@ function PendingConfirmationCard({ actions, onConfirm, onCancel, disabled }: {
 
 // Reproductor de audio dentro de un mensaje de voz (URL firmada de R2, bajo demanda)
 function MessageAudio({ audioKey, durationSec }: { audioKey: string; durationSec?: number }) {
+  const { t } = useTranslation()
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState(false)
   useEffect(() => {
@@ -738,10 +739,10 @@ function MessageAudio({ audioKey, durationSec }: { audioKey: string; durationSec
   const mm = durationSec ? `${Math.floor(durationSec / 60)}:${(durationSec % 60).toString().padStart(2, '0')}` : ''
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 2 }}>🎙 Audio{mm ? ` · ${mm}` : ''}</div>
-      {error ? <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Audio no disponible</div>
+      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 2 }}>🎙 {t('magicChat.audioLabel')}{mm ? ` · ${mm}` : ''}</div>
+      {error ? <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{t('magicChat.audioUnavailable')}</div>
         : url ? <audio controls src={url} style={{ width: '100%', height: 32 }} />
-        : <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Cargando audio…</div>}
+        : <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{t('magicChat.loadingAudio')}</div>}
     </div>
   )
 }

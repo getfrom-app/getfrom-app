@@ -3006,19 +3006,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (action === 'move-today') {
       const today = new Date(); today.setHours(0,0,0,0)
       store.updateNode(node.id, { due: today.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: hoy', type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateToday') })}`, type: 'success' } }))
       return
     } else if (action === 'move-tomorrow') {
       const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
       store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: mañana', type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateTomorrow') })}`, type: 'success' } }))
       return
     } else if (action === 'move-next-week') {
       const d = new Date()
       const dow = d.getDay()
       d.setDate(d.getDate() + (dow === 0 ? 1 : 8 - dow)); d.setHours(0,0,0,0)
       store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: '📅 Fecha: próxima semana', type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateNextWeek') })}`, type: 'success' } }))
       return
     } else if (action === 'move-to' && payload.moveToDate) {
       const d = new Date(payload.moveToDate); d.setHours(0,0,0,0)
@@ -3026,7 +3026,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const updates: Record<string, unknown> = { due: d.toISOString(), status: node.status ?? 'pending' }
       if (payload.moveToRecurrence) updates.recurrence = recurrenceToString(payload.moveToRecurrence)
       store.updateNode(node.id, updates)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 Fecha: ${label}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: label })}`, type: 'success' } }))
       return
     } else if (action === 'expand-all') {
       const getAllDescEx = (id: string): string[] => {
@@ -3120,7 +3120,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         // Si no es tarea aún, convertir a tarea pendiente
         ...(node.status === null ? { status: 'pending' } : {}),
       })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Repetición configurada: ${rec.display}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('outliner.recurrenceSet', { rec: rec.display }), type: 'success' } }))
       return
     }
 
@@ -3680,7 +3680,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 onClick={() => navigate(`/node/${node.id}`)}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                {node.text || 'Sin título'}
+                {node.text || t('common.noTitle')}
               </div>
             ) : (
             /* contentEditable SIN hijos React — el contenido se gestiona
@@ -3974,8 +3974,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               const [unit, nStr] = node.recurrence.split(':')
               const n = parseInt(nStr || '1') || 1
               const unitLabels: Record<string, [string, string]> = {
-                daily: ['día', 'días'], weekly: ['sem.', 'sem.'],
-                monthly: ['mes', 'meses'], yearly: ['año', 'años'],
+                daily: [t('outliner.recBadgeDaySing'), t('outliner.recBadgeDayPlur')],
+                weekly: [t('outliner.recBadgeWeekSing'), t('outliner.recBadgeWeekPlur')],
+                monthly: [t('outliner.recBadgeMonthSing'), t('outliner.recBadgeMonthPlur')],
+                yearly: [t('outliner.recBadgeYearSing'), t('outliner.recBadgeYearPlur')],
               }
               const [sing, plur] = unitLabels[unit] || [unit, unit]
               const txt = n === 1 ? sing : `${n} ${plur}`
@@ -3987,7 +3989,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               return (
                 <span
                   className="node-type-badge recurrence"
-                  title={`Repite cada ${txt} · clic derecho o × para quitar`}
+                  title={t('outliner.recBadgeTitle', { rec: txt })}
                   onContextMenu={removeRecurrence}
                 >
                   🔁 {txt}
@@ -4267,7 +4269,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
                       store.updateNode(node.id, { due: d.toISOString() })
                     }}
-                  >→ mañana</button>
+                  >→ {t('outliner.tomorrow')}</button>
                   <button
                     className="node-date-action-btn node-date-action-btn--remove"
                     title={t('tip.removeDate')}
@@ -4275,7 +4277,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                       e.preventDefault(); e.stopPropagation()
                       store.updateNode(node.id, { due: null })
                     }}
-                  >× fecha</button>
+                  >× {t('outliner.dateLower')}</button>
                 </span>
               </span>
             )}
@@ -4326,7 +4328,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             {/* Badge predicción de tarea sola */}
             {taskPrediction && !datePrediction && isEditing && !ctxCompletion && (
               <span className="from-ghost from-ghost--task">
-                <span className="from-ghost-text">☐ tarea</span>
+                <span className="from-ghost-text">☐ {t('outliner.taskLower')}</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">↵</span>
               </span>
@@ -4429,12 +4431,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         <div className="inline-picker" style={pickerStyle}>
           {picker.type === 'move' && (
             <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--accent)', fontWeight: 600, borderBottom: '1px solid var(--border)' }}>
-              → Mover a...
+              → {t('outliner.moveTo')}
             </div>
           )}
           {picker.type === 'mirror' && (
             <div style={{ padding: '4px 10px 6px', fontSize: 11, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-              ⬡ Espejo — selecciona el nodo a reflejar aquí
+              ⬡ {t('outliner.mirrorHint')}
             </div>
           )}
           {picker.type === 'move' ? picker.items.map((item, idx) => (
@@ -4463,7 +4465,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 <span className="inline-picker-content">
                   <span className="inline-picker-label">{item.label}</span>
                   {item.group === 'note' && (
-                    <span className="inline-picker-preview">{item.isNote ? 'Nota' : 'Párrafo'}</span>
+                    <span className="inline-picker-preview">{item.isNote ? t('outliner.noteWord') : t('outliner.paragraphWord')}</span>
                   )}
                 </span>
               </button>
@@ -4472,13 +4474,13 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               <>
                 {contextItems.length > 0 && (
                   <>
-                    <div className="inline-picker-section-header">Contextos</div>
+                    <div className="inline-picker-section-header">{t('outliner.contextsHeader')}</div>
                     {contextItems.map((item, i) => renderItem(item, i))}
                   </>
                 )}
                 {noteItems.length > 0 && (
                   <>
-                    <div className="inline-picker-section-header" style={{ borderTop: contextItems.length > 0 ? '1px solid var(--border)' : undefined, marginTop: contextItems.length > 0 ? 4 : 0 }}>Notas</div>
+                    <div className="inline-picker-section-header" style={{ borderTop: contextItems.length > 0 ? '1px solid var(--border)' : undefined, marginTop: contextItems.length > 0 ? 4 : 0 }}>{t('outliner.notesHeader')}</div>
                     {noteItems.map((item, i) => renderItem(item, contextItems.length + i))}
                   </>
                 )}
@@ -4486,7 +4488,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
             )
           })() : picker.type === '#' ? (
             <>
-              <div className="inline-picker-section-header">Contextos</div>
+              <div className="inline-picker-section-header">{t('outliner.contextsHeader')}</div>
               {picker.items.map((item, idx) => (
                 <button
                   key={item.id}
@@ -4500,7 +4502,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   </span>
                   <span className="inline-picker-content">
                     <span className="inline-picker-label">
-                      {item.cajonCreate ? `Crear contexto «${item.label}»` : item.label}
+                      {item.cajonCreate ? t('outliner.createContext', { label: item.label }) : item.label}
                     </span>
                     {!item.cajonCreate && item.contextLabel && (
                       <span className="inline-picker-preview">{item.contextLabel}</span>
@@ -4509,9 +4511,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 </button>
               ))}
               <div className="inline-picker-footer">
-                <span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
-                <span><kbd>↵</kbd> asignar</span>
-                <span><kbd>esc</kbd> cerrar</span>
+                <span><kbd>↑</kbd><kbd>↓</kbd> {t('outliner.footerNavigate')}</span>
+                <span><kbd>↵</kbd> {t('outliner.footerAssign')}</span>
+                <span><kbd>esc</kbd> {t('outliner.footerClose')}</span>
               </div>
             </>
           ) : picker.items.map((item, idx) => (

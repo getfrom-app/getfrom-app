@@ -50,13 +50,13 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
     const safe = Math.max(1, n)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
-  const recUnits: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'mes.'], ['yearly', 'año']]
+  const recUnits: [string, string][] = [['daily', t('nodeRightPanel.unitDays')], ['weekly', t('nodeRightPanel.unitWeeksShort')], ['monthly', t('taskProps.unitMonthsShort')], ['yearly', t('taskProps.unitYearShort')]]
   const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
   const priorityOpts: { v: Node['priority']; l: string; c: string }[] = [
     { v: null,     l: '–',    c: '' },
-    { v: 'low',    l: 'Baja',  c: '#6b7280' },
-    { v: 'medium', l: 'Media', c: '#f59e0b' },
-    { v: 'high',   l: 'Alta',  c: '#ef4444' },
+    { v: 'low',    l: t('nodeRightPanel.prioLow'),  c: '#6b7280' },
+    { v: 'medium', l: t('nodeRightPanel.prioMedium'), c: '#f59e0b' },
+    { v: 'high',   l: t('nodeRightPanel.prioHigh'),  c: '#ef4444' },
   ]
 
   if (!pos) return null
@@ -74,9 +74,9 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
       <div className="tpp-section-label">{t('modal.dueDate')}</div>
       <div className="nqp-quick-row">
         {[
-          { label: 'Hoy', days: 0 },
-          { label: 'Mañana', days: 1 },
-          { label: 'Lunes', days: qNextMondayDays },
+          { label: t('common.today'), days: 0 },
+          { label: t('nodeRightPanel.tomorrow'), days: 1 },
+          { label: t('taskProps.monday'), days: qNextMondayDays },
           { label: '+7d', days: 7 },
         ].map(({ label, days }) => {
           const d = new Date(); d.setDate(d.getDate() + days)
@@ -112,7 +112,7 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
         ))}
       </div>
 
-      <div className="tpp-section-label">Repetición</div>
+      <div className="tpp-section-label">{t('common.repeat')}</div>
       <div className="nqp-rec-row">
         <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
           onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
@@ -137,10 +137,10 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
       <div className="tpp-section-label">{t('search.filterStatus')}</div>
       <div className="nqp-chips-row">
         {([
-          { v: 'pending' as const, l: '○ Pendiente' },
-          { v: 'done'    as const, l: '✓ Hecha' },
-          { v: 'future'  as const, l: '◆ Futura' },
-          { v: null,               l: '– Sin estado' },
+          { v: 'pending' as const, l: `○ ${t('nodeRightPanel.statusPending')}` },
+          { v: 'done'    as const, l: `✓ ${t('taskProps.statusDoneF')}` },
+          { v: 'future'  as const, l: `◆ ${t('taskProps.statusFutureF')}` },
+          { v: null,               l: `– ${t('nodeRightPanel.statusNone')}` },
         ] as { v: Node['status']; l: string }[]).map(opt => (
           <button key={String(opt.v)}
             className={`nqp-chip${node.status === opt.v ? ' active' : ''}`}

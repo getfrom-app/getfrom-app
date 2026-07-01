@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { diaryId } from '../../utils/deterministicId'
 import type { Node } from '../../types'
@@ -43,6 +44,7 @@ function mondayOfIsoWeek(year: number, week: number): Date {
 }
 
 export default function TemporalChildrenBlock({ node, type, onNavigate }: Props) {
+  const { t } = useTranslation()
   const s = useStore()
   s  // suscripción
 
@@ -54,7 +56,7 @@ export default function TemporalChildrenBlock({ node, type, onNavigate }: Props)
     const yearNum = parseInt(node.text || '0')
     return (
       <div className="temporal-children">
-        <div className="temporal-children-label">Meses de {yearNum}</div>
+        <div className="temporal-children-label">{t('temporal.monthsOf', { year: yearNum })}</div>
         <div className="temporal-children-grid temporal-children-grid--months">
           {MONTHS_ES.map(m => {
             const existing = store.children(node.id).find(c => c.text === m && !c.deletedAt)
@@ -91,7 +93,7 @@ export default function TemporalChildrenBlock({ node, type, onNavigate }: Props)
     void firstDay
     return (
       <div className="temporal-children">
-        <div className="temporal-children-label">Semanas de {node.text}</div>
+        <div className="temporal-children-label">{t('temporal.weeksOf', { month: node.text })}</div>
         <div className="temporal-children-grid temporal-children-grid--weeks">
           {[...weeksInMonth].sort((a, b) => a - b).map(w => {
             const label = `Semana ${w}`
@@ -152,7 +154,7 @@ export default function TemporalChildrenBlock({ node, type, onNavigate }: Props)
 
   return (
     <div className="temporal-children">
-      <div className="temporal-children-label">Días de la semana</div>
+      <div className="temporal-children-label">{t('temporal.daysOfWeek')}</div>
       <div className="temporal-children-grid temporal-children-grid--days">
         {days.map((d, i) => {
           const dayOfWeek = DAYS_ES_SHORT[d.getDay()]

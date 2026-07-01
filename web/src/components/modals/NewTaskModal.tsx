@@ -74,16 +74,16 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
               />
             </div>
             <div className="modal-field modal-field--half">
-              <label className="modal-label">Prioridad</label>
+              <label className="modal-label">{t('taskPropsModal.priority')}</label>
               <select
                 className="modal-select"
                 value={priority}
                 onChange={e => setPriority(e.target.value as 'high' | 'medium' | 'low' | '')}
               >
-                <option value="">Sin prioridad</option>
-                <option value="high">🔴 Alta</option>
-                <option value="medium">🟡 Media</option>
-                <option value="low">⚪ Baja</option>
+                <option value="">{t('kanban.priorityNone')}</option>
+                <option value="high">{t('kanban.filterHigh')}</option>
+                <option value="medium">{t('kanban.filterMedium')}</option>
+                <option value="low">{t('kanban.filterLow')}</option>
               </select>
             </div>
           </div>

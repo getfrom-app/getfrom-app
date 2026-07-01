@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/config'
 
 // ── Priority badge ───────────────────────────────────────────────────────────
 
@@ -33,10 +34,10 @@ function formatDue(due: string): { label: string; overdue: boolean } {
   const overdue = diff < 0
 
   let label: string
-  if (diff < 0) label = diff === -1 ? 'ayer' : `hace ${Math.abs(diff)}d`
-  else if (diff === 0) label = 'hoy'
-  else if (diff === 1) label = 'mañana'
-  else if (diff < 7) label = `en ${diff}d`
+  if (diff < 0) label = diff === -1 ? i18n.t('kanban.yesterday') : i18n.t('kanban.daysAgo', { n: Math.abs(diff) })
+  else if (diff === 0) label = i18n.t('common.today')
+  else if (diff === 1) label = i18n.t('kanban.tomorrow')
+  else if (diff < 7) label = i18n.t('kanban.inDays', { n: diff })
   else label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
   return { label, overdue }
@@ -45,6 +46,7 @@ function formatDue(due: string): { label: string; overdue: boolean } {
 // ── Kanban card ──────────────────────────────────────────────────────────────
 
 function KanbanCard({ task, onDrop }: { task: Node; onDrop: (id: string, newStatus: Node['status']) => void }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [dragOver, setDragOver] = useState(false)
 
@@ -65,7 +67,7 @@ function KanbanCard({ task, onDrop }: { task: Node; onDrop: (id: string, newStat
     >
       <div className="kanban-card-header">
         <PriorityDot priority={task.priority} />
-        <span className="kanban-card-title">{task.text || 'Sin título'}</span>
+        <span className="kanban-card-title">{task.text || t('common.noTitle')}</span>
         {task.isFavorite && <span style={{ fontSize: 11, color: '#f59e0b' }}>★</span>}
       </div>
       {/* Tags */}
@@ -101,9 +103,9 @@ interface ColumnConfig {
 }
 
 const COLUMNS: ColumnConfig[] = [
-  { status: 'pending',   label: 'Activo',      color: '#3b82f6', icon: '●' },
-  { status: 'done',      label: 'Completado',  color: '#22c55e', icon: '✓' },
-  { status: null,        label: 'Sin estado',  color: '#6b7280', icon: '○' },
+  { status: 'pending',   label: 'kanban.statusActive',    color: '#3b82f6', icon: '●' },
+  { status: 'done',      label: 'kanban.statusCompleted', color: '#22c55e', icon: '✓' },
+  { status: null,        label: 'kanban.statusNone',      color: '#6b7280', icon: '○' },
 ]
 
 function KanbanColumn({
@@ -146,13 +148,13 @@ function KanbanColumn({
       <div className="kanban-column-header">
         <div className="kanban-column-title">
           <span className="kanban-column-icon" style={{ color: column.color }}>{column.icon}</span>
-          <span>{column.label}</span>
+          <span>{t(column.label)}</span>
           <span className="kanban-column-count">{tasks.length}</span>
         </div>
         <button
           className="kanban-add-btn"
           onClick={() => { setAdding(true); setNewText('') }}
-          title={`Nueva tarea en ${column.label}`}
+          title={t('kanban.newTaskIn', { column: t(column.label) })}
         >
           +
         </button>
@@ -162,7 +164,7 @@ function KanbanColumn({
           <KanbanCard key={t.id} task={t} onDrop={onDrop} />
         ))}
         {tasks.length === 0 && !adding && (
-          <div className="kanban-column-empty">Sin tareas</div>
+          <div className="kanban-column-empty">{t('kanban.noTasks')}</div>
         )}
         {adding && (
           <input
@@ -191,21 +193,22 @@ type KanbanGroupBy = 'status' | 'priority' | 'tag'
 // ── Priority columns config ──────────────────────────────────────────────────
 
 const PRIORITY_COLUMNS = [
-  { key: 'high',   label: 'Alta',          color: '#ef4444', icon: '▲' },
-  { key: 'medium', label: 'Media',         color: '#f97316', icon: '●' },
-  { key: 'low',    label: 'Baja',          color: '#6b7280', icon: '▽' },
-  { key: 'none',   label: 'Sin prioridad', color: '#94a3b8', icon: '○' },
+  { key: 'high',   label: 'kanban.priorityHigh',   color: '#ef4444', icon: '▲' },
+  { key: 'medium', label: 'kanban.priorityMedium', color: '#f97316', icon: '●' },
+  { key: 'low',    label: 'kanban.priorityLow',    color: '#6b7280', icon: '▽' },
+  { key: 'none',   label: 'kanban.priorityNone',   color: '#94a3b8', icon: '○' },
 ] as const
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: Node['status'] }) {
+  const { t } = useTranslation()
   const map: Record<string, { label: string; color: string }> = {
-    pending: { label: 'Activo', color: '#3b82f6' },
-    done: { label: 'Completado', color: '#22c55e' },
+    pending: { label: t('kanban.statusActive'), color: '#3b82f6' },
+    done: { label: t('kanban.statusCompleted'), color: '#22c55e' },
   }
   const entry = status ? map[status] : null
-  if (!entry) return <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Sin estado</span>
+  if (!entry) return <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{t('kanban.statusNone')}</span>
   return (
     <span style={{
       fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
@@ -219,11 +222,12 @@ function StatusBadge({ status }: { status: Node['status'] }) {
 // ── Priority badge (for table) ───────────────────────────────────────────────
 
 function PriorityBadge({ priority }: { priority: Node['priority'] }) {
+  const { t } = useTranslation()
   if (!priority) return <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>—</span>
   const map: Record<string, { label: string; color: string }> = {
-    high: { label: 'Alta', color: '#ef4444' },
-    medium: { label: 'Media', color: '#f59e0b' },
-    low: { label: 'Baja', color: '#6b7280' },
+    high: { label: t('kanban.priorityHigh'), color: '#ef4444' },
+    medium: { label: t('kanban.priorityMedium'), color: '#f59e0b' },
+    low: { label: t('kanban.priorityLow'), color: '#6b7280' },
   }
   const entry = map[priority]
   return (
@@ -239,6 +243,7 @@ function PriorityBadge({ priority }: { priority: Node['priority'] }) {
 // ── Table view ───────────────────────────────────────────────────────────────
 
 function KanbanTable({ tasks }: { tasks: Node[] }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   function toggleDone(e: React.MouseEvent, task: Node) {
@@ -252,10 +257,10 @@ function KanbanTable({ tasks }: { tasks: Node[] }) {
         <thead>
           <tr className="kanban-table-head-row">
             <th className="kanban-table-th" style={{ width: 32 }}></th>
-            <th className="kanban-table-th" style={{ textAlign: 'left' }}>Título</th>
-            <th className="kanban-table-th" style={{ width: 110 }}>Estado</th>
-            <th className="kanban-table-th" style={{ width: 90 }}>Prioridad</th>
-            <th className="kanban-table-th" style={{ width: 110 }}>Fecha límite</th>
+            <th className="kanban-table-th" style={{ textAlign: 'left' }}>{t('common.title')}</th>
+            <th className="kanban-table-th" style={{ width: 110 }}>{t('kanban.colStatus')}</th>
+            <th className="kanban-table-th" style={{ width: 90 }}>{t('kanban.colPriority')}</th>
+            <th className="kanban-table-th" style={{ width: 110 }}>{t('kanban.colDueDate')}</th>
           </tr>
         </thead>
         <tbody>
@@ -276,7 +281,7 @@ function KanbanTable({ tasks }: { tasks: Node[] }) {
                 </td>
                 <td className="kanban-table-td">
                   <span style={{ fontSize: 13, textDecoration: isDone ? 'line-through' : 'none' }}>
-                    {task.text || 'Sin título'}
+                    {task.text || t('common.noTitle')}
                   </span>
                 </td>
                 <td className="kanban-table-td"><StatusBadge status={task.status} /></td>
@@ -290,7 +295,7 @@ function KanbanTable({ tasks }: { tasks: Node[] }) {
           {tasks.length === 0 && (
             <tr>
               <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>
-                Sin tareas
+                {t('kanban.noTasks')}
               </td>
             </tr>
           )}
@@ -361,8 +366,8 @@ export default function KanbanView() {
         <h1 className="view-title">Kanban</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="kanban-stats">
-            <span className="kanban-stat">{totalPending} pendientes</span>
-            <span className="kanban-stat kanban-stat--done">{totalDone} completadas</span>
+            <span className="kanban-stat">{t('kanban.pendingCount', { n: totalPending })}</span>
+            <span className="kanban-stat kanban-stat--done">{t('kanban.completedCount', { n: totalDone })}</span>
           </div>
           {viewMode === 'board' && (
             <select
@@ -370,9 +375,9 @@ export default function KanbanView() {
               value={groupBy}
               onChange={e => setGroupBy(e.target.value as KanbanGroupBy)}
             >
-              <option value="status">Por estado</option>
-              <option value="priority">Por prioridad</option>
-              <option value="tag">Por tag</option>
+              <option value="status">{t('kanban.groupByStatus')}</option>
+              <option value="priority">{t('kanban.groupByPriority')}</option>
+              <option value="tag">{t('kanban.groupByTag')}</option>
             </select>
           )}
           <div className="kanban-view-mode-toggle">
@@ -388,7 +393,7 @@ export default function KanbanView() {
               onClick={() => setViewMode('table')}
               title={t('kanban.viewTable')}
             >
-              Tabla
+              {t('kanban.table')}
             </button>
           </div>
         </div>
@@ -410,7 +415,7 @@ export default function KanbanView() {
               className={`kanban-filter-btn ${priorityFilter === p ? 'active' : ''}`}
               onClick={() => setPriorityFilter(p)}
             >
-              {p === 'all' ? 'Todas' : p === 'high' ? '🔴 Alta' : p === 'medium' ? '🟡 Media' : '⚪ Baja'}
+              {p === 'all' ? t('kanban.filterAll') : p === 'high' ? t('kanban.filterHigh') : p === 'medium' ? t('kanban.filterMedium') : t('kanban.filterLow')}
             </button>
           ))}
         </div>
@@ -438,7 +443,7 @@ export default function KanbanView() {
               <div className="kanban-column-header">
                 <div className="kanban-column-title">
                   <span className="kanban-column-icon" style={{ color: col.color }}>{col.icon}</span>
-                  <span>{col.label}</span>
+                  <span>{t(col.label)}</span>
                   <span className="kanban-column-count">
                     {filteredTasks.filter(t => (t.priority ?? 'none') === col.key).length}
                   </span>
@@ -450,7 +455,7 @@ export default function KanbanView() {
                   .map(t => <KanbanCard key={t.id} task={t} onDrop={handleDrop} />)
                 }
                 {filteredTasks.filter(t => (t.priority ?? 'none') === col.key).length === 0 && (
-                  <div className="kanban-column-empty">Sin tareas</div>
+                  <div className="kanban-column-empty">{t('kanban.noTasks')}</div>
                 )}
               </div>
             </div>
@@ -468,7 +473,7 @@ export default function KanbanView() {
         )
         const allTagCols = [
           ...uniqueTags.map(tag => ({ key: tag, label: `#${tag}`, isTag: true })),
-          ...(untagged.length > 0 ? [{ key: '__none__', label: 'Sin tag', isTag: false }] : []),
+          ...(untagged.length > 0 ? [{ key: '__none__', label: t('kanban.noTag'), isTag: false }] : []),
         ]
         return (
           <div className="kanban-board">
@@ -486,14 +491,14 @@ export default function KanbanView() {
                   </div>
                   <div className="kanban-column-body">
                     {colTasks.map(t => <KanbanCard key={t.id} task={t} onDrop={handleDrop} />)}
-                    {colTasks.length === 0 && <div className="kanban-column-empty">Sin tareas</div>}
+                    {colTasks.length === 0 && <div className="kanban-column-empty">{t('kanban.noTasks')}</div>}
                   </div>
                 </div>
               )
             })}
             {allTagCols.length === 0 && (
               <div style={{ padding: '32px', color: 'var(--text-tertiary)', fontSize: 13 }}>
-                Ninguna tarea tiene tags asignados
+                {t('kanban.noTasksWithTags')}
               </div>
             )}
           </div>

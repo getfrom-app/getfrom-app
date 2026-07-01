@@ -140,7 +140,7 @@ AL TERMINAR ("fin"):
     setPasswordError('')
     setPasswordSuccess('')
     if (newPassword !== confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden')
+      setPasswordError(t('account.passwordsDontMatch'))
       return
     }
     setPasswordLoading(true)
@@ -317,8 +317,8 @@ AL TERMINAR ("fin"):
     // Confirmación obligatoria: contraseña (o email si la cuenta es de Google).
     const hasPwd = userStore.user?.hasPassword !== false
     const answer = window.prompt(hasPwd
-      ? 'Escribe tu contraseña para confirmar la eliminación de tu cuenta:'
-      : 'Escribe tu email para confirmar la eliminación de tu cuenta:')
+      ? t('account.deleteConfirmPasswordPrompt')
+      : t('account.deleteConfirmEmailPrompt'))
     if (!answer || !answer.trim()) return
     setDeleteLoading(true)
     try {
@@ -678,7 +678,7 @@ AL TERMINAR ("fin"):
           <div className="settings-row">
             <div>
               <div className="settings-row-label">{t('shortcuts.sectionTextExpansion')}</div>
-              <div className="settings-row-hint">{t('shortcuts.textExpansionHint')} Ej: <code>;firma</code> → <em>Un saludo, Alberto</em></div>
+              <div className="settings-row-hint">{t('shortcuts.textExpansionHint')} {t('account.shortcutExampleLabel')} <code>{t('account.shortcutExampleTrigger')}</code> → <em>{t('account.shortcutExampleExpansion')}</em></div>
             </div>
           </div>
 
@@ -899,11 +899,11 @@ AL TERMINAR ("fin"):
 
             {/* Instrucciones */}
             <div style={{ marginTop: 4, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, lineHeight: 1.65, color: 'var(--text-secondary)' }}>
-              <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>Cómo sincronizar Google Calendar</strong>
+              <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>{t('account.gcalHowToTitle')}</strong>
               <ol style={{ margin: 0, paddingLeft: 18 }}>
-                <li>Cierra sesión en Fromly.</li>
-                <li>Inicia sesión usando el botón <em>{t('auth.continueWithGoogle')}</em>.</li>
-                <li>Los eventos con fecha y hora se importarán automáticamente al Calendario.</li>
+                <li>{t('account.gcalStep1')}</li>
+                <li>{t('account.gcalStep2Before')} <em>{t('auth.continueWithGoogle')}</em>.</li>
+                <li>{t('account.gcalStep3')}</li>
               </ol>
               <a
                 href="https://fromly.app/docs/google-calendar"
@@ -911,7 +911,7 @@ AL TERMINAR ("fin"):
                 rel="noopener noreferrer"
                 style={{ display: 'inline-block', marginTop: 8, color: 'var(--accent)', fontSize: 12 }}
               >
-                Ver documentación →
+                {t('account.gcalViewDocs')}
               </a>
             </div>
           </section>
@@ -930,9 +930,9 @@ AL TERMINAR ("fin"):
                 <div style={{ flex: 1 }}>
                   <div className="settings-row-label">{t('sidebar.claudeMCP')}</div>
                   <div className="settings-row-hint">
-                    Conecta Claude con tu vault. Instala la extensión y genera tu token.{' '}
+                    {t('account.mcpConnectHint')}{' '}
                     <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
-                      Más info →
+                      {t('account.mcpMoreInfo')}
                     </a>
                   </div>
                 </div>
@@ -942,7 +942,7 @@ AL TERMINAR ("fin"):
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
                 >
-                  ↓ Descargar From.dxt
+                  {t('account.mcpDownloadDxt')}
                 </a>
               </div>
 
@@ -951,8 +951,8 @@ AL TERMINAR ("fin"):
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>1</span>
                   {/* Email de la cuenta activa */}
-                  {user?.email && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>Cuenta: {user.email}</span>}
-                  Token de API — pégalo en Claude Desktop al instalar la extensión
+                  {user?.email && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>{t('account.mcpAccountPrefix')} {user.email}</span>}
+                  {t('account.mcpTokenStepLabel')}
                 </div>
                 {mcpLoaded && (
                   mcpToken ? (
@@ -962,16 +962,16 @@ AL TERMINAR ("fin"):
                           {mcpToken}
                         </code>
                         <button className="btn-secondary" onClick={copyMcpToken} style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}>
-                          {mcpCopied ? '✓ Copiado' : 'Copiar'}
+                          {mcpCopied ? t('account.mcpCopied') : t('account.mcpCopy')}
                         </button>
                       </div>
                       <button onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer', padding: 0, border: 'none' }}>
-                        {generatingMcp ? 'Regenerando...' : 'Regenerar token'}
+                        {generatingMcp ? t('account.mcpRegenerating') : t('account.mcpRegenerate')}
                       </button>
                     </div>
                   ) : (
                     <button className="btn-secondary" onClick={handleGenerateMcpToken} disabled={generatingMcp} style={{ fontSize: 13 }}>
-                      {generatingMcp ? 'Generando...' : 'Generar token de API'}
+                      {generatingMcp ? t('account.mcpGenerating') : t('account.mcpGenerateToken')}
                     </button>
                   )
                 )}
@@ -982,10 +982,10 @@ AL TERMINAR ("fin"):
                 <div style={{ width: '100%', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>2</span>
-                    Activa el guardado automático
+                    {t('account.mcpStep2Title')}
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, margin: '0 0 10px' }}>
-                    Copia el siguiente bloque y pégalo en <strong style={{ color: 'var(--text)' }}>Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas</strong>. Hazlo una vez y Claude guardará tus conversaciones en Fromly automáticamente.
+                    {t('account.mcpStep2TextBefore')} <strong style={{ color: 'var(--text)' }}>{t('account.mcpStep2Path')}</strong>. {t('account.mcpStep2TextAfter')}
                   </p>
                   <div style={{ position: 'relative' }}>
                     <pre style={{ margin: 0, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 120, overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
@@ -996,7 +996,7 @@ AL TERMINAR ("fin"):
                       className="btn-primary"
                       style={{ marginTop: 8, fontSize: 13, width: '100%', justifyContent: 'center' }}
                     >
-                      {mcpPromptCopied ? '✓ Copiado — pégalo en Claude Desktop → Ajustes → Perfil' : 'Copiar instrucciones'}
+                      {mcpPromptCopied ? t('account.mcpInstructionsCopied') : t('account.mcpCopyInstructions')}
                     </button>
                   </div>
                 </div>

@@ -2194,11 +2194,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
         }}>
           {(multiSel.size + selStrokes.size) > 1 && (
-            <button style={miniItem} onClick={() => groupSelection()}>Agrupar</button>
+            <button style={miniItem} onClick={() => groupSelection()}>{t('pizarra.group')}</button>
           )}
-          <button style={miniItem} onClick={() => copySelection()}>Copiar</button>
-          <button style={miniItem} onClick={() => duplicateSelection()}>Duplicar</button>
-          <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>Eliminar</button>
+          <button style={miniItem} onClick={() => copySelection()}>{t('common.copy')}</button>
+          <button style={miniItem} onClick={() => duplicateSelection()}>{t('common.duplicate')}</button>
+          <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }} onClick={() => deleteSelection()}>{t('common.delete')}</button>
         </div>
       )}
 
@@ -2212,7 +2212,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
             onClick={(e) => e.stopPropagation()}>
             <button style={{ ...miniItem, color: 'var(--danger,#e03131)' }}
               onClick={() => { mutateConnectors(cs => cs.filter(c => c.id !== connMenu.id)); setHoverConn(null); setConnMenu(null) }}>
-              Eliminar flecha
+              {t('pizarra.deleteArrow')}
             </button>
           </div>
         </>
@@ -2342,7 +2342,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
         // (tabla/kanban/calendario). El TEXTO y los DOCUMENTOS se ven siempre
         // completos a cualquier zoom (es ligero y el usuario quiere leerlo).
         const lod = cam.scale < LOD_SCALE && !editing && !!elView
-        const lodTitle = (node.text || (isText ? 'Documento' : elView ? (elView[0].toUpperCase() + elView.slice(1)) : 'Sin título')).slice(0, 60)
+        const lodTitle = (node.text || (isText ? t('pizarra.document') : elView ? (elView[0].toUpperCase() + elView.slice(1)) : t('common.noTitle'))).slice(0, 60)
         return (
           <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isClean ? ' pizarra-node--cleantext' : ''}${hasChrome ? ' pizarra-node--check' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
@@ -2513,8 +2513,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
           <div style={{ position: 'fixed', top: textMenu.y, left: textMenu.x, zIndex: 2000, minWidth: 160,
             background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
             boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
-            <button onClick={() => { duplicateText(textMenu.id); setTextMenu(null) }} style={ctxItem}>Duplicar</button>
-            <button onClick={() => { deleteText(textMenu.id); setTextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>Eliminar</button>
+            <button onClick={() => { duplicateText(textMenu.id); setTextMenu(null) }} style={ctxItem}>{t('common.duplicate')}</button>
+            <button onClick={() => { deleteText(textMenu.id); setTextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>{t('common.delete')}</button>
           </div>
         </>
       )}
@@ -2685,27 +2685,27 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
               boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
               {isMulti ? (
                 <>
-                  <div style={{ padding: '6px 12px 4px', fontSize: 12, color: 'var(--text-secondary,#888)' }}>{multiSel.size + selStrokes.size} seleccionados</div>
+                  <div style={{ padding: '6px 12px 4px', fontSize: 12, color: 'var(--text-secondary,#888)' }}>{t('pizarra.selectedCount', { n: multiSel.size + selStrokes.size })}</div>
                   {(multiSel.size + selStrokes.size) > 1 && (
                     <button onClick={() => { groupSelection(); setContextMenu(null) }} style={ctxItem}>
-                      Agrupar
+                      {t('pizarra.group')}
                     </button>
                   )}
                   <button onClick={() => { duplicateSelection(); setContextMenu(null) }} style={ctxItem}>
-                    Duplicar todos
+                    {t('pizarra.duplicateAll')}
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
                   <button onClick={() => { deleteSelection(); setContextMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
-                    Eliminar todos
+                    {t('pizarra.deleteAll')}
                   </button>
                 </>
               ) : (
                 <>
                   <button onClick={() => { removeFromCanvas(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
-                    Quitar de la pizarra
+                    {t('pizarra.removeFromCanvas')}
                   </button>
                   <button onClick={() => { window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextMenu.nodeId } })); navigate(`/node/${contextMenu.nodeId}`); setContextMenu(null) }} style={ctxItem}>
-                    Abrir nodo
+                    {t('pizarra.openNode')}
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
                   {/* Convertir en tarea (hoy) / Favorito */}
@@ -2722,16 +2722,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                             store.updateNode(contextMenu.nodeId, { status: 'pending', due: today.toISOString() })
                           }
                           setContextMenu(null)
-                        }} style={ctxItem}>{isTask ? '○ Quitar tarea' : '☑ Convertir en tarea'}</button>
+                        }} style={ctxItem}>{isTask ? t('pizarra.removeTask') : t('pizarra.convertToTask')}</button>
                         <button onClick={() => { store.updateNode(contextMenu.nodeId, { isFavorite: !n?.isFavorite }); setContextMenu(null) }} style={ctxItem}>
-                          {n?.isFavorite ? '★ Quitar de favoritos' : '☆ Favorito'}
+                          {n?.isFavorite ? t('pizarra.removeFavorite') : t('pizarra.addFavorite')}
                         </button>
                         <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
                       </>
                     )
                   })()}
                   <button onClick={() => { duplicateNode(contextMenu.nodeId, 24); setContextMenu(null) }} style={ctxItem}>
-                    Duplicar
+                    {t('common.duplicate')}
                   </button>
                   <button onClick={() => {
                     const n = store.getNode(contextMenu.nodeId)
@@ -2739,7 +2739,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
                     store.deleteNode(contextMenu.nodeId)
                     setContextMenu(null)
                   }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
-                    Eliminar nodo
+                    {t('pizarra.deleteNode')}
                   </button>
                 </>
               )}

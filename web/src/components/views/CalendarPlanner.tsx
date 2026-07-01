@@ -409,7 +409,7 @@ export default function CalendarPlanner() {
         title={`${block.text}\n${fmtHH(block.start)} – ${fmtHH(block.end)}`}
       >
         <div className="cp-block-time">{fmtHH(block.start)}</div>
-        <div className="cp-block-text">{block.text || 'Sin título'}</div>
+        <div className="cp-block-text">{block.text || t('common.noTitle')}</div>
         {canDrag && <div className="cp-block-resize" onMouseDown={e => handleResizeStart(e, block.id)} />}
       </div>
     )
@@ -594,7 +594,7 @@ export default function CalendarPlanner() {
         <div className="cp-view-tabs">
           {(['day','week','year'] as ViewMode[]).map(m => (
             <button key={m} className={`cp-view-tab ${viewMode===m?'cp-view-tab--active':''}`} onClick={() => setViewMode(m)}>
-              {m === 'day' ? 'Día' : m === 'week' ? 'Semana' : 'Año'}
+              {m === 'day' ? t('calendarPlanner.day') : m === 'week' ? t('calendarPlanner.week') : t('calendarPlanner.year')}
             </button>
           ))}
         </div>
@@ -602,7 +602,7 @@ export default function CalendarPlanner() {
         <button className="cp-nav-btn" onClick={() => navigate_date(-1)}>‹</button>
         <span className="cp-nav-title">{navTitle}</span>
         <button className="cp-nav-btn" onClick={() => navigate_date(1)}>›</button>
-        <button className="cp-today-btn" onClick={() => setCenterDate(today)}>Hoy</button>
+        <button className="cp-today-btn" onClick={() => setCenterDate(today)}>{t('common.today')}</button>
       </div>
 
       {/* ── Body ── */}
@@ -612,19 +612,19 @@ export default function CalendarPlanner() {
         <div className="cp-task-col">
           {/* Filtros */}
           <div className="cp-task-filters">
-            {([['all','Todas'],['overdue','Vencidas'],['today','Hoy'],['future','Futuras']] as [TaskFilter,string][]).map(([f,label]) => (
+            {([['all','calendarPlanner.filterAll'],['overdue','calendarPlanner.filterOverdue'],['today','common.today'],['future','calendarPlanner.filterFuture']] as [TaskFilter,string][]).map(([f,labelKey]) => (
               <button
                 key={f}
                 className={`cp-filter-chip ${taskFilter===f?'cp-filter-chip--active':''} ${f==='overdue'?'cp-filter-chip--od':''}`}
                 onClick={() => setTaskFilter(f)}
-              >{label}</button>
+              >{t(labelKey)}</button>
             ))}
           </div>
 
           {/* Árbol filtrado — mismos bullets, chevrons y zoom que el árbol central */}
           <div className="cp-task-outliner">
             {filterMatchIds.size === 0
-              ? <div className="cp-task-empty">Sin tareas{taskFilter !== 'all' ? ' en este filtro' : ''}</div>
+              ? <div className="cp-task-empty">{taskFilter !== 'all' ? t('calendarPlanner.noTasksInFilter') : t('calendarPlanner.noTasks')}</div>
               : <Outliner
                   parentId={null}
                   filterMatchIds={filterMatchIds}
@@ -691,11 +691,11 @@ export default function CalendarPlanner() {
                 const dayNode = ensureDayPath(ctxMenu.block.start)
                 store.createNode({ text: ctxMenu.block.gcalEvent.title, parentId: dayNode.id })
                 setCtxMenu(null)
-              }}>📄 Crear nodo asociado</button>
+              }}>{t('calendarPlanner.createLinkedNode')}</button>
             )}
             {ctxMenu.block.kind === 'task' && ctxMenu.block.linkedId && (
               <button onClick={() => { navigate(`/node/${ctxMenu.block.linkedId!}`); setCtxMenu(null) }}>
-                → Ir a la tarea
+                {t('calendarPlanner.goToTask')}
               </button>
             )}
             {ctxMenu.block.kind === 'standalone' && (
@@ -705,11 +705,11 @@ export default function CalendarPlanner() {
                 store.createNode({ text: b.text, parentId: dayNode.id, isTask: true })
                 store.deleteNode(b.id)
                 setCtxMenu(null)
-              }}>✓ Convertir a tarea</button>
+              }}>{t('calendarPlanner.convertToTask')}</button>
             )}
             {ctxMenu.block.kind !== 'gcal' && (
               <button className="cp-ctx-danger" onClick={() => { store.deleteNode(ctxMenu.block.id); setCtxMenu(null) }}>
-                Eliminar time block
+                {t('calendarPlanner.deleteTimeBlock')}
               </button>
             )}
           </div>

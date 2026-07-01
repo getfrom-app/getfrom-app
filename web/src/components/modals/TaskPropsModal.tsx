@@ -7,8 +7,8 @@ import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 
-const REC_UNITS: [string, string][] = [['daily', 'días'], ['weekly', 'sem.'], ['monthly', 'meses'], ['yearly', 'años']]
-const PRIORITIES: [string, string][] = [['high', 'Alta'], ['medium', 'Media'], ['low', 'Baja']]
+const REC_UNITS: [string, string][] = [['daily', 'taskPropsModal.recDays'], ['weekly', 'taskPropsModal.recWeeks'], ['monthly', 'taskPropsModal.recMonths'], ['yearly', 'taskPropsModal.recYears']]
+const PRIORITIES: [string, string][] = [['high', 'priority.high'], ['medium', 'priority.medium'], ['low', 'priority.low']]
 
 export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
   const { t } = useTranslation()
@@ -57,13 +57,13 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal modal--small" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 380 }}>
-        <h3 className="modal-title" style={{ marginBottom: 2 }}>⚙ Propiedades de la tarea</h3>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary,#666)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.text || 'Tarea'}</div>
+        <h3 className="modal-title" style={{ marginBottom: 2 }}>⚙ {t('taskPropsModal.title')}</h3>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary,#666)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.text || t('taskPropsModal.taskFallback')}</div>
 
         {/* Fecha rápida */}
-        <div style={label}>Fecha</div>
+        <div style={label}>{t('common.date')}</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-          {([['Hoy', 0], ['Mañana', 1], ['+7d', 7], ['+30d', 30]] as [string, number][]).map(([lbl, d]) => (
+          {([[t('taskPropsModal.quickToday'), 0], [t('taskPropsModal.quickTomorrow'), 1], ['+7d', 7], ['+30d', 30]] as [string, number][]).map(([lbl, d]) => (
             <button key={lbl} style={chip(false)} onClick={() => quick(d)}>{lbl}</button>
           ))}
         </div>
@@ -75,28 +75,28 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
         </div>
 
         {/* Recurrencia */}
-        <div style={label}>Repetir cada</div>
+        <div style={label}>{t('taskPropsModal.repeatEvery')}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button style={chip(!recUnit)} onClick={() => setRec('', 1)}>No</button>
+          <button style={chip(!recUnit)} onClick={() => setRec('', 1)}>{t('taskPropsModal.repeatNo')}</button>
           <input type="number" min={1} max={999} value={recN} disabled={!recUnit}
             style={{ ...input, width: 56 }}
             onChange={e => setRec(recUnit || 'daily', Math.max(1, parseInt(e.target.value) || 1))} />
           {REC_UNITS.map(([unit, lbl]) => (
-            <button key={unit} style={chip(recUnit === unit)} onClick={() => setRec(unit, recN)}>{lbl}</button>
+            <button key={unit} style={chip(recUnit === unit)} onClick={() => setRec(unit, recN)}>{t(lbl)}</button>
           ))}
         </div>
 
         {/* Prioridad */}
-        <div style={label}>Prioridad</div>
+        <div style={label}>{t('taskPropsModal.priority')}</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button style={chip(!node.priority)} onClick={() => setPriority(null)}>Ninguna</button>
+          <button style={chip(!node.priority)} onClick={() => setPriority(null)}>{t('taskPropsModal.priorityNone')}</button>
           {PRIORITIES.map(([p, lbl]) => (
-            <button key={p} style={chip(node.priority === p)} onClick={() => setPriority(p as 'low' | 'medium' | 'high')}>{lbl}</button>
+            <button key={p} style={chip(node.priority === p)} onClick={() => setPriority(p as 'low' | 'medium' | 'high')}>{t(lbl)}</button>
           ))}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
-          <button className="btn-primary" onClick={onClose}>Listo</button>
+          <button className="btn-primary" onClick={onClose}>{t('taskPropsModal.done')}</button>
         </div>
       </div>
     </div>,

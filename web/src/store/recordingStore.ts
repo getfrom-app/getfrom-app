@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import i18n from '../i18n/config'
 
 export type RecordingSource = 'mic'
 export type RecordingPhase = 'idle' | 'recording' | 'done'
@@ -54,7 +55,7 @@ class RecordingStore {
 
     const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechAPI) {
-      this.error = 'Tu navegador no soporta grabación de voz. Usa Chrome.'
+      this.error = i18n.t('recording.notSupported', { defaultValue: 'Tu navegador no soporta grabación de voz. Usa Chrome.' })
       this.notify()
       return
     }
@@ -63,7 +64,7 @@ class RecordingStore {
     try {
       this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
-      this.error = 'Permiso de micrófono denegado'
+      this.error = i18n.t('recording.micDenied', { defaultValue: 'Permiso de micrófono denegado' })
       this.notify()
       return
     }
@@ -114,7 +115,7 @@ class RecordingStore {
 
       rec.onerror = (e: SpeechRecognitionErrorEvent) => {
         if (e.error === 'not-allowed') {
-          this.error = 'Permiso de micrófono denegado'
+          this.error = i18n.t('recording.micDenied', { defaultValue: 'Permiso de micrófono denegado' })
           this._stopInternal()
         }
       }

@@ -58,8 +58,8 @@ export default function KeyboardShortcutsModal({ onClose }: Props) {
         </div>
 
         <p className="shortcuts-hint">
-          {t('shortcuts.pressKey')} <kbd className="shortcut-key">?</kbd> para abrir este panel ·
-          {' '}<span style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => { onClose(); window.location.href = '/app/settings?tab=hotkeys' }}>Editar atajos →</span>
+          {t('shortcuts.pressKey')} <kbd className="shortcut-key">?</kbd> {t('shortcuts.toOpenThisPanel')} ·
+          {' '}<span style={{ color: 'var(--accent)', cursor: 'pointer' }} onClick={() => { onClose(); window.location.href = '/app/settings?tab=hotkeys' }}>{t('shortcuts.editShortcuts')}</span>
         </p>
       </div>
     </div>,

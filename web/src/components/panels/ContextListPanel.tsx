@@ -390,7 +390,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
           onClick={() => { setAddingCtx(true); setTimeout(() => newCtxInputRef.current?.focus(), 30) }}
         >
           <span style={{ width: 18, display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo contexto…</span>
+          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>{t('contextListPanel.newContext')}</span>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', padding: '5px 16px', gap: 4 }}>

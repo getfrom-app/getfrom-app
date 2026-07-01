@@ -906,11 +906,11 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
             setSelectedId(n.id)
           }}>
             <div className="outliner-empty-icon">✎</div>
-            <div className="outliner-empty-title">Nota vacía</div>
+            <div className="outliner-empty-title">{t('outliner.emptyNote')}</div>
             <div className="outliner-empty-hint">
-              Haz clic aquí o pulsa Enter para empezar a escribir
+              {t('outliner.emptyHint')}
               <br />
-              <span style={{ opacity: 0.6 }}>/ para comandos · # para tags · @ para menciones</span>
+              <span style={{ opacity: 0.6 }}>{t('outliner.emptyHintCommands')}</span>
             </div>
           </div>
         )}

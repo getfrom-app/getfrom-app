@@ -12,7 +12,7 @@ const TYPE_ICONS: Record<string, string> = {
   youtube: '▶️', url: '🔗', book: '📚', podcast: '🎙', document: '📄',
 }
 const TYPE_LABELS: Record<string, string> = {
-  youtube: 'Vídeo', url: 'Enlace', book: 'Libro', podcast: 'Podcast', document: 'Documento',
+  youtube: 'resourcesView.typeVideo', url: 'resourcesView.typeLink', book: 'resourcesView.typeBook', podcast: 'resourcesView.typePodcast', document: 'resourcesView.typeDocument',
 }
 // Colores pastel iguales al panel del calendario/agenda
 const STATUS_COLORS: Record<string, string> = {
@@ -21,7 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
   done:    '#86efac',   // verde pastel
 }
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente', future: 'Futuro', done: 'Hecho',
+  pending: 'common.pending', future: 'resourcesView.statusFuture', done: 'common.done',
 }
 
 function effectiveStatus(node: Node): 'pending' | 'future' | 'done' {
@@ -160,16 +160,16 @@ export default function ResourcesView() {
           <div className="resources-empty">
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔗</div>
             <div style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 8 }}>
-              {hasActiveFilters ? 'Sin resultados para estos filtros' : 'Sin recursos aún'}
+              {hasActiveFilters ? t('resourcesView.noResults') : t('resourcesView.noResourcesYet')}
             </div>
             {!hasActiveFilters && (
               <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-                Pega una URL como título de una nota, o usa el botón 🔗 Recurso en el panel derecho.
+                {t('resourcesView.emptyHint')}
               </div>
             )}
             {hasActiveFilters && (
               <button className="resources-filter-btn" style={{ marginTop: 12 }} onClick={clearFilters}>
-                Limpiar filtros
+                {t('resourcesView.clearFilters')}
               </button>
             )}
           </div>
@@ -188,7 +188,7 @@ export default function ResourcesView() {
                   )}
                   <div className="resource-card-body">
                     <div className="resource-card-type">
-                      <span>{TYPE_ICONS[type]} {TYPE_LABELS[type]}</span>
+                      <span>{TYPE_ICONS[type]} {t(TYPE_LABELS[type])}</span>
                       {meta?.domain && <span className="resource-card-domain">{meta.channel || meta.domain}</span>}
                     </div>
                     <div className="resource-card-title">{meta?.title || node.text || t('common.noTitle')}</div>
@@ -210,9 +210,9 @@ export default function ResourcesView() {
                         onClick={e => e.stopPropagation()}
                         onChange={e => { e.stopPropagation(); setStatus(node, e.target.value as 'pending' | 'future' | 'done') }}
                       >
-                        <option value="pending">Pendiente</option>
-                        <option value="future">Futuro</option>
-                        <option value="done">Hecho</option>
+                        <option value="pending">{t('common.pending')}</option>
+                        <option value="future">{t('resourcesView.statusFuture')}</option>
+                        <option value="done">{t('common.done')}</option>
                       </select>
                       <div className="resource-card-actions">
                         {linkedCount > 0 && (
@@ -222,7 +222,7 @@ export default function ResourcesView() {
                         )}
                         <button className="resource-card-add-task" title={t('resourcesView.createLinkedTask')}
                           onClick={e => { e.stopPropagation(); createLinkedTask(node) }}>
-                          ＋ Tarea
+                          {t('resourcesView.addTask')}
                         </button>
                         {url && (
                           <a href={url} target="_blank" rel="noopener noreferrer"
@@ -242,22 +242,22 @@ export default function ResourcesView() {
       <div className="resources-sidebar">
 
         {hasActiveFilters && (
-          <button className="resources-clear-btn" onClick={clearFilters}>✕ Limpiar filtros</button>
+          <button className="resources-clear-btn" onClick={clearFilters}>{t('resourcesView.clearFiltersX')}</button>
         )}
 
         {/* Tipo */}
         <div className="resources-sidebar-section">
-          <div className="resources-sidebar-label">Tipo</div>
-          {(['all', 'youtube', 'url', 'book', 'podcast', 'document'] as const).map(t => (
+          <div className="resources-sidebar-label">{t('resourcesView.type')}</div>
+          {(['all', 'youtube', 'url', 'book', 'podcast', 'document'] as const).map(ty => (
             <button
-              key={t}
-              className={`resources-sidebar-btn${typeFilter === t ? ' active' : ''}`}
-              onClick={() => setTypeFilter(t)}
+              key={ty}
+              className={`resources-sidebar-btn${typeFilter === ty ? ' active' : ''}`}
+              onClick={() => setTypeFilter(ty)}
             >
-              {t === 'all' ? '🔍 Todo' : `${TYPE_ICONS[t]} ${TYPE_LABELS[t]}`}
-              {t !== 'all' && (
+              {ty === 'all' ? t('resourcesView.typeAll') : `${TYPE_ICONS[ty]} ${t(TYPE_LABELS[ty])}`}
+              {ty !== 'all' && (
                 <span className="resources-sidebar-count">
-                  {resources.filter(n => getResourceData(n).type === t).length}
+                  {resources.filter(n => getResourceData(n).type === ty).length}
                 </span>
               )}
             </button>
@@ -266,7 +266,7 @@ export default function ResourcesView() {
 
         {/* Estado */}
         <div className="resources-sidebar-section">
-          <div className="resources-sidebar-label">Estado</div>
+          <div className="resources-sidebar-label">{t('resourcesView.status')}</div>
           {(['all', 'pending', 'future', 'done'] as const).map(st => (
             <button
               key={st}
@@ -276,10 +276,10 @@ export default function ResourcesView() {
                 : {}}
               onClick={() => setStatusFilter(st)}
             >
-              {st === 'all' ? '📋 Todos' : (
+              {st === 'all' ? t('resourcesView.statusAll') : (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: STATUS_COLORS[st], display: 'inline-block', flexShrink: 0 }} />
-                  {STATUS_LABELS[st]}
+                  {t(STATUS_LABELS[st])}
                 </span>
               )}
               <span className="resources-sidebar-count">
@@ -291,7 +291,7 @@ export default function ResourcesView() {
 
         {/* Tags — siempre visible */}
         <div className="resources-sidebar-section">
-          <div className="resources-sidebar-label">Tags</div>
+          <div className="resources-sidebar-label">{t('resourcesView.tags')}</div>
           <input
             className="resources-tag-search"
             placeholder={t('resourcesView.searchTag')}
@@ -301,10 +301,10 @@ export default function ResourcesView() {
           <div className="resources-tag-list">
             {allTags.length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>
-                Los recursos sin tag aparecerán aquí
+                {t('resourcesView.noTagsHint')}
               </div>
             ) : filteredTags.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>Sin resultados para "{tagSearch}"</div>
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0' }}>{t('resourcesView.noTagResults', { query: tagSearch })}</div>
             ) : (
               filteredTags.map(tag => {
                 const count = resources.filter(n => (n.types || []).includes(tag)).length

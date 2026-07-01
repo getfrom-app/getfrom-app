@@ -7,6 +7,7 @@
 //  - cerrar = ocultar la ventana (no se destruye, vive en el tray)
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { getToken } from '../../api/client'
 import { ToastProvider } from '../Toast'
@@ -38,6 +39,7 @@ async function routeToMain(path: string) {
 }
 
 export default function CaptureWindow() {
+  const { t } = useTranslation()
   const [ready, setReady] = useState(didInitialLoad)
   const [hasToken, setHasToken] = useState(!!getToken())
   // Cambiar la key remonta UnifiedCapture → limpia el texto y re-enfoca el input.
@@ -71,13 +73,13 @@ export default function CaptureWindow() {
         fontFamily: 'Inter, sans-serif', borderRadius: 12,
         border: '1px solid var(--border)', padding: 24, textAlign: 'center',
       }}>
-        <strong style={{ color: 'var(--text-primary)', fontSize: 15 }}>Inicia sesión en Fromly</strong>
-        <span style={{ fontSize: 13 }}>Abre la app de Fromly y entra en tu cuenta para usar la captura rápida.</span>
+        <strong style={{ color: 'var(--text-primary)', fontSize: 15 }}>{t('captureWindow.loginTitle')}</strong>
+        <span style={{ fontSize: 13 }}>{t('captureWindow.loginHint')}</span>
         <button
           onClick={() => routeToMain('/')}
           style={{ marginTop: 4, padding: '8px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
         >
-          Abrir Fromly
+          {t('captureWindow.openFromly')}
         </button>
       </div>
     )
@@ -90,7 +92,7 @@ export default function CaptureWindow() {
         background: 'var(--bg-primary)', color: 'var(--text-tertiary)',
         fontFamily: 'Inter, sans-serif', borderRadius: 12, fontSize: 13,
       }}>
-        Cargando…
+        {t('common.loading')}
       </div>
     )
   }

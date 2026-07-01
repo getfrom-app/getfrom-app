@@ -204,7 +204,7 @@ export default function SearchPanel({ filterText, onFilter, onClose, onSelectCon
                 className={`search-panel-chip ${activeContextId === UNCLASSIFIED_FILTER_ID ? 'active' : ''}`}
                 onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
               >
-                Sin clasificar
+                {t('autoCtx.unclassifiedFilter')}
               </button>
             )}
           </div>
@@ -290,7 +290,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
       {panels.length > 0 && (
         <div className="rc-section-label">
-          Filtros
+          {t('searchPanel.filters')}
         </div>
       )}
       {panels.map(p => {
@@ -379,7 +379,7 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', cursor: 'text', fontSize: 13, color: 'var(--text-tertiary)' }}
         >
           <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>◈</span>
-          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Nuevo filtro…</span>
+          <span style={{ fontStyle: 'italic', opacity: 0.5 }}>{t('searchPanel.newFilter')}</span>
         </div>
       )}
       {activeQuery && savingPanel && (
@@ -445,7 +445,7 @@ function FavoritesSection() {
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
       <div className="rc-section-label">
-        Favoritos
+        {t('searchPanel.favorites')}
       </div>
       {favorites.slice(0, 15).map(n => {
         const isRenaming = renamingId === n.id

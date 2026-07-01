@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getMe, type UserProfile } from '../api/client'
 import { getGoogleStatus } from '../api/googleCalendar'
+import i18n from '../i18n/config'
 
 class UserStore {
   user: UserProfile | null = null
@@ -71,15 +72,17 @@ class UserStore {
   }
 
   get planLabel(): string {
-    if (this.user?.licenseStatus === 'active') return 'Licencia perpetua'
-    if (this.user?.subscriptionStatus === 'active') return 'Suscripción activa'
+    if (this.user?.licenseStatus === 'active') return i18n.t('account.planLifetime', { defaultValue: 'Licencia perpetua' })
+    if (this.user?.subscriptionStatus === 'active') return i18n.t('account.subActive', { defaultValue: 'Suscripción activa' })
     if (this.user?.subscriptionStatus === 'trialing') {
       const ends = this.user.trialEndsAt ? new Date(this.user.trialEndsAt) : null
       const days = ends ? Math.ceil((ends.getTime() - Date.now()) / 86400000) : 0
-      return days > 0 ? `Prueba gratuita — ${days}d restantes` : 'Prueba gratuita'
+      return days > 0
+        ? i18n.t('account.trialDaysLeft', { defaultValue: 'Prueba gratuita — {{days}}d restantes', days })
+        : i18n.t('account.trial', { defaultValue: 'Prueba gratuita' })
     }
-    if (this.user?.subscriptionStatus === 'past_due') return 'Pago pendiente'
-    return 'Plan gratuito'
+    if (this.user?.subscriptionStatus === 'past_due') return i18n.t('account.pastDue', { defaultValue: 'Pago pendiente' })
+    return i18n.t('account.planFree', { defaultValue: 'Plan gratuito' })
   }
 
   reset() {

@@ -179,10 +179,10 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
       store.updateNode(node.id, { isEvent: true, due: eventDue })
     }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
-    const label = parsed.isEvent ? 'Evento' : parsed.isTask ? 'Tarea' : 'Nota'
-    showToast(`✓ ${label} creada`)
+    const label = parsed.isEvent ? t('cmdpalette.event') : parsed.isTask ? t('cmdpalette.task') : t('cmdpalette.note')
+    showToast(t('cmdpalette.createdToast', { label }))
     onClose()
-  }, [parsed, query, showToast, onClose])
+  }, [parsed, query, showToast, onClose, t])
 
   // ── Helpers para sub-vistas ─────────────────────────────────────────────────
   const contextoRoot = findContextRoot() ?? null
@@ -212,7 +212,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
       const filters = allFilterNodes()
       const filtered = q ? filters.filter(f => normalizeText(f.text).includes(qNorm)) : filters
       if (filtered.length === 0) return [{
-        id: 'no-filtros', label: q ? `Sin filtros para "${q}"` : 'No hay filtros guardados',
+        id: 'no-filtros', label: q ? t('cmdpalette.noFiltersFor', { query: q }) : t('cmdpalette.noFiltersSaved'),
         type: 'wf-action', taskStatus: null, score: 0, action: () => {},
       }]
       return filtered.map(f => ({
@@ -235,13 +235,13 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
       const ctxAll = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text)
       const filtered = q ? ctxAll.filter(n => normalizeText(n.text).includes(qNorm)) : ctxAll
       if (filtered.length === 0) return [{
-        id: 'no-ctx', label: q ? `Sin contextos para "${q}"` : 'No hay contextos',
+        id: 'no-ctx', label: q ? t('cmdpalette.noContextsFor', { query: q }) : t('cmdpalette.noContexts'),
         type: 'wf-action', taskStatus: null, score: 0, action: () => {},
       }]
       return filtered.map(n => ({
         id: `ctx-${n.id}`,
         label: n.text || '',
-        sublabel: 'Abrir contexto',
+        sublabel: t('cmdpalette.openContext'),
         type: 'wf-action' as const,
         taskStatus: null as null,
         score: q ? scoreMatch(n.text || '', q) : 100,
@@ -256,7 +256,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
       const items: PaletteItem[] = [
         {
           id: 'quick-today',
-          label: 'Hoy',
+          label: t('cmdpalette.todayLabel'),
           sublabel: todayLabel,
           type: 'wf-action',
           taskStatus: null,
@@ -265,7 +265,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         },
         {
           id: 'quick-tomorrow',
-          label: 'Mañana',
+          label: t('cmdpalette.tomorrowLabel'),
           sublabel: tomorrowLabel,
           type: 'wf-action',
           taskStatus: null,
@@ -279,8 +279,8 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         },
         {
           id: 'cat-filtros',
-          label: 'Filtros',
-          sublabel: (() => { const c = allFilterNodes().length; return c > 0 ? `${c} filtros guardados` : 'Sin filtros guardados' })(),
+          label: t('cmdpalette.filters'),
+          sublabel: (() => { const c = allFilterNodes().length; return c > 0 ? t('cmdpalette.filtersSavedCount', { count: c }) : t('cmdpalette.noFiltersSaved') })(),
           type: 'wf-action',
           taskStatus: null,
           score: 180,
@@ -288,11 +288,11 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         },
         {
           id: 'cat-contextos',
-          label: 'Contextos',
+          label: t('cmdpalette.contexts'),
           sublabel: (() => {
-            if (!contextoRoot) return 'Sin contextos'
+            if (!contextoRoot) return t('cmdpalette.noContexts')
             const c = store.children(contextoRoot.id).filter(n => !n.deletedAt).length
-            return c > 0 ? `${c} contextos` : 'Sin contextos'
+            return c > 0 ? t('cmdpalette.contextsCount', { count: c }) : t('cmdpalette.noContexts')
           })(),
           type: 'wf-action',
           taskStatus: null,
@@ -319,12 +319,12 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
 
     // "filtros" → switch a vista filtros
     if (['filtros', 'filtro', 'filter'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
-      return [{ id: 'cat-filtros', label: 'Filtros guardados', sublabel: 'Ver todos los filtros', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('filtros'); setQuery(''); setActiveIdx(0) } }]
+      return [{ id: 'cat-filtros', label: t('cmdpalette.savedFilters'), sublabel: t('cmdpalette.viewAllFilters'), type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('filtros'); setQuery(''); setActiveIdx(0) } }]
     }
 
     // "contextos" → switch a vista contextos
     if (['contextos', 'contexto', 'context'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
-      return [{ id: 'cat-contextos', label: 'Contextos', sublabel: 'Ver todos los contextos', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('contextos'); setQuery(''); setActiveIdx(0) } }]
+      return [{ id: 'cat-contextos', label: t('cmdpalette.contexts'), sublabel: t('cmdpalette.viewAllContexts'), type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('contextos'); setQuery(''); setActiveIdx(0) } }]
     }
 
     // Búsqueda por nombre de contexto
@@ -332,7 +332,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
       const ctxNodes = store.children(contextoRoot.id).filter(n => !n.deletedAt && n.text && normalizeText(n.text).includes(qNormStr))
       if (ctxNodes.length > 0) {
         return ctxNodes.map(n => ({
-          id: `ctx-${n.id}`, label: n.text || '', sublabel: 'Abrir contexto',
+          id: `ctx-${n.id}`, label: n.text || '', sublabel: t('cmdpalette.openContext'),
           type: 'wf-action' as const, taskStatus: null as null,
           score: scoreMatch(n.text || '', q),
           action: () => { onSelectContext?.(n.id); onClose() },
@@ -348,9 +348,9 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { navigate(`/node/${nodes[0].id}`); onClose(); return }; navigate(`/tag/${tag}`); onClose() } }))
       }
       const matchingTags = allTags.filter(t => t.toLowerCase().includes(tagQuery))
-      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { navigate(`/tag/${tag}`); onClose() } }))
+      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: t('cmdpalette.notesCount', { count: store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length }), type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { navigate(`/tag/${tag}`); onClose() } }))
       const exactTag = matchingTags.find(t => t.toLowerCase() === tagQuery)
-      const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || 'Sin título', sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: n.status as 'pending' | 'done' | null ?? null, score: 50, action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() } })) : []
+      const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || t('common.noTitle'), sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: n.status as 'pending' | 'done' | null ?? null, score: 50, action: () => { recordRecentNode(n.id); navigate(`/node/${n.id}`); onClose() } })) : []
       return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
     }
 
@@ -378,19 +378,19 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
     // Colapsar / Expandir
     const qLow = q.toLowerCase()
     if (['colapsar', 'collapse', 'plegar', 'contraer'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
-      results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast('Todo colapsado', 'success') } })
+      results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? t('cmdpalette.collapseAllHintNode') : t('cmdpalette.collapseAllHintRoot'), type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast(t('cmdpalette.toastCollapsed'), 'success') } })
     }
     if (['expandir', 'expand', 'desplegar'].some(kw => kw.includes(qLow) || qLow.includes(kw.slice(0, 3)))) {
-      results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast('Todo expandido', 'success') } })
+      results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? t('cmdpalette.expandAllHintNode') : t('cmdpalette.expandAllHintRoot'), type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast(t('cmdpalette.toastExpanded'), 'success') } })
     }
 
     if (results.length === 0) {
       const displayText = parsed.cleanText || q
-      const label = parsed.isEvent ? 'Evento' : parsed.isTask ? 'Tarea' : 'Nota'
-      results.push({ id: 'create-item', label: `Crear ${label.toLowerCase()}: ${displayText}`, type: 'create', taskStatus: null, score: -1, action: doCreate })
+      const label = parsed.isEvent ? t('cmdpalette.eventLower') : parsed.isTask ? t('cmdpalette.taskLower') : t('cmdpalette.noteLower')
+      results.push({ id: 'create-item', label: t('cmdpalette.createItem', { label, text: displayText }), type: 'create', taskStatus: null, score: -1, action: doCreate })
     }
 
-    results.push({ id: 'panel-save', label: 'Guardar como filtro', sublabel: `"${q}"`, type: 'panel-save', taskStatus: null, score: -99, action: () => { setPanelName(q); setCreatingPanel(true); setTimeout(() => panelNameRef.current?.focus(), 0) } })
+    results.push({ id: 'panel-save', label: t('cmdpalette.saveAsFilter'), sublabel: `"${q}"`, type: 'panel-save', taskStatus: null, score: -99, action: () => { setPanelName(q); setCreatingPanel(true); setTimeout(() => panelNameRef.current?.focus(), 0) } })
 
     return results
   }, [query, view, parsed, doCreate, navigate, onClose, t, contextoRoot, atajosRoot, allFilterNodes, onSelectContext, currentNodeId, showToast])
@@ -422,7 +422,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
   function handleSavePanel() {
     if (!panelName.trim()) return
     createFilterShortcut(panelName.trim(), query)
-    showToast(`Filtro "${panelName.trim()}" guardado`)
+    showToast(t('cmdpalette.filterSavedToast', { name: panelName.trim() }))
     onClose()
   }
 
@@ -433,11 +433,11 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
         {/* Modo: guardar filtro */}
         {creatingPanel ? (
           <div className="cmdpalette-panel-create">
-            <span className="cmdpalette-panel-create-label">Guardar como filtro</span>
+            <span className="cmdpalette-panel-create-label">{t('cmdpalette.saveAsFilter')}</span>
             <input
               ref={panelNameRef}
               className="cmdpalette-panel-create-input"
-              placeholder={`Nombre del filtro "${query}"`}
+              placeholder={t('cmdpalette.filterNamePlaceholder', { query })}
               value={panelName}
               onChange={e => setPanelName(e.target.value)}
               onKeyDown={e => {
@@ -446,7 +446,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
               }}
             />
             <div className="cmdpalette-panel-create-actions">
-              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>Guardar filtro</button>
+              <button className="cmdpalette-panel-create-btn" onClick={handleSavePanel}>{t('cmdpalette.saveFilter')}</button>
               <button className="cmdpalette-panel-create-cancel" onClick={() => { setCreatingPanel(false); setTimeout(() => inputRef.current?.focus(), 0) }}>{t('common.cancel')}</button>
             </div>
           </div>
@@ -458,7 +458,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
             className="cmdpalette-subview-back"
             onClick={() => { setView('default'); setQuery(''); setActiveIdx(0) }}
           >
-            ← {view === 'filtros' ? 'Filtros' : 'Contextos'}
+            ← {view === 'filtros' ? t('cmdpalette.filters') : t('cmdpalette.contexts')}
           </button>
         )}
 
@@ -475,7 +475,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
           <input
             ref={inputRef}
             className="cmdpalette-input"
-            placeholder={view === 'filtros' ? 'Buscar filtro…' : view === 'contextos' ? 'Buscar contexto…' : t('cmdpalette.searchPlaceholder')}
+            placeholder={view === 'filtros' ? t('cmdpalette.searchFilter') : view === 'contextos' ? t('cmdpalette.searchContext') : t('cmdpalette.searchPlaceholder')}
             value={query}
             onChange={e => { setQuery(e.target.value); setActiveIdx(0) }}
             onKeyDown={handleKeyDown}

@@ -6,6 +6,7 @@
 // de un solo audio (_audioKey/_audioTranscript).
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { getAudioUrl } from '../../api/client'
 
@@ -37,6 +38,7 @@ function fmtDur(s: number) {
 }
 
 function AudioItemView({ item, index, total }: { item: AudioItem; index: number; total: number }) {
+  const { t } = useTranslation()
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState(false)
 
@@ -53,10 +55,10 @@ function AudioItemView({ item, index, total }: { item: AudioItem; index: number;
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
-        🎙 {total > 1 ? `Audio ${index + 1}/${total}` : 'Audio'}{fmtDur(item.durationSec)}
+        🎙 {total > 1 ? t('audioPanel.audioN', { index: index + 1, total }) : t('audioPanel.audio')}{fmtDur(item.durationSec)}
       </div>
-      {error && <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No se pudo cargar el audio.</div>}
-      {!error && !url && <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Cargando audio…</div>}
+      {error && <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('audioPanel.loadError')}</div>}
+      {!error && !url && <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{t('audioPanel.loading')}</div>}
       {url && <audio controls src={url} style={{ width: '100%', marginBottom: 10 }} />}
       {item.transcript && (
         <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
@@ -68,13 +70,14 @@ function AudioItemView({ item, index, total }: { item: AudioItem; index: number;
 }
 
 export default function AudioPanel({ nodeId }: { nodeId: string }) {
+  const { t } = useTranslation()
   const node = store.getNode(nodeId)
   const audios = readAudios(node?.extraData)
 
   return (
     <div style={{ padding: '20px 18px', overflowY: 'auto', height: '100%' }}>
       {audios.length === 0 && (
-        <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>No hay audio en esta nota.</div>
+        <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{t('audioPanel.noAudio')}</div>
       )}
       {audios.map((item, i) => (
         <AudioItemView key={item.audioKey || i} item={item} index={i} total={audios.length} />

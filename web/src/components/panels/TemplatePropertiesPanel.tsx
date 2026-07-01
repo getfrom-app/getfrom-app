@@ -5,19 +5,23 @@
  */
 import { useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/config'
 import { useStore } from '../../store/nodeStore'
 import {
   getDailyTemplate, setDailyTemplate,
   getTemplateRecurrence, setTemplateRecurrence, type TemplateRecurrence,
 } from '../../utils/tagsHelper'
 
-const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-const FREQ_NOUN = { day: 'días', week: 'semanas', month: 'meses' } as const
+const weekdayKeys = ['template.sunday', 'template.monday', 'template.tuesday', 'template.wednesday', 'template.thursday', 'template.friday', 'template.saturday'] as const
+const weekdays = () => weekdayKeys.map(k => i18n.t(k))
+const freqNoun = () => ({ day: i18n.t('template.days'), week: i18n.t('template.weeks'), month: i18n.t('template.months') } as const)
 
 function recurrenceSummary(r: TemplateRecurrence): string {
-  const every = r.interval > 1 ? `Cada ${r.interval} ${FREQ_NOUN[r.freq]}` : { day: 'Cada día', week: 'Cada semana', month: 'Cada mes' }[r.freq]
-  if (r.freq === 'week' && typeof r.weekday === 'number') return `${every}, ${WEEKDAYS[r.weekday]}`
-  if (r.freq === 'month' && typeof r.monthday === 'number') return `${every}, día ${r.monthday}`
+  const nouns = freqNoun()
+  const every = r.interval > 1 ? `${i18n.t('template.every')} ${r.interval} ${nouns[r.freq]}` : { day: i18n.t('template.everyDay'), week: i18n.t('template.everyWeek'), month: i18n.t('template.everyMonth') }[r.freq]
+  if (r.freq === 'week' && typeof r.weekday === 'number') return `${every}, ${weekdays()[r.weekday]}`
+  if (r.freq === 'month' && typeof r.monthday === 'number') return `${every}, ${i18n.t('template.day')} ${r.monthday}`
   return every
 }
 
@@ -36,6 +40,7 @@ interface Props {
 }
 
 export default function TemplatePropertiesPanel({ nodeId, onBack }: Props) {
+  const { t } = useTranslation()
   const s = useStore()
   void s.nodesVersion
   const node = s.getNode(nodeId)
@@ -55,7 +60,7 @@ export default function TemplatePropertiesPanel({ nodeId, onBack }: Props) {
           onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'none')}
         >
-          ← Plantillas
+          {t('template.backTemplates')}
         </button>
         <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {node.text}
@@ -67,28 +72,28 @@ export default function TemplatePropertiesPanel({ nodeId, onBack }: Props) {
         <button onClick={() => setDailyTemplate(nodeId, !isDaily)} style={toggleBtn(isDaily)}>
           <span style={dot(isDaily)} />
           <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Auto-aplicar en nota diaria</span>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t('template.autoApplyTitle')}</span>
             <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 1 }}>
-              {isDaily ? 'Cada día nuevo arranca con esta plantilla.' : 'Aplicar esta plantilla al crear la nota del día.'}
+              {isDaily ? t('template.autoApplyOn') : t('template.autoApplyOff')}
             </span>
           </span>
-          <span style={{ fontSize: 11.5, color: 'var(--text-tertiary)' }}>{isDaily ? 'Activa' : 'clic'}</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-tertiary)' }}>{isDaily ? t('template.active') : t('template.click')}</span>
         </button>
 
         {/* Nota recurrente → abre modal de configuración */}
         <button onClick={() => setModalOpen(true)} style={toggleBtn(!!recur)}>
           <span style={dot(!!recur)} />
           <span style={{ flex: 1 }}>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Nota recurrente</span>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t('template.recurringTitle')}</span>
             <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 1 }}>
-              {recur ? recurrenceSummary(recur) : 'Insertar como sección en días concretos (cada semana, mes…).'}
+              {recur ? recurrenceSummary(recur) : t('template.recurringDesc')}
             </span>
           </span>
-          <span style={{ fontSize: 11.5, color: 'var(--text-tertiary)' }}>{recur ? 'editar' : 'clic'}</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-tertiary)' }}>{recur ? t('template.edit') : t('template.click')}</span>
         </button>
 
         <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', lineHeight: 1.5, borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-          El contenido se edita en la ventana central, en bullets, como cualquier nota. Lo que pongas dentro es lo que se copia al aplicarla.
+          {t('template.contentHint')}
         </div>
       </div>
 
@@ -111,6 +116,7 @@ function RecurrenceModal({ initial, onClose, onSave }: {
   onClose: () => void
   onSave: (r: TemplateRecurrence | null) => void
 }) {
+  const { t } = useTranslation()
   const [freq, setFreq] = useState<'day' | 'week' | 'month'>(initial?.freq ?? 'week')
   const [interval, setInterval] = useState<number>(initial?.interval ?? 1)
   const [weekday, setWeekday] = useState<number>(initial?.weekday ?? 1)
@@ -132,51 +138,51 @@ function RecurrenceModal({ initial, onClose, onSave }: {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseDown={onClose}>
       <div style={{ background: 'var(--bg-primary)', borderRadius: 14, padding: '24px 24px 20px', width: 420, maxWidth: '90vw', boxShadow: '0 24px 80px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column', gap: 16 }} onMouseDown={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>🔁 Nota recurrente</span>
+          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>🔁 {t('template.recurringTitle')}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Cada</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('template.every')}</span>
           <input
             type="number" min={1} max={99} value={interval}
             onChange={e => setInterval(parseInt(e.target.value) || 1)}
             style={{ ...selectStyle, width: 64, textAlign: 'center' }}
           />
           <select value={freq} onChange={e => setFreq(e.target.value as 'day' | 'week' | 'month')} style={{ ...selectStyle, width: 'auto', flex: 1 }}>
-            <option value="day">{interval > 1 ? 'días' : 'día'}</option>
-            <option value="week">{interval > 1 ? 'semanas' : 'semana'}</option>
-            <option value="month">{interval > 1 ? 'meses' : 'mes'}</option>
+            <option value="day">{interval > 1 ? t('template.days') : t('template.day')}</option>
+            <option value="week">{interval > 1 ? t('template.weeks') : t('template.week')}</option>
+            <option value="month">{interval > 1 ? t('template.months') : t('template.month')}</option>
           </select>
         </div>
 
         {freq === 'week' && (
           <div>
-            <label style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>El día</label>
+            <label style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>{t('template.theDay')}</label>
             <select value={weekday} onChange={e => setWeekday(parseInt(e.target.value))} style={selectStyle}>
-              {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{WEEKDAYS[d]}</option>)}
+              {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{t(weekdayKeys[d])}</option>)}
             </select>
           </div>
         )}
         {freq === 'month' && (
           <div>
-            <label style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>El día del mes</label>
+            <label style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'block', marginBottom: 6 }}>{t('template.theDayOfMonth')}</label>
             <select value={monthday} onChange={e => setMonthday(parseInt(e.target.value))} style={selectStyle}>
-              {Array.from({ length: 28 }, (_, i) => i + 1).map(n => <option key={n} value={n}>Día {n}</option>)}
+              {Array.from({ length: 28 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{t('template.day')} {n}</option>)}
             </select>
           </div>
         )}
 
         <p style={{ margin: 0, fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-          Fromly insertará esta plantilla como una sección dentro de la nota de ese día (no reemplaza el día).
+          {t('template.modalHint')}
         </p>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
           {initial && (
-            <button className="btn-secondary btn-danger-outline" onClick={() => onSave(null)} style={{ marginRight: 'auto' }}>Quitar recurrencia</button>
+            <button className="btn-secondary btn-danger-outline" onClick={() => onSave(null)} style={{ marginRight: 'auto' }}>{t('template.removeRecurrence')}</button>
           )}
-          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
-          <button className="btn-primary" onClick={save}>Guardar</button>
+          <button className="btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
+          <button className="btn-primary" onClick={save}>{t('common.save')}</button>
         </div>
       </div>
     </div>
