@@ -29,7 +29,7 @@ import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { firstContextOf, contextColor, isMarkedContext } from '../../utils/cajones'
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
-import { computeCanvasLayout } from '../../utils/canvasLayout'
+import { computeNestedLayout, type NestedLayout } from '../../utils/nestedCanvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
@@ -518,26 +518,44 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // LIENZO GLOBAL: un solo plano = TODO el subárbol posicionado (recursivo). Las
   // zonas (contextos/áreas) son marcos que contienen a sus hijos, en el MISMO
   // plano (pins absolutos). Fuera de global: hijos directos + un nivel de áreas.
+  // LIENZO GLOBAL: layout ANIDADO auto-calculado — cada contexto es un ÁREA (caja) y
+  // sus subcontextos son cajas DENTRO. No destructivo (solo memoria); el `_area` propio
+  // de un contexto (si el usuario lo movió) manda sobre la caja calculada.
+  const nested = useMemo<NestedLayout | null>(() => {
+    if (!globalCanvas) return null
+    try { return computeNestedLayout(findContextRoot()?.id ?? parentId) }
+    catch { return null } // ante cualquier fallo, el lienzo se pinta sin layout (no rompe)
+  }, [globalCanvas, parentId, nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  const nestedRef = useRef<NestedLayout | null>(null)
+  useEffect(() => { nestedRef.current = nested }, [nested])
+
   const children = useMemo(() => {
     if (globalCanvas) {
-      // El contenido del plano único = tu árbol de CONTEXTOS (no los hijos del
-      // nodo-lienzo, que es solo el contenedor de cámara/trazos).
-      const contentRoot = findContextRoot()?.id ?? parentId
+      // Solo lo que el layout anidado coloca: CONTEXTOS (marcos) + su CONTENIDO directo
+      // (filas). Lo más profundo no se pinta suelto (vive dentro de su fila/contexto).
+      if (!nested) return [] as Node[]
       const out: Node[] = []
       const seen = new Set<string>()
-      const walk = (id: string) => {
-        for (const c of store.children(id)) {
-          if (c.deletedAt || seen.has(c.id)) continue
-          seen.add(c.id); out.push(c); walk(c.id)
-        }
+      const add = (id: string) => {
+        if (seen.has(id)) return
+        const n = store.getNode(id)
+        if (n && !n.deletedAt) { seen.add(id); out.push(n) }
       }
-      walk(contentRoot)
+      for (const id of nested.contextIds) add(id)
+      for (const id of nested.contentIds) add(id)
+      // Áreas EXPLÍCITAS (`_area`, movidas a mano o legacy) que no estén en el árbol de
+      // contextos → seguir pintándolas con su contenido para no perderlas.
+      for (const n of store.allActive()) {
+        if (n.deletedAt || seen.has(n.id) || !isArea(n)) continue
+        add(n.id)
+        for (const c of store.children(n.id)) add(c.id)
+      }
       return out
     }
     const out = [...directChildren]
     for (const n of directChildren) if (isArea(n)) out.push(...store.children(n.id).filter(c => !c.deletedAt))
     return out
-  }, [parentId, globalCanvas, nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parentId, globalCanvas, nodesVersion, nested]) // eslint-disable-line react-hooks/exhaustive-deps
   // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
   const refIds = readRefs(parentId)
   const refsKey = refIds.join(',')
@@ -552,28 +570,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // demás fluyen como en la LISTA (columna ancho-completo, apilados naturalmente,
   // sin solaparse). Al arrastrar uno del flujo, gana posición y pasa a flotar; al
   // volver a Lista, todos vuelven a su orden.
-  // Auto-layout NO destructivo del plano único (solo en memoria; el pin propio manda).
-  const autoLayout = useMemo(() => {
-    if (!globalCanvas) return null
-    try { return computeCanvasLayout(findContextRoot()?.id ?? parentId) }
-    catch { return null } // ante cualquier fallo, el lienzo se pinta sin auto-layout (no rompe)
-  }, [globalCanvas, parentId, nodesVersion])
-  // Zonas = marcos (no tarjetas): solo áreas guardadas explícitamente. En el lienzo
-  // global los CONTEXTOS se pintan como TARJETAS (items de la lista), no como marcos.
+  // Zonas = MARCOS. En el lienzo global TODO contexto es un marco (área anidada). Fuera
+  // de global, solo las áreas guardadas explícitamente (`_area`).
   const zoneIds = useMemo(() => {
     const set = new Set<string>()
-    for (const n of children) if (isArea(n)) set.add(n.id)
+    if (globalCanvas && nested) for (const id of nested.contextIds) set.add(id)
+    for (const n of children) if (isArea(n)) set.add(n.id) // áreas explícitas (todos los modos)
     return set
-  }, [children])
+  }, [children, globalCanvas, nested])
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
     for (const n of children) {
-      if (isHiddenPin(n) || zoneIds.has(n.id)) continue // marcador de vista / zona (frame) → no es card
-      const pin = readPin(n) ?? (autoLayout ? autoLayout.get(n.id) ?? null : null)
+      if (isHiddenPin(n) || zoneIds.has(n.id)) continue // marco / marcador de vista → no es card
+      const auto = nested ? nested.items.get(n.id) ?? null : null
+      const pin = readPin(n) ?? (auto ? { x: auto.x, y: auto.y } : null)
       if (pin) map.set(n.id, { x: pin.x, y: pin.y })
     }
     return map
-  }, [children, autoLayout, zoneIds])
+  }, [children, nested, zoneIds])
 
   // ── Minimapa: rectángulos (en MUNDO) de todo el contenido del lienzo, para
   // dibujar la «vista de pájaro» abajo a la izquierda. Se recalcula solo cuando
@@ -796,11 +810,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // guardado si lo tiene; si no, encaja la región en el viewport).
   const flyToArea = useCallback((id: string) => {
     const a = store.getNode(id); if (!a) return
-    const rect = readAreaRect(a); if (!rect) { flyToNode(a); return }
+    // Área explícita (`_area`) o caja anidada auto-calculada del contexto.
+    const rect = readAreaRect(a) ?? nestedRef.current?.boxes.get(id) ?? null
+    if (!rect) { flyToNode(a); return }
     const vp = viewportRef.current
     let ed: Record<string, unknown> = {}; try { ed = JSON.parse(a.extraData || '{}') } catch { /* vacío */ }
     const saved = Number(ed[PIN_SCALE])
-    const scale = Number.isFinite(saved) && saved > 0 ? saved : Math.min(vp.w / rect.w, vp.h / rect.h) * 0.95
+    // Caja auto: encuadrar la región en el viewport (deja aire). Explícita con zoom guardado: usarlo.
+    const scale = (readAreaRect(a) && Number.isFinite(saved) && saved > 0)
+      ? saved
+      : Math.min(vp.w / rect.w, vp.h / rect.h) * 0.9
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
 
@@ -1244,7 +1263,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       if (!id) return
       const n = store.getNode(id)
       if (!n) return
-      if (isArea(n)) { flyToArea(id); return }
+      // Área explícita o contexto con caja anidada → volar a su región.
+      if (isArea(n) || nestedRef.current?.boxes.has(id)) { flyToArea(id); return }
       if (store.children(parentId).some(c => c.id === id)) flyToNode(n)
     }
     window.addEventListener('from:pizarra-flyto', h)
@@ -1987,7 +2007,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           con área SÍ, como marco). Clic en la etiqueta → abre su columna de contexto
           (nunca navega ni hace zoom-in). */}
       {children.filter(n => zoneIds.has(n.id)).map(a => {
-        const rect = readAreaRect(a) ?? (autoLayout ? autoLayout.get(a.id) ?? null : null); if (!rect) return null
+        const rect = readAreaRect(a) ?? (nested ? nested.boxes.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
         const sw = rect.w * cam.scale, sh = rect.h * cam.scale
