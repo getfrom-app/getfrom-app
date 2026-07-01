@@ -147,6 +147,7 @@ interface Props {
   filterAncestorIds?: Set<string> // ancestros de nodos coincidentes (precomputado, evita getAllDescendants)
   isFirstEmpty?: boolean  // primer nodo de nota vacía — muestra placeholder siempre
   flat?: boolean  // modo virtualizado: la lista plana ya monta los hijos → este nodo NO los renderiza
+  canvasMode?: boolean  // LIENZO ÚNICO: el contenido es texto libre; NUNCA navega a /node ni entra a subcanvas. Clic = seleccionar (abre columna derecha).
 }
 
 const COMMON_TYPES = [
@@ -286,9 +287,19 @@ function getAllDescendants(nodeId: string): string[] {
   return result
 }
 
-export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty, flat }: Props) {
+export default function OutlinerNode({ node, depth, isSelected, selectedId, isMultiSelected: _isMultiSelectedProp, onSelect, onSelectNext, onShiftSelect, filterText, highlightText, filterMatchIds, filterAncestorIds, isFirstEmpty, flat, canvasMode }: Props) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const _rrNavigate = useNavigate()
+  // LIENZO ÚNICO: en el lienzo global no existe la navegación a subpáginas/subcanvas.
+  // Redirigimos TODA llamada a navigate() a "seleccionar el nodo" (abre su columna
+  // derecha) — así el dot, los iconos, las notas, las tareas y los slash-commands
+  // dejan de entrar a /node de un solo golpe, sin tocar cada call-site.
+  const navigate = canvasMode
+    ? ((to: unknown) => {
+        const m = /\/node\/([^/?#]+)/.exec(String(to))
+        if (m) onSelect(node.id)
+      }) as typeof _rrNavigate
+    : _rrNavigate
   // Cada nodo calcula su propio estado de multi-selección desde el estado global,
   // en lugar de heredar el boolean del padre. Esto permite seleccionar nodos
   // en distintos niveles de jerarquía con drag-to-select.
@@ -3289,6 +3300,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     taskConverting ? 'node-row--task-converting' : '',
     mirrorOfId ? 'node-row--mirror' : '',
     filterExiting ? 'node-row--filter-exit' : '',
+    canvasMode ? 'node-row--canvas' : '',
   ].filter(Boolean).join(' ')
 
   // Picker position — fixed al viewport (portal a document.body)

@@ -1750,6 +1750,13 @@ body.outliner-drag-active {
   opacity: 1;
 }
 
+/* LIENZO ÚNICO: el contenido es texto libre — no hay zoom-in, así que el nav-dot
+   (punto de navegación) desaparece por completo. Los checkboxes/iconos de estado
+   (tarea, evento, bucle…) se conservan porque no navegan. */
+.node-row--canvas .bullet-nav-dot {
+  display: none !important;
+}
+
 .node-text--nota {
   color: var(--text-primary);
 }

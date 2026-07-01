@@ -1398,7 +1398,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   //  ya no hay contentEditable propio ni persistencia manual aquí.)
 
   // El DOT abre el MISMO nodo en solitario (DocEditor). No hay copia ni sync.
-  const openTextAsDoc = useCallback((id: string) => { navigate(`/node/${id}`) }, [navigate])
+  // LIENZO ÚNICO: el texto es LIBRE, no se "entra" a ningún sitio. Clic en su dot/
+  // marcador = SELECCIONAR (abre columna derecha), nunca navegar a /node.
+  const openTextAsDoc = useCallback((id: string) => {
+    if (globalCanvas) { setSelectedId(id); return }
+    navigate(`/node/${id}`)
+  }, [navigate, globalCanvas])
 
   // ── Migración: WBText legacy (JSON en el body de la pizarra) → nodos `_ctext` ──
   // Una sola vez por pizarra. Reúne lo existente sin duplicar: si el WBText ya tenía
@@ -2523,7 +2528,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                     e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
                   }
                 }}>
-                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat canvasMode={globalCanvas} />
               </div>
             )}
             {/* (Documento: chevron + DOT van INLINE en el cuerpo, alineados con la 1ª
@@ -2541,7 +2546,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             {/* DOT del texto del lienzo: en hover SIEMPRE; sin hover, solo si tiene hijos
                 (marcado, como una nota). Al crear/editar NO aparece: solo el cursor.
                 Clic = ENTRAR en el nodo (su propia página), igual que el bullet de un nodo. */}
-            {isPlainText && (hovered || plainHasKids) && !dragPos && (
+            {isPlainText && (hovered || plainHasKids) && !dragPos && !globalCanvas && (
               <div title={t('tip.openNode')} onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
                 style={{ position: 'absolute', left: 2, top: 0, height: 26, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
@@ -2630,7 +2635,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                     e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
                   }
                 }}>
-                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat />
+                <OutlinerNode node={node} depth={0} isSelected={selectedId === node.id} selectedId={selectedId} isMultiSelected={false} onSelect={setSelectedId} onSelectNext={() => {}} onShiftSelect={() => {}} filterText="" flat canvasMode={globalCanvas} />
               </div>
             </div>
           ))}
