@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Wechsle zu Pro, wann immer du willst",
   "pricing.titleFree": "Kostenlos starten",
   "prompts.varCopied": "{{v}} kopiert — füge sie in den Prompt ein",
-  "statusbar.agentsActive": "{{count}} aktiv"
+  "statusbar.agentsActive": "{{count}} aktiv",
+  "globalCanvas.related": "Knoten",
+  "globalCanvas.removeFromCanvas": "Von der Leinwand entfernen",
+  "globalCanvas.emptyTitle": "Die unendliche Leinwand",
+  "globalCanvas.emptyHint": "Eine einzige Ebene für alles. Platziere deine Bereiche und bewege dich mit der Kamera zwischen ihnen. Umkehrbar: Entfernen von der Leinwand löscht nichts.",
+  "globalCanvas.placeAreas": "Meine Bereiche auf der Leinwand platzieren",
+  "globalCanvas.fitAll": "Alles einpassen"
 }

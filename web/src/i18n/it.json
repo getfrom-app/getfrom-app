@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Passa a Pro quando ti serve",
   "pricing.titleFree": "Inizia gratis",
   "prompts.varCopied": "{{v}} copiata — incollala nel prompt",
-  "statusbar.agentsActive": "{{count}} attivi"
+  "statusbar.agentsActive": "{{count}} attivi",
+  "globalCanvas.related": "nodi",
+  "globalCanvas.removeFromCanvas": "Rimuovi dalla tela",
+  "globalCanvas.emptyTitle": "La tela infinita",
+  "globalCanvas.emptyHint": "Un unico piano per tutto. Posiziona le tue aree e spostati tra loro con la telecamera. È reversibile: rimuovere dalla tela non elimina nulla.",
+  "globalCanvas.placeAreas": "Posiziona le mie aree sulla tela",
+  "globalCanvas.fitAll": "Adatta tutto"
 }

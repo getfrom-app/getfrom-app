@@ -293,18 +293,27 @@ export default function NodeView() {
 
   const viewKind = useMemo(() => {
     if (!node) return 'list'
+    let kind: string
     // Si hay _views modernas, usa el kind de la activa
     const views = store.getViews(node.id)
     if (views.length > 0) {
       const v = views.find(x => x.id === activeViewId)
-      return v?.kind || 'list'
+      kind = v?.kind || 'list'
+    } else if (viewBlock === 'tabla') kind = 'table'
+    else if (viewBlock === 'kanban') kind = 'kanban'
+    else if (viewBlock === 'calendario') kind = 'calendar'
+    else if (viewBlock === 'pizarra') kind = 'pizarra'
+    else kind = 'list'
+    // Arreglo seguro: una NOTA normal en modo pizarra pero SIN hijos que colocar
+    // se vería como lienzo en blanco (p. ej. una tarjeta capturada del lienzo de
+    // un día cuyos elementos quedaron bajo el día). En ese caso, abrir en lista.
+    // La diaria y la Agenda sí pueden abrir un lienzo vacío (se dibuja encima).
+    if (kind === 'pizarra' && !node.isDiaryEntry
+        && findRootByKey('agenda')?.id !== node.id
+        && store.children(node.id).length === 0) {
+      kind = 'list'
     }
-    // Si no hay _views, mapea desde viewBlock legacy
-    if (viewBlock === 'tabla') return 'table'
-    if (viewBlock === 'kanban') return 'kanban'
-    if (viewBlock === 'calendario') return 'calendar'
-    if (viewBlock === 'pizarra') return 'pizarra'
-    return 'list'
+    return kind
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
   // ¿Es la raíz 📅 Agenda? → se muestra como CALENDARIO-LIENZO (zoom temporal LOD).

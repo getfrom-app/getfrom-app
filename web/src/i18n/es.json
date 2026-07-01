@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Pasa a Pro cuando lo necesites",
   "pricing.titleFree": "Empieza gratis",
   "prompts.varCopied": "{{v}} copiada — pégala en el prompt",
-  "statusbar.agentsActive": "{{count}} activos"
+  "statusbar.agentsActive": "{{count}} activos",
+  "globalCanvas.related": "nodos",
+  "globalCanvas.removeFromCanvas": "Quitar del lienzo",
+  "globalCanvas.emptyTitle": "El lienzo infinito",
+  "globalCanvas.emptyHint": "Un único plano para todo. Coloca tus áreas y muévete entre ellas con la cámara. Es reversible: quitar del lienzo no borra nada.",
+  "globalCanvas.placeAreas": "Colocar mis áreas en el lienzo",
+  "globalCanvas.fitAll": "Reencuadrar"
 }

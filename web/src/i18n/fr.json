@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Passe à Pro quand tu en as besoin",
   "pricing.titleFree": "Commence gratuitement",
   "prompts.varCopied": "{{v}} copiée — colle-la dans le prompt",
-  "statusbar.agentsActive": "{{count}} actifs"
+  "statusbar.agentsActive": "{{count}} actifs",
+  "globalCanvas.related": "nœuds",
+  "globalCanvas.removeFromCanvas": "Retirer du canevas",
+  "globalCanvas.emptyTitle": "Le canevas infini",
+  "globalCanvas.emptyHint": "Un seul plan pour tout. Placez vos zones et déplacez-vous entre elles avec la caméra. C'est réversible : retirer du canevas ne supprime rien.",
+  "globalCanvas.placeAreas": "Placer mes zones sur le canevas",
+  "globalCanvas.fitAll": "Tout ajuster"
 }

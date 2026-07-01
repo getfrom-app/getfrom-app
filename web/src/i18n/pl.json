@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Przejdź na Pro, kiedy potrzebujesz",
   "pricing.titleFree": "Zacznij za darmo",
   "prompts.varCopied": "{{v}} skopiowano — wklej do promptu",
-  "statusbar.agentsActive": "{{count}} aktywnych"
+  "statusbar.agentsActive": "{{count}} aktywnych",
+  "globalCanvas.related": "węzły",
+  "globalCanvas.removeFromCanvas": "Usuń z płótna",
+  "globalCanvas.emptyTitle": "Nieskończone płótno",
+  "globalCanvas.emptyHint": "Jedna płaszczyzna na wszystko. Umieść swoje obszary i przemieszczaj się między nimi kamerą. Odwracalne: usunięcie z płótna niczego nie kasuje.",
+  "globalCanvas.placeAreas": "Umieść moje obszary na płótnie",
+  "globalCanvas.fitAll": "Dopasuj wszystko"
 }

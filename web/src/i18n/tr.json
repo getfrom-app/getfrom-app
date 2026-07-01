@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "İhtiyaç duyduğunda Pro'ya geç",
   "pricing.titleFree": "Ücretsiz başla",
   "prompts.varCopied": "{{v}} kopyalandı — isteme yapıştırın",
-  "statusbar.agentsActive": "{{count}} etkin"
+  "statusbar.agentsActive": "{{count}} etkin",
+  "globalCanvas.related": "düğüm",
+  "globalCanvas.removeFromCanvas": "Tuvalden kaldır",
+  "globalCanvas.emptyTitle": "Sonsuz tuval",
+  "globalCanvas.emptyHint": "Her şey için tek bir düzlem. Alanlarını yerleştir ve kamerayla aralarında gez. Geri alınabilir: tuvalden kaldırmak hiçbir şeyi silmez.",
+  "globalCanvas.placeAreas": "Alanlarımı tuvale yerleştir",
+  "globalCanvas.fitAll": "Tümünü sığdır"
 }

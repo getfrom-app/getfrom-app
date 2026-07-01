@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Перейдите на Pro, когда понадобится",
   "pricing.titleFree": "Начните бесплатно",
   "prompts.varCopied": "{{v}} скопировано — вставьте в промпт",
-  "statusbar.agentsActive": "{{count}} активно"
+  "statusbar.agentsActive": "{{count}} активно",
+  "globalCanvas.related": "узлы",
+  "globalCanvas.removeFromCanvas": "Убрать с холста",
+  "globalCanvas.emptyTitle": "Бесконечный холст",
+  "globalCanvas.emptyHint": "Единая плоскость для всего. Размещайте области и перемещайтесь между ними камерой. Обратимо: удаление с холста ничего не стирает.",
+  "globalCanvas.placeAreas": "Разместить мои области на холсте",
+  "globalCanvas.fitAll": "Вместить всё"
 }

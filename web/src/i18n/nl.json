@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Upgrade naar Pro wanneer je het nodig hebt",
   "pricing.titleFree": "Begin gratis",
   "prompts.varCopied": "{{v}} gekopieerd — plak het in de prompt",
-  "statusbar.agentsActive": "{{count}} actief"
+  "statusbar.agentsActive": "{{count}} actief",
+  "globalCanvas.related": "knooppunten",
+  "globalCanvas.removeFromCanvas": "Verwijderen van canvas",
+  "globalCanvas.emptyTitle": "Het oneindige canvas",
+  "globalCanvas.emptyHint": "Eén vlak voor alles. Plaats je gebieden en beweeg ertussen met de camera. Omkeerbaar: verwijderen van het canvas wist niets.",
+  "globalCanvas.placeAreas": "Mijn gebieden op het canvas plaatsen",
+  "globalCanvas.fitAll": "Alles passend maken"
 }

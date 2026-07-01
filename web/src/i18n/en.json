@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Go Pro whenever you need it",
   "pricing.titleFree": "Start free",
   "prompts.varCopied": "{{v}} copied — paste it into the prompt",
-  "statusbar.agentsActive": "{{count}} active"
+  "statusbar.agentsActive": "{{count}} active",
+  "globalCanvas.related": "nodes",
+  "globalCanvas.removeFromCanvas": "Remove from canvas",
+  "globalCanvas.emptyTitle": "The infinite canvas",
+  "globalCanvas.emptyHint": "A single plane for everything. Place your areas and move between them with the camera. It's reversible: removing from the canvas deletes nothing.",
+  "globalCanvas.placeAreas": "Place my areas on the canvas",
+  "globalCanvas.fitAll": "Fit all"
 }

@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Uppgradera till Pro när du behöver",
   "pricing.titleFree": "Börja gratis",
   "prompts.varCopied": "{{v}} kopierad — klistra in den i prompten",
-  "statusbar.agentsActive": "{{count}} aktiva"
+  "statusbar.agentsActive": "{{count}} aktiva",
+  "globalCanvas.related": "noder",
+  "globalCanvas.removeFromCanvas": "Ta bort från arbetsytan",
+  "globalCanvas.emptyTitle": "Den oändliga arbetsytan",
+  "globalCanvas.emptyHint": "Ett enda plan för allt. Placera dina områden och rör dig mellan dem med kameran. Reversibelt: att ta bort från arbetsytan raderar ingenting.",
+  "globalCanvas.placeAreas": "Placera mina områden på arbetsytan",
+  "globalCanvas.fitAll": "Anpassa alla"
 }

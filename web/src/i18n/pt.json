@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Muda para Pro quando precisares",
   "pricing.titleFree": "Começa grátis",
   "prompts.varCopied": "{{v}} copiada — cola-a no prompt",
-  "statusbar.agentsActive": "{{count}} ativos"
+  "statusbar.agentsActive": "{{count}} ativos",
+  "globalCanvas.related": "nós",
+  "globalCanvas.removeFromCanvas": "Remover do quadro",
+  "globalCanvas.emptyTitle": "O quadro infinito",
+  "globalCanvas.emptyHint": "Um único plano para tudo. Coloca as tuas áreas e move-te entre elas com a câmara. É reversível: remover do quadro não apaga nada.",
+  "globalCanvas.placeAreas": "Colocar as minhas áreas no quadro",
+  "globalCanvas.fitAll": "Ajustar tudo"
 }

@@ -1942,5 +1942,11 @@
   "pricing.subtitleFree": "Αναβαθμίστε σε Pro όποτε το χρειαστείτε",
   "pricing.titleFree": "Ξεκινήστε δωρεάν",
   "prompts.varCopied": "{{v}} αντιγράφηκε — επικολλήστε το στο prompt",
-  "statusbar.agentsActive": "{{count}} ενεργά"
+  "statusbar.agentsActive": "{{count}} ενεργά",
+  "globalCanvas.related": "κόμβοι",
+  "globalCanvas.removeFromCanvas": "Αφαίρεση από τον καμβά",
+  "globalCanvas.emptyTitle": "Ο άπειρος καμβάς",
+  "globalCanvas.emptyHint": "Ένα ενιαίο επίπεδο για τα πάντα. Τοποθετήστε τις περιοχές σας και μετακινηθείτε ανάμεσά τους με την κάμερα. Είναι αναστρέψιμο: η αφαίρεση από τον καμβά δεν διαγράφει τίποτα.",
+  "globalCanvas.placeAreas": "Τοποθέτηση των περιοχών μου στον καμβά",
+  "globalCanvas.fitAll": "Προσαρμογή όλων"
 }
