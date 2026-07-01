@@ -46,6 +46,9 @@ interface Props {
   // Si se pasa una URL de PDF, se renderiza como FONDO del lienzo (ancla mundo 0,0),
   // nítido al ampliar, detrás de trazos y tarjetas. Las herramientas marcan encima.
   pdfBackground?: string
+  // Lienzo GLOBAL (home): al seleccionar un nodo se abre su columna derecha SIN
+  // salir del lienzo (evento `from:open-detail`), en vez de navegar a él.
+  globalCanvas?: boolean
 }
 
 // Ancho en unidades de mundo del PDF de fondo (alto se ajusta solo por página).
@@ -316,7 +319,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId, flowUnpositioned, pdfBackground }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, globalCanvas }: Props) {
   const { t } = useTranslation()
   useStore() // re-render ante cambios del store
   const navigate = useNavigate()
@@ -377,6 +380,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground 
 
   // Nodo seleccionado (el OutlinerNode embebido se enfoca/edita al seleccionarlo).
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // Lienzo GLOBAL (home): al seleccionar un nodo, abrir su columna derecha (la de
+  // siempre de ese nodo) SIN salir del lienzo. Al deseleccionar, volver a la
+  // columna del día. MainLayout escucha estos eventos.
+  useEffect(() => {
+    if (!globalCanvas) return
+    if (selectedId) window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: selectedId } }))
+    else window.dispatchEvent(new CustomEvent('from:close-detail'))
+  }, [globalCanvas, selectedId])
 
   // Multiselección con marco (Cmd/Ctrl + arrastrar sobre el fondo).
   // multiSel = nodos seleccionados; selStrokes = trazos (dibujos) seleccionados.

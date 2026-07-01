@@ -131,6 +131,7 @@ import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgente
 import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '../../api/userKnowledge'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
+import { isContextNode } from '../../utils/cajones'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -580,6 +581,17 @@ export default function MainLayout() {
     // y pide revertir (a filtro) al salir de ese modo.
     function onOpenDay() { setRightPanel('day') }
     function onCloseDay() { setRightPanel(p => p === 'day' ? 'filter' : p) }
+    // Lienzo global: seleccionar un nodo → su columna derecha SIN salir del lienzo.
+    // Solo para nodos-CONTEXTO (zonas/subcontextos): muestran ContextPropertiesPanel.
+    // (Un nodo normal no secuestra la columna del día; se navega a él como siempre.)
+    function onOpenDetail(e: Event) {
+      const id = (e as CustomEvent).detail?.nodeId
+      const n = id ? store.getNode(id) : null
+      if (n && isContextNode(n.id)) { setRightCollapsed(false); setDetailNodeId(id); setRightPanel('context') }
+    }
+    function onCloseDetail() { setRightPanel(p => p === 'context' ? 'day' : p); setDetailNodeId(null) }
+    window.addEventListener('from:open-detail', onOpenDetail as EventListener)
+    window.addEventListener('from:close-detail', onCloseDetail)
     window.addEventListener('from:node-trashed', onTrashed)
     window.addEventListener('from:node-restored', onRestored)
     window.addEventListener('from:open-node', onOpenNode)
@@ -587,6 +599,8 @@ export default function MainLayout() {
     window.addEventListener('from:open-day-panel', onOpenDay)
     window.addEventListener('from:close-day-panel', onCloseDay)
     return () => {
+      window.removeEventListener('from:open-detail', onOpenDetail as EventListener)
+      window.removeEventListener('from:close-detail', onCloseDetail)
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
       window.removeEventListener('from:open-node', onOpenNode)
