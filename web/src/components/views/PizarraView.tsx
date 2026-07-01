@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { uploadFile } from '../../api/client'
 import { ensureDayPath } from '../../utils/agendaHelper'
-import { findRootByKey } from '../../utils/rootLookup'
+import { findRootByKey, findContextRoot } from '../../utils/rootLookup'
 import { setTemporalFocus } from '../../utils/pizarraNav'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
@@ -509,6 +509,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // plano (pins absolutos). Fuera de global: hijos directos + un nivel de áreas.
   const children = useMemo(() => {
     if (globalCanvas) {
+      // El contenido del plano único = tu árbol de CONTEXTOS (no los hijos del
+      // nodo-lienzo, que es solo el contenedor de cámara/trazos).
+      const contentRoot = findContextRoot()?.id ?? parentId
       const out: Node[] = []
       const seen = new Set<string>()
       const walk = (id: string) => {
@@ -517,7 +520,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           seen.add(c.id); out.push(c); walk(c.id)
         }
       }
-      walk(parentId)
+      walk(contentRoot)
       return out
     }
     const out = [...directChildren]
@@ -540,7 +543,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // volver a Lista, todos vuelven a su orden.
   // Auto-layout NO destructivo del plano único (solo en memoria; el pin propio manda).
   const autoLayout = useMemo(
-    () => globalCanvas ? computeCanvasLayout(parentId) : null,
+    () => globalCanvas ? computeCanvasLayout(findContextRoot()?.id ?? parentId) : null,
     [globalCanvas, parentId, nodesVersion],
   )
   // Zonas = marcos (no tarjetas): áreas guardadas + (en global) contextos con contenido.
